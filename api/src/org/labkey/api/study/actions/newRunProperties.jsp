@@ -23,8 +23,9 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="java.util.Map" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
+<%@ page import="java.io.File" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <script type="text/javascript">LABKEY.requiresScript('completion.js');</script>
 
@@ -34,7 +35,7 @@
 %>
 <table>
 <%
-    if (bean.getTransformResult().isWarningsExist())
+    if (bean.getTransformResult().getWarnings() != null)
     {
 %>
         <tr>
@@ -47,13 +48,13 @@
             <td>&nbsp;</td>
         </tr>
         <tr class="labkey-wp-header">
-            <td colspan="2">Transformed Files</td>
+            <td colspan="2">Output Files</td>
         </tr>
-        <% for(String file : bean.getTransformResult().getFiles())
+        <% for(File file : bean.getTransformResult().getFiles())
         { %>
             <tr>
                 <td colspan="2"><a class="labkey-text-link" href='<%= new ActionURL(TransformResultsAction.class,getContainer())
-                    .addParameter("name",file).addParameter("uploadAttemptId", bean.getUploadAttemptID())%>'><%= file%></a></td>
+                    .addParameter("name",file.getName()).addParameter("uploadAttemptId", bean.getUploadAttemptID())%>'><%= file.getName()%></a></td>
             </tr>
         <% } %>
         <tr>
@@ -76,12 +77,11 @@
     {
 %>
         <tr>
-            <%--<td class="labkey-error" id="importErrors" colspan="2"></td>--%>
             <td class="labkey-error" id="importErrors" colspan="2">
                 <% for(ObjectError err : bean.getErrors().getAllErrors())
                 {
                 %>
-                    <%= err.getDefaultMessage() %>
+                    <%= h(err.getDefaultMessage()) %>
                     <br>
                 <%}%>
             </td>
@@ -130,7 +130,7 @@
 
     Ext4.onReady(function(){
         Ext4.create('Ext.Button', {
-            text: 'Override',
+            text: 'Proceed',
             renderTo: Ext4.get("overrideBtn"),
             handler: function() {
                 this.form = document.getElementById('ExperimentRun');
@@ -154,7 +154,7 @@
         });
 
         <%
-        if (bean.getTransformResult().isWarningsExist())
+        if (bean.getTransformResult().getWarnings() != null)
         {
         %>
         var form = document.getElementById("ExperimentRun");

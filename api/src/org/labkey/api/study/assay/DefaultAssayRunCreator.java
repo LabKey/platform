@@ -278,7 +278,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             TransformResult transformResult = transform(context, run);
             List<ExpData> insertedDatas = new ArrayList<>();
 
-            if(transformResult.isWarningsExist())
+            if(transformResult.getWarnings() != null && context instanceof AssayRunUploadForm)
             {
                 context.setTransformResult(transformResult);
                 ((AssayRunUploadForm)context).setName(run.getName());

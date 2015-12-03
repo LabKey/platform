@@ -45,11 +45,11 @@ public interface TransformResult
 
     void setWarnings(String warnings);
 
-    boolean isWarningsExist();
+//    boolean hasWarnings();
+//
+//    void setHasWarnings(boolean warningsExist);
 
-    void setWarningsExist(boolean warningsExist);
+    List<File> getFiles();
 
-    List<String> getFiles();
-
-    void setFiles(List<String> files);
+    void setFiles(List<File> files);
 }

@@ -35,16 +35,16 @@ public class DefaultTransformResult implements TransformResult
     private Map<DomainProperty, String> _runProperties = Collections.emptyMap();
     private File _uploadedFile;
     private String _assayId;
-    private boolean _warningsExist;
+    private boolean _hasWarnings;
     private String _warnings;
-    private List<String> _files;
+    private List<File> _files;
 
-    public List<String> getFiles()
+    public List<File> getFiles()
     {
         return _files;
     }
 
-    public void setFiles(List<String> files)
+    public void setFiles(List<File> files)
     {
         _files = files;
     }
@@ -59,15 +59,15 @@ public class DefaultTransformResult implements TransformResult
         _warnings = warnings;
     }
 
-    public boolean isWarningsExist()
-    {
-        return _warningsExist;
-    }
-
-    public void setWarningsExist(boolean warningsExist)
-    {
-        _warningsExist = warningsExist;
-    }
+//    public boolean hasWarnings()
+//    {
+//        return _hasWarnings;
+//    }
+//
+//    public void setHasWarnings(boolean hasWarnings)
+//    {
+//        _hasWarnings = hasWarnings;
+//    }
 
     public DefaultTransformResult(){}
 
@@ -83,7 +83,7 @@ public class DefaultTransformResult implements TransformResult
         _batchProperties = mergeResult.getBatchProperties();
         _runProperties = mergeResult.getRunProperties();
         _uploadedFile = mergeResult.getUploadedFile();
-        _warningsExist = mergeResult.isWarningsExist();
+//        _hasWarnings = mergeResult.hasWarnings();
         _warnings = mergeResult.getWarnings();
         _files = mergeResult.getFiles();
         _assayId = null;

@@ -1,17 +1,15 @@
 package org.labkey.api.study.actions;
 
-import org.apache.commons.io.IOUtils;
 import org.labkey.api.qc.TsvDataExchangeHandler;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URIUtil;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
 
 /**
  * Created by Marty on 11/16/2015.
@@ -29,17 +27,10 @@ public class TransformResultsAction extends BaseAssayAction<TransformResultsActi
         {
             File transformFile = new File(TsvDataExchangeHandler.workingDirectory);
             String path = transformFile.getParent() + File.separator + form.getUploadAttemptId() + File.separator + form.getName();
-
-            HttpServletResponse response = getViewContext().getResponse();
-            OutputStream out;
-
-            try(InputStream in = new FileInputStream(new File(path)))
+            if(URIUtil.isDescendant(new File(transformFile.getParent()).toURI(), new File(path).toURI()))
             {
-                response.setContentType("text/plain");
-                response.setHeader("Content-disposition", "attachment; filename=\"" + form.getName() +"\"");
-
-                out = response.getOutputStream();
-                IOUtils.copy(in, out);
+                HttpServletResponse response = getViewContext().getResponse();
+                PageFlowUtil.streamFile(response, new File(path), true);
             }
         }
 

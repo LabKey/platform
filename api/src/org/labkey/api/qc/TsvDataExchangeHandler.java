@@ -15,7 +15,6 @@
  */
 package org.labkey.api.qc;
 
-import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -396,8 +395,9 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         return map;
     }
 
-    public void processWarningsOutput(DefaultTransformResult result, Map<String, String> transformedProps, File runInfo, String errorFile, List<String> files) throws ValidationException
+    public RunInfo processRunInfo(File runInfo) throws ValidationException
     {
+        RunInfo info = new RunInfo();
         if (runInfo.exists())
         {
             List<ValidationError> errors = new ArrayList<>();
@@ -412,132 +412,15 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                         new ColumnDescriptor("type", String.class)
                 });
 
-                String sevLevel = null;
-                String maxSeverity = null;
-                String workingDir = "";
-                for (Map<String, Object> row : loader)
-                {
-                    if (row.get("name").equals(Props.severityLevel.name()))
-                    {
-                        sevLevel = row.get("value").toString();
-                    }
-                    if (row.get("name").equals(Props.workingDir.name()))
-                    {
-                        workingDir = row.get("value").toString();
-                    }
-                }
-
-                if(null != transformedProps)
-                {
-                    for (Map.Entry<String, String> row : transformedProps.entrySet())
-                    {
-                        if (row.getKey().equals(Props.maximumSeverity.name()))
-                        {
-                            maxSeverity = row.getValue();
-                            break;
-                        }
-                    }
-                }
-
-                // Look for error file and get contents
-                String warning = null;
-                if(null != errorFile)
-                {
-                    File errFile = new File(errorFile);
-                    if (errFile.exists())
-                    {
-                        try (Scanner sc = new Scanner(new File(errorFile)))
-                        {
-                            warning = sc.useDelimiter("\\A").next();
-                        }
-                        catch (Exception e)
-                        {
-                            warning = null;
-                        }
-                    }
-                }
-
-                // Display warnings case
-                if(null != sevLevel && sevLevel.equals(errLevel.WARN.name()) && null != maxSeverity && maxSeverity.equals(errLevel.WARN.name()))
-                {
-                    result.setWarningsExist(true);
-                    if(null != warning)
-                        result.setWarnings(warning);
-                    else
-                        result.setWarnings("Warnings found in transform script!");
-
-                    if(null != files && !files.isEmpty())
-                        result.setFiles(files);
-                }
-                // if error file exists
-                else if(null != warning)
-                    throw new ValidationException(warning);
-                // if error indicated in transformPropertiesFile
-                else if(null != maxSeverity && maxSeverity.equals(errLevel.ERROR.name()))
-                    throw new ValidationException("Transform script has thrown errors.");
-            }
-            catch (Exception e)
-            {
-                throw new ValidationException(e.toString());
-            }
-
-            if (!errors.isEmpty())
-                throw new ValidationException(errors);
-        }
-    }
-
-    public void processValidationOutput(File runInfo, @Nullable Logger log) throws ValidationException
-    {
-        if (runInfo.exists())
-        {
-            List<ValidationError> errors = new ArrayList<>();
-
-            try (TabLoader loader = new TabLoader(runInfo, false))
-            {
-                // Don't unescape file path names on windows (C:\foo\bar.tsv)
-                loader.setUnescapeBackslashes(false);
-                loader.setColumns(new ColumnDescriptor[]{
-                        new ColumnDescriptor("name", String.class),
-                        new ColumnDescriptor("value", String.class),
-                        new ColumnDescriptor("type", String.class)
-                });
-
-                File errorFile = null;
                 for (Map<String, Object> row : loader)
                 {
                     if (row.get("name").equals(Props.errorsFile.name()))
                     {
-                        errorFile = new File(row.get("value").toString());
-                        break;
+                        info.setErrorFile(new File(row.get("value").toString()));
                     }
-                }
-
-                if (errorFile != null && errorFile.exists())
-                {
-                    try (TabLoader errorLoader = new TabLoader(errorFile, false))
+                    if (row.get("name").equals(Props.severityLevel.name()))
                     {
-                        errorLoader.setColumns(new ColumnDescriptor[]{
-                                new ColumnDescriptor("type", String.class),
-                                new ColumnDescriptor("property", String.class),
-                                new ColumnDescriptor("message", String.class)
-                        });
-
-                        for (Map<String, Object> row : errorLoader)
-                        {
-                            if ("error".equalsIgnoreCase(row.get("type").toString()))
-                            {
-                                String propName = mapPropertyName(StringUtils.trimToNull((String)row.get("property")));
-
-                                if (propName != null)
-                                    errors.add(new PropertyValidationError(row.get("message").toString(), propName));
-                                else
-                                    errors.add(new SimpleValidationError(row.get("message").toString()));
-                            }
-                            else if ("warn".equalsIgnoreCase(row.get("type").toString()) && log != null)
-                            {
-                                log.warn(row.get("message").toString());
-                            }
-                        }
+                        info.setWarningSevLevel(row.get("value").toString());
                     }
                 }
             }
@@ -548,6 +431,109 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
             if (!errors.isEmpty())
                 throw new ValidationException(errors);
+
+        }
+        return info;
+    }
+
+    public void processWarningsOutput(DefaultTransformResult result, Map<String, String> transformedProps, RunInfo info, String errorFile, List<File> files) throws ValidationException
+    {
+        List<ValidationError> errors = new ArrayList<>();
+
+        String maxSeverity = null;
+
+        if(null != transformedProps)
+        {
+            for (Map.Entry<String, String> row : transformedProps.entrySet())
+            {
+                if (row.getKey().equals(Props.maximumSeverity.name()))
+                {
+                    maxSeverity = row.getValue();
+                    break;
+                }
+            }
+        }
+
+        // Look for error file and get contents
+        String warning = null;
+        if(null != errorFile)
+        {
+            File errFile = new File(errorFile);
+            if (errFile.exists())
+            {
+                try (Scanner sc = new Scanner(new File(errorFile)))
+                {
+                    warning = sc.useDelimiter("\\A").next();
+                }
+                catch (Exception e)
+                {
+                    warning = null;
+                }
+            }
+        }
+
+        // Display warnings case
+        if(null != info.getWarningSevLevel() && info.getWarningSevLevel().equals(errLevel.WARN.name()) && null != maxSeverity && maxSeverity.equals(errLevel.WARN.name()))
+        {
+            if(null != warning)
+                result.setWarnings(warning);
+            else
+                result.setWarnings("Warnings found in transform script!");
+
+            if(null != files && !files.isEmpty())
+                result.setFiles(files);
+        }
+        // if error file exists
+        else if(null != warning)
+            throw new ValidationException(warning);
+            // if error indicated in transformPropertiesFile
+        else if(null != maxSeverity && maxSeverity.equals(errLevel.ERROR.name()))
+            throw new ValidationException("Transform script has thrown errors.");
+
+        if (!errors.isEmpty())
+            throw new ValidationException(errors);
+    }
+
+    public void processValidationOutput(RunInfo info, @Nullable Logger log) throws ValidationException
+    {
+        List<ValidationError> errors = new ArrayList<>();
+
+        if (info.getErrorFile() != null && info.getErrorFile().exists())
+        {
+            try (TabLoader errorLoader = new TabLoader(info.getErrorFile(), false))
+            {
+                errorLoader.setColumns(new ColumnDescriptor[]{
+                        new ColumnDescriptor("type", String.class),
+                        new ColumnDescriptor("property", String.class),
+                        new ColumnDescriptor("message", String.class)
+                });
+
+                for (Map<String, Object> row : errorLoader)
+                {
+                    if ("error".equalsIgnoreCase(row.get("type").toString()))
+                    {
+                        String propName = mapPropertyName(StringUtils.trimToNull((String) row.get("property")));
+
+                        if (propName != null)
+                            errors.add(new PropertyValidationError(row.get("message").toString(), propName));
+                        else
+                            errors.add(new SimpleValidationError(row.get("message").toString()));
+                    }
+                    else if ("warn".equalsIgnoreCase(row.get("type").toString()) && log != null)
+                    {
+                        log.warn(row.get("message").toString());
+                    }
+                }
+            }
+
+            catch (Exception e)
+            {
+                throw new ValidationException(e.getMessage());
+            }
+
+            if (!errors.isEmpty())
+                throw new ValidationException(errors);
+
         }
     }
 
@@ -657,13 +643,42 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         return _filesToIgnore.contains(file);
     }
 
+    private class RunInfo {
+        private File _errorFile;
+        private String _warningSevLevel;
+
+        public File getErrorFile()
+        {
+            return _errorFile;
+        }
+
+        public void setErrorFile(File errorFile)
+        {
+            _errorFile = errorFile;
+        }
+
+        public String getWarningSevLevel()
+        {
+            return _warningSevLevel;
+        }
+
+        public void setWarningSevLevel(String warningSevLevel)
+        {
+            _warningSevLevel = warningSevLevel;
+        }
+    }
+
     public TransformResult processTransformationOutput(AssayRunUploadContext<? extends AssayProvider> context, File runInfo, ExpRun run, File scriptFile, TransformResult mergeResult, Set<File> inputDataFiles) throws ValidationException
     {
         DefaultTransformResult result = new DefaultTransformResult(mergeResult);
         _filesToIgnore.add(scriptFile);
 
+        // Get data for processing errors and warnings
+        RunInfo info;
+        info = processRunInfo(runInfo);
+
         // check to see if any errors were generated
-        processValidationOutput(runInfo, context.getLogger());
+        processValidationOutput(info, context.getLogger());
 
         // Find the output step for the run
         ExpProtocolApplication outputProtocolApplication = null;
@@ -732,7 +747,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                     }
                 }
 
-                List<String> tempFiles = Lists.newArrayList();
+                List<File> tempFiles = new ArrayList<>();
 
                 // Loop through all of the files that are left after running the transform script
                 for (File file : runInfo.getParentFile().listFiles())
@@ -758,7 +773,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                         if(file.getName().equals(TRANS_ERR_FILE))
                             transErrorFile = targetFile.getPath();
                         else
-                            tempFiles.add(targetFile.getName());
+                            tempFiles.add(targetFile);
 
 
                         // Copy the file to the same directory as the original data file
@@ -853,7 +868,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 if (runDataUploadedFile != null)
                     result.setUploadedFile(runDataUploadedFile);
 
-                processWarningsOutput(result, transformedProps, runInfo, transErrorFile, tempFiles);
+                processWarningsOutput(result, transformedProps, info, transErrorFile, tempFiles);
             }
             catch (Exception e)
             {
@@ -938,7 +953,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             return _context.getUser();
         }
 
-        public String getSeverityLevel() { return "";}
+        public String getSeverityLevel() { return null;}
 
         public void setSeverityLevel(String severityLevel) {};
 
