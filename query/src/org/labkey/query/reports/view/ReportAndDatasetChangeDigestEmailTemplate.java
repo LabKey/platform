@@ -44,6 +44,7 @@ import java.util.Map;
 public class ReportAndDatasetChangeDigestEmailTemplate extends EmailTemplate
 {
     private static final String DEFAULT_SUBJECT = "Report/Dataset Change Notification";
+    private static final String DEFAULT_SENDER = "^siteShortName^";
 
     private final List<ReplacementParam> _replacements = new ArrayList<>();
     private ActionURL _folderUrl;
@@ -68,7 +69,7 @@ public class ReportAndDatasetChangeDigestEmailTemplate extends EmailTemplate
 
     public ReportAndDatasetChangeDigestEmailTemplate()
     {
-        super("Report/dataset change (digest)", DEFAULT_SUBJECT, loadBody(), "Daily digest of report and dataset changes", ContentType.HTML);
+        super("Report/dataset change (digest)", DEFAULT_SUBJECT, loadBody(), "Daily digest of report and dataset changes", ContentType.HTML, DEFAULT_SENDER);
 
         _replacements.add(new ReplacementParam<String>("folderUrl", String.class, "URL to folder")
         {

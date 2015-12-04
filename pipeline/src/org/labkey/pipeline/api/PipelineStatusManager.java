@@ -222,7 +222,7 @@ public class PipelineStatusManager
                 (sfExist == null || !PipelineJob.TaskStatus.error.matches(sfExist.getStatus())))
         {
             LOG.info("Error status has changed - considering an email notification");
-            PipelineManager.sendNotificationEmail(sfSet, job.getContainer());
+            PipelineManager.sendNotificationEmail(sfSet, job.getContainer(), user);
         }
 
         if (PipelineJob.TaskStatus.error.matches(status))
@@ -238,7 +238,7 @@ public class PipelineStatusManager
 
             // Notify if this is not a split job
             if (job.getParentGUID() == null)
-                PipelineManager.sendNotificationEmail(sfSet, job.getContainer());
+                PipelineManager.sendNotificationEmail(sfSet, job.getContainer(), user);
         }
         return true;
     }

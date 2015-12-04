@@ -51,6 +51,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -205,11 +206,11 @@ public class EmailServiceImpl implements EmailService.I
         private Map<String, String> _headers = new HashMap<>();
         private Map<Message.RecipientType, String[]> _recipients = new HashMap<>();
         private List<File> _files;
+        private String _senderName;
 
         public EmailMessageImpl(String from, String[] to, String subject)
         {
             _from = from;
-
             _recipients.put(Message.RecipientType.TO, to);
             _subject = subject;
         }
@@ -217,6 +218,11 @@ public class EmailServiceImpl implements EmailService.I
         public String getFrom()
         {
             return _from;
+        }
+
+        public void setSenderName(String senderName)
+        {
+            _senderName = senderName;
         }
 
         public String[] getTo()
@@ -302,7 +308,17 @@ public class EmailServiceImpl implements EmailService.I
                 msg.setContent(multiPartContent);
             }
 
-            msg.setFrom(new InternetAddress(_from));
+            try
+            {
+                if (_senderName == null)
+                    msg.setFrom(new InternetAddress(_from));
+                else
+                    msg.setFrom(new InternetAddress(_from, _senderName));
+            }
+            catch (UnsupportedEncodingException e)
+            {
+                throw new MessagingException(e.getMessage(), e);
+            }
 
             for (Map.Entry<Message.RecipientType, String[]> entry : _recipients.entrySet())
             {

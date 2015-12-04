@@ -38,6 +38,8 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
 {
     protected static final String DEFAULT_SUBJECT =
             "^itemName^ #^issueId^, \"^title^,\" has been ^action^";
+    protected static final String DEFAULT_SENDER =
+            "^siteShortName^";
     protected static final String DEFAULT_BODY =
             "You can review this ^itemNameLowerCase^ here: ^detailsURL^\n" +
             "Modified by: ^user^\n" +
@@ -52,11 +54,13 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
     private String _fieldChanges;
     private String _recipients;
     private String _attachments;
+    private User   _originatingUser;
 
     public IssueUpdateEmailTemplate()
     {
         super("Issue update");
         setSubject(DEFAULT_SUBJECT);
+        setSenderName(DEFAULT_SENDER);
         setBody(DEFAULT_BODY);
         setDescription("Sent to the users based on issue notification rules and settings after an issue has been edited or inserted.");
         setPriority(10);
@@ -279,6 +283,21 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
                 return _fieldChanges;
             }
         });
+        _replacements.add(new ReplacementParam<String>("userFirstName", String.class, "First name of the user performing the operation"){
+            public String getValue(Container c) {
+                return _originatingUser == null ? null : _originatingUser.getFirstName();
+            }
+        });
+        _replacements.add(new ReplacementParam<String>("userLastName", String.class, "Last name of the user performing the operation"){
+            public String getValue(Container c) {
+                return _originatingUser == null ? null : _originatingUser.getLastName();
+            }
+        });
+        _replacements.add(new ReplacementParam<String>("userDisplayName", String.class, "Display name of the user performing the operation"){
+            public String getValue(Container c) {
+                return _originatingUser == null ? null : _originatingUser.getFriendlyName();
+            }
+        });
 
         // modifiedFields
 
@@ -332,13 +351,14 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
         protected abstract Integer getUserId(Container c);
     }
 
-    public void init(Issue newIssue, ActionURL detailsURL, String change, String comment, String fieldChanges, Set<User> recipients,  List<AttachmentFile> attachments)
+    public void init(Issue newIssue, ActionURL detailsURL, String change, String comment, String fieldChanges, Set<User> recipients, List<AttachmentFile> attachments, User creator)
     {
         _newIssue = newIssue;
         _detailsURL = detailsURL;
         _change = change;
         _comment = comment;
         _fieldChanges = fieldChanges;
+        _originatingUser = creator;
 
         StringBuilder sb = new StringBuilder();
         String separator = "";

@@ -70,6 +70,7 @@
 %>
         </select></td></tr>
         <tr><td class="labkey-form-label">Description:</td><td><div id="emailDescription"><%=h(bean.getTemplateDescription())%></div></td><td></td></tr>
+        <tr><td class="labkey-form-label">From:</td><td><input id="emailSender" name="emailSender" style="width:100%" value="<%=h(bean.getEmailSender())%>"></td><td></td></tr>
         <tr><td class="labkey-form-label">Subject:</td><td><input id="emailSubject" name="emailSubject" style="width:100%" value="<%=h(bean.getEmailSubject())%>"></td><td></td></tr>
         <tr><td class="labkey-form-label">Message:</td><td><textarea id="emailMessage" name="emailMessage" style="width:100%" rows="20"><%=h(bean.getEmailMessage())%></textarea></td></tr>
         <tr>
@@ -120,6 +121,7 @@
         out.write(sep);
         out.write("\t\"name\":\"" + et.getClass().getName() + "\",\n");
         out.write("\t\"description\":" + PageFlowUtil.jsString(et.getDescription()) + ",\n");
+        out.write("\t\"sender\":" + PageFlowUtil.jsString(et.getSenderName()) + ",\n");
         out.write("\t\"subject\":" + PageFlowUtil.jsString(et.getSubject()) + ",\n");
         out.write("\t\"message\":" + PageFlowUtil.jsString(et.getBody()) + ",\n");
         // Let users delete the folder-scoped template only if it's been stored in the same folder they're in, and they're
@@ -156,6 +158,7 @@
     {
         var selection = Ext4.get('templateClass').dom;
         var subject = Ext4.get('emailSubject').dom;
+        var sender = Ext4.get('emailSender').dom;
         var message = Ext4.get('emailMessage').dom;
         var description = Ext4.get('emailDescription').dom;
         var descriptionFF = Ext4.get('emailDescriptionFF').dom;
@@ -165,6 +168,7 @@
             if (this.emailTemplates[i].name == selection.value)
             {
                 subject.value = this.emailTemplates[i].subject;
+                sender.value = this.emailTemplates[i].sender;
                 description.innerHTML = this.emailTemplates[i].description;
                 descriptionFF.value = this.emailTemplates[i].description;
                 message.value = this.emailTemplates[i].message;

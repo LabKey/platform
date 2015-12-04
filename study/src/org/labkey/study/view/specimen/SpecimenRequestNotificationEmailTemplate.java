@@ -18,6 +18,7 @@ package org.labkey.study.view.specimen;
 import org.apache.commons.io.IOUtils;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
@@ -41,11 +42,13 @@ public class SpecimenRequestNotificationEmailTemplate extends EmailTemplate
 {
     protected static final String DEFAULT_SUBJECT =
             "^studyName^: ^subjectSuffix^";
+    protected static final String DEFAULT_SENDER = "^userDisplayName^";
     public static final String NAME = "Specimen request notification";
     private List<EmailTemplate.ReplacementParam> _replacements = new ArrayList<>();
 
     private String _subjectSuffix;
     private SpecimenUtils.NotificationBean _notification;
+    private User _originatingUser;
 
     /** Instead of in-lining a long String, we store the default body template as a ClassLoader resource */
     private static String loadBody()
@@ -65,7 +68,7 @@ public class SpecimenRequestNotificationEmailTemplate extends EmailTemplate
 
     public SpecimenRequestNotificationEmailTemplate()
     {
-        super(NAME, DEFAULT_SUBJECT, loadBody(), "Sent to users when a specimen request has been edited or inserted.", ContentType.HTML);
+        super(NAME, DEFAULT_SUBJECT, loadBody(), "Sent to users when a specimen request has been edited or inserted.", ContentType.HTML, DEFAULT_SENDER);
         setEditableScopes(EmailTemplate.Scope.SiteOrFolder);
 
         _replacements.add(new EmailTemplate.ReplacementParam<String>("studyName", String.class, "The name of this folder's study")
@@ -186,6 +189,21 @@ public class SpecimenRequestNotificationEmailTemplate extends EmailTemplate
                 return comments == null ? "[Not provided]" : comments;
             }
         });
+        _replacements.add(new ReplacementParam<String>("userFirstName", String.class, "First name of the user performing the operation, only works when reply to current user"){
+            public String getValue(Container c) {
+                return _originatingUser == null ? null : _originatingUser.getFirstName();
+            }
+        });
+        _replacements.add(new ReplacementParam<String>("userLastName", String.class, "Last name of the user performing the operation, only works when reply to current user"){
+            public String getValue(Container c) {
+                return _originatingUser == null ? null : _originatingUser.getLastName();
+            }
+        });
+        _replacements.add(new ReplacementParam<String>("userDisplayName", String.class, "Display name of the user performing the operation, only works when reply to current user"){
+            public String getValue(Container c) {
+                return _originatingUser == null ? null : _originatingUser.getFriendlyName();
+            }
+        });
 
         _replacements.addAll(super.getValidReplacements());
     }
@@ -232,6 +250,8 @@ public class SpecimenRequestNotificationEmailTemplate extends EmailTemplate
 
         _subjectSuffix = settings.getSubjectSuffix().replaceAll("%requestId%", "" + notification.getRequestId());
     }
+
+    public void setOriginatingUser(User user){_originatingUser = user;}
 
     public List<EmailTemplate.ReplacementParam> getValidReplacements(){return _replacements;}
 

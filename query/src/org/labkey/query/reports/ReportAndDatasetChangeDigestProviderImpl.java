@@ -167,6 +167,7 @@ public final class ReportAndDatasetChangeDigestProviderImpl extends ReportAndDat
 
         EmailMessage msg = ems.createMessage(LookAndFeelProperties.getInstance(form.getContainer()).getSystemEmailAddress(),
                 new String[]{form.getUser().getEmail()}, template.renderSubject(form.getContainer()));
+        msg.setSenderName(template.renderSenderName(form.getContainer()));
         msg.addContent(EmailMessage.contentType.HTML, template.renderBody(form.getContainer()));
 
         return msg;

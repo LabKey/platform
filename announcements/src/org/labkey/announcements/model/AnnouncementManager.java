@@ -16,6 +16,7 @@
 package org.labkey.announcements.model;
 
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -27,6 +28,7 @@ import org.labkey.announcements.EmailNotificationPage;
 import org.labkey.announcements.config.AnnouncementEmailConfig;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
+import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.CompareType;
@@ -63,7 +65,11 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.emailTemplate.EmailTemplate;
+import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -77,6 +83,7 @@ import org.labkey.api.wiki.WikiService;
 import javax.mail.MessagingException;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -206,7 +213,7 @@ public class AnnouncementManager
 
         return new TableSelector(_comm.getTableInfoAnnouncements(), filter, sort).getArray(AnnouncementModel.class);
     }
-    
+
     public static AnnouncementModel[] getAnnouncements(@Nullable Container c, String parent)
     {
         SimpleFilter filter = new SimpleFilter();
@@ -398,30 +405,30 @@ public class AnnouncementManager
                         {
                             Permissions perm = AnnouncementsController.getPermissions(c, recipient, settings);
                             ActionURL changePreferenceURL;
-                            EmailNotificationPage.Reason reason;
+                            EmailNotificationBean.Reason reason;
 
                             if (memberList.contains(recipient.getUserId()))
                             {
-                                reason = EmailNotificationPage.Reason.memberList;
+                                reason = EmailNotificationBean.Reason.memberList;
                                 changePreferenceURL = new ActionURL(AnnouncementsController.RemoveFromMemberListAction.class, c);
                                 changePreferenceURL.addParameter("userId", String.valueOf(recipient.getUserId()));
                                 changePreferenceURL.addParameter("messageId", String.valueOf(parent.getRowId()));
                             }
                             else
                             {
-                                reason = EmailNotificationPage.Reason.signedUp;
+                                reason = EmailNotificationBean.Reason.signedUp;
                                 changePreferenceURL = AnnouncementsController.getEmailPreferencesURL(c, AnnouncementsController.getBeginURL(c), a.lookupSrcIdentifer());
                             }
 
                             try
                             {
-                                ViewMessage m = getMessage(c, recipient, settings, perm, parent, a, isResponse, changePreferenceURL, currentRendererType, reason);
+                                MailHelper.MultipartMessage m = getMessage(c, recipient, settings, perm, parent, a, isResponse, changePreferenceURL, currentRendererType, reason, user);
                                 m.setHeader("References", references);
                                 m.setHeader("Message-ID", messageId);
 
                                 emailer.addMessage(recipient.getEmail(), m);
                             }
-                            catch (MessagingException e)
+                            catch (Exception e)
                             {
                                 ExceptionUtil.logExceptionToMothership(null, e);
                             }
@@ -436,71 +443,28 @@ public class AnnouncementManager
         renderAndEmailThread.start();
     }
 
-    private static ViewMessage getMessage(Container c, User recipient, DiscussionService.Settings settings, @NotNull Permissions perm, AnnouncementModel parent, AnnouncementModel a, boolean isResponse, ActionURL removeURL, WikiRendererType currentRendererType, EmailNotificationPage.Reason reason) throws MessagingException
+    private static MailHelper.MultipartMessage getMessage(Container c, User recipient, DiscussionService.Settings settings, @NotNull Permissions perm, AnnouncementModel parent, AnnouncementModel a, boolean isResponse, ActionURL removeURL, WikiRendererType currentRendererType, EmailNotificationBean.Reason reason, User user) throws Exception
     {
-        ActionURL threadURL = AnnouncementsController.getThreadURL(c, parent.getEntityId(), a.getRowId());
-
-        ViewMessage m = MailHelper.createMultipartViewMessage(LookAndFeelProperties.getInstance(c).getSystemEmailAddress(), null);
-        m.setSubject(StringUtils.trimToEmpty(isResponse ? "RE: " + parent.getTitle() : a.getTitle()));
-
-        // Hack! Push a ViewContext with the recipient as the user, so embedded webparts get rendered with that
-        // user's permissions, etc.
-        try (ViewContext.StackResetter resetter = ViewContext.pushMockViewContext(recipient, c, threadURL))
+        if (!HttpView.hasCurrentView())
         {
-            HttpServletRequest request = resetter.getContext().getRequest();
-
-            EmailNotificationPage page = createEmailNotificationTemplate("emailNotificationPlain.jsp", false, c, recipient, settings, perm, parent, a, removeURL, currentRendererType, reason);
-            JspView view = new JspView(page);
-            view.setFrame(WebPartView.FrameType.NOT_HTML);
-            m.setTextContent(request, view);
-
-            page = createEmailNotificationTemplate("emailNotification.jsp", true, c, recipient, settings, perm, parent, a, removeURL, currentRendererType, reason);
-            view = new JspView(page);
-            view.setFrame(WebPartView.FrameType.NONE);
-            m.setHtmlContent(request, view);
-
-            return m;
+            // Hack! Push a ViewContext with the recipient as the user, so embedded webparts get rendered with that
+            // user's permissions, etc.
+            ActionURL threadURL = AnnouncementsController.getThreadURL(c, parent.getEntityId(), a.getRowId());
+            ViewContext.pushMockViewContext(recipient, c, threadURL);
         }
-        catch (Exception e)
-        {
-            throw new MessagingException(e.getMessage(), e);
-        }
+
+        EmailNotificationBean notificationBean = new EmailNotificationBean(c, recipient, settings, perm, parent, a, isResponse, removeURL, currentRendererType, reason);
+
+        NotificationEmailTemplate template = EmailTemplateService.get().getEmailTemplate(NotificationEmailTemplate.class, c);
+        template.init(notificationBean, user);
+        MailHelper.MultipartMessage message = MailHelper.createMultipartMessage();
+
+        message.setEncodedHtmlContent(template.renderBody(c));
+        message.setSubject(template.renderSubject(c));
+        message.setFrom(template.renderFrom(c, LookAndFeelProperties.getInstance(c).getSystemEmailAddress()));
+
+        return message;
     }
-
-    private static EmailNotificationPage createEmailNotificationTemplate(String templateName, boolean includeBody, Container c,
-        User recipient, DiscussionService.Settings settings, @NotNull Permissions perm, AnnouncementModel parent,
-        AnnouncementModel a, ActionURL removeURL, WikiRendererType currentRendererType, EmailNotificationPage.Reason reason)
-    {
-        EmailNotificationPage page = (EmailNotificationPage) JspLoader.createPage(AnnouncementsController.class, templateName);
-
-        page.c = c;
-        page.recipient = recipient;
-        page.settings = settings;
-        page.threadURL = new ActionURL(AnnouncementsController.ThreadAction.class, c).addParameter("rowId", a.getRowId());
-        page.threadParentURL = new ActionURL(AnnouncementsController.ThreadAction.class, c).addParameter("rowId", parent.getRowId());
-        page.boardPath = c.getPath();
-        page.boardURL = AnnouncementsController.getBeginURL(c);
-        page.removeURL = removeURL;
-        page.siteURL = ActionURL.getBaseServerURL();
-        page.announcementModel = a;
-        page.reason = reason;
-        page.includeGroups = perm.includeGroups();
-
-        // for plain text email messages, we don't ever want to include the body since we can't translate HTML into
-        // plain text
-        if (includeBody && !settings.isSecure())
-        {
-            //format email using same renderer chosen for message // TODO: why not simply a.getFormattedHtml()?
-            //note that we still send all messages, including plain text, as html-formatted messages; only the inserted body text differs between renderers.
-            WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
-            if (null != wikiService)
-            {
-                page.body = wikiService.getFormattedHtml(currentRendererType, a.getBody());
-            }
-        }
-        return page;
-    }
-
 
     private static synchronized void insertMemberList(User user, List<Integer> userIds, int messageId)
     {
@@ -594,7 +558,7 @@ public class AnnouncementManager
 
        unindexThread(ann);
     }
-    
+
 
     public static void deleteUserFromAllMemberLists(User user)
     {
@@ -888,7 +852,7 @@ public class AnnouncementManager
         }
     }
 
-    
+
     public static class TestCase extends Assert
     {
         private void purgeAnnouncements(Container c, boolean verifyEmpty) throws SQLException
@@ -964,6 +928,273 @@ public class AnnouncementManager
             // UNDONE: attachments, update, responses, ....
 
             purgeAnnouncements(c, true);
+        }
+    }
+
+    public static class NotificationEmailTemplate extends EmailTemplate
+    {
+        protected static final String DEFAULT_SUBJECT =
+                "^messageSubject^";
+        protected static final String DEFAULT_SENDER =
+                "^siteShortName^";
+        protected static final String DEFAULT_DESCRIPTION =
+                "New Posts Notification from the ^siteShortName^ Web Site";
+
+        protected static final String NAME = "Message board notification";
+
+        protected static final String BODY_PATH = "/org/labkey/announcements/emailNotification.txt";
+        private List<EmailTemplate.ReplacementParam> _replacements = new ArrayList<>();
+        private EmailNotificationBean notificationBean = null;
+
+        private String reasonForEmail = "";
+        private User   user = null;
+        private String attachments = "";
+        private String messageUrl = "";
+
+        public NotificationEmailTemplate()
+        {
+            super(NAME, DEFAULT_SUBJECT, loadBody(), DEFAULT_DESCRIPTION, ContentType.HTML, DEFAULT_SENDER);
+            setEditableScopes(EmailTemplate.Scope.SiteOrFolder);
+
+            _replacements.add(new ReplacementParam<String>("createdByUser", String.class, "User that generated the message", ContentType.HTML)
+            {
+                public String getValue(Container c)
+                {
+                    if (notificationBean == null)
+                        return null;
+                    return notificationBean.announcementModel.getCreatedByName(notificationBean.includeGroups, notificationBean.recipient, false);
+                }
+            });
+
+            _replacements.add(new ReplacementParam<String>("createdOrResponded", String.class, "Created or Responded to a message", ContentType.HTML)
+            {
+                public String getValue(Container c)
+                {
+                    if (notificationBean == null)
+                        return null;
+                    return notificationBean.announcementModel.getParent() != null ? " responded" : " created a new ";
+                }
+            });
+
+            _replacements.add(new ReplacementParam<Date>("messageDatetime", Date.class, "Date and time the message is created", ContentType.HTML)
+            {
+                public Date getValue(Container c)
+                {
+                    if (notificationBean == null)
+                        return null;
+                    return notificationBean.announcementModel.getCreated();
+                }
+            });
+
+            _replacements.add(new ReplacementParam<String>("conversationName", String.class, "Message title", ContentType.HTML)
+            {
+                public String getValue(Container c)
+                {
+                    if (notificationBean == null)
+                        return null;
+                    return notificationBean.settings.getConversationName().toLowerCase();
+                }
+            });
+
+            _replacements.add(new ReplacementParam<String>("messageUrl", String.class, "Link to the original message", ContentType.HTML)
+            {
+
+                public String getValue(Container c)
+                {
+                     return messageUrl;
+                }
+            });
+
+            _replacements.add(new ReplacementParam<String>("messageBody", String.class, "Message content", ContentType.HTML)
+            {
+                public String getValue(Container c)
+                {
+                    if (notificationBean == null)
+                        return null;
+                    return notificationBean.body == null ? "" : notificationBean.body;
+                }
+            });
+
+            _replacements.add(new ReplacementParam<String>("messageSubject", String.class, "Message subject", ContentType.HTML)
+            {
+                public String getValue(Container c)
+                {
+                    if (notificationBean == null)
+                        return null;
+                    return StringUtils.trimToEmpty(notificationBean.isResponse ? "RE: " + notificationBean.parentModel.getTitle() : notificationBean.announcementModel.getTitle());
+                }
+            });
+
+            _replacements.add(new ReplacementParam<String>("attachments", String.class, "Attachments for this message", ContentType.HTML)
+            {
+
+                public String getValue(Container c)
+                {
+                    return attachments;
+                }
+            });
+
+            _replacements.add(new ReplacementParam<String>("reasonFooter", String.class, "Footer information explaining why user is receiving this message", ContentType.HTML)
+            {
+                public String getValue(Container c)
+                {
+                    return reasonForEmail;
+                }
+            });
+
+            _replacements.add(new ReplacementParam<String>("userFirstName", String.class, "First name of the user who created or responded to the message"){
+                public String getValue(Container c) {
+                    return user == null ? null : user.getFirstName();
+                }
+            });
+            _replacements.add(new ReplacementParam<String>("userLastName", String.class, "Last name of the user who created or responded to the message"){
+                public String getValue(Container c) {
+                     return user == null ? null : user.getLastName();
+                }
+            });
+            _replacements.add(new ReplacementParam<String>("userDisplayName", String.class, "Display name of the user who created or responded to the message"){
+                public String getValue(Container c) {
+                    return user == null ? null : user.getFriendlyName();
+                }
+            });
+
+
+            _replacements.addAll(super.getValidReplacements());
+        }
+
+        public List<ReplacementParam> getValidReplacements()
+        {
+            return _replacements;
+        }
+
+        private static String loadBody()
+        {
+            try
+            {
+                try (InputStream is = NotificationEmailTemplate.class.getResourceAsStream(BODY_PATH))
+                {
+                    return IOUtils.toString(is);
+                }
+            }
+            catch (IOException e)
+            {
+                throw new UnexpectedException(e);
+            }
+        }
+
+        public void init(EmailNotificationBean notification, User user)
+        {
+            this.notificationBean = notification;
+            this.user = user;
+            initReason();
+            initAttachments();
+        }
+
+        private void initReason()
+        {
+            StringBuilder sb = new StringBuilder();
+            if (notificationBean.reason == EmailNotificationBean.Reason.signedUp)
+            {
+                sb.append("You have received this email because you are signed up to receive notifications about new posts to <a href=\"");
+                sb.append(PageFlowUtil.filter(notificationBean.boardURL.getURIString()));
+                sb.append("\">");
+                sb.append(PageFlowUtil.filter(notificationBean.boardURL.getURIString()));
+                sb.append("</a> at <a href=\"");
+                sb.append(PageFlowUtil.filter(notificationBean.siteURL));
+                sb.append("\">");
+                sb.append(PageFlowUtil.filter(notificationBean.siteURL));
+                sb.append(" </a>. You must login to respond to this message. If you no longer wish to receive these notifications you can <a href=\"");
+                sb.append(PageFlowUtil.filter(notificationBean.removeURL.getURIString()));
+                sb.append(")\">change your email preferences.</a>");
+                reasonForEmail = sb.toString();
+            }
+            else
+            {
+                sb.append("<p>You have received this email because you are on the member list for this ");
+                sb.append(notificationBean.settings.getConversationName().toLowerCase());
+                sb.append(". You must login to respond to this message. If you no longer wish to receive these notifications you can remove yourself from the member list by ");
+                sb.append("<a href=\"");
+                sb.append(PageFlowUtil.filter(notificationBean.removeURL.getURIString()));
+                sb.append("\">clicking here</a>.</p>");
+                reasonForEmail = sb.toString();
+            }
+        }
+
+        private void initAttachments()
+        {
+            AnnouncementModel announcementModel = notificationBean.announcementModel;
+            if (announcementModel == null)
+                return;
+
+            StringBuilder sb = new StringBuilder();
+            String separator = "";
+
+            if (!announcementModel.getAttachments().isEmpty())
+            {
+                sb.append("Attachments: ");
+                for (Attachment attachment : announcementModel.getAttachments())
+                {
+                    sb.append(separator);
+                    separator = ", ";
+                    sb.append("<a href=\"").append((attachment.getDownloadUrl(AnnouncementsController.DownloadAction.class))).append("\">").append((attachment.getName())).append("</a>");
+                }
+            }
+            this.attachments = sb.toString();
+            messageUrl = announcementModel.getParent() == null ? notificationBean.threadURL.getURIString() : notificationBean.threadParentURL.getURIString();
+
+        }
+    }
+
+    public static class EmailNotificationBean
+    {
+        private Container c;
+        private User recipient;
+        private ActionURL threadURL;
+        private ActionURL threadParentURL;
+        private String boardPath;
+        private ActionURL boardURL;
+        private String siteURL;
+        private AnnouncementModel announcementModel;
+        private AnnouncementModel parentModel;
+        private boolean isResponse;
+        private String body;
+        private DiscussionService.Settings settings;
+        private ActionURL removeURL;
+        private Reason reason;
+
+        public boolean includeGroups;
+
+        public enum Reason { signedUp, memberList }
+
+        public EmailNotificationBean(Container c,
+                                     User recipient, DiscussionService.Settings settings, @NotNull Permissions perm, AnnouncementModel parent,
+                                     AnnouncementModel a, boolean isResponse, ActionURL removeURL, WikiRendererType currentRendererType, EmailNotificationBean.Reason reason)
+        {
+            this.c = c;
+            this.recipient = recipient;
+            this.threadURL = new ActionURL(AnnouncementsController.ThreadAction.class, c).addParameter("rowId", a.getRowId());
+            this.threadParentURL = new ActionURL(AnnouncementsController.ThreadAction.class, c).addParameter("rowId", parent.getRowId());
+            this.boardPath = c.getPath();
+            this.boardURL = AnnouncementsController.getBeginURL(c);
+            this.siteURL = ActionURL.getBaseServerURL();
+            this.announcementModel = a;
+            this.parentModel = parent;
+            this.isResponse = isResponse;
+            this.removeURL = removeURL;
+            this.settings = settings;
+            this.reason = reason;
+            this.includeGroups = perm.includeGroups();
+
+            if (!settings.isSecure())
+            {
+                WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
+                if (null != wikiService)
+                {
+                    this.body = wikiService.getFormattedHtml(currentRendererType, a.getBody());
+                }
+            }
+            else
+                this.body = a.getBody();
         }
     }
 }

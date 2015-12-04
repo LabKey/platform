@@ -212,7 +212,7 @@ public class PipelineManager
         return props.get(name);
     }
 
-    public static void sendNotificationEmail(PipelineStatusFileImpl statusFile, Container c)
+    public static void sendNotificationEmail(PipelineStatusFileImpl statusFile, Container c, User user)
     {
         PipelineMessage message;
         if (PipelineJob.TaskStatus.complete.matches(statusFile.getStatus()))
@@ -249,7 +249,7 @@ public class PipelineManager
         {
             if (message != null)
             {
-                Message m = message.createMessage();
+                Message m = message.createMessage(user);
                 MailHelper.send(m, null, c);
             }
         }
@@ -375,7 +375,7 @@ public class PipelineManager
         //public void setStatusFiles(PipelineStatusFileImpl[] statusFiles){_statusFiles = statusFiles;}
         public void setRecipients(String recipients){_recipients = recipients;}
 
-        public MimeMessage createMessage()
+        public MimeMessage createMessage(User user)
         {
             try
             {
@@ -383,14 +383,15 @@ public class PipelineManager
 
                 ActionURL url = StatusController.urlDetails(_statusFile); 
 
+                _template.setOriginatingUser(user);
                 _template.setDataUrl(url.getURIString());
                 _template.setJobDescription(_statusFile.getDescription());
                 _template.setStatus(_statusFile.getStatus());
                 _template.setTimeCreated(_statusFile.getCreated());
 
                 m.setTemplate(_template, _c);
+                m.addFrom(new Address[]{_template.renderFrom(_c, LookAndFeelProperties.getInstance(_c).getSystemEmailAddress())});
 
-                m.addFrom(new Address[]{new InternetAddress(LookAndFeelProperties.getInstance(_c).getSystemEmailAddress())});
                 m.addRecipients(Message.RecipientType.TO, MailHelper.createAddressArray(_recipients));
 
                 return m;
@@ -435,7 +436,7 @@ public class PipelineManager
 
                 m.setTemplate(_template, _c);
 
-                m.addFrom(new Address[]{new InternetAddress(LookAndFeelProperties.getInstance(_c).getSystemEmailAddress())});
+                m.addFrom(new Address[]{_template.renderFrom(_c, LookAndFeelProperties.getInstance(_c).getSystemEmailAddress())});
                 m.addRecipients(Message.RecipientType.TO, MailHelper.createAddressArray(_recipients));
 
                 return m;
@@ -454,16 +455,19 @@ public class PipelineManager
         protected String _jobDescription;
         protected Date _timeCreated;
         protected String _status;
+        protected User _originatingUser;
         private List<ReplacementParam> _replacements = new ArrayList<>();
 
         protected static final String DEFAULT_BODY = "Job description: ^jobDescription^\n" +
                 "Created: ^timeCreated^\n" +
                 "Status: ^status^\n" +
                 "Additional details for this job can be obtained by navigating to this link:\n\n^dataURL^";
+        protected static final String DEFAULT_SENDER = "^siteShortName^";
 
         protected PipelineEmailTemplate(String name)
         {
             super(name);
+            setSenderName(DEFAULT_SENDER);
 
             _replacements.add(new ReplacementParam<String>("dataURL", String.class, "Link to the job details for this pipeline job"){
                 public String getValue(Container c) {return _dataUrl;}
@@ -477,9 +481,25 @@ public class PipelineManager
             _replacements.add(new ReplacementParam<String>("status", String.class, "The job status"){
                 public String getValue(Container c) {return _status;}
             });
+            _replacements.add(new ReplacementParam<String>("userFirstName", String.class, "First name of the user performing the operation"){
+                public String getValue(Container c) {
+                    return _originatingUser == null ? null : _originatingUser.getFirstName();
+                }
+            });
+            _replacements.add(new ReplacementParam<String>("userLastName", String.class, "Last name of the user performing the operation"){
+                public String getValue(Container c) {
+                    return _originatingUser == null ? null : _originatingUser.getLastName();
+                }
+            });
+            _replacements.add(new ReplacementParam<String>("userDisplayName", String.class, "Display name of the user performing the operation"){
+                public String getValue(Container c) {
+                    return _originatingUser == null ? null : _originatingUser.getFriendlyName();
+                }
+            });
             _replacements.addAll(super.getValidReplacements());
         }
         public void setDataUrl(String dataUrl){_dataUrl = dataUrl;}
+        public void setOriginatingUser(User user){_originatingUser = user;}
         public void setJobDescription(String description){_jobDescription = description;}
         public void setTimeCreated(Date timeCreated){_timeCreated = timeCreated;}
         public void setStatus(String status){_status = status;}
@@ -516,6 +536,7 @@ public class PipelineManager
         private PipelineStatusFileImpl[] _statusFiles;
         private Date _startTime;
         private Date _endTime;
+        protected static final String DEFAULT_SENDER = "^siteShortName^";
 
         protected static final String DEFAULT_BODY = "The following jobs have completed between the time of: ^startTime^ " +
                 "and the end time of: ^endTime^:\n\n^pipelineJobs^";
@@ -523,6 +544,7 @@ public class PipelineManager
         protected PipelineDigestTemplate(String name)
         {
             super(name);
+            setSenderName(DEFAULT_SENDER);
 
             _replacements.add(new ReplacementParam<String>("pipelineJobs", String.class, "The list of all pipeline jobs that have completed for this notification period"){
                 public String getValue(Container c) {return getJobStatus();}

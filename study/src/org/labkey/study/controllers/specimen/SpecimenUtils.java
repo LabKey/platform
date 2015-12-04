@@ -489,9 +489,11 @@ public class SpecimenUtils
         NotificationBean notificationBean = new NotificationBean(getViewContext(), notification, specimenList, getStudy().getLabel());
         SpecimenRequestNotificationEmailTemplate template = EmailTemplateService.get().getEmailTemplate(SpecimenRequestNotificationEmailTemplate.class, getContainer());
         template.init(notificationBean);
+        if (settings.isReplyToCurrentUser())
+            template.setOriginatingUser(getUser());
 
         MailHelper.MultipartMessage message = MailHelper.createMultipartMessage();
-        message.setFrom(new InternetAddress(settings.getReplyToEmailAddress(getUser())));
+        message.setFrom(template.renderFrom(getContainer(), settings.getReplyToEmailAddress(getUser())));
         message.setEncodedHtmlContent(template.renderBody(getContainer()));
         message.setSubject(template.renderSubject(getContainer()));
 

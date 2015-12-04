@@ -1,0 +1,16 @@
+<table width="100%">
+    <tbody>
+            <tr><td><b>The following new posts were made yesterday in folder: ^folderName^</b></td></tr>
+            ^postList^
+    </tbody>
+</table>
+<br>
+<br>
+<hr size="1">
+<table width="100%">
+    <tbody>
+    <tr><td>
+        ^reasonFooter^
+    </td></tr>
+    </tbody>
+</table>

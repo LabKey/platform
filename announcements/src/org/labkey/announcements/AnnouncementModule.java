@@ -53,6 +53,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
@@ -111,6 +112,8 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
 
         AnnouncementSchema.register(this);
         DiscussionService.register(new DiscussionServiceImpl());
+        EmailTemplateService.get().registerTemplate(AnnouncementManager.NotificationEmailTemplate.class);
+        EmailTemplateService.get().registerTemplate(AnnouncementDigestProvider.DailyDigestEmailTemplate.class);
     }
 
     @NotNull

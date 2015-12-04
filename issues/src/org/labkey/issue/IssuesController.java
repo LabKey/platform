@@ -582,9 +582,9 @@ public class IssuesController extends SpringActionController
 
             final String assignedTo = UserManager.getDisplayName(_issue.getAssignedTo(), user);
             if (assignedTo != null)
-                sendUpdateEmail(_issue, null, changeSummary.getTextChanges(), changeSummary.getSummary(), form.getComment(), url, "opened and assigned to " + assignedTo, getAttachmentFileList(), form.getAction());
+                sendUpdateEmail(_issue, null, changeSummary.getTextChanges(), changeSummary.getSummary(), form.getComment(), url, "opened and assigned to " + assignedTo, getAttachmentFileList(), form.getAction(), user);
             else
-                sendUpdateEmail(_issue, null, changeSummary.getTextChanges(), changeSummary.getSummary(), form.getComment(), url, "opened", getAttachmentFileList(), form.getAction());
+                sendUpdateEmail(_issue, null, changeSummary.getTextChanges(), changeSummary.getSummary(), form.getComment(), url, "opened", getAttachmentFileList(), form.getAction(), user);
 
             return true;
         }
@@ -839,7 +839,7 @@ public class IssuesController extends SpringActionController
             {
                 change += " as " + issue.getResolution(); // Issue 12273
             }
-            sendUpdateEmail(issue, prevIssue, changeSummary.getTextChanges(), changeSummary.getSummary(), form.getComment(), detailsUrl, change, getAttachmentFileList(), form.getAction());
+            sendUpdateEmail(issue, prevIssue, changeSummary.getTextChanges(), changeSummary.getSummary(), form.getComment(), detailsUrl, change, getAttachmentFileList(), form.getAction(), user);
             return true;
         }
 
@@ -1368,7 +1368,7 @@ public class IssuesController extends SpringActionController
         }
     }
 
-    private void sendUpdateEmail(Issue issue, Issue prevIssue, String fieldChanges, String summary, String comment, ActionURL detailsURL, String change, List<AttachmentFile> attachments, Class<? extends Controller> action) throws ServletException
+    private void sendUpdateEmail(Issue issue, Issue prevIssue, String fieldChanges, String summary, String comment, ActionURL detailsURL, String change, List<AttachmentFile> attachments, Class<? extends Controller> action, User createdByUser) throws ServletException
     {
         // Skip the email if no comment and no public fields have changed, #17304
         if (fieldChanges.isEmpty() && comment.isEmpty())
@@ -1387,16 +1387,16 @@ public class IssuesController extends SpringActionController
                 String messageId = "<" + issue.getEntityId() + "." + lastComment.getCommentId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
                 String references = messageId + " <" + issue.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
                 MailHelper.MultipartMessage m = MailHelper.createMultipartMessage();
-                m.setFrom(LookAndFeelProperties.getInstance(getContainer()).getSystemEmailAddress());
                 m.addRecipients(Message.RecipientType.TO, MailHelper.createAddressArray(to));
                 Address[] addresses = m.getAllRecipients();
 
                 if (addresses != null && addresses.length > 0)
                 {
                     IssueUpdateEmailTemplate template = EmailTemplateService.get().getEmailTemplate(IssueUpdateEmailTemplate.class, getContainer());
-                    template.init(issue, detailsURL, change, comment, fieldChanges, allAddresses, attachments);
+                    template.init(issue, detailsURL, change, comment, fieldChanges, allAddresses, attachments, user);
 
                     m.setSubject(template.renderSubject(getContainer()));
+                    m.setFrom(template.renderFrom(getContainer(), LookAndFeelProperties.getInstance(getContainer()).getSystemEmailAddress()));
                     m.setHeader("References", references);
                     String body = template.renderBody(getContainer());
 
