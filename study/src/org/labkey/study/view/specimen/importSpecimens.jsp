@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController"%>
 <%@ page import="org.labkey.study.pipeline.SpecimenArchive" %>
 <%@ page import="java.util.zip.ZipException" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenController.ImportSpecimensBean> me =
@@ -34,17 +35,19 @@
 %>
 <%= archiveCount %> specimen archive<%= text(archiveCount > 1 ? "s" : "") %> selected.<br><br>
 <%
-    try
+    for (SpecimenArchive archive : bean.getArchives())
     {
-        for (SpecimenArchive archive : bean.getArchives())
+        String archiveName = archive.getDefinitionFile().getName();
+        try
         {
+            List<SpecimenArchive.EntryDescription> entries = archive.getEntryDescriptions(getContainer());
 %>
-    Specimen archive <b><%= h(archive.getDefinitionFile().getName()) %></b> contains the following files:<br><br>
+    Specimen archive <b><%= h(archiveName) %></b> contains the following files:<br><br>
     <table class="labkey-data-region labkey-show-borders">
         <tr><th>File</th><th>Size</th><th>Modified</th></tr>
         <%
             int row = 0;
-            for (SpecimenArchive.EntryDescription entry : archive.getEntryDescriptions(getContainer()))
+            for (SpecimenArchive.EntryDescription entry : entries)
             {
         %>
             <tr class="<%=getShadeRowClass(row++ % 2 == 0)%>">
@@ -58,13 +61,13 @@
     </table><br>
 <%
         }
-    }
-    catch (ZipException z)
-    {
-        hasError = true;
+        catch (ZipException z)
+        {
+            hasError = true;
 %>
-<p class="labkey-error"> The archive is corrupt and cannot be read.</p><br/>
+<p class="labkey-error"> Specimen archive <b><%=h(archiveName)%></b> is corrupt and cannot be read.</p><br/>
 <%
+        }
     }
 %>
 
