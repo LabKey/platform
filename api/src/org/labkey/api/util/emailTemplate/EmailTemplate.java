@@ -29,6 +29,8 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 
+import javax.mail.internet.InternetAddress;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Formatter;
@@ -111,6 +113,7 @@ public abstract class EmailTemplate
     @NotNull private final String _name;
     private String _body;
     private String _subject;
+    private String _senderName;
     private String _description;
     private int _priority = 50;
     /** Scope is the locations in which the user should be able to edit this template. It should always be the same
@@ -173,11 +176,17 @@ public abstract class EmailTemplate
 
     public EmailTemplate(@NotNull String name, String subject, String body, String description, @NotNull ContentType contentType)
     {
+        this(name, subject, body, description, contentType, null);
+    }
+
+    public EmailTemplate(@NotNull String name, String subject, String body, String description, @NotNull ContentType contentType, String senderDisplayName)
+    {
         _name = name;
         _subject = subject;
         _body = body;
         _description = description;
         _contentType = contentType;
+        _senderName = senderDisplayName;
     }
 
     @NotNull public String getName(){return _name;}
@@ -193,6 +202,8 @@ public abstract class EmailTemplate
     public void setEditableScopes(Scope scope){_scope = scope;}
     public Container getContainer(){return _container;}
     /* package */ void setContainer(Container c){_container = c;}
+    public String getSenderName(){return _senderName;}
+    public void setSenderName(String senderName){_senderName = senderName;}
 
     @NotNull
     public ContentType getContentType()
@@ -277,6 +288,20 @@ public abstract class EmailTemplate
     public String renderSubject(Container c)
     {
         return render(c, getSubject());
+    }
+
+    public InternetAddress renderFrom(Container c, String senderEmail) throws UnsupportedEncodingException
+    {
+        // use system or folder default if senderEmail is missing
+        if (senderEmail == null)
+            senderEmail = LookAndFeelProperties.getInstance(c).getSystemEmailAddress();
+        String senderDisplayName = render(c, getSenderName());
+        return new InternetAddress(senderEmail, senderDisplayName);
+    }
+
+    public String renderSenderName(Container c)
+    {
+        return render(c, getSenderName());
     }
 
     public String renderBody(Container c)

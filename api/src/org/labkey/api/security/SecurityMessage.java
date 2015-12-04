@@ -16,16 +16,18 @@
 
 package org.labkey.api.security;
 
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.data.Container;
 
+import javax.mail.Address;
 import javax.mail.internet.MimeMessage;
 
 public class SecurityMessage
 {
     private String _verificationURL;
-    private String _originatingUser;
+    private User _originatingUser;
     private String _to;
     private String _type;
     private String _messagePrefix;
@@ -45,11 +47,13 @@ public class SecurityMessage
             MailHelper.MultipartMessage m = MailHelper.createMultipartMessage();
 
             _template.setVerificationUrl(getVerificationURL());
-            _template.setEmailAddress(getOriginatingUser());
+            _template.setOriginatingUser(getOriginatingUser());
             _template.setRecipient(getTo());
             _template.setOptionPrefix(getMessagePrefix());
 
             m.setTemplate(_template, c);
+            LookAndFeelProperties properties = LookAndFeelProperties.getInstance(c);
+            m.addFrom(new Address[]{_template.renderFrom(c, properties.getSystemEmailAddress())});
 
             return m;
         }
@@ -66,11 +70,11 @@ public class SecurityMessage
     {
         return _verificationURL;
     }
-    public String getOriginatingUser()
+    public User getOriginatingUser()
     {
         return _originatingUser;
     }
-    public void setOriginatingUser(String originatingUser)
+    public void setOriginatingUser(User originatingUser)
     {
         _originatingUser = originatingUser;
     }

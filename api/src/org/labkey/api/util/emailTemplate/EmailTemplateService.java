@@ -43,6 +43,7 @@ public class EmailTemplateService
     private static final String EMAIL_TEMPLATE_PROPERTIES_MAP_NAME = "emailTemplateProperties";
     private static final String MESSAGE_SUBJECT_PART = "subject";
     private static final String MESSAGE_BODY_PART = "body";
+    private static final String MESSAGE_FROM_PART = "from";
     private static final String EMAIL_TEMPLATE_DELIM = "/";
 
     private static final EmailTemplateService instance = new EmailTemplateService();
@@ -169,8 +170,10 @@ public class EmailTemplateService
                     // Subject and bodies are stored as two separate key-value pairs in the map
                     if (MESSAGE_SUBJECT_PART.equals(partType))
                         et.setSubject(entry.getValue());
-                    else
+                    else if (MESSAGE_BODY_PART.equals(partType))
                         et.setBody(entry.getValue());
+                    else if (MESSAGE_FROM_PART.equals(partType))
+                        et.setSenderName((entry.getValue()));
                 }
                 // do nothing, we don't necessarily care about stale template properties
                 catch (Exception e)
@@ -228,6 +231,8 @@ public class EmailTemplateService
                 template.getSubject());
         map.put(className + EMAIL_TEMPLATE_DELIM + MESSAGE_BODY_PART,
                 template.getBody());
+        map.put(className + EMAIL_TEMPLATE_DELIM + MESSAGE_FROM_PART,
+                template.getSenderName());
         map.save();
     }
 
@@ -238,6 +243,7 @@ public class EmailTemplateService
         final String className = template.getClass().getName();
         map.remove(className + EMAIL_TEMPLATE_DELIM + MESSAGE_SUBJECT_PART);
         map.remove(className + EMAIL_TEMPLATE_DELIM + MESSAGE_BODY_PART);
+        map.remove(className + EMAIL_TEMPLATE_DELIM + MESSAGE_FROM_PART);
         map.save();
     }
 }
