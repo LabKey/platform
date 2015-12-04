@@ -215,6 +215,12 @@ Ext4.define('File.panel.Browser', {
      */
     tbarItems : [],
 
+    /**
+     * EXPERIMENTAL
+     * Allow for the file browser to bind to history and update web browser navigation on folder navigation.
+     */
+    useHistory: false,
+
     statics : {
         /**
          * Requests the set of actions available for the given containerPath
@@ -353,6 +359,7 @@ Ext4.define('File.panel.Browser', {
             importDataEnabled: true,
             pipelineActions: [], // array of pipeline models that are currently available. See File.data.Pipeline
             STATE_LOCK: false,
+            useHistory: this.useHistory && Ext4.supports.History,
 
             //
             // Message Templates
@@ -372,6 +379,24 @@ Ext4.define('File.panel.Browser', {
         this.items = this.getItems();
 
         this.callParent();
+
+        // Attach history
+        if (this.useHistory) {
+
+            // safety check for now to make sure the browser is in WebDav
+            if (LABKEY.ActionURL.getController() !== '_webdav' && LABKEY.ActionURL.getController() !== '') {
+                this.useHistory = false;
+                console.warn('File Browser: Using history is only supported in WebDav view at this time.');
+            }
+            else {
+                Ext4.EventManager.on(window, 'popstate', function() {
+                    if (!this.STATE_LOCK) {
+                        var nodeId = this.fileSystem.changeFromURL(location.pathname, false);
+                        this._ensureVisible(nodeId);
+                    }
+                }, this);
+            }
+        }
 
         // Attach listeners
         this.on('folderchange', this.onFolderChange, this);
@@ -1148,7 +1173,7 @@ Ext4.define('File.panel.Browser', {
         }
     },
 
-    setFolderOffset : function(offsetPath, model) {
+    setFolderOffset : function(offsetPath, model, skipHistory) {
 
         var oldRootOffset = this.rootOffset;
 
@@ -1157,6 +1182,10 @@ Ext4.define('File.panel.Browser', {
         // if the offset changes, fire a folder change
         if (oldRootOffset != this.rootOffset) {
             this.fireEvent('folderchange', this.rootOffset, model, offsetPath);
+
+            if (this.useHistory && skipHistory !== true) {
+                history.pushState(undefined, this.rootOffset, this.fileSystem.changeOffsetURL(this.rootOffset));
+            }
         }
 
         //
@@ -1385,7 +1414,7 @@ Ext4.define('File.panel.Browser', {
             this.vStack = undefined;
 
             if (this.lastSelectedNode) {
-                this.changeFolder(this.lastSelectedNode);
+                this.changeFolder(this.lastSelectedNode, true /* skipHistory */);
                 this.lastSelectedNode = undefined;
             }
 
@@ -2007,10 +2036,11 @@ Ext4.define('File.panel.Browser', {
     /**
      * Call this whenever you want to change folders under the root.
      * @param model - the record whose 'id' is the valid path
+     * @param {boolean} [skipHistory=false]
      */
-    changeFolder : function(model) {
+    changeFolder : function(model, skipHistory) {
         var url = model.data.id;
-        this.setFolderOffset(url, model);
+        this.setFolderOffset(url, model, skipHistory);
     },
 
     /**

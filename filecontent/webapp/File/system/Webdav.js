@@ -56,6 +56,31 @@
             this.init(config);
         },
 
+        changeFromURL : function(rawURL)
+        {
+            var decoded = LABKEY.ActionURL.decodePath(rawURL),
+                newRootOffset = decoded.replace(this.rootPath, '/');
+
+            this.changeOffsetURL(newRootOffset);
+
+            return this.rootOffset;
+        },
+
+        changeOffsetURL : function(newRootOffset, encode)
+        {
+            this.rootOffset = newRootOffset;
+            this.offsetUrl = LABKEY.ActionURL.decodePath(this.rootOffset.replace(this.baseUrl, ''));
+
+            var path = this.concatPaths(this.rootPath, this.rootOffset);
+
+            if (encode !== false)
+            {
+                path = LABKEY.ActionURL.encodePath(path);
+            }
+
+            return path;
+        },
+
         getURI: function (url)
         {
             return this.concatPaths(LABKEY.ActionURL.getBaseURL(true), this.concatPaths(this.contextUrl, LABKEY.ActionURL.encodePath(url)));
