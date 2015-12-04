@@ -442,7 +442,7 @@ public class ModuleLoader implements Filter
 
         if (upgradeUser != null)
         {
-            ensureStartupComplete(Execution.Synchronous);
+            initiateModuleStartup(Execution.Synchronous);
             _log.info("LabKey Server startup is complete; all modules have been initialized");
         }
         else
@@ -1173,7 +1173,7 @@ public class ModuleLoader implements Filter
         }
         else
         {
-            ensureStartupComplete(Execution.Asynchronous);
+            initiateModuleStartup(Execution.Asynchronous);
         }
 
         filterChain.doFilter(servletRequest, servletResponse);
@@ -1296,7 +1296,13 @@ public class ModuleLoader implements Filter
         }
     }
 
-    private void ensureStartupComplete(Execution execution)
+    /**
+     * Initiate the module startup process.
+     *
+     * @param execution Determines if startup is synchronous (method does not return until the startup process is complete)
+     *                  or asynchronous (method returns immediately and startup occurs in the background).
+     */
+    private void initiateModuleStartup(Execution execution)
     {
         synchronized (STARTUP_LOCK)
         {
