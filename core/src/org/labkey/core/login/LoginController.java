@@ -1782,9 +1782,16 @@ public class LoginController extends SpringActionController
                 {
                     _email = email;
 
-                    if (UserManager.getUser(_email) == null)
+                    User user = UserManager.getUser(_email);
+                    if (user == null)
                     {
                         errors.reject("setPassword", "This user doesn't exist.  Make sure you've copied the entire link into your browser's address bar.");
+                        _unrecoverableError = true;
+                    }
+                    else if (!user.isActive())
+                    {
+                        errors.reject("setPassword", "This user account has been deactivated. Please contact a system "
+                                + "administrator if you need to reactivate this account.");
                         _unrecoverableError = true;
                     }
                 }
