@@ -1554,8 +1554,8 @@ boxPlot.render();
         }
 
         if(!config.margins.right) {
-            config.margins.right = config.properties.color || (config.legendData && config.legendData.length > 0)
-                    ? (hasYRightMetric ? 235 : 150) : 40;
+            config.margins.right = (config.properties.color || (config.legendData && config.legendData.length > 0) ? 190 : 40)
+                                    + (hasYRightMetric ? 45 : 0);
         }
 
         if(!config.margins.bottom) {
