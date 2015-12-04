@@ -7,115 +7,144 @@
 Ext.define('LABKEY.app.plugin.LoadingMask', {
     extend: 'Ext.AbstractPlugin',
 
-    blockingMask: true, // blocking mask will show the large spinner and mask content area for the component
+    // array of mask config objects for this component with the following properties:
+    // element, beginEvent, endEvent, plus defaults applied in this.applyDefaultConfig
+    configs: [],
 
-    itemsMaskCls: null, // items mask will show small spinners for all items of the component (see Info Pane detail counts)
+    // Defaults
+    AS_BLOCKING_MASK: true,
+    ITEMS_MASK_CLS: null,
+    LOADING_DELAY: 500,
+    PRODUCTION_GIF_PATH: null,
 
-    loadingDelay: 500, // the number of milliseconds to delay before showing the mask if the end event hasn't already happened
+    init : function(component)
+    {
+        if (!Ext.isArray(this.configs) || this.configs.length < 1)
+        {
+            console.warn('No configs provided for loading mask plugin.');
+        }
 
-    beginConfig: null, // defines the component and events for that component that will trigger the showMask
+        if (!Ext.isDefined(component.loadingMaskPlugin))
+        {
+            component.loadingMaskPlugin = {configs: []};
+        }
 
-    endConfig: null, // defines the component and events for that component that will trigger the hideMask
-
-    maskingLock: false,
-
-    productionGifPath: null,
-
-    init : function(component) {
-
-        this.showLoadingMaskTask = new Ext.util.DelayedTask(function(itemsMaskCls){
-            if (this.maskingLock)
+        // move the configs to the component.loadingMaskPlugin.configs array
+        if (Ext.isArray(this.configs))
+        {
+            Ext.each(this.configs, function(maskConfig)
             {
-                if (this.blockingMask)
-                {
-                    if (!this.maskCmp)
-                        this.maskCmp = new Ext.LoadMask(this, { cls: "large-spinner-mask", msg:" " });
-                    this.maskCmp.show();
-                }
-                else
-                {
-                    if (itemsMaskCls)
-                    {
-                        if (this.getEl())
-                            this.getEl().addCls(itemsMaskCls);
-                    }
-                    else if (this.productionGifPath)
-                    {
-                        this.maskCmp = Ext.create('Ext.Component', {
-                            renderTo: this.getEl(),
-                            autoEl: {
-                                tag: 'img', alt: 'loading',
-                                height: 22, width: 22,
-                                src: LABKEY.contextPath + this.productionGifPath + 'med.gif'
-                            }
-                        });
-                    }
-                }
-            }
-        }, component);
+                this.loadingMaskPlugin.configs.push(maskConfig);
+            }, component);
+        }
 
-        Ext.override(component, {
-            productionGifPath: this.productionGifPath,
-            blockingMask: this.blockingMask,
-            itemsMaskCls: this.itemsMaskCls,
-            loadingDelay: this.loadingDelay,
-            showLoadingMaskTask: this.showLoadingMaskTask,
-            showMask: this.showMask,
-            hideMask: this.hideMask
+        // apply defaults to the mask configs
+        Ext.each(component.loadingMaskPlugin.configs, this.applyDefaultConfig, this);
+
+        // initialize the showLoadingTask and hideLoadingTask for each of the configs
+        Ext.each(component.loadingMaskPlugin.configs, this.initShowLoadingTask, component);
+        Ext.each(component.loadingMaskPlugin.configs, this.initHideLoadingTask, component);
+
+        // attach the begin and end events to the specified component's element to show mask
+        Ext.each(component.loadingMaskPlugin.configs, this.attachBeginEndEvents, this);
+    },
+
+    applyDefaultConfig : function(maskConfig)
+    {
+        Ext.applyIf(maskConfig, {
+            blockingMask: this.AS_BLOCKING_MASK, // blocking mask will show the large spinner and mask content area for the component
+            itemsMaskCls: this.ITEMS_MASK_CLS, // items mask will show small spinners for all items of the component (see Info Pane detail counts)
+            loadingDelay: this.LOADING_DELAY, // the number of milliseconds to delay before showing the mask if the end event hasn't already happened
+            productionGifPath: this.PRODUCTION_GIF_PATH
         });
+    },
 
-        // attach the begin events to the specified component to show mask,
-        // note: beginConfig can be a single config or an array of configs
-        if (this.beginConfig && !Ext.isArray(this.beginConfig))
+    attachBeginEndEvents : function(maskConfig)
+    {
+        if (Ext.isDefined(maskConfig.element))
         {
-            this.beginConfig = [this.beginConfig];
-        }
-        Ext.each(this.beginConfig, function(beginCfg)
-        {
-            if (beginCfg && beginCfg.component && Ext.isArray(beginCfg.events))
+            if (Ext.isString(maskConfig.beginEvent))
             {
-                Ext.each(Ext.Array.unique(beginCfg.events), function(eventName)
-                {
-                    beginCfg.component.on(eventName, function()
-                    {
-                        component.showMask(beginCfg.itemsMaskCls || this.itemsMaskCls);
-                    }, component);
-                }, this);
+                maskConfig.element.on(maskConfig.beginEvent, this.showMask, maskConfig);
             }
-        }, this);
 
-        // attach the end events to the specified component to hide mask,
-        // note: endConfig can be a single config or an array of configs
-        if (this.endConfig && !Ext.isArray(this.endConfig))
-        {
-            this.endConfig = [this.endConfig];
-        }
-        Ext.each(this.endConfig, function(endCfg) {
-            if (endCfg && endCfg.component && Ext.isArray(endCfg.events))
+            if (Ext.isString(maskConfig.endEvent))
             {
-                Ext.each(Ext.Array.unique(endCfg.events), function(eventName)
+                maskConfig.element.on(maskConfig.endEvent, this.hideMask, maskConfig);
+            }
+        }
+        else
+        {
+            console.warn('No element defined to attach loading mask events.');
+        }
+    },
+
+    initShowLoadingTask : function(maskConfig)
+    {
+        // note: scope is the component that the mask is being attached to
+        maskConfig.showLoadingTask = new Ext.util.DelayedTask(function()
+        {
+            if (maskConfig.blockingMask)
+            {
+                if (!maskConfig.maskCmp)
                 {
-                    endCfg.component.on(eventName, function()
+                    maskConfig.maskCmp = new Ext.LoadMask(this, {cls: "large-spinner-mask", msg: " "});
+                }
+
+                maskConfig.maskCmp.show();
+            }
+            else
+            {
+                if (maskConfig.itemsMaskCls)
+                {
+                    if (this.getEl())
                     {
-                        component.hideMask(endCfg.itemsMaskCls || this.itemsMaskCls)
-                    }, component);
-                }, this);
+                        this.getEl().addCls(maskConfig.itemsMaskCls);
+                    }
+                }
+                else if (maskConfig.productionGifPath)
+                {
+                    maskConfig.maskCmp = Ext.create('Ext.Component', {
+                        renderTo: this.getEl(),
+                        autoEl: {
+                            tag: 'img', alt: 'loading',
+                            height: 22, width: 22,
+                            src: maskConfig.productionGifPath + 'med.gif'
+                        }
+                    });
+                }
             }
         }, this);
     },
 
-    showMask : function(itemsMaskCls) {
-        this.maskingLock = true;
-        this.showLoadingMaskTask.delay(this.loadingDelay, null, null, [itemsMaskCls]);
+    initHideLoadingTask : function(maskConfig)
+    {
+        // note: scope is the component that the mask is being attached to
+        maskConfig.hideLoadingTask = new Ext.util.DelayedTask(function()
+        {
+            maskConfig.showLoadingTask.cancel();
+
+            if (maskConfig.maskCmp)
+            {
+                maskConfig.maskCmp.hide();
+            }
+
+            if (maskConfig.itemsMaskCls && this.getEl())
+            {
+                this.getEl().removeCls(maskConfig.itemsMaskCls);
+            }
+        }, this);
     },
 
-    hideMask : function(itemsMaskCls) {
-        if (this.maskCmp)
-            this.maskCmp.hide();
+    showMask : function()
+    {
+        // note: scope is the maskConfig from the component.loadingMaskPlugin.configs array
+        this.showLoadingTask.delay(this.loadingDelay);
+    },
 
-        if (itemsMaskCls && this.getEl())
-            this.getEl().removeCls(itemsMaskCls);
-
-        this.maskingLock = false;
+    hideMask : function()
+    {
+        // note: scope is the maskConfig from the component.loadingMaskPlugin.configs array
+        this.hideLoadingTask.delay();
     }
 });
