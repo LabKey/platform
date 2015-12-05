@@ -15,6 +15,8 @@
  */
 package org.labkey.bigiron.mssql;
 
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.TableResolver;
 
 /**
@@ -22,10 +24,23 @@ import org.labkey.api.data.dialect.TableResolver;
  * Date: 2/9/12
  * Time: 8:34 AM
  */
-public class MicrosoftSqlServer2012Dialect extends BaseMicrosoftSqlServerDialect
+public class MicrosoftSqlServer2012Dialect extends MicrosoftSqlServer2008R2Dialect
 {
     public MicrosoftSqlServer2012Dialect(TableResolver tableResolver)
     {
         super(tableResolver);
+    }
+
+    // Called only if rowCount and offset are both > 0... and order is non-blank
+    @Override
+    protected SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, @NotNull String order, String groupBy, int maxRows, long offset)
+    {
+        SQLFragment sql = new SQLFragment(select);
+        sql.append("\n").append(from);
+        if (null != filter && !filter.isEmpty()) sql.append("\n").append(filter);
+        if (groupBy != null) sql.append("\n").append(groupBy);
+        sql.append("\n").append(order).append("\nOFFSET ").append(offset).append(" ROWS FETCH NEXT ").append(maxRows).append(" ROWS ONLY");
+
+        return sql;
     }
 }

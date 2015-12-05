@@ -124,6 +124,7 @@ bigiron/module.properties -text
 bigiron/src/org/labkey/bigiron/BigIronModule.java -text
 bigiron/src/org/labkey/bigiron/mssql/BaseMicrosoftSqlServerDialect.java -text
 bigiron/src/org/labkey/bigiron/mssql/GroupConcatInstallationManager.java -text
+bigiron/src/org/labkey/bigiron/mssql/MicrosoftSqlServer2008R2Dialect.java -text
 bigiron/src/org/labkey/bigiron/mssql/MicrosoftSqlServer2012Dialect.java -text
 bigiron/src/org/labkey/bigiron/mssql/MicrosoftSqlServer2014Dialect.java -text
 bigiron/src/org/labkey/bigiron/mssql/MicrosoftSqlServer2016Dialect.java -text
