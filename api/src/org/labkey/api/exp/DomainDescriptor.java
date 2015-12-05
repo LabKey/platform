@@ -220,6 +220,10 @@ public final class DomainDescriptor
         return ((DomainDescriptor) obj).getDomainId() == getDomainId();
     }
 
+    public boolean isProvisioned()
+    {
+        return this.storageSchemaName != null && this.storageTableName != null;
+    }
 
     public static class Builder implements org.labkey.api.data.Builder<DomainDescriptor>
     {

@@ -103,4 +103,5 @@ public interface Domain extends IPropertyType
      */
     void setShouldDeleteAllData(boolean shouldDeleteAllData);
     boolean isShouldDeleteAllData();
+    boolean isProvisioned();
 }

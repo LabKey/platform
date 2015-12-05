@@ -412,7 +412,9 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                 // however, assay round trips uncreated mandatory fields through the editor, so mark them as not-new
                 if (domain.isMandatoryField(field) && field.getPropertyId() == 0)
                     field.setPropertyId(-1);
-                _rows.add(new Row(field));
+
+                Row row = new Row(field);
+                _rows.add(row);
             }
         }
 
@@ -749,8 +751,6 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         return BAD_NAME_ERROR_MESSAGE;
     }
 
-
-
     public void refreshRow(final int index, final Row rowObject)
     {
         HTMLTable.CellFormatter formatter = _table.getCellFormatter();
@@ -765,6 +765,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         final FieldType pd = rowObject.edit;
         FieldStatus status = getStatus(rowObject);
         boolean readOnly = isReadOnly(rowObject);
+        pd.setTypeEditable(isTypeEditable(rowObject));
 
         String imageId = "partstatus_" + index;
         HTML statusImage = getStatusHtml(imageId, status);

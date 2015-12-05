@@ -69,7 +69,7 @@ public enum PropertyType
                     return SimpleTypeNames.BOOLEAN;
                 }
             },
-    STRING("http://www.w3.org/2001/XMLSchema#string", "String", 's', JdbcType.VARCHAR, 100, "text", Cell.CELL_TYPE_STRING, String.class)
+    STRING("http://www.w3.org/2001/XMLSchema#string", "String", 's', JdbcType.VARCHAR, 4000, "text", Cell.CELL_TYPE_STRING, String.class)
             {
                 protected Object convertExcelValue(Cell cell) throws ConversionException
                 {
@@ -89,7 +89,7 @@ public enum PropertyType
                     return SimpleTypeNames.STRING;
                 }
             },
-    MULTI_LINE("http://www.w3.org/2001/XMLSchema#multiLine", "MultiLine", 's', JdbcType.VARCHAR, 1000, "textarea", Cell.CELL_TYPE_STRING, String.class)
+    MULTI_LINE("http://www.w3.org/2001/XMLSchema#multiLine", "MultiLine", 's', JdbcType.VARCHAR, 4000, "textarea", Cell.CELL_TYPE_STRING, String.class)
             {
                 protected Object convertExcelValue(Cell cell) throws ConversionException
                 {
@@ -109,7 +109,7 @@ public enum PropertyType
                     return SimpleTypeNames.STRING;
                 }
             },
-    RESOURCE("http://www.w3.org/2000/01/rdf-schema#Resource", "PropertyURI", 's', JdbcType.VARCHAR, 100, null, Cell.CELL_TYPE_STRING, Identifiable.class)
+    RESOURCE("http://www.w3.org/2000/01/rdf-schema#Resource", "PropertyURI", 's', JdbcType.VARCHAR, 4000, null, Cell.CELL_TYPE_STRING, Identifiable.class)
             {
                 protected Object convertExcelValue(Cell cell) throws ConversionException
                 {
@@ -383,7 +383,7 @@ public enum PropertyType
                     throw new UnsupportedOperationException();
                 }
             },
-    XML_TEXT("http://cpas.fhcrc.org/exp/xml#text-xml", "XmlText", 's', JdbcType.LONGVARCHAR, 100, null, Cell.CELL_TYPE_STRING, null)
+    XML_TEXT("http://cpas.fhcrc.org/exp/xml#text-xml", "XmlText", 's', JdbcType.LONGVARCHAR, 4000, null, Cell.CELL_TYPE_STRING, null)
             {
                 protected Object convertExcelValue(Cell cell) throws ConversionException
                 {

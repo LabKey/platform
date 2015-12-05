@@ -72,6 +72,7 @@ public abstract class SqlDialect
     protected static final String INPUT_TOO_LONG_ERROR_MESSAGE = "The input you provided was too long.";
     public static final String GENERIC_ERROR_MESSAGE = "The database experienced an unexpected problem. Please check your input and try again.";
     public static final String GUID_TYPE = "ENTITYID";
+    protected static final int MAX_VARCHAR_SIZE = 4000;  //Any length over this will be set to nvarchar(max)/text
 
     private int _databaseVersion = 0;
     private String _productVersion = "0";

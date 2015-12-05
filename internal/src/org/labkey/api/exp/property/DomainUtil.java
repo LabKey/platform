@@ -185,6 +185,7 @@ public class DomainUtil
         d.setReservedFieldNames(new HashSet<>(reservedProperties));
         d.setMandatoryFieldNames(new HashSet<>(domainKind.getMandatoryPropertyNames(domain)));
         d.setExcludeFromExportFieldNames(new HashSet<>(domainKind.getAdditionalProtectedPropertyNames(domain)));
+        d.setProvisioned(domain.isProvisioned());
         return d;
     }
 
@@ -198,7 +199,7 @@ public class DomainUtil
         gwtDomain.setName(dd.getName());
         gwtDomain.setDescription(dd.getDescription());
         gwtDomain.setContainer(dd.getContainer().getId());
-
+        gwtDomain.setProvisioned(dd.isProvisioned());
         return gwtDomain;
     }
 
@@ -498,7 +499,7 @@ public class DomainUtil
     public static void setPropertyDescriptorScale(DomainProperty p)
     {
         // Set Scale for non-string types
-        if (!(PropertyType.STRING.equals(p.getPropertyDescriptor().getPropertyType()) || PropertyType.MULTI_LINE.equals(p.getPropertyDescriptor().getPropertyType())))
+        if (!p.getPropertyDescriptor().isStringType())
             p.setScale(p.getPropertyDescriptor().getPropertyType().getScale());
     }
 

@@ -532,7 +532,7 @@ public class OntologyManager
         int stringLength = value == null ? 0 : value.toString().length();
         if (value != null && prop.isStringType() && stringLength > stringLengthLimit)
         {
-            String s = stringLength > 100 ? value.toString() : value.toString().substring(0, 100);
+            String s = stringLength < 100 ? value.toString() : value.toString().substring(0, 100);
             errors.add(new PropertyValidationError("Field '" + prop.getName() + "' is limited to " + stringLengthLimit + " characters, but the value is " + stringLength + " characters. (The value starts with '" + s + "...')", prop.getName()));
             ret = false;
         }

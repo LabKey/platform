@@ -52,6 +52,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     private Set<String> reservedFieldNames = new HashSet<String>();
 
     private Set<String> excludeFromExportFieldNames = new HashSet<String>();
+    private boolean provisioned = false;
 
     public GWTDomain()
     {
@@ -72,6 +73,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.defaultDefaultValueType = src.defaultDefaultValueType;
         this.defaultValueOptions = src.defaultValueOptions;
         this.defaultValuesURL = src.defaultValuesURL;
+        this.provisioned = src.isProvisioned();
 
         if (src.indices != null)
         {
@@ -309,6 +311,20 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     public void setDefaultValuesURL(String defaultValuesURL)
     {
         this.defaultValuesURL = defaultValuesURL;
+    }
+
+    /**
+     * Flag indicating domain is provisioned
+     * @return
+     */
+    public boolean isProvisioned()
+    {
+        return provisioned;
+    }
+
+    public void setProvisioned(boolean value)
+    {
+        this.provisioned = value;
     }
 
 }
