@@ -974,23 +974,36 @@ public abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
      *
      * NOTE: expects data size check to be done prior,
      *       will throw a SQL exception if not able to change size due to existing data
+     *       will throw an Argument exception if attempting to change Key column
      * @param change
      * @return
      */
     private List<String> getResizeColumnStatement(TableChange change)
     {
         List<String> statements = new ArrayList<>();
+
+        //Generate the alter table portion of statement
+        String alterTableSegment = String.format("ALTER TABLE %s",
+                makeTableIdentifier(change)
+        );
+
         for (PropertyStorageSpec column : change.getColumns())
         {
-            //Int.Max denotes a max column even if dialect max size differs
-            String size = column.getSize() == Integer.MAX_VALUE ?
+//            //If column is primary key drop constraint
+//            if(column.isPrimaryKey())
+//            {
+//                String dropKeySegment = alterTableSegment + getPrimaryKeyConstraintFragment(change.getTableName(), column.getName(), false);
+//                statements.add(dropKeySegment);
+//            }
+
+            //T-SQL will throw an error for nvarchar sizes >4000
+            //Use the common default max size to make type change to nvarchar(max)/text consistent
+            String size = column.getSize() > SqlDialect.MAX_VARCHAR_SIZE ?
                     "max" :
                     column.getSize().toString();
 
             //T-SQL only allows 1 ALTER COLUMN clause per ALTER TABLE statement
-            String statement = String.format("ALTER TABLE [%s].[%s] ALTER COLUMN [%s] %s(%s) ",
-                    change.getSchemaName(),
-                    change.getTableName(),
+            String statement = alterTableSegment + String.format(" ALTER COLUMN [%s] %s(%s) ",
                     column.getName(),
                     sqlTypeNameFromJdbcType(column.getJdbcType()),
                     size);
@@ -998,9 +1011,24 @@ public abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             //T-SQL will drop any existing null constraints
             statement += column.isNullable() ? "NULL;" : "NOT NULL;";
             statements.add(statement);
+
+//            //If column is primary key re-add constraint
+//            if(column.isPrimaryKey())
+//            {
+//                String addKeySegment = alterTableSegment + getPrimaryKeyConstraintFragment(change.getTableName(), column.getName(), true);
+//                statements.add(addKeySegment);
+//            }
         }
         return statements;
     }
+
+//    private String getPrimaryKeyConstraintFragment(String tableName, String pkColumnName, boolean isAdd )
+//    {
+//        String addOrDrop = isAdd ? "ADD" : "DROP";
+//        return String.format(addOrDrop + " CONSTRAINT [%s] PRIMARY KEY (%s)",
+//                tableName + "_pk",
+//                makeLegalIdentifier(pkColumnName));
+//    }
 
     private List<String> getCreateTableStatements(TableChange change)
     {

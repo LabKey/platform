@@ -713,4 +713,9 @@ public class DomainImpl implements Domain
             storage = _aliasManager.decideAlias(pd.getName());
         pd.setStorageColumnName(storage);
     }
+
+    public boolean isProvisioned()
+    {
+        return getStorageTableName() != null && getDomainKind().getStorageSchemaName() != null;
+    }
 }

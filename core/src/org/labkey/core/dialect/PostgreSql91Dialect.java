@@ -1028,8 +1028,8 @@ public class PostgreSql91Dialect extends SqlDialect
         sb.append( String.format("ALTER TABLE %s.%s ", change.getSchemaName(), change.getTableName()));
         for (PropertyStorageSpec column : change.getColumns())
         {
-            //Int.Max denotes a max column even if dialect max size differs
-            String dbType = column.getSize() == Integer.MAX_VALUE ?
+            //Using the common default max size to make type change to text
+            String dbType = column.getSize() > SqlDialect.MAX_VARCHAR_SIZE ?
                     "text" :
                     sqlTypeNameFromJdbcType(column.getJdbcType()) + "(" + column.getSize().toString() + ")";
 
