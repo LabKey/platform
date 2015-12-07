@@ -15,6 +15,8 @@
  */
 package org.labkey.api.security.permissions;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Describes the ability to add new objects to the system.
  * User: Dave
@@ -24,6 +26,11 @@ public class InsertPermission extends AbstractPermission
 {
     public InsertPermission()
     {
-        super("Insert", "May add new information.");
+        this("Insert", "May add new information.");
+    }
+
+    protected InsertPermission(@NotNull String name, @NotNull String description)
+    {
+        super(name, description);
     }
 }

@@ -15,6 +15,8 @@
  */
 package org.labkey.api.security.permissions;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Describes the ability to view information within the system.
  * User: Dave
@@ -24,6 +26,11 @@ public class ReadPermission extends AbstractPermission
 {
     public ReadPermission()
     {
-        super("Read", "Can read information.");
+        this("Read", "Can read information.");
+    }
+
+    protected ReadPermission(@NotNull String name, @NotNull String description)
+    {
+        super(name, description);
     }
 }
