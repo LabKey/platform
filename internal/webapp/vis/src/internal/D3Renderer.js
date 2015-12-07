@@ -812,8 +812,12 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             xHandleSel.attr('transform', 'translate(0,' + plot.grid.bottomEdge + ')');
         xHandleSel.selectAll('rect').attr('height', height);
         xHandleSel.selectAll('.extent').attr('opacity', 0);
-        xHandleSel.select('.resize.e rect').attr('fill', brushStrokeColor).attr('style', null);
-        xHandleSel.select('.resize.w rect').attr('fill', brushStrokeColor).attr('style', null);
+        xHandleSel.select('.resize.e rect')
+                .attr('class', 'e-resize-handle-rect')
+                .attr('fill', brushStrokeColor).attr('style', null);
+        xHandleSel.select('.resize.w rect')
+                .attr('class', 'w-resize-handle-rect')
+                .attr('fill', brushStrokeColor).attr('style', null);
         xHandleBrush.on('brushstart', xBrushStart);
         xHandleBrush.on('brush', xBrush);
         xHandleBrush.on('brushend', xBrushEnd);
