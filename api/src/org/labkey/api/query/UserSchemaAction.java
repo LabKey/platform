@@ -263,8 +263,8 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
                         qus.updateRows(form.getUser(), form.getContainer(), rows, oldKeys, null, null);
                     }
                 }
-
-                transaction.commit();
+                if (!errors.hasErrors())
+                    transaction.commit();       // Only commit if there were no errors
             }
             catch (SQLException x)
             {
