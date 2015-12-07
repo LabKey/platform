@@ -59,6 +59,7 @@ public class ApiQueryResponse implements ApiResponse
     private static final String URL_COL_PREFIX = "_labkeyurl_";
     private TableInfo _tinfo = null;
     private List<DisplayColumn> _displayColumns = null;
+    private Map<DisplayColumn, String> _displayColumnCaptions = new HashMap<>();
     protected long _rowCount = 0;
     protected RenderContext _ctx = null;
     private ViewContext _viewContext;
@@ -212,7 +213,10 @@ public class ApiQueryResponse implements ApiResponse
             {
                 if (dc.getColumnInfo() != null && !dc.getColumnInfo().equals(dc.getDisplayColumnInfo()))
                 {
-                    displayValueColumns.add(dc.getDisplayColumnInfo().getRenderer());
+                    DisplayColumn fkDisplayColumn = dc.getDisplayColumnInfo().getRenderer();
+                    displayValueColumns.add(fkDisplayColumn);
+
+                    _displayColumnCaptions.put(fkDisplayColumn, dc.getCaption(ctx, false) + "/" + fkDisplayColumn.getCaption(ctx, false));
                 }
             }
 
@@ -395,10 +399,15 @@ public class ApiQueryResponse implements ApiResponse
         extGridColumn.put("hidden", colInfo != null && (colInfo.isHidden() || colInfo.isAutoIncrement())); //auto-incr list key columns return false for isHidden(), so check isAutoIncrement as well
         if (dc.getTextAlign() != null)
             extGridColumn.put("align", dc.getTextAlign());
-        if (dc.getCaption() != null)
-            extGridColumn.put("header", dc.getCaption(_ctx, false));
         if (dc.getDescription() != null)
             extGridColumn.put("tooltip", dc.getDescription());
+        if (dc.getCaption() != null)
+        {
+            if (isIncludeDisplayValues() && _displayColumnCaptions.containsKey(dc))
+                extGridColumn.put("header", _displayColumnCaptions.get(dc));
+            else
+                extGridColumn.put("header", dc.getCaption(_ctx, false));
+        }
         if (dc.getWidth() != null)
         {
             try
