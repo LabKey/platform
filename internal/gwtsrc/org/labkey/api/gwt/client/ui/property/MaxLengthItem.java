@@ -67,7 +67,10 @@ public class MaxLengthItem<DomainType extends GWTDomain<FieldType>, FieldType ex
         if (field == null)
             return false;
 
-        int value = _maxCheckBox.getValue().booleanValue() ? Integer.MAX_VALUE : _limitTextBox.getValue();
+        //If value exceeds Default then set to MAX
+        int value = _maxCheckBox.getValue().booleanValue() || _limitTextBox.getValue() > DEFAULT_SIZE ?
+                Integer.MAX_VALUE : _limitTextBox.getValue();
+
         boolean changed = field.getScale() != value;
 
         //Only set value if it has changed
@@ -111,6 +114,8 @@ public class MaxLengthItem<DomainType extends GWTDomain<FieldType>, FieldType ex
         int _size = pd.getScale();
         _maxCheckBox.setValue(_size > DEFAULT_SIZE);
         _limitTextBox.setValue(_size);
+
+        validateValue();
         onLimitChange();
     }
 
@@ -172,15 +177,20 @@ public class MaxLengthItem<DomainType extends GWTDomain<FieldType>, FieldType ex
     {
         public void onKeyUp(KeyUpEvent event)
         {
-            //Do some limit validation on entered value
-            int val = _limitTextBox.getValue();
-            if (val > DEFAULT_SIZE)
-                showWarning(); //Apply warning
-            else if (val < 0)
-                _limitTextBox.setValue(0); //Hardcap at 0
-            else
-                hideWarning(); //Value is correct range hide error if present
+            validateValue();
         }
+    }
+
+    private void validateValue()
+    {
+        //Do some limit validation on entered value
+        int val = _limitTextBox.getValue();
+        if (val > DEFAULT_SIZE)
+            showWarning(); //Apply warning
+        else if (val < 0)
+            _limitTextBox.setValue(0); //Hardcap at 0
+        else
+            hideWarning(); //Value is in range, hide error if present
     }
 
     private void showWarning()
