@@ -31,8 +31,19 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromPath("Ext4"));
+        return resources;
+    }
+%>
 <%
 /*
  * This JSP is used to display an access report for the following actions:
@@ -51,12 +62,9 @@
 %>
 
 <script type="text/javascript">
-    Ext.onReady(function(){
-        Ext.QuickTips.init();
-        Ext.apply(Ext.QuickTips.getQuickTip(), {
-            dismissDelay: 15000,
-            trackMouse: true
-        });
+    Ext4.QuickTips.init(true, {
+        dismissDelay: 15000,
+        trackMouse: true
     });
 </script>
 
@@ -159,11 +167,11 @@ However, If this account is re-enabled, it would have the following permissions.
                                         {
                                             String groupName = group.isProjectGroup() ? groupContainer.getPath() + "/" + group.getName() : group.getName();
                                             ActionURL groupURL = urlProvider(SecurityUrls.class).getManageGroupURL(groupContainer, groupName);
-                                            %><%= !first ? ", " : "" %><a href="<%=h(groupURL)%>" ext:qtip="<%=hoverExpanation%>"><%=h(displayName)%></a><%
+                                            %><%= !first ? ", " : "" %><a href="<%=h(groupURL)%>" data-qtip="<%=hoverExpanation%>"><%=h(displayName)%></a><%
                                         }
                                         else
                                         {
-                                            %><%= !first ? ", " : "" %><span ext:qtip="<%=hoverExpanation%>"><%=h(displayName)%></span><%
+                                            %><%= !first ? ", " : "" %><span data-qtip="<%=hoverExpanation%>"><%=h(displayName)%></span><%
                                         }
                                         first = false;
                                     }
