@@ -98,9 +98,11 @@ if (!LABKEY.DataRegions) {
 
             async: isQWP,
 
-            bodyClass: isQWP ? 'webpart.bodyClass' : undefined,
+            bodyClass: undefined,
 
             buttonBar: undefined,
+
+            buttonBarPosition: undefined,
 
             /**
              * All rows visible on the current page.
@@ -114,7 +116,14 @@ if (!LABKEY.DataRegions) {
              */
             containerFilter: undefined,
 
+            containerPath: undefined,
+
+            /**
+             * @deprecated use region.name instead
+             */
             dataRegionName: this.name,
+
+            detailsURL: undefined,
 
             /**
              * The faceted filter pane as been loaded
@@ -132,6 +141,10 @@ if (!LABKEY.DataRegions) {
              * Id of the DataRegion. Same as name property.
              */
             id: this.name,
+
+            importURL: undefined,
+
+            insertURL: undefined,
 
             linkTarget: undefined,
 
@@ -163,6 +176,10 @@ if (!LABKEY.DataRegions) {
 
             removeableContainerFilter: undefined,
 
+            removeableFilters: undefined,
+
+            removeableSort: undefined,
+
             renderTo: undefined,
 
             reportId: undefined,
@@ -188,17 +205,39 @@ if (!LABKEY.DataRegions) {
 
             selectedCount: 0,
 
+            shadeAlternatingRows: undefined,
+
+            showBorders: undefined,
+
+            showDeleteButton: undefined,
+
+            showDetailsColumn: undefined,
+
+            showExportButtons: undefined,
+
+            showInsertNewButton: undefined,
+
+            showPagination: undefined,
+
             showRecordSelectors: false,
+
+            showReports: undefined,
 
             /**
              * An enum declaring which set of rows to show. all | selected | unselected | paginated
              */
             showRows: 'paginated',
 
+            showSurroundingBorder: undefined,
+
+            showUpdateColumn: undefined,
+
             /**
              * Open the customize view panel after rendering. The value of this option can be "true" or one of "ColumnsTab", "FilterTab", or "SortTab".
              */
             showViewPanel: undefined,
+
+            sort: undefined,
 
             sql: undefined,
 
@@ -217,6 +256,8 @@ if (!LABKEY.DataRegions) {
             titleHref: undefined,
 
             totalRows: undefined, // totalRows isn't available when showing all rows.
+
+            updateURL: undefined,
 
             userContainerFilter: undefined, // TODO: Incorporate this with the standard containerFilter
 
@@ -256,6 +297,13 @@ if (!LABKEY.DataRegions) {
 
         if ($.isArray(this.removeableFilters)) {
             LABKEY.Filter.appendFilterParams(this.userFilters, this.removeableFilters, this.name);
+        }
+
+        if (LABKEY.Utils.isString(this.removeableSort)) {
+            if (this.userSort === undefined) {
+                this.userSort = '';
+            }
+            this.userSort += this.removeableSort;
         }
 
         this._allowHeaderLock = this.allowHeaderLock === true;
@@ -1825,6 +1873,14 @@ if (!LABKEY.DataRegions) {
     //
     // PRIVATE FUNCTIONS
     //
+    var _applyOptionalParameters = function(region, params, optionalParams) {
+        $.each(optionalParams, function(i, p) {
+            if (region[p] !== undefined) {
+                params[p] = region[p];
+            }
+        });
+    };
+
     var _alterSortString = function(region, current, fieldKey, direction /* optional */) {
         fieldKey = _resolveFieldKey(region, fieldKey);
 
@@ -1952,7 +2008,7 @@ if (!LABKEY.DataRegions) {
                 region.renderTo = renderTo;
             }
             else if (LABKEY.Utils.isString(renderTo.id)) {
-                this.renderTo = renderTo.id; // support 'Ext' elements
+                region.renderTo = renderTo.id; // support 'Ext' elements
             }
             else {
                 throw 'Unsupported "renderTo"';
@@ -1979,7 +2035,7 @@ if (!LABKEY.DataRegions) {
         }
 
         LABKEY.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('query', 'deleteView', region.containerPath),
+            url: LABKEY.ActionURL.buildURL('query', 'deleteView.api', region.containerPath),
             jsonData: json,
             method: 'POST',
             callback: function() {
@@ -2585,8 +2641,37 @@ if (!LABKEY.DataRegions) {
             params[name + '.async'] = true;
 
             if (LABKEY.Utils.isString(region.frame)) {
-                params["webpart.frame"] = region.frame;
+                params['webpart.frame'] = region.frame;
             }
+
+            if (LABKEY.Utils.isString(region.bodyClass)) {
+                params['webpart.bodyClass'] = region.bodyClass;
+            }
+
+            _applyOptionalParameters(region, params, [
+                'allowChooseQuery',
+                'allowChooseView',
+                'buttonBarPosition',
+                'detailsURL',
+                'importURL',
+                'insertURL',
+                'linkTarget',
+                'updateURL',
+                'shadeAlternatingRows',
+                'showBorders',
+                'showDeleteButton',
+                'showDetailsColumn',
+                'showExportButtons',
+                'showInsertNewButton',
+                'showPagination',
+                'showReports',
+                'showSurroundingBorder',
+                'showUpdateColumn',
+                'showViewPanel',
+                'timeout',
+                'title',
+                'titleHref'
+            ]);
 
             // Sorts configured by the user when interacting with the grid. We need to pass these as URL parameters.
             if (LABKEY.Utils.isString(region.userSort) && region.userSort.length > 0) {
@@ -2604,22 +2689,6 @@ if (!LABKEY.DataRegions) {
                 params[name + CONTAINER_FILTER_NAME] = region.userContainerFilter;
             }
 
-            if (region.title) {
-                params.title = region.title;
-            }
-
-            if (region.titleHref) {
-                params.titleHref = region.titleHref;
-            }
-
-            if (region.allowChooseQuery !== undefined) {
-                params.allowChooseQuery = region.allowChooseQuery === true;
-            }
-
-            if (region.allowChooseView !== undefined) {
-                params.allowChooseView = region.allowChooseView === true;
-            }
-
             if (region.parameters) {
                 $.each(region.parameters, function(parameter, value) {
                     var p = parameter;
@@ -2631,6 +2700,7 @@ if (!LABKEY.DataRegions) {
             }
         }
 
+        // TODO: Can this be removed now that Ext is not being used?
         // Ext uses a param called _dc to defeat caching, and it may be
         // on the URL if the Query web part has done a sort or filter
         // strip it if it's there so it's not included twice (Ext always appends one)
