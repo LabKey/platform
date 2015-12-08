@@ -748,6 +748,10 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 }
 
                 List<File> tempFiles = new ArrayList<>();
+                if(runDataUploadedFile != null)
+                {
+                    tempFiles.add(runDataUploadedFile);
+                }
 
                 // Loop through all of the files that are left after running the transform script
                 for (File file : runInfo.getParentFile().listFiles())
