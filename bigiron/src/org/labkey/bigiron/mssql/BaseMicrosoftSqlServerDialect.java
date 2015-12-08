@@ -987,15 +987,9 @@ public abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                 makeTableIdentifier(change)
         );
 
+        //Don't use getSqlColumnSpec as constraints must be dropped and re-applied (exception for NOT NULL)
         for (PropertyStorageSpec column : change.getColumns())
         {
-//            //If column is primary key drop constraint
-//            if(column.isPrimaryKey())
-//            {
-//                String dropKeySegment = alterTableSegment + getPrimaryKeyConstraintFragment(change.getTableName(), column.getName(), false);
-//                statements.add(dropKeySegment);
-//            }
-
             //T-SQL will throw an error for nvarchar sizes >4000
             //Use the common default max size to make type change to nvarchar(max)/text consistent
             String size = column.getSize() > SqlDialect.MAX_VARCHAR_SIZE ?
@@ -1011,24 +1005,10 @@ public abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             //T-SQL will drop any existing null constraints
             statement += column.isNullable() ? "NULL;" : "NOT NULL;";
             statements.add(statement);
-
-//            //If column is primary key re-add constraint
-//            if(column.isPrimaryKey())
-//            {
-//                String addKeySegment = alterTableSegment + getPrimaryKeyConstraintFragment(change.getTableName(), column.getName(), true);
-//                statements.add(addKeySegment);
-//            }
         }
+
         return statements;
     }
-
-//    private String getPrimaryKeyConstraintFragment(String tableName, String pkColumnName, boolean isAdd )
-//    {
-//        String addOrDrop = isAdd ? "ADD" : "DROP";
-//        return String.format(addOrDrop + " CONSTRAINT [%s] PRIMARY KEY (%s)",
-//                tableName + "_pk",
-//                makeLegalIdentifier(pkColumnName));
-//    }
 
     private List<String> getCreateTableStatements(TableChange change)
     {
@@ -1200,7 +1180,8 @@ public abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
         if (prop.getJdbcType().sqlType == Types.VARCHAR && !prop.isEntityId())
         {
-            if (prop.getSize() == Integer.MAX_VALUE)
+            //If size greater than Allowed size, change to Max
+            if (prop.getSize() > SqlDialect.MAX_VARCHAR_SIZE)
             {
                 colSpec.add("(MAX)");
             }

@@ -1205,12 +1205,16 @@ public class PostgreSql91Dialect extends SqlDialect
         List<String> colSpec = new ArrayList<>();
         colSpec.add(makePropertyIdentifier(prop.getName()));
         colSpec.add(sqlTypeNameFromSqlType(prop));
-        if (prop.getJdbcType().sqlType == Types.VARCHAR && !prop.isEntityId() && prop.getSize() != Integer.MAX_VALUE)
+
+        //Apply size and precision to varchar and Decimal types
+        if (prop.getJdbcType().sqlType == Types.VARCHAR && !prop.isEntityId() && prop.getSize() <= SqlDialect.MAX_VARCHAR_SIZE)
             colSpec.add("(" + prop.getSize() + ")");
         else if (prop.getJdbcType() == JdbcType.DECIMAL)
             colSpec.add("(15,4)");
+
         if (prop.isPrimaryKey() || !prop.isNullable())
             colSpec.add("NOT NULL");
+
         if (null != prop.getDefaultValue())
         {
             if (prop.getJdbcType().sqlType == Types.BOOLEAN)
@@ -1265,6 +1269,11 @@ public class PostgreSql91Dialect extends SqlDialect
             {
                 throw new IllegalArgumentException("EntityId is not supported for SQL type " + prop.getJdbcType().sqlType + " (" + sqlTypeNameFromSqlType(prop.getJdbcType().sqlType) + ")");
             }
+        }
+        //If varchar longer than common limit, then switch type to Text
+        else if (prop.getJdbcType().sqlType == Types.VARCHAR && prop.getSize() > SqlDialect.MAX_VARCHAR_SIZE)
+        {
+            return sqlTypeNameFromSqlType(Types.LONGVARCHAR);
         }
         else
         {
