@@ -68,6 +68,7 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
+import org.labkey.api.util.emailTemplate.UserOriginatedEmailTemplate;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -445,25 +446,21 @@ public class AnnouncementManager
 
     private static MailHelper.MultipartMessage getMessage(Container c, User recipient, DiscussionService.Settings settings, @NotNull Permissions perm, AnnouncementModel parent, AnnouncementModel a, boolean isResponse, ActionURL removeURL, WikiRendererType currentRendererType, EmailNotificationBean.Reason reason, User user) throws Exception
     {
-        if (!HttpView.hasCurrentView())
+        ActionURL threadURL = AnnouncementsController.getThreadURL(c, parent.getEntityId(), a.getRowId());
+        try (ViewContext.StackResetter ignore = ViewContext.pushMockViewContext(recipient, c, threadURL))
         {
-            // Hack! Push a ViewContext with the recipient as the user, so embedded webparts get rendered with that
-            // user's permissions, etc.
-            ActionURL threadURL = AnnouncementsController.getThreadURL(c, parent.getEntityId(), a.getRowId());
-            ViewContext.pushMockViewContext(recipient, c, threadURL);
+            EmailNotificationBean notificationBean = new EmailNotificationBean(c, recipient, settings, perm, parent, a, isResponse, removeURL, currentRendererType, reason);
+
+            NotificationEmailTemplate template = EmailTemplateService.get().getEmailTemplate(NotificationEmailTemplate.class, c);
+            template.init(notificationBean, user);
+            MailHelper.MultipartMessage message = MailHelper.createMultipartMessage();
+
+            message.setEncodedHtmlContent(template.renderBody(c));
+            message.setSubject(template.renderSubject(c));
+            message.setFrom(template.renderFrom(c, LookAndFeelProperties.getInstance(c).getSystemEmailAddress()));
+
+            return message;
         }
-
-        EmailNotificationBean notificationBean = new EmailNotificationBean(c, recipient, settings, perm, parent, a, isResponse, removeURL, currentRendererType, reason);
-
-        NotificationEmailTemplate template = EmailTemplateService.get().getEmailTemplate(NotificationEmailTemplate.class, c);
-        template.init(notificationBean, user);
-        MailHelper.MultipartMessage message = MailHelper.createMultipartMessage();
-
-        message.setEncodedHtmlContent(template.renderBody(c));
-        message.setSubject(template.renderSubject(c));
-        message.setFrom(template.renderFrom(c, LookAndFeelProperties.getInstance(c).getSystemEmailAddress()));
-
-        return message;
     }
 
     private static synchronized void insertMemberList(User user, List<Integer> userIds, int messageId)
@@ -931,12 +928,10 @@ public class AnnouncementManager
         }
     }
 
-    public static class NotificationEmailTemplate extends EmailTemplate
+    public static class NotificationEmailTemplate extends UserOriginatedEmailTemplate
     {
         protected static final String DEFAULT_SUBJECT =
                 "^messageSubject^";
-        protected static final String DEFAULT_SENDER =
-                "^siteShortName^";
         protected static final String DEFAULT_DESCRIPTION =
                 "New Posts Notification from the ^siteShortName^ Web Site";
 
@@ -947,13 +942,12 @@ public class AnnouncementManager
         private EmailNotificationBean notificationBean = null;
 
         private String reasonForEmail = "";
-        private User   user = null;
         private String attachments = "";
         private String messageUrl = "";
 
         public NotificationEmailTemplate()
         {
-            super(NAME, DEFAULT_SUBJECT, loadBody(), DEFAULT_DESCRIPTION, ContentType.HTML, DEFAULT_SENDER);
+            super(NAME, DEFAULT_SUBJECT, loadBody(), DEFAULT_DESCRIPTION, ContentType.HTML);
             setEditableScopes(EmailTemplate.Scope.SiteOrFolder);
 
             _replacements.add(new ReplacementParam<String>("createdByUser", String.class, "User that generated the message", ContentType.HTML)
@@ -1042,23 +1036,6 @@ public class AnnouncementManager
                 }
             });
 
-            _replacements.add(new ReplacementParam<String>("userFirstName", String.class, "First name of the user who created or responded to the message"){
-                public String getValue(Container c) {
-                    return user == null ? null : user.getFirstName();
-                }
-            });
-            _replacements.add(new ReplacementParam<String>("userLastName", String.class, "Last name of the user who created or responded to the message"){
-                public String getValue(Container c) {
-                     return user == null ? null : user.getLastName();
-                }
-            });
-            _replacements.add(new ReplacementParam<String>("userDisplayName", String.class, "Display name of the user who created or responded to the message"){
-                public String getValue(Container c) {
-                    return user == null ? null : user.getFriendlyName();
-                }
-            });
-
-
             _replacements.addAll(super.getValidReplacements());
         }
 
@@ -1085,7 +1062,7 @@ public class AnnouncementManager
         public void init(EmailNotificationBean notification, User user)
         {
             this.notificationBean = notification;
-            this.user = user;
+            this.setOriginatingUser(user);
             initReason();
             initAttachments();
         }

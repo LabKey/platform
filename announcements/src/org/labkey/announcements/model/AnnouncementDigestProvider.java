@@ -136,33 +136,29 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
 
     private static MailHelper.MultipartMessage getDailyDigestMessage(Container c, DiscussionService.Settings settings, Permissions perm, List<AnnouncementModel> announcementModels, User recipient) throws Exception
     {
-        if (!HttpView.hasCurrentView())
+        ActionURL boardURL = AnnouncementsController.getBeginURL(c);
+        // Hack! Push a ViewContext with the recipient as the user, so embedded webparts get rendered with that
+        // user's permissions, etc.
+        try (ViewContext.StackResetter ignored = ViewContext.pushMockViewContext(recipient, c, boardURL))
         {
-            // Hack! Push a ViewContext with the recipient as the user, so embedded webparts get rendered with that
-            // user's permissions, etc.
-            ActionURL boardURL = AnnouncementsController.getBeginURL(c);
-            ViewContext.pushMockViewContext(recipient, c, boardURL);
+            DailyDigestBean bean = new DailyDigestBean(c, settings, perm, announcementModels);
+            DailyDigestEmailTemplate template = EmailTemplateService.get().getEmailTemplate(DailyDigestEmailTemplate.class, c);
+            template.init(bean);
+
+            MailHelper.MultipartMessage message = MailHelper.createMultipartMessage();
+            message.setEncodedHtmlContent(template.renderBody(c));
+            message.setSubject(template.renderSubject(c));
+            message.setFrom(template.renderFrom(c, LookAndFeelProperties.getInstance(c).getSystemEmailAddress()));
+            message.setRecipient(Message.RecipientType.TO, new InternetAddress(recipient.getEmail()));
+
+            return message;
         }
-
-        DailyDigestBean bean = new DailyDigestBean(c, settings, perm, announcementModels);
-        DailyDigestEmailTemplate template = EmailTemplateService.get().getEmailTemplate(DailyDigestEmailTemplate.class, c);
-        template.init(bean);
-
-        MailHelper.MultipartMessage message = MailHelper.createMultipartMessage();
-        message.setEncodedHtmlContent(template.renderBody(c));
-        message.setSubject(template.renderSubject(c));
-        message.setFrom(template.renderFrom(c, LookAndFeelProperties.getInstance(c).getSystemEmailAddress()));
-        message.setRecipient(Message.RecipientType.TO, new InternetAddress(recipient.getEmail()));
-
-        return message;
     }
 
     public static class DailyDigestEmailTemplate extends EmailTemplate
     {
         protected static final String DEFAULT_SUBJECT =
                 "New posts to ^folderName^";
-        protected static final String DEFAULT_SENDER =
-                "^siteShortName^";
         protected static final String DEFAULT_DESCRIPTION =
                 "Daily digest notification from the ^siteShortName^ Web Site";
         protected static final String NAME = "Message board daily digest";
@@ -175,7 +171,7 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
 
         public DailyDigestEmailTemplate()
         {
-            super(NAME, DEFAULT_SUBJECT, loadBody(), DEFAULT_DESCRIPTION, ContentType.HTML, DEFAULT_SENDER);
+            super(NAME, DEFAULT_SUBJECT, loadBody(), DEFAULT_DESCRIPTION, ContentType.HTML);
             setEditableScopes(EmailTemplate.Scope.SiteOrFolder);
 
             _replacements.add(new ReplacementParam<String>("folderName", String.class, "Folder that user subscribed to", ContentType.HTML)

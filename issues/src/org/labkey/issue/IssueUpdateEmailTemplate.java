@@ -20,7 +20,7 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.util.emailTemplate.EmailTemplate;
+import org.labkey.api.util.emailTemplate.UserOriginatedEmailTemplate;
 import org.labkey.api.view.ActionURL;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
@@ -34,12 +34,10 @@ import java.util.Set;
  * User: jeckels
  * Date: Aug 3, 2010
  */
-public class IssueUpdateEmailTemplate extends EmailTemplate
+public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
 {
     protected static final String DEFAULT_SUBJECT =
             "^itemName^ #^issueId^, \"^title^,\" has been ^action^";
-    protected static final String DEFAULT_SENDER =
-            "^siteShortName^";
     protected static final String DEFAULT_BODY =
             "You can review this ^itemNameLowerCase^ here: ^detailsURL^\n" +
             "Modified by: ^user^\n" +
@@ -54,13 +52,11 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
     private String _fieldChanges;
     private String _recipients;
     private String _attachments;
-    private User   _originatingUser;
 
     public IssueUpdateEmailTemplate()
     {
         super("Issue update");
         setSubject(DEFAULT_SUBJECT);
-        setSenderName(DEFAULT_SENDER);
         setBody(DEFAULT_BODY);
         setDescription("Sent to the users based on issue notification rules and settings after an issue has been edited or inserted.");
         setPriority(10);
@@ -283,21 +279,6 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
                 return _fieldChanges;
             }
         });
-        _replacements.add(new ReplacementParam<String>("userFirstName", String.class, "First name of the user performing the operation"){
-            public String getValue(Container c) {
-                return _originatingUser == null ? null : _originatingUser.getFirstName();
-            }
-        });
-        _replacements.add(new ReplacementParam<String>("userLastName", String.class, "Last name of the user performing the operation"){
-            public String getValue(Container c) {
-                return _originatingUser == null ? null : _originatingUser.getLastName();
-            }
-        });
-        _replacements.add(new ReplacementParam<String>("userDisplayName", String.class, "Display name of the user performing the operation"){
-            public String getValue(Container c) {
-                return _originatingUser == null ? null : _originatingUser.getFriendlyName();
-            }
-        });
 
         // modifiedFields
 
@@ -358,7 +339,7 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
         _change = change;
         _comment = comment;
         _fieldChanges = fieldChanges;
-        _originatingUser = creator;
+        setOriginatingUser(creator);
 
         StringBuilder sb = new StringBuilder();
         String separator = "";
