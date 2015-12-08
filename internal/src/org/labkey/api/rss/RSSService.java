@@ -42,5 +42,5 @@ abstract public class RSSService
 
     abstract public List<RSSFeed> getFeeds(Container container, User user);
 
-    abstract public void aggregateFeeds(List<RSSFeed> feeds, Writer writer);
+    abstract public void aggregateFeeds(List<RSSFeed> feeds, User user, Writer writer);
 }

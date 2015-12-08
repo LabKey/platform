@@ -24,16 +24,18 @@ import com.sun.syndication.io.SyndFeedInput;
 import com.sun.syndication.io.SyndFeedOutput;
 import com.sun.syndication.io.XmlReader;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.webdav.WebdavResource;
+import org.labkey.api.webdav.WebdavService;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -62,7 +64,7 @@ public class RSSServiceImpl extends RSSService
         return feeds;
     }
 
-    public void aggregateFeeds(List<RSSFeed> feeds, Writer writer)
+    public void aggregateFeeds(List<RSSFeed> feeds, User user, Writer writer)
     {
         SyndFeed feed = new SyndFeedImpl();
 
@@ -77,33 +79,29 @@ public class RSSServiceImpl extends RSSService
 
         for (RSSFeed _feed : feeds)
         {
-            URL inputURL = null;
+            XmlReader reader = null;
 
             try
             {
-                inputURL = new URL(_feed.getFeedURL());
+                reader = getReader(_feed, user);
             }
-            catch (MalformedURLException e)
+            catch (IOException e)
             {
-                Logger.getLogger(RSSService.class).error("Invalid Feed (MalformedURLException): " + _feed.getFeedURL());
+                Logger.getLogger(RSSService.class).error("Invalid RSS Feed: " + e.getMessage());
             }
 
-            if (null != inputURL)
+            if (null != reader)
             {
                 try
                 {
                     SyndFeedInput input = new SyndFeedInput();
-                    SyndFeed inFeed = input.build(new XmlReader(inputURL));
+                    SyndFeed inFeed = input.build(reader);
 
                     entries.addAll(inFeed.getEntries());
                 }
-                catch (IOException e)
-                {
-                    Logger.getLogger(RSSService.class).error("Invalid Feed (IOException): " + inputURL);
-                }
                 catch (FeedException fe)
                 {
-                    Logger.getLogger(RSSService.class).error("Invalid Feed (FeedException): " + inputURL);
+                    Logger.getLogger(RSSService.class).error("Invalid Feed (FeedException): " + _feed.getFeedURL());
                 }
             }
         }
@@ -139,5 +137,32 @@ public class RSSServiceImpl extends RSSService
         {
             Logger.getLogger(RSSService.class).error("Error", e);
         }
+    }
+
+
+    @Nullable
+    private XmlReader getReader(RSSFeed feed, User user) throws IOException
+    {
+        XmlReader reader;
+
+        if (feed.getFeedURL().startsWith("webdav:/"))
+        {
+            WebdavResource resource = WebdavService.get().lookup(feed.getFeedURL().replace("webdav:/", ""));
+
+            if (null != resource && resource.isFile())
+            {
+                reader = new XmlReader(resource.getInputStream(user));
+            }
+            else
+            {
+                throw new IOException(feed.getFeedURL() + ". If attempting to use webdav ensure the URL begins with webdav:/" + WebdavService.getPath() + " and is not URL encoded.");
+            }
+        }
+        else
+        {
+            reader = new XmlReader(new URL(feed.getFeedURL()));
+        }
+
+        return reader;
     }
 }
