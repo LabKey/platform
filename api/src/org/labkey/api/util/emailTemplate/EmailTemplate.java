@@ -48,6 +48,7 @@ public abstract class EmailTemplate
     private static Pattern scriptPattern = Pattern.compile("\\^(.*?)\\^");
     private static List<ReplacementParam> _replacements = new ArrayList<>();
     private static final String FORMAT_DELIMITER = "|";
+    protected static final String DEFAULT_SENDER = "^siteShortName^";
 
     private static final Logger LOG = Logger.getLogger(EmailTemplate.class);
 
@@ -113,7 +114,7 @@ public abstract class EmailTemplate
     @NotNull private final String _name;
     private String _body;
     private String _subject;
-    private String _senderName;
+    @Nullable private String _senderName;
     private String _description;
     private int _priority = 50;
     /** Scope is the locations in which the user should be able to edit this template. It should always be the same
@@ -176,10 +177,10 @@ public abstract class EmailTemplate
 
     public EmailTemplate(@NotNull String name, String subject, String body, String description, @NotNull ContentType contentType)
     {
-        this(name, subject, body, description, contentType, null);
+        this(name, subject, body, description, contentType, DEFAULT_SENDER);
     }
 
-    public EmailTemplate(@NotNull String name, String subject, String body, String description, @NotNull ContentType contentType, String senderDisplayName)
+    public EmailTemplate(@NotNull String name, String subject, String body, String description, @NotNull ContentType contentType, @Nullable String senderDisplayName)
     {
         _name = name;
         _subject = subject;
@@ -202,7 +203,7 @@ public abstract class EmailTemplate
     public void setEditableScopes(Scope scope){_scope = scope;}
     public Container getContainer(){return _container;}
     /* package */ void setContainer(Container c){_container = c;}
-    public String getSenderName(){return _senderName;}
+    @Nullable public String getSenderName(){return _senderName;}
     public void setSenderName(String senderName){_senderName = senderName;}
 
     @NotNull

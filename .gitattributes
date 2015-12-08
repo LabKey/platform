@@ -1650,6 +1650,7 @@ api/src/org/labkey/api/util/XmlBeansUtil.java -text
 api/src/org/labkey/api/util/XmlValidationException.java -text
 api/src/org/labkey/api/util/emailTemplate/EmailTemplate.java -text
 api/src/org/labkey/api/util/emailTemplate/EmailTemplateService.java -text
+api/src/org/labkey/api/util/emailTemplate/UserOriginatedEmailTemplate.java -text
 api/src/org/labkey/api/util/massSpecDataFileType.java -text
 api/src/org/labkey/api/util/mime.txt -text
 api/src/org/labkey/api/view/AbstractView.java -text

@@ -81,6 +81,7 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
+import org.labkey.api.util.emailTemplate.UserOriginatedEmailTemplate;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
@@ -2795,11 +2796,10 @@ public class SecurityManager
         }
     }
 
-    public abstract static class SecurityEmailTemplate extends EmailTemplate
+    public abstract static class SecurityEmailTemplate extends UserOriginatedEmailTemplate
     {
         protected String _optionalPrefix;
         private String _verificationUrl = "";
-        private User _originatingUser = null;
         private String _recipient = "";
         protected boolean _verificationUrlRequired = true;
         protected final List<ReplacementParam> _replacements = new ArrayList<>();
@@ -2821,27 +2821,12 @@ public class SecurityManager
                     return _recipient;
                 }
             });
-            _replacements.add(new ReplacementParam<String>("userFirstName", String.class, "First name of the user performing the operation"){
-                public String getValue(Container c) {
-                    return _originatingUser == null ? null : _originatingUser.getFirstName();
-                }
-            });
-            _replacements.add(new ReplacementParam<String>("userLastName", String.class, "Last name of the user performing the operation"){
-                public String getValue(Container c) {
-                    return _originatingUser == null ? null : _originatingUser.getLastName();
-                }
-            });
-            _replacements.add(new ReplacementParam<String>("userDisplayName", String.class, "Display name of the user performing the operation"){
-                public String getValue(Container c) {
-                    return _originatingUser == null ? null : _originatingUser.getFriendlyName();
-                }
-            });
+
             _replacements.addAll(super.getValidReplacements());
         }
 
         public void setOptionPrefix(String optionalPrefix){_optionalPrefix = optionalPrefix;}
         public void setVerificationUrl(String verificationUrl){_verificationUrl = verificationUrl;}
-        public void setOriginatingUser(User user){_originatingUser = user;}
         public void setRecipient(String recipient){_recipient = recipient;}
         public List<ReplacementParam> getValidReplacements(){return _replacements;}
 
@@ -2864,7 +2849,6 @@ public class SecurityManager
     {
         protected static final String DEFAULT_SUBJECT =
                 "Welcome to the ^organizationName^ ^siteShortName^ Web Site new user registration";
-        protected static final String DEFAULT_SENDER = "^siteShortName^";
         protected static final String DEFAULT_BODY =
                 "^optionalMessage^\n\n" +
                 "You now have an account on the ^organizationName^ ^siteShortName^ web site.  We are sending " +
@@ -2890,7 +2874,6 @@ public class SecurityManager
         {
             super(name);
             setSubject(DEFAULT_SUBJECT);
-            setSenderName(DEFAULT_SENDER);
             setBody(DEFAULT_BODY);
             setDescription("Sent to the new user and administrator when a user is added to the site.");
             setPriority(1);
@@ -2917,7 +2900,6 @@ public class SecurityManager
     {
         protected static final String DEFAULT_SUBJECT =
                 "Reset Password Notification from the ^siteShortName^ Web Site";
-        protected static final String DEFAULT_SENDER = "^siteShortName^";
         protected static final String DEFAULT_BODY =
                 "We have reset your password on the ^organizationName^ ^siteShortName^ web site. " +
                 "To sign in to the system you will need " +
@@ -2937,7 +2919,6 @@ public class SecurityManager
         {
             super(name);
             setSubject(DEFAULT_SUBJECT);
-            setSenderName(DEFAULT_SENDER);
             setBody(DEFAULT_BODY);
             setDescription("Sent to the user and administrator when the password of a user is reset.");
             setPriority(3);

@@ -58,6 +58,10 @@ public interface EmailMessage
     void addContent(contentType type, String content);
     void addContent(contentType type, ViewContext context, HttpView view) throws Exception;
     void addContent(contentType type, HttpServletRequest request, HttpView view) throws Exception;
+
+    /**
+     * Sets the display name for the email sender, the actual sender email address will be the one configured via site or project settings
+     */
     void setSenderName(String senderName);
 
     MimeMessage createMessage() throws MessagingException;
