@@ -1588,18 +1588,21 @@ public class ExperimentController extends SpringActionController
                 if (_data.isInlineImage() && form.getMaxDimension() != null && _data.isFileOnDisk())
                 {
                     BufferedImage image = ImageIO.read(_data.getFile());
-                    int imageMax = Math.max(image.getHeight(), image.getWidth());
-                    if (imageMax > form.getMaxDimension().intValue())
+                    // If image, create a thumbnail, otherwise fall through as a regular download attempt
+                    if (image != null)
                     {
-                        double scale = (double)form.getMaxDimension().intValue() / (double)imageMax;
-                        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-                        ImageUtil.resizeImage(image, bOut, scale, 1);
-                        PageFlowUtil.streamFileBytes(getViewContext().getResponse(), realContent.getName() + ".png", bOut.toByteArray(), !inline);
-                        return null;
-                    }
+                        int imageMax = Math.max(image.getHeight(), image.getWidth());
+                        if (imageMax > form.getMaxDimension().intValue())
+                        {
+                            double scale = (double) form.getMaxDimension().intValue() / (double) imageMax;
+                            ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+                            ImageUtil.resizeImage(image, bOut, scale, 1);
+                            PageFlowUtil.streamFileBytes(getViewContext().getResponse(), realContent.getName() + ".png", bOut.toByteArray(), !inline);
+                            return null;
+                        }
+                   }
                 }
 
-                String lowerCaseFileName = realContent.getName().toLowerCase();
                 boolean extended = "jsonTSVExtended".equalsIgnoreCase(form.getFormat());
                 boolean ignoreTypes = "jsonTSVIgnoreTypes".equalsIgnoreCase(form.getFormat());
                 if ("jsonTSV".equalsIgnoreCase(form.getFormat()) || extended || ignoreTypes)
