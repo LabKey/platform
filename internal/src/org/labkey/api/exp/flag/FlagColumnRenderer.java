@@ -18,6 +18,7 @@ package org.labkey.api.exp.flag;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -94,19 +95,40 @@ public class FlagColumnRenderer extends DataColumn
 
         try
         {
-            out.write("<script type=\"text/javascript\">\n");
-            out.write("var " + setFlagFn + " = LABKEY.DataRegion._showFlagDialog({");
-            if (null != endpoint)
-                out.write("url: " + PageFlowUtil.jsString(endpoint) + ", ");
-            if (null != jsConvertPKToLSID)
-                out.write("  translatePrimaryKey : " + jsConvertPKToLSID + ", ");
-            out.write("  dataRegionName: " + PageFlowUtil.jsString(dataRegionName) + ", ");
-//            out.write("  columnName: " + PageFlowUtil.jsString(getBoundColumn().getName()) + ", ");
-            out.write("  imgSrcFlagged: " + PageFlowUtil.jsString(flagSrc) + ", ");
-            out.write("  imgSrcUnflagged: " + PageFlowUtil.jsString(unflagSrc) + ", ");
-            out.write("  imgTitle: " + PageFlowUtil.jsString(defaultTitle));
-            out.write("});\n");
-            out.write("</script>");
+            if (DataRegion.useExperimentalDataRegion())
+            {
+                out.write("<script type=\"text/javascript\">\n");
+                out.write("var " + setFlagFn + ";");
+                out.write("LABKEY.requiresExt4Sandbox(function() {");
+                out.write("LABKEY.requiresScript('internal/flagColumn.js', function() {");
+                out.write(setFlagFn + " = LABKEY.internal.FlagColumn._showDialog({");
+                if (null != endpoint)
+                    out.write("url: " + PageFlowUtil.jsString(endpoint) + ", ");
+                if (null != jsConvertPKToLSID)
+                    out.write("  translatePrimaryKey : " + jsConvertPKToLSID + ", ");
+                out.write("  dataRegionName: " + PageFlowUtil.jsString(dataRegionName) + ", ");
+                out.write("  imgSrcFlagged: " + PageFlowUtil.jsString(flagSrc) + ", ");
+                out.write("  imgSrcUnflagged: " + PageFlowUtil.jsString(unflagSrc) + ", ");
+                out.write("  imgTitle: " + PageFlowUtil.jsString(defaultTitle));
+                out.write("});\n});});");
+                out.write("</script>");
+            }
+            else
+            {
+                out.write("<script type=\"text/javascript\">\n");
+                out.write("var " + setFlagFn + " = LABKEY.DataRegion._showFlagDialog({");
+                if (null != endpoint)
+                    out.write("url: " + PageFlowUtil.jsString(endpoint) + ", ");
+                if (null != jsConvertPKToLSID)
+                    out.write("  translatePrimaryKey : " + jsConvertPKToLSID + ", ");
+                out.write("  dataRegionName: " + PageFlowUtil.jsString(dataRegionName) + ", ");
+                out.write("  imgSrcFlagged: " + PageFlowUtil.jsString(flagSrc) + ", ");
+                out.write("  imgSrcUnflagged: " + PageFlowUtil.jsString(unflagSrc) + ", ");
+                out.write("  imgTitle: " + PageFlowUtil.jsString(defaultTitle));
+                out.write("});\n");
+                out.write("</script>");
+            }
+
             return setFlagFn;
         }
         catch (Exception e)
