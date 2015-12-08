@@ -3,8 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-if (!LABKEY.DataRegions)
-{
+if (!LABKEY.DataRegions) {
     LABKEY.DataRegions = {};
 }
 
@@ -53,9 +52,30 @@ if (!LABKEY.DataRegions)
      */
     Proto._init = function(config, applyDefaults) {
 
+        // ensure name
+        if (!config.dataRegionName) {
+            if (!config.name) {
+                this.name = LABKEY.Utils.id('aqwp');
+            }
+            else {
+                this.name = config.name;
+            }
+        }
+        else if (!config.name) {
+            this.name = config.dataRegionName;
+        }
+        else {
+            this.name = config.name;
+        }
+
+        if (!this.name) {
+            throw '"name" is required to initialize a LABKEY.DataRegion';
+        }
+
         var me = this;
         var nameSel = '#' + me.name;
         var baseSel = 'form' + nameSel;
+        var isQWP = config._useQWPDefaults === true;
 
         this.form = $(baseSel);
 
@@ -64,10 +84,26 @@ if (!LABKEY.DataRegions)
          */
         var defaults = {
 
-            _allowHeaderLock: false,
+            _allowHeaderLock: isQWP,
+
+            _failure: isQWP ? LABKEY.Utils.getOnFailure(config) : undefined,
+
+            _success: isQWP ? LABKEY.Utils.getOnSuccess(config) : undefined,
+
+            aggregates: undefined,
+
+            allowChooseQuery: undefined,
+
+            allowChooseView: undefined,
+
+            async: isQWP,
+
+            bodyClass: isQWP ? 'webpart.bodyClass' : undefined,
+
+            buttonBar: undefined,
 
             /**
-             * All rows visible on the curreng page.
+             * All rows visible on the current page.
              */
             complete: false,
 
@@ -78,43 +114,72 @@ if (!LABKEY.DataRegions)
              */
             containerFilter: undefined,
 
+            dataRegionName: this.name,
+
             /**
              * The faceted filter pane as been loaded
              * @private
              */
             facetLoaded: false,
 
+            filters: undefined,
+
+            frame: undefined,
+
+            errorType: 'html',
+
             /**
              * Id of the DataRegion. Same as name property.
              */
-            id: name,
+            id: this.name,
+
+            linkTarget: undefined,
 
             /**
              * Maximum number of rows to be displayed. 0 if the count is not limited. Read-only.
              */
             maxRows: 0,
 
+            metadata: undefined,
+
             /**
              * Name of the DataRegion. Should be unique within a given page. Read-only. This will also be used as the id.
              */
-            name: name,
+            name: this.name,
 
             /**
-             * Starting offset of the rows to be displayed. 0 if at the beginning of the results. Read-only.
+             * The index of the first row to return from the server (defaults to 0). Use this along with the maxRows config property to request pages of data.
              */
             offset: 0,
+
+            parameters: undefined,
 
             /**
              * Name of the query to which this DataRegion is bound. Read-only.
              */
             queryName: '',
 
+            quickChartDisabled: false,
+
+            removeableContainerFilter: undefined,
+
+            renderTo: undefined,
+
+            reportId: undefined,
+
             requestURL: undefined,
+
+            returnURL: isQWP ? window.location.href : undefined,
 
             /**
              * Schema name of the query to which this DataRegion is bound. Read-only.
              */
             schemaName: '',
+
+            /**
+             * An object to use as the callback function's scope. Defaults to this.
+             */
+            scope: this,
 
             /**
              * URL to use when selecting all rows in the grid. May be null. Read-only.
@@ -128,49 +193,42 @@ if (!LABKEY.DataRegions)
             /**
              * An enum declaring which set of rows to show. all | selected | unselected | paginated
              */
-            showRows: "paginated",
+            showRows: 'paginated',
+
+            /**
+             * Open the customize view panel after rendering. The value of this option can be "true" or one of "ColumnsTab", "FilterTab", or "SortTab".
+             */
+            showViewPanel: undefined,
 
             sql: undefined,
 
+            /**
+             * If true, no alert will appear if there is a problem rendering the QueryWebpart. This is most often encountered if page configuration changes between the time when a request was made and the content loads. Defaults to false.
+             */
+            suppressRenderErrors: false,
+
+            /**
+             * A timeout for the AJAX call, in milliseconds.
+             */
+            timeout: undefined,
+
+            title: undefined,
+
+            titleHref: undefined,
+
             totalRows: undefined, // totalRows isn't available when showing all rows.
+
+            userContainerFilter: undefined, // TODO: Incorporate this with the standard containerFilter
+
+            userFilters: {},
+
+            userSort: undefined,
 
             /**
              * Name of the custom view to which this DataRegion is bound, may be blank. Read-only.
              */
-            viewName: null,
-
-            //
-            // Asynchronous properties
-            //
-            async: false,
-            aggregates: undefined,
-            buttonBar: undefined,
-            frame: 'none',
-            metadata: undefined,
-            quickChartDisabled: false,
-            renderTo: undefined,
-            reportId: undefined,
-            timeout: undefined,
-
-            removeableContainerFilter: undefined,
-            userContainerFilter: undefined, // TODO: Incorporate this with the standard containerFilter
-
-            filters: undefined,
-            userFilters: {},
-
-            parameters: undefined,
-            userSort: undefined,
-
-            title: undefined,
-            titleHref: undefined,
-
-            allowChooseQuery: undefined,
-            allowChooseView: undefined
+            viewName: null
         };
-
-        if (!config || !LABKEY.Utils.isString(config.name)) {
-            throw '"name" is required to construct a LABKEY.DataRegion.';
-        }
 
         var settings;
 
@@ -181,11 +239,25 @@ if (!LABKEY.DataRegions)
             settings = $.extend({}, config);
         }
 
+        // if 'filters' is not specified and 'filterArray' is, use 'filterArray'
+        if (!$.isArray(settings.filters) && $.isArray(config.filterArray)) {
+            settings.filters = config.filterArray;
+        }
+
         for (var s in settings) {
             if (settings.hasOwnProperty(s)) {
                 this[s] = settings[s];
             }
         }
+
+        if (config.renderTo) {
+            _convertRenderTo(this, config.renderTo);
+        }
+
+        if ($.isArray(this.removeableFilters)) {
+            LABKEY.Filter.appendFilterParams(this.userFilters, this.removeableFilters, this.name);
+        }
+
         this._allowHeaderLock = this.allowHeaderLock === true;
 
         if (!config.messages) {
@@ -218,6 +290,10 @@ if (!LABKEY.DataRegions)
         this._initPaging();
         this._initCustomViews();
         this._initPanes();
+
+        if (isQWP && this.renderTo) {
+            _load(this);
+        }
     };
 
     Proto.destroy = function() {
@@ -335,6 +411,14 @@ if (!LABKEY.DataRegions)
     };
 
     /**
+     *
+     * @returns {LABKEY.DataRegion2}
+     */
+    Proto.getDataRegion = function() {
+        return this;
+    };
+
+    /**
      * Returns the user {@link LABKEY.Query.containerFilter} parameter from the URL.
      * @returns {LABKEY.Query.containerFilter} The user container filter.
      */
@@ -369,6 +453,13 @@ if (!LABKEY.DataRegions)
     Proto.removeFilter = function(filter) {
         if (LABKEY.Utils.isObject(filter) && LABKEY.Utils.isFunction(filter.getColumnName)) {
             _updateFilter(this, null, [this.name + '.' + filter.getColumnName() + '~']);
+        }
+    };
+
+    Proto.render = function(renderTo) {
+        if (!this.RENDER_LOCK) {
+            _convertRenderTo(this, renderTo);
+            this.refresh();
         }
     };
 
@@ -1680,6 +1771,36 @@ if (!LABKEY.DataRegions)
         $(this).bind(evt, function() { callback.apply(scope || this, $(arguments).slice(1)); });
     };
 
+    Proto._onButtonClick = function(buttonId) {
+        var item = this.findButtonById(this.buttonBar.items, buttonId);
+        if (item && $.isFunction(item.handler)) {
+            try {
+                return item.handler.call(item.scope || this, this);
+            }
+            catch(ignore) {}
+        }
+        return false;
+    };
+
+    Proto.findButtonById = function(items, id) {
+        if (!items || !items.length || items.length <= 0) {
+            return null;
+        }
+
+        var ret;
+        for (var i = 0; i < items.length; i++) {
+            if (items[i].id == id) {
+                return items[i];
+            }
+            ret = this.findButtonById(items[i].items, id);
+            if (null != ret) {
+                return ret;
+            }
+        }
+        
+        return null;
+    };
+
     Proto.headerLock = function() { return this._allowHeaderLock === true; };
 
     Proto.disableHeaderLock = function() {
@@ -1731,11 +1852,11 @@ if (!LABKEY.DataRegions)
     };
 
     var _beforeRowsChange = function(region, rowChangeEnum) {
-        var event = $.Event('beforeshowrowschange');
-        $(region).trigger(event, [region, rowChangeEnum]);
-        if (event.isDefaultPrevented()) {
-            return false;
-        }
+        //var event = $.Event('beforeshowrowschange');
+        //$(region).trigger(event, [region, rowChangeEnum]);
+        //if (event.isDefaultPrevented()) {
+        //    return false;
+        //}
         return true;
     };
 
@@ -1773,24 +1894,21 @@ if (!LABKEY.DataRegions)
     };
 
     var _chainSelectionCountCallback = function(region, config) {
+
+        var success = LABKEY.Utils.getOnSuccess(config);
+
         // On success, update the current selectedCount on this DataRegion and fire the 'selectchange' event
-        var updateSelected = function(data) {
+        config.success = function(data) {
             region.selectionModified = true;
             region.selectedCount = data.count;
             _onSelectionChange(region);
+
+            // Chain updateSelected with the user-provided success callback
+            if ($.isFunction(success)) {
+                success.call(config.scope, data);
+            }
         };
 
-        // Chain updateSelected with the user-provided success callback
-        var success = LABKEY.Utils.getOnSuccess(config);
-        if (success) {
-            // TODO: Fix this, it is a feature of ExtJS... http://docs.sencha.com/extjs/3.4.0/#!/api/Ext.util.Functions-method-createSequence
-            success = updateSelected.createSequence(success, config.scope);
-        }
-        else {
-            success = updateSelected;
-        }
-
-        config.success = success;
         return config;
     };
 
@@ -1826,6 +1944,22 @@ if (!LABKEY.DataRegions)
             var params = _getParameters(region, newQueryString, [region.name + OFFSET_PREFIX]);
             region.setSearchString.call(region, region.name, _buildQueryString(region, params));
         }
+    };
+
+    var _convertRenderTo = function(region, renderTo) {
+        if (renderTo) {
+            if (LABKEY.Utils.isString(renderTo)) {
+                region.renderTo = renderTo;
+            }
+            else if (LABKEY.Utils.isString(renderTo.id)) {
+                this.renderTo = renderTo.id; // support 'Ext' elements
+            }
+            else {
+                throw 'Unsupported "renderTo"';
+            }
+        }
+
+        return region;
     };
 
     var _deleteCustomView = function(region, complete, message) {
@@ -2254,7 +2388,7 @@ if (!LABKEY.DataRegions)
         });
     };
 
-    var _load = function(region, callback, scope, failure, failScope) {
+    var _load = function(region, callback, scope) {
 
         var params = _getAsyncParams(region);
         var jsonData = _getAsyncBody(region, params);
@@ -2266,6 +2400,10 @@ if (!LABKEY.DataRegions)
         }
 
         var renderTo = region.renderTo || region.name;
+
+        if (!renderTo) {
+            throw '"renderTo" must be specified either upon construction or when calling render()';
+        }
 
         LABKEY.Ajax.request({
             timeout: (region.timeout == undefined) ? 30000 : region.timeout,
@@ -2298,19 +2436,41 @@ if (!LABKEY.DataRegions)
                             callback.call(scope);
                         }
 
+                        if ($.isFunction(this._success)) {
+                            this._success.call(this.scope || this, this, response);
+                        }
+
                         $(this).trigger('success', [this, response]);
+
+                        this.RENDER_LOCK = true;
+                        $(this).trigger('render', this);
+                        this.RENDER_LOCK = false;
                     }, this);
                 }
                 else {
                     // not finding element considered a failure
-                    if ($.isFunction(failure)) {
-                        failure.call(failScope || this, response /* json */, response, undefined /* options */, target);
+                    if ($.isFunction(this._failure)) {
+                        this._failure.call(this.scope || this, response /* json */, response, undefined /* options */, target);
+                    }
+                    else if (!this.suppressRenderErrors) {
+                        LABKEY.Utils.alert('Rendering Error', 'The element "' + renderTo + '" does not exist in the document. You may need to specify "renderTo".');
                     }
                 }
             },
             failure: LABKEY.Utils.getCallbackWrapper(function(json, response, options) {
-                if ($.isFunction(failure)) {
-                    failure.call(failScope || this, json, response, options, $('#' + renderTo));
+
+                var target = $('#' + renderTo);
+
+                if (target.length > 0) {
+                    if ($.isFunction(this._failure)) {
+                        this._failure.call(this.scope || this, json, response, options);
+                    }
+                    else if (this.errorType === 'html') {
+                        target.html('<div class="labkey-error">' + LABKEY.Utils.encodeHtml(json.exception) + '</div>');
+                    }
+                }
+                else if (!this.suppressRenderErrors) {
+                    LABKEY.Utils.alert('Rendering Error', 'The element "' + renderTo + '" does not exist in the document. You may need to specify "renderTo".');
                 }
             }, region, true),
             scope: region
@@ -2324,10 +2484,7 @@ if (!LABKEY.DataRegions)
             json.sql = params.sql;
         }
 
-        if (region.buttonBar &&
-            (region.buttonBar.position || (region.buttonBar.items && region.buttonBar.items.length > 0))) {
-            json.buttonBar = _processButtonBar(region);
-        }
+        _processButtonBar(region, json);
 
         // 10505: add non-removable sorts and filters to json (not url params).
         if (region.filters || region.aggregates) {
@@ -2348,8 +2505,34 @@ if (!LABKEY.DataRegions)
         return json;
     };
 
-    var _processButtonBar = function(region) {
+    var _processButtonBar = function(region, json) {
 
+        var bar = region.buttonBar;
+
+        if (bar && (bar.position || (bar.items && bar.items.length > 0))) {
+            _processButtonBarItems(region, bar.items);
+
+            // only attach if valid
+            json.buttonBar = bar;
+        }
+    };
+
+    var _processButtonBarItems = function(region, items) {
+        if ($.isArray(items) && items.length > 0) {
+            for (var i = 0; i < items.length; i++) {
+                var item = items[i];
+
+                if (item && $.isFunction(item.handler)) {
+                    item.id = item.id || LABKEY.Utils.id();
+                    // TODO: A better way? This exposed _onButtonClick isn't very awesome
+                    item.onClick = "return LABKEY.DataRegions['" + region.name + "']._onButtonClick('" + item.id + "');";
+                }
+
+                if (item.items) {
+                    _processButtonBarItems(region, item.items);
+                }
+            }
+        }
     };
 
     var _getAsyncParams = function(region) {
@@ -3126,167 +3309,9 @@ if (!LABKEY.DataRegions)
     };
     MsgProto.on = function(evt, callback, scope) { $(this).bind(evt, $.proxy(callback, scope)); };
 
-
-    // TODO: Make this work
-    //var qwp1 = new LABKEY.QueryWebPart({
-    //    renderTo: '<%=h(queryWebPartDivId)%>',
-    //    frame: 'none',
-    //    schemaName: 'genotyping',
-    //    sql: this.getAssignmentPivotSQL(idArr, searchId, displayId),
-    //    showDetailsColumn: false,
-    //    dataRegionName: 'report',
-    //    buttonBar: {
-    //        includeStandardButtons: false,
-    //        items:[
-    //            LABKEY.QueryWebPart.standardButtons.exportRows,
-    //            LABKEY.QueryWebPart.standardButtons.print,
-    //            LABKEY.QueryWebPart.standardButtons.pageSize
-    //        ]
-    //    }
-    //});
-
     LABKEY.QueryWebPart2 = function(config) {
-
-        var _config = config || {};
-
-        // TODO: Support removeableSort, removeableContainerFilter
-        var defaults = {
-            renderTo: undefined,
-            allowChooseQuery: undefined,
-            allowChooseView: undefined,
-            allowHeaderLock: true,
-            dataRegionName: LABKEY.Utils.id('aqwp'),
-            returnURL: window.location.href,
-            _success: LABKEY.Utils.getOnSuccess(_config),
-            _failure: LABKEY.Utils.getOnFailure(_config),
-            filters: undefined,
-            /* filterOptRe: undefined, NO LONGER SUPPORTED */
-            removeableFilters: undefined,
-            errorType: 'html',
-            parameters: undefined,
-            sql: undefined,
-            aggregates: undefined,
-            suppressRenderErrors: false,
-            scope: this,
-            maxRows: 0, // TODO: Ideally, this can be set to region default instead of explicitly the same
-            offset: 0,
-            showRows: 'paginated',
-            frame: 'webpart.frame',
-            title: 'webpart.title',
-            titleHref: 'webpart.titleHref'
-        };
-
-        var settings = $.extend({}, defaults, _config);
-
-        // if 'filters' is not specified and 'filterArray' is, use 'filterArray'
-        if (!$.isArray(settings.filters) && $.isArray(_config.filterArray)) {
-            settings.filters = _config.filterArray;
-        }
-
-        for (var s in settings) {
-            if (settings.hasOwnProperty(s)) {
-                this[s] = settings[s];
-            }
-        }
-
-        var userFilters = {};
-        if ($.isArray(this.removeableFilters)) {
-            LABKEY.Filter.appendFilterParams(userFilters, this.removeableFilters, this.dataRegionName);
-        }
-
-        // TODO: Figure out strategy for changing the defaults for a region backing a QWP (e.g. frame is 'portal' not 'none')
-
-        this.region = LABKEY.DataRegion2.create({
-            async: true,
-            name: this.dataRegionName,
-            schemaName: this.schemaName,
-            queryName: this.queryName,
-            allowChooseQuery: this.allowChooseQuery,
-            allowChooseView: this.allowChooseView,
-            allowHeaderLock: this.allowHeaderLock,
-            frame: this.frame,
-            filters: this.filters,
-            userFilters: userFilters,
-            aggregates: this.aggregates,
-            title: this.title,
-            titleHref: this.titleHref,
-            sql: this.sql,
-            offset: this.offset,
-            maxRows: this.maxRows,
-            showRows: this.showRows
-        });
-
-        if (this.renderTo) {
-            this.render();
-        }
-    };
-
-    LABKEY.QueryWebPart2.prototype.render = function(renderTo) {
-
-        if (this.RENDER_LOCK) {
-            return;
-        }
-
-        if (renderTo) {
-            this.renderTo = renderTo;
-        }
-
-        if (this.renderTo) {
-            if (LABKEY.Utils.isString(this.renderTo)) {
-                this.renderTo = renderTo;
-            }
-            else if (LABKEY.Utils.isString(this.renderTo.id)) {
-                this.renderTo = this.renderTo.id; // support "Ext" elements
-            }
-            else {
-                throw 'Unsupported renderTo';
-            }
-        }
-
-        if (this.renderTo) {
-            this.region.renderTo = this.renderTo;
-
-            // hook 'success' for triggering 'render' event
-            this.region.on('success', function(region, response) {
-                if (this._success) {
-                    this._success.call(this.scope, region, response);
-                }
-
-                this.RENDER_LOCK = true;
-                $(this).trigger('render', this);
-                this.RENDER_LOCK = false;
-            }, this);
-
-            _load(this.region, undefined, undefined, function(json, response, options, renderEl) {
-
-                // failure - do weird stuff
-                if (renderEl.length > 0) {
-                    if ($.isFunction(this._failure)) {
-                        this._failure.call(this.scope || this, json, response, options);
-                    }
-                    else if (this.errorType === 'html') {
-                        renderEl.html('<div class="labkey-error">' + LABKEY.Utils.encodeHtml(json.exception) + '</div>');
-                    }
-                }
-                else {
-                    if (!this.suppressRenderErrors) {
-                        LABKEY.Utils.alert('Rendering Error', 'The element "' + this.renderTo + '" does not exist!');
-                    }
-                }
-
-            }, this);
-        }
-        else {
-            throw '"renderTo" must be specified either upon construction or when calling LABKEY.QueryWebpart2.render.';
-        }
-    };
-
-    LABKEY.QueryWebPart2.prototype.getDataRegion = function() {
-        return this.region;
-    };
-
-    LABKEY.QueryWebPart2.prototype.on = function(event, callback, scope) {
-        $(this).bind(event, $.proxy(callback, scope));
+        config._useQWPDefaults = true;
+        return LABKEY.DataRegion2.create(config);
     };
 
 })(jQuery);
@@ -3339,6 +3364,6 @@ LABKEY.AggregateTypes = {
     MAX: 'max'
 };
 
-// Be sure to comment out DataRegion.js, QueryWebPart.js in clientapi/ext3.lib.xml
+// Be sure to comment out DataRegion.js, QueryWebPart.js in clientapi/ext3.lib.xml and labkey.js
 //LABKEY.DataRegion = LABKEY.DataRegion2;
 //LABKEY.QueryWebPart = LABKEY.QueryWebPart2;
