@@ -72,12 +72,8 @@ if (!LABKEY.DataRegions) {
             throw '"name" is required to initialize a LABKEY.DataRegion';
         }
 
-        var me = this;
-        var nameSel = '#' + me.name;
-        var baseSel = 'form' + nameSel;
+        var nameSel = '#' + this.name;
         var isQWP = config._useQWPDefaults === true;
-
-        this.form = $(baseSel);
 
         /**
          * Config Options
@@ -318,19 +314,18 @@ if (!LABKEY.DataRegions) {
         this.selectionModified = false;
         this.panelConfigurations = {}; // formerly, panelButtonContents
 
-        //this.table = $('dataregion_' + me.name);
+        this.form = $('form' + nameSel);
 
         // derived DataRegion's may not include the form id
-        //if (!this.form && this.table)
-        //{
-        //    var el = this.table.dom;
-        //    do
-        //    {
-        //        el = el.parentNode;
-        //    }
-        //    while (el != null && el.tagName != "FORM");
-        //    if (el) this.form = el;
-        //}
+        if (this.form.length === 0) {
+            var form = $('#dataregion_' + this.name).closest('form');
+            if (form.length > 0) {
+                this.form = form;
+            }
+            else {
+                console.warn('Data Region: Unable to find form for region "' + this.name + '".')
+            }
+        }
 
         this._initMessaging();
         this._initSelection();
@@ -2058,15 +2053,11 @@ if (!LABKEY.DataRegions) {
     };
 
     var _getAllRowSelectors = function(region) {
-        var nameSel = '#' + region.name;
-        var baseSel = 'form' + nameSel;
-        return $(baseSel + ' .labkey-selectors input[type="checkbox"][name=".toggle"]');
+        return region.form.find('.labkey-selectors input[type="checkbox"][name=".toggle"]');
     };
 
     var _getRowSelectors = function(region) {
-        var nameSel = '#' + region.name;
-        var baseSel = 'form' + nameSel;
-        return $(baseSel + ' .labkey-selectors input[type="checkbox"][name=".select"]');
+        return region.form.find('.labkey-selectors input[type="checkbox"][name=".select"]');
     };
 
     var _getHeaderSelector = function(region) {
