@@ -129,7 +129,7 @@ if (!LABKEY.DataRegions) {
 
             filters: undefined,
 
-            frame: undefined,
+            frame: isQWP ? undefined : 'none',
 
             errorType: 'html',
 
@@ -533,8 +533,7 @@ if (!LABKEY.DataRegions) {
         params.push([target.getURLParameterName(this.name), target.getURLParameterValue()]);
 
         // stop skipping prefixes and add the rest of the params
-        for (var f = 1; f < filters.length; f++)
-        {
+        for (var f = 1; f < filters.length; f++) {
             target = filters[f];
             params.push([target.getURLParameterName(this.name), target.getURLParameterValue()]);
         }
@@ -1800,9 +1799,6 @@ if (!LABKEY.DataRegions) {
                 });
             }
             this.facet.toggleCollapse();
-            //if (this.resizeTask) {
-            //    this.resizeTask.delay(350);
-            //}
         }
         else {
             this.loadFaceting(this.showFaceting, this);
@@ -2639,6 +2635,14 @@ if (!LABKEY.DataRegions) {
                 params['webpart.bodyClass'] = region.bodyClass;
             }
 
+            if (LABKEY.Utils.isString(region.title)) {
+                params['webpart.title'] = region.title;
+            }
+
+            if (LABKEY.Utils.isString(region.titleHref)) {
+                params['webpart.titleHref'] = region.titleHref;
+            }
+
             _applyOptionalParameters(region, params, [
                 'allowChooseQuery',
                 'allowChooseView',
@@ -2659,9 +2663,7 @@ if (!LABKEY.DataRegions) {
                 'showSurroundingBorder',
                 'showUpdateColumn',
                 'showViewPanel',
-                'timeout',
-                'title',
-                'titleHref'
+                'timeout'
             ]);
 
             // Sorts configured by the user when interacting with the grid. We need to pass these as URL parameters.
