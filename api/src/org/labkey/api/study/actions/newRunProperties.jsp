@@ -54,7 +54,7 @@
         { %>
             <tr>
                 <td colspan="2"><a class="labkey-text-link" href='<%= new ActionURL(TransformResultsAction.class,getContainer())
-                    .addParameter("name",file.getName()).addParameter("uploadAttemptId", bean.getUploadAttemptID())%>'><%= file.getName()%></a></td>
+                    .addParameter("name",file.getName()).addParameter("uploadAttemptId", bean.getUploadAttemptID())%>'><%= h(file.getName())%></a></td>
             </tr>
         <% } %>
         <tr>

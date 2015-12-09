@@ -3,6 +3,7 @@ package org.labkey.api.study.actions;
 import org.labkey.api.qc.TsvDataExchangeHandler;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URIUtil;
 import org.springframework.validation.BindException;
@@ -27,7 +28,7 @@ public class TransformResultsAction extends BaseAssayAction<TransformResultsActi
         {
             File transformFile = new File(TsvDataExchangeHandler.workingDirectory);
             String path = transformFile.getParent() + File.separator + form.getUploadAttemptId() + File.separator + form.getName();
-            if(URIUtil.isDescendant(new File(transformFile.getParent()).toURI(), new File(path).toURI()))
+            if(URIUtil.isDescendant(FileUtil.resolveFile(new File(transformFile.getParent())).toURI(), FileUtil.resolveFile(new File(path)).toURI()))
             {
                 HttpServletResponse response = getViewContext().getResponse();
                 PageFlowUtil.streamFile(response, new File(path), true);
