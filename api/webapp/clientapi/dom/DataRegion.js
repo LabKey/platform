@@ -47,7 +47,7 @@ if (!LABKEY.DataRegions) {
     /**
      *
      * @param {Object} config
-     * @param {Boolean} [applyDefaults]
+     * @param {Boolean} [applyDefaults=false]
      * @private
      */
     Proto._init = function(config, applyDefaults) {
@@ -72,204 +72,206 @@ if (!LABKEY.DataRegions) {
             throw '"name" is required to initialize a LABKEY.DataRegion';
         }
 
-        var nameSel = '#' + this.name;
+        // _useQWPDefaults is only used on initial construction
         var isQWP = config._useQWPDefaults === true;
-
-        /**
-         * Config Options
-         */
-        var defaults = {
-
-            _allowHeaderLock: isQWP,
-
-            _failure: isQWP ? LABKEY.Utils.getOnFailure(config) : undefined,
-
-            _success: isQWP ? LABKEY.Utils.getOnSuccess(config) : undefined,
-
-            aggregates: undefined,
-
-            allowChooseQuery: undefined,
-
-            allowChooseView: undefined,
-
-            async: isQWP,
-
-            bodyClass: undefined,
-
-            buttonBar: undefined,
-
-            buttonBarPosition: undefined,
-
-            /**
-             * All rows visible on the current page.
-             */
-            complete: false,
-
-            /**
-             * The currently applied container filter. Note, this is only if it is set on the URL, otherwise
-             * the containerFilter could come from the view configuration. Use getContainerFilter()
-             * on this object to get the right value.
-             */
-            containerFilter: undefined,
-
-            containerPath: undefined,
-
-            /**
-             * @deprecated use region.name instead
-             */
-            dataRegionName: this.name,
-
-            detailsURL: undefined,
-
-            /**
-             * The faceted filter pane as been loaded
-             * @private
-             */
-            facetLoaded: false,
-
-            filters: undefined,
-
-            frame: isQWP ? undefined : 'none',
-
-            errorType: 'html',
-
-            /**
-             * Id of the DataRegion. Same as name property.
-             */
-            id: this.name,
-
-            importURL: undefined,
-
-            insertURL: undefined,
-
-            linkTarget: undefined,
-
-            /**
-             * Maximum number of rows to be displayed. 0 if the count is not limited. Read-only.
-             */
-            maxRows: 0,
-
-            metadata: undefined,
-
-            /**
-             * Name of the DataRegion. Should be unique within a given page. Read-only. This will also be used as the id.
-             */
-            name: this.name,
-
-            /**
-             * The index of the first row to return from the server (defaults to 0). Use this along with the maxRows config property to request pages of data.
-             */
-            offset: 0,
-
-            parameters: undefined,
-
-            /**
-             * Name of the query to which this DataRegion is bound. Read-only.
-             */
-            queryName: '',
-
-            quickChartDisabled: false,
-
-            removeableContainerFilter: undefined,
-
-            removeableFilters: undefined,
-
-            removeableSort: undefined,
-
-            renderTo: undefined,
-
-            reportId: undefined,
-
-            requestURL: undefined,
-
-            returnURL: isQWP ? window.location.href : undefined,
-
-            /**
-             * Schema name of the query to which this DataRegion is bound. Read-only.
-             */
-            schemaName: '',
-
-            /**
-             * An object to use as the callback function's scope. Defaults to this.
-             */
-            scope: this,
-
-            /**
-             * URL to use when selecting all rows in the grid. May be null. Read-only.
-             */
-            selectAllURL: undefined,
-
-            selectedCount: 0,
-
-            shadeAlternatingRows: undefined,
-
-            showBorders: undefined,
-
-            showDeleteButton: undefined,
-
-            showDetailsColumn: undefined,
-
-            showExportButtons: undefined,
-
-            showInsertNewButton: undefined,
-
-            showPagination: undefined,
-
-            showRecordSelectors: false,
-
-            showReports: undefined,
-
-            /**
-             * An enum declaring which set of rows to show. all | selected | unselected | paginated
-             */
-            showRows: 'paginated',
-
-            showSurroundingBorder: undefined,
-
-            showUpdateColumn: undefined,
-
-            /**
-             * Open the customize view panel after rendering. The value of this option can be "true" or one of "ColumnsTab", "FilterTab", or "SortTab".
-             */
-            showViewPanel: undefined,
-
-            sort: undefined,
-
-            sql: undefined,
-
-            /**
-             * If true, no alert will appear if there is a problem rendering the QueryWebpart. This is most often encountered if page configuration changes between the time when a request was made and the content loads. Defaults to false.
-             */
-            suppressRenderErrors: false,
-
-            /**
-             * A timeout for the AJAX call, in milliseconds.
-             */
-            timeout: undefined,
-
-            title: undefined,
-
-            titleHref: undefined,
-
-            totalRows: undefined, // totalRows isn't available when showing all rows.
-
-            updateURL: undefined,
-
-            userContainerFilter: undefined, // TODO: Incorporate this with the standard containerFilter
-
-            userFilters: {},
-
-            userSort: undefined,
-
-            /**
-             * Name of the custom view to which this DataRegion is bound, may be blank. Read-only.
-             */
-            viewName: null
-        };
+        delete config._useQWPDefaults;
 
         var settings;
 
         if (applyDefaults) {
+
+            /**
+             * Config Options
+             */
+            var defaults = {
+
+                _allowHeaderLock: isQWP,
+
+                _failure: isQWP ? LABKEY.Utils.getOnFailure(config) : undefined,
+
+                _success: isQWP ? LABKEY.Utils.getOnSuccess(config) : undefined,
+
+                aggregates: undefined,
+
+                allowChooseQuery: undefined,
+
+                allowChooseView: undefined,
+
+                async: isQWP,
+
+                bodyClass: undefined,
+
+                buttonBar: undefined,
+
+                buttonBarPosition: undefined,
+
+                /**
+                 * All rows visible on the current page.
+                 */
+                complete: false,
+
+                /**
+                 * The currently applied container filter. Note, this is only if it is set on the URL, otherwise
+                 * the containerFilter could come from the view configuration. Use getContainerFilter()
+                 * on this object to get the right value.
+                 */
+                containerFilter: undefined,
+
+                containerPath: undefined,
+
+                /**
+                 * @deprecated use region.name instead
+                 */
+                dataRegionName: this.name,
+
+                detailsURL: undefined,
+
+                /**
+                 * The faceted filter pane as been loaded
+                 * @private
+                 */
+                facetLoaded: false,
+
+                filters: undefined,
+
+                frame: isQWP ? undefined : 'none',
+
+                errorType: 'html',
+
+                /**
+                 * Id of the DataRegion. Same as name property.
+                 */
+                id: this.name,
+
+                importURL: undefined,
+
+                insertURL: undefined,
+
+                linkTarget: undefined,
+
+                /**
+                 * Maximum number of rows to be displayed. 0 if the count is not limited. Read-only.
+                 */
+                maxRows: 0,
+
+                metadata: undefined,
+
+                /**
+                 * Name of the DataRegion. Should be unique within a given page. Read-only. This will also be used as the id.
+                 */
+                name: this.name,
+
+                /**
+                 * The index of the first row to return from the server (defaults to 0). Use this along with the maxRows config property to request pages of data.
+                 */
+                offset: 0,
+
+                parameters: undefined,
+
+                /**
+                 * Name of the query to which this DataRegion is bound. Read-only.
+                 */
+                queryName: '',
+
+                quickChartDisabled: false,
+
+                removeableContainerFilter: undefined,
+
+                removeableFilters: undefined,
+
+                removeableSort: undefined,
+
+                renderTo: undefined,
+
+                reportId: undefined,
+
+                requestURL: undefined,
+
+                returnURL: isQWP ? window.location.href : undefined,
+
+                /**
+                 * Schema name of the query to which this DataRegion is bound. Read-only.
+                 */
+                schemaName: '',
+
+                /**
+                 * An object to use as the callback function's scope. Defaults to this.
+                 */
+                scope: this,
+
+                /**
+                 * URL to use when selecting all rows in the grid. May be null. Read-only.
+                 */
+                selectAllURL: undefined,
+
+                selectedCount: 0,
+
+                shadeAlternatingRows: undefined,
+
+                showBorders: undefined,
+
+                showDeleteButton: undefined,
+
+                showDetailsColumn: undefined,
+
+                showExportButtons: undefined,
+
+                showInsertNewButton: undefined,
+
+                showPagination: undefined,
+
+                showRecordSelectors: false,
+
+                showReports: undefined,
+
+                /**
+                 * An enum declaring which set of rows to show. all | selected | unselected | paginated
+                 */
+                showRows: 'paginated',
+
+                showSurroundingBorder: undefined,
+
+                showUpdateColumn: undefined,
+
+                /**
+                 * Open the customize view panel after rendering. The value of this option can be "true" or one of "ColumnsTab", "FilterTab", or "SortTab".
+                 */
+                showViewPanel: undefined,
+
+                sort: undefined,
+
+                sql: undefined,
+
+                /**
+                 * If true, no alert will appear if there is a problem rendering the QueryWebpart. This is most often encountered if page configuration changes between the time when a request was made and the content loads. Defaults to false.
+                 */
+                suppressRenderErrors: false,
+
+                /**
+                 * A timeout for the AJAX call, in milliseconds.
+                 */
+                timeout: undefined,
+
+                title: undefined,
+
+                titleHref: undefined,
+
+                totalRows: undefined, // totalRows isn't available when showing all rows.
+
+                updateURL: undefined,
+
+                userContainerFilter: undefined, // TODO: Incorporate this with the standard containerFilter
+
+                userFilters: {},
+
+                userSort: undefined,
+
+                /**
+                 * Name of the custom view to which this DataRegion is bound, may be blank. Read-only.
+                 */
+                viewName: null
+            };
+
             settings = $.extend({}, defaults, config);
         }
         else {
@@ -281,8 +283,14 @@ if (!LABKEY.DataRegions) {
             settings.filters = config.filterArray;
         }
 
+        // Any 'key' of this object will not be copied from settings to the region instance
+        var blackList = {
+            failure: true,
+            success: true
+        };
+
         for (var s in settings) {
-            if (settings.hasOwnProperty(s)) {
+            if (settings.hasOwnProperty(s) && !blackList[s]) {
                 this[s] = settings[s];
             }
         }
@@ -314,33 +322,23 @@ if (!LABKEY.DataRegions) {
         this.selectionModified = false;
         this.panelConfigurations = {}; // formerly, panelButtonContents
 
-        this.form = $('form' + nameSel);
-
-        // derived DataRegion's may not include the form id
-        if (this.form.length === 0) {
-            var form = $('#dataregion_' + this.name).closest('form');
-            if (form.length > 0) {
-                this.form = form;
-            }
-            else {
-                console.warn('Data Region: Unable to find form for region "' + this.name + '".')
-            }
-        }
-
-        this._initMessaging();
-        this._initSelection();
-        this._initHeaderLocking();
-        this._initPaging();
-        this._initCustomViews();
-        this._initPanes();
-
         if (isQWP && this.renderTo) {
             _load(this);
         }
+        else if (!isQWP) {
+            this._initMessaging();
+            this._initSelection();
+            this._initHeaderLocking();
+            this._initPaging();
+            this._initCustomViews();
+            this._initPanes();
+        }
+        // else the user needs to call render
     };
 
     Proto.destroy = function() {
         // currently a no-op, but should be used to clean-up after ourselves
+        this.disableHeaderLock();
     };
 
     /**
@@ -499,13 +497,6 @@ if (!LABKEY.DataRegions) {
         }
     };
 
-    Proto.render = function(renderTo) {
-        if (!this.RENDER_LOCK) {
-            _convertRenderTo(this, renderTo);
-            this.refresh();
-        }
-    };
-
     /**
      * Replace a filter on this Data Region. Optionally, supply another filter to replace for cases when the filter
      * columns don't match exactly.
@@ -517,28 +508,35 @@ if (!LABKEY.DataRegions) {
         _updateFilter(this, filter, [this.name + '.' + target.getColumnName() + '~']);
     };
 
-    Proto.replaceFilters = function(filters, column) {
-        if (!LABKEY.Utils.isArray(filters) || filters.length == 0) {
-            return;
+    Proto.replaceFilters = function(filters, columnNames) {
+        var filterPrefixes = [],
+            filterParams = [],
+            params,
+            me = this;
+
+        if ($.isArray(filters)) {
+            $.each(filters, function(i, filter) {
+                filterPrefixes.push(me.name + '.' + filter.getColumnName() + '~');
+                filterParams.push([filter.getURLParameterName(me.name), filter.getURLParameterValue()]);
+            });
         }
 
-        if (filters.length == 1) {
-            return this.replaceFilter(filters[0]);
+        if ($.isArray(columnNames)) {
+            $.each(_getParameters(this, this.requestURL), function(i, param) {
+                if (param[0].indexOf(me.name + '.') === 0 && param[0].indexOf('~') > -1) {
+                    $.each(columnNames, function(j, name) {
+                        if (param[0].indexOf(me.name + '.' + name) > -1) {
+                            filterPrefixes.push(param[0]);
+                        }
+                    });
+                }
+            });
         }
 
-        // use the first filter to skip prefixes
-        var target = filters[0];
+        $.unique(filterPrefixes);
 
-        var params = _getParameters(this, this.requestURL, [this.name + '.' + column.fieldKey + '~']);
-        params.push([target.getURLParameterName(this.name), target.getURLParameterValue()]);
-
-        // stop skipping prefixes and add the rest of the params
-        for (var f = 1; f < filters.length; f++) {
-            target = filters[f];
-            params.push([target.getURLParameterName(this.name), target.getURLParameterValue()]);
-        }
-
-        _changeFilter(this, params, LABKEY.DataRegion.buildQueryString(params));
+        params = _getParameters(this, this.requestURL, filterPrefixes).concat(filterParams);
+        _changeFilter(this, params);
     };
 
     /**
@@ -550,7 +548,7 @@ if (!LABKEY.DataRegions) {
         var params = _getParameters(this, this.requestURL);
         var skips = [], me = this;
 
-        $.each(params, function(param) {
+        $.each(params, function(i, param) {
             if (param[0].indexOf(me.name + '.') == 0 && param[0].indexOf(filterMatch) > -1) {
                 skips.push(param[0]);
             }
@@ -1435,7 +1433,7 @@ if (!LABKEY.DataRegions) {
             additionalFields[sort.fieldKey] = true;
         });
 
-        $.each(additionalFields, function(fieldKey) {
+        $.each(additionalFields, function(i, fieldKey) {
             fields.push(fieldKey);
         });
 
@@ -1753,6 +1751,19 @@ if (!LABKEY.DataRegions) {
     };
 
     /**
+     * Allows for asynchronous rendering of the Data Region. This region must be in "async" mode for
+     * this to do anything.
+     * @param {String} [renderTo] - The element ID where to render the data region. If not given it will default to
+     * the current renderTo target is.
+     */
+    Proto.render = function(renderTo) {
+        if (!this.RENDER_LOCK && this.async) {
+            _convertRenderTo(this, renderTo);
+            this.refresh();
+        }
+    };
+
+    /**
      * Show a ribbon panel. tabPanelConfig is an ExtJS 3.4 config object for a TabPanel.
      * The only required value is the items array.
      */
@@ -1852,13 +1863,23 @@ if (!LABKEY.DataRegions) {
      * @private
      */
     Proto._openFilter = function(columnName) {
-        var me = this;
-        LABKEY.requiresExt3ClientAPI(function() {
+        if (this._dialogLoaded) {
             new LABKEY.FilterDialog({
-                dataRegionName: me.name,
-                column: me.getColumn(columnName)
+                dataRegionName: this.name,
+                column: this.getColumn(columnName),
+                cacheFacetResults: false // could have changed on Ajax
             }).show();
-        });
+        }
+        else {
+            LABKEY.requiresExt3ClientAPI(function() {
+                this._dialogLoaded = true;
+                new LABKEY.FilterDialog({
+                    dataRegionName: this.name,
+                    column: this.getColumn(columnName),
+                    cacheFacetResults: false // could have changed on Ajax
+                }).show();
+            }, this);
+        }
     };
 
     //
@@ -1959,8 +1980,9 @@ if (!LABKEY.DataRegions) {
         return config;
     };
 
-    var _changeFilter = function(region, newParamValPairs, newQueryString) {
+    var _changeFilter = function(region, newParamValPairs) {
 
+        var newQueryString = _buildQueryString(region, newParamValPairs);
         //var event = $.Event('beforefilterchange');
 
         var filterPairs = [], name, val;
@@ -2029,10 +2051,13 @@ if (!LABKEY.DataRegions) {
             url: LABKEY.ActionURL.buildURL('query', 'deleteView.api', region.containerPath),
             jsonData: json,
             method: 'POST',
-            callback: function() {
-                if (timerId > 0) { clearTimeout(timerId); }
-            },
             success: LABKEY.Utils.getCallbackWrapper(function(json) {
+
+                if (timerId > 0) {
+                    clearTimeout(timerId);
+                }
+
+                region.removeMessage.call(region, 'customizeview');
                 region.showSuccessMessage.call(region);
                 // change view to either a shadowed view or the default view
                 var config = { type: 'view' };
@@ -2042,18 +2067,35 @@ if (!LABKEY.DataRegions) {
                 region.changeView.call(region, config);
             }, region),
             failure: LABKEY.Utils.getCallbackWrapper(function(json) {
-                region.showErrorMessage.call(json.exception);
+
+                if (timerId > 0) {
+                    clearTimeout(timerId);
+                }
+
+                region.removeMessage.call(region, 'customizeview');
+                region.showErrorMessage.call(region, json.exception);
             }, region, true),
             scope: region
         });
     };
 
     var _getAllRowSelectors = function(region) {
-        return region.form.find('.labkey-selectors input[type="checkbox"][name=".toggle"]');
+        return _getFormSelector(region).find('.labkey-selectors input[type="checkbox"][name=".toggle"]');
+    };
+
+    var _getFormSelector = function(region) {
+        var form = $('form#' + region.name);
+
+        // derived DataRegion's may not include the form id
+        if (form.length == 0) {
+            form = $('#dataregion_' + region.name).closest('form');
+        }
+
+        return form;
     };
 
     var _getRowSelectors = function(region) {
-        return region.form.find('.labkey-selectors input[type="checkbox"][name=".select"]');
+        return _getFormSelector(region).find('.labkey-selectors input[type="checkbox"][name=".select"]');
     };
 
     var _getHeaderSelector = function(region) {
@@ -2469,9 +2511,8 @@ if (!LABKEY.DataRegions) {
                 if (target.length > 0) {
 
                     //this.unmask();
-                    //if (dr) {
-                    //    dr.destroy();
-                    //}
+
+                    this.destroy();
 
                     LABKEY.Utils.loadAjaxContent(response, target, function() {
 
@@ -2707,7 +2748,7 @@ if (!LABKEY.DataRegions) {
         if (filter) {
             params.push([filter.getURLParameterName(region.name), filter.getURLParameterValue()]);
         }
-        _changeFilter(region, params, _buildQueryString(region, params));
+        _changeFilter(region, params);
     };
 
     var _updateRequiresSelectionButtons = function(region, selectedCount) {
