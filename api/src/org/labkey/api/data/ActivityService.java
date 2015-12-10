@@ -1,20 +1,12 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.view.ViewContext;
 
-import java.util.Collection;
-
-/**
- * Created by susanh on 11/20/15.
- */
 public interface ActivityService
 {
-    @Nullable
-    PHI getPHI(ViewContext context);
+    @Nullable Activity getCurrentActivity(ViewContext context);
 
-    Collection<? extends ActivityRole> getActivityRoles();
-
-    @Nullable
-    ActivityRole getActivityRoleFromName(@Nullable String name);
+    @Nullable JSONObject getCurrentActivityAsJson(ViewContext context);
 }
