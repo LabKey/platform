@@ -933,7 +933,7 @@ public class AnnouncementManager
         protected static final String DEFAULT_SUBJECT =
                 "^messageSubject^";
         protected static final String DEFAULT_DESCRIPTION =
-                "New Posts Notification from the ^siteShortName^ Web Site";
+                "Message board notification for individual new post";
 
         protected static final String NAME = "Message board notification";
 
@@ -966,7 +966,7 @@ public class AnnouncementManager
                 {
                     if (notificationBean == null)
                         return null;
-                    return notificationBean.announcementModel.getParent() != null ? " responded" : " created a new ";
+                    return notificationBean.announcementModel.getParent() != null ? " responded" : " created a new " + notificationBean.settings.getConversationName().toLowerCase();
                 }
             });
 
@@ -977,16 +977,6 @@ public class AnnouncementManager
                     if (notificationBean == null)
                         return null;
                     return notificationBean.announcementModel.getCreated();
-                }
-            });
-
-            _replacements.add(new ReplacementParam<String>("conversationName", String.class, "Message title", ContentType.HTML)
-            {
-                public String getValue(Container c)
-                {
-                    if (notificationBean == null)
-                        return null;
-                    return notificationBean.settings.getConversationName().toLowerCase();
                 }
             });
 

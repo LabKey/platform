@@ -7,7 +7,7 @@
 <table width="100%">
     <tbody>
         <tr style="background:#F4F4F4;"><td colspan="2" style="border:solid 1px #808080; border-right: 0 none">
-        ^createdByUser^ ^createdOrResponded^ a new ^conversationName^.</td>
+        ^createdByUser^ ^createdOrResponded^</td>
         <td align="right" style="border:solid 1px #808080; border-right: 0 none">^messageDatetime^</td>
         </tr>
 

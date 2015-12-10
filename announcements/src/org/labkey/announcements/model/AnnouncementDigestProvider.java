@@ -160,7 +160,7 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
         protected static final String DEFAULT_SUBJECT =
                 "New posts to ^folderName^";
         protected static final String DEFAULT_DESCRIPTION =
-                "Daily digest notification from the ^siteShortName^ Web Site";
+                "Message board daily digest notification";
         protected static final String NAME = "Message board daily digest";
         protected static final String BODY_PATH = "/org/labkey/announcements/dailyDigest.txt";
 
