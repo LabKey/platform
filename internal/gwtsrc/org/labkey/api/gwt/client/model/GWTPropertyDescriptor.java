@@ -574,7 +574,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         {
             return false;
         }
-        if(getScale() != that.getScale()) return false;
+        if(!getScale().equals(that.getScale())) return false;
 
         return true;
     }

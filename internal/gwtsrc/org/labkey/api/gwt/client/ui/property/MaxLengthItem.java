@@ -2,11 +2,10 @@ package org.labkey.api.gwt.client.ui.property;
 
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.KeyUpEvent;
 import com.google.gwt.event.dom.client.KeyUpHandler;
-import com.google.gwt.event.logical.shared.ValueChangeEvent;
-import com.google.gwt.event.logical.shared.ValueChangeHandler;
-import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.ui.FlexTable;
 import org.labkey.api.gwt.client.model.GWTDomain;
@@ -39,7 +38,8 @@ public class MaxLengthItem<DomainType extends GWTDomain<FieldType>, FieldType ex
     @Override
     public int addToTable(FlexTable flexTable, int row)
     {
-        _maxCheckBox.addValueChangeHandler(new MaxClicked_ChangeHandler());
+        _maxCheckBox.addClickHandler(new MaxClicked_ChangeHandler());
+        _maxCheckBox.addKeyUpHandler(createKeyUpHandler());
         _limitTextBox.addChangeHandler(new ValueChanged_ChangeHandler());
         _limitTextBox.addKeyUpHandler(new LimitKeyUpHandler());
         _limitTextBox.setWidth("50%");
@@ -50,8 +50,8 @@ public class MaxLengthItem<DomainType extends GWTDomain<FieldType>, FieldType ex
         _label = labelPanel;
 
         flexTable.setWidget(row, LABEL_COLUMN, labelPanel);
-        DOM.setElementProperty(_limitTextBox.getElement(), "id", "scale");
-        DOM.setElementProperty(_maxCheckBox.getElement(), "id", "isMaxText");
+        _limitTextBox.setName("scale");
+        _maxCheckBox.setName("isMaxText");
 
         _panel = new VerticalPanel();
         _panel.add(_maxCheckBox);
@@ -64,18 +64,16 @@ public class MaxLengthItem<DomainType extends GWTDomain<FieldType>, FieldType ex
     @Override
     public boolean copyValuesToPropertyDescriptor(FieldType field)
     {
-        if (field == null)
+        //Field is invalid, or textbox has been cleared
+        //Field will revert to last value if refreshed/reshown
+        if (field == null || _limitTextBox.getValue() == null)
             return false;
 
-        //If value exceeds Default then set to MAX
-        int value = _maxCheckBox.getValue().booleanValue() || _limitTextBox.getValue() > DEFAULT_SIZE ?
+        Integer value = _maxCheckBox.getValue().booleanValue() || _limitTextBox.getValue() > DEFAULT_SIZE ?
                 Integer.MAX_VALUE : _limitTextBox.getValue();
 
-        boolean changed = field.getScale() != value;
-
-        //Only set value if it has changed
-        if (changed)
-            field.setScale(value);
+        Boolean changed = !field.getScale().equals(value);
+        field.setScale(value);
 
         return changed;
     }
@@ -111,9 +109,9 @@ public class MaxLengthItem<DomainType extends GWTDomain<FieldType>, FieldType ex
         if (!enabled)
             return;
 
-        int _size = pd.getScale();
-        _maxCheckBox.setValue(_size > DEFAULT_SIZE);
-        _limitTextBox.setValue(_size);
+        int size = pd.getScale();
+        _maxCheckBox.setValue(size > DEFAULT_SIZE);
+        _limitTextBox.setValue(size);
 
         validateValue();
         onLimitChange();
@@ -152,15 +150,17 @@ public class MaxLengthItem<DomainType extends GWTDomain<FieldType>, FieldType ex
         onLimitChange();
     }
 
-    private class MaxClicked_ChangeHandler implements ValueChangeHandler
+    private class MaxClicked_ChangeHandler implements ClickHandler
     {
-        public void onValueChange(ValueChangeEvent e)
+        public void onClick(ClickEvent event)
         {
             //If max is checked set to max, otherwise set it to the default
-            _limitTextBox.setValue(_maxCheckBox.getValue().booleanValue() ?
-                Integer.MAX_VALUE :
-                DEFAULT_SIZE);
+            if (!_maxCheckBox.getValue().booleanValue())
+                _limitTextBox.setValue(DEFAULT_SIZE);
+            else
+                _limitTextBox.setValue(Integer.MAX_VALUE);
 
+            _propertyPane.copyValuesToPropertyDescriptor();
             onLimitChange();
         }
     }
@@ -169,6 +169,7 @@ public class MaxLengthItem<DomainType extends GWTDomain<FieldType>, FieldType ex
     {
         public void onChange(ChangeEvent e)
         {
+            _propertyPane.copyValuesToPropertyDescriptor();
             onLimitChange();
         }
     }
@@ -178,17 +179,19 @@ public class MaxLengthItem<DomainType extends GWTDomain<FieldType>, FieldType ex
         public void onKeyUp(KeyUpEvent event)
         {
             validateValue();
+            _propertyPane.copyValuesToPropertyDescriptor();
+            onLimitChange();
         }
     }
 
     private void validateValue()
     {
         //Do some limit validation on entered value
-        int val = _limitTextBox.getValue();
-        if (val > DEFAULT_SIZE)
+        Integer val = _limitTextBox.getValue();
+        if (val == null)
+        {}  //Allow user to clear field
+        else if (val > DEFAULT_SIZE)
             showWarning(); //Apply warning
-        else if (val < 0)
-            _limitTextBox.setValue(0); //Hardcap at 0
         else
             hideWarning(); //Value is in range, hide error if present
     }

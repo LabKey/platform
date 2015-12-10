@@ -487,20 +487,8 @@ public class DomainUtil
         defaultValues.put(p, pd.getDefaultValue());
         _copyProperties(p, pd, errors);
         updatePropertyValidators(p, null, pd);
-        setPropertyDescriptorScale(p);
 
         return p;
-    }
-
-    /**
-     * Set default scales for non-string types
-     * @param p
-     */
-    public static void setPropertyDescriptorScale(DomainProperty p)
-    {
-        // Set Scale for non-string types
-        if (!p.getPropertyDescriptor().isStringType())
-            p.setScale(p.getPropertyDescriptor().getPropertyType().getScale());
     }
 
     private static String createUniquePropertyURI(String base, Set<String> propertyUrisInUse)
