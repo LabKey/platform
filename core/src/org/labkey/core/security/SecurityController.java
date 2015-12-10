@@ -1011,9 +1011,8 @@ public class SecurityController extends SpringActionController
             ExcelWriter ew = new ExcelWriter(rgn.getResultSet(ctx), rgn.getDisplayColumns())
             {
                 @Override
-                public void renderGrid(Sheet sheet, List<ExcelColumn> visibleColumns) throws SQLException, MaxRowsExceededException
+                public void renderGrid(RenderContext ctx, Sheet sheet, List<ExcelColumn> visibleColumns) throws SQLException, MaxRowsExceededException
                 {
-                    RenderContext ctx = new RenderContext(HttpView.currentContext());
                     for (Pair<Integer, String> memberGroup : memberGroups)
                     {
                         Map<String, Object> row = new CaseInsensitiveHashMap<>();
@@ -1022,7 +1021,7 @@ public class SecurityController extends SpringActionController
                         ctx.setRow(row);
                         renderGridRow(sheet, ctx, visibleColumns);
                     }
-                    super.renderGrid(sheet, visibleColumns);
+                    super.renderGrid(ctx, sheet, visibleColumns);
                 }
             };
             ew.setAutoSize(true);

@@ -48,10 +48,8 @@ public class MapArrayExcelWriter extends ExcelWriter
     }
 
     @Override
-    public void renderGrid(Sheet sheet, List<ExcelColumn> visibleColumns) throws SQLException, MaxRowsExceededException
+    public void renderGrid(RenderContext ctx, Sheet sheet, List<ExcelColumn> visibleColumns) throws SQLException, MaxRowsExceededException
     {
-        RenderContext ctx = new RenderContext(HttpView.currentContext());
-
         for (currentRow = 0; currentRow < maps.size(); currentRow++)
         {
             renderGridRow(sheet, ctx, visibleColumns);
