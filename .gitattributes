@@ -126,6 +126,7 @@ api/src/org/labkey/api/attachments/AttachmentDirectory.java -text
 api/src/org/labkey/api/attachments/AttachmentFile.java -text
 api/src/org/labkey/api/attachments/AttachmentForm.java -text
 api/src/org/labkey/api/attachments/AttachmentParent.java -text
+api/src/org/labkey/api/attachments/AttachmentParentImpl.java -text
 api/src/org/labkey/api/attachments/AttachmentService.java -text
 api/src/org/labkey/api/attachments/ByteArrayAttachmentFile.java -text
 api/src/org/labkey/api/attachments/DocumentConversionService.java -text

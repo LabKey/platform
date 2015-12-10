@@ -15,7 +15,15 @@
  */
 package org.labkey.api.data;
 
+import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentParentImpl;
+import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.query.FieldKey;
+
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.util.Set;
 
 /**
  * User: adam
@@ -32,6 +40,13 @@ public class AttachmentDisplayColumn extends AbstractFileDisplayColumn
     }
 
     @Override
+    public void addQueryFieldKeys(Set<FieldKey> keys)
+    {
+        super.addQueryFieldKeys(keys);
+        keys.add(FieldKey.fromParts("entityId"));
+    }
+
+    @Override
     protected String getFileName(Object value)
     {
         if (value instanceof File)
@@ -40,6 +55,19 @@ public class AttachmentDisplayColumn extends AbstractFileDisplayColumn
             return (String)value;
         else
             return null;
+    }
+
+    @Override
+    protected InputStream getFileContents(RenderContext ctx, Object value) throws FileNotFoundException
+    {
+        String filename = (String)getValue(ctx);
+        String entityId = (String)ctx.get("entityId");
+
+        if (null == filename || null == entityId)
+            return null;
+
+        AttachmentParent parent = new AttachmentParentImpl(entityId, ctx.getContainer());
+        return AttachmentService.get().getInputStream(parent, filename);
     }
 
 }

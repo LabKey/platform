@@ -39,7 +39,10 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URIUtil;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Writer;
 import java.util.Map;
 import java.util.Set;
@@ -182,6 +185,19 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
                 }
                 catch (IOException ignored) {}
             }
+        }
+        return null;
+    }
+
+    @Override
+    protected InputStream getFileContents(RenderContext ctx, Object ignore) throws FileNotFoundException
+    {
+        Object value = getValue(ctx);
+        if (value != null)
+        {
+            File f = new File(value.toString());
+            if (f.isFile())
+                return new FileInputStream(f);
         }
         return null;
     }

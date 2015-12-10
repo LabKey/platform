@@ -358,10 +358,9 @@ public class Crosstab
         }
 
         @Override
-        public void renderGrid(Sheet sheet, List<ExcelColumn> visibleColumns) throws SQLException, MaxRowsExceededException
+        public void renderGrid(RenderContext ctx, Sheet sheet, List<ExcelColumn> visibleColumns) throws SQLException, MaxRowsExceededException
         {
             Map<String, Object> rowMap = new CaseInsensitiveHashMap<>();
-            RenderContext ctx = new RenderContext(HttpView.currentContext());
 
             for (Object rowValue : _crosstab.getRowHeaders())
             {

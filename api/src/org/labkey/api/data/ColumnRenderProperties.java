@@ -630,6 +630,8 @@ public abstract class ColumnRenderProperties implements ImportAliasable
 
     public Class getJavaClass()
     {
+        if (getPropertyType() != null && getInputType() != null && getInputType().equalsIgnoreCase("file"))
+            return getPropertyType().getJavaType();
         return javaClassFromSqlType(getSqlTypeInt(), isNullable());
     }
 

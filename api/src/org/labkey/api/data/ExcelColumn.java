@@ -17,19 +17,35 @@
 package org.labkey.api.data;
 
 import jxl.format.Colour;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.log4j.Logger;
+import org.apache.poi.hssf.usermodel.HSSFClientAnchor;
+import org.apache.poi.hssf.usermodel.HSSFPicture;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.ClientAnchor;
+import org.apache.poi.ss.usermodel.CreationHelper;
+import org.apache.poi.ss.usermodel.Drawing;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.FormulaError;
+import org.apache.poi.ss.usermodel.Picture;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFAnchor;
+import org.apache.poi.xssf.usermodel.XSSFClientAnchor;
+import org.apache.poi.xssf.usermodel.XSSFPicture;
+import org.apache.poi.xssf.usermodel.XSSFShape;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Writer;
 import java.text.DecimalFormat;
 import java.text.Format;
@@ -53,11 +69,23 @@ public class ExcelColumn extends RenderColumn
     private static final int TYPE_MULTILINE_STRING = 4;
     private static final int TYPE_DATE = 5;
     private static final int TYPE_BOOLEAN = 6;
+    private static final int TYPE_FILE = 7;
+
+
+    /**
+     * 256 is one full character, one character has 7 pixels.
+     */
+    private static final double PIXELS_TO_CHARACTERS = 256 / 7;
+
+    private static final double MAX_IMAGE_RATIO = 0.75;
+    private static final double MAX_IMAGE_HEIGHT = 400.0;
+    private static final double MAX_IMAGE_WIDTH = 300.0;
 
     // CONSIDER: Add support for left/right/center alignment (from DisplayColumn)
     private int _simpleType = TYPE_UNKNOWN;
     private CellStyle _style = null;
     private boolean _autoSize = false;
+    private int _autoSizeWidth = 0;
     private String _name = null;
     private String _caption = null;
     private final Map<ConditionalFormat, CellStyle> _formats = new HashMap<>();
@@ -91,6 +119,11 @@ public class ExcelColumn extends RenderColumn
             setFormatString(dc.getFormatString());
         }
         setName(dc.getName());
+        if (dc.getColumnInfo() != null)
+        {
+            // Use bound column's name so import/export will round-trip
+            setName(dc.getColumnInfo().getName());
+        }
         setCaption(dc.getCaptionExpr());
     }
 
@@ -138,6 +171,8 @@ public class ExcelColumn extends RenderColumn
             _simpleType = TYPE_DATE;
         else if (Boolean.class.isAssignableFrom(valueClass) || Boolean.TYPE.isAssignableFrom(valueClass))
             _simpleType = TYPE_BOOLEAN;
+        else if (File.class.isAssignableFrom(valueClass))
+            _simpleType = TYPE_FILE;
         else
         {
             _log.error("init: Unknown Class " + valueClass + " " + getName());
@@ -257,7 +292,7 @@ public class ExcelColumn extends RenderColumn
             return;
         }
 
-        Cell cell = rowObject.getCell(column, Row.CREATE_NULL_AS_BLANK); 
+        Cell cell = rowObject.getCell(column, Row.CREATE_NULL_AS_BLANK);
 
         try
         {
@@ -284,6 +319,78 @@ public class ExcelColumn extends RenderColumn
                         cell.setCellStyle(_style);
                     }
                     break;
+
+                case TYPE_FILE:
+                    Drawing drawing = (Drawing)ctx.get(ExcelWriter.SHEET_DRAWING);
+
+                    if (drawing != null && _dc instanceof AbstractFileDisplayColumn)
+                    {
+                        String path = (String)o;
+                        int imageType = -1;
+                        if (path.endsWith(".png"))
+                            imageType = Workbook.PICTURE_TYPE_PNG;
+                        else if (path.endsWith(".jpeg") || path.endsWith(".jpg"))
+                            imageType = Workbook.PICTURE_TYPE_JPEG;
+
+                        if (imageType != -1)
+                        {
+                            BufferedImage img = null;
+                            byte[] data = null;
+                            try(InputStream is = ((AbstractFileDisplayColumn)_dc).getFileContents(ctx, o))
+                            {
+                                if (is != null)
+                                {
+                                    data = IOUtils.toByteArray(is);
+                                    img = ImageIO.read(new ByteArrayInputStream(data));
+                                }
+                            }
+                            catch (IOException e)
+                            {
+                                _log.error("Error reading image file data", e);
+                                //throw new RuntimeException(e);
+                                data = null; //will change to throw exception after fixing file lookups
+                            }
+
+                            if (data != null && data.length > 0)
+                            {
+                                int height = img.getHeight();
+                                int width = img.getWidth();
+//
+                                double ratio = (double) width/height;
+                                if (ratio >= MAX_IMAGE_RATIO)
+                                {
+                                    // resize to max width
+                                    if (width > MAX_IMAGE_WIDTH)
+                                    {
+                                        height = (int) (height / (width / MAX_IMAGE_WIDTH));
+                                        width = (int) MAX_IMAGE_WIDTH;
+                                    }
+                                }
+                                else
+                                {
+                                    // resize to max height
+                                    if (height > MAX_IMAGE_HEIGHT)
+                                    {
+                                        width = (int) (width / (height / MAX_IMAGE_HEIGHT));
+                                        height = (int) MAX_IMAGE_HEIGHT;
+                                    }
+                                }
+                                setImageSize(ctx, row, column, Pair.of(width, height));
+
+                                Workbook wb = cell.getSheet().getWorkbook();
+                                CreationHelper helper = wb.getCreationHelper();
+                                int pictureIdx = wb.addPicture(data, imageType);
+
+                                double rowRatio = height / /*maxRowHeight*/40.0;
+                                double colRatio = width / /*maxColWidth*/120.0;
+                                ClientAnchor anchor = createAnchor(row, column, rowRatio, colRatio, helper);
+                                Picture pict = drawing.createPicture(anchor, pictureIdx);
+                                setImagePicture(ctx, row, column, pict);
+                            }
+                        }
+                    }
+                    break;
+
                 case(TYPE_STRING):
                 default:
                     // 9729 : CRs are doubled in list data exported to Excel, normalize newlines as '\n'
@@ -294,7 +401,7 @@ public class ExcelColumn extends RenderColumn
                     {
                         s = s.substring(0, 32762) + "...";
                     }
-                    
+
                     cell.setCellValue(s);
                     if (_style != null)
                         cell.setCellStyle(_style);
@@ -327,6 +434,62 @@ public class ExcelColumn extends RenderColumn
         }
     }
 
+    private void setImageSize(RenderContext ctx, int row, int column, Pair<Integer, Integer> size)
+    {
+        HashMap<Pair<Integer, Integer>, Pair<Integer, Integer>> imageSize = (HashMap<Pair<Integer, Integer>, Pair<Integer, Integer>>)ctx.get(ExcelWriter.SHEET_IMAGE_SIZES);
+        imageSize.put(Pair.of(row, column), size);
+    }
+
+    private void setImagePicture(RenderContext ctx, int row, int column, Picture pict)
+    {
+        HashMap<Pair<Integer, Integer>, Picture> pictures = (HashMap<Pair<Integer, Integer>, Picture>)ctx.get(ExcelWriter.SHEET_IMAGE_PICTURES);
+        pictures.put(Pair.of(row, column), pict);
+    }
+
+    private Pair<Integer, Integer> getImageSize(RenderContext ctx, int row, int column)
+    {
+        HashMap<Pair<Integer, Integer>, Pair<Integer, Integer>> imageSize = (HashMap<Pair<Integer, Integer>, Pair<Integer, Integer>>)ctx.get(ExcelWriter.SHEET_IMAGE_SIZES);
+        return imageSize.get(Pair.of(row, column));
+    }
+
+    private Picture getImagePicture(RenderContext ctx, int row, int column)
+    {
+        HashMap<Pair<Integer, Integer>, Picture> pictures = (HashMap<Pair<Integer, Integer>, Picture>)ctx.get(ExcelWriter.SHEET_IMAGE_PICTURES);
+        return pictures.get(Pair.of(row, column));
+    }
+
+    /**
+     * Creates an anchor within a single cell.
+     */
+    private ClientAnchor createAnchor(int row, int column, double rowRatio, double colRatio, CreationHelper helper)
+    {
+        ClientAnchor anchor = helper.createClientAnchor();
+        anchor.setAnchorType(ClientAnchor.MOVE_AND_RESIZE);
+        anchor.setCol1(column);
+        anchor.setRow1(row);
+        anchor.setCol2(column);
+        anchor.setRow2(row);
+        // need to make the image smaller than the cell so it is sortable
+        // create a margin of 1 on each side
+        if (anchor instanceof XSSFClientAnchor) {
+            // format is XSSF
+            // full cell size is 1023 width and 255 height
+            // each multiplied by XSSFShape.EMU_PER_PIXEL
+            anchor.setDx1(XSSFShape.EMU_PER_PIXEL);
+            anchor.setDy1(XSSFShape.EMU_PER_PIXEL);
+            anchor.setDx2((int)(1022 * XSSFShape.EMU_PER_PIXEL * colRatio) - XSSFShape.EMU_PER_PIXEL);
+            anchor.setDy2((int)(254 * XSSFShape.EMU_PER_PIXEL * rowRatio) - XSSFShape.EMU_PER_PIXEL);
+        } else {
+            // format is HSSF
+            // full cell size is 1023 width and 255 height
+            anchor.setDx1(colRatio > 1 ? (int) colRatio : 1);
+            anchor.setDy1(rowRatio > 1 ? (int) rowRatio : 1);
+            anchor.setDx2((int)(1021 * colRatio));
+            anchor.setDy2((int)(253 * rowRatio));
+        }
+        return anchor;
+    }
+
     private CellStyle getExcelFormat(Object o, ColumnInfo columnInfo)
     {
         if (columnInfo == null)
@@ -334,7 +497,7 @@ public class ExcelColumn extends RenderColumn
             // Not all DisplayColumns have a ColumnInfo
             return null;
         }
-        
+
         for (ConditionalFormat format : columnInfo.getConditionalFormats())
         {
             if (format.meetsCriteria(o))
@@ -428,15 +591,176 @@ public class ExcelColumn extends RenderColumn
 
     // Note: width of the column will be adjusted once per call to ExcelWriter.render(), which potentially means
     // multiple times per sheet.  This shouldn't be a problem, though.
-    protected void adjustWidth(Sheet sheet, int column)
+    protected void adjustWidth(RenderContext ctx, Sheet sheet, int column, int startRow, int endRow)
     {
         if (_autoSize)
         {
-            sheet.autoSizeColumn(column);
+            boolean hasImage = false;
+            for (int row = endRow; row >= startRow; row--)
+            {
+                Pair<Integer, Integer> imgSizes = getImageSize(ctx, row, column);
+                if (imgSizes != null)
+                {
+                    hasImage = true;
+                    break;
+                }
+            }
+            if (!hasImage)
+                sheet.autoSizeColumn(column);
+            else
+                adjustImageColumnWidth(ctx, sheet, column, startRow, endRow);
+
         }
         else
         {
             sheet.setColumnWidth(column, 10 * 256);
+        }
+    }
+
+    private void adjustImageColumnWidth(RenderContext ctx, Sheet sheet, int column, int startRow, int endRow)
+    {
+        calculateAutoSize(ctx, sheet, column, startRow, endRow);
+
+        int newWidth = Math.min(_autoSizeWidth + 1, 255) * 256;
+        sheet.setColumnWidth(column, newWidth);
+
+        for (int row = endRow; row >= startRow; row--)
+        {
+            Row sheetRow = sheet.getRow(row);
+            float rowHeight = sheetRow.getHeightInPoints();
+            Picture pict = getImagePicture(ctx, row, column);
+            Pair<Integer, Integer> sizes = getImageSize(ctx, row, column);
+            if (pict == null)
+                continue;
+
+            int originalWidth = sizes.first;
+            int originalHeight = sizes.second;
+            int adjustedWidth;
+            int adjustedHeight;
+
+            if (rowHeight / originalHeight > (float) newWidth / (originalWidth * PIXELS_TO_CHARACTERS))
+            {
+                adjustedWidth = (int) (originalWidth * (float) newWidth / (originalWidth * PIXELS_TO_CHARACTERS));
+                adjustedHeight = (int) (originalHeight * (float) newWidth / (originalWidth * PIXELS_TO_CHARACTERS));
+            }
+            else
+            {
+                adjustedWidth = (int) (originalWidth * rowHeight / originalHeight);
+                adjustedHeight = (int) (originalHeight * rowHeight / originalHeight);
+            }
+
+            if (pict instanceof XSSFPicture)
+            {
+                XSSFPicture picture = (XSSFPicture) pict;
+                XSSFAnchor anchor = picture.getAnchor();
+                anchor.setDx2(adjustedWidth * XSSFShape.EMU_PER_POINT);
+                anchor.setDy2(adjustedHeight * XSSFShape.EMU_PER_POINT);
+            }
+            else if (pict instanceof  HSSFPicture)
+            {
+                HSSFPicture picture = (HSSFPicture) pict;
+                HSSFClientAnchor anchor = (HSSFClientAnchor) picture.getAnchor();
+
+                double xRatio = 1023.0 * PIXELS_TO_CHARACTERS / sheet.getColumnWidth(anchor.getCol2());
+                double yRatio = 255.0 / sheet.getRow(anchor.getRow2()).getHeightInPoints();
+                int dY2 = (int) (adjustedHeight * yRatio);
+                int dX2 = (int) (adjustedWidth * xRatio);
+                anchor.setDx2(dX2);
+                anchor.setDy2(dY2);
+            }
+        }
+    }
+
+    //
+    // Calculates the "autosize" column width, the width that approximates the width of the contents of cells in
+    // this column.  Several caveats here:
+    //
+    // 1. This assumes all data is in Arial 10-point normal font
+    // 2. It only counts the number of characters; it doesn't know the exact font display width on the client PC.
+    // 3. It's not very efficient; for each cell, it reads the contents, converts it to the appropriate
+    //    Java object, and then applies the appropriate Format to determine the displayed width.
+    // 4. Be extra careful with long String columns; there's no absolute maximum, so you could end up with
+    //    very wide columns.
+    //
+    // The results are actually fairly good and performance seems reasonable.  But setting display widths
+    // in the schema XML file may be preferable.
+    //
+    private void calculateAutoSize(RenderContext ctx, Sheet sheet, int column, int startRow, int endRow)
+    {
+        Format format = null;
+
+        // In some cases (e.g., exporting multiple MS2 runs), this method is called multiple times for a given sheet.
+        // Maintaining _autoSizeWidth as a member variable between calls ensures that the width
+        if (0 == _autoSizeWidth)
+            _autoSizeWidth = _caption != null ? _caption.length() : 10;  // Start with caption width as minimum
+
+        switch (_simpleType)
+        {
+            case(TYPE_DATE):
+                format = FastDateFormat.getInstance(getFormatString());
+                break;
+            case(TYPE_INT):
+            case(TYPE_DOUBLE):
+                format = new DecimalFormat(getFormatString());
+                break;
+        }
+
+        // Assumes column has same cell type from startRow to endRow, and that cell type matches the Excel column type (which it should, since we just wrote it)
+        for (int row = startRow; row <= endRow; row++)
+        {
+            Cell cell = getRow(sheet, row).getCell(column);
+            if (cell != null)
+            {
+                String formatted = null;
+                int length = -1;
+
+                // Need to be careful here, checking _simpleType again and verifying legal values. See #18561 for an example
+                // of a problem that occurred because we assumed all date values could be formatted by FastDateFormat.
+                switch (cell.getCellType())
+                {
+                    case Cell.CELL_TYPE_NUMERIC:
+                        switch (_simpleType)
+                        {
+                            case(TYPE_DATE):
+                                if (org.apache.poi.ss.usermodel.DateUtil.isCellDateFormatted(cell))
+                                    formatted = format.format(cell.getDateCellValue());
+                                break;
+                            case(TYPE_INT):
+                            case(TYPE_DOUBLE):
+                                formatted = format.format(cell.getNumericCellValue());
+                                break;
+                        }
+                        break;
+
+                    case Cell.CELL_TYPE_ERROR:
+                        formatted = FormulaError.forInt(cell.getErrorCellValue()).getString();
+                        break;
+
+                    case Cell.CELL_TYPE_BLANK:
+                        if (_simpleType == TYPE_FILE) {
+                            Pair<Integer, Integer> size = getImageSize(ctx, row, column);
+                            if (size != null)
+                            {
+                                // added 2 margin pixels per side and 1 for the gridline
+                                int width = size.first;
+                                length = (width + 5) / 7;//PIXELS_TO_CHARACTERS);
+                            }
+                        }
+                        break;
+
+                    default:
+                        formatted = cell.getStringCellValue();
+                        break;
+                }
+
+                if (formatted != null)
+                    length = formatted.length();
+
+                if (length > _autoSizeWidth)
+                    _autoSizeWidth = length;
+//                if (null != formatted && formatted.length() > _autoSizeWidth)
+//                    _autoSizeWidth = formatted.length();
+            }
         }
     }
 

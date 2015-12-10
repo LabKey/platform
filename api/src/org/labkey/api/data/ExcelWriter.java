@@ -22,6 +22,7 @@ import org.apache.poi.openxml4j.exceptions.OpenXML4JRuntimeException;
 import org.apache.poi.ss.SpreadsheetVersion;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Drawing;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Footer;
 import org.apache.poi.ss.usermodel.PrintSetup;
@@ -36,6 +37,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.HttpView;
 
 import javax.servlet.ServletOutputStream;
@@ -126,6 +128,10 @@ public class ExcelWriter implements ExportWriter
     }
 
     public static final int MAX_ROWS = 65535;
+
+    protected static final String SHEET_DRAWING = "~~excel-sheet-drawing~~";
+    protected static final String SHEET_IMAGE_SIZES = "~~excel-sheet-image-sizes~~";
+    protected static final String SHEET_IMAGE_PICTURES = "~~excel-sheet-image-pictures~~";
 
     protected Results _rs;
 
@@ -621,6 +627,11 @@ public class ExcelWriter implements ExportWriter
             {
                 sheet = _workbook.createSheet(getSheetName(sheetNumber));
                 sheet.getPrintSetup().setPaperSize(PrintSetup.LETTER_PAPERSIZE);
+
+                Drawing drawing = sheet.createDrawingPatriarch();
+                ctx.put(SHEET_DRAWING, drawing);
+                ctx.put(SHEET_IMAGE_SIZES, new HashMap<>());
+                ctx.put(SHEET_IMAGE_PICTURES, new HashMap<>());
             }
         }
 
@@ -634,14 +645,14 @@ public class ExcelWriter implements ExportWriter
                 renderSheetHeaders(sheet, visibleColumns.size());
                 renderColumnCaptions(sheet, visibleColumns);
 
-                renderGrid(sheet, visibleColumns);
+                renderGrid(ctx, sheet, visibleColumns);
             }
             catch(MaxRowsExceededException e)
             {
                 // Just continue on
             }
 
-            adjustColumnWidths(sheet, visibleColumns);
+            adjustColumnWidths(ctx, sheet, visibleColumns);
 
             if (null != getFooter())
             {
@@ -658,27 +669,25 @@ public class ExcelWriter implements ExportWriter
     }
 
 
-    public void adjustColumnWidths(Sheet sheet, List visibleColumns)
+    public void adjustColumnWidths(RenderContext ctx, Sheet sheet, List visibleColumns)
     {
         for (int column = visibleColumns.size() - 1; column >= 0; column--)
         {
-            ((ExcelColumn) visibleColumns.get(column)).adjustWidth(sheet, column);
+            ((ExcelColumn) visibleColumns.get(column)).adjustWidth(ctx, sheet, column, 0, _totalDataRows);
         }
     }
 
 
     public void renderGrid(Sheet sheet, ResultSet rs) throws SQLException, MaxRowsExceededException
     {
-        //TODO: Figure out how to pass this through...
         RenderContext ctx = new RenderContext(HttpView.currentContext());
-        renderGrid(sheet, getVisibleColumns(ctx), new ResultsImpl(rs));
+        renderGrid(ctx, sheet, getVisibleColumns(ctx), new ResultsImpl(rs));
     }
 
     public void renderGrid(Sheet sheet, Results rs) throws SQLException, MaxRowsExceededException
     {
-        //TODO: Figure out how to pass this through...
         RenderContext ctx = new RenderContext(HttpView.currentContext());
-        renderGrid(sheet, getVisibleColumns(ctx), rs);
+        renderGrid(ctx, sheet, getVisibleColumns(ctx), rs);
     }
 
     // Initialize non-wrapping text format for this worksheet
@@ -802,13 +811,13 @@ public class ExcelWriter implements ExportWriter
     }
 
 
-    public void renderGrid(Sheet sheet, List<ExcelColumn> visibleColumns) throws SQLException, MaxRowsExceededException
+    public void renderGrid(RenderContext ctx, Sheet sheet, List<ExcelColumn> visibleColumns) throws SQLException, MaxRowsExceededException
     {
-        renderGrid(sheet, visibleColumns, _rs);
+        renderGrid(ctx, sheet, visibleColumns, _rs);
     }
 
 
-    public void renderGrid(Sheet sheet, List<ExcelColumn> visibleColumns, Results rs) throws SQLException, MaxRowsExceededException
+    public void renderGrid(RenderContext ctx, Sheet sheet, List<ExcelColumn> visibleColumns, Results rs) throws SQLException, MaxRowsExceededException
     {
         if (null == rs)
             return;
@@ -816,7 +825,6 @@ public class ExcelWriter implements ExportWriter
         try
         {
             ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
-            RenderContext ctx = new RenderContext(HttpView.currentContext());
             ctx.setResults(rs);
 
             // Output all the rows, but don't exceed the document's maximum number of rows
@@ -838,8 +846,24 @@ public class ExcelWriter implements ExportWriter
         int row = getCurrentRow();
         _totalDataRows++;
 
+        HashMap<Pair<Integer, Integer>, Pair<Integer, Integer>> imageSize = (HashMap<Pair<Integer, Integer>, Pair<Integer, Integer>>)ctx.get(ExcelWriter.SHEET_IMAGE_SIZES);
+        int maxHeight = -1;
         for (int column = 0; column < columns.size(); column++)
+        {
             columns.get(column).writeCell(sheet, column, row, ctx);
+
+            Pair<Integer, Integer> size = imageSize.get(Pair.of(row, column));
+            if (size != null)
+                maxHeight = Math.max(maxHeight, size.second);
+        }
+
+        // adjust row height
+        if (maxHeight != -1)
+        {
+            Row sheetRow = sheet.getRow(row);
+            //sheetRow.setHeightInPoints(maxHeight * 0.76f);
+            sheetRow.setHeightInPoints(maxHeight);
+        }
 
         incrementRow();
     }

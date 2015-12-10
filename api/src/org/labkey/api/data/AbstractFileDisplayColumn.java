@@ -22,7 +22,9 @@ import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Writer;
 
 /**
@@ -53,6 +55,8 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
     /** @return the short name of the file (not including full path) */
     protected abstract String getFileName(Object value);
 
+    protected abstract InputStream getFileContents(RenderContext ctx, Object value) throws FileNotFoundException;
+    
     protected void renderIconAndFilename(RenderContext ctx, Writer out, String filename, boolean link, boolean thumbnail) throws IOException
     {
        renderIconAndFilename(ctx, out, filename, null, link, thumbnail);
@@ -78,23 +82,29 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
 
             String displayName = getFileName(filename);
 
-            StringBuilder icon = new StringBuilder();
-            icon.append("<img src=\"").append(ctx.getRequest().getContextPath());
-            icon.append((null != fileIconUrl) ? fileIconUrl : Attachment.getFileIcon(filename));
-            icon.append("\" alt=\"icon\"");
-            icon.append("/>&nbsp;").append(PageFlowUtil.filter(displayName));
-
             if (url != null && thumbnail && _map.isInlineImageFor(new File(filename)))
             {
+                StringBuilder popupHtml = new StringBuilder();
+                popupHtml.append("<img style=\"max-width:300px; height:auto;\" src=\"");
+                popupHtml.append(PageFlowUtil.filter(url));
+                popupHtml.append("\" />");
+
                 StringBuilder thumbnailHtml = new StringBuilder();
-                thumbnailHtml.append("<img style=\"max-width:300px; height:auto;\" src=\"");
-                thumbnailHtml.append(PageFlowUtil.filter(url));
+                thumbnailHtml.append("<img style=\"display:block; height:auto; width:100%; max-width: 32px; vertical-align:middle\"");
+                thumbnailHtml.append(" src=\"").append(PageFlowUtil.filter(url)).append("\"");
+                thumbnailHtml.append(" title=\"").append(displayName).append("\"");
                 thumbnailHtml.append("\" />");
 
-                out.write(PageFlowUtil.helpPopup(displayName, thumbnailHtml.toString(), true, icon.toString(), 310, url == null ? null : "window.location = '" + url + "'"));
+                out.write(PageFlowUtil.helpPopup(displayName, popupHtml.toString(), true, thumbnailHtml.toString(), 310, url == null ? null : "window.location = '" + url + "'"));
             }
             else
             {
+                StringBuilder icon = new StringBuilder();
+                icon.append("<img src=\"").append(ctx.getRequest().getContextPath());
+                icon.append((null != fileIconUrl) ? fileIconUrl : Attachment.getFileIcon(filename));
+                icon.append("\" alt=\"icon\"");
+                icon.append("/>&nbsp;").append(PageFlowUtil.filter(displayName));
+
                 out.write(icon.toString());
             }
 
