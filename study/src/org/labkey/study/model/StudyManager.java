@@ -19,7 +19,6 @@ package org.labkey.study.model;
 import org.apache.commons.collections15.CollectionUtils;
 import org.apache.commons.collections15.Transformer;
 import org.apache.commons.collections15.map.CaseInsensitiveMap;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.log4j.Level;
@@ -69,7 +68,6 @@ import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
@@ -107,6 +105,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.AssaySpecimenConfig;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -114,7 +113,6 @@ import org.labkey.api.study.Visit;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -142,7 +140,6 @@ import org.labkey.study.importer.SchemaReader;
 import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.importer.StudyReload;
 import org.labkey.study.query.DatasetTableImpl;
-import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.study.query.StudyPersonnelDomainKind;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.studydesign.StudyProductAntigenDomainKind;
@@ -157,11 +154,9 @@ import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.writer.DatasetWriter;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.BindException;
-import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -185,6 +180,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 public class StudyManager
 {
@@ -4050,7 +4047,8 @@ public class StudyManager
 
             if (existingDef != null && existingDef.getDatasetId() != id)
             {
-                errors.reject("importDatasetSchemas", "A different dataset already exists with the name " + name);
+                errors.reject("importDatasetSchemas", "Existing " + name + " dataset has id " + existingDef.getDatasetId() +
+                    ", uploaded " + name + " dataset has id " + id);
                 return false;
             }
 
