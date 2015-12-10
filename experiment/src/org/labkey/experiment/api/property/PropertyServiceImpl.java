@@ -254,7 +254,6 @@ public class PropertyServiceImpl implements PropertyService.Interface
         prop.setLabel(xProp.getLabel());
         prop.setName(xProp.getName());
         prop.setRangeURI(xProp.getRangeURI());
-        DomainUtil.setPropertyDescriptorScale(prop);
 
         String propertyURI = xProp.getPropertyURI();
         // Deal with legacy property URIs that don't have % in the name part properly encoded

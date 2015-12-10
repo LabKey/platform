@@ -1693,11 +1693,6 @@ public class PostgreSql91Dialect extends SqlDialect
             return super.formatJdbcFunction(fn, arguments);
     }
 
-
-
-
-
-
     public static class TestCase extends Assert
     {
         PostgreSql91Dialect getDialect()
