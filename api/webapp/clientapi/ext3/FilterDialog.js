@@ -30,6 +30,8 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
     allowFacet : undefined,
 
+    cacheFacetResults: true,
+
     initComponent : function() {
 
         if (!this['dataRegionName']) {
@@ -335,6 +337,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 dataRegionName: this.dataRegionName,
                 jsonType : this.jsonType,
                 filters: filters,
+                cacheResults: this.cacheFacetResults,
                 listeners: {
                     invalidfilter : function() {
                         this.carryfilter = false;
@@ -828,6 +831,8 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
      */
     filterOptimization: true,
 
+    cacheResults: true,
+
     emptyDisplayValue: '[Blank]',
 
     initComponent : function() {
@@ -1223,7 +1228,7 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
 
     getLookupStore : function() {
         var dr = this.getDataRegion();
-        var storeId = [dr.schemaName, dr.queryName, this.fieldKey].join('||');
+        var storeId = this.cacheResults ? [dr.schemaName, dr.queryName, this.fieldKey].join('||') : Ext.id();
 
         // cache
         var store = Ext.StoreMgr.get(storeId);
