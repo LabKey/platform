@@ -58,15 +58,33 @@ public class AttachmentDisplayColumn extends AbstractFileDisplayColumn
     }
 
     @Override
+    public Class getDisplayValueClass()
+    {
+        ColumnInfo displayColumn = getDisplayColumn();
+        if (displayColumn.getPropertyType() != null)
+            return displayColumn.getPropertyType().getJavaType();
+        return super.getDisplayValueClass();
+    }
+
+    @Override
     protected InputStream getFileContents(RenderContext ctx, Object value) throws FileNotFoundException
     {
-        String filename = (String)getValue(ctx);
-        String entityId = (String)ctx.get("entityId");
+        String entityIdValue = null;
+        String downloadUrl = getURLExpression().eval(ctx);
+        String[] parts = downloadUrl.split("entityId=");
+        if (parts.length > 1)
+        {
+            String[] paramParts = parts[1].split("&");
+            if (paramParts.length > 0)
+                entityIdValue = paramParts[0];
+        }
 
-        if (null == filename || null == entityId)
+        String filename = (String)getValue(ctx);
+
+        if (null == filename || entityIdValue == null)
             return null;
 
-        AttachmentParent parent = new AttachmentParentImpl(entityId, ctx.getContainer());
+        AttachmentParent parent = new AttachmentParentImpl(entityIdValue, ctx.getContainer());
         return AttachmentService.get().getInputStream(parent, filename);
     }
 
