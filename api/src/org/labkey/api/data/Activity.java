@@ -1,5 +1,6 @@
 package org.labkey.api.data;
 
+import org.apache.commons.lang3.EnumUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
@@ -19,8 +20,12 @@ public class Activity implements Serializable
         _name = name;
         _irb = irb;
         _phiStr = phiStr;
-        _phi = PHI.valueOf(phiStr);
         _terms = terms;
+
+        if (phiStr != null && EnumUtils.isValidEnum(PHI.class, phiStr))
+            _phi = PHI.valueOf(phiStr);
+        else
+            _phi = null;
     }
 
     public Activity(Container container, String name, String irb, @NotNull PHI phi, String... terms)
