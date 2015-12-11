@@ -6,8 +6,13 @@ import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.KeyUpEvent;
 import com.google.gwt.event.dom.client.KeyUpHandler;
-import com.google.gwt.user.client.ui.*;
+import com.google.gwt.user.client.ui.CheckBox;
 import com.google.gwt.user.client.ui.FlexTable;
+import com.google.gwt.user.client.ui.FlowPanel;
+import com.google.gwt.user.client.ui.InlineLabel;
+import com.google.gwt.user.client.ui.IntegerBox;
+import com.google.gwt.user.client.ui.Panel;
+import com.google.gwt.user.client.ui.VerticalPanel;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.HelpPopup;
@@ -90,10 +95,7 @@ public class MaxLengthItem<DomainType extends GWTDomain<FieldType>, FieldType ex
         }
         else
         {
-            removeClass(_maxCheckBox, "labkey-disabled");
-            removeClass(_limitTextBox, "labkey-disabled");
-            _maxCheckBox.setEnabled(true);
-            _limitTextBox.setEnabled(true);
+            onLimitChange();
         }
     }
 
@@ -106,12 +108,14 @@ public class MaxLengthItem<DomainType extends GWTDomain<FieldType>, FieldType ex
         boolean enabled = isStringAndEditable(pd) && domainIsProvisioned;
         setVisible(enabled);
 
-        if (!enabled)
-            return;
-
         int size = pd.getScale();
         _maxCheckBox.setValue(size > DEFAULT_SIZE);
         _limitTextBox.setValue(size);
+
+        //This needs to be after the initial setting of Scale,
+        // otherwise scale will get set to default
+        if (!enabled)
+            return;
 
         validateValue();
         onLimitChange();
@@ -210,6 +214,12 @@ public class MaxLengthItem<DomainType extends GWTDomain<FieldType>, FieldType ex
 
     private void onLimitChange()
     {
+        if (!isEnabled())
+            return;
+
+        _maxCheckBox.setEnabled(true);
+        removeClass(_maxCheckBox,"labkey-disabled");
+
         //If max is checked disable text entry
         if (_maxCheckBox.getValue().booleanValue())
         {
@@ -221,12 +231,9 @@ public class MaxLengthItem<DomainType extends GWTDomain<FieldType>, FieldType ex
         }
         else
         {
-            if (isEnabled())
             //Enable entry box
-            {
-                _limitTextBox.setEnabled(true);
-                removeClass(_limitTextBox,"labkey-disabled");
-            }
+            _limitTextBox.setEnabled(true);
+            removeClass(_limitTextBox,"labkey-disabled");
         }
     }
 
