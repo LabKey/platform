@@ -1363,6 +1363,9 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public List<FolderTab> getDeletedTabFolders(String newFolderType)
     {
+        if (null == newFolderType)
+            throw new IllegalStateException("Folder type not found.");
+
         // Get container tabs whose containers have been deleted
         FolderType folderType = FolderTypeManager.get().getFolderType(newFolderType);
         if (null == folderType)
