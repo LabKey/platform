@@ -1615,7 +1615,7 @@ public class CoreController extends SpringActionController
         public ApiResponse execute(ContainerInfoForm form, BindException errors) throws Exception
         {
             // Provide information about container, specifically an array of child tab folders that were deleted
-            Container container = ContainerManager.getForPath(form.getContainerPath());
+            Container container = form.getContainerPath() != null ? ContainerManager.getForPath(form.getContainerPath()) : getContainer();
             JSONArray deletedFolders = new JSONArray();
             for (FolderTab folderTab : container.getDeletedTabFolders(form.getNewFolderType()))
             {
