@@ -72,7 +72,7 @@ public class HelpTopic
 
     public String getHelpTopicHref()
     {
-        return "http://help.labkey.org/wiki/home/documentation/" + getHelpVersion() + "/page.view?name=" + _topic;
+        return "http://www.labkey.org/wiki/home/documentation/" + getHelpVersion() + "/page.view?name=" + _topic;
     }
 
     // Create a simple link (just an <a> tag with plain mixed case text, no graphics) that links to the help topic, displays
