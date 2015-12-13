@@ -16,6 +16,7 @@
 package org.labkey.api.exp;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -57,7 +58,8 @@ public class LsidManager
     {
         Identifiable getObject(Lsid lsid);
 
-        String getDisplayURL(Lsid lsid);
+        @Nullable
+        ActionURL getDisplayURL(Lsid lsid);
 
         Container getContainer(Lsid lsid);
 
@@ -88,7 +90,8 @@ public class LsidManager
             return ExperimentService.get().getExpRun(lsid.toString());
         }
 
-        public String getDisplayURL(Lsid lsid)
+        @Nullable
+        public ActionURL getDisplayURL(Lsid lsid)
         {
             ExpRun run = getObject(lsid);
             if (run == null)
@@ -96,7 +99,7 @@ public class LsidManager
             ExpProtocol protocol = run.getProtocol();
             if (protocol == null)
                 return null;
-            return getDisplayURL(run.getContainer(), protocol, run).getLocalURIString();
+            return getDisplayURL(run.getContainer(), protocol, run);
         }
 
         protected ActionURL getDisplayURL(Container c, ExpProtocol protocol, ExpRun run)
@@ -123,7 +126,7 @@ public class LsidManager
         registerHandler(prefix, handler, getDefaultAuthority());
     }
 
-    public String getDisplayURL(String lsid)
+    public ActionURL getDisplayURL(String lsid)
     {
         return getDisplayURL(new Lsid(lsid));
     }
@@ -193,7 +196,7 @@ public class LsidManager
             return ExperimentService.get().getObject(lsid);
     }
 
-    public String getDisplayURL(Lsid lsid)
+    public ActionURL getDisplayURL(Lsid lsid)
     {
         LsidHandler handler = findHandler(lsid);
         if (null != handler)

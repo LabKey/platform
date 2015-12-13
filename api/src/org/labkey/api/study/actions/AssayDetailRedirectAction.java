@@ -15,16 +15,16 @@
  */
 package org.labkey.api.study.actions;
 
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.view.*;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.assay.AssayUrls;
-import org.springframework.web.servlet.ModelAndView;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
 /*
  * User: brittp
  * Date: Mar 17, 2009
@@ -58,9 +58,9 @@ public class AssayDetailRedirectAction extends SimpleRedirectAction<AssayDetailR
         ExpRun run = ExperimentService.get().getExpRun(form.getRunId().intValue());
         if (run == null)
             throw new NotFoundException("The assay run that produced the data has been deleted.");
-        String url = LsidManager.get().getDisplayURL(run.getLSID());
+        ActionURL url = LsidManager.get().getDisplayURL(run.getLSID());
         if (url != null)
-            return new ActionURL(url);
+            return url;
         return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(run.getContainer(), run.getProtocol(), run.getRowId());
     }
 }

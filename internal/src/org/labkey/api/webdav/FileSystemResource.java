@@ -702,7 +702,7 @@ public class FileSystemResource extends AbstractWebdavResource
                 if (!runIDs.add(run.getRowId()))
                     continue;
 
-                String runURL = dataURL == null ? LsidManager.get().getDisplayURL(run.getLSID()) : dataURL.toString();
+                ActionURL runURL = dataURL == null ? LsidManager.get().getDisplayURL(run.getLSID()) : dataURL;
                 String actionName;
 
                 if (!run.getName().equals(data.getName()))

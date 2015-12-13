@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exp;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -25,6 +26,7 @@ import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 
 /**
  * User: migra
@@ -38,11 +40,12 @@ public enum LsidType
 {
     Experiment
             {
-                public String getDisplayURL(Lsid lsid)
+                @Nullable
+                public ActionURL getDisplayURL(Lsid lsid)
                 {
                     ExpExperiment exp = getObject(lsid);
                     return exp == null ? null :
-                            PageFlowUtil.urlProvider(ExperimentUrls.class).getExperimentDetailsURL(exp.getContainer(), exp).toString();
+                            PageFlowUtil.urlProvider(ExperimentUrls.class).getExperimentDetailsURL(exp.getContainer(), exp);
                 }
 
                 public ExpExperiment getObject(Lsid lsid)
@@ -53,11 +56,12 @@ public enum LsidType
 
     Protocol
             {
-                public String getDisplayURL(Lsid lsid)
+                @Nullable
+                public ActionURL getDisplayURL(Lsid lsid)
                 {
                     ExpProtocol protocol = getObject(lsid);
                     return protocol == null ? null :
-                            PageFlowUtil.urlProvider(ExperimentUrls.class).getProtocolDetailsURL(protocol).toString();
+                            PageFlowUtil.urlProvider(ExperimentUrls.class).getProtocolDetailsURL(protocol);
                 }
 
                 public ExpProtocol getObject(Lsid lsid)
@@ -69,11 +73,12 @@ public enum LsidType
 
     ProtocolApplication
             {
-                public String getDisplayURL(Lsid lsid)
+                @Nullable
+                public ActionURL getDisplayURL(Lsid lsid)
                 {
                     ExpProtocolApplication app = getObject(lsid);
                     return app == null ? null :
-                            PageFlowUtil.urlProvider(ExperimentUrls.class).getProtocolApplicationDetailsURL(app).toString();
+                            PageFlowUtil.urlProvider(ExperimentUrls.class).getProtocolApplicationDetailsURL(app);
                 }
 
                 public ExpProtocolApplication getObject(Lsid lsid)
@@ -84,11 +89,12 @@ public enum LsidType
 
     Material
             {
-                public String getDisplayURL(Lsid lsid)
+                @Nullable
+                public ActionURL getDisplayURL(Lsid lsid)
                 {
                     ExpMaterial m = getObject(lsid);
                     return m == null ? null :
-                            PageFlowUtil.urlProvider(ExperimentUrls.class).getMaterialDetailsURL(m).toString();
+                            PageFlowUtil.urlProvider(ExperimentUrls.class).getMaterialDetailsURL(m);
                 }
 
                 public ExpMaterial getObject(Lsid lsid)
@@ -100,11 +106,12 @@ public enum LsidType
     MaterialSource
             {
 
-                public String getDisplayURL(Lsid lsid)
+                @Nullable
+                public ActionURL getDisplayURL(Lsid lsid)
                 {
                     ExpSampleSet source = getObject(lsid);
                     return source == null ? null :
-                            PageFlowUtil.urlProvider(ExperimentUrls.class).getShowSampleSetURL(source).toString();
+                            PageFlowUtil.urlProvider(ExperimentUrls.class).getShowSampleSetURL(source);
                 }
 
                 public ExpSampleSet getObject(Lsid lsid)
@@ -115,11 +122,12 @@ public enum LsidType
 
     Data
             {
-                public String getDisplayURL(Lsid lsid)
+                @Nullable
+                public ActionURL getDisplayURL(Lsid lsid)
                 {
                     ExpData data = getObject(lsid);
                     return data == null ? null :
-                            PageFlowUtil.urlProvider(ExperimentUrls.class).getDataDetailsURL(data).toString();
+                            PageFlowUtil.urlProvider(ExperimentUrls.class).getDataDetailsURL(data);
                 }
 
                 public ExpData getObject(Lsid lsid)
@@ -130,11 +138,12 @@ public enum LsidType
 
     ExperimentRun
             {
-                public String getDisplayURL(Lsid lsid)
+                @Nullable
+                public ActionURL getDisplayURL(Lsid lsid)
                 {
                     ExpRun run = getObject(lsid);
                     return run == null ? null :
-                            PageFlowUtil.urlProvider(ExperimentUrls.class).getShowRunGraphURL(run).toString();
+                            PageFlowUtil.urlProvider(ExperimentUrls.class).getShowRunGraphURL(run);
                 }
 
                 public ExpRun getObject(Lsid lsid)
@@ -146,7 +155,8 @@ public enum LsidType
 
     Fraction
             {
-                public String getDisplayURL(Lsid lsid)
+                @Nullable
+                public ActionURL getDisplayURL(Lsid lsid)
                 {
                     return Material.getDisplayURL(lsid);
                 }
@@ -159,7 +169,8 @@ public enum LsidType
 
     public abstract Identifiable getObject(Lsid lsid);
 
-    public abstract String getDisplayURL(Lsid lsid);
+    @Nullable
+    public abstract ActionURL getDisplayURL(Lsid lsid);
 
     public static LsidType get(String prefix)
     {
