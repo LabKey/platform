@@ -16,6 +16,7 @@
 package org.labkey.study.model;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
@@ -49,7 +50,8 @@ public class StudyLsidHandler implements LsidManager.LsidHandler
         throw new UnsupportedOperationException();
     }
 
-    public String getDisplayURL(Lsid lsid)
+    @Nullable
+    public ActionURL getDisplayURL(Lsid lsid)
     {
         // TODO fix getDisplayUrl
         if (true) throw new RuntimeException("not integrated with hard tables");
@@ -81,7 +83,7 @@ public class StudyLsidHandler implements LsidManager.LsidHandler
                 url.addParameter(DatasetDefinition.DATASETKEY, String.valueOf(datasetId));
                 url.addParameter(VisitImpl.SEQUENCEKEY, String.valueOf(sequenceNum));
                 url.addParameter("StudyData.participantId~eq", ptid);
-                return url.toString();
+                return url;
             }
             catch (SQLException x)
             {

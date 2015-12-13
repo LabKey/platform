@@ -3850,7 +3850,7 @@ public class ExperimentController extends SpringActionController
             if (!PageFlowUtil.empty(form.getLsid()))
             {
                 String lsid = Lsid.canonical(form.getLsid());
-                String url = LsidManager.get().getDisplayURL(lsid);
+                ActionURL url = LsidManager.get().getDisplayURL(lsid);
                 if (url == null && form.getType() != null)
                 {
                     switch (form.getType().toLowerCase())

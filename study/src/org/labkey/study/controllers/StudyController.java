@@ -100,7 +100,6 @@ import org.labkey.api.search.SearchUrls;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
@@ -2605,7 +2604,7 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(SourceLsidForm form, BindException errors) throws Exception
         {
-            String url = LsidManager.get().getDisplayURL(form.getSourceLsid());
+            ActionURL url = LsidManager.get().getDisplayURL(form.getSourceLsid());
             if (url == null)
             {
                 return new HtmlView("The assay run that produced the data has been deleted.");
@@ -2982,10 +2981,10 @@ public class StudyController extends BaseStudyController
     private static final String PARTICIPANT_PROPS_CACHE = "Study_participants/propertyCache";
     private static final String DATASET_SORT_COLUMN_CACHE = "Study_participants/datasetSortColumnCache";
     @SuppressWarnings("unchecked")
-    private static Map<String, PropertyDescriptor[]> getParticipantPropsMap(ViewContext context)
+    private static Map<String, List<PropertyDescriptor>> getParticipantPropsMap(ViewContext context)
     {
         HttpSession session = context.getRequest().getSession(true);
-        Map<String, PropertyDescriptor[]> map = (Map<String, PropertyDescriptor[]>) session.getAttribute(PARTICIPANT_PROPS_CACHE);
+        Map<String, List<PropertyDescriptor>> map = (Map<String, List<PropertyDescriptor>>) session.getAttribute(PARTICIPANT_PROPS_CACHE);
         if (map == null)
         {
             map = new HashMap<>();
@@ -2994,10 +2993,10 @@ public class StudyController extends BaseStudyController
         return map;
     }
 
-    public static PropertyDescriptor[] getParticipantPropsFromCache(ViewContext context, String typeURI)
+    public static List<PropertyDescriptor> getParticipantPropsFromCache(ViewContext context, String typeURI)
     {
-        Map<String, PropertyDescriptor[]> map = getParticipantPropsMap(context);
-        PropertyDescriptor[] props = map.get(typeURI);
+        Map<String, List<PropertyDescriptor>> map = getParticipantPropsMap(context);
+        List<PropertyDescriptor> props = map.get(typeURI);
         if (props == null)
         {
             props = OntologyManager.getPropertiesForType(typeURI, context.getContainer());

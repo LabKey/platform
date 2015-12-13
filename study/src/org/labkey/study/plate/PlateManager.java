@@ -17,6 +17,7 @@
 package org.labkey.study.plate;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
@@ -616,12 +617,13 @@ public class PlateManager implements PlateService.Service
             return PlateManager.get().getPlate(lsid.toString());
         }
 
-        public String getDisplayURL(Lsid lsid)
+        @Nullable
+        public ActionURL getDisplayURL(Lsid lsid)
         {
             PlateImpl plate = getPlate(lsid);
             if (plate == null)
                 return null;
-            return PlateManager.get().getDetailsURL(plate).getLocalURIString();
+            return PlateManager.get().getDetailsURL(plate);
         }
 
         public ExpObject getObject(Lsid lsid)
@@ -653,14 +655,15 @@ public class PlateManager implements PlateService.Service
             return PlateManager.get().getWellGroup(lsid.toString());
         }
 
-        public String getDisplayURL(Lsid lsid)
+        @Nullable
+        public ActionURL getDisplayURL(Lsid lsid)
         {
             if (lsid == null)
                 return null;
             WellGroup wellGroup = getWellGroup(lsid);
             if (wellGroup == null)
                 return null;
-            return PlateManager.get().getDetailsURL(wellGroup.getPlate()).getLocalURIString();
+            return PlateManager.get().getDetailsURL(wellGroup.getPlate());
         }
 
         public ExpObject getObject(Lsid lsid)
