@@ -27,6 +27,7 @@ import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
@@ -107,6 +108,8 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
         form.setCreateNewSampleSet(false);
         form.setCreateNewColumnsOnExistingSampleSet(false);
 
+        translateRowIdToIdCols(rows);
+
         try
         {
             form.setLoader(new MapLoader(rows));
@@ -122,6 +125,49 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
         catch (ExperimentException e)
         {
             throw new ValidationException(e.getMessage());
+        }
+    }
+
+    /** For rows that have a RowId but lack values for the ID columns, try to fill in the ID columns */
+    private void translateRowIdToIdCols(List<Map<String, Object>> rows)
+    {
+        for (Map<String, Object> row : rows)
+        {
+            Object rowIdObject = row.get("RowId");
+            if (rowIdObject != null)
+            {
+                // See if we already have values for all of the Id columns
+                boolean foundAllIdCols = true;
+                for (DomainProperty prop : _ss.getIdCols())
+                {
+                    if (row.get(prop.getName()) == null)
+                    {
+                        foundAllIdCols = false;
+                    }
+                }
+                if (!foundAllIdCols)
+                {
+                    try
+                    {
+                        int rowId = Integer.parseInt(rowIdObject.toString());
+
+                        // Look up the values from the current row in the DB
+                        Map<String, Object> oldRowValues = new TableSelector(getQueryTable(), new SimpleFilter(FieldKey.fromParts("RowId"), rowId), null).getMap();
+                        if (oldRowValues != null)
+                        {
+                            // Stick them into the row
+                            for (DomainProperty prop : _ss.getIdCols())
+                            {
+                                if (row.get(prop.getName()) == null)
+                                {
+                                    row.put(prop.getName(), oldRowValues.get(prop.getName()));
+                                }
+                            }
+                        }
+                    }
+                    catch (NumberFormatException ignored) {}
+                }
+            }
         }
     }
 
