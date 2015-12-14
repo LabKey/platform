@@ -229,6 +229,8 @@ abstract public class PipelineJob extends Job implements Serializable
     public static final String LABKEY_TASKPIPELINE_PROPERTY = HEADER_PREFIX + "TASKPIPELINE";
     public static final String LABKEY_TASKID_PROPERTY = HEADER_PREFIX + "TASKID";
     public static final String LABKEY_TASKSTATUS_PROPERTY = HEADER_PREFIX + "TASKSTATUS";
+    /** The execution location to which the job's current task is assigned */
+    public static final String LABKEY_LOCATION_PROPERTY = HEADER_PREFIX + "LOCATION";
 
     private String _provider;
     private ViewBackgroundInfo _info;

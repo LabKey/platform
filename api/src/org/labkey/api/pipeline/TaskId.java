@@ -18,7 +18,7 @@ package org.labkey.api.pipeline;
 import java.io.Serializable;
 
 /**
- * Identifier for a pipeline definition.
+ * Identifier for a pipeline definition. Used for both top-level pipelines, as well as tasks within a pipeline.
  *
  * <dl>
  *     <dt>namespaceClass</dt>
