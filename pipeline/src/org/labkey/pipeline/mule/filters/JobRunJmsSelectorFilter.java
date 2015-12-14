@@ -26,7 +26,7 @@ import org.mule.providers.jms.filters.JmsSelectorFilter;
  */
 public class JobRunJmsSelectorFilter extends JmsSelectorFilter
 {
-    public static StringBuffer appendSelector(StringBuffer expr)
+    public static StringBuilder appendSelector(StringBuilder expr)
     {
         return expr.append(PipelineJob.LABKEY_TASKPIPELINE_PROPERTY)
                 .append(" = '").append(PipelineJob.class.getName()).append("'");
@@ -34,6 +34,6 @@ public class JobRunJmsSelectorFilter extends JmsSelectorFilter
 
     public JobRunJmsSelectorFilter()
     {
-        setExpression(appendSelector(new StringBuffer()).toString());
+        setExpression(appendSelector(new StringBuilder()).toString());
     }
 }

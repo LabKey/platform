@@ -15,13 +15,11 @@
  */
 package org.labkey.pipeline.mule.filters;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.TaskFactory;
-import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.mule.providers.jms.filters.JmsSelectorFilter;
-import org.apache.log4j.Logger;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -69,7 +67,7 @@ public class TaskJmsSelectorFilter extends JmsSelectorFilter
 
     public String getExpression()
     {
-        StringBuffer expr = new StringBuffer();
+        StringBuilder expr = new StringBuilder();
         expr.append("(");
         expr.append("(");
         boolean first = true;
@@ -78,29 +76,29 @@ public class TaskJmsSelectorFilter extends JmsSelectorFilter
             first = false;
             JobRunJmsSelectorFilter.appendSelector(expr);
         }
-        for (TaskFactory factory : PipelineJobServiceImpl.get().getTaskFactories(null))
+        for (String location : getLocations())
         {
-            if (!getLocations().contains(factory.getExecutionLocation()))
-                continue;
-
             if (first)
                 first = false;
             else
                 expr.append(" OR ");
 
-            expr.append(PipelineJob.LABKEY_TASKID_PROPERTY)
-                    .append(" = '").append(factory.getId()).append("'");
+            expr.append(PipelineJob.LABKEY_LOCATION_PROPERTY)
+                    .append(" = '").append(location).append("'");
         }
 
         // If nothing has been included yet, make sure this filter never succeeds.
         if (first)
         {
-            expr.append(PipelineJob.LABKEY_TASKID_PROPERTY)
-                    .append(" = '").append(PipelineJob.Task.class.getName()).append("'");
+            expr.append("1 = 2");
         }
+
         expr.append(")");
         expr.append(" AND ");
-        expr.append(PipelineJob.LABKEY_TASKSTATUS_PROPERTY).append(" = '" + PipelineJob.TaskStatus.waiting.toString() + "'");
+        expr.append(PipelineJob.LABKEY_TASKSTATUS_PROPERTY);
+        expr.append(" = '");
+        expr.append(PipelineJob.TaskStatus.waiting.toString());
+        expr.append("'");
         expr.append(")");
 
         _log.debug("JMS Select: " + expr);

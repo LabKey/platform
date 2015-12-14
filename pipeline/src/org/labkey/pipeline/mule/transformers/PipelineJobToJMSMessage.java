@@ -17,10 +17,10 @@ package org.labkey.pipeline.mule.transformers;
 
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.mule.providers.jms.transformers.ObjectToJMSMessage;
-import org.mule.transformers.xml.AbstractXStreamTransformer;
 import org.mule.transformers.AbstractEventAwareTransformer;
 import org.mule.umo.UMOEventContext;
 import org.mule.umo.transformer.TransformerException;
@@ -89,8 +89,25 @@ public class PipelineJobToJMSMessage extends AbstractEventAwareTransformer
             setJmsProperty(msg, PipelineJob.LABKEY_TASKPIPELINE_PROPERTY, tp.getId().toString());
             setJmsProperty(msg, PipelineJob.LABKEY_TASKSTATUS_PROPERTY, job.getActiveTaskStatus().toString());
             TaskId task = job.getActiveTaskId();
+
+            // Determine execution location based on web server's notion of who owns what tasks
+            String location = null;
             if (task != null)
+            {
                 setJmsProperty(msg, PipelineJob.LABKEY_TASKID_PROPERTY, task.toString());
+                TaskFactory factory = PipelineJobService.get().getTaskFactory(task);
+                if (factory != null)
+                {
+                    location = factory.getExecutionLocation();
+                }
+            }
+
+            // Default to running in the main thread pool on the web server
+            if (location == null)
+            {
+                location = TaskFactory.WEBSERVER;
+            }
+            setJmsProperty(msg, PipelineJob.LABKEY_LOCATION_PROPERTY, location);
         }
     }
 
