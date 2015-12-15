@@ -191,7 +191,6 @@ public class SpecimenForeignKey extends LookupForeignKey
         HashSet<FieldKey> ret = new HashSet<>();
         for (String name : _assayDataTable.getPkColumnNames())
             ret.add(new FieldKey(null,name));
-        ret.add(new FieldKey(null,"Container"));
         Set<FieldKey> superColumns = super.getSuggestedColumns();
         if (null != superColumns)
             ret.addAll(superColumns);
