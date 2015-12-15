@@ -643,12 +643,9 @@ public class QueryServiceImpl extends QueryService
                 }
                 else
                 {
-                    String schema = path.get(1);
-                    String query = path.get(2);
-
                     Collection<ModuleCustomViewDef> viewDefs = viewResources
                         .stream()
-                        .map(view -> new ModuleCustomViewDef(view, schema, query))
+                        .map(resource -> new ModuleCustomViewDef(resource))
                         .collect(Collectors.toCollection(LinkedList::new));
 
                     return Collections.unmodifiableCollection(viewDefs);

@@ -17,7 +17,7 @@
 package org.labkey.query;
 
 import org.labkey.api.data.Aggregate;
-import org.labkey.api.query.CustomView;
+import org.labkey.api.query.CustomViewInfo.ColumnProperty;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.Pair;
@@ -25,6 +25,7 @@ import org.labkey.api.util.Pair;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 /*
 * User: Dave
@@ -41,15 +42,11 @@ import java.util.Map;
  */
 public class ModuleCustomViewDef
 {
-    private final String _schema;
-    private final String _query;
     private final CustomViewXmlReader _customView;
     private final long _lastModified;
 
-    public ModuleCustomViewDef(Resource r, String schema, String query)
+    public ModuleCustomViewDef(Resource r)
     {
-        _schema = schema;
-        _query = query;
         _lastModified = r.getLastModified();
         _customView = CustomViewXmlReader.loadDefinition(r);
 
@@ -75,15 +72,15 @@ public class ModuleCustomViewDef
 
     public String getSchema()
     {
-        return _schema != null ? _schema : _customView.getSchema();
+        return _customView.getSchema();
     }
 
     public String getQuery()
     {
-        return _query != null ? _query : _customView.getQuery();
+        return _customView.getQuery();
     }
 
-    public List<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> getColList()
+    public List<Entry<FieldKey, Map<ColumnProperty, String>>> getColList()
     {
         return _customView.getColList();
     }
