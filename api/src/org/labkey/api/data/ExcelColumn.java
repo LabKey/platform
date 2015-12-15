@@ -437,24 +437,30 @@ public class ExcelColumn extends RenderColumn
     private void setImageSize(RenderContext ctx, int row, int column, Pair<Integer, Integer> size)
     {
         HashMap<Pair<Integer, Integer>, Pair<Integer, Integer>> imageSize = (HashMap<Pair<Integer, Integer>, Pair<Integer, Integer>>)ctx.get(ExcelWriter.SHEET_IMAGE_SIZES);
-        imageSize.put(Pair.of(row, column), size);
+        if (imageSize != null)
+            imageSize.put(Pair.of(row, column), size);
     }
 
     private void setImagePicture(RenderContext ctx, int row, int column, Picture pict)
     {
         HashMap<Pair<Integer, Integer>, Picture> pictures = (HashMap<Pair<Integer, Integer>, Picture>)ctx.get(ExcelWriter.SHEET_IMAGE_PICTURES);
-        pictures.put(Pair.of(row, column), pict);
+        if (pictures != null)
+            pictures.put(Pair.of(row, column), pict);
     }
 
     private Pair<Integer, Integer> getImageSize(RenderContext ctx, int row, int column)
     {
         HashMap<Pair<Integer, Integer>, Pair<Integer, Integer>> imageSize = (HashMap<Pair<Integer, Integer>, Pair<Integer, Integer>>)ctx.get(ExcelWriter.SHEET_IMAGE_SIZES);
+        if (imageSize == null)
+            return null;
         return imageSize.get(Pair.of(row, column));
     }
 
     private Picture getImagePicture(RenderContext ctx, int row, int column)
     {
         HashMap<Pair<Integer, Integer>, Picture> pictures = (HashMap<Pair<Integer, Integer>, Picture>)ctx.get(ExcelWriter.SHEET_IMAGE_PICTURES);
+        if (pictures == null)
+            return null;
         return pictures.get(Pair.of(row, column));
     }
 
