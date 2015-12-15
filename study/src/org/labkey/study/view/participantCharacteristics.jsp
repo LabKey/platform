@@ -52,6 +52,7 @@
 <%@ page import="java.util.Date" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="java.util.Arrays" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     ViewContext context = getViewContext();
@@ -101,7 +102,7 @@
                 expanded = false;
 
             // sort the properties so they appear in the same order as the grid view
-            PropertyDescriptor[] pds = sortProperties(StudyController.getParticipantPropsFromCache(context, typeURI), dataset, context);
+            List<PropertyDescriptor> pds = sortProperties(StudyController.getParticipantPropsFromCache(context, typeURI), dataset, context);
             if (!dataset.canRead(user))
             {
     %>
@@ -246,7 +247,7 @@
     %>
 </table>
 <%!
-    PropertyDescriptor[] sortProperties(PropertyDescriptor[] pds, Dataset dsd, ViewContext context)
+    List<PropertyDescriptor> sortProperties(List<PropertyDescriptor> pds, Dataset dsd, ViewContext context)
     {
         final Map<String, Integer> sortMap = StudyController.getSortedColumnList(context, dsd);
         if (sortMap != null && !sortMap.isEmpty())
@@ -257,7 +258,7 @@
                 if (sortMap.containsKey(p.getName()))
                     props[sortMap.get(p.getName())] = p;
             }
-            return props;
+            return Arrays.asList(props);
         }
         return pds;
     }
