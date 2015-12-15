@@ -17,31 +17,50 @@ package org.labkey.core.admin.test;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.labkey.api.admin.TableXmlUtils;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.settings.AppProps;
 
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
- * User: tgaluhn
- * Date: 5/1/2015
- *
  * Migrated from DbSchema; no changes made for the migration
  */
+@RunWith(Parameterized.class)
 public class SchemaXMLTestCase extends Assert
 {
-    // Compare schema XML vs. meta data for all module schemas
-    @Test
-    public void testSchemaXML() throws Exception
+    @Parameterized.Parameters
+    public static Collection schemas()
     {
-        Set<DbSchema> schemas = DbSchema.getAllSchemasToTest();
+        List<Object[]> parameters = new ArrayList<>();
 
-        for (DbSchema schema : schemas)
-            testSchemaXml(schema);
+        for (DbSchema schema : DbSchema.getAllSchemasToTest())
+        {
+            parameters.add(new Object[]{schema, true});
+        }
+
+        return parameters;
     }
 
-    private void testSchemaXml(DbSchema schema) throws Exception
+    private DbSchema schemaToTest;
+
+    public SchemaXMLTestCase(DbSchema schemaToTest, boolean alwaysExpectSuccess)
+    {
+        this.schemaToTest = schemaToTest;
+    }
+
+    // Compare schema XML vs. meta data for all module schemas
+    @Test
+    public void testSchemaXML()
+    {
+        testSchemaXml(schemaToTest);
+    }
+
+    private void testSchemaXml(DbSchema schema)
     {
         String sOut = TableXmlUtils.compareXmlToMetaData(schema, false, false, true).getResultsString();
 
