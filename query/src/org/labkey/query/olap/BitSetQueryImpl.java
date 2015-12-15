@@ -1394,6 +1394,7 @@ public class BitSetQueryImpl
     void resultsCachePut(String query, MemberSet m)
     {
         String key = cachePrefix + query;
+        logDebug("cache put: " + key);
         _resultsCache.put(key, m.detach());
         if (_log.isDebugEnabled())
         {
@@ -2190,6 +2191,7 @@ public class BitSetQueryImpl
                     }
             }
 
+            logDebug("cache put: " + cacheKey);
             _resultsCache.put(cacheKey, ret);
             return ret;
         }
