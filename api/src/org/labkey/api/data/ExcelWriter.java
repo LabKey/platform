@@ -852,9 +852,12 @@ public class ExcelWriter implements ExportWriter
         {
             columns.get(column).writeCell(sheet, column, row, ctx);
 
-            Pair<Integer, Integer> size = imageSize.get(Pair.of(row, column));
-            if (size != null)
-                maxHeight = Math.max(maxHeight, size.second);
+            if (imageSize != null)
+            {
+                Pair<Integer, Integer> size = imageSize.get(Pair.of(row, column));
+                if (size != null)
+                    maxHeight = Math.max(maxHeight, size.second);
+            }
         }
 
         // adjust row height
