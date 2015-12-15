@@ -400,9 +400,7 @@ if (typeof LABKEY == "undefined")
             }
             else
             {
-                requiresExt4Sandbox(function() {
-                    requiresScript("clientapi.min.js", coreDone);
-                });
+                requiresScript("clientapi.min.js", coreDone);
             }
         };
 
