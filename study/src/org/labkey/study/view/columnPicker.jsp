@@ -33,7 +33,7 @@
 
 ReportsController.DataPickerBean bean = (ReportsController.DataPickerBean)HttpView.currentModel();
 DatasetDefinition selectedDataset = null;
-PropertyDescriptor[] pds = null;
+List<PropertyDescriptor> pds = null;
 String error = null;
 %>
 <p><%=h(bean.caption)%></p>
@@ -62,7 +62,7 @@ if (selectedDataset != null)
     List<VisitDataset> datasetVisits = selectedDataset.getVisitDatasets();
     if (null != selectedDataset.getTypeURI())
         pds = OntologyManager.getPropertiesForType(selectedDataset.getTypeURI(),bean.study.getContainer());
-    if (null == pds || pds.length == 0)
+    if (null == pds || pds.size() == 0)
         error = "Dataset is not defined yet.";
 
     %><tr><td>Visit</td><td><select name="<%=text(VisitImpl.SEQUENCEKEY)%>"><%

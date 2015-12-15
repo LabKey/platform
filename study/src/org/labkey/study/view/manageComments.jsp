@@ -30,6 +30,7 @@
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Collections" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -41,8 +42,8 @@
 
     List<? extends Dataset> datasets = manager.getDatasetDefinitions(study);
 
-    PropertyDescriptor[] ptidDescriptors = new PropertyDescriptor[0];
-    PropertyDescriptor[] ptidVisitDescriptors = new PropertyDescriptor[0];
+    List<PropertyDescriptor> ptidDescriptors = Collections.emptyList();
+    List<PropertyDescriptor> ptidVisitDescriptors = Collections.emptyList();
     Integer participantCommentDatasetId = bean.getParticipantCommentDatasetId();
     Integer participantVisitCommentDatasetId = bean.getParticipantVisitCommentDatasetId();
 

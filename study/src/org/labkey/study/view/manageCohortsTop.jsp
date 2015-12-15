@@ -25,6 +25,8 @@
 <%@ page import="org.labkey.study.controllers.CohortController" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Collections" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -135,24 +137,24 @@
                 <select name="participantCohortProperty">
                     <option value="">[None]</option>
                     <%
-                        PropertyDescriptor[] descriptors;
+                        List<PropertyDescriptor> descriptors;
                         Integer participantCohortDatasetId = study.getParticipantCohortDatasetId();
                         if (participantCohortDatasetId == null || participantCohortDatasetId < 0)
-                            descriptors = new PropertyDescriptor[0];
+                            descriptors = Collections.emptyList();
                         else
                         {
                             Dataset dataset = StudyManager.getInstance().getDatasetDefinition(study, participantCohortDatasetId);
                             if (dataset != null)
                                 descriptors = OntologyManager.getPropertiesForType(dataset.getTypeURI(), study.getContainer());
                             else
-                                descriptors = new PropertyDescriptor[0];
+                                descriptors = Collections.emptyList();
                         }
                         for (PropertyDescriptor pd : descriptors)
                         {
                             if (pd.getPropertyType() == PropertyType.STRING) // only strings can be cohort labels
                             {
                     %>
-                    <option value="<%= pd.getName() %>"<%=selected(pd.getName().equals(study.getParticipantCohortProperty()))%>>
+                    <option value="<%= h(pd.getName()) %>"<%=selected(pd.getName().equals(study.getParticipantCohortProperty()))%>>
                         <%= h(null == pd.getLabel() ? pd.getName() : pd.getLabel()) %>
                     </option>
                     <%

@@ -17,13 +17,13 @@
 %>
 <%@ page import="org.labkey.api.exp.PropertyDescriptor"%>
 <%@ page import="org.labkey.api.exp.PropertyType"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.experiment.types.TypesController.TypeDetailsAction" %>
+<%@ page import="org.labkey.experiment.types.TypesController.TypeDetailsAction"%>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     TypeDetailsAction bean = (TypeDetailsAction)getModelBean();
     String typeName = bean.typeName;
-    PropertyDescriptor[] properties = bean.properties;
+    List<PropertyDescriptor> properties = bean.properties;
 %><h3><%=h(typeName)%></h3>
 <table>
 <tr><th>Name</th><th>PropertyURI</th><th>Type</th></tr><%

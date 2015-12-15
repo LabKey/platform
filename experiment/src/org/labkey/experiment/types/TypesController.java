@@ -66,6 +66,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -307,7 +308,7 @@ public class TypesController extends SpringActionController
     public static class TypeDetailsAction extends SimpleViewAction<TypeForm>
     {
         public String typeName;
-        public PropertyDescriptor properties[] = new PropertyDescriptor[0];
+        public List<PropertyDescriptor> properties = Collections.emptyList();
 
         public ModelAndView getView(TypeForm form, BindException errors) throws Exception
         {

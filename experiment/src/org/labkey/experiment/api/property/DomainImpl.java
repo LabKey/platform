@@ -91,8 +91,8 @@ public class DomainImpl implements Domain
     public DomainImpl(DomainDescriptor dd)
     {
         _dd = dd;
-        PropertyDescriptor[] pds = OntologyManager.getPropertiesForType(getTypeURI(), getContainer());
-        _properties = new ArrayList<>(pds.length);
+        List<PropertyDescriptor> pds = OntologyManager.getPropertiesForType(getTypeURI(), getContainer());
+        _properties = new ArrayList<>(pds.size());
         List<DomainPropertyManager.ConditionalFormatWithPropertyId> allFormats = DomainPropertyManager.get().getConditionalFormats(getContainer());
         for (PropertyDescriptor pd : pds)
         {
