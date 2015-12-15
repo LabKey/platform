@@ -2199,7 +2199,7 @@ if (!LABKEY.DataRegions) {
     var _onSelectionChange = function(region) {
         $(region).trigger('selectchange', [region, region.selectedCount]);
         _updateRequiresSelectionButtons(region, region.selectedCount);
-        LABKEY.Utils.signalWebDriverTest('selectChange', region.selectedCount);
+        LABKEY.Utils.signalWebDriverTest('dataRegionSelectionChange', region.selectedCount);
     };
 
     var _onViewSave = function(region, designer, savedViewsInfo, urlParameters) {
