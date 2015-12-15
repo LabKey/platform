@@ -32,8 +32,13 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.pipeline.ParamParser;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.PipelineProvider;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
+import org.labkey.api.pipeline.PipelineValidationException;
+import org.labkey.api.pipeline.RemoteExecutionEngine;
 import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.TaskFactorySettings;
 import org.labkey.api.pipeline.TaskId;
@@ -44,14 +49,17 @@ import org.labkey.api.pipeline.XMLBeanTaskFactoryFactory;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URIUtil;
 import org.labkey.pipeline.api.properties.ApplicationPropertiesImpl;
 import org.labkey.pipeline.api.properties.ConfigPropertiesImpl;
 import org.labkey.pipeline.cluster.NoOpPipelineStatusWriter;
+import org.labkey.pipeline.mule.test.DummyPipelineJob;
+import org.labkey.pipeline.mule.test.DummyRemoteExecutionEngine;
 import org.labkey.pipeline.mule.JMSStatusWriter;
-import org.labkey.api.pipeline.RemoteExecutionEngine;
 import org.labkey.pipeline.xml.TaskType;
 
 import java.io.File;
@@ -633,7 +641,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
 
     /**
      * Search various directories to find the exact location of the specified tool.
-     * @param installPath File system location where tool is installed. {@value null} to search pipelineToolsDirectory and PATH
+     * @param installPath File system location where tool is installed. Use null to search both pipelineToolsDirectory and PATH
      * @param rel Path to tool relative to the installPath or pipelinToolsDirectory/PATH
      * @param expectExecutable Tool canExecute and may have an unspecified file extension
      * @return Full path to the specified tool
@@ -820,6 +828,73 @@ public class PipelineJobServiceImpl extends PipelineJobService
             _appProps.setToolsDirectory(_tempDir);
             _impl.setAppProperties(_appProps);
             _impl.setConfigProperties(_props);
+        }
+
+        @Test(expected = IllegalArgumentException.class)
+        public void testUnknownEngine()
+        {
+            _impl.getRemoteExecutionEngine("!!NoSuchEngine!!");
+        }
+
+        @Test
+        public void testDummySubmit() throws PipelineValidationException, InterruptedException, PipelineProvider.HandlerException
+        {
+            if (!PipelineService.get().isEnterprisePipeline())
+            {
+                return;
+            }
+
+            int dummyEngineIndex = _impl._remoteExecutionEngines.size();
+            DummyRemoteExecutionEngine dummyEngine = new DummyRemoteExecutionEngine();
+            _impl._remoteExecutionEngines.add(dummyEngine);
+            try
+            {
+                assertEquals(dummyEngine, _impl.getRemoteExecutionEngine(dummyEngine.getType()));
+
+                int dummyConfigIndex = _impl._remoteExecutionEngineConfigs.size();
+                DummyRemoteExecutionEngine.DummyConfig dummyConfig = new DummyRemoteExecutionEngine.DummyConfig();
+                _impl._remoteExecutionEngineConfigs.add(dummyConfig);
+                try
+                {
+                    Container c = JunitUtil.getTestContainer();
+
+                    PipelineJob job = new DummyPipelineJob(c, TestContext.get().getUser());
+
+                    PipelineService.get().queueJob(job);
+
+                    int seconds = 0;
+                    while (seconds++ < 10 && dummyEngine.getSubmitCount() == 0)
+                    {
+                        Thread.sleep(1000);
+                    }
+                    assertEquals("Job was never submitted", 1, dummyEngine.getSubmitCount());
+
+                    PipelineStatusFile file = PipelineStatusManager.getStatusFile(job.getLogFile());
+                    assertNotNull("No status file found!", file);
+
+                    PipelineStatusManager.cancelStatus(job.getInfo(), Collections.singleton(file.getRowId()));
+
+                    seconds = 0;
+                    while (seconds++ < 10 && dummyEngine.getCancelCount() == 0)
+                    {
+                        Thread.sleep(1000);
+                    }
+                    assertEquals("Job was never cancelled", 1, dummyEngine.getCancelCount());
+
+                    // Will fail if job didn't get moved from Cancelling to Cancelled
+                    PipelineStatusManager.deleteStatus(job.getInfo(), true, Collections.singleton(file.getRowId()));
+
+                    job.getLogFile().delete();
+                }
+                finally
+                {
+                    _impl._remoteExecutionEngineConfigs.remove(dummyConfigIndex);
+                }
+            }
+            finally
+            {
+                _impl._remoteExecutionEngines.remove(dummyEngineIndex);
+            }
         }
 
         @Test

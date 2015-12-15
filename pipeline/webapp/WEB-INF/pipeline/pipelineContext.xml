@@ -8,6 +8,9 @@
             <list>
                 <bean class="org.labkey.pipeline.analysis.CommandTaskImpl$Factory"/>
                 <bean class="org.labkey.pipeline.analysis.ConvertTaskFactory"/>
+
+                <!-- For unit-testing purposes -->
+                <bean class="org.labkey.pipeline.mule.test.DummyTaskFactory"/>
             </list>
         </property>
         <property name="pipelineImpls">

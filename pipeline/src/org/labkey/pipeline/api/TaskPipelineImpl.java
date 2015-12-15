@@ -123,7 +123,7 @@ public class TaskPipelineImpl<SettingsType extends TaskPipelineSettings> impleme
         return _taskProgression;
     }
 
-    protected void setTaskProgression(TaskId[] taskProgression)
+    public void setTaskProgression(TaskId... taskProgression)
     {
         _taskProgression = taskProgression;
     }

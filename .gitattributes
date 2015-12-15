@@ -1168,7 +1168,6 @@ pipeline/src/org/labkey/pipeline/importer/FolderImportJob.java -text
 pipeline/src/org/labkey/pipeline/importer/FolderImportProvider.java -text
 pipeline/src/org/labkey/pipeline/importer/FolderImportTask.java -text
 pipeline/src/org/labkey/pipeline/importer/FolderJobSupport.java -text
-pipeline/src/org/labkey/pipeline/mule/DummyRemoteExecutionEngine.java -text
 pipeline/src/org/labkey/pipeline/mule/EPipelineContextListener.java -text
 pipeline/src/org/labkey/pipeline/mule/EPipelineQueueImpl.java -text
 pipeline/src/org/labkey/pipeline/mule/JMSStatusWriter.java -text
@@ -1198,6 +1197,10 @@ pipeline/src/org/labkey/pipeline/mule/filters/TaskRemoteExecutionEngineJmsSelect
 pipeline/src/org/labkey/pipeline/mule/filters/TaskRemoteServerJmsSelectorFilter.java -text
 pipeline/src/org/labkey/pipeline/mule/filters/TaskStateChangeJmsSelectorFilter.java -text
 pipeline/src/org/labkey/pipeline/mule/routing/EPipelineQueueMessageSplitter.java -text
+pipeline/src/org/labkey/pipeline/mule/test/DummyPipelineJob.java -text
+pipeline/src/org/labkey/pipeline/mule/test/DummyRemoteExecutionEngine.java -text
+pipeline/src/org/labkey/pipeline/mule/test/DummyTask.java -text
+pipeline/src/org/labkey/pipeline/mule/test/DummyTaskFactory.java -text
 pipeline/src/org/labkey/pipeline/mule/transformers/JMSMessageToPipelineJob.java -text
 pipeline/src/org/labkey/pipeline/mule/transformers/NoOpTransformer.java -text
 pipeline/src/org/labkey/pipeline/mule/transformers/PipelineJobToJMSMessage.java -text
