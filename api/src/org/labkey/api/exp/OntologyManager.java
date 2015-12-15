@@ -2123,12 +2123,12 @@ public class OntologyManager
     }
 
     //TODO: DbCache semantics. This loads the cache but does not fetch cause need to get them all together
-    public static PropertyDescriptor[] getPropertiesForType(String typeURI, Container c)
+    public static List<PropertyDescriptor> getPropertiesForType(String typeURI, Container c)
 	{
-        PropertyDescriptor[] pdArray = getCachedPropertyDescriptorsForDomain(typeURI, c);
-        if (pdArray != null)
+        List<PropertyDescriptor> result = getCachedPropertyDescriptorsForDomain(typeURI, c);
+        if (result != null)
         {
-            return pdArray;
+            return result;
         }
 
         String sql = " SELECT PD.*,Required " +
@@ -2144,27 +2144,26 @@ public class OntologyManager
             c.getProject() == null ? _sharedContainer.getProject().getId() : c.getProject().getId(),
             _sharedContainer.getProject().getId()
         };
-        pdArray = new SqlSelector(getExpSchema(), sql, params).getArray(PropertyDescriptor.class);
+        result = Collections.unmodifiableList(new SqlSelector(getExpSchema(), sql, params).getArrayList(PropertyDescriptor.class));
         //NOTE: cached descriptors may have differing values of isRequired() as that is a per-domain setting
         //Descriptors returned from this method come direct from DB and have correct values.
-        List<Pair<String, Boolean>> propertyURIs = new ArrayList<>(pdArray.length);
-        for (PropertyDescriptor pd : pdArray)
+        List<Pair<String, Boolean>> propertyURIs = new ArrayList<>(result.size());
+        for (PropertyDescriptor pd : result)
         {
             propDescCache.put(getCacheKey(pd), pd);
             propertyURIs.add(new Pair<>(pd.getPropertyURI(), pd.isRequired()));
         }
         domainPropertiesCache.put(getCacheKey(typeURI, c), propertyURIs);
 
-        return pdArray;
+        return result;
 	}
 
-    private static PropertyDescriptor[] getCachedPropertyDescriptorsForDomain(String typeURI, Container c)
+    private static List<PropertyDescriptor> getCachedPropertyDescriptorsForDomain(String typeURI, Container c)
     {
         List<Pair<String, Boolean>> propertyURIs = domainPropertiesCache.get(getCacheKey(typeURI, c));
         if (propertyURIs != null)
         {
-            PropertyDescriptor[] result = new PropertyDescriptor[propertyURIs.size()];
-            int index = 0;
+            List<PropertyDescriptor> result = new ArrayList<>(propertyURIs.size());
             for (Pair<String, Boolean> propertyURI : propertyURIs)
             {
                 PropertyDescriptor pd = propDescCache.get(getCacheKey(propertyURI.getKey(), c));
@@ -2178,9 +2177,9 @@ public class OntologyManager
                 // Clone so nobody else messes up our copy
                 pd = pd.clone();
                 pd.setRequired(propertyURI.getValue().booleanValue());
-                result[index++] = pd;
+                result.add(pd);
             }
-            return result;
+            return Collections.unmodifiableList(result);
         }
         return null;
     }
@@ -2511,8 +2510,8 @@ public class OntologyManager
             assert (null!= dd);
 
             pdNewMap = newPropsByDomain.get(dURI);
-            PropertyDescriptor[] domainProps = getPropertiesForType(dURI, dd.getContainer());
-            int sortOrder = domainProps.length;
+            List<PropertyDescriptor> domainProps = getPropertiesForType(dURI, dd.getContainer());
+            int sortOrder = domainProps.size();
 
             for (PropertyDescriptor pdToInsert : pdNewMap.values())
             {
@@ -2523,7 +2522,7 @@ public class OntologyManager
                 }
                 else
                 {
-                    if (domainProps.length == 0)
+                    if (domainProps.size() == 0)
                     {
                         // this is much faster than insertOrUpdatePropertyDescriptor()
                         if (pdToInsert.getPropertyId() == 0)
@@ -3300,8 +3299,8 @@ public class OntologyManager
             ensurePropertyDomain(pdStr, dd);
             ensurePropertyDomain(pdInt, dd);
 
-            PropertyDescriptor[] pds = getPropertiesForType(domURIa, c);
-            assertEquals(2, pds.length);
+            List<PropertyDescriptor> pds = getPropertiesForType(domURIa, c);
+            assertEquals(2, pds.size());
             Map<String, PropertyDescriptor>  mPds = new HashMap<>();
             for(PropertyDescriptor pd1  : pds)
                 mPds.put( pd1.getPropertyURI(), pd1);
