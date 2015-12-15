@@ -216,6 +216,7 @@ abstract public class PipelineJob extends Job implements Serializable
          * Do the work of the task.
          * @return the files used as inputs and generated as outputs, and the steps that operated on them
          */
+        @NotNull
         public abstract RecordedActionSet run() throws PipelineJobException;
     }
 
