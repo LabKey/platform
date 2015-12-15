@@ -17,6 +17,7 @@ package org.labkey.di.pipeline;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
@@ -423,6 +424,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
     }
 
 
+    @NotNull
     public RecordedActionSet run() throws PipelineJobException
     {
         RecordedAction action = new RecordedAction(_factory.getId().getName());

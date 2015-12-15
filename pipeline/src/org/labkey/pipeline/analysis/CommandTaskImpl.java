@@ -16,6 +16,7 @@
 package org.labkey.pipeline.analysis;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jmock.Mockery;
 import org.jmock.lib.legacy.ClassImposteriser;
 import org.junit.Assert;
@@ -550,6 +551,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         return path;
     }
 
+    @NotNull
     public RecordedActionSet run() throws PipelineJobException
     {
         try

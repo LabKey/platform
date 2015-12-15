@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment.pipeline;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
@@ -59,6 +60,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
         super(factory, job);
     }
 
+    @NotNull
     public RecordedActionSet run() throws PipelineJobException
     {
         MoveRunsPipelineJob job = (MoveRunsPipelineJob)getJob();

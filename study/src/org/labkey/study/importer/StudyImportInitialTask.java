@@ -16,6 +16,7 @@
 
 package org.labkey.study.importer;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.AbstractTaskFactory;
 import org.labkey.api.pipeline.AbstractTaskFactorySettings;
@@ -53,6 +54,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
 
     private static final int DELAY_INCREMENT = 10;
 
+    @NotNull
     public RecordedActionSet run() throws PipelineJobException
     {
         PipelineJob job = getJob();

@@ -16,6 +16,7 @@
 
 package org.labkey.study.pipeline;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.PipelineJob;
@@ -69,6 +70,7 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
         return _cohortManager;
     }
 
+    @NotNull
     public RecordedActionSet run() throws PipelineJobException
     {
         try

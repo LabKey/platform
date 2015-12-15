@@ -16,6 +16,7 @@
 package org.labkey.experiment.pipeline;
 
 import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.FileXarSource;
@@ -139,6 +140,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
      * This allows us to quickly tell if the task is already complete by checking for the XAR file. If it exists, we
      * can simply reimport it. If the temporary file exists, we can skip directly to step 5 above. 
      */
+    @NotNull
     public RecordedActionSet run() throws PipelineJobException
     {
         try

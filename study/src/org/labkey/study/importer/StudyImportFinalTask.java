@@ -16,6 +16,7 @@
 
 package org.labkey.study.importer;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.pipeline.AbstractTaskFactory;
 import org.labkey.api.pipeline.AbstractTaskFactorySettings;
@@ -48,6 +49,7 @@ public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.
         super(factory, job);
     }
 
+    @NotNull
     public RecordedActionSet run() throws PipelineJobException
     {
         PipelineJob job = getJob();

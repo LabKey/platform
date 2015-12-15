@@ -17,6 +17,7 @@
 package org.labkey.study.pipeline;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.PipelineJob;
@@ -54,6 +55,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
         super(factory, job);
     }
 
+    @NotNull
     public RecordedActionSet run() throws PipelineJobException
     {
         try

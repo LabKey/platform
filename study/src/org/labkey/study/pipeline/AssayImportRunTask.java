@@ -391,6 +391,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
      * @return
      * @throws PipelineJobException
      */
+    @NotNull
     public RecordedActionSet run() throws PipelineJobException
     {
         AssayProvider provider = _factory.getProvider(getJob());

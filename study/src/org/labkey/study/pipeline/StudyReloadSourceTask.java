@@ -15,6 +15,7 @@
  */
 package org.labkey.study.pipeline;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.pipeline.AbstractTaskFactory;
 import org.labkey.api.pipeline.AbstractTaskFactorySettings;
 import org.labkey.api.pipeline.PipeRoot;
@@ -40,6 +41,7 @@ public class StudyReloadSourceTask extends PipelineJob.Task<StudyReloadSourceTas
         super(factory, job);
     }
 
+    @NotNull
     @Override
     public RecordedActionSet run() throws PipelineJobException
     {
