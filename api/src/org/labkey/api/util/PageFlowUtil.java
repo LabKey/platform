@@ -1806,12 +1806,16 @@ public class PageFlowUtil
     private static String resolveThemeName(Container c)
     {
         String themeName = WebTheme.DEFAULT.getFriendlyName();
-        WebTheme theme = WebThemeManager.getTheme(c);
 
-        // Custom Theme -- TODO: Should have a better way to lookup built-in themes
-        if (!theme.isEditable())
+        if (c != null)
         {
-            themeName = theme.getFriendlyName();
+            WebTheme theme = WebThemeManager.getTheme(c);
+
+            // Custom Theme -- TODO: Should have a better way to lookup built-in themes
+            if (!theme.isEditable())
+            {
+                themeName = theme.getFriendlyName();
+            }
         }
 
         return themeName.toLowerCase();
