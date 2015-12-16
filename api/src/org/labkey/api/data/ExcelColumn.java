@@ -321,9 +321,12 @@ public class ExcelColumn extends RenderColumn
                     break;
 
                 case TYPE_FILE:
-                    Drawing drawing = (Drawing)ctx.get(ExcelWriter.SHEET_DRAWING);
-                    boolean hasImageContent = false;
+                    String filePath = o.toString().replaceAll("\r\n", "\n");
+                    cell.setCellValue(filePath);
+                    if (_style != null)
+                        cell.setCellStyle(_style);
 
+                    Drawing drawing = (Drawing)ctx.get(ExcelWriter.SHEET_DRAWING);
                     if (drawing != null && _dc instanceof AbstractFileDisplayColumn)
                     {
                         String path = (String)o;
@@ -387,16 +390,8 @@ public class ExcelColumn extends RenderColumn
                                 ClientAnchor anchor = createAnchor(row, column, rowRatio, colRatio, helper);
                                 Picture pict = drawing.createPicture(anchor, pictureIdx);
                                 setImagePicture(ctx, row, column, pict);
-                                hasImageContent = true;
                             }
                         }
-                    }
-                    if (!hasImageContent) // show file name/path if not an image or image failed to load
-                    {
-                        String s = o.toString().replaceAll("\r\n", "\n");
-                        cell.setCellValue(s);
-                        if (_style != null)
-                            cell.setCellStyle(_style);
                     }
                     break;
 
