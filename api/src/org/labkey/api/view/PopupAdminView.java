@@ -74,6 +74,7 @@ public class PopupAdminView extends PopupMenuView
         if (hasAdminReadInRoot)
         {
             NavTree siteAdmin = new NavTree("Site");
+            siteAdmin.setId("__lk-adminmenu-site");
             siteAdmin.addChildren(SiteAdminMenu.getNavTree(context));
             navTree.addChild(siteAdmin);
         }
@@ -86,6 +87,7 @@ public class PopupAdminView extends PopupMenuView
             if (isAdminInThisFolder && !c.isWorkbook())
             {
                 NavTree folderAdmin = new NavTree("Folder");
+                folderAdmin.setId("__lk-adminmenu-folder");
                 folderAdmin.addChildren(FolderAdminMenu.getFolderElements(c));
                 folderAdmin.addSeparator();
                 folderAdmin.addChildren(ProjectAdminMenu.getNavTree(context));
@@ -96,6 +98,7 @@ public class PopupAdminView extends PopupMenuView
         if (user.isDeveloper())
         {
             NavTree devMenu = new NavTree("Developer Links");
+            devMenu.setId("__lk-adminmenu-developer");
             devMenu.addChildren(PopupDeveloperView.getNavTree(context));
             navTree.addChild(devMenu);
         }
@@ -156,6 +159,8 @@ public class PopupAdminView extends PopupMenuView
         setNavTree(navTree);
         setAlign(PopupMenu.Align.RIGHT);
         setButtonStyle(PopupMenu.ButtonStyle.TEXT);
+
+        getModelBean().setIsSingletonMenu(true);
     }
 
     private void addModulesToMenu(ViewContext context, SortedSet<Module> modules, Module defaultModule, NavTree menu)

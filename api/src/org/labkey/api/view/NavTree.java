@@ -500,7 +500,7 @@ public class NavTree implements Collapsible
 
     public String toJS()
     {
-        return toJS(new StringBuilder(), false).toString();
+        return toJS(new StringBuilder(), true, false).toString();
     }
 
 
@@ -552,7 +552,7 @@ public class NavTree implements Collapsible
      * Renders a navtree instance to a javascript object suitable for consumptions by the rendering library.
      * Note that description is translated to: tooltip.
      */
-    protected StringBuilder toJS(StringBuilder sb, boolean asMenu)
+    protected StringBuilder toJS(StringBuilder sb, boolean withIds, boolean asMenu)
     {
         String title = getText();
         sb.append("{").append("text:").append(PageFlowUtil.qh(title));
@@ -565,7 +565,7 @@ public class NavTree implements Collapsible
                 sb.append(" labkey-emphasis");
             sb.append("'");
         }
-        if (!asMenu && StringUtils.isNotEmpty(getId()))
+        if (withIds && StringUtils.isNotEmpty(getId()))
             sb.append(",id:").append(PageFlowUtil.qh(getId()));
         if (StringUtils.isNotEmpty(getDescription()))
             sb.append(",tooltip:").append(PageFlowUtil.qh(getDescription()));
@@ -587,7 +587,7 @@ public class NavTree implements Collapsible
         {
             sb.append(",hideOnClick:false");
             sb.append(",\n").append(asMenu ? "menu:{showSeparator:false,items:" : "children:");
-            toJS(_children, sb, asMenu);
+            toJS(_children, sb, asMenu, withIds);
             sb.append(",\n").append(asMenu ? "}" : "");
         }
         else
@@ -598,7 +598,13 @@ public class NavTree implements Collapsible
         return sb;
     }
 
+    @Deprecated
     public static StringBuilder toJS(Collection<NavTree> list, @Nullable StringBuilder sb, boolean asMenu)
+    {
+        return toJS(list,sb,asMenu,!asMenu);
+    }
+
+    public static StringBuilder toJS(Collection<NavTree> list, @Nullable StringBuilder sb, boolean asMenu, boolean withIds)
     {
         if (null == sb)
             sb = new StringBuilder();
@@ -610,7 +616,7 @@ public class NavTree implements Collapsible
             if (tree == NavTree.MENU_SEPARATOR)
                 sb.append("'-'");
             else
-                tree.toJS(sb, asMenu);
+                tree.toJS(sb, withIds, asMenu);
             sep = ",\n";
         }
         sb.append("]");

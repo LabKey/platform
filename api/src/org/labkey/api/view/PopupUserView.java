@@ -38,11 +38,15 @@ public class PopupUserView extends PopupMenuView
         ActionURL currentURL = context.getActionURL();
 
         NavTree tree = new NavTree(user.getFriendlyName());
-        tree.addChild("My Account", PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId(), currentURL));
+        NavTree myaccount = new NavTree("My Account", PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId(), currentURL));
+        myaccount.setId("__lk-usermenu-myaccount");
+        tree.addChild(myaccount);
 
         if (user.isImpersonated())
         {
-            tree.addChild("Stop Impersonating", PageFlowUtil.urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getImpersonationContext().getReturnURL()));
+            NavTree stop = new NavTree("Stop Impersonating", PageFlowUtil.urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getImpersonationContext().getReturnURL()));
+            stop.setId("__lk-usermenu-stopimpersonating");
+            tree.addChild(stop);
         }
         else
         {
@@ -56,13 +60,16 @@ public class PopupUserView extends PopupMenuView
             if (adminUser.isSiteAdmin() || (null != project && project.hasPermission(adminUser, AdminPermission.class)))
             {
                 NavTree impersonateMenu = new NavTree("Impersonate");
+                impersonateMenu.setId("__lk-usermenu-impersonate");
                 impersonationContext.addMenu(impersonateMenu, c, user, currentURL);
 
                 if (impersonateMenu.hasChildren())
                     tree.addChild(impersonateMenu);
             }
 
-            tree.addChild("Sign Out", PageFlowUtil.urlProvider(LoginUrls.class).getLogoutURL(c));
+            NavTree out = new NavTree("Sign Out", PageFlowUtil.urlProvider(LoginUrls.class).getLogoutURL(c));
+            out.setId("__lk-usermenu-signout");
+            tree.addChild(out);
         }
 
         tree.setId("userMenu");
@@ -70,5 +77,7 @@ public class PopupUserView extends PopupMenuView
         setNavTree(tree);
         setAlign(PopupMenu.Align.RIGHT);
         setButtonStyle(PopupMenu.ButtonStyle.TEXT);
+
+        getModelBean().setIsSingletonMenu(true);
     }
 }

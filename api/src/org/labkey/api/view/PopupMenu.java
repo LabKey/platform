@@ -35,6 +35,10 @@ import java.util.Map;
  */
 public class PopupMenu extends DisplayElement
 {
+    // a menu that appears on the page only once, can use id's,
+    // however a menu that can appear on the page multiple times
+    // should not use id's
+    private boolean singletonMenu = false;
     private NavTree _navTree;
     private Align _align = Align.LEFT;
     private ButtonStyle _buttonStyle = ButtonStyle.MENUBUTTON;
@@ -89,6 +93,12 @@ public class PopupMenu extends DisplayElement
         return _safeID;
     }
 
+    public void setIsSingletonMenu(boolean b)
+    {
+        // basically indicates that is OK to render id's on menu items (useful for testing)
+        singletonMenu = true;
+    }
+
     public void render(RenderContext ctx, Writer out) throws IOException
     {
         render(out);
@@ -109,6 +119,9 @@ public class PopupMenu extends DisplayElement
     {
         if (null == _navTree.getText())
             return;
+
+        if (singletonMenu && StringUtils.isNotEmpty(_navTree.getId()))
+            _safeID = _navTree.getId();
 
         // Issue 11392: DataRegion name escaping in button menus.  Menu id is double-escaped.  Once here, once when rendering.
         String jsStringFilteredMenuId = PageFlowUtil.qh(_safeID);
@@ -164,7 +177,7 @@ public class PopupMenu extends DisplayElement
         out.append("if (typeof(Ext4) != 'undefined') { Ext4.onReady(function() {");
         out.append(renderUnregScript());
         out.append(" var m = Ext4.create('Ext.menu.Menu',");
-        out.append(renderMenuModel(_navTree.getChildList(), _safeID));
+        out.append(renderMenuModel(_navTree.getChildList(), _safeID, singletonMenu));
         out.append("); }); } else { console.error('Unable to render menu. Ext4 is not available.'); }");
     }
 
@@ -182,14 +195,15 @@ public class PopupMenu extends DisplayElement
         return sb.toString();
     }
 
-    private static String renderMenuModel(Collection<NavTree> trees, String id)
+    private static String renderMenuModel(Collection<NavTree> trees, String id, boolean singletonMenu)
     {
         StringBuilder sb = new StringBuilder();
 
         sb.append("{showSeparator: false, ");
         sb.append("id:").append(PageFlowUtil.qh(id)).append(",\n");
         sb.append("items:");
-        NavTree.toJS(trees, sb, true);
+        boolean useIds = singletonMenu;
+        NavTree.toJS(trees, sb, true, useIds);
         sb.append("}");
 
         return sb.toString();
