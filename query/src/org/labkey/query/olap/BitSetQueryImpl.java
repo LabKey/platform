@@ -1380,7 +1380,7 @@ public class BitSetQueryImpl
     }
 
 
-    static StringKeyCache<MemberSet> _resultsCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "olap - count distinct queries");
+    static StringKeyCache<MemberSet> _resultsCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, TimeUnit.DAYS.toMillis(1), "olap - count distinct queries");
 
     MemberSet resultsCacheGet(String query)
     {
