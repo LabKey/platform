@@ -18,6 +18,7 @@ package org.labkey.api.etl;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 
 import java.util.HashSet;
@@ -118,5 +119,10 @@ public abstract class AbstractDataIterator implements DataIterator
     protected void checkShouldCancel() throws BatchValidationException
     {
         _context.checkShouldCancel();
+    }
+
+    protected boolean preserveEmptyString()
+    {
+        return _context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.PreserveEmptyString);
     }
 }

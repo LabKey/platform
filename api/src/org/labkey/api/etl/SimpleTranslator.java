@@ -98,7 +98,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     {
         super(context);
         _data = source;
-        _outputColumns.add(new Pair<ColumnInfo, Supplier>(new ColumnInfo(source.getColumnInfo(0)), new PassthroughColumn(0)));
+        _outputColumns.add(new Pair<>(new ColumnInfo(source.getColumnInfo(0)), new PassthroughColumn(0)));
     }
 
     protected DataIterator getInput()
@@ -216,12 +216,22 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         final int index;
         final JdbcType type;
         final String fieldName;
+        final boolean _preserveEmptyString;
 
         SimpleConvertColumn(String fieldName, int indexFrom, JdbcType to)
         {
             this.fieldName = fieldName;
             this.index = indexFrom;
             this.type = to;
+            _preserveEmptyString = false;
+        }
+
+        public SimpleConvertColumn(String fieldName, int indexFrom, JdbcType to, boolean preserveEmptyString)
+        {
+            this.index = indexFrom;
+            this.type = to;
+            this.fieldName = fieldName;
+            _preserveEmptyString = preserveEmptyString;
         }
 
         @Override
@@ -240,6 +250,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         protected Object convert(Object o)
         {
+            if (o instanceof String && JdbcType.VARCHAR.equals(type) && "".equals(o))
+                return "";
             return null==type ? o : type.convert(o);
         }
 
@@ -604,8 +616,6 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         }
     }
 
-
-
     /* use same value for all rows, set value on first usage */
     Timestamp _ts = null;
 
@@ -752,7 +762,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         if (mv)
             c = new MissingValueConvertColumn(col.getName(), fromIndex, col.getJdbcType());
         else
-            c = new SimpleConvertColumn(col.getName(), fromIndex, col.getJdbcType());
+            c = new SimpleConvertColumn(col.getName(), fromIndex, col.getJdbcType(), preserveEmptyString());
 
         ForeignKey fk = col.getFk();
         if (fk != null && _context.isAllowImportLookupByAlternateKey() && fk.allowImportByAlternateKey())
@@ -777,7 +787,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         if (mv)
             c = new MissingValueConvertColumn(col.getName(), fromIndex, mvIndex, col.getJdbcType());
         else
-            c = new SimpleConvertColumn(col.getName(), fromIndex, col.getJdbcType());
+            c = new SimpleConvertColumn(col.getName(), fromIndex, col.getJdbcType(), preserveEmptyString());
 
         ForeignKey fk = col.getFk();
         if (fk != null && _context.isAllowImportLookupByAlternateKey() && fk.allowImportByAlternateKey())
@@ -992,7 +1002,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         for (int i=1 ; i<_outputColumns.size() ; i++)
             outputCols.put(_outputColumns.get(i).getKey().getName(), i);
 
-        boolean allowTargetContainers = null != context.getConfigParameters() && Boolean.TRUE==context.getConfigParameters().get(QueryUpdateService.ConfigParameters.TargetMultipleContainers);
+        boolean allowTargetContainers = context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.TargetMultipleContainers);
 
         addBuiltinColumn(SpecialColumn.Container, allowTargetContainers, target, inputCols, outputCols, containerCallable);
         addBuiltinColumn(SpecialColumn.CreatedBy,  allowPassThrough, target, inputCols, outputCols, userCallable);

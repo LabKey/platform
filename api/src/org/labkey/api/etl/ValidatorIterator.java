@@ -28,6 +28,7 @@ import org.labkey.api.data.validator.RowValidator;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 
@@ -62,7 +63,7 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
         if (vs != null)
         {
             while (_validators.size() <= i)
-                _validators.add(new ArrayList<ColumnValidator>());
+                _validators.add(new ArrayList<>());
             _validators.get(i).addAll(vs);
         }
     }
@@ -72,7 +73,7 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
         if (v != null)
         {
             while (_validators.size() <= i)
-                _validators.add(new ArrayList<ColumnValidator>());
+                _validators.add(new ArrayList<>());
             _validators.get(i).add(v);
         }
     }
@@ -84,7 +85,7 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
 
     public void addRequired(int i, @Nullable ColumnInfo col, @Nullable DomainProperty dp)
     {
-        addValidator(i, ColumnValidators.createRequiredValidator(col, dp));
+        addValidator(i, ColumnValidators.createRequiredValidator(col, dp, _context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.PreserveEmptyString)));
     }
 
 

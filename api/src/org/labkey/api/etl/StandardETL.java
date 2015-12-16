@@ -30,6 +30,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 
@@ -230,11 +231,11 @@ public class StandardETL implements DataIteratorBuilder
             if (null == pair.target || isAttachment)
                 indexConvert = convert.addColumn(pair.indexFrom);
             else if (null == pair.dp)
-                indexConvert = convert.addConvertColumn(pair.target, pair.indexFrom, pair.indexMv,  supportsMV);
+                indexConvert = convert.addConvertColumn(pair.target, pair.indexFrom, pair.indexMv, supportsMV);
             else
                 indexConvert = convert.addConvertColumn(pair.target, pair.indexFrom, pair.indexMv, pair.dp.getPropertyDescriptor(), pair.dp.getPropertyDescriptor().getPropertyType());
 
-            List<ColumnValidator> validators = ColumnValidators.create(pair.target, pair.dp);
+            List<ColumnValidator> validators = ColumnValidators.create(pair.target, pair.dp, context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.PreserveEmptyString));
             validate.addValidators(indexConvert, validators);
         }
 

@@ -106,6 +106,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     protected final Container _mvIndicatorContainer;
     // true if the results can be scrolled by the DataIterator created in .getDataIterator()
     protected Boolean _scrollable = null;
+    protected boolean _preserveEmptyString = false;
 
     protected DataLoader()
     {
@@ -241,6 +242,15 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     protected void setScrollable(boolean scrollable)
     {
         _scrollable = scrollable;
+    }
+
+    /**
+     * By default, we treat empty strings as NULL values. Set true to keep them as empty strings instead.
+     *
+     */
+    public void setPreserveEmptyString(boolean preserveEmptyString)
+    {
+        _preserveEmptyString = preserveEmptyString;
     }
 
     /**
@@ -587,10 +597,14 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                 for (int i = 0; i < _activeColumns.length; i++)
                 {
                     ColumnDescriptor column = _activeColumns[i];
+                    if (_preserveEmptyString && null == column.missingValues)
+                    {
+                        column.missingValues = "";
+                    }
                     Object fld;
                     if (i >= fields.length)
                     {
-                        fld = "";
+                        fld = _preserveEmptyString ? null : "";
                     }
                     else
                     {
@@ -598,7 +612,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                         if (fld instanceof String && StringUtils.containsOnly(((String) fld), ' '))
                             fld = "";
                         else if (fld == null)
-                            fld = "";
+                            fld = _preserveEmptyString ? null : "";
                     }
                     try
                     {

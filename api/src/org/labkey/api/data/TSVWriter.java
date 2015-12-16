@@ -38,8 +38,9 @@ public class TSVWriter extends TextWriter
 
     protected List<String> _fileHeader = null;
     protected boolean _headerRowVisible = true;
+    protected boolean _preserveEmptyString = false;
 
-    public static enum DELIM
+    public enum DELIM
     {
         COMMA("Comma", ',', "csv", "text/csv"),
         SEMICOLON("Semicolon", ';', "csv", "text/csv"),
@@ -47,7 +48,7 @@ public class TSVWriter extends TextWriter
         TAB("Tab", '\t', "tsv", "text/tab-separated-values")
         ;
 
-        private DELIM(final String text, char delim, String extension, String contentType)
+        DELIM(final String text, char delim, String extension, String contentType)
         {
             this.text = text;
             this.delim = delim;
@@ -66,14 +67,14 @@ public class TSVWriter extends TextWriter
         public String contentType;
     }
 
-    public static enum QUOTE
+    public enum QUOTE
     {
         DOUBLE('"'),
         SINGLE('\''),
         NONE((char)Character.UNASSIGNED)
         ;
 
-        private QUOTE(final char quoteChar) {
+        QUOTE(final char quoteChar) {
             this.quoteChar = quoteChar;
         }
 
@@ -130,6 +131,11 @@ public class TSVWriter extends TextWriter
     public void setRowSeparator(String rowSeparator)
     {
         _rowSeparator = rowSeparator;
+    }
+
+    public void setPreserveEmptyString(boolean preserveEmptyString)
+    {
+        _preserveEmptyString = preserveEmptyString;
     }
 
     protected String _escapedCharsString = null;
@@ -196,7 +202,7 @@ public class TSVWriter extends TextWriter
 
         int len = value.length();
         if (len == 0)
-            return false;
+            return _preserveEmptyString;
         char firstCh = value.charAt(0);
         char lastCh = value.charAt(len-1);
         if (Character.isSpaceChar(firstCh) || Character.isSpaceChar(lastCh))

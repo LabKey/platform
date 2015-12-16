@@ -49,12 +49,18 @@ public class ColumnValidators
     @NotNull
     public static List<ColumnValidator> create(@Nullable ColumnInfo col, @Nullable DomainProperty dp)
     {
+        return create(col, dp, false);
+    }
+
+    @NotNull
+    public static List<ColumnValidator> create(@Nullable ColumnInfo col, @Nullable DomainProperty dp, boolean allowEmptyString)
+    {
         if (col == null && dp == null)
             return Collections.emptyList();
 
         List<ColumnValidator> validators = new ArrayList<>();
 
-        add(validators, createRequiredValidator(col, dp));
+        add(validators, createRequiredValidator(col, dp, allowEmptyString));
         add(validators, createLengthValidator(col));
         add(validators, createPropertyValidators(dp));
         add(validators, createDateValidator(col));
@@ -79,7 +85,7 @@ public class ColumnValidators
     }
 
     @Nullable
-    public static RequiredValidator createRequiredValidator(@Nullable ColumnInfo col, @Nullable DomainProperty dp)
+    public static RequiredValidator createRequiredValidator(@Nullable ColumnInfo col, @Nullable DomainProperty dp, boolean allowEmptyString)
     {
         boolean supportsMV = (null != col && null != col.getMvColumnName()) || (null != dp && dp.isMvEnabled());
         boolean notnull = null != col && !col.isNullable();
@@ -88,7 +94,7 @@ public class ColumnValidators
         if ((notnull || required) && (col == null || !col.isAutoIncrement()))
         {
             String label = col != null ? col.getName() : dp.getName();
-            return new RequiredValidator(label, !notnull && supportsMV);
+            return new RequiredValidator(label, !notnull && supportsMV, allowEmptyString);
         }
 
         return null;

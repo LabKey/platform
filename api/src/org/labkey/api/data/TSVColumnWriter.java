@@ -97,7 +97,7 @@ public abstract class TSVColumnWriter extends TSVWriter
         else
         {
             Object rawValue = dc.getValue(ctx);
-            return (null == rawValue ? "" : String.valueOf(rawValue));
+            return (null == rawValue ? null : String.valueOf(rawValue));
         }
     }
 }

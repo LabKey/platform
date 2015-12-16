@@ -586,7 +586,7 @@ public abstract class SqlDialect
 
     public final void runSql(DbSchema schema, String sql, @Nullable UpgradeCode upgradeCode, ModuleContext moduleContext, @Nullable Connection conn)
     {
-        SqlScriptExecutor parser = new SqlScriptExecutor(sql, getSQLScriptSplitPattern(), getSQLScriptProcPattern(), schema, upgradeCode, moduleContext, conn);
+        SqlScriptExecutor parser = new SqlScriptExecutor(sql, getSQLScriptSplitPattern(), getSQLScriptProcPattern(), schema, upgradeCode, moduleContext, conn, getBooleanLiteral(true));
         parser.execute();
     }
 

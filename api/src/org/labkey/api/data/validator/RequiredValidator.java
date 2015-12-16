@@ -25,11 +25,13 @@ import org.labkey.api.exp.MvFieldWrapper;
 public class RequiredValidator extends AbstractColumnValidator implements UnderstandsMissingValues
 {
     final boolean allowMV;
+    final boolean allowES;
 
-    public RequiredValidator(String columnName, boolean allowMissingValueIndicators)
+    public RequiredValidator(String columnName, boolean allowMissingValueIndicators, boolean allowEmptyString)
     {
         super(columnName);
         allowMV = allowMissingValueIndicators;
+        allowES = allowEmptyString;
     }
 
     @Override
@@ -37,8 +39,15 @@ public class RequiredValidator extends AbstractColumnValidator implements Unders
     {
         checkRequired:
         {
-            if (null == value || (value instanceof String && ((String)value).length() == 0))
+            if (null == value)
                 break checkRequired;
+
+            if (value instanceof String && ((String)value).length() == 0)
+            {
+                if (allowES)
+                    return null;
+                else break checkRequired;
+            }
 
             if (!(value instanceof MvFieldWrapper))
                 return null;

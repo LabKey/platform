@@ -162,4 +162,18 @@ public class DataIteratorContext
     {
         return _configParameters;
     }
+
+    @Nullable
+    public Object getConfigParameter(Enum key)
+    {
+        Object param = null;
+        if (null != getConfigParameters())
+            param = getConfigParameters().get(key);
+        return param;
+    }
+
+    public boolean getConfigParameterBoolean(Enum key)
+    {
+        return Boolean.TRUE == getConfigParameter(key);
+    }
 }

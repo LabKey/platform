@@ -305,19 +305,23 @@ public class TabLoader extends DataLoader
     {
         value = StringUtils.trimToEmpty(value);
         if ("\\N".equals(value))
-            return "";
+            return _preserveEmptyString ? null : "";
         if (_unescapeBackslashes)
         {
             try
             {
                 return StringEscapeUtils.unescapeJava(value);
             }
-            catch (NumberFormatException nfe)
+            catch (IllegalArgumentException e)
             {
                 // Issue 16691: OctalUnescaper or UnicodeUnescaper translators will throw NumberFormatException for illegal sequences such as '\' followed by octal '9' or unicode 'zzzz'.
-                String msg = "Can't unescape value '" + value + "'.  Number format error " + nfe.getMessage();
+                // StringEscapeUtils can also throw IllegalArgumentException
+                String msg = "Error reading data. Can't unescape value '" + value + "'. ";
+                if (e instanceof NumberFormatException)
+                    msg += "Number format error ";
+                msg += e.getMessage();
                 if (isThrowOnErrors())
-                    throw new IllegalArgumentException(msg);
+                    throw new IllegalArgumentException(msg, e);
                 else
                     _log.warn(msg);
             }
@@ -408,7 +412,7 @@ public class TabLoader extends DataLoader
             if (ch == _chDelimiter)
             {
                 end = start;
-                field = "";
+                field = _preserveEmptyString ? null : "";
             }
             else if (ch == chQuote)
             {

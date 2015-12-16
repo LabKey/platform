@@ -336,7 +336,7 @@ public class StatementDataIterator extends AbstractDataIterator
 //              Sometimes (always?) Postgres leaves the connection unusable after a constraint exception, so we can't continue even if we want to
                 throw _errors;
             }
-            // table does not exists
+            // table does not exist
             else if (SqlDialect.isObjectNotFoundException(x))
             {
                 Table.OptimisticConflictException opt = Table.OptimisticConflictException.create(Table.ERROR_TABLEDELETED);
