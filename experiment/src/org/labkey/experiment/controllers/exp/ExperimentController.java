@@ -1607,7 +1607,7 @@ public class ExperimentController extends SpringActionController
                 boolean ignoreTypes = "jsonTSVIgnoreTypes".equalsIgnoreCase(form.getFormat());
                 if ("jsonTSV".equalsIgnoreCase(form.getFormat()) || extended || ignoreTypes)
                 {
-                    streamToJSON(realContent, form.getFormat(), -1);
+                    streamToJSON(realContent, form.getFormat(), -1, null);
                     return null;
                 }
 
@@ -1679,7 +1679,7 @@ public class ExperimentController extends SpringActionController
             {
                 tempFile = File.createTempFile("parse", formFile.getOriginalFilename());
                 FileUtil.copyData(formFile.getInputStream(),tempFile);
-                streamToJSON(tempFile, form.getFormat(), form.getMaxRows());
+                streamToJSON(tempFile, form.getFormat(), form.getMaxRows(), formFile.getOriginalFilename());
             }
             finally
             {
@@ -1692,7 +1692,7 @@ public class ExperimentController extends SpringActionController
 
 
     // SampleSetTest
-    private void streamToJSON(File realContent, String format, int maxRow) throws IOException
+    private void streamToJSON(File realContent, String format, int maxRow, String originalFileName) throws IOException
     {
         String lowerCaseFileName = realContent.getName().toLowerCase();
         boolean extended = "jsonTSVExtended".equalsIgnoreCase(format);
@@ -1775,6 +1775,8 @@ public class ExperimentController extends SpringActionController
         JSONObject workbookJSON = new JSONObject();
         workbookJSON.put("fileName", realContent.getName());
         workbookJSON.put("sheets", sheetsArray);
+        if (originalFileName != null)
+            workbookJSON.put("originalFileName", originalFileName);
         writer.writeResponse(new ApiSimpleResponse(workbookJSON));
     }
 
