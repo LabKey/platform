@@ -15,12 +15,14 @@
  */
 package org.labkey.api.view.template;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.MultiPortalFolderType;
 import org.labkey.api.module.SimpleAction;
+import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.FooterProperties;
 import org.labkey.api.util.UsageReportingLevel;
@@ -32,7 +34,6 @@ import org.labkey.api.wiki.WikiService;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -42,17 +43,28 @@ public class HomeTemplate extends PrintTemplate
 {
     public HomeTemplate(ViewContext context, Container c, ModelAndView body)
     {
-        this(context, c, body, new PageConfig(context.getActionURL().getController()), new NavTree[0]);
+        this(context, c, body, new PageConfig(context.getActionURL().getController()));
     }
 
 
-    public HomeTemplate(ViewContext context, Container c, ModelAndView body, PageConfig page, NavTree[] navTrail)
+    public HomeTemplate(ViewContext context, Container c, ModelAndView body, PageConfig page)
     {
         super("/org/labkey/api/view/template/HomeTemplate.jsp", page);
 
+        // for testing add meta tags
+        User user = context.getUser();
+        User authenticatedUser = user;
+        User impersonatedUser = null;
+        if (authenticatedUser.isImpersonated())
+        {
+            impersonatedUser = user;
+            authenticatedUser = user.getImpersonatingUser();
+        }
+        page.setMetaTag("authenticatedUser",null==authenticatedUser?"-":StringUtils.defaultString(authenticatedUser.getEmail(),user.getDisplayName(user)));
+        page.setMetaTag("impersonatedUser", null==impersonatedUser?"-":StringUtils.defaultString(impersonatedUser.getEmail(),user.getDisplayName(user)));
+
         //show the header on the home template
         page.setShowHeader(true);
-        page.setNavTrail(Arrays.asList(navTrail));
 
         WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
 
