@@ -727,33 +727,6 @@ public class TestController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
-    public class CoreClientApiAction extends SimpleViewAction<Object>
-    {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            return new HtmlView("Core Client API Action");
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            root.addChild("Core Client Test API", actionURL(BeginAction.class));
-            return root;
-        }
-    }
-
-    @Override
-    protected ModelAndView getTemplate(ViewContext context, ModelAndView mv, Controller action, PageConfig page)
-    {
-        ModelAndView template = super.getTemplate(context, mv, action, page);
-
-        // for the clientApiTest action, return a special template that contains only the core client api scripts
-        if (action instanceof CoreClientApiAction)
-            template = new CoreClientApiTemplate(mv, page);
-
-        return template;
-    }
-
     public static class ButtonForm
     {
         private String _text;

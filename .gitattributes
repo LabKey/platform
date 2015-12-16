@@ -475,11 +475,9 @@ core/src/org/labkey/core/statistics/NoCurveFit.java -text
 core/src/org/labkey/core/statistics/ParameterCurveFit.java -text
 core/src/org/labkey/core/statistics/PolynomialCurveFit.java -text
 core/src/org/labkey/core/statistics/StatsServiceImpl.java -text
-core/src/org/labkey/core/test/CoreClientApiTemplate.java -text
 core/src/org/labkey/core/test/TestController.java -text
 core/src/org/labkey/core/test/buttons.jsp -text
 core/src/org/labkey/core/test/complex.jsp -text
-core/src/org/labkey/core/test/coreClientApiTemplate.jsp -text
 core/src/org/labkey/core/test/form.jsp -text
 core/src/org/labkey/core/test/tags.jsp -text
 core/src/org/labkey/core/themeStylesheet.jsp -text

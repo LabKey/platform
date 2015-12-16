@@ -2669,10 +2669,8 @@ table.labkey-tab-strip
 /* This tab has no bottom border so it looks like it is forward */
 td.labkey-tab-selected, .labkey-tab-selected {
 	padding: 4px 7px;
-    border-top: solid 1px #b4b4b4;
-    border-left: solid 1px #b4b4b4;
-    border-right: solid 1px #b4b4b4;
-    border-bottom: solid 1px #ffffff;
+    border: 1px solid #b4b4b4;
+    border-bottom-color: #ffffff;
     background-color: #fff;
     color: #000000;
 	font-weight: bold;
@@ -2761,6 +2759,15 @@ ul.labkey-tab-strip
     border-bottom : 1px solid #b4b4b4;
     margin : 0;
     padding-left : 10px;
+}
+
+ul.labkey-tab-strip .tab-strip-clear
+{
+    clear: both;
+    height: 0;
+    overflow: hidden;
+    line-height: 0;
+    font-size: 0;
 }
 
 ul.labkey-tab-strip li
