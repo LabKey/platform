@@ -7,13 +7,13 @@ function baseConverter (number,ob,nb) {
 	number = number + "";
 	number = number.toUpperCase();
 	var list = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-	var dec = 0;
-	for (var i = 0; i <=  number.length; i++) {
+	var dec = 0, i;
+	for (i = 0; i <=  number.length; i++) {
 		dec += (list.indexOf(number.charAt(i))) * (Math.pow(ob , (number.length - i - 1)));
 	}
 	number = "";
 	var magnitude = Math.floor((Math.log(dec))/(Math.log(nb)));
-	for (var i = magnitude; i >= 0; i--) {
+	for (i = magnitude; i >= 0; i--) {
 		var amount = Math.floor(dec/Math.pow(nb,i));
 		number = number + list.charAt(amount); 
 		dec -= amount*(Math.pow(nb,i));
@@ -24,8 +24,11 @@ function baseConverter (number,ob,nb) {
 
 // Converts a RGB color to HSV
 function toHSV(rgbColor){
-	rgbColor = rgbColor.replace('#','');		
-	
+	var red,green,blue;
+	var saturation, valueBrightness;
+
+	rgbColor = rgbColor.replace('#','');
+
 	red = baseConverter(rgbColor.substr(0,2),16,10);
 	green = baseConverter(rgbColor.substr(2,2),16,10);
 	blue = baseConverter(rgbColor.substr(4,2),16,10);
@@ -65,17 +68,18 @@ function toHSV(rgbColor){
 	}	
 		
 	
-	returnArray = [hue,saturation,valueBrightness];
+	var returnArray = [hue,saturation,valueBrightness];
 	return returnArray;
 }
 
 function toRgb(hue,saturation,valueBrightness){
-	Hi = Math.floor(hue / 60);
+	var red,green,blue;
+	var Hi = Math.floor(hue / 60);
 	if(hue==360)Hi=0;
-	f = hue/60 - Hi;
-	p = (valueBrightness * (1- saturation)).toPrecision(2);
-	q = (valueBrightness * (1 - (f * saturation))).toPrecision(2);
-	t = (valueBrightness * (1 - ((1-f)*saturation))).toPrecision(2);
+	var f = hue/60 - Hi;
+	var p = (valueBrightness * (1- saturation)).toPrecision(2);
+	var q = (valueBrightness * (1 - (f * saturation))).toPrecision(2);
+	var t = (valueBrightness * (1 - ((1-f)*saturation))).toPrecision(2);
 
 	switch(Hi){
 		case 0:
@@ -95,7 +99,7 @@ function toRgb(hue,saturation,valueBrightness){
 			break;
 		case 3: 
 			red = p;
-			green = q;;
+			green = q;
 			blue = valueBrightness;
 			break;
 		case 4:
@@ -141,13 +145,13 @@ function toRgb(hue,saturation,valueBrightness){
 	while(blue.length<2){
 		blue = "0" + "" + blue;
 	}
-	rgbColor = "#" + red + "" + green + "" + blue;
+	var rgbColor = "#" + red + "" + green + "" + blue;
 	return rgbColor.toUpperCase();
 }
 
 function findColorByDegrees(rgbColor,degrees){
 	rgbColor = rgbColor.replace('#','');
-	myArray = toHSV(rgbColor);
+	var myArray = toHSV(rgbColor);
 	myArray[0]+=degrees;
 	if(myArray[0]>=360)myArray[0]-=360;
 	if(myArray[0]<0)myArray[0]+=360;	
@@ -157,7 +161,7 @@ function findColorByDegrees(rgbColor,degrees){
 function findColorByBrightness(rgbColor,brightness){
 	
 	rgbColor = rgbColor.replace('#','');
-	myArray = toHSV(rgbColor);
+	var myArray = toHSV(rgbColor);
 	
 	myArray[2]+=brightness/100;
 	if(myArray[2]>1)myArray[2]=1;

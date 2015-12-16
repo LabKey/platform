@@ -48,7 +48,7 @@ Ext.ux.ComponentDataView = Ext.extend(Ext.DataView, {
     renderItem : function (rootNode, item, node, record, index)
     {
         var c = item.render ?
-                c = item.cloneConfig() :
+                item.cloneConfig() :
                 Ext.create(item, this.defaultType);
 
         if(c.renderTarget){

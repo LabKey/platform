@@ -119,9 +119,11 @@ LABKEY.Mothership = (function () {
 
     // UNDONE: Throttle number of errors so we don't DOS ourselves.
     function ignore(msg, file) {
+        var i;
+
         // Ignore duplicates from the same page.
         // Also ignores errors that have already been reported and rethrown.
-        for (var i = 0; i < _lastErrors.length; i++) {
+        for (i = 0; i < _lastErrors.length; i++) {
             if (msg.indexOf(_lastErrors[i]) > -1)
                 return true;
         }
@@ -132,7 +134,7 @@ LABKEY.Mothership = (function () {
             'extensions/'
         ];
 
-        for (var i = 0; i < ignoreURLs.length; i++) {
+        for (i = 0; i < ignoreURLs.length; i++) {
             if (file.indexOf(ignoreURLs[i]) === 0)
                 return true;
         }
@@ -152,7 +154,7 @@ LABKEY.Mothership = (function () {
             'Error loading script'
         ];
 
-        for (var i = 0; i < ignoreMsgs.length; i++) {
+        for (i = 0; i < ignoreMsgs.length; i++) {
             if (msg.indexOf(ignoreMsgs[i]) === 0)
                 return true;
         }
@@ -329,19 +331,19 @@ LABKEY.Mothership = (function () {
             var un = Ext.lib.Event.removeListener;
 
             // Our replacement for addListener
-            function addListener(el, eventName, fn) {
+            var addListener = function(el, eventName, fn) {
                 //log("Ext.lib.Event.addListener called");
                 fn = createWrap(fn);
                 return on.call(this, el, eventName, fn);
-            }
+            };
 
             // Our replacement for removeListener
-            function removeListener(el, eventName, fn) {
+            var removeListener = function(el, eventName, fn) {
                 if (fn)
                     return un.call(this, el, eventName, fn._wrapped || fn);
                 else
                     return un.call(this, el, eventName, fn);
-            }
+            };
 
             Ext.lib.Event.on = Ext.lib.Event.addListener = addListener;
             Ext.lib.Event.un = Ext.lib.Event.removeListener = removeListener;
@@ -363,20 +365,20 @@ LABKEY.Mothership = (function () {
             var un = Ext.util.Event.prototype.removeListener;
 
             // Our replacement for addListener
-            function addListener(fn, scope, options) {
+            var addListener = function(fn, scope, options) {
                 //log("Ext.util.Event.addListener called");
                 fn = createWrap(fn);
                 return on.call(this, fn, scope, options);
-            }
+            };
 
             // Our replacement for removeListener
-            function removeListener(fn, scope) {
+            var removeListener = function(fn, scope) {
                 //log("Ext.util.Event.removeListener called");
                 if (fn)
                     return un.call(this, fn._wrapped || fn, scope);
                 else
                     return un.call(this, fn, scope);
-            }
+            };
 
             Ext.util.Event.prototype.addListener = addListener;
             Ext.util.Event.prototype.removeListener = removeListener;
@@ -396,19 +398,19 @@ LABKEY.Mothership = (function () {
             var un = Ext.EventManager.removeListener;
 
             // Our replacement for addListener
-            function addListener(element, eventName, fn, scope, options) {
+            var addListener = function(element, eventName, fn, scope, options) {
                 //log("Ext.EventManager.addListener called");
                 fn = createWrap(fn);
                 return on(element, eventName, fn, scope, options);
-            }
+            };
 
             // Our replacement for removeListener
-            function removeListener(el, eventName, fn, scope) {
+            var removeListener = function(el, eventName, fn, scope) {
                 if (fn)
                     return un(el, eventName, fn._wrapped || fn, scope);
                 else
                     return un(el, eventName, fn, scope);
-            }
+            };
 
             Ext.EventManager.on = Ext.EventManager.addListener = addListener;
             Ext.EventManager.un = Ext.EventManager.removeListener = removeListener;
@@ -426,12 +428,12 @@ LABKEY.Mothership = (function () {
             log("replacing Ext.lib.Ajax.request");
             var r = Ext.lib.Ajax.request;
 
-            function request(method, uri, cb, data, options) {
+            var request = function(method, uri, cb, data, options) {
                 log("Ext.lib.Ajax.request called");
                 cb.success = createWrap(cb.success);
                 cb.failure = createWrap(cb.failure);
                 return r.call(this, method, uri, cb, data, options);
-            }
+            };
 
             Ext.lib.Ajax.request = request;
             replace_Ext_lib_Ajax.initialized = true;
@@ -480,19 +482,19 @@ LABKEY.Mothership = (function () {
             var un = Ext4.EventManager.removeListener;
 
             // Our replacement for addListener
-            function addListener(element, eventName, fn, scope, options) {
+            var addListener = function(element, eventName, fn, scope, options) {
                 //log("Ext4.EventManager.addListener called");
                 fn = createWrap(fn);
                 return on(element, eventName, fn, scope, options);
-            }
+            };
 
             // Our replacement for removeListener
-            function removeListener(el, eventName, fn, scope) {
+            var removeListener = function(el, eventName, fn, scope) {
                 if (fn)
                     return un(el, eventName, fn._wrapped || fn, scope);
                 else
                     return un(el, eventName, fn, scope);
-            }
+            };
 
             Ext4.EventManager.on = Ext4.EventManager.addListener = addListener;
             Ext4.EventManager.un = Ext4.EventManager.removeListener = removeListener;

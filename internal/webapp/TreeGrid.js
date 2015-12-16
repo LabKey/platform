@@ -229,7 +229,7 @@ Ext.ux.tree.TreeGrid = Ext.extend(Ext.tree.TreePanel, {
             colCount = cols.length,
             groups = this.outerCt.query('colgroup'),
             groupCount = groups.length,
-            c, g, i, j;
+            c, g, i, j, len;
 
         for(i = 0; i<colCount; i++) {
             c = cols[i];
@@ -469,7 +469,7 @@ Ext.ux.tree.TreeGridSorter = Ext.extend(Ext.tree.TreeSorter, {
         tree.on('headerclick', this.onHeaderClick, this);
         tree.ddAppendOnly = true;
 
-        me = this;
+        var me = this;
         this.defaultSortFn = function(n1, n2){
 
             var dsc = me.dir && me.dir.toLowerCase() == 'desc';

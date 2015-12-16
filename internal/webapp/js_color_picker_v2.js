@@ -236,7 +236,7 @@ Owner of DHTMLgoodies.com
 		}else var parentNode = this.parentNode;
 		var activeColorDiv = false;
 		var subDiv = parentNode.getElementsByTagName('DIV')[0];
-		counter=0;	
+		var counter=0;
 		var initZIndex = 10;	
 		var contentDiv = document.getElementById('color_picker_content').getElementsByTagName('DIV')[0];
 		do{			
@@ -279,8 +279,8 @@ Owner of DHTMLgoodies.com
 	
 		inputObj.appendChild(div);	
 		var currentWidth = 0;
-		for(var no=0;no<tabs.length;no++){			
-			
+		for(var no=0;no<tabs.length;no++){
+			var suffix;
 			var tabDiv = document.createElement('DIV');
 			tabDiv.onselectstart = cancelColorPickerEvent;
 			tabDiv.ondragstart = cancelColorPickerEvent;
