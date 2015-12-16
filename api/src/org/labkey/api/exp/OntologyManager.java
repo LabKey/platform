@@ -133,12 +133,19 @@ public class OntologyManager
     public static final int MAX_PROPS_IN_BATCH = 1000;  // Keep this reasonably small so progress indicator is updated regularly
     public static final int UPDATE_STATS_BATCH_COUNT = 1000;
 
-    public static List<String> insertTabDelimited(Container c, User user, @Nullable Integer ownerObjectId, ImportHelper helper, PropertyDescriptor[] descriptors, List<Map<String, Object>> rows, boolean ensureObjects) throws SQLException, ValidationException
+    /** @return LSIDs/ObjectURIs of inserted objects */
+    public static List<String> insertTabDelimited(Container c, User user, @Nullable Integer ownerObjectId, ImportHelper helper, Domain domain, List<Map<String, Object>> rows, boolean ensureObjects) throws SQLException, ValidationException
     {
-        return insertTabDelimited(c, user, ownerObjectId, helper, descriptors, rows, ensureObjects, null);
+        List<PropertyDescriptor> properties = new ArrayList<>(domain.getProperties().size());
+        for (DomainProperty prop : domain.getProperties())
+        {
+            properties.add(prop.getPropertyDescriptor());
+        }
+        return insertTabDelimited(c, user, ownerObjectId, helper, properties, rows, ensureObjects);
     }
 
-    private static List<String> insertTabDelimited(Container c, User user, @Nullable Integer ownerObjectId, ImportHelper helper, PropertyDescriptor[] descriptors, List<Map<String, Object>> rows, boolean ensureObjects, Logger logger) throws SQLException, ValidationException
+    /** @return LSIDs/ObjectURIs of inserted objects */
+    public static List<String> insertTabDelimited(Container c, User user, @Nullable Integer ownerObjectId, ImportHelper helper, List<PropertyDescriptor> descriptors, List<Map<String, Object>> rows, boolean ensureObjects) throws SQLException, ValidationException
     {
 		CPUTimer total  = new CPUTimer("insertTabDelimited");
 		CPUTimer before = new CPUTimer("beforeImport");
@@ -149,16 +156,12 @@ public class OntologyManager
 		assert getExpSchema().getScope().isTransactionActive();
 		List<String> resultingLsids = new ArrayList<>(rows.size());
         // Make sure we have enough rows to handle the overflow of the current row so we don't have to resize the list
-        List<PropertyRow> propsToInsert = new ArrayList<>(MAX_PROPS_IN_BATCH + descriptors.length);
+        List<PropertyRow> propsToInsert = new ArrayList<>(MAX_PROPS_IN_BATCH + descriptors.size());
 
         ValidatorContext validatorCache = new ValidatorContext(c, user);
 
 		try
 		{
-            PropertyType[] propertyTypes = new PropertyType[descriptors.length];
-            for (int i = 0; i < descriptors.length; i++)
-                propertyTypes[i] = descriptors[i].getPropertyType();
-
             OntologyObject objInsert = new OntologyObject();
 			objInsert.setContainer(c);
 			objInsert.setOwnerObjectId(ownerObjectId);
@@ -199,11 +202,10 @@ public class OntologyManager
 					objectId = objInsert.getObjectId();
 				}
 
-				for (int i = 0; i < descriptors.length; i++)
-				{
-					PropertyDescriptor pd = descriptors[i];
-					Object value = map.get(pd.getPropertyURI());
-					if (null == value)
+                for (PropertyDescriptor pd : descriptors)
+                {
+                    Object value = map.get(pd.getPropertyURI());
+                    if (null == value)
                     {
                         if (pd.isRequired())
                             throw new ValidationException("Missing value for required property " + pd.getName());
@@ -219,14 +221,14 @@ public class OntologyManager
                     }
                     try
                     {
-                        PropertyRow row = new PropertyRow(objectId, pd, value, propertyTypes[i]);
+                        PropertyRow row = new PropertyRow(objectId, pd, value, pd.getPropertyType());
                         propsToInsert.add(row);
                     }
                     catch (ConversionException e)
                     {
-                        throw new ValidationException("Could not convert '" + value + "' for field " + pd.getName() + ", should be of type " + propertyTypes[i].getJavaType().getSimpleName());
+                        throw new ValidationException("Could not convert '" + value + "' for field " + pd.getName() + ", should be of type " + pd.getPropertyType().getJavaType().getSimpleName());
                     }
-				}
+                }
                 assert ensure.stop();
 
                 rowCount++;
@@ -237,15 +239,13 @@ public class OntologyManager
                     insertPropertiesBulk(c, propsToInsert);
                     helper.afterBatchInsert(rowCount);
                     assert insert.stop();
-                    propsToInsert = new ArrayList<>(MAX_PROPS_IN_BATCH + descriptors.length);
+                    propsToInsert = new ArrayList<>(MAX_PROPS_IN_BATCH + descriptors.size());
 
                     if (++batchCount % UPDATE_STATS_BATCH_COUNT == 0)
                     {
-                        if (logger != null) logger.debug("inserted row " + rowCount + "...");
                         getExpSchema().getSqlDialect().updateStatistics(getTinfoObject());
                         getExpSchema().getSqlDialect().updateStatistics(getTinfoObjectProperty());
                         helper.updateStatistics(rowCount);
-                        if (logger != null) logger.debug("updated statistics");
                     }
                 }
             }
@@ -257,7 +257,6 @@ public class OntologyManager
 			insertPropertiesBulk(c, propsToInsert);
             helper.afterBatchInsert(rowCount);
 			assert insert.stop();
-            if (logger != null) logger.debug("inserted row " + rowCount + ".");
 		}
 		catch (SQLException x)
 		{

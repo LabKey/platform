@@ -37,7 +37,6 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.AbstractExperimentDataHandler;
@@ -368,14 +367,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
         else
         {
-            PropertyDescriptor[] dataProperties = new PropertyDescriptor[dataDomain.getProperties().size()];
-            for (int i = 0; i < dataDomain.getProperties().size(); i++)
-            {
-                dataProperties[i] = dataDomain.getProperties().get(i).getPropertyDescriptor();
-            }
             Integer id = OntologyManager.ensureObject(container, data.getLSID());
             OntologyManager.insertTabDelimited(container, user, id,
-                    new SimpleAssayDataImportHelper(data), dataProperties, fileData, false);
+                    new SimpleAssayDataImportHelper(data), dataDomain, fileData, false);
         }
     }
 
