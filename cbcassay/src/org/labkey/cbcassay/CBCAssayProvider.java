@@ -241,8 +241,8 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
 
         final String uri = domainUri + "#" + name;
 
-        PropertyDescriptor[] props = new PropertyDescriptor[] {
-                CBCDataProperty.MinValue.getPropertyDescriptor(), CBCDataProperty.MaxValue.getPropertyDescriptor(), CBCDataProperty.Units.getPropertyDescriptor() };
+        List<PropertyDescriptor> props = Arrays.asList(
+                CBCDataProperty.MinValue.getPropertyDescriptor(), CBCDataProperty.MaxValue.getPropertyDescriptor(), CBCDataProperty.Units.getPropertyDescriptor());
 
         Map<String, Object> row = new HashMap<>();
         if (min != null)

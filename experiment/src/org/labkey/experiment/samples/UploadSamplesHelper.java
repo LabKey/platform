@@ -385,7 +385,7 @@ public class UploadSamplesHelper
                     }
                 }
             }
-            materials = insertTabDelimitedMaterial(maps, descriptors.toArray(new PropertyDescriptor[descriptors.size()]), _materialSource, reusedMaterialLSIDs);
+            materials = insertTabDelimitedMaterial(maps, new ArrayList<>(descriptors), _materialSource, reusedMaterialLSIDs);
             new ExpSampleSetImpl(_materialSource).onSamplesChanged(_form.getUser(), null);
 
             transaction.commit();
@@ -532,7 +532,7 @@ public class UploadSamplesHelper
         return ret.toString();
     }
 
-    public List<ExpMaterial> insertTabDelimitedMaterial(List<Map<String, Object>> rows, PropertyDescriptor[] descriptors, MaterialSource source, Set<String> reusedMaterialLSIDs)
+    public List<ExpMaterial> insertTabDelimitedMaterial(List<Map<String, Object>> rows, List<PropertyDescriptor> descriptors, MaterialSource source, Set<String> reusedMaterialLSIDs)
             throws SQLException, ValidationException, ExperimentException
     {
         long start = System.currentTimeMillis();
