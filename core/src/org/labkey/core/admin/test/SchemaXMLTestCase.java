@@ -33,14 +33,14 @@ import java.util.List;
 @RunWith(Parameterized.class)
 public class SchemaXMLTestCase extends Assert
 {
-    @Parameterized.Parameters
+    @Parameterized.Parameters(name = "{1}")
     public static Collection schemas()
     {
         List<Object[]> parameters = new ArrayList<>();
 
         for (DbSchema schema : DbSchema.getAllSchemasToTest())
         {
-            parameters.add(new Object[]{schema, true});
+            parameters.add(new Object[]{schema, schema.getDisplayName()});
         }
 
         return parameters;
@@ -48,7 +48,7 @@ public class SchemaXMLTestCase extends Assert
 
     private DbSchema schemaToTest;
 
-    public SchemaXMLTestCase(DbSchema schemaToTest, boolean alwaysExpectSuccess)
+    public SchemaXMLTestCase(DbSchema schemaToTest, String displayName)
     {
         this.schemaToTest = schemaToTest;
     }
