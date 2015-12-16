@@ -58,7 +58,7 @@
             }
         }
     %>
-        <div class="x-clear"></div>
+        <div class="tab-strip-clear"></div>
     </ul>
     <div class="labkey-tab-strip-spacer"></div>
     <div class="labkey-tab-strip-content">

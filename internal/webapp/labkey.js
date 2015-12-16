@@ -23,6 +23,8 @@ if (typeof LABKEY == "undefined")
             extJsRoot: "ext-3.4.1",
             extJsRoot_42: "ext-4.2.1",
             extThemeRoot: "labkey-ext-theme",
+            extThemeName_42: "seattle",
+            extThemeRoot_42: "ext-theme",
             fieldMarker: '@',
             hash: 0,
             imagePath: "",
@@ -323,21 +325,35 @@ if (typeof LABKEY == "undefined")
             }
 
             if (file.indexOf('/') == 0)
+            {
                 file = file.substring(1);
+            }
 
-            // Support both LabKey and external CSS files
-            var fullPath = file.substr(0, 4) != "http" ? configs.contextPath + "/" + file + '?' + configs.hash : file;
+            var key = file,
+                fullPath;
 
-            if (_requestedCssFiles[fullPath])
-                return;
+            if (!_requestedCssFiles[key])
+            {
+                _requestedCssFiles[key] = true;
 
-            addElemToHead("link", {
-                type: "text/css",
-                rel: "stylesheet",
-                href: fullPath
-            });
+                // Support both LabKey and external CSS files
+                if (file.substr(0, 4) != "http")
+                {
+                    // local files
+                    fullPath = configs.contextPath + "/" + file + '?' + configs.hash;
+                }
+                else
+                {
+                    // external files
+                    fullPath = file;
+                }
 
-            _requestedCssFiles[fullPath] = true;
+                addElemToHead("link", {
+                    type: "text/css",
+                    rel: "stylesheet",
+                    href: fullPath
+                });
+            }
         };
 
         var requestedCssFiles = function()
@@ -554,6 +570,7 @@ if (typeof LABKEY == "undefined")
                     configs.extJsRoot_42 + "/ext-patches.js"
                 ];
 
+                requiresCss(configs.extThemeRoot_42 + "/" + configs.extThemeName_42 + "/ext-all.css");
                 requiresScript(scripts, callback, scope);
             }
         };

@@ -30,7 +30,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jfree.chart.encoders.EncoderUtil;
 import org.jfree.chart.encoders.ImageFormat;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -1568,11 +1567,7 @@ public class PageFlowUtil
             }
         }
 
-
-        StringBuilder sb = getFaviconIncludes(c);
-        sb.append(getLabkeyJS(context, resources));
-        sb.append(getStylesheetIncludes(c, resources, true));
-        sb.append(getJavaScriptIncludes(c, resources));
+        StringBuilder sb = new StringBuilder(getIncludes(context, resources, true));
 
         if (currentId != -1)
         {
@@ -1583,23 +1578,6 @@ public class PageFlowUtil
             sb.append(MiniProfiler.renderInitScript(currentId, ids, getServerSessionHash()));
         }
 
-        return sb.toString();
-    }
-
-    /**
-     * Temporary method for testing core client api (no ext dependencies)
-     */
-    public static String getCoreClientApiIncludes(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources)
-    {
-        Container c = context.getContainer();
-
-        if (null == c)
-            c = ContainerManager.getRoot();
-
-        StringBuilder sb = getFaviconIncludes(c);
-        sb.append(getLabkeyJS(context, resources));
-        sb.append(getStylesheetIncludes(c, resources, false));
-        sb.append(getJavaScriptIncludes(c, resources, true, true));
         return sb.toString();
     }
 
@@ -1620,17 +1598,49 @@ public class PageFlowUtil
         return sb;
     }
 
+    private static String getIncludes(ViewContext context, @Nullable LinkedHashSet<ClientDependency> extraResources, boolean includeDefaultResources)
+    {
+        Container c = context.getContainer();
+
+        if (null == c)
+            c = ContainerManager.getRoot();
+
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+
+        if (includeDefaultResources)
+        {
+            // Respect App Properties regarding Ext3 configuration
+            if (AppProps.getInstance().isExt3APIRequired())
+                resources.add(ClientDependency.fromPath("clientapi/ext3"));
+            else if (AppProps.getInstance().isExt3Required())
+                resources.add(ClientDependency.fromPath("Ext3"));
+
+            // Always include clientapi and internal
+            resources.add(ClientDependency.fromPath("clientapi"));
+            resources.add(ClientDependency.fromPath("internal"));
+        }
+
+        if (extraResources != null)
+            resources.addAll(extraResources);
+
+        StringBuilder sb = getFaviconIncludes(c);
+        sb.append(getLabkeyJS(context, resources));
+        sb.append(getStylesheetIncludes(c, resources));
+        sb.append(getJavaScriptIncludes(c, resources));
+
+        return sb.toString();
+    }
 
     // Outputs <link> elements for standard stylesheets (but not Ext stylesheets). Note hrefs are relative, so callers may
     // need to output a <base> element prior to calling.
     public static String getStylesheetIncludes(Container c)
     {
-        return getStylesheetIncludes(c, null, false);
+        return getStylesheetIncludes(c, null);
     }
 
     // Outputs <link> elements for standard stylesheets, Ext stylesheets, and client dependency stylesheets, as required.
     // Note that hrefs are relative, so callers may need to output a <base> element prior to calling.
-    private static String getStylesheetIncludes(Container c, @Nullable LinkedHashSet<ClientDependency> resources, boolean includeExtStylesheets)
+    private static String getStylesheetIncludes(Container c, @Nullable LinkedHashSet<ClientDependency> resources)
     {
         WebTheme theme = WebThemeManager.getTheme(c);
 
@@ -1640,15 +1650,44 @@ public class PageFlowUtil
         Formatter F = new Formatter(sb);
         String link = "    <link href=\"%s\" type=\"text/css\" rel=\"stylesheet\">\n";
 
-        if (includeExtStylesheets)
+        boolean devMode = AppProps.getInstance().isDevMode();
+        Set<String> preIncludedCss = new HashSet<>();
+
+        /* Stylesheets for Ext 3.x, 4.x -- order matters as overrides are in stylesheet.css and themeStylesheet.view */
+        if (null != resources)
         {
-            // TODO: Migrate to be dependent on ext 3 loading
-            /* Stylesheets for Ext 3.x -- order matters as overriddes are in stylesheet.css and themeStylesheet.view */
-            F.format(link, AppProps.getInstance().getContextPath() + "/" + extJsRoot() + "/resources/css/ext-all.css");
-            F.format(link, Path.parse(AppProps.getInstance().getContextPath() + resolveExtThemePath(c)));
+            boolean ext3Included = false;
+            boolean ext4Included = false;
+
+            for (ClientDependency resource : resources)
+            {
+                for (String paths : resource.getJsPaths(c, devMode))
+                {
+                    if (!ext3Included && paths.startsWith("ext-3.4.1/ext-all"))
+                    {
+                        ext3Included = true;
+                        String cssPath = extJsRoot() + "/resources/css/ext-all.css";
+
+                        preIncludedCss.add(cssPath);
+                        F.format(link, Path.parse(AppProps.getInstance().getContextPath() + "/" + cssPath));
+                    }
+
+                    if (!ext4Included && paths.startsWith("ext-4.2.1/ext-all"))
+                    {
+                        ext4Included = true;
+                        String cssPath = ext4ThemeRoot() + "/" + resolveThemeName(c) + "/ext-all.css";
+
+                        preIncludedCss.add(cssPath);
+                        F.format(link, Path.parse(AppProps.getInstance().getContextPath() + "/" + cssPath));
+                    }
+
+                    if (ext3Included && ext4Included)
+                        break;
+                }
+            }
         }
 
-        String fontAwesomeCss = AppProps.getInstance().isDevMode() ? "font-awesome.css" : "font-awesome.min.css";
+        String fontAwesomeCss = devMode ? "font-awesome.css" : "font-awesome.min.css";
         F.format(link, PageFlowUtil.filter(new ResourceURL("/internal/font-awesome-4.4.0/css/" + fontAwesomeCss)));
 
         F.format(link, PageFlowUtil.filter(new ResourceURL(theme.getStyleSheet(), ContainerManager.getRoot())));
@@ -1694,19 +1733,19 @@ public class PageFlowUtil
         sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\">\n");
 
         if (resources != null)
-            writeCss(c, sb, resources);
+            writeCss(c, sb, resources, preIncludedCss);
 
         return sb.toString();
     }
 
-    private static void writeCss(Container c, StringBuilder sb, LinkedHashSet<ClientDependency> resources)
+    private static void writeCss(Container c, StringBuilder sb, LinkedHashSet<ClientDependency> resources, Set<String> preIncludedCss)
     {
         Set<String> cssFiles = new HashSet<>();
         if (resources != null)
         {
             for (ClientDependency r : resources)
             {
-                for (String script : (r.getCssPaths(c)))
+                for (String script : r.getCssPaths(c))
                 {
                     sb.append("<link href=\"");
                     if (ClientDependency.isExternalDependency(script))
@@ -1721,7 +1760,7 @@ public class PageFlowUtil
                     }
                     sb.append("\" type=\"text/css\" rel=\"stylesheet\">");
 
-                    cssFiles.add((script));
+                    cssFiles.add(script);
                 }
             }
         }
@@ -1731,6 +1770,16 @@ public class PageFlowUtil
         {
             sb.append("    <script type=\"text/javascript\">\n        LABKEY.requestedCssFiles(");
             String comma = "";
+
+            if (null != preIncludedCss)
+            {
+                for (String path : preIncludedCss)
+                {
+                    sb.append(comma).append(jsString(path));
+                    comma = ",";
+                }
+            }
+
             for (String s : cssFiles)
             {
                 if (!ClientDependency.isExternalDependency(s))
@@ -1751,13 +1800,13 @@ public class PageFlowUtil
 
     public static final String ext4ThemeRoot()
     {
-        return "ext-theme/";
+        return "ext-theme";
     }
 
-    public static String resolveExtThemePath(Container container)
+    private static String resolveThemeName(Container c)
     {
         String themeName = WebTheme.DEFAULT.getFriendlyName();
-        WebTheme theme = WebThemeManager.getTheme(container);
+        WebTheme theme = WebThemeManager.getTheme(c);
 
         // Custom Theme -- TODO: Should have a better way to lookup built-in themes
         if (!theme.isEditable())
@@ -1765,48 +1814,7 @@ public class PageFlowUtil
             themeName = theme.getFriendlyName();
         }
 
-        return "/" + ext4ThemeRoot() + themeName.toLowerCase() + "/ext-all.css";
-    }
-
-    private static void explodedExtPaths(Map<String, JSONObject> packages, String pkgDep, Set<String> scripts)
-    {
-        JSONObject dependency = packages.get(pkgDep);
-        if (dependency == null)
-            return;
-
-        // Remove package so it won't be included twice.
-        packages.put(pkgDep, null);
-
-        if (dependency.has("pkgDeps"))
-        {
-            JSONArray array = dependency.getJSONArray("pkgDeps");
-            for (int i = 0; i < array.length(); i++)
-                explodedExtPaths(packages, array.getString(i), scripts);
-        }
-
-        for (JSONObject fileInclude : dependency.getJSONArray("fileIncludes").toJSONObjectArray())
-        {
-            scripts.add(extJsRoot() + "/" + fileInclude.getString("path") + fileInclude.getString("text"));
-        }
-    }
-
-    public static LinkedHashSet<ClientDependency> getDefaultJavaScriptPaths(boolean coreClientApiOnly)
-    {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-
-        if (AppProps.getInstance().isExt3APIRequired())
-            resources.add(ClientDependency.fromPath("clientapi/ext3"));
-        else if (AppProps.getInstance().isExt3Required())
-            resources.add(ClientDependency.fromPath("Ext3"));
-
-        if (coreClientApiOnly)
-            resources.add(ClientDependency.fromPath("clientapi_core"));
-        else
-            resources.add(ClientDependency.fromPath("clientapi"));
-
-        if (!coreClientApiOnly)
-            resources.add(ClientDependency.fromPath("internal"));
-        return resources;
+        return themeName.toLowerCase();
     }
 
     public static String getLabkeyJS(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources)
@@ -1833,12 +1841,7 @@ public class PageFlowUtil
         return sb.toString();
     }
 
-    public static String getJavaScriptIncludes(Container c, LinkedHashSet<ClientDependency> extraResources)
-    {
-        return getJavaScriptIncludes(c, extraResources, true, false);
-    }
-
-    public static String getJavaScriptIncludes(Container c, LinkedHashSet<ClientDependency> extraResources, boolean includeDefaultResources, boolean coreClientApiOnly)
+    private static String getJavaScriptIncludes(Container c, LinkedHashSet<ClientDependency> resources)
     {
         String contextPath = AppProps.getInstance().getContextPath();
         String serverHash = getServerSessionHash();
@@ -1849,13 +1852,6 @@ public class PageFlowUtil
           */
         LinkedHashSet<String> includes = new LinkedHashSet<>();
         LinkedHashSet<String> implicitIncludes = new LinkedHashSet<>();
-
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        if (includeDefaultResources)
-            resources.addAll(getDefaultJavaScriptPaths(coreClientApiOnly));
-
-        if (extraResources != null)
-            resources.addAll(extraResources);
 
         getJavaScriptFiles(c, resources, includes, implicitIncludes);
 
@@ -1992,6 +1988,7 @@ public class PageFlowUtil
         json.put("contextPath", contextPath);
         json.put("imagePath", contextPath + "/_images");
         json.put("extJsRoot", extJsRoot());
+        json.put("extThemeName_42", resolveThemeName(context.getContainer()));
         json.put("devMode", appProps.isDevMode());
         json.put("homeContainer", ContainerManager.getHomeContainer().getName());
         Container shared = ContainerManager.getSharedContainer();
