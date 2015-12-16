@@ -644,7 +644,12 @@ public class ExcelColumn extends RenderColumn
             int adjustedWidth;
             int adjustedHeight;
 
-            if (rowHeight / originalHeight > (float) newWidth / (originalWidth * PIXELS_TO_CHARACTERS))
+            if (originalWidth <= MAX_IMAGE_WIDTH && originalHeight <= MAX_IMAGE_HEIGHT)
+            {
+                adjustedWidth = originalWidth;
+                adjustedHeight = originalHeight;
+            }
+            else if (rowHeight / originalHeight > (float) newWidth / (originalWidth * PIXELS_TO_CHARACTERS))
             {
                 adjustedWidth = (int) (originalWidth * (float) newWidth / (originalWidth * PIXELS_TO_CHARACTERS));
                 adjustedHeight = (int) (originalHeight * (float) newWidth / (originalWidth * PIXELS_TO_CHARACTERS));
