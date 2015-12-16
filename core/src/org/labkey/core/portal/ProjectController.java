@@ -318,7 +318,7 @@ public class ProjectController extends SpringActionController
 
             HttpView template;
             if (!isPrint())
-                template = new HomeTemplate(getViewContext(), c, new VBox(), page, new NavTree[0]);
+                template = new HomeTemplate(getViewContext(), c, new VBox(), page);
             else
                 template = new PrintTemplate(new VBox());
 
