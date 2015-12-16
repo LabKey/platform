@@ -836,7 +836,7 @@ public abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     private static final Pattern GO_PATTERN = Pattern.compile("^\\s*GO\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
-    private static final Pattern PROC_PATTERN = Pattern.compile("^\\s*EXEC(?:UTE)?\\s+core\\.((executeJavaUpgradeCode\\s*'(.+)')|(bulkImport\\s*'(.+)'\\s*,\\s*'(.+)'\\s*,\\s*'(.+)'))\\s*;?\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+    private static final Pattern PROC_PATTERN = Pattern.compile("^\\s*EXEC(?:UTE)?\\s+core\\.((executeJavaUpgradeCode\\s*'(.+)')|(bulkImport\\s*'(.+)'\\s*,\\s*'(.+)'\\s*,\\s*'(.+)'))\\s*,?\\s*(\\d)?;?\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
     @Override
     // Split Microsoft SQL scripts on GO statements
@@ -1530,7 +1530,7 @@ public abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         This allows retrieval of the full list of sparse columns in a wide table. NOTE: This query does not
         return the full set of column metadata properties present in the driver's result set;
         only the subset of properties currently used by the application.
-        Acknowledgement: This query is a modified form by the SQL Server internal view sys.spt_columns_odbc_view,
+        Acknowledgement: This query is a modified form of the SQL Server internal view sys.spt_columns_odbc_view,
         which is used by sp_columns. It has been simplified for only the return columns and object types of interest,
         and the DATA_TYPEs have the mappings to jdbc types that are normally performed by the driver getColumns() call.
       */
