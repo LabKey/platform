@@ -585,7 +585,8 @@ public abstract class SpringActionController implements Controller, HasViewConte
                     NavTree[] children = root.getChildren();
                     page.setTitle(children[children.length-1].getText());
                 }
-                HomeTemplate template = new HomeTemplate(context, context.getContainer(), mv, page, root.getChildren());
+                page.setNavTrail(root.getChildList());
+                HomeTemplate template = new HomeTemplate(context, context.getContainer(), mv, page);
                 return template;
             }
         }

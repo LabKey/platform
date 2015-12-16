@@ -34,6 +34,7 @@ import org.labkey.api.wiki.WikiService;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -50,6 +51,9 @@ public class HomeTemplate extends PrintTemplate
     public HomeTemplate(ViewContext context, Container c, ModelAndView body, PageConfig page)
     {
         super("/org/labkey/api/view/template/HomeTemplate.jsp", page);
+
+        if (null==page.getNavTrail())
+            page.setNavTrail(Collections.emptyList());
 
         // for testing add meta tags
         User user = context.getUser();
