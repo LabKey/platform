@@ -1667,6 +1667,8 @@ api/src/org/labkey/api/view/ColorPickerDisplayColumn.java -text
 api/src/org/labkey/api/view/DefaultModelAndView.java -text
 api/src/org/labkey/api/view/FolderTab.java -text
 api/src/org/labkey/api/view/ForbiddenProjectException.java -text
+api/src/org/labkey/api/view/FrameFactoryBootstrap.java -text
+api/src/org/labkey/api/view/FrameFactoryClassic.java -text
 api/src/org/labkey/api/view/GWTView.java -text
 api/src/org/labkey/api/view/GWTView.jsp -text
 api/src/org/labkey/api/view/HttpPostRedirectView.java -text

@@ -52,18 +52,21 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
     public JspView(@NotNull HttpJspPage page)
     {
         _page = page;
+        setFrame(FrameType.DIV);
         MemTracker.getInstance().put(this);
     }
 
     public JspView(@NotNull HttpJspPage page, ModelClass model)
     {
         super(model);
+        setFrame(FrameType.DIV);
         _page = page;
     }
 
     public JspView(@NotNull HttpJspPage page, ModelClass model, Errors errors)
     {
         super(model);
+        setFrame(FrameType.DIV);
         _page = page;
         _errors = errors;
     }
@@ -80,6 +83,7 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
     public JspView(String page, @Nullable ModelClass model)
     {
         super(model);
+        setFrame(FrameType.DIV);
         MemTracker.getInstance().put(this);
         _path = page;
         _page = JspLoader.createPage((String)null, page);
@@ -102,6 +106,7 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
     public JspView(@NotNull Class packageClass, @NotNull String jspName, @Nullable ModelClass model)
     {
         super(model);
+        setFrame(FrameType.DIV);
         MemTracker.getInstance().put(this);
         _path = jspName;
         _page = JspLoader.createPage(packageClass, jspName);
@@ -121,6 +126,15 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
         _errors = errors;
     }
 
+    @Override
+    public void setTitle(CharSequence title)
+    {
+        super.setTitle(title);
+        // this is a backward compatibility hack, but it is more localized than the previous backward compatibility hack
+        // where PortalFrame check for null==title
+        if (StringUtils.isNotEmpty(title) && getFrame() == FrameType.DIV)
+            setFrame(FrameType.PORTAL);
+    }
 
     public HttpJspPage getPage()
     {

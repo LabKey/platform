@@ -36,7 +36,6 @@ public class ViewServiceImpl implements ViewService
         return f.createTemplate(e, context, body, page);
     }
 
-    /*
     Map<Enum,FrameFactory> frames = Collections.synchronizedMap(new HashMap<>());
 
     @Override
@@ -46,12 +45,11 @@ public class ViewServiceImpl implements ViewService
     }
 
     @Override
-    public HttpView<PageConfig> getFrame(Enum e, ViewContext context, WebPartFrame.FrameConfig config)
+    public WebPartFrame getFrame(Enum e, ViewContext context, WebPartFrame.FrameConfig config)
     {
         FrameFactory f = frames.get(e);
         if (null == f)
-            f = frames.get(FrameType.PORTAL);
+            f = frames.get(WebPartView.FrameType.PORTAL);
         return f.createFrame(e, context, config);
     }
-    */
 }

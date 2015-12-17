@@ -8,7 +8,7 @@ import org.springframework.web.servlet.ModelAndView;
  */
 public interface ViewService
 {
-    /** see PageConfig.Template for primary enum */
+    /** TEMPLATES see PageConfig.Template for primary enum */
 
     interface TemplateFactory
     {
@@ -19,24 +19,8 @@ public interface ViewService
 
     HttpView<PageConfig> getTemplate(Enum e, ViewContext context, ModelAndView body, PageConfig page);
 
-    /** FRAMES **/
+    /** FRAMES see WebPartView.FrameType for primary enum **/
 
-    enum FrameType
-    {
-        /** with portal widgets */
-        PORTAL,
-        /** title w/ hr */
-        TITLE,
-        DIALOG,
-        /** just <div class=""> */
-        DIV,
-        LEFT_NAVIGATION,
-        /** clean */
-        NONE,
-        NOT_HTML    // same as NONE, just a marker
-    }
-
-    /*
     interface FrameFactory
     {
         WebPartFrame createFrame(Enum e, ViewContext context, WebPartFrame.FrameConfig config);
@@ -44,6 +28,5 @@ public interface ViewService
 
     void registerFrameFactory(Enum template, FrameFactory f);
 
-    HttpView<PageConfig> getFrame(Enum e, ViewContext context, WebPartFrame.FrameConfig config);
-    */
+    WebPartFrame getFrame(Enum e, ViewContext context, WebPartFrame.FrameConfig config);
 }

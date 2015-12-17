@@ -213,7 +213,17 @@ public class QueryView extends WebPartView<Object>
     public QueryView(UserSchema schema)
     {
         setSchema(schema);
+        setFrame(FrameType.DIV);
     }
+
+    @Override
+    public void setTitle(CharSequence title)
+    {
+        super.setTitle(title);
+        if (StringUtils.isNotEmpty(title) && getFrame()==FrameType.DIV)
+            setFrame(FrameType.PORTAL);
+    }
+
 
     @Deprecated
     /** Use the constructor that takes an Errors object instead */
@@ -224,7 +234,7 @@ public class QueryView extends WebPartView<Object>
 
     public QueryView(UserSchema schema, QuerySettings settings, @Nullable Errors errors)
     {
-        setSchema(schema);
+        this(schema);
         if (null != settings)
             setSettings(settings);
         _errors = errors;

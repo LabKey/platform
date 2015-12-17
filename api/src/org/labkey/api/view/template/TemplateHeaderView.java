@@ -50,6 +50,7 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
     public TemplateHeaderView(@Nullable String upgradeMessage, @Nullable Map<String, Throwable> moduleErrors, PageConfig page)
     {
         super("/org/labkey/api/view/template/header.jsp", new TemplateHeaderBean(upgradeMessage, moduleErrors, page));
+        setFrame(FrameType.NONE);
         buildWarningMessageList();
     }
 

@@ -24,11 +24,10 @@ import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
-import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ErrorRenderer;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.HString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.template.ClientDependency;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -40,46 +39,47 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-
-import static org.labkey.api.util.PageFlowUtil.filter;
 
 
 public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
 {
+    public enum FrameType
+    {
+        /** with portal widgets */
+        PORTAL,
+        /** title w/ hr */
+        TITLE,
+        DIALOG,
+        /** just <div class=""> */
+        DIV,
+        LEFT_NAVIGATION,
+        /** clean */
+        NONE,
+        NOT_HTML    // same as NONE, just a marker
+    }
+
+
     public static final int DEFAULT_WEB_PART_ID = -1;
+
+    protected final WebPartFrame.FrameConfig _frameConfig = new WebPartFrame.FrameConfig();
 
     private Throwable _prepareException = null;
     private boolean _isPrepared = false;
-    private boolean _isEmbedded = false;
-    private boolean _showTitle  = true;
-    private boolean _isWebpart  = true;
-    private boolean _isEmpty = false;
-    private String _helpPopup;
-    private FrameType _frame = FrameType.PORTAL;
-    private int _webPartRowId = DEFAULT_WEB_PART_ID;
-    private NavTree _navMenu = null;
-    private List<NavTree> _customMenus = null;
-    private String _defaultLocation;
-    private NavTree _custom;
-    private boolean _hidePageTitle = false;
-
     private final boolean _devMode =AppProps.getInstance().isDevMode();
     protected String _debugViewDescription = null;
 
     private static final Logger LOG = Logger.getLogger(WebPartView.class);
 
+
     public boolean isEmpty()
     {
-        return _isEmpty;
+        return _frameConfig._isEmpty;
     }
 
     public void setEmpty(boolean empty)
     {
-        _isEmpty = empty;
+        _frameConfig._isEmpty = empty;
     }
 
     public ApiResponse renderToApiResponse() throws Exception
@@ -139,20 +139,6 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         };
     }
 
-    public static enum FrameType
-    {
-        /** with portal widgets */
-        PORTAL,
-        /** title w/ hr */
-        TITLE,
-        DIALOG,
-        /** just <div class=""> */
-        DIV,
-        LEFT_NAVIGATION,
-        /** clean */
-        NONE,
-        NOT_HTML    // same as NONE, just a marker
-    }
 
     public WebPartView()
     {
@@ -163,7 +149,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
     public WebPartView(String title)
     {
         this();
-        addObject("title", title);
+        setTitle(title);
     }
 
     public WebPartView(ModelBean model)
@@ -175,66 +161,53 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
     public WebPartView(String title, HttpView contents)
     {
         this();
-        addObject("title", title);
+        setTitle(title);
         setBody(contents);
     }
 
-
     public void setFrame(FrameType type)
     {
-        _frame = type;
+        _frameConfig._frame = type;
     }
 
     public FrameType getFrame()
     {
-        return _frame;
+        return _frameConfig._frame;
     }
 
     public void setBodyClass(String className)
     {
-        addObject("className", className);
-    }
-
-    public String getBodyClass()
-    {
-        return StringUtils.defaultString((String) getViewContext().get("className"), "");
+        _frameConfig._className = className;
     }
 
     public void setTitle(CharSequence title)
     {
-        if (title instanceof HString)
-            title = ((HString)title).getSource();
-        addObject("title", title == null ? "" : title.toString());
+        _frameConfig._title = null==title ? null : title.toString();
     }
 
     public String getTitle()
     {
-        Object ret = getViewContext().get("title");
-        return ret == null ? null : ret.toString();
+        return _frameConfig._title;
     }
 
     /** Use ActionURL version instead */
     @Deprecated
     public void setTitleHref(String href)
     {
-        addObject("href", href);
+        _frameConfig._titleHref = href;
     }
 
     public void setTitlePopupHelp(String title, String body)
+
     {
-        _helpPopup = PageFlowUtil.helpPopup(title, body);
+        _frameConfig._helpPopup = PageFlowUtil.helpPopup(title, body);
     }
 
     public void setTitleHref(ActionURL href)
     {
-        addObject("href", href.getLocalURIString());
+        _frameConfig._titleHref =  href.getLocalURIString();
     }
 
-
-    public String getTitleHref()
-    {
-        return (String) getViewContext().get("href");
-    }
 
     public void setIsOnlyWebPartOnPage(boolean b)
     {
@@ -243,50 +216,43 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
 
     public int getWebPartRowId()
     {
-        return _webPartRowId;
+        return _frameConfig._webPartRowId;
     }
 
     public void setWebPartRowId(int webPartRowId)
     {
-        _webPartRowId = webPartRowId;
+        _frameConfig._webPartRowId = webPartRowId;
     }
 
     public NavTree getPortalLinks()
     {
-        NavTree navTree = (NavTree) getViewContext().get("customizeLinks");
-        if (null == navTree)
-        {
-            navTree = new NavTree();
-            addObject("customizeLinks", navTree);
-        }
-
-        return navTree;
+        return _frameConfig._portalLinks;
     }
 
     public void setPortalLinks(NavTree navTree)
     {
-        addObject("customizeLinks", navTree);
+        _frameConfig._portalLinks = navTree;
     }
 
     public void setCustomize(NavTree tree)
     {
-       _custom = tree;
+        _frameConfig._customize = tree;
     }
 
-    public NavTree getCustomize()
+    public final NavTree getCustomize()
     {
-        return _custom;
+        return _frameConfig._customize;
     }
 
     public void enableExpandCollapse(String rootId, boolean collapsed)
     {
-        addObject("collapsed", Boolean.valueOf(collapsed));
-        addObject("rootId", rootId);
+        _frameConfig._collapsed = collapsed;
+        _frameConfig._rootId = rootId;
     }
 
     public void setNavMenu(NavTree navMenu)
     {
-        _navMenu = navMenu;
+        _frameConfig._navMenu = navMenu;
     }
 
     /** Override to declare your own NavTree menu implementation that will be used by the
@@ -295,55 +261,55 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
      */
     public NavTree getNavMenu()
     {
-        return _navMenu;
+        return _frameConfig._navMenu;
     }
 
     public void addCustomMenu(NavTree tree)
     {
-        if (_customMenus == null)
-            _customMenus = new ArrayList<>();
-        _customMenus.add(tree);
-    }
-
-    public List<NavTree> getCustomMenus()
-    {
-        return _customMenus;
+        if (_frameConfig._customMenus == null)
+            _frameConfig._customMenus = new ArrayList<>();
+        _frameConfig._customMenus.add(tree);
     }
 
     public void setShowTitle(boolean showTitle)
     {
-        _showTitle = showTitle;
+        _frameConfig._showTitle = showTitle;
     }
 
     public boolean showTitle()
     {
-        return _showTitle;
+        return _frameConfig._showTitle;
+    }
+
+    public void setCollapsible(boolean b)
+    {
+        _frameConfig._isCollapsible = b;
     }
 
     public boolean isCollapsible()
     {
-        return true;
+        return _frameConfig._isCollapsible;
     }
 
     public void setLocation(String location)
     {
-        _defaultLocation = location;
+        _frameConfig._location = location;
     }
 
     public String getLocation()
     {
-        return _defaultLocation;
+        return _frameConfig._location;
     }
 
     /** @return Override to declare if a view is or is not a Web Part. Defaults to true. */
     public boolean isWebPart()
     {
-        return _isWebpart;
+        return _frameConfig._isWebpart;
     }
 
     public void setIsWebPart(boolean isWebPart)
     {
-        _isWebpart = isWebPart;
+        _frameConfig._isWebpart = isWebPart;
     }
     
     @Override
@@ -359,10 +325,20 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         String name = StringUtils.defaultString(_debugViewDescription, this.getClass().getSimpleName());
         try (Timing timing = MiniProfiler.step(name))
         {
-            boolean isDebugHtml = _devMode && _frame != FrameType.NOT_HTML && StringUtils.startsWith(response.getContentType(), "text/html");
+            boolean isDebugHtml = _devMode && _frameConfig._frame != FrameType.NOT_HTML && StringUtils.startsWith(response.getContentType(), "text/html");
             if (isDebugHtml)
                 response.getWriter().print("<!--" + name + "-->");
-            doStartTag(getViewContext().getExtendedProperties(), response.getWriter());
+
+            // handle WebPartView subclasses that override getNavMenu()
+            // by default this is a no-op
+            _frameConfig._navMenu = getNavMenu();
+
+            // handle WebParView subclasses that override isWebPart()
+            _frameConfig._isWebpart = isWebPart();
+
+            WebPartFrame frame = ServiceRegistry.get(ViewService.class).getFrame(_frameConfig._frame, getViewContext(), _frameConfig);
+
+            frame.doStartTag(response.getWriter());
 
             if (exceptionToRender == null)
             {
@@ -413,7 +389,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                 }
             }
 
-            doEndTag(getViewContext().getExtendedProperties(), response.getWriter());
+            frame.doEndTag(response.getWriter());
             if (isDebugHtml)
                 response.getWriter().print("<!--/" + this.getClass() + "-->");
         }
@@ -471,480 +447,6 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
     }
 
 
-    public void doStartTag(Map m, PrintWriter out)
-    {
-        ViewContext context = getViewContext();
-        String contextPath = context.getContextPath();
-        FrameType frameType = getFrame();
-
-        String title = getTitle();
-        String href = getTitleHref();
-
-        // HACK for backwards compatibility
-        if (null == title && frameType==FrameType.PORTAL)
-        {
-            frameType = FrameType.DIV;
-            setFrame(frameType);
-        }
-
-        String className = getBodyClass();
-
-        switch (frameType)
-        {
-            case NONE:
-            case NOT_HTML:
-                break;
-
-            case DIV:
-                if (className != null && className.length() > 0)
-                    out.printf("<div class=\"%s\">", className);
-                else
-                    out.printf("<div>");
-                break;
-
-            case TITLE:
-                startTitleFrame(out, title, href, "100%", className);
-                break;
-
-            case DIALOG:
-            {
-                out.print("<table class=\"labkey-bordered\"><tr>");
-                out.print("<th>");
-                out.print(  PageFlowUtil.filter(title));
-                out.print(  "<br><img src='" + getViewContext().getContextPath() + "/_.gif' height=1 width=600>");
-                out.print("</th>");
-
-                if (getViewContext().get("closeURL") != null)
-                {
-                    Object o = getViewContext().get("closeURL");
-                    Object closeUrl = o instanceof ActionURL ? ((ActionURL)o).getLocalURIString() : String.valueOf(o);
-                    out.print("<th valign=\"top\" align=\"right\">");
-                    out.print("<a href=\"" + PageFlowUtil.filter(closeUrl) + "\">");
-                    out.print("<img src=\"" + contextPath + "/_images/partdelete.gif\"></a>");
-                    out.print("</th>");
-                }
-
-                out.print("</tr><tr><td colspan=2 class=\"" + className + "\">");
-                break;
-            }
-
-            case PORTAL:
-            {
-                out.println("<!--webpart-->");
-                out.println("<table name=\"webpart\" id=\"webpart_" + getWebPartRowId() + "\" class=\"labkey-wp\">");
-
-                Boolean collapsed = false;
-
-                // Don't render webpart header if title is null or blank
-                if (!StringUtils.isEmpty(title))
-                {
-                    out.println("<tr class=\"labkey-wp-header\">");
-                    out.print("<th class=\"labkey-wp-title-left\" title=\"");
-                    if (showTitle())
-                        out.print(PageFlowUtil.filter(title));
-                    out.print("\">");
-
-                    collapsed = (Boolean) context.get("collapsed");
-
-                    if (collapsed != null && isCollapsible())
-                    {
-                        String rootId = (String) context.get("rootId");
-                        ActionURL expandCollapseUrl = null;
-                        String expandCollapseGifId = "expandCollapse-" + rootId;
-                        if (collapsed != null)
-                        {
-                            if (rootId == null)
-                                throw new IllegalArgumentException("pathToHere or rootId not provided");
-                            expandCollapseUrl = PageFlowUtil.urlProvider(ProjectUrls.class). getExpandCollapseURL(getViewContext().getContainer(), "", rootId);
-                        }
-
-                        out.printf("<a href=\"%s\" onclick=\"return LABKEY.Utils.toggleLink(this, %s);\" id=\"%s\">",
-                                filter(expandCollapseUrl.getLocalURIString()), "true", expandCollapseGifId);
-                        String image = collapsed.booleanValue() ? "plus.gif" : "minus.gif";
-                        out.printf("<img width=9 height=9 style=\"margin-bottom: 0\" src=\"%s/_images/%s\"></a>", context.getContextPath(), image);
-
-                        out.printf(" <a href=\"%s\" onclick=\"return LABKEY.Utils.toggleLink(document.getElementById(%s), %s);\">",
-                                filter(expandCollapseUrl.getLocalURIString()), PageFlowUtil.jsString(expandCollapseGifId), "true");
-                        if (showTitle())
-                        {
-                            out.print("<span class=\"labkey-wp-title-text\">");
-                            out.print(PageFlowUtil.filter(title));
-                            out.print("</span>");
-                        }
-                        out.print("</a>");
-                    }
-                    else
-                    {
-                        if (null != href)
-                            out.print("<a href=\"" + PageFlowUtil.filter(href) + "\">");
-                        if (showTitle())
-                        {
-                            out.print("<span class=\"labkey-wp-title-text\">");
-                            out.print(PageFlowUtil.filter(title));
-                            out.print("</span>");
-                        }
-                        if (null != href)
-                            out.print("</a>");
-                    }
-                    if (_helpPopup != null)
-                    {
-                        out.print(_helpPopup);
-                    }
-
-                    NavTree[] links = getPortalLinks().getChildren();
-                    String sep = "";
-
-                    // Add Custom link
-                    NavTree nMenu = getNavMenu();
-                    if (nMenu == null)
-                        nMenu = new NavTree("More");  // // 11730 : Customize link missing on many webparts
-
-                    if (getCustomize() != null)
-                    {
-                        NavTree customize = getCustomize();
-                        customize.setText("Customize");
-                        nMenu.addChild(customize);
-                    }
-
-                    if (getViewContext().getUser().isSiteAdmin())
-                    {
-                        Portal.WebPart webPart = Portal.getPart(context.getContainer(), getWebPartRowId());
-
-                        if (webPart != null)
-                        {
-                            String permissionString = null;
-                            String containerPathString = null;
-
-                            if (webPart.getPermission() != null)
-                                permissionString = "'" + webPart.getPermission()+ "'";
-
-                            if (webPart.getPermissionContainer() != null)
-                                containerPathString = PageFlowUtil.qh(webPart.getPermissionContainer().getPath());
-
-                            // Wrapped in immediately invoke function expression because of Issue 16953
-                            NavTree permissionsNav = new NavTree("Permissions",
-                                    "javascript:LABKEY.Portal._showPermissions(" +
-                                    getWebPartRowId() + "," +
-                                    permissionString + "," +
-                                    containerPathString + ");"
-                            );
-
-                            permissionsNav.setId("permissions_"+webPart.getRowId());
-                            nMenu.addChild(permissionsNav);
-                        }
-                    }
-
-                    if (getLocation() != null && getLocation().equals(WebPartFactory.LOCATION_RIGHT))
-                    {
-
-                        // Collapse all items into one drop-down
-                        // Render the navigation menu
-                        if (nMenu == null)
-                            nMenu = new NavTree("More");
-
-                        // Portal
-                        if (links.length > 0)
-                        {
-//                            NavTree portal = new NavTree("Layout");
-                            for (NavTree link : links)
-                                nMenu.addChild(link);
-//                            nMenu.addChild(portal);
-                        }
-
-                        if (nMenu.hasChildren())
-                        {
-                            out.print("&nbsp;");
-                            renderMenuWithFontImage(nMenu, out, "fa fa-caret-down");
-                        }
-                        out.print("</th>\n<th class=\"labkey-wp-title-right\">");
-                    }
-                    else if (!isWebPart())
-                    {
-                        out.print("</th>\n<th class=\"labkey-wp-title-right\">");
-                        // Purposely don't render custom links to avoid duplicates
-
-                        // Render Navigation Links
-                        if (nMenu.hasChildren())
-                        {
-                            out.print("<div class=\"labkey-wp-text-buttons\">");
-                            for (NavTree link : nMenu.getChildren())
-                            {
-                                if (link.hasChildren())
-                                {
-                                    renderMenu(link, out);
-                                }
-                                out.print(sep);
-                                String linkHref = link.getHref();
-                                String linkText = link.getText();
-
-                                if (null != linkHref && 0 < linkHref.length())
-                                {
-                                    out.print("<a href=\"" + linkHref + "\"");
-                                    if (link.isNoFollow())
-                                        out.print(" rel=\"nofollow\"");
-                                    out.print(">" + linkText + "</a>");
-                                }
-                                else if (link.getScript() != null)
-                                {
-                                    out.print("<a onClick=" + PageFlowUtil.jsString(link.getScript()) + ">" + linkText + "</a>");                                
-                                }
-                            }
-                            out.print("</div>");
-                        }
-                    }
-                    else
-                    {
-                        // show the move up move down and delete web part menu options
-                        if (links.length > 0)
-                        {
-                            for (NavTree link : links)
-                                nMenu.addChild(link);
-                        }
-
-                        out.print("&nbsp;");
-
-                        if (nMenu != null && nMenu.hasChildren())
-                        {
-                            renderMenuWithFontImage(nMenu, out, "fa fa-caret-down");
-                        }
-
-                        // Render specific parts first (e.g. wiki edit)
-                        if (_customMenus != null)
-                        {
-                            Iterator itr = _customMenus.iterator();
-                            NavTree current;
-                            while (itr.hasNext())
-                            {
-                                current = (NavTree) itr.next();
-                                out.print(sep);
-                                if (current.hasChildren())
-                                {                                    
-                                    renderMenu(current, out, current.getImageSrc());
-                                }
-                                else
-                                {
-                                    String linkHref = current.getHref();
-                                    String linkText = current.getText();
-                                    String script = current.getScript();
-
-                                    if (StringUtils.isEmpty(linkHref) && StringUtils.isEmpty(script))
-                                    {
-                                        out.print("<span class=\"labkey-wp-icon-button-inactive\">");
-                                    }
-                                    else
-                                    {
-                                        out.print("<span class=\"labkey-wp-icon-button-active\">");
-
-                                        if (StringUtils.isEmpty(linkHref))
-                                            linkHref = "javascript:void(0);";
-
-                                        out.print("<a href=\"" + PageFlowUtil.filter(linkHref) + "\"");
-                                        if (current.isNoFollow())
-                                            out.print(" rel=\"nofollow\"");
-                                        if (StringUtils.isNotEmpty(script))
-                                            out.print(" onclick=\"" + PageFlowUtil.filter(script) + "\"");
-                                        out.print(">");
-                                    }
-
-                                    if (null != current.getImageCls())
-                                    {
-                                        out.print("<span class=\"" + current.getImageCls() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\"></span>");
-                                    }
-                                    else if (null != current.getImageSrc())
-                                    {
-                                        if (current.getImageWidth() != null && current.getImageHeight() != null)
-                                            out.print("<img height=" + current.getImageHeight() + " width=" + current.getImageWidth() + " src=\"" + current.getImageSrc() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\">");
-                                        else
-                                            out.print("<img src=\"" + current.getImageSrc() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\">");
-                                    }
-                                    else
-                                    {
-                                        out.print(PageFlowUtil.filter(linkText));
-                                    }
-
-                                    if (StringUtils.isNotEmpty(linkHref) || StringUtils.isNotEmpty(script))
-                                        out.print("</a>");
-                                    out.print("</span>");
-                                }
-                            }
-                        }
-
-                        out.print("</th>\n<th class=\"labkey-wp-title-right\">");
-
-                     }
-
-                    out.println("</th>");
-                    out.println("</tr>");
-
-                }
-
-
-                out.print("<tr id=\"" + getContentId() + "\" ");
-                if (collapsed != null && collapsed.booleanValue())
-                    out.print("style=\"display: none\"");
-                out.println(">");
-
-                out.print("<td colspan=2 class=\"" + className + " labkey-wp-body\">");
-                break;
-            }
-            case LEFT_NAVIGATION:
-            {
-                out.print("<!--leftnav-webpart--><table class=\"labkey-expandable-nav\">");
-
-                Boolean collapsed = (Boolean) context.get("collapsed");
-                if (title != null)
-                {
-                    out.print("<tr>");
-
-                    String rootId = (String) context.get("rootId");
-                    ActionURL expandCollapseUrl = null;
-                    String expandCollapseGifId = "expandCollapse-" + rootId;
-
-                    if (collapsed != null)
-                    {
-                        if (rootId == null)
-                            throw new IllegalArgumentException("pathToHere or rootId not provided");
-                        expandCollapseUrl = PageFlowUtil.urlProvider(ProjectUrls.class). getExpandCollapseURL(getViewContext().getContainer(), "", rootId);
-                    }
-
-                    out.print("<td class=\"labkey-expand-collapse-area\"><div>");
-
-                    if (collapsed != null)
-                    {
-                        out.printf("<a class=\"labkey-header\" href=\"%s\" onclick=\"return LABKEY.Utils.toggleLink(this, %s);\" id=\"%s\">",
-                                filter(expandCollapseUrl.getLocalURIString()), "true", expandCollapseGifId);
-                        String image = collapsed.booleanValue() ? "plus.gif" : "minus.gif";
-                        out.printf("<img src=\"%s/_images/%s\" width=9 height=9></a>", context.getContextPath(), image);
-                    }
-                    if (null != href)
-                    {
-                        // print title with user-specified link:
-                        out.print("<a class=\"labkey-header\" href=\"" + PageFlowUtil.filter(href) + "\">");
-                        out.print(PageFlowUtil.filter(title));
-                        out.print("</a>");
-                    }
-                    else if (collapsed != null)
-                    {
-                        // print title with expand/collapse link:
-                        out.printf("<a class=\"labkey-header\" href=\"%s\" onclick=\"return LABKEY.Utils.toggleLink(document.getElementById(%s), %s);\">",
-                                filter(expandCollapseUrl.getLocalURIString()), PageFlowUtil.jsString(expandCollapseGifId), "true");
-                        out.print(PageFlowUtil.filter(title));
-                        out.print("</a>");
-                    }
-                    else
-                    {
-                        // print the title alone:
-                        out.print(PageFlowUtil.filter(title));
-                    }
-
-                    out.print("</div></td></tr>\n"); // end of second <th>
-                }
-                out.print("<tr" + (collapsed != null && collapsed.booleanValue() ? " style=\"display:none\"" : "") + " class=\"" + className + "\">" +
-                        "<td colspan=\"2\" class=\"labkey-expandable-nav-body\">");
-                break;
-            }
-        }
-    }
-
-    private String getContentId()
-    {
-        return "WebPartView" + System.identityHashCode(this);
-    }
-
-    // dumb method because labkey-announcement-title has huge padding which we need to avoid sometimes
-    public static void startTitleFrame(Writer out, String title, String href, String width, String className, int paddingTop)
-    {
-        try
-        {
-            out.write(
-                    "<table " + (null!=width?"width=\"" + width + "\"" : "") + ">" +
-                            "<tr>" +
-                            "<td class=\"labkey-announcement-title\" style=\"padding-top:" + paddingTop + ";\" align=left><span>");
-            if (null != href)
-                out.write("<a href=\"" + PageFlowUtil.filter(href) + "\">");
-            out.write(PageFlowUtil.filter(title));
-            if (null != href)
-                out.write("</a>");
-            out.write("</span></td></tr>");
-            out.write("<tr><td class=\"labkey-title-area-line\"></td></tr>");
-            out.write("<tr><td colspan=3 class=\"" + className + "\">");
-        }
-        catch (IOException x)
-        {
-            throw new RuntimeException(x);
-        }
-    }
-
-    public static void startTitleFrame(Writer out, String title, String href, String width, String className)
-    {
-        try
-        {
-            out.write(
-                    "<table " + (null!=width?"width=\"" + width + "\"" : "") + ">" +
-                            "<tr>" +
-                            "<td class=\"labkey-announcement-title\" align=left><span>");
-            if (null != href)
-                out.write("<a href=\"" + PageFlowUtil.filter(href) + "\">");
-            out.write(PageFlowUtil.filter(title));
-            if (null != href)
-                out.write("</a>");
-            out.write("</span></td></tr>");
-            out.write("<tr><td class=\"labkey-title-area-line\"></td></tr>");
-            out.write("<tr><td colspan=3 class=\"" + className + "\">");
-        }
-        catch (IOException x)
-        {
-            throw new RuntimeException(x);
-        }
-    }
-
-    public static void startTitleFrame(Writer out, String title)
-    {
-        startTitleFrame(out, title, null, null, null);
-    }
-
-
-    public static void endTitleFrame(Writer out)
-    {
-        try
-        {
-            out.write("</td></tr></table>");
-        }
-        catch (IOException x)
-        {
-            throw new RuntimeException(x);
-        }
-    }
-
-
-    public void doEndTag(Map context, PrintWriter out)
-    {
-        FrameType frameType = getFrame();
-
-        switch (frameType)
-        {
-            case NONE:
-            case NOT_HTML:
-                break;
-
-            case DIV:
-                out.print("</div>");
-                break;
-
-            case TITLE:
-                endTitleFrame(out);
-                break;
-
-            case LEFT_NAVIGATION:
-            case PORTAL:
-                out.print("</td></tr></table><!--/webpart-->");
-                break;
-
-            case DIALOG:
-                out.print("</td></tr></table>");
-        }
-    }
-
     protected void renderView(ModelBean model, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
         renderView(model, response.getWriter());
@@ -958,12 +460,12 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
 
     public boolean isEmbedded()
     {
-        return _isEmbedded;
+        return _frameConfig._isEmbedded;
     }
 
     public void setEmbedded(boolean embedded)
     {
-        _isEmbedded = embedded;
+        _frameConfig._isEmbedded = embedded;
     }
 
     protected static class WebPartCollapsible implements Collapsible
@@ -1003,64 +505,36 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         }
     }
 
-    private void renderMenu(NavTree menu, PrintWriter out)
-    {
-        try
-        {
-            menu.setText(menu.getText());
-            PopupMenu more = new PopupMenu(menu, PopupMenu.Align.RIGHT, PopupMenu.ButtonStyle.TEXT);
-            more.setOffset("-7");
-            more.render(out);
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void renderMenu(NavTree menu, PrintWriter out, String imageSrc)
-    {
-        try
-        {
-            menu.setText("More");
-            PopupMenu more = new PopupMenu(menu, PopupMenu.Align.RIGHT, PopupMenu.ButtonStyle.IMAGE);
-            menu.setImage(imageSrc, 24, 24);
-            more.setImageId("more-" + PageFlowUtil.filter(getTitle().toLowerCase()));
-            out.print("<span class=\"labkey-wp-icon-button-active\">");
-            more.render(out);
-            out.print("</span>");
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void renderMenuWithFontImage(NavTree menu, PrintWriter out, String imageCls)
-    {
-        try
-        {
-            menu.setText("More");
-            PopupMenu more = new PopupMenu(menu, PopupMenu.Align.RIGHT, PopupMenu.ButtonStyle.IMAGE);
-            menu.setImageCls(imageCls);
-            more.setImageId("more-" + PageFlowUtil.filter(getTitle().toLowerCase()));
-            out.print("<span class=\"labkey-wp-icon-button-active\">");
-            more.render(out);
-            out.print("</span>");
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
 
     public boolean isHidePageTitle()
     {
-        return _hidePageTitle;
+        return _frameConfig._hidePageTitle;
     }
 
     public void setHidePageTitle(boolean hidePageTitle)
     {
-        _hidePageTitle = hidePageTitle;
+        _frameConfig._hidePageTitle = hidePageTitle;
+    }
+
+
+    @Deprecated
+    public static void startTitleFrame(Writer out, String title)
+    {
+        FrameFactoryClassic.startTitleFrame(out,title);
+    }
+    @Deprecated
+    public static void startTitleFrame(Writer out, String title, String href, String width, String className)
+    {
+        FrameFactoryClassic.startTitleFrame(out,title,href,width,className);
+    }
+    @Deprecated
+    public static void startTitleFrame(Writer out, String title, String href, String width, String className, int paddingTop)
+    {
+        FrameFactoryClassic.startTitleFrame(out,title,href,width,className,paddingTop);
+    }
+    @Deprecated
+    public static void endTitleFrame(Writer out)
+    {
+        FrameFactoryClassic.endTitleFrame(out);
     }
 }

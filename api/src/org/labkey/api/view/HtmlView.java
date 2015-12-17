@@ -29,12 +29,14 @@ public class HtmlView extends WebPartView
     public HtmlView(String html)
     {
         setHtml(html);
+        setFrame(FrameType.DIV);
     }
 
     public HtmlView(String title, String html)
     {
         this(html);
         setTitle(title);
+        setFrame(FrameType.PORTAL);
     }
 
     public HtmlView(String title, String html, Object... params)
