@@ -31,6 +31,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.AppBar;
+import org.labkey.api.view.template.AppBarView;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.MenuBarView;
 import org.labkey.api.view.template.PageConfig;
