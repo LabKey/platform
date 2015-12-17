@@ -393,7 +393,7 @@ LABKEY.Utils = new function(impl, $) {
         var signalContainerId = 'testSignals';
         var signalContainerSelector = '#' + signalContainerId;
         var signalContainer = $(signalContainerSelector);
-        var formHTML = '<div id="' + signalContainerId + '"></div>';
+        var formHTML = '<META id="' + signalContainerId + '"></META>';
 
         if (!signalContainer.length)
         {
@@ -402,11 +402,11 @@ LABKEY.Utils = new function(impl, $) {
             signalContainer.hide();
         }
 
-        signalContainer.find('div[name="' + signalName + '"]').remove();
-        signalContainer.append('<div name="' + signalName + '" id="' + LABKEY.Utils.id() + '"/>');
+        signalContainer.find('META[name="' + signalName + '"]').remove();
+        signalContainer.append('<META name="' + signalName + '" id="' + LABKEY.Utils.id() + '"/>');
         if (signalResult)
         {
-            signalContainer.find('div[name="' + signalName + '"]').attr("value", signalResult);
+            signalContainer.find('META[name="' + signalName + '"]').attr("value", signalResult);
         }
     };
 
