@@ -2963,7 +2963,7 @@ public class ExperimentController extends SpringActionController
             String materialSourceLsid = ExperimentService.get().getSampleSetLsid(form.getName(), getContainer()).toString();
             _ss = ExperimentService.get().getSampleSet(materialSourceLsid);
 
-            // TODO: how to get this FormattedError into the valdiateCommand?
+            // TODO: how to get this FormattedError into the validate command?
             if (!form.isImportMoreSamples() && null != _ss)
             {
                 errors.addError(new FormattedError("A sample set with that name already exists.  If you would like to import samples that set, go here:  " +

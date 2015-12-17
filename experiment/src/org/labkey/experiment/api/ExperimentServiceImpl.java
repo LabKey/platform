@@ -3360,7 +3360,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             for (SimpleRunRecord runRecord : runRecords)
             {
                 count++;
-                ExpRunImpl run = createRun(runRecord.getInputMaterialMap(), Collections.emptyMap(), runRecord.getOutputMaterialMap(), Collections.emptyMap(), info);
+                ExpRunImpl run = createRun(runRecord.getInputMaterialMap(), runRecord.getInputDataMap(), runRecord.getOutputMaterialMap(), runRecord.getOutputDataMap(), info);
 
                 helper.addRunParams(run._object, user.getUserId());
 
@@ -3389,14 +3389,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 ExpProtocolApplicationImpl protApp2 = new ExpProtocolApplicationImpl(new ProtocolApplication());
                 ExpProtocolApplicationImpl protApp3 = new ExpProtocolApplicationImpl(new ProtocolApplication());
 
-                helper.addProtocolApp(protApp1, date, action1, parentProtocol, run, runRecord.getInputMaterialMap(),
-                        runRecord.getOutputMaterialMap());
+                helper.addProtocolApp(protApp1, date, action1, parentProtocol, run, runRecord);
 
-                helper.addProtocolApp(protApp2, date, action2, protocol2, run, runRecord.getInputMaterialMap(),
-                        runRecord.getOutputMaterialMap());
+                helper.addProtocolApp(protApp2, date, action2, protocol2, run, runRecord);
 
-                helper.addProtocolApp(protApp3, date, action3, outputProtocol, run, runRecord.getOutputMaterialMap(),
-                        runRecord.getOutputMaterialMap());
+                helper.addProtocolApp(protApp3, date, action3, outputProtocol, run, runRecord);
 
                 if ((count % MAX_RUNS_IN_BATCH) == 0)
                 {
@@ -3428,6 +3425,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         private List<List<?>> _protAppParams = new ArrayList<>();
         private List<ProtocolAppRecord> _protAppRecords = new ArrayList<>();
         private List<List<?>> _materialInputParams = new ArrayList<>();
+        private List<List<?>> _dataInputParams = new ArrayList<>();
 
         public DeriveSamplesBulkHelper(Container container, User user, XarContext context)
         {
@@ -3452,9 +3450,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
 
         public void addProtocolApp(ExpProtocolApplicationImpl protApp, Date activityDate, ProtocolAction action, ExpProtocol protocol,
-                                   ExpRun run, Map<ExpMaterial, String> inputMaterialMap, Map<ExpMaterial, String> outputMaterialMap)
+                                   ExpRun run, SimpleRunRecord runRecord)
         {
-            _protAppRecords.add(new ProtocolAppRecord(protApp, activityDate, action, protocol, run, inputMaterialMap, outputMaterialMap));
+            _protAppRecords.add(new ProtocolAppRecord(protApp, activityDate, action, protocol, run, runRecord));
         }
 
         public void saveBatch() throws SQLException, XarFormatException
@@ -3470,6 +3468,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             createMaterialInputParams(_protAppRecords, _materialInputParams);
             saveExpMaterialInputBatch(_materialInputParams);
             saveExpMaterialOutputs(_protAppRecords);
+            createDataInputParams(_protAppRecords, _dataInputParams);
+            saveExpDataInputBatch(_dataInputParams);
+            saveExpDataOutputs(_protAppRecords);
 
             // clear the stored records
             _runParams.clear();
@@ -3558,15 +3559,36 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 assert protAppRowMap.containsKey(rec._protApp.getLSID());
 
                 Integer rowId = protAppRowMap.get(rec._protApp.getLSID());
+                rec._protApp._object.setRowId(rowId);
+
                 // optimize, should be only 1 material input
-                for (Map.Entry<ExpMaterial, String> entry : rec._inputMaterialMap.entrySet())
+                for (Map.Entry<ExpMaterial, String> entry : rec._runRecord.getInputMaterialMap().entrySet())
                 {
-                    rec._protApp._object.setRowId(rowId);
 
                     materialInputParams.add(Arrays.asList(
                             entry.getKey().getRowId(),
                             rowId,
                             entry.getValue()));
+                }
+            }
+        }
+
+        private void createDataInputParams(List<ProtocolAppRecord> protAppRecords, List<List<?>> dataInputParams)
+        {
+            for (ProtocolAppRecord rec : protAppRecords)
+            {
+                if (rec._action.getSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE ||
+                        rec._action.getSequence() == SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE)
+                {
+                    // optimize, should be only 1 material input
+                    for (Map.Entry<ExpData, String> entry : rec._runRecord.getInputDataMap().entrySet())
+                    {
+                        dataInputParams.add(Arrays.asList(
+                                entry.getValue(),
+                                entry.getKey().getRowId(),
+                                rec._protApp.getRowId()
+                        ));
+                    }
                 }
             }
         }
@@ -3577,7 +3599,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             {
                 if (rec._action.getSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE)
                 {
-                    for (ExpMaterial outputMaterial : rec._outputMaterialMap.keySet())
+                    for (ExpMaterial outputMaterial : rec._runRecord.getOutputMaterialMap().keySet())
                     {
                         SQLFragment sql = new SQLFragment("UPDATE ").append(getTinfoMaterial(), "").
                                 append(" SET SourceApplicationId = ?, RunId = ? WHERE RowId = ?");
@@ -3590,22 +3612,59 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             }
         }
 
+        private void saveExpDataOutputs(List<ProtocolAppRecord> protAppRecords)
+        {
+            for (ProtocolAppRecord rec : protAppRecords)
+            {
+                if (rec._action.getSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE)
+                {
+                    for (ExpData outputData : rec._runRecord.getOutputDataMap().keySet())
+                    {
+                        SQLFragment sql = new SQLFragment("UPDATE ").append(getTinfoData(), "").
+                                append(" SET SourceApplicationId = ?, RunId = ? WHERE RowId = ?");
+
+                        sql.addAll(new Object[]{rec._protApp.getRowId(), rec._protApp._object.getRunId(), outputData.getRowId()});
+
+                        new SqlExecutor(getTinfoMaterial().getSchema()).execute(sql);
+                    }
+                }
+            }
+        }
+
         private void saveExpMaterialInputBatch(List<List<?>> params) throws SQLException
         {
-            StringBuilder sql = new StringBuilder("INSERT INTO ").append(ExperimentServiceImpl.get().getTinfoMaterialInput().toString()).
-                    append(" (MaterialId, TargetApplicationId, Role)").
-                    append(" VALUES (?,?,?)");
+            if (!params.isEmpty())
+            {
+                StringBuilder sql = new StringBuilder("INSERT INTO ").append(ExperimentServiceImpl.get().getTinfoMaterialInput().toString()).
+                        append(" (MaterialId, TargetApplicationId, Role)").
+                        append(" VALUES (?,?,?)");
 
-            Table.batchExecute(getExpSchema(), sql.toString(), params);
+                Table.batchExecute(getExpSchema(), sql.toString(), params);
+            }
         }
 
         private void saveExpProtocolApplicationBatch(List<List<?>> params) throws SQLException
         {
-            StringBuilder sql = new StringBuilder("INSERT INTO ").append(ExperimentServiceImpl.get().getTinfoProtocolApplication().toString()).
-                    append(" (Name, CpasType, ProtocolLsid, ActivityDate, RunId, ActionSequence, Lsid)").
-                    append(" VALUES (?,?,?,?,?,?,?)");
+            if (!params.isEmpty())
+            {
+                StringBuilder sql = new StringBuilder("INSERT INTO ").append(ExperimentServiceImpl.get().getTinfoProtocolApplication().toString()).
+                        append(" (Name, CpasType, ProtocolLsid, ActivityDate, RunId, ActionSequence, Lsid)").
+                        append(" VALUES (?,?,?,?,?,?,?)");
 
-            Table.batchExecute(getExpSchema(), sql.toString(), params);
+                Table.batchExecute(getExpSchema(), sql.toString(), params);
+            }
+        }
+
+        private void saveExpDataInputBatch(List<List<?>> params) throws SQLException
+        {
+            if (!params.isEmpty())
+            {
+                StringBuilder sql = new StringBuilder("INSERT INTO ").append(ExperimentServiceImpl.get().getTinfoDataInput().toString()).
+                        append(" (Role, DataId, TargetApplicationId)").
+                        append(" VALUES (?,?,?)");
+
+                Table.batchExecute(getExpSchema(), sql.toString(), params);
+            }
         }
 
         private class ProtocolAppRecord
@@ -3615,19 +3674,17 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             ProtocolAction _action;
             ExpProtocol _protocol;
             ExpRun _run;
-            Map<ExpMaterial, String> _inputMaterialMap;
-            Map<ExpMaterial, String> _outputMaterialMap;
+            SimpleRunRecord _runRecord;
 
             public ProtocolAppRecord(ExpProtocolApplicationImpl protApp, Date activityDate, ProtocolAction action, ExpProtocol protocol,
-                                     ExpRun run, Map<ExpMaterial, String> inputMaterialMap, Map<ExpMaterial, String> outputMaterialMap)
+                                     ExpRun run, SimpleRunRecord runRecord)
             {
                 _protApp = protApp;
                 _activityDate = activityDate;
                 _action = action;
                 _protocol = protocol;
                 _run = run;
-                _inputMaterialMap = inputMaterialMap;
-                _outputMaterialMap = outputMaterialMap;
+                _runRecord = runRecord;
             }
         }
     }

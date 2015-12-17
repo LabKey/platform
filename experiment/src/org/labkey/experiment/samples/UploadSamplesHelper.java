@@ -32,8 +32,11 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocolApplication;
+import org.labkey.api.exp.api.ExpProtocolOutput;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
@@ -41,8 +44,10 @@ import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.ExperimentProperty;
+import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
+import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
@@ -72,6 +77,8 @@ import java.util.Set;
 public class UploadSamplesHelper
 {
     private static final Logger _log = Logger.getLogger(UploadSamplesHelper.class);
+    private static final String MATERIAL_INPUT_PARENT = "MaterialInputs";
+    private static final String DATA_INPUT_PARENT = "DataInputs";
 
     UploadMaterialSetForm _form;
     private MaterialSource _materialSource;
@@ -99,7 +106,7 @@ public class UploadSamplesHelper
                 {
                     ret.put(-1, "");
                 }
-                for (int i = 0; i < cds.length; i ++)
+                for (int i = 0; i < cds.length; i++)
                 {
                     ret.put(i, cds[i].name);
                 }
@@ -285,7 +292,7 @@ public class UploadSamplesHelper
                                 uri = uri.substring(uri.indexOf("#") + 1);
                             }
                             throw new ExperimentException("All rows must contain values for all Id columns: Missing " + uri +
-                                " in row:  " + (i + 1));
+                                    " in row:  " + (i + 1));
                         }
                     }
                 }
@@ -368,7 +375,7 @@ public class UploadSamplesHelper
                         // 10164 : Deleting flag/comment doesn't clear flag/comment after reupload
                         String oldComment = material.getComment();
                         Object newCommentObj = map.get(ExperimentProperty.COMMENT.getPropertyDescriptor().getPropertyURI());
-                        String newComment = null==newCommentObj ? null : String.valueOf(newCommentObj);
+                        String newComment = null == newCommentObj ? null : String.valueOf(newCommentObj);
                         if (StringUtils.isEmpty(newComment) && !hasCommentHeader && oldComment != null)
                         {
                             Map<String, Object> newMap = new HashMap<>(map);
@@ -519,7 +526,7 @@ public class UploadSamplesHelper
     protected String decideName(Map<String, Object> rowMap, List<String> idCols)
     {
         StringBuilder ret = new StringBuilder(String.valueOf(rowMap.get(idCols.get(0))));
-        for (int i = 1; i < idCols.size(); i ++)
+        for (int i = 1; i < idCols.size(); i++)
         {
             String col = idCols.get(i);
             ret.append("-");
@@ -551,28 +558,11 @@ public class UploadSamplesHelper
 
         if (source.getParentCol() != null)
         {
-            // Map from material name to material of all materials in all sample sets visible from this location
-            Map<String, List<ExpMaterialImpl>> potentialParents = ExperimentServiceImpl.get().getSamplesByName(_form.getContainer(), _form.getUser());
+            Map<String, PropertyDescriptor> descriptorMap = new HashMap<>();
+            Map<String, List<ExpMaterialImpl>> potentialParents = null;
 
-            // We need to make sure that the set of potential parents points to the same object as our list of recently
-            // inserted materials. This is important because if creating the sample derivation run changes the material
-            // at all (setting its source run, for example), we need to be sure that we don't later save a different
-            // instance of the same material that doesn't have the edit.
-            for (ExpMaterial material : helper._materials)
-            {
-                List<ExpMaterialImpl> possibleDuplicates = potentialParents.get(material.getName());
-                assert possibleDuplicates != null && !possibleDuplicates.isEmpty() : "There should be at least one material with the same name";
-                if (possibleDuplicates != null)
-                {
-                    for (int i = 0; i < possibleDuplicates.size(); i++)
-                    {
-                        if (possibleDuplicates.get(i).getRowId() == material.getRowId())
-                        {
-                            possibleDuplicates.set(i, (ExpMaterialImpl)material);
-                        }
-                    }
-                }
-            }
+            for (PropertyDescriptor descriptor : descriptors)
+                descriptorMap.put(descriptor.getPropertyURI(), descriptor);
 
             assert rows.size() == helper._materials.size() : "Didn't find as many materials as we have rows";
 
@@ -598,27 +588,34 @@ public class UploadSamplesHelper
                     }
                 }
 
-                String newParent = row.get(source.getParentCol()) == null ? null : row.get(source.getParentCol()).toString();
-                if (newParent != null)
+                Map<ExpProtocolOutput, String> parentInputMap = resolveParentInputs(_form.getUser(), getContainer(), source, descriptorMap.get(source.getParentCol()),
+                        row, potentialParents, helper);
+
+                if (!parentInputMap.isEmpty())
                 {
                     // Need to create a new derivation run
-                    List<ExpMaterial> parentMaterials = resolveParentMaterials(newParent, potentialParents);
-                    Map<ExpMaterial, String> parentMap = new HashMap<>();
-                    int index = 1;
-                    for (ExpMaterial parentMaterial : parentMaterials)
-                    {
-                        parentMap.put(parentMaterial, "Sample" + (index == 1 ? "" : Integer.toString(index)));
-                        index++;
-                    }
+                    Map<ExpMaterial, String> parentMaterialMap = new HashMap<>();
+                    Map<ExpData, String> parentDataMap = new HashMap<>();
 
-                    runRecords.add(new UploadSampleRunRecord(parentMap, Collections.singletonMap(material, "Sample")));
+                    for (Map.Entry<ExpProtocolOutput, String> entry : parentInputMap.entrySet())
+                    {
+                        if (entry.getKey() instanceof ExpMaterial)
+                        {
+                            parentMaterialMap.put((ExpMaterial)entry.getKey(), entry.getValue());
+                        }
+                        else if (entry.getKey() instanceof ExpData)
+                        {
+                            parentDataMap.put((ExpData)entry.getKey(), entry.getValue());
+                        }
+                    }
+                    runRecords.add(new UploadSampleRunRecord(parentMaterialMap, Collections.singletonMap(material, "Sample"), parentDataMap, Collections.emptyMap()));
                     //ExperimentService.get().deriveSamples(parentMap, Collections.singletonMap(material, "Sample"), new ViewBackgroundInfo(_form.getContainer(),  _form.getUser(), null), _log);
                 }
             }
 
             if (!runRecords.isEmpty())
             {
-                ExperimentService.get().deriveSamplesBulk(runRecords, new ViewBackgroundInfo(_form.getContainer(),  _form.getUser(), null), _log);
+                ExperimentService.get().deriveSamplesBulk(runRecords, new ViewBackgroundInfo(_form.getContainer(), _form.getUser(), null), _log);
             }
         }
 
@@ -642,11 +639,16 @@ public class UploadSamplesHelper
     {
         Map<ExpMaterial, String> _inputMaterial;
         Map<ExpMaterial, String> _outputMaterial;
+        Map<ExpData, String> _inputData;
+        Map<ExpData, String> _outputData;
 
-        public UploadSampleRunRecord(Map<ExpMaterial, String> inputMaterial, Map<ExpMaterial, String> outputMaterial)
+        public UploadSampleRunRecord(Map<ExpMaterial, String> inputMaterial, Map<ExpMaterial, String> outputMaterial,
+                                     Map<ExpData, String> inputData, Map<ExpData, String> outputData)
         {
             _inputMaterial = inputMaterial;
             _outputMaterial = outputMaterial;
+            _inputData = inputData;
+            _outputData = outputData;
         }
 
         @Override
@@ -660,11 +662,124 @@ public class UploadSamplesHelper
         {
             return _outputMaterial;
         }
+
+        @Override
+        public Map<ExpData, String> getInputDataMap()
+        {
+            return _inputData;
+        }
+
+        @Override
+        public Map<ExpData, String> getOutputDataMap()
+        {
+            return _outputData;
+        }
     }
 
-    private List<ExpMaterial> resolveParentMaterials(String newParent, Map<String, List<ExpMaterialImpl>> materials) throws ValidationException, ExperimentException
+    Map<ExpProtocolOutput, String> resolveParentInputs(User user, Container c, MaterialSource source, PropertyDescriptor sourceDescriptor,
+                                                       Map<String, Object> row,
+                                                       Map<String, List<ExpMaterialImpl>> potentialParents,
+                                                       MaterialImportHelper helper) throws ExperimentException, ValidationException
     {
-        List<ExpMaterial> parents = new ArrayList<>();
+        Map<ExpProtocolOutput, String> parentInputMap = new HashMap<>();
+        String newParent = row.get(source.getParentCol()) == null ? null : row.get(source.getParentCol()).toString();
+
+        if (newParent != null)
+        {
+            String parentColName = sourceDescriptor != null ? sourceDescriptor.getName() : null;
+            if (parentColName != null)
+            {
+                // support for mapping DataClass or SampleSet objects as a parent input using the column name format:
+                // DataInputs/<data class name> or MaterialInputs/<sample set name>. Either / or . works as a delimiter
+                //
+                String[] parts = parentColName.split("\\.|/");
+                if (parts.length == 2)
+                {
+                    if (parts[0].equalsIgnoreCase(MATERIAL_INPUT_PARENT))
+                    {
+                        ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(c, parts[1]);
+                        if (sampleSet != null)
+                        {
+                            ExpMaterial sample = sampleSet.getSample(c, newParent);
+                            if (sample != null)
+                                parentInputMap.put(sample, "Sample");
+                        }
+                    }
+                    else if (parts[0].equalsIgnoreCase(DATA_INPUT_PARENT))
+                    {
+                        ensureTargetColumnLookup(user, c, source, parentColName, "exp.data", parts[1]);
+                        ExpDataClass dataClass = ExperimentService.get().getDataClass(c, user, parts[1]);
+                        if (dataClass != null)
+                        {
+                            ExpData data = dataClass.getData(c, newParent);
+                            if (data != null)
+                            {
+                                parentInputMap.put(data, data.getName());
+                            }
+                        }
+                    }
+                }
+            }
+
+            // legacy magic column value method (only current way to map to multiple parents)
+            if (parentInputMap.isEmpty())
+            {
+                if (potentialParents == null)
+                {
+                    // Map from material name to material of all materials in all sample sets visible from this location
+                    potentialParents = ExperimentServiceImpl.get().getSamplesByName(_form.getContainer(), _form.getUser());
+
+                    // We need to make sure that the set of potential parents points to the same object as our list of recently
+                    // inserted materials. This is important because if creating the sample derivation run changes the material
+                    // at all (setting its source run, for example), we need to be sure that we don't later save a different
+                    // instance of the same material that doesn't have the edit.
+                    for (ExpMaterial material : helper._materials)
+                    {
+                        List<ExpMaterialImpl> possibleDuplicates = potentialParents.get(material.getName());
+                        assert possibleDuplicates != null && !possibleDuplicates.isEmpty() : "There should be at least one material with the same name";
+                        if (possibleDuplicates != null)
+                        {
+                            for (int i = 0; i < possibleDuplicates.size(); i++)
+                            {
+                                if (possibleDuplicates.get(i).getRowId() == material.getRowId())
+                                {
+                                    possibleDuplicates.set(i, (ExpMaterialImpl) material);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                List<ExpProtocolOutput> parentMaterials = resolveParentMaterials(newParent, potentialParents);
+                int index = 1;
+                for (ExpProtocolOutput parentMaterial : parentMaterials)
+                {
+                    parentInputMap.put(parentMaterial, "Sample" + (index == 1 ? "" : Integer.toString(index)));
+                    index++;
+                }
+            }
+        }
+        return parentInputMap;
+    }
+
+    private void ensureTargetColumnLookup(User user, Container c, MaterialSource source, String propName, String schemaName, String queryName) throws ExperimentException
+    {
+        Domain domain = PropertyService.get().getDomain(c, source.getLSID());
+        if (domain != null)
+        {
+            DomainProperty prop = domain.getPropertyByName(propName);
+            if (prop != null && prop.getLookup() == null)
+            {
+                prop.setLookup(new Lookup(c, schemaName, queryName));
+                prop.setHidden(true);
+                domain.save(user);
+            }
+        }
+    }
+
+    private List<ExpProtocolOutput> resolveParentMaterials(String newParent, Map<String, List<ExpMaterialImpl>> materials) throws ValidationException, ExperimentException
+    {
+        List<ExpProtocolOutput> parents = new ArrayList<>();
 
         String[] parentNames = newParent.split(",");
         for (String parentName : parentNames)

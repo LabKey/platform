@@ -234,7 +234,6 @@ public class UploadMaterialSetForm extends ViewForm
         return new UploadSamplesHelper(this).getIdFieldOptions(allowBlank);
     }
 
-
     public ExpSampleSetImpl getSampleSet()
     {
         if (name == null)
