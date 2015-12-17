@@ -30,6 +30,7 @@ import org.labkey.api.util.ErrorRenderer;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.view.template.FrameFactoryClassic;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import javax.servlet.ServletException;

@@ -1667,8 +1667,6 @@ api/src/org/labkey/api/view/ColorPickerDisplayColumn.java -text
 api/src/org/labkey/api/view/DefaultModelAndView.java -text
 api/src/org/labkey/api/view/FolderTab.java -text
 api/src/org/labkey/api/view/ForbiddenProjectException.java -text
-api/src/org/labkey/api/view/FrameFactoryBootstrap.java -text
-api/src/org/labkey/api/view/FrameFactoryClassic.java -text
 api/src/org/labkey/api/view/GWTView.java -text
 api/src/org/labkey/api/view/GWTView.jsp -text
 api/src/org/labkey/api/view/HttpPostRedirectView.java -text
@@ -1701,8 +1699,6 @@ api/src/org/labkey/api/view/SpringErrorView.java -text
 api/src/org/labkey/api/view/Stats.java -text
 api/src/org/labkey/api/view/TabBoxView.java -text
 api/src/org/labkey/api/view/TabStripView.java -text
-api/src/org/labkey/api/view/TemplateFactoryBootstrap.java -text
-api/src/org/labkey/api/view/TemplateFactoryClassic.java -text
 api/src/org/labkey/api/view/TermsOfUseException.java -text
 api/src/org/labkey/api/view/ThemeFont.java -text
 api/src/org/labkey/api/view/TidyFilterView.java -text
@@ -1717,6 +1713,11 @@ api/src/org/labkey/api/view/WebPartConfigurationException.java -text
 api/src/org/labkey/api/view/WebPartFactory.java -text
 api/src/org/labkey/api/view/WebTheme.java -text
 api/src/org/labkey/api/view/WebThemeManager.java -text
+api/src/org/labkey/api/view/bootstrap/BootstrapTemplate.java -text
+api/src/org/labkey/api/view/bootstrap/BootstrapTemplate.jsp -text
+api/src/org/labkey/api/view/bootstrap/FrameFactoryBootstrap.java -text
+api/src/org/labkey/api/view/bootstrap/TemplateFactoryBootstrap.java -text
+api/src/org/labkey/api/view/bootstrap/appBar.jsp -text
 api/src/org/labkey/api/view/jspTemplateTest.jsp -text
 api/src/org/labkey/api/view/menu/ContainerMenu.java -text
 api/src/org/labkey/api/view/menu/FolderAdminMenu.java -text
@@ -1735,13 +1736,14 @@ api/src/org/labkey/api/view/tabstrip.jsp -text
 api/src/org/labkey/api/view/template/AppBar.java -text
 api/src/org/labkey/api/view/template/AppBarView.java -text
 api/src/org/labkey/api/view/template/BodyTemplate.java -text
-api/src/org/labkey/api/view/template/BootstrapTemplate.java -text
 api/src/org/labkey/api/view/template/ClientDependency.java -text
 api/src/org/labkey/api/view/template/EmptyView.java -text
+api/src/org/labkey/api/view/template/FrameFactoryClassic.java -text
 api/src/org/labkey/api/view/template/HomeTemplate.jsp -text
 api/src/org/labkey/api/view/template/MenuBarView.java -text
 api/src/org/labkey/api/view/template/PageConfig.java -text
 api/src/org/labkey/api/view/template/PrintTemplate.java -text
+api/src/org/labkey/api/view/template/TemplateFactoryClassic.java -text
 api/src/org/labkey/api/view/template/TemplateHeaderView.java -text
 api/src/org/labkey/api/view/template/WizardTemplate.java -text
 api/src/org/labkey/api/view/template/appBar.jsp -text

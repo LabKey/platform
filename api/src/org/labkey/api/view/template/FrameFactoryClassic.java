@@ -13,13 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.view;
+package org.labkey.api.view.template;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.PopupMenu;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewService;
+import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.WebPartFrame;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -35,7 +43,7 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
 
     public void registerFrames()
     {
-        for (WebPartView.FrameType f : FrameType.values())
+        for (FrameType f : FrameType.values())
         {
             ServiceRegistry.get(ViewService.class).registerFrameFactory(f,this);
         }

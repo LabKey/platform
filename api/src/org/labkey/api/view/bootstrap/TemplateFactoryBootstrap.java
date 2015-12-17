@@ -1,14 +1,17 @@
-package org.labkey.api.view;
+package org.labkey.api.view.bootstrap;
 
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewService;
+import org.labkey.api.view.ViewServiceImpl;
 import org.labkey.api.view.template.BodyTemplate;
 import org.labkey.api.view.template.DialogTemplate;
-import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.view.template.WizardTemplate;
 import org.springframework.web.servlet.ModelAndView;
 
-public class TemplateFactoryClassic implements ViewService.TemplateFactory
+public class TemplateFactoryBootstrap implements ViewService.TemplateFactory
 {
     public void registerTemplates()
     {
@@ -49,7 +52,7 @@ public class TemplateFactoryClassic implements ViewService.TemplateFactory
             case Home:
             default:
             {
-                return new HomeTemplate(context, context.getContainer(), body, page);
+                return new BootstrapTemplate(context, context.getContainer(), body, page);
             }
         }
     }

@@ -1,4 +1,9 @@
-package org.labkey.api.view;
+package org.labkey.api.view.bootstrap;
+
+import org.labkey.api.view.template.FrameFactoryClassic;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartFrame;
+import org.labkey.api.view.WebPartView;
 
 import java.io.PrintWriter;
 
