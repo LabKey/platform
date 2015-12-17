@@ -11,4 +11,6 @@ public interface SimpleRunRecord
 {
     public Map<ExpMaterial, String> getInputMaterialMap();
     public Map<ExpMaterial, String> getOutputMaterialMap();
+    public Map<ExpData, String> getInputDataMap();
+    public Map<ExpData, String> getOutputDataMap();
 }
