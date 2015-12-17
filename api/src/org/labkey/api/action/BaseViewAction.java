@@ -792,13 +792,25 @@ public abstract class BaseViewAction<FORM> implements Controller, HasViewContext
         if (!policy.hasPermissions(user, permissionsRequired, contextualRoles))
             throw new UnauthorizedException();
 
-        boolean requiresAdmin = permissionsRequired.contains(AdminPermission.class);
 
-        if (isPOST)
+        csrfChecking:
         {
-            boolean csrfCheck = requiresSiteAdmin || requiresAdmin || actionClass.isAnnotationPresent(CSRF.class);
-            if (csrfCheck)
-                CSRFUtil.validate(context);
+            boolean requiresAdmin = permissionsRequired.contains(AdminPermission.class);
+
+            // this is default CSRF rule if there is not an explicit @CSRF annotation
+            //   currently all POSTS on admin action are validated
+            CSRF.Method csrfCheck = (requiresSiteAdmin || requiresAdmin) ? CSRF.Method.POST : CSRF.Method.NONE;
+
+            // A more aggressive option, check _all_ POST requests
+            // CSRF.Method csrfCheck = CSRF.Method.POST;
+
+            if (actionClass.isAnnotationPresent(CSRF.class))
+            {
+                CSRF csrfAnnotation = actionClass.getAnnotation(CSRF.class);
+                csrfCheck = csrfAnnotation.value();
+            }
+
+            csrfCheck.validate(context);
         }
 
         // User must have at least one permission in this set
@@ -816,7 +828,7 @@ public abstract class BaseViewAction<FORM> implements Controller, HasViewContext
 
         if (permissionsRequired.isEmpty() && !requiresSiteAdmin && !requiresLogin && !requiresNoPermission && !adminConsoleAction && permissionsAnyOf.isEmpty())
         {
-            throw new ConfigurationException("@RequiresPermission, @RequiresPermission, @RequiresSiteAdmin, @RequiresLogin, @RequiresNoPermission, or @AdminConsoleAction annotation is required on class " + actionClass.getName());
+            throw new ConfigurationException("@RequiresPermission, @RequiresSiteAdmin, @RequiresLogin, @RequiresNoPermission, or @AdminConsoleAction annotation is required on class " + actionClass.getName());
         }
 
         // All permission checks have succeeded.  Now check for deprecated action.

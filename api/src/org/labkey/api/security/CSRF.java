@@ -16,9 +16,16 @@
 
 package org.labkey.api.security;
 
+import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.util.CSRFUtil;
+import org.labkey.api.view.ViewContext;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+import java.util.Arrays;
+import java.util.Set;
 
 /**
  * Tags an action as implementing protection against cross-site request forgery attempts by including a hidden
@@ -32,6 +39,41 @@ import java.lang.annotation.Target;
 public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target(ElementType.TYPE)
 @interface CSRF
 {
-//    public enum Method {NONE, POST, ALL}
-//    Method value();
+    public enum Method
+    {
+        NONE()
+        {
+            public boolean check(String method)
+            {
+                return false;
+            }
+        },
+
+        POST()
+        {
+            public boolean check(String method)
+            {
+                return StringUtils.equalsIgnoreCase("POST",method);
+            }
+        },
+
+        ALL()
+        {
+            public boolean check(String method)
+            {
+                return true;
+            }
+        };
+
+        abstract public boolean check(String method);
+
+        public void validate(ViewContext context)
+        {
+            String method = context.getRequest().getMethod();
+            if (check(method))
+                CSRFUtil.validate(context);
+        }
+    }
+
+    Method value() default Method.POST;
 }
