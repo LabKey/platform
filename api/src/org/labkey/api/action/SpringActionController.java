@@ -37,6 +37,7 @@ import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
@@ -50,13 +51,9 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewService;
 import org.labkey.api.view.ViewServlet;
-import org.labkey.api.view.template.BodyTemplate;
-import org.labkey.api.view.template.DialogTemplate;
-import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.view.template.PrintTemplate;
-import org.labkey.api.view.template.WizardTemplate;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -545,51 +542,20 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
     protected ModelAndView getTemplate(ViewContext context, ModelAndView mv, Controller action, PageConfig page)
     {
-        switch (page.getTemplate())
+        NavTree root = new NavTree();
+        appendNavTrail(action, root);
+        if (root.hasChildren())
         {
-            case None:
-            {
-                return null;
-            }
-            case Framed:
-            case Print:
-            {
-                NavTree root = new NavTree();
-                appendNavTrail(action, root);
-                if (root.hasChildren() && page.getTitle() == null)
-                {
-                    NavTree[] children = root.getChildren();
-                    page.setTitle(children[children.length-1].getText());
-                }
-                return new PrintTemplate(mv, page);
-            }
-            case Dialog:
-            {
-                return new DialogTemplate(mv, page);
-            }
-            case Wizard:
-            {
-                return new WizardTemplate(mv, page);
-            }
-            case Body:
-            {
-                return new BodyTemplate(mv, page);
-            }
-            case Home:
-            default:
-            {
-                NavTree root = new NavTree();
-                appendNavTrail(action, root);
-                if (root.hasChildren() && page.getTitle() == null)
-                {
-                    NavTree[] children = root.getChildren();
-                    page.setTitle(children[children.length-1].getText());
-                }
-                page.setNavTrail(root.getChildList());
-                HomeTemplate template = new HomeTemplate(context, context.getContainer(), mv, page);
-                return template;
-            }
+            NavTree[] children = root.getChildren();
+            page.setNavTrail(Arrays.asList(children));
+            if (null == page.getTitle())
+                page.setTitle(children[children.length-1].getText());
         }
+
+        ViewService service = ServiceRegistry.get(ViewService.class);
+        HttpView template;
+        template = service.getTemplate(page.getTemplate(), context, mv, page);
+        return template;
     }
 
 

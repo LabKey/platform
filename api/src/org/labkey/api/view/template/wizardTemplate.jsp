@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.view.template.WizardTemplate" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ page session="true" %>
 <%
@@ -35,11 +36,11 @@
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <%if (pageConfig.getFrameOption() == PageConfig.FrameOption.DENY) {%> <script type="text/javascript">if (top != self) top.location.replace(self.location.href);</script><%}%>
     <title><%=h(pageConfig.getTitle())%></title>
-    <%= pageConfig.getMetaTags(getActionURL()) %>
+    <%= text(pageConfig.getMetaTags(getActionURL())) %>
     <%= PageFlowUtil.getStandardIncludes(getViewContext(), pageConfig.getClientDependencies()) %>
 </head>
 
-<body<%= null != pageConfig.getFocus() ? " onload=\"document." + pageConfig.getFocus() + ".focus();\"" : "" %> class="labkey-main">
+<body<%= text(StringUtils.isNotEmpty(pageConfig.getFocus()) ? (" onload=\"document." + pageConfig.getFocus() + "?document." + pageConfig.getFocus() + ".focus():null;\"") : "") %> class="labkey-main">
     <table class="labkey-main"><%
 
     if (pageConfig.showHeader() != PageConfig.TrueFalse.False)

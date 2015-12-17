@@ -1699,6 +1699,8 @@ api/src/org/labkey/api/view/SpringErrorView.java -text
 api/src/org/labkey/api/view/Stats.java -text
 api/src/org/labkey/api/view/TabBoxView.java -text
 api/src/org/labkey/api/view/TabStripView.java -text
+api/src/org/labkey/api/view/TemplateFactoryBootstrap.java -text
+api/src/org/labkey/api/view/TemplateFactoryClassic.java -text
 api/src/org/labkey/api/view/TermsOfUseException.java -text
 api/src/org/labkey/api/view/ThemeFont.java -text
 api/src/org/labkey/api/view/TidyFilterView.java -text
@@ -1706,6 +1708,8 @@ api/src/org/labkey/api/view/URLException.java -text
 api/src/org/labkey/api/view/ViewBackgroundInfo.java -text
 api/src/org/labkey/api/view/ViewContext.java -text
 api/src/org/labkey/api/view/ViewForm.java -text
+api/src/org/labkey/api/view/ViewService.java -text
+api/src/org/labkey/api/view/ViewServiceImpl.java -text
 api/src/org/labkey/api/view/WebPartCache.java -text
 api/src/org/labkey/api/view/WebPartConfigurationException.java -text
 api/src/org/labkey/api/view/WebPartFactory.java -text
@@ -1729,6 +1733,7 @@ api/src/org/labkey/api/view/tabstrip.jsp -text
 api/src/org/labkey/api/view/template/AppBar.java -text
 api/src/org/labkey/api/view/template/AppBarView.java -text
 api/src/org/labkey/api/view/template/BodyTemplate.java -text
+api/src/org/labkey/api/view/template/BootstrapTemplate.java -text
 api/src/org/labkey/api/view/template/ClientDependency.java -text
 api/src/org/labkey/api/view/template/EmptyView.java -text
 api/src/org/labkey/api/view/template/HomeTemplate.jsp -text

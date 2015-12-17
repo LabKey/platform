@@ -95,6 +95,8 @@ public class AppBar extends NavTree
 
     public List<NavTree> setNavTrail(List<NavTree> navTrail, ViewContext context)
     {
+        if (null == navTrail)
+            navTrail = Collections.emptyList();
         _navTrail = fixCrumbTrail(navTrail, context);
         return _navTrail;
     }

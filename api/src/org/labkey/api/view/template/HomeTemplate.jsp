@@ -47,9 +47,9 @@
         response.setHeader("X-FRAME-OPTIONS", bean.getFrameOption().name());
 
     String onLoad = "";
-    if (null != bean.getFocus())
+    if (StringUtils.isNotEmpty(bean.getFocus()))
     {
-        onLoad += "document." + bean.getFocus() + ".focus(); ";
+        onLoad += "(document." + bean.getFocus() + "?document." + bean.getFocus() + ".focus():null);";
     }
     if (bean.getShowPrintDialog())
     {
@@ -70,7 +70,7 @@
     %>
     <title><%=h(bean.getTitle()) %></title>
     <!-- <%=h(url.getURIString())%> -->
-<%= bean.getMetaTags(url) %>
+<%= text(bean.getMetaTags(url)) %>
 <%= PageFlowUtil.getStandardIncludes(getViewContext(), bean.getClientDependencies()) %>
     <%
         if (null != bean.getRssUrl())
