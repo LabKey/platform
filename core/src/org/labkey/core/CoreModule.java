@@ -114,8 +114,12 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ShortURLService;
+import org.labkey.api.view.TemplateFactoryBootstrap;
+import org.labkey.api.view.TemplateFactoryClassic;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewService;
+import org.labkey.api.view.ViewServiceImpl;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.menu.FolderMenu;
@@ -255,6 +259,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     {
         ServiceRegistry.get().registerService(ContainerService.class, ContainerManager.getContainerService());
         ServiceRegistry.get().registerService(FolderSerializationRegistry.class, FolderSerializationRegistryImpl.get());
+        ServiceRegistry.get().registerService(ViewService.class, ViewServiceImpl.getInstance());
+
+        new TemplateFactoryClassic().registerTemplates();
+//        new TemplateFactoryBootstrap().registerTemplates();
 
         addController("admin", AdminController.class);
         addController("admin-sql", SqlScriptController.class);

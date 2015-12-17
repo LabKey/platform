@@ -53,6 +53,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.HeartBeat;
@@ -74,12 +75,11 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewService;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.menu.FolderMenu;
-import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.springframework.validation.BindException;
@@ -315,12 +315,10 @@ public class ProjectController extends SpringActionController
 
             PageConfig page = getPageConfig();
             page.setHelpTopic(folderType.getHelpTopic());
+            page.setNavTrail(Collections.emptyList());
 
-            HttpView template;
-            if (!isPrint())
-                template = new HomeTemplate(getViewContext(), c, new VBox(), page);
-            else
-                template = new PrintTemplate(new VBox());
+            PageConfig.Template t = isPrint() ? PageConfig.Template.Print : PageConfig.Template.Home;
+            HttpView template = ServiceRegistry.get(ViewService.class).getTemplate(t, getViewContext(), new VBox(), page);
 
             String pageId = form.getPageId();
             if (pageId == null)

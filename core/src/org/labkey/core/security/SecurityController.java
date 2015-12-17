@@ -1687,7 +1687,7 @@ public class SecurityController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            throw new UnsupportedOperationException();
+            return root;
         }
     }
 
