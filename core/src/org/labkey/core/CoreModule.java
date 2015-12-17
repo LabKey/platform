@@ -104,24 +104,7 @@ import org.labkey.api.study.assay.ReplacedRunFilter;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.*;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.AlwaysAvailableWebPartFactory;
-import org.labkey.api.view.BaseWebPartFactory;
-import org.labkey.api.view.ContactWebPart;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.JspTemplate;
-import org.labkey.api.view.JspView;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.view.Portal;
-import org.labkey.api.view.ShortURLService;
-import org.labkey.api.view.TemplateFactoryBootstrap;
-import org.labkey.api.view.TemplateFactoryClassic;
-import org.labkey.api.view.VBox;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ViewService;
-import org.labkey.api.view.ViewServiceImpl;
-import org.labkey.api.view.WebPartFactory;
-import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.*;
 import org.labkey.api.view.menu.FolderMenu;
 import org.labkey.api.view.template.MenuBarView;
 import org.labkey.api.webdav.FileSystemAuditProvider;
@@ -262,7 +245,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ServiceRegistry.get().registerService(ViewService.class, ViewServiceImpl.getInstance());
 
         new TemplateFactoryClassic().registerTemplates();
-//        new TemplateFactoryBootstrap().registerTemplates();
+        //new TemplateFactoryBootstrap().registerTemplates();
+        new FrameFactoryClassic().registerFrames();
+        //new FrameFactoryBootstrap().registerFrames();
 
         addController("admin", AdminController.class);
         addController("admin-sql", SqlScriptController.class);

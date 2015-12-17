@@ -324,6 +324,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
 
         ThreadWrapper(URLHelper currentURL, String caption, HttpView... views)
         {
+            setFrame(FrameType.DIV);
             _vbox = new VBox();
             for (HttpView v : views)
             {

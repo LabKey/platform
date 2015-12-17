@@ -80,6 +80,7 @@ public class WikiTOC extends NavTreeMenu
 
         setId(getNavTreeId(_cToc));
         setElements(context, getNavTree());
+        setCollapsible(false);
     }
 
     @Override
@@ -121,12 +122,6 @@ public class WikiTOC extends NavTreeMenu
         addObject("rootId", rootId);
     }
 
-    @Override
-    public boolean isCollapsible()
-    {
-        return false;
-    }
-    
     public static String getNavTreeId(Container cToc)
     {
         return "Wiki-TOC-" + cToc.getId();

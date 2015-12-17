@@ -1199,10 +1199,6 @@ public class ProjectController extends SpringActionController
         _frameTypeMap.put("false", WebPartView.FrameType.NONE);
         _frameTypeMap.put("0", WebPartView.FrameType.NONE);
         _frameTypeMap.put("dialog", WebPartView.FrameType.DIALOG);
-        _frameTypeMap.put("left-nav", WebPartView.FrameType.LEFT_NAVIGATION);
-        _frameTypeMap.put("leftNav", WebPartView.FrameType.LEFT_NAVIGATION);
-        _frameTypeMap.put("left-navigation", WebPartView.FrameType.LEFT_NAVIGATION);
-        _frameTypeMap.put("leftNavigation", WebPartView.FrameType.LEFT_NAVIGATION);
         _frameTypeMap.put("title", WebPartView.FrameType.TITLE);
     }
 
