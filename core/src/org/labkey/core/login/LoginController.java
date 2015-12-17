@@ -517,7 +517,7 @@ public class LoginController extends SpringActionController
     @ActionNames("login, showLogin")
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
-    // @CSRF don't need CSRF for actions that require a password
+    @CSRF(CSRF.Method.NONE) // don't need CSRF for actions that require a password
     public class LoginAction extends FormViewAction<LoginForm>
     {
         public void validateCommand(LoginForm form, Errors errors)
@@ -2584,7 +2584,7 @@ public class LoginController extends SpringActionController
 
 
     @RequiresNoPermission
-    public static class WhoAmIAction extends MutatingApiAction // require POST
+    public static class WhoAmIAction extends ApiAction
     {
         @Override
         public ApiResponse execute(Object o, BindException errors) throws Exception
