@@ -734,3 +734,7 @@ div.headermenu {
 .project-list ul li:hover {
     background-color: #<%= link %>;
 }
+
+.labkey-ribbon .tabs-left > .nav-tabs {
+    background-color: #<%= grid %>;
+}

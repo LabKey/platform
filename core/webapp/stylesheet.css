@@ -3753,3 +3753,176 @@ a div.x4-menu-item-icon.fa-users
 {
     background-image: none;
 }
+
+/* EXPORT TAB PANEL -- REMOVE THESE SELECTORS IF MIGRATE TO BOOTSTRAP OCCURS */
+.labkey-ribbon .tabbable {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+.labkey-ribbon .tabbable:before,.tabbable:after {
+    display: table;
+    content: " "
+}
+
+.labkey-ribbon .tabbable:after {
+    clear: both
+}
+
+.labkey-ribbon .tabbable:before,.tabbable:after {
+    display: table;
+    content: " "
+}
+
+.labkey-ribbon .tabbable:after {
+    clear: both
+}
+
+.labkey-ribbon .nav {
+    padding-left: 0;
+    margin-bottom: 0;
+    list-style: none;
+}
+
+.labkey-ribbon .nav:before,.nav:after {
+    display: table;
+    content: " ";
+}
+
+.labkey-ribbon .nav:after {
+    clear: both;
+}
+
+.labkey-ribbon .nav:before,.nav:after {
+    display: table;
+    content: " ";
+}
+
+.labkey-ribbon .nav:after {
+    clear: both;
+}
+
+.labkey-ribbon .nav>li {
+    position: relative;
+    display: block;
+}
+
+.labkey-ribbon .nav>li>a {
+    position: relative;
+    display: block;
+    padding: 10px 15px;
+}
+
+.labkey-ribbon .nav>li>a:hover,.nav>li>a:focus {
+    text-decoration: none;
+    background-color: #eee;
+}
+
+.labkey-ribbon .nav-tabs {
+    border-bottom: 1px solid #ddd
+}
+
+.labkey-ribbon .nav-tabs>li {
+    float: left;
+    margin-bottom: -1px
+}
+
+.labkey-ribbon .nav-tabs>li>a {
+    margin-right: 2px;
+    line-height: 1.428571429;
+    border: 1px solid transparent;
+    border-radius: 4px 4px 0 0
+}
+
+.labkey-ribbon .nav-tabs>li>a:hover {
+    border-color: #eee
+}
+
+.labkey-ribbon .nav-tabs>li.active>a,
+.labkey-ribbon .nav-tabs>li.active>a:hover,
+.labkey-ribbon .nav-tabs>li.active>a:focus {
+    color: #555;
+    cursor: default;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-bottom-color: transparent
+}
+
+.labkey-ribbon .nav-tabs.nav-justified {
+    width: 100%;
+    border-bottom: 0
+}
+
+.labkey-ribbon .nav-tabs.nav-justified>li {
+    display: table-cell;
+    float: none;
+    width: 1%
+}
+
+.labkey-ribbon .nav-tabs.nav-justified>li>a {
+    text-align: center
+}
+
+.labkey-ribbon .nav-tabs.nav-justified>li>a {
+    margin-right: 0;
+    border-bottom: 1px solid #ddd
+}
+
+.labkey-ribbon .nav-tabs.nav-justified>.active>a {
+    border-bottom-color: #fff
+}
+
+/* custom inclusion left tabs */
+
+.labkey-ribbon .tabs-left > .nav-tabs {
+    border-bottom: 0;
+}
+
+.labkey-ribbon .tab-content > .tab-pane {
+    background-color: #fff;
+    border-top: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    display: none;
+}
+
+.labkey-ribbon .tab-content > .active {
+    display: block;
+}
+
+.labkey-ribbon .tabs-left > .nav-tabs > li {
+    float: none;
+}
+
+.labkey-ribbon .tabs-left > .nav-tabs > li > a {
+    min-width: 74px;
+    margin-right: 0;
+    margin-bottom: 3px;
+}
+
+.labkey-ribbon .tabs-left > .nav-tabs {
+    float: left;
+    margin: 0;
+    border-right: 1px solid #ddd;
+    background-color: #E7EFF4;
+}
+
+.labkey-ribbon .tabs-left > .nav-tabs > li > a {
+    margin-right: -1px;
+    -webkit-border-radius: 4px 0 0 4px;
+    -moz-border-radius: 4px 0 0 4px;
+    border-radius: 4px 0 0 4px;
+}
+
+.labkey-ribbon .tabs-left > .nav-tabs > li > a:hover,
+.labkey-ribbon .tabs-left > .nav-tabs > li > a:focus {
+    border-color: #eeeeee #dddddd #eeeeee #eeeeee;
+}
+
+.labkey-ribbon .tabs-left > .nav-tabs .active > a,
+.labkey-ribbon .tabs-left > .nav-tabs .active > a:hover,
+.labkey-ribbon .tabs-left > .nav-tabs .active > a:focus {
+    border-color: #ddd transparent #ddd #ddd;
+    *border-right-color: #ffffff;
+}
