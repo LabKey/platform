@@ -15,6 +15,8 @@
  */
 package org.labkey.api.view;
 
+import org.apache.commons.lang3.StringUtils;
+
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -43,6 +45,12 @@ public class HtmlView extends WebPartView
     {
         this(title, html);
         _printfParams = params;
+    }
+
+    public void setTitle(String title)
+    {
+        if (StringUtils.isNotEmpty(title) && getFrame()==FrameType.DIV)
+            setFrame(FrameType.PORTAL);
     }
 
     public void setHtml(String html)
