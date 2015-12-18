@@ -41,10 +41,13 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
@@ -65,6 +68,8 @@ import org.labkey.api.util.XmlValidationException;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.ConditionalFormatFilterType;
 import org.labkey.data.xml.ConditionalFormatType;
+import org.labkey.data.xml.domainTemplate.DataClassIndex;
+import org.labkey.data.xml.domainTemplate.DataClassOptions;
 import org.labkey.data.xml.domainTemplate.DataClassTemplateDocument;
 
 import java.io.IOException;
@@ -72,6 +77,7 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -280,7 +286,54 @@ public class DomainUtil
         return gwtProp;
     }
 
-    public static GWTPropertyDescriptor getPropertyDescriptor(ColumnType columnXml)
+    public static List<GWTPropertyDescriptor> getPropertyDescriptors(DataClassTemplateDocument templateDoc)
+    {
+        List<GWTPropertyDescriptor> properties = new ArrayList<>();
+
+        DataClassTemplateDocument.DataClassTemplate template = templateDoc.getDataClassTemplate();
+        for (ColumnType columnType : template.getTable().getColumns().getColumnArray())
+            properties.add(DomainUtil.getPropertyDescriptor(columnType));
+
+        return properties;
+    }
+
+    public static List<GWTIndex> getUniqueIndices(DataClassTemplateDocument templateDoc)
+    {
+        List<GWTIndex> indices = new ArrayList<>();
+
+        DataClassTemplateDocument.DataClassTemplate template = templateDoc.getDataClassTemplate();
+        for (DataClassIndex dataClassIndex : template.getIndexArray())
+        {
+            // Only unique is supported currently
+            if (TableInfo.IndexType.Unique.name().equalsIgnoreCase(dataClassIndex.getType()))
+                indices.add(new GWTIndex(Arrays.asList(dataClassIndex.getColumnArray()), true));
+        }
+
+        return indices;
+    }
+
+    public static Map<String, Object> getDataClassOptions(DataClassTemplateDocument templateDoc, Container container)
+    {
+        Map<String, Object> optionsMap = new HashMap<>();
+        optionsMap.put("sampleSetId", null);
+        optionsMap.put("nameExpression", null);
+
+        DataClassTemplateDocument.DataClassTemplate template = templateDoc.getDataClassTemplate();
+        if (template.isSetOptions())
+        {
+            DataClassOptions options = template.getOptions();
+            optionsMap.put("nameExpression", options.getNameExpression());
+            if (options.isSetSampleSet())
+            {
+                ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(container, options.getSampleSet(), false);
+                optionsMap.put("sampleSetId", sampleSet != null ? sampleSet.getRowId() : null);
+            }
+        }
+
+        return optionsMap;
+    }
+
+    private static GWTPropertyDescriptor getPropertyDescriptor(ColumnType columnXml)
     {
         GWTPropertyDescriptor gwtProp = new GWTPropertyDescriptor();
         gwtProp.setName(columnXml.getColumnName());
@@ -387,7 +440,7 @@ public class DomainUtil
                         for (DataClassTemplateDocument template : getDataClassTemplatesForGroup(templatesDir, messages))
                         {
                             String tableName = template.getDataClassTemplate().getTable().getTableName();
-                            templateDocs.put(tableName + " (" + templatesDir.getName() + ")", template);
+                            templateDocs.put(templatesDir.getName() + ":" + tableName, template);
                         }
                     }
                 }
@@ -415,7 +468,7 @@ public class DomainUtil
                     }
                     catch (XmlException e)
                     {
-                        messages.add("Skipping '" + resource.getName() + "' template file: " + XmlBeansUtil.getErrorMessage(e));
+                        logXmlParseError(messages, "Skipping '" + resource.getName() + "' template file: " + XmlBeansUtil.getErrorMessage(e));
                     }
                     catch (XmlValidationException e)
                     {
@@ -423,21 +476,29 @@ public class DomainUtil
                         sb.append("Skipping '").append(resource.getName()).append("' template file:\n");
                         for (XmlError err : e.getErrorList())
                             sb.append("  ").append(XmlBeansUtil.getErrorMessage(err)).append("\n");
-                        messages.add(sb.toString());
+                        logXmlParseError(messages, sb.toString());
                     }
                     catch (IOException e)
                     {
-                        messages.add("Skipping '" + resource.getName() + "' template file: " + e.getMessage());
+                        logXmlParseError(messages, ("Skipping '" + resource.getName() + "' template file: " + e.getMessage()));
                     }
                 }
                 else
                 {
-                    messages.add("Skipping '" + resource.getName() + "' template file: does not have the expected file suffix.");
+                    logXmlParseError(messages, ("Skipping '" + resource.getName() + "' template file: does not have the expected file suffix."));
                 }
             }
         }
 
         return templates;
+    }
+
+    private static void logXmlParseError(Set<String> messages, String message)
+    {
+        if (messages != null)
+            messages.add(message);
+        else
+            Logger.getLogger(DomainUtil.class).warn(message);
     }
 
     /** @return Errors encountered during the save attempt */

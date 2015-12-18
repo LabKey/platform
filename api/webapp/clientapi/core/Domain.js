@@ -78,7 +78,8 @@ LABKEY.Domain = new function()
     return {
 
         /**
-         * Create a new domain with the given design.
+         * Create a new domain with the given kind, domainDesign, and options or
+         * specify a domain template group and name to use for the domain creation.
          * <b>Note: this is an experimental API and may change unexpectedly.</b>
          *
          * @param {Object} config An object which contains the following configuration properties.
@@ -92,24 +93,35 @@ LABKEY.Domain = new function()
          */
         create : function (config)
         {
-            // old-style
-            if (arguments.length > 1)
+            // new-style
+            if (typeof config === "object")
             {
-                config = {
-                    success: arguments[0],
-                    failure: arguments[1],
-                    kind: arguments[2],
-                    domainDesign: arguments[3],
-                    options: arguments[4],
-                    containerPath: arguments[5]
-                };
+                createDomain(config.success, config.failure, config, config.containerPath);
             }
+            // old-style
+            else if (arguments.length > 1)
+            {
+                var success = arguments[0],
+                    failure = arguments[1],
+                    params = {},
+                    containerPath;
 
-            createDomain(
-                config.success,
-                config.failure,
-                { kind: config.kind, domainDesign: config.domainDesign, options: config.options },
-                config.containerPath);
+                if ((arguments.length == 4 || arguments.length == 5) && typeof arguments[3] === "string")
+                {
+                    params.domainGroup = arguments[2];
+                    params.domainTemplate = arguments[3];
+                    containerPath = arguments[4];
+                }
+                else
+                {
+                    params.kind = arguments[2];
+                    params.domainDesign = arguments[3];
+                    params.options = arguments[4];
+                    containerPath = arguments[5];
+                }
+
+                createDomain(success, failure, params, containerPath);
+            }
         },
 
 	/**
