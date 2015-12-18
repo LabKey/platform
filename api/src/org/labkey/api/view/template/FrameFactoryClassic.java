@@ -69,6 +69,8 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
                 return new _FramePortal(context, config);
             case DIALOG:
                 return new _FrameDialog(context, config);
+            case LEFT_NAVIGATION:
+                return new _FrameNavigation(context, config);
 
         }
 
@@ -600,6 +602,86 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
         catch (Exception e)
         {
             throw new RuntimeException(e);
+        }
+    }
+
+
+
+    // WOULD LOVE TO KILL THIS ONE
+
+    class _FrameNavigation extends AbstractFrame
+    {
+        _FrameNavigation(ViewContext context, FrameConfig config)
+        {
+            super(context, config);
+        }
+
+        @Override
+        public void doStartTag(PrintWriter out)
+        {
+            String title = config._title;
+            String href = config._titleHref;
+            String className = config._className;
+
+            out.print("<!--leftnav-webpart--><table class=\"labkey-expandable-nav\">");
+
+            if (title != null)
+            {
+                out.print("<tr>");
+
+                String rootId = config._rootId;
+                ActionURL expandCollapseUrl = null;
+                String expandCollapseGifId = "expandCollapse-" + rootId;
+
+                boolean isCollapsible = config._isCollapsible;
+                if (isCollapsible)
+                {
+                    if (rootId == null)
+                        isCollapsible = false;
+                    else
+                        expandCollapseUrl = PageFlowUtil.urlProvider(ProjectUrls.class). getExpandCollapseURL(context.getContainer(), "", rootId);
+                }
+
+                out.print("<td class=\"labkey-expand-collapse-area\"><div>");
+
+                if (isCollapsible)
+                {
+                    out.printf("<a class=\"labkey-header\" href=\"%s\" onclick=\"return LABKEY.Utils.toggleLink(this, %s);\" id=\"%s\">",
+                            filter(expandCollapseUrl.getLocalURIString()), "true", expandCollapseGifId);
+                    String image = config._collapsed ? "plus.gif" : "minus.gif";
+                    out.printf("<img src=\"%s/_images/%s\" width=9 height=9></a>", context.getContextPath(), image);
+                }
+                if (null != href)
+                {
+                    // print title with user-specified link:
+                    out.print("<a class=\"labkey-header\" href=\"" + PageFlowUtil.filter(href) + "\">");
+                    out.print(PageFlowUtil.filter(title));
+                    out.print("</a>");
+                }
+                else if (isCollapsible)
+                {
+                    // print title with expand/collapse link:
+                    out.printf("<a class=\"labkey-header\" href=\"%s\" onclick=\"return LABKEY.Utils.toggleLink(document.getElementById(%s), %s);\">",
+                            filter(expandCollapseUrl.getLocalURIString()), PageFlowUtil.jsString(expandCollapseGifId), "true");
+                    out.print(PageFlowUtil.filter(title));
+                    out.print("</a>");
+                }
+                else
+                {
+                    // print the title alone:
+                    out.print(PageFlowUtil.filter(title));
+                }
+
+                out.print("</div></td></tr>\n"); // end of second <th>
+            }
+            out.print("<tr" + (config._isCollapsible && config._collapsed ? " style=\"display:none\"" : "") + " class=\"" + className + "\">" +
+                    "<td colspan=\"2\" class=\"labkey-expandable-nav-body\">");
+        }
+
+        @Override
+        public void doEndTag(PrintWriter out)
+        {
+            out.print("</td></tr></table><!--/webpart-->");
         }
     }
 }

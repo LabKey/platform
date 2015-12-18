@@ -312,6 +312,12 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
     {
         _frameConfig._isWebpart = isWebPart;
     }
+
+
+    protected WebPartFrame getWebPartFrame()
+    {
+        return ServiceRegistry.get(ViewService.class).getFrame(_frameConfig._frame, getViewContext(), _frameConfig);
+    }
     
     @Override
     protected final void renderInternal(ModelBean model, HttpServletRequest request, HttpServletResponse response) throws Exception
@@ -337,7 +343,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
             // handle WebParView subclasses that override isWebPart()
             _frameConfig._isWebpart = isWebPart();
 
-            WebPartFrame frame = ServiceRegistry.get(ViewService.class).getFrame(_frameConfig._frame, getViewContext(), _frameConfig);
+            WebPartFrame frame = getWebPartFrame();
 
             frame.doStartTag(response.getWriter());
 
