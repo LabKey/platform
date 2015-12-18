@@ -63,6 +63,8 @@ public interface ExperimentUrls extends UrlProvider
 
     ActionURL getDomainEditorURL(Container container, String domainURI, boolean allowAttachmentProperties, boolean allowFileLinkProperties, boolean showDefaultValueSettings);
 
+    ActionURL getShowDataClassURL(Container container, int rowId);
+
     ActionURL getShowFileURL(ExpData data, boolean inline);
 
     ActionURL getMaterialDetailsURL(ExpMaterial material);

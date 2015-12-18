@@ -21,6 +21,8 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlError;
+import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -29,7 +31,6 @@ import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -47,9 +48,11 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
+import org.labkey.api.module.Module;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.util.DateUtil;
@@ -57,7 +60,15 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.util.XmlValidationException;
+import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.ConditionalFormatFilterType;
+import org.labkey.data.xml.ConditionalFormatType;
+import org.labkey.data.xml.domainTemplate.DataClassTemplateDocument;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -267,6 +278,166 @@ public class DomainUtil
             gwtProp.setLookupSchema(prop.getLookup().getSchemaName());
         }
         return gwtProp;
+    }
+
+    public static GWTPropertyDescriptor getPropertyDescriptor(ColumnType columnXml)
+    {
+        GWTPropertyDescriptor gwtProp = new GWTPropertyDescriptor();
+        gwtProp.setName(columnXml.getColumnName());
+
+        if (columnXml.isSetColumnTitle())
+            gwtProp.setLabel(columnXml.getColumnTitle());
+        if (columnXml.isSetConceptURI())
+            gwtProp.setConceptURI(columnXml.getConceptURI());
+        if (columnXml.isSetPropertyURI())
+            gwtProp.setPropertyURI(columnXml.getPropertyURI());
+        if (columnXml.isSetRangeURI())
+            gwtProp.setRangeURI(columnXml.getRangeURI());
+        if (columnXml.isSetIsHidden())
+            gwtProp.setHidden(columnXml.getIsHidden());
+        if (columnXml.isSetFk())
+        {
+            gwtProp.setLookupContainer(columnXml.getFk().getFkFolderPath());
+            gwtProp.setLookupSchema(columnXml.getFk().getFkDbSchema());
+            gwtProp.setLookupQuery(columnXml.getFk().getFkTable());
+        }
+
+        // Display properties
+        if (columnXml.isSetDescription())
+            gwtProp.setDescription(columnXml.getDescription());
+        if (columnXml.isSetUrl())
+            gwtProp.setURL(columnXml.getUrl());
+        if (columnXml.isSetShownInInsertView())
+            gwtProp.setShownInInsertView(columnXml.getShownInInsertView());
+        if (columnXml.isSetShownInUpdateView())
+            gwtProp.setShownInUpdateView(columnXml.getShownInUpdateView());
+        if (columnXml.isSetShownInDetailsView())
+            gwtProp.setShownInDetailsView(columnXml.getShownInDetailsView());
+
+        // Format properties
+        if (columnXml.isSetFormatString())
+            gwtProp.setFormat(columnXml.getFormatString());
+        if (columnXml.isSetConditionalFormats())
+        {
+            List<GWTConditionalFormat> formats = new ArrayList<>();
+            for (ConditionalFormatType formatType : columnXml.getConditionalFormats().getConditionalFormatArray())
+            {
+                GWTConditionalFormat gwtFormat = new GWTConditionalFormat();
+                gwtFormat.setBold(formatType.getBold());
+                gwtFormat.setItalic(formatType.getItalics());
+                gwtFormat.setStrikethrough(formatType.getStrikethrough());
+                gwtFormat.setTextColor(formatType.getTextColor());
+                gwtFormat.setBackgroundColor(formatType.getBackgroundColor());
+                for (ConditionalFormatFilterType filterType : formatType.getFilters().getFilterArray())
+                    gwtFormat.setFilter("format.column%7E" + filterType.getOperator().toString() + "=" + filterType.getValue());
+
+                formats.add(gwtFormat);
+            }
+            gwtProp.setConditionalFormats(formats);
+        }
+
+        // Validator properties
+        if (columnXml.isSetNullable())
+            gwtProp.setRequired(!columnXml.getNullable());
+        // TODO gwtProp.setPropertyValidators();
+
+        // Reporting properties
+        if (columnXml.isSetMeasure())
+            gwtProp.setMeasure(columnXml.getMeasure());
+        if (columnXml.isSetDimension())
+            gwtProp.setDimension(columnXml.getDimension());
+        if (columnXml.isSetRecommendedVariable())
+            gwtProp.setRecommendedVariable(columnXml.getRecommendedVariable());
+        if (columnXml.isSetDefaultScale())
+            gwtProp.setDefaultScale(columnXml.getDefaultScale().toString());
+        if (columnXml.isSetFacetingBehavior())
+            gwtProp.setFacetingBehaviorType(columnXml.getFacetingBehavior().toString());
+
+        // Advanced properties
+        if (columnXml.isSetIsMvEnabled())
+            gwtProp.setMvEnabled(columnXml.getIsMvEnabled());
+        // TODO gwtProp.setDefaultValueType();
+        if (columnXml.isSetDefaultValue())
+            gwtProp.setDefaultValue(columnXml.getDefaultValue());
+        if (columnXml.isSetImportAliases())
+            gwtProp.setImportAliases(StringUtils.join(columnXml.getImportAliases().getImportAliasArray(), ","));
+        if (columnXml.isSetProtected())
+            gwtProp.setProtected(columnXml.getProtected());
+        if (columnXml.isSetExcludeFromShifting())
+            gwtProp.setExcludeFromShifting(columnXml.getExcludeFromShifting());
+        if (columnXml.isSetScale())
+            gwtProp.setScale(columnXml.getScale());
+
+        return gwtProp;
+    }
+
+    public static Map<String, DataClassTemplateDocument> getModuleDomainTemplateDocs(Container container, Set<String> messages)
+    {
+        Map<String, DataClassTemplateDocument> templateDocs = new HashMap<>();
+
+        if (container != null)
+        {
+            for (Module module : container.getActiveModules())
+            {
+                Resource groupsDir = module.getModuleResource("domain-templates");
+                if (groupsDir != null && groupsDir.isCollection())
+                {
+                    for (Resource templatesDir : groupsDir.list())
+                    {
+                        for (DataClassTemplateDocument template : getDataClassTemplatesForGroup(templatesDir, messages))
+                        {
+                            String tableName = template.getDataClassTemplate().getTable().getTableName();
+                            templateDocs.put(tableName + " (" + templatesDir.getName() + ")", template);
+                        }
+                    }
+                }
+            }
+        }
+
+        return templateDocs;
+    }
+
+    private static List<DataClassTemplateDocument> getDataClassTemplatesForGroup(Resource templatesDir, Set<String> messages)
+    {
+        List<DataClassTemplateDocument> templates = new ArrayList<>();
+
+        if (templatesDir != null && templatesDir.isCollection())
+        {
+            for (Resource resource : templatesDir.list())
+            {
+                if (resource.getName().endsWith(".template.xml"))
+                {
+                    try (InputStream is = resource.getInputStream())
+                    {
+                        DataClassTemplateDocument template = DataClassTemplateDocument.Factory.parse(is);
+                        XmlBeansUtil.validateXmlDocument(template, resource.getName());
+                        templates.add(template);
+                    }
+                    catch (XmlException e)
+                    {
+                        messages.add("Skipping '" + resource.getName() + "' template file: " + XmlBeansUtil.getErrorMessage(e));
+                    }
+                    catch (XmlValidationException e)
+                    {
+                        StringBuilder sb = new StringBuilder();
+                        sb.append("Skipping '").append(resource.getName()).append("' template file:\n");
+                        for (XmlError err : e.getErrorList())
+                            sb.append("  ").append(XmlBeansUtil.getErrorMessage(err)).append("\n");
+                        messages.add(sb.toString());
+                    }
+                    catch (IOException e)
+                    {
+                        messages.add("Skipping '" + resource.getName() + "' template file: " + e.getMessage());
+                    }
+                }
+                else
+                {
+                    messages.add("Skipping '" + resource.getName() + "' template file: does not have the expected file suffix.");
+                }
+            }
+        }
+
+        return templates;
     }
 
     /** @return Errors encountered during the save attempt */
