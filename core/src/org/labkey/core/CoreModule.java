@@ -105,7 +105,6 @@ import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.*;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.*;
-import org.labkey.api.view.bootstrap.TemplateFactoryBootstrap;
 import org.labkey.api.view.menu.FolderMenu;
 import org.labkey.api.view.template.FrameFactoryClassic;
 import org.labkey.api.view.template.MenuBarView;
@@ -248,9 +247,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ServiceRegistry.get().registerService(ViewService.class, ViewServiceImpl.getInstance());
 
         new TemplateFactoryClassic().registerTemplates();
-        //new TemplateFactoryBootstrap().registerTemplates();
         new FrameFactoryClassic().registerFrames();
-        //new FrameFactoryBootstrap().registerFrames();
 
         addController("admin", AdminController.class);
         addController("admin-sql", SqlScriptController.class);
