@@ -95,10 +95,13 @@ import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.form.DeleteForm;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.query.ExpInputTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
+import org.labkey.api.gwt.client.model.GWTIndex;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineRootContainerTree;
@@ -171,6 +174,11 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.TableType;
+import org.labkey.data.xml.domainTemplate.DataClassIndex;
+import org.labkey.data.xml.domainTemplate.DataClassOptions;
+import org.labkey.data.xml.domainTemplate.DataClassTemplateDocument;
 import org.labkey.experiment.ChooseExperimentTypeBean;
 import org.labkey.experiment.ConfirmDeleteView;
 import org.labkey.experiment.CustomPropertiesView;
@@ -1034,36 +1042,110 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(InsertPermission.class)
-    public class InsertDataClassAction extends FormViewAction<DataClass>
+    public class InsertDataClassAction extends FormViewAction<InsertDataClassForm>
     {
         private ActionURL _sucessUrl;
+        private Map<String, DataClassTemplateDocument> _moduleTemplates;
 
         @Override
-        public void validateCommand(DataClass form, Errors errors)
+        public void validateCommand(InsertDataClassForm form, Errors errors)
         {
-            if (StringUtils.isBlank(form.getName()))
+            String name = form.getName();
+
+            if (form.isUseTemplate())
             {
-                errors.reject(ERROR_MSG, "Name is required");
+                Set<String> messages = new HashSet<>();
+                _moduleTemplates = DomainUtil.getModuleDomainTemplateDocs(getContainer(), messages);
+
+                if (!_moduleTemplates.containsKey(form.getDomainTemplate()))
+                    errors.reject(ERROR_MSG, "Unknown template selected: " + form.getDomainTemplate());
+                else
+                {
+                    DataClassTemplateDocument template = _moduleTemplates.get(form.getDomainTemplate());
+                    name = template.getDataClassTemplate().getTable().getTableName();
+                }
             }
+
+            if (StringUtils.isBlank(name))
+                errors.reject(ERROR_MSG, "DataClass name or template selection is required.");
+            else if (ExperimentService.get().getDataClass(getContainer(), getUser(), name) != null)
+                errors.reject(ERROR_MSG, "DataClass '" + name + "' already exists.");
+
         }
 
         @Override
-        public ModelAndView getView(DataClass form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(InsertDataClassForm form, boolean reshow, BindException errors) throws Exception
         {
+            Set<String> messages = new HashSet<>();
+            Map<String, DataClassTemplateDocument> domainTemplates = DomainUtil.getModuleDomainTemplateDocs(getContainer(), messages);
+            form.setAvailableDomainTemplateNames(domainTemplates.keySet());
+            form.setXmlParseErrors(messages);
+
+            for (String message : messages)
+                _log.warn(message);
+
             return new JspView<>("/org/labkey/experiment/insertDataClass.jsp", form, errors);
         }
 
         @Override
-        public boolean handlePost(DataClass form, BindException errors) throws Exception
+        public boolean handlePost(InsertDataClassForm form, BindException errors) throws Exception
         {
-            ExpDataClass dataClass = ExperimentService.get().createDataClass(getContainer(), getUser(), form.getName(), form.getDescription(), Collections.emptyList(), Collections.emptyList(), null, form.getNameExpression());
-            _sucessUrl = PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(getContainer(), dataClass.getDomain().getTypeURI(), false, false, false);
+            if (form.isUseTemplate())
+            {
+                DataClassTemplateDocument templateDoc = _moduleTemplates.get(form.getDomainTemplate());
+                DataClassTemplateDocument.DataClassTemplate template = templateDoc.getDataClassTemplate();
+                TableType tableType = template.getTable();
+
+                // get the property descriptors from the selected template's table columns
+                List<GWTPropertyDescriptor> properties = new ArrayList<>();
+                for (ColumnType columnType : tableType.getColumns().getColumnArray())
+                    properties.add(DomainUtil.getPropertyDescriptor(columnType));
+
+                // get the table unique indices
+                List<GWTIndex> indices = new ArrayList<>();
+                for (DataClassIndex dataClassIndex : template.getIndexArray())
+                {
+                    // Only unique is supported currently
+                    if (TableInfo.IndexType.Unique.name().equalsIgnoreCase(dataClassIndex.getType()))
+                        indices.add(new GWTIndex(Arrays.asList(dataClassIndex.getColumnArray()), true));
+                }
+
+                // get the DataClass specific options
+                Integer sampleSetId = null;
+                String nameExpression = null;
+                if (template.isSetOptions())
+                {
+                    DataClassOptions options = template.getOptions();
+                    nameExpression = options.getNameExpression();
+                    if (options.isSetSampleSet())
+                    {
+                        ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(getContainer(), options.getSampleSet(), false);
+                        sampleSetId = sampleSet != null ? sampleSet.getRowId() : null;
+                    }
+                }
+
+                ExpDataClass dataClass = ExperimentService.get().createDataClass(
+                    getContainer(), getUser(), tableType.getTableName(), tableType.getDescription(),
+                    properties, indices, sampleSetId, nameExpression
+                );
+
+                _sucessUrl = PageFlowUtil.urlProvider(ExperimentUrls.class).getShowDataClassURL(getContainer(), dataClass.getRowId());
+            }
+            else
+            {
+                ExpDataClass dataClass = ExperimentService.get().createDataClass(
+                    getContainer(), getUser(), form.getName(), form.getDescription(),
+                    Collections.emptyList(), Collections.emptyList(), null, form.getNameExpression()
+                );
+
+                _sucessUrl = PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(getContainer(), dataClass.getDomain().getTypeURI(), false, false, false);
+            }
 
             return true;
         }
 
         @Override
-        public URLHelper getSuccessURL(DataClass o)
+        public URLHelper getSuccessURL(InsertDataClassForm form)
         {
             return _sucessUrl;
         }
@@ -1072,6 +1154,54 @@ public class ExperimentController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Create Data Class");
+        }
+    }
+
+    public static class InsertDataClassForm extends DataClass
+    {
+        private boolean _useTemplate;
+        private String _domainTemplate;
+        private Set<String> _availableDomainTemplateNames;
+        private Set<String> _xmlParseErrors;
+
+        public boolean isUseTemplate()
+        {
+            return _useTemplate;
+        }
+
+        public void setUseTemplate(boolean useTemplate)
+        {
+            _useTemplate = useTemplate;
+        }
+
+        public String getDomainTemplate()
+        {
+            return _domainTemplate;
+        }
+
+        public void setDomainTemplate(String domainTemplate)
+        {
+            _domainTemplate = domainTemplate;
+        }
+
+        public Set<String> getAvailableDomainTemplateNames()
+        {
+            return _availableDomainTemplateNames;
+        }
+
+        public void setAvailableDomainTemplateNames(Set<String> availableDomainTemplateNames)
+        {
+            _availableDomainTemplateNames = availableDomainTemplateNames;
+        }
+
+        public Set<String> getXmlParseErrors()
+        {
+            return _xmlParseErrors;
+        }
+
+        public void setXmlParseErrors(Set<String> xmlParseErrors)
+        {
+            _xmlParseErrors = xmlParseErrors;
         }
     }
 
@@ -5313,6 +5443,14 @@ public class ExperimentController extends SpringActionController
                 url.addParameter("showDefaultValueSettings", "1");
             return url;
 
+        }
+
+        @Override
+        public ActionURL getShowDataClassURL(Container container, int rowId)
+        {
+            ActionURL url = new ActionURL(ShowDataClassAction.class, container);
+            url.addParameter("rowId", rowId);
+            return url;
         }
 
         public ActionURL getShowFileURL(ExpData data, boolean inline)
