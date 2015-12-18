@@ -726,6 +726,7 @@ public class SecurityController extends SpringActionController
         Overview(StudyImpl study)
         {
             this(study, null);
+            setFrame(FrameType.NONE);
         }
 
         Overview(StudyImpl study, ActionURL redirect)
