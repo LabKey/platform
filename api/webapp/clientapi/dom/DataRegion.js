@@ -1533,30 +1533,18 @@ if (!LABKEY.DataRegions) {
                             first = false;
                         }
                         panel.doLayout();
-                        panel.show();
-                        callback.call(scope);
-                        //Ext4.get(element[0]).slideIn('t', {
-                        //    callback: function() {
-                        //        callback.call(scope);
-                        //    },
-                        //    duration: 400,
-                        //    scope: this
-                        //});
+                        $(panel.getEl().dom).slideDown(undefined, function() {
+                            panel.show();
+                            callback.call(scope);
+                        });
                     };
 
                     // Called when customize view needs to be hidden
                     var hideFn = function(id, panel, element, callback, scope) {
-                        panel.hide();
-                        callback.call(scope);
-                        //Ext4.get(element[0]).slideOut('t', {
-                        //    callback: function() {
-                        //        panel.setVisible(false);
-                        //        callback.call(scope);
-                        //    },
-                        //    concurrent: true,
-                        //    duration: 400,
-                        //    scope: this
-                        //});
+                        $(panel.getEl().dom).slideUp(undefined, function() {
+                            panel.hide();
+                            callback.call(scope);
+                        });
                     };
 
                     this.publishPanel(CUSTOM_VIEW_PANELID, this.customizeView, showFn, hideFn, this);
@@ -1590,13 +1578,15 @@ if (!LABKEY.DataRegions) {
     };
 
     var _defaultShow = function(panelId, panel, ribbon, cb, cbScope) {
-        $('#' + panelId).show();
-        cb.call(cbScope);
+        $('#' + panelId).slideDown(undefined, function() {
+            cb.call(cbScope);
+        });
     };
 
     var _defaultHide = function(panelId, panel, ribbon, cb, cbScope) {
-        $('#' + panelId).hide();
-        cb.call(cbScope);
+        $('#' + panelId).slideUp(undefined, function() {
+            cb.call(cbScope);
+        });
     };
 
     Proto.publishPanel = function(panelId, panel, showFn, hideFn, scope) {
