@@ -375,7 +375,10 @@ public abstract class AbstractDataRegion extends DisplayElement
     protected void renderRibbon(RenderContext ctx, Writer out) throws IOException
     {
         out.write("<tr>");
-        out.write("<td colspan=\"2\" class=\"labkey-ribbon extContainer\" style=\"display:none;\"></td>");
+        if (DataRegion.useExperimentalDataRegion())
+            out.write("<td colspan=\"2\" class=\"labkey-ribbon\" style=\"display:none;\"></td>");
+        else
+            out.write("<td colspan=\"2\" class=\"labkey-ribbon extContainer\" style=\"display:none;\"></td>");
         out.write("</tr>\n");
     }
 

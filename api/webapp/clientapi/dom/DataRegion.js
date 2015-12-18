@@ -1527,7 +1527,6 @@ if (!LABKEY.DataRegions) {
 
                     // Called when customize view needs to be shown
                     var showFn = function(id, panel, element, callback, scope) {
-                        element.removeClass('extContainer');
                         if (first) {
                             panel.hide();
                             panel.getEl().appendTo(Ext4.get(element[0]));
@@ -1590,11 +1589,21 @@ if (!LABKEY.DataRegions) {
         }
     };
 
+    var _defaultShow = function(panelId, panel, ribbon, cb, cbScope) {
+        $('#' + panelId).show();
+        cb.call(cbScope);
+    };
+
+    var _defaultHide = function(panelId, panel, ribbon, cb, cbScope) {
+        $('#' + panelId).hide();
+        cb.call(cbScope);
+    };
+
     Proto.publishPanel = function(panelId, panel, showFn, hideFn, scope) {
         this.panelConfigurations[panelId] = {
             panel: panel,
-            show: showFn,
-            hide: hideFn,
+            show: $.isFunction(showFn) ? showFn : _defaultShow,
+            hide: $.isFunction(hideFn) ? hideFn : _defaultHide,
             scope: scope
         };
         return this;
@@ -1644,10 +1653,10 @@ if (!LABKEY.DataRegions) {
         this.hidePanel(function() {
             this.activePanelId = panelId;
 
-            // find the ribbon container
+            // ensure the ribbon is visible
             var ribbon = _getHeaderSelector(this).find('.labkey-ribbon');
-
             ribbon.show();
+
             config.show.call(config.scope || this, this.activePanelId, config.panel, ribbon, function() {
                 if ($.isFunction(callback)) {
                     callback.call(scope || this);
@@ -1767,18 +1776,31 @@ if (!LABKEY.DataRegions) {
      * Show a ribbon panel. tabPanelConfig is an ExtJS 3.4 config object for a TabPanel.
      * The only required value is the items array.
      */
-    Proto.showButtonPanel = function(panelButton, tabPanelConfig) {
+    Proto.showButtonPanel = function(panelButton) {
 
-        var panelId = panelButton.getAttribute('panelId');
+        var ribbon = _getHeaderSelector(this).find('.labkey-ribbon'),
+            panelId = $(panelButton).attr('panel-toggle'),
+            panelSel;
+
         if (panelId) {
+
+            panelSel = $('#' + panelId);
+
+            // allow for toggling the state
             if (panelId === this.activePanelId) {
                 this.hidePanel();
             }
             else {
-                var config = this.getPanelConfiguration(panelId);
-                if (!config) {
-                    this.publishPanel(panelId, tabPanelConfig, _showExt3Panel, _hideExt3Panel, this);
+                // determine if the content needs to be moved to the ribbon
+                if (ribbon.has(panelSel).length === 0) {
+                    panelSel.detach().appendTo(ribbon);
                 }
+
+                // determine if this panel has been registered
+                if (!this.getPanelConfiguration(panelId)) {
+                    this.publishPanel(panelId);
+                }
+
                 this.showPanel(panelId);
             }
         }
@@ -2392,85 +2414,6 @@ if (!LABKEY.DataRegions) {
 
         _getAllRowSelectors(region).each(function() { this.checked = (checked == true)});
         return ids;
-    };
-
-    var _showExt3Panel = function(id, tabPanelConfig, element, callback, scope) {
-        LABKEY.requiresExt3ClientAPI(function() {
-            // can assume Ext 3 exists as 'Ext'
-            element.addClass('extContainer');
-            var panelDiv = Ext.get(element[0]);
-
-            // determine if the tab panel needs to be constructed
-            if (!$.isFunction(tabPanelConfig.getEl)) {
-
-                var minWidth = 700,
-                    tabContentWidth = 0,
-                    newItems = [];
-
-                // New up the TabPanel if we haven't already
-                // Only create one per button, even if that button is rendered both above and below the grid
-                tabPanelConfig.cls = 'vertical-tabs';
-                tabPanelConfig.tabWidth = 80;
-                tabPanelConfig.renderTo = panelDiv;
-                tabPanelConfig.activeGroup = 0;
-
-                // create the newItems
-                $.each(tabPanelConfig.items, function(i, item) {
-                    item.autoScroll = true;
-
-                    //FF and IE won't auto-resize the tab panel to fit the content
-                    //so we need to calculate the min size and set it explicitly
-                    if (Ext.isGecko || Ext.isIE) {
-                        if (!item.events) {
-                            item = Ext.create(item, 'grouptab');
-                        }
-                        item.removeClass('x-hide-display');
-                        if (item.items.getCount() > 0 && item.items.items[0].contentEl) {
-                            tabContentWidth = Ext.get(item.items.items[0].contentEl).getWidth();
-                            item.addClass('x-hide-display');
-                            minWidth = Math.min(minWidth, tabContentWidth);
-                        }
-                    }
-
-                    newItems.push(item);
-                });
-
-                tabPanelConfig.items = newItems;
-                if ((Ext.isGecko || Ext.isIE) && minWidth > 0 && header.getWidth() < minWidth) {
-                    tabPanelConfig.width = minWidth;
-                }
-
-                // re-publish the panel as the panel rather than the panel configuration
-                tabPanelConfig = new Ext.ux.GroupTabPanel(tabPanelConfig);
-                this.publishPanel(id, tabPanelConfig, _showExt3Panel, _hideExt3Panel, this);
-            }
-
-            tabPanelConfig.getEl().setVisible(true);
-            tabPanelConfig.show();
-            tabPanelConfig.getEl().slideIn('t', {
-                callback: function() {
-                    callback.call(scope);
-                },
-                duration: 0.4,
-                scope: this
-            });
-
-        }, this);
-    };
-
-    var _hideExt3Panel = function(id, panel, element, callback, scope) {
-        var region = this;
-
-        panel.getEl().slideOut('t', {
-            callback: function() {
-                panel.hide();
-                panel.getEl().setVisible(false);
-                callback.call(scope);
-            },
-            concurrent: true,
-            duration: 0.4,
-            scope: region
-        });
     };
 
     var _load = function(region, callback, scope) {
@@ -3417,6 +3360,150 @@ if (!LABKEY.DataRegions) {
         config._useQWPDefaults = true;
         return LABKEY.DataRegion2.create(config);
     };
+
+    if (!$.fn.tab) {
+        // TAB CLASS DEFINITION
+        // ====================
+        var Tab = function (element) {
+            this.element = $(element);
+        };
+
+        Tab.VERSION = '3.3.6';
+
+        Tab.TRANSITION_DURATION = 150;
+
+        Tab.prototype.show = function () {
+            var $this    = this.element;
+            var $ul      = $this.closest('ul:not(.dropdown-menu)');
+            var selector = $this.data('target');
+
+            if (!selector) {
+                selector = $this.attr('href');
+                selector = selector && selector.replace(/.*(?=#[^\s]*$)/, ''); // strip for ie7
+            }
+
+            if ($this.parent('li').hasClass('active')) {
+                return;
+            }
+
+            var $previous = $ul.find('.active:last a');
+            var hideEvent = $.Event('hide.bs.tab', {
+                relatedTarget: $this[0]
+            });
+            var showEvent = $.Event('show.bs.tab', {
+                relatedTarget: $previous[0]
+            });
+
+            $previous.trigger(hideEvent);
+            $this.trigger(showEvent);
+
+            if (showEvent.isDefaultPrevented() || hideEvent.isDefaultPrevented()) {
+                return;
+            }
+
+            var $target = $(selector);
+
+            this.activate($this.closest('li'), $ul);
+            this.activate($target, $target.parent(), function () {
+                $previous.trigger({
+                    type: 'hidden.bs.tab',
+                    relatedTarget: $this[0]
+                });
+                $this.trigger({
+                    type: 'shown.bs.tab',
+                    relatedTarget: $previous[0]
+                })
+            })
+        };
+
+        Tab.prototype.activate = function (element, container, callback) {
+            var $active = container.find('> .active');
+            var transition = callback
+                    && $.support.transition
+                    && ($active.length && $active.hasClass('fade') || !!container.find('> .fade').length);
+
+            function next() {
+                $active
+                        .removeClass('active')
+                        .find('> .dropdown-menu > .active')
+                        .removeClass('active')
+                        .end()
+                        .find('[data-toggle="tab"]')
+                        .attr('aria-expanded', false);
+
+                element
+                        .addClass('active')
+                        .find('[data-toggle="tab"]')
+                        .attr('aria-expanded', true);
+
+                if (transition) {
+                    element[0].offsetWidth; // reflow for transition
+                    element.addClass('in');
+                }
+                else {
+                    element.removeClass('fade');
+                }
+
+                if (element.parent('.dropdown-menu').length) {
+                    element
+                            .closest('li.dropdown')
+                            .addClass('active')
+                            .end()
+                            .find('[data-toggle="tab"]')
+                            .attr('aria-expanded', true)
+                }
+
+                callback && callback();
+            }
+
+            $active.length && transition ?
+                    $active.one('bsTransitionEnd', next).emulateTransitionEnd(Tab.TRANSITION_DURATION) :
+                    next();
+
+            $active.removeClass('in');
+        };
+
+
+        // TAB PLUGIN DEFINITION
+        // =====================
+
+        function Plugin(option) {
+            return this.each(function () {
+                var $this = $(this);
+                var data  = $this.data('bs.tab');
+
+                if (!data) $this.data('bs.tab', (data = new Tab(this)));
+                if (typeof option == 'string') data[option]()
+            })
+        }
+
+        var old = $.fn.tab;
+
+        $.fn.tab = Plugin;
+        $.fn.tab.Constructor = Tab;
+
+
+        // TAB NO CONFLICT
+        // ===============
+
+        $.fn.tab.noConflict = function () {
+            $.fn.tab = old;
+            return this;
+        };
+
+
+        // TAB DATA-API
+        // ============
+
+        var clickHandler = function (e) {
+            e.preventDefault();
+            Plugin.call($(this), 'show');
+        };
+
+        $(document)
+                .on('click.bs.tab.data-api', '[data-toggle="tab"]', clickHandler)
+                .on('click.bs.tab.data-api', '[data-toggle="pill"]', clickHandler)
+    }
 
 })(jQuery);
 

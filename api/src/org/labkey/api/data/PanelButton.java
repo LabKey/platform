@@ -57,6 +57,76 @@ public class PanelButton extends ActionButton
     @Override
     public void render(RenderContext ctx, Writer out) throws IOException
     {
+        if (DataRegion.useExperimentalDataRegion())
+            newRender(ctx, out);
+        else
+            oldRender(ctx, out);
+    }
+
+    private void newRender(RenderContext ctx, Writer out) throws IOException
+    {
+        String requiresSelectionDataRegion = _requiresSelection ? ctx.getCurrentRegion().getName() : null;
+        String id = getId();
+        String panelId = getId();
+        Map<String, String> attributes = new HashMap<>();
+
+        attributes.put("panel-toggle", panelId);
+
+        if (requiresSelectionDataRegion != null)
+            attributes.put("labkey-requires-selection", PageFlowUtil.filter(requiresSelectionDataRegion));
+
+        boolean includeContent = !ctx.containsKey(id);
+        boolean active = true;
+        // Remember that we've already rendered the content once
+        ctx.put(id, true);
+
+        out.write(PageFlowUtil.generateDropDownButton(getCaption(), "javascript:void(0)",
+                "(function(el) { LABKEY.DataRegions[" + PageFlowUtil.jsString(_dataRegionName) + "].showButtonPanel(el); })(this);",
+                attributes));
+
+        out.write("<div id=\"" + panelId + "\" class=\"tabbable tabs-left\" style=\"display: none;\">");
+
+        // render tabs
+        out.write("<ul class=\"nav nav-tabs\">");
+        for (Map.Entry<String, HttpView> entry : _subpanels.entrySet())
+        {
+            String entryId = PageFlowUtil.filter(id + entry.getKey());
+            out.write("<li" + (active ? " class=\"active\"" : "") + "><a href=\"#" + entryId + "\" data-toggle=\"tab\">" + PageFlowUtil.filter(entry.getKey()) + "</a></li>");
+            active = false;
+        }
+        out.write("</ul>");
+        // -- render tabs
+
+        // render tab contents
+        active = true;
+        out.write("<div class=\"tab-content\">");
+        for (Map.Entry<String, HttpView> entry : _subpanels.entrySet())
+        {
+            String entryId = PageFlowUtil.filter(id + entry.getKey());
+            out.write("<div id=\"" + entryId + "\" class=\"tab-pane" + (active ? " active" : "") + "\">");
+            active = false;
+            try
+            {
+                entry.getValue().render(ctx.getRequest(), ctx.getViewContext().getResponse());
+            }
+            catch (IOException e)
+            {
+                throw e;
+            }
+            catch (Exception e)
+            {
+                throw new UnexpectedException(e);
+            }
+            out.write("</div>");
+        }
+        out.write("</div>");
+        // -- render tab contents
+
+        out.write("</div>");
+    }
+
+    private void oldRender(RenderContext ctx, Writer out) throws IOException
+    {
         String requiresSelectionDataRegion = _requiresSelection ? ctx.getCurrentRegion().getName() : null;
         String id = getId();
         Map<String, String> attributes = new HashMap<>();
