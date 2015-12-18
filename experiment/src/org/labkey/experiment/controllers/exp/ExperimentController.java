@@ -1044,7 +1044,7 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(InsertPermission.class)
     public class InsertDataClassAction extends FormViewAction<InsertDataClassForm>
     {
-        private ActionURL _sucessUrl;
+        private ActionURL _successUrl;
         private Map<String, DataClassTemplateDocument> _moduleTemplates;
 
         @Override
@@ -1081,9 +1081,6 @@ public class ExperimentController extends SpringActionController
             form.setAvailableDomainTemplateNames(domainTemplates.keySet());
             form.setXmlParseErrors(messages);
 
-            for (String message : messages)
-                _log.warn(message);
-
             return new JspView<>("/org/labkey/experiment/insertDataClass.jsp", form, errors);
         }
 
@@ -1096,40 +1093,16 @@ public class ExperimentController extends SpringActionController
                 DataClassTemplateDocument.DataClassTemplate template = templateDoc.getDataClassTemplate();
                 TableType tableType = template.getTable();
 
-                // get the property descriptors from the selected template's table columns
-                List<GWTPropertyDescriptor> properties = new ArrayList<>();
-                for (ColumnType columnType : tableType.getColumns().getColumnArray())
-                    properties.add(DomainUtil.getPropertyDescriptor(columnType));
-
-                // get the table unique indices
-                List<GWTIndex> indices = new ArrayList<>();
-                for (DataClassIndex dataClassIndex : template.getIndexArray())
-                {
-                    // Only unique is supported currently
-                    if (TableInfo.IndexType.Unique.name().equalsIgnoreCase(dataClassIndex.getType()))
-                        indices.add(new GWTIndex(Arrays.asList(dataClassIndex.getColumnArray()), true));
-                }
-
-                // get the DataClass specific options
-                Integer sampleSetId = null;
-                String nameExpression = null;
-                if (template.isSetOptions())
-                {
-                    DataClassOptions options = template.getOptions();
-                    nameExpression = options.getNameExpression();
-                    if (options.isSetSampleSet())
-                    {
-                        ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(getContainer(), options.getSampleSet(), false);
-                        sampleSetId = sampleSet != null ? sampleSet.getRowId() : null;
-                    }
-                }
+                List<GWTPropertyDescriptor> properties = DomainUtil.getPropertyDescriptors(templateDoc);
+                List<GWTIndex> indices = DomainUtil.getUniqueIndices(templateDoc);
+                Map<String, Object> options = DomainUtil.getDataClassOptions(templateDoc, getContainer());
 
                 ExpDataClass dataClass = ExperimentService.get().createDataClass(
                     getContainer(), getUser(), tableType.getTableName(), tableType.getDescription(),
-                    properties, indices, sampleSetId, nameExpression
+                    properties, indices, (Integer)options.get("sampleSetId"), (String)options.get("nameExpression")
                 );
 
-                _sucessUrl = PageFlowUtil.urlProvider(ExperimentUrls.class).getShowDataClassURL(getContainer(), dataClass.getRowId());
+                _successUrl = PageFlowUtil.urlProvider(ExperimentUrls.class).getShowDataClassURL(getContainer(), dataClass.getRowId());
             }
             else
             {
@@ -1138,7 +1111,7 @@ public class ExperimentController extends SpringActionController
                     Collections.emptyList(), Collections.emptyList(), null, form.getNameExpression()
                 );
 
-                _sucessUrl = PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(getContainer(), dataClass.getDomain().getTypeURI(), false, false, false);
+                _successUrl = PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(getContainer(), dataClass.getDomain().getTypeURI(), false, false, false);
             }
 
             return true;
@@ -1147,7 +1120,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(InsertDataClassForm form)
         {
-            return _sucessUrl;
+            return _successUrl;
         }
 
         @Override

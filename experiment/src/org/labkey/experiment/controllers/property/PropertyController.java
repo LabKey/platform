@@ -66,6 +66,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.data.xml.domainTemplate.DataClassTemplateDocument;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -194,25 +195,49 @@ public class PropertyController extends SpringActionController
         public ApiResponse execute(SimpleApiJsonForm getForm, BindException errors) throws Exception
         {
             JSONObject jsonObj = getForm.getJsonObject();
-
-            String kindName = jsonObj.getString("kind");
-            if (kindName == null)
-                throw new IllegalArgumentException("Domain kind required");
-            GWTDomain newDomain = convertJsonToDomain(jsonObj);
-            JSONObject jsOptions = jsonObj.optJSONObject("options");
-            if (jsOptions == null)
-                jsOptions = new JSONObject();
-
-            // Convert JSONObject to a Map, unpacking JSONArray as we go.
-            // XXX: There must be utility for this somewhere?
             Map<String, Object> options = new HashMap<>();
-            for (String key : jsOptions.keySet())
+            GWTDomain newDomain;
+            String kindName;
+
+            String domainGroup = jsonObj.getString("domainGroup");
+            String domainTemplate = jsonObj.getString("domainTemplate");
+            if (domainGroup != null && domainTemplate != null)
             {
-                Object value = jsOptions.get(key);
-                if (value instanceof JSONArray)
-                    options.put(key, ((JSONArray) value).toArray());
-                else
-                    options.put(key, value);
+                kindName = "DataClass";
+
+                String templateName = domainGroup + ":" + domainTemplate;
+                DataClassTemplateDocument templateDoc = DomainUtil.getModuleDomainTemplateDocs(getContainer(), null).get(templateName);
+                if (templateDoc == null)
+                    throw new IllegalArgumentException("Domain template '" + domainTemplate + "' not found in group '" + domainGroup + "'.");
+
+                newDomain = new GWTDomain();
+                newDomain.setName(templateDoc.getDataClassTemplate().getTable().getTableName());
+                newDomain.setDescription(templateDoc.getDataClassTemplate().getTable().getDescription());
+
+                newDomain.setFields(DomainUtil.getPropertyDescriptors(templateDoc));
+                newDomain.setIndices(DomainUtil.getUniqueIndices(templateDoc));
+                options = DomainUtil.getDataClassOptions(templateDoc, getContainer());
+            }
+            else
+            {
+                kindName = jsonObj.getString("kind");
+                if (kindName == null)
+                    throw new IllegalArgumentException("Domain kind required");
+                newDomain = convertJsonToDomain(jsonObj);
+                JSONObject jsOptions = jsonObj.optJSONObject("options");
+                if (jsOptions == null)
+                    jsOptions = new JSONObject();
+
+                // Convert JSONObject to a Map, unpacking JSONArray as we go.
+                // XXX: There must be utility for this somewhere?
+                for (String key : jsOptions.keySet())
+                {
+                    Object value = jsOptions.get(key);
+                    if (value instanceof JSONArray)
+                        options.put(key, ((JSONArray) value).toArray());
+                    else
+                        options.put(key, value);
+                }
             }
 
             createDomain(kindName, newDomain, options, getContainer(), getUser());
