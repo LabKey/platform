@@ -390,7 +390,7 @@ public class ParticipantGroupManager
         boolean isAdmin = context.getContainer().hasPermission(context.getUser(), SharedParticipantGroupPermission.class) ||
                 context.getContainer().hasPermission(context.getUser(), AdminPermission.class);
 
-        return "LABKEY.requiresExt4Sandbox(function() {" +
+        return "LABKEY.requiresExt4ClientAPI(function() {" +
                 "LABKEY.requiresScript('study/ParticipantGroup.js', function(){" +
                 " Study.window.ParticipantGroup.fromDataRegion(" + PageFlowUtil.jsString(dataRegionName) + "," + fromSelection + "," + isAdmin + "); " +
                 "},this);});";
