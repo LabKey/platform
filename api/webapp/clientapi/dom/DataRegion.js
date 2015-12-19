@@ -80,6 +80,9 @@ if (!LABKEY.DataRegions) {
 
         if (applyDefaults) {
 
+            // defensively remove, not allowed to be set
+            delete config._userSort;
+
             /**
              * Config Options
              */
@@ -264,8 +267,6 @@ if (!LABKEY.DataRegions) {
 
                 userFilters: {},
 
-                userSort: undefined,
-
                 /**
                  * Name of the custom view to which this DataRegion is bound, may be blank. Read-only.
                  */
@@ -303,11 +304,14 @@ if (!LABKEY.DataRegions) {
             LABKEY.Filter.appendFilterParams(this.userFilters, this.removeableFilters, this.name);
         }
 
+        // initialize sorting
+        if (this._userSort === undefined) {
+            this._userSort = _getUserSort(this, true /* asString */);
+        }
+
         if (LABKEY.Utils.isString(this.removeableSort)) {
-            if (this.userSort === undefined) {
-                this.userSort = '';
-            }
-            this.userSort += this.removeableSort;
+            this._userSort = this.removeableSort + this._userSort;
+            delete this.removeableSort;
         }
 
         this._allowHeaderLock = this.allowHeaderLock === true;
@@ -566,12 +570,11 @@ if (!LABKEY.DataRegions) {
      */
     Proto._initSelection = function() {
 
-        var me = this;
+        var me = this,
+            form = _getFormSelector(this);
 
-        if (this.form) {
-            if (this.showRecordSelectors) {
-                _onSelectionChange(this);
-            }
+        if (form && this.showRecordSelectors) {
+            _onSelectionChange(this);
         }
 
         // Bind Events
@@ -1149,7 +1152,7 @@ if (!LABKEY.DataRegions) {
     /**
      * Replaces the sort on the given column, if present, or sets a brand new sort
      * @param {string or LABKEY.FieldKey} fieldKey name of the column to be sorted
-     * @param sortDirection either "+' for ascending or '-' for descending
+     * @param {string} [sortDir=+] Set to '+' for ascending or '-' for descending
      */
     Proto.changeSort = function(fieldKey, sortDir) {
         if (!fieldKey)
@@ -1167,8 +1170,8 @@ if (!LABKEY.DataRegions) {
             return;
         }
 
-        var sortString = _alterSortString(this, this.getParameter(this.name + SORT_PREFIX), fieldKey, sortDir);
-        _setParameter(this, SORT_PREFIX, sortString, [SORT_PREFIX, OFFSET_PREFIX]);
+        this._userSort = _alterSortString(this, this._userSort, fieldKey, sortDir);
+        _setParameter(this, SORT_PREFIX, this._userSort, [SORT_PREFIX, OFFSET_PREFIX]);
     };
 
     /**
@@ -1191,9 +1194,9 @@ if (!LABKEY.DataRegions) {
             return;
         }
 
-        var sortString = _alterSortString(this, this.getParameter(this.name + SORT_PREFIX), fieldKey);
-        if (sortString.length > 0) {
-            _setParameter(this, SORT_PREFIX, sortString, [SORT_PREFIX, OFFSET_PREFIX]);
+        this._userSort = _alterSortString(this, this._userSort, fieldKey);
+        if (this._userSort.length > 0) {
+            _setParameter(this, SORT_PREFIX, this._userSort, [SORT_PREFIX, OFFSET_PREFIX]);
         }
         else {
             _removeParameters(this, [SORT_PREFIX, OFFSET_PREFIX]);
@@ -1209,25 +1212,7 @@ if (!LABKEY.DataRegions) {
      * @returns {Object} Object representing the user sort.
      */
     Proto.getUserSort = function() {
-        var userSort = [];
-        var sortParam = this.getParameter(this.name + SORT_PREFIX);
-        if (sortParam) {
-            var sorts = sortParam.split(','), fieldKey, dir;
-            $.each(sorts, function(i, sort) {
-                fieldKey = sort;
-                dir = SORT_ASC;
-                if (sort.charAt(0) == SORT_DESC) {
-                    fieldKey = fieldKey.substring(1);
-                    dir = SORT_DESC;
-                }
-                else if (sort.charAt(0) == SORT_ASC) {
-                    fieldKey = fieldKey.substring(1);
-                }
-                userSort.push({fieldKey: fieldKey, dir: dir});
-            });
-        }
-
-        return userSort;
+        return _getUserSort(this);
     };
 
     //
@@ -1914,7 +1899,7 @@ if (!LABKEY.DataRegions) {
         if (current != null) {
             var sorts = current.split(',');
             $.each(sorts, function(i, sort) {
-                if ((sort != columnName) && (sort != SORT_ASC + columnName) && (sort != SORT_DESC + columnName)) {
+                if (sort.length > 0 && (sort != columnName) && (sort != SORT_ASC + columnName) && (sort != SORT_DESC + columnName)) {
                     newSorts.push(sort);
                 }
             });
@@ -2135,7 +2120,7 @@ if (!LABKEY.DataRegions) {
             }
 
             var pairs = qString.split('&'), p, key,
-                    LAST = '.lastFilter', lastIdx, skip = $.isArray(skipPrefixSet);
+                LAST = '.lastFilter', lastIdx, skip = $.isArray(skipPrefixSet);
 
             $.each(pairs, function(i, pair) {
                 p = pair.split('=', 2);
@@ -2182,6 +2167,40 @@ if (!LABKEY.DataRegions) {
         }
 
         return params;
+    };
+
+    /**
+     * 
+     * @param region
+     * @param {boolean} [asString=false]
+     * @private
+     */
+    var _getUserSort = function(region, asString) {
+        var userSort = [],
+            sortParam = region.getParameter(region.name + SORT_PREFIX);
+
+        if (asString) {
+            userSort = sortParam || '';
+        }
+        else {
+            if (sortParam) {
+                var fieldKey, dir;
+                $.each(sortParam.split(','), function(i, sort) {
+                    fieldKey = sort;
+                    dir = SORT_ASC;
+                    if (sort.charAt(0) == SORT_DESC) {
+                        fieldKey = fieldKey.substring(1);
+                        dir = SORT_DESC;
+                    }
+                    else if (sort.charAt(0) == SORT_ASC) {
+                        fieldKey = fieldKey.substring(1);
+                    }
+                    userSort.push({fieldKey: fieldKey, dir: dir});
+                });
+            }
+        }
+
+        return userSort;
     };
 
     var _buttonBind = function(region, cls, fn) {
@@ -2336,7 +2355,7 @@ if (!LABKEY.DataRegions) {
         }
 
         var param, value,
-                params = _getParametersSearch(region, region.requestURL, skipPrefixes);
+            params = _getParametersSearch(region, region.requestURL, skipPrefixes);
 
         if ($.isArray(newParamValPairs)) {
             $.each(newParamValPairs, function(i, newPair) {
@@ -2641,8 +2660,8 @@ if (!LABKEY.DataRegions) {
             ]);
 
             // Sorts configured by the user when interacting with the grid. We need to pass these as URL parameters.
-            if (LABKEY.Utils.isString(region.userSort) && region.userSort.length > 0) {
-                params[name + SORT_PREFIX] = region.userSort;
+            if (LABKEY.Utils.isString(region._userSort) && region._userSort.length > 0) {
+                params[name + SORT_PREFIX] = region._userSort;
             }
 
             if (region.userFilters) {
@@ -2666,12 +2685,6 @@ if (!LABKEY.DataRegions) {
                 });
             }
         }
-
-        // TODO: Can this be removed now that Ext is not being used?
-        // Ext uses a param called _dc to defeat caching, and it may be
-        // on the URL if the Query web part has done a sort or filter
-        // strip it if it's there so it's not included twice (Ext always appends one)
-        delete params['_dc'];
 
         return params;
     };
