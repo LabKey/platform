@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.api.data.ColumnHeaderType" %>
-<%@ page import="org.labkey.api.data.DataRegion" %>
 <%@ page import="org.labkey.api.query.QueryView" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.GUID" %>
@@ -49,7 +48,6 @@
 
     boolean hasSelected = model.hasSelected(getViewContext());
     String exportRegionName = model.getExportRegionName();
-    String DRNamespace = DataRegion.useExperimentalDataRegion() ? "LABKEY.DataRegion2" : "LABKEY.DataRegion";
 %>
 <table class="labkey-export-tab-contents">
     <tr>
@@ -92,7 +90,7 @@
 <script type="text/javascript">
     (function($) {
 
-        <%=text(DRNamespace)%>.registerPane(<%=PageFlowUtil.jsString(model.getDataRegionName())%>, function(dr) {
+        LABKEY.DataRegion.registerPane(<%=PageFlowUtil.jsString(model.getDataRegionName())%>, function(dr) {
             var xlsExportEl = $("#<%=h(xlsGUID)%>");
             var xlsxExportEl = $("#<%=h(xlsxGUID)%>");
             var iqyExportEl = $("#<%=h(iqyGUID)%>");

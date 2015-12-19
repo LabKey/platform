@@ -906,7 +906,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
 
     getEditableErrors : function () {
         if (!this.editableErrors) {
-            this.editableErrors = LABKEY.DataRegion2.getCustomViewEditableErrors(this.customView);
+            this.editableErrors = LABKEY.DataRegion.getCustomViewEditableErrors(this.customView);
         }
         return this.editableErrors;
     },

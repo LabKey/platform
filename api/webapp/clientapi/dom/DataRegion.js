@@ -3067,11 +3067,15 @@ if (!LABKEY.DataRegions) {
                     'internal/ViewDesigner/tab/BaseTab.js',
                     'internal/ViewDesigner/tab/ColumnsTab.js',
                     'internal/ViewDesigner/tab/FilterTab.js',
-                    'internal/ViewDesigner/tab/SortTab.js',
-                    'internal/ViewDesigner/FieldMetaRecord.js',
-                    'internal/ViewDesigner/FieldMetaStore.js',
-                    'internal/ViewDesigner/Designer.js'
-                ], cb, scope);
+                    'internal/ViewDesigner/tab/SortTab.js'
+                ], function() {
+                    // These scripts depend on each other -- inOrder
+                    LABKEY.requiresScript([
+                        'internal/ViewDesigner/FieldMetaRecord.js',
+                        'internal/ViewDesigner/FieldMetaStore.js',
+                        'internal/ViewDesigner/Designer.js'
+                    ], cb, scope, true);
+                });
             }
             else {
                 LABKEY.requiresScript('internal/ViewDesigner.min.js', cb, scope);

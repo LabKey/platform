@@ -15,16 +15,15 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.data.DataRegion" %>
+<%@ page import="org.labkey.api.data.ColumnHeaderType" %>
 <%@ page import="org.labkey.api.data.TSVWriter" %>
 <%@ page import="org.labkey.api.query.QueryView" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.GUID" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.data.ColumnHeaderType" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -58,7 +57,6 @@
 
     boolean hasSelected = model.hasSelected(getViewContext());
     String exportRegionName = model.getExportRegionName();
-    String DRNamespace = DataRegion.useExperimentalDataRegion() ? "LABKEY.DataRegion2" : "LABKEY.DataRegion";
 %>
 <table class="labkey-export-tab-contents">
     <tr>
@@ -105,7 +103,7 @@
 <script>
     (function($) {
 
-        <%=text(DRNamespace)%>.registerPane(<%=PageFlowUtil.jsString(model.getDataRegionName())%>, function(dr) {
+        LABKEY.DataRegion.registerPane(<%=PageFlowUtil.jsString(model.getDataRegionName())%>, function(dr) {
             var delimEl = $("#<%=h(delimGUID)%>"),
                 quoteEl = $("#<%=h(quoteGUID)%>"),
                 exportSelectedEl = $("#<%=h(exportSelectedId)%>"),
