@@ -149,7 +149,8 @@ public class BreakpointThread extends Thread implements ShutdownListener
             StringBuilder threadInfo = new StringBuilder(thread.getName());
             threadInfo.append(" (");
             threadInfo.append(thread.getState());
-            threadInfo.append(")");
+            threadInfo.append("), daemon: ");
+            threadInfo.append(thread.isDaemon());
             Set<Integer> spids = ConnectionWrapper.getSPIDsForThread(thread);
             if (!spids.isEmpty())
             {
