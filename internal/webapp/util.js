@@ -216,6 +216,43 @@ function showMenu(parent, menuElementId, align) {
     return menu;
 }
 
+// If at least one checkbox on the form is selected then GET/POST url.  Otherwise, display an error.
+function verifySelected(form, url, method, pluralNoun, pluralConfirmText, singularConfirmText)
+{
+    var checked = 0;
+    var elems = form.elements;
+    var l = elems.length;
+
+    for (var i = 0; i < l; i++)
+    {
+        var e = elems[i];
+
+        if (e.type == 'checkbox' && e.checked && e.name == '.select')
+        {
+            checked++;
+        }
+    }
+
+    if (checked > 0)
+    {
+        if ((window.parent == window) && (null != pluralConfirmText))
+        {
+            var confirmText = (1 == checked && null != singularConfirmText ? singularConfirmText : pluralConfirmText);
+
+            if (!window.confirm(confirmText.replace("${selectedCount}", checked)))
+                return false;
+        }
+
+        form.action = url;
+        form.method = method;
+        return true;
+    }
+    else
+    {
+        LABKEY.Utils.alert('Please select one or more ' + pluralNoun + '.');
+        return false;
+    }
+}
 
 LABKEY.addMarkup(
 '<div id="helpDiv" onMouseOver="mouseEnteredHelpDiv()" onMouseOut="mouseExitedHelpDiv()"' +
