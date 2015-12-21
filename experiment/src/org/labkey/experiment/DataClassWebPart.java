@@ -1,6 +1,7 @@
 package org.labkey.experiment;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.TableInfo;
@@ -79,5 +80,17 @@ public class DataClassWebPart extends QueryView
     public boolean showImportDataButton()
     {
         return false;
+    }
+
+    @Override
+    public ActionButton createDeleteButton()
+    {
+        // Use default delete button, but without showing the confirmation text -- DeleteDataClassAction will show a confirmation page.
+        ActionButton button = super.createDeleteButton();
+        if (button != null)
+        {
+            button.setRequiresSelection(true);
+        }
+        return button;
     }
 }
