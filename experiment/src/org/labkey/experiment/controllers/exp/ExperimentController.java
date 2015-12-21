@@ -782,6 +782,7 @@ public class ExperimentController extends SpringActionController
             dr.setButtonBar(new ButtonBar());
             DetailsView detailsView = new DetailsView(dr, _material.getRowId());
             detailsView.setTitle("Standard Properties");
+            detailsView.setFrame(WebPartView.FrameType.PORTAL);
 
             CustomPropertiesView cpv = new CustomPropertiesView(_material.getLSID(), c);
 
@@ -1610,6 +1611,7 @@ public class ExperimentController extends SpringActionController
             dr.addDisplayColumn(new LineageGraphDisplayColumn(_data, run));
             DetailsView detailsView = new DetailsView(dr, pk);
             detailsView.setTitle("Standard Properties");
+            detailsView.setFrame(WebPartView.FrameType.PORTAL);
             ButtonBar bb = new ButtonBar();
             bb.setStyle(ButtonBar.Style.separateButtons);
 
