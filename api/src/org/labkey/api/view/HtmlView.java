@@ -47,8 +47,10 @@ public class HtmlView extends WebPartView
         _printfParams = params;
     }
 
-    public void setTitle(String title)
+    @Override
+    public void setTitle(CharSequence title)
     {
+        super.setTitle(title);
         if (StringUtils.isNotEmpty(title) && getFrame()==FrameType.DIV)
             setFrame(FrameType.PORTAL);
     }
