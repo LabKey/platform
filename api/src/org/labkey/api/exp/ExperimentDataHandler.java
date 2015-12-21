@@ -30,28 +30,29 @@ import java.util.List;
 
 /**
  * Responsible for storing whatever is desired from a data file in the database. May be the full
- * file's content, a subset, just summary, etc.
+ * file's content, a subset, just summary, etc. Implementations recognizes which {@link ExpData} it should each via
+ * the Handler superinterface.
  * User: jeckels
  * Date: Sep 23, 2005
  */
 public interface ExperimentDataHandler extends Handler<ExpData>
 {
     @Nullable
-    public DataType getDataType();
+    DataType getDataType();
 
     /**
      * Import whatever content from the file is destined for storage in the database. Typically persisted in a schema
      * owned by the module that holds the implementation of the ExperimentDataHandler.
      */
-    public void importFile(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context) throws ExperimentException;
+    void importFile(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context) throws ExperimentException;
 
     /**
      * Stream the content of this data object. Typically this just streams the bytes of the file from disk, but could
      * create something based exclusively on what's in the database.
      */
-    public void exportFile(ExpData data, File dataFile, OutputStream out) throws ExperimentException;
+    void exportFile(ExpData data, File dataFile, OutputStream out) throws ExperimentException;
 
-    public ActionURL getContentURL(ExpData data);
+    ActionURL getContentURL(ExpData data);
 
     /**
      * Invoked prior to the deletion of the data, potentially because its run is being deleted. Any related rows in
@@ -59,14 +60,14 @@ public interface ExperimentDataHandler extends Handler<ExpData>
      * In the case of moving runs to another container, the data rows could later be re-attached to the relevant data/run
      * without needing to fully reimport. In cases of actual deletion, deleteData() will later be called.
      */
-    public void beforeDeleteData(List<ExpData> datas) throws ExperimentException;
+    void beforeDeleteData(List<ExpData> datas) throws ExperimentException;
 
     /**
      * Completely delete all database rows attached to this data object.
      */
-    public void deleteData(ExpData data, Container container, User user);
+    void deleteData(ExpData data, Container container, User user);
 
-    public boolean hasContentToExport(ExpData data, File file);
+    boolean hasContentToExport(ExpData data, File file);
 
     void runMoved(ExpData newData, Container container, Container targetContainer, String oldRunLSID, String newRunLSID, User user, int oldDataRowID) throws ExperimentException;
 

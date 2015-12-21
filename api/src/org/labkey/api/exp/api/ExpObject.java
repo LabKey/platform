@@ -30,6 +30,7 @@ import org.labkey.api.util.URLHelper;
 import java.util.Date;
 import java.util.Map;
 
+/** Base interface for various experiment data model objects */
 public interface ExpObject extends Identifiable, Comparable<ExpObject>
 {
     /** Prevent edits to this object. Subsequent calls to setters will throw an IllegalStateException */

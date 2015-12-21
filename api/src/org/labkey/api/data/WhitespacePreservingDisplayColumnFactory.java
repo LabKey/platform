@@ -19,6 +19,8 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.PageFlowUtil;
 
 /**
+ * Renders the value in HTML preserving whitespace, including spaces and newlines.
+ *
  * User: jeckels
  * Date: 10/9/2015
  */

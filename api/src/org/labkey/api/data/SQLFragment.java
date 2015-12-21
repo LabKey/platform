@@ -17,7 +17,6 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -38,9 +37,9 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
+ * Holds both the SQL text and JDBC parameter values to use during invocation.
  * User: Matthew
  * Date: Apr 19, 2006
- * Time: 4:56:01 PM
  */
 public class SQLFragment implements Appendable, CharSequence
 {
@@ -102,9 +101,7 @@ public class SQLFragment implements Appendable, CharSequence
 
     public SQLFragment(CharSequence sql, Object... params)
     {
-        guard(sql);
-        this.sql = sql.toString();
-        this.params = Arrays.asList(params);
+        this(sql, Arrays.asList(params));
     }
 
 
@@ -222,24 +219,23 @@ public class SQLFragment implements Appendable, CharSequence
             if (null != params)
                 ret.addAll(params);
         }
-        assert null != (ret = Collections.unmodifiableList(ret));
-        return ret;
-    }
+        return Collections.unmodifiableList(ret);
+     }
 
 
-    final static Object[] emptyArray = new Object[0];
+    final static Object[] EMPTY_ARRAY = new Object[0];
 
     public Object[] getParamsArray()
     {
-        return null == params ? emptyArray : params.toArray();
+        return null == params ? EMPTY_ARRAY : params.toArray();
     }
 
 
-    private List<Object> getModfiableParams()
+    private List<Object> getMutableParams()
     {
         if (!(params instanceof ArrayList))
         {
-            ArrayList<Object> t = new ArrayList<>();
+            List<Object> t = new ArrayList<>();
             if (params != null)
                 t.addAll(params);
             params = t;
@@ -272,6 +268,7 @@ public class SQLFragment implements Appendable, CharSequence
         return this;
     }
 
+    /** Adds the container's ID as an in-line string constant to the SQL */
     public SQLFragment append(@NotNull Container c)
     {
         String id = c.getId();
@@ -286,6 +283,7 @@ public class SQLFragment implements Appendable, CharSequence
         return this;
     }
 
+    /** Adds the object's toString() to the SQL */
     public SQLFragment append(Object o)
     {
         guard(o);
@@ -293,20 +291,23 @@ public class SQLFragment implements Appendable, CharSequence
         return this;
     }
 
+    /** Adds the object as a JDBC parameter value */
     public SQLFragment add(Object p)
     {
-        getModfiableParams().add(p);
+        getMutableParams().add(p);
         return this;
     }
 
 
+    /** Adds the objects as JDBC parameter values */
     public void addAll(Collection<?> l)
     {
-        getModfiableParams().addAll(l);
+        getMutableParams().addAll(l);
     }
 
 
-    public void addAll(Object[] values)
+    /** Adds the objects as JDBC parameter values */
+    public void addAll(Object... values)
     {
         if (values == null)
             return;
@@ -314,12 +315,13 @@ public class SQLFragment implements Appendable, CharSequence
     }
 
 
+    /** Sets the parameter at the index to the object's value */
     public void set(int i, Object p)
     {
-        getModfiableParams().set(i,p);
+        getMutableParams().set(i,p);
     }
 
-
+    /** Append both the SQL and the parameters from the other SQLFragment to this SQLFragment */
     public SQLFragment append(SQLFragment f)
     {
         if (null != f.sb)
@@ -334,7 +336,7 @@ public class SQLFragment implements Appendable, CharSequence
     }
 
 
-    // Append a full statement (using the correct dialect syntax) and its parameters to this SQLFragment
+    /** Append a full statement (using the correct dialect syntax) and its parameters to this SQLFragment */
     public SQLFragment appendStatement(@Nullable SQLFragment statement, SqlDialect dialect)
     {
         if (null == statement || statement.isEmpty())
@@ -383,19 +385,20 @@ public class SQLFragment implements Appendable, CharSequence
         return append(table.getFromSQL(table.getName()));
     }
 
-
+    /** Add a table/query to the SQL with an alias, as used in a FROM clause */
     public SQLFragment append(TableInfo table, String alias)
     {
         return append(table.getFromSQL(alias));
     }
 
-    
+    /** Add to the SQL */
     public SQLFragment append(char ch)
     {
         getStringBuilder().append(ch);
         return this;
     }
 
+    /** Add to the SQL as either an in-line string literal or as a JDBC parameter depending on whether it would need escaping */
     public SQLFragment appendStringLiteral(CharSequence s)
     {
         String source = HString.source(s);        
@@ -420,16 +423,17 @@ public class SQLFragment implements Appendable, CharSequence
         return sql;
     }
 
+    /** Insert into the SQL */
     public void insert(int index, String str)
     {
         getStringBuilder().insert(index, str);
     }
 
-    // Insert this SQLFragment's SQL and parameters at the start of the existing SQL and parameters
+    /** Insert this SQLFragment's SQL and parameters at the start of the existing SQL and parameters */
     public void prepend(SQLFragment sql)
     {
         insert(0, sql.getSqlCharSequence().toString());
-        getModfiableParams().addAll(0, sql.getParams());
+        getMutableParams().addAll(0, sql.getParams());
         mergeCommonTableExpressions(sql);
     }
 

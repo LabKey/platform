@@ -20,7 +20,6 @@ import org.labkey.api.security.User;
 /**
  * User: vsharma
  * Date: 8/23/2014
- * Time: 4:06 PM
  */
 public interface ExperimentListener
 {

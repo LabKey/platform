@@ -20,14 +20,10 @@ import org.labkey.api.view.DisplayElement;
 import java.util.List;
 
 /**
- * User: dave
- * Date: Apr 7, 2010
- * Time: 10:15:25 AM
- */
-
-/**
  * Represents configuration information for a specific button in a button bar configuration.
  * Currently this is used only with the QueryWebPart
+ * User: dave
+ * Date: Apr 7, 2010
  */
 public interface ButtonConfig
 {

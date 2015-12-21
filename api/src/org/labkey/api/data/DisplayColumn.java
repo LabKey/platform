@@ -46,6 +46,10 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * A column in a grid, details, insert, update, or similar view. May wrap a column from the underlying database,
+ * or may get its value/rendering from elsewhere.
+ */
 public abstract class DisplayColumn extends RenderColumn
 {
     protected String _textAlign = null;
@@ -491,7 +495,7 @@ public abstract class DisplayColumn extends RenderColumn
     {
         if (sort != null)
         {
-            Set<ColumnInfo> ret = new NullPreventingSet<>(new HashSet<ColumnInfo>());
+            Set<ColumnInfo> ret = new NullPreventingSet<>(new HashSet<>());
             addQueryColumns(ret);
             for (ColumnInfo info : ret)
             {

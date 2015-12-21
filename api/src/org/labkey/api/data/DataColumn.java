@@ -42,6 +42,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
+/** Subclass that wraps a ColumnInfo to pull values from the database */
 public class DataColumn extends DisplayColumn
 {
     private static final Logger LOG = Logger.getLogger(DataColumn.class);

@@ -33,7 +33,6 @@ import java.util.Set;
  * Descriptor for how to sort a query to a database. May include multiple columns, with separate ascending/descending
  * orders for all of them.
  */
-
 public class Sort
 {
     public enum SortDirection

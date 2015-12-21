@@ -12,6 +12,7 @@ import org.springframework.web.servlet.mvc.Controller;
 import java.util.List;
 
 /**
+ * Category of {@link ExpData}, extended by a Domain with custom properties. Data version of an {@link ExpSampleSet}
  * User: kevink
  * Date: 9/15/15
  */

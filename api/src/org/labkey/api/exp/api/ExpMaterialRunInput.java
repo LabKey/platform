@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.api;
 
+/** Maps an {@link ExpMaterial} to be the input into an {@link ExpRun}. */
 public interface ExpMaterialRunInput extends ExpRunInput
 {
     public static final String DEFAULT_ROLE = "Material";

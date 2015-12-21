@@ -29,6 +29,8 @@ import java.sql.SQLException;
 import java.util.Collection;
 
 /**
+ * A schema in the underlying database that is populated by tables created (provisioned) dynamically
+ * based on administrator or other input into what columns/fields should be tracked.
  * Created by klum on 2/23/14.
  */
 public class ProvisionedDbSchema extends DbSchema

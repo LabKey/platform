@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+/** An instance of an {@link ExpProtocol}, with actual inputs and outputs */
 public interface ExpRun extends ExpObject
 {
     /** @return the experiments (AKA run groups in the UI) of which this run is a member */

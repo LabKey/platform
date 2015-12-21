@@ -32,9 +32,9 @@ import java.util.Collection;
 import java.util.List;
 
 /**
+ * Knows how to execute SQL against the underlying database, getting a connection as appropriate
  * User: adam
  * Date: 10/25/11
- * Time: 11:27 PM
  */
 public class SqlExecutor extends JdbcCommand<SqlExecutor>
 {

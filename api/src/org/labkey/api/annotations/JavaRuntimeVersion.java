@@ -16,17 +16,15 @@
 package org.labkey.api.annotations;
 
 /**
+ * Used to mark code that is specific to a particular Java runtime version, for example, hacks that work around problems
+ * in the runtime or links to the Java documentation. Re-evaluate these when Java versions are released or deprecated.
+ * Search for text "@JavaRuntimeVersion" to find all usages.
  * User: adam
  * Date: 9/11/13
- * Time: 7:54 PM
  */
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-
-// Used to mark code that is specific to a particular Java runtime version, for example, hacks that work around problems
-// in the runtime or links to the Java documentation. Re-evaluate these when Java versions are released or deprecated.
-// Search for text "@JavaRuntimeVersion" to find all usages.
 
 @Retention(RetentionPolicy.SOURCE)
 public @interface JavaRuntimeVersion

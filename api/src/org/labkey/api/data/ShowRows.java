@@ -17,14 +17,20 @@
 package org.labkey.api.data;
 
 /**
+ * Modes by which the right selection of rows are chosen to query the database and/or render the data.
  * User: kevink
- * Date: Mar 25, 2008 2:22:55 PM
+ * Date: Mar 25, 2008
  */
 public enum ShowRows
 {
+    /** Don't actually show any rows */
     NONE,
+    /** Show up to a certain number of rows */
     PAGINATED,
+    /** Show all rows */
     ALL,
+    /** Show only the rows that have been selected by the user */
     SELECTED,
+    /** Show only the rows that have NOT been selected by the user */
     UNSELECTED
 }

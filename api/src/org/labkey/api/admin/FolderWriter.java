@@ -23,6 +23,7 @@ import org.labkey.folder.xml.FolderDocument;
 import java.util.Collection;
 
 /**
+ * Writer for a particular type of data, used for folder exports.
  * User: cnathe
  * Date: Jan 18, 2012
  */

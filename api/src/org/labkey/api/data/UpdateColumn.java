@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.labkey.api.util.StringExpression;
 
+/** Renders the edit link for a row in a grid */
 public class UpdateColumn extends UrlColumn
 {
     public UpdateColumn(StringExpression urlExpression)

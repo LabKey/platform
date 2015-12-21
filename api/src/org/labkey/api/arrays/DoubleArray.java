@@ -19,15 +19,14 @@ import java.util.ArrayList;
 
 
 /**
+ * Alternative to ArrayList<Double>
  * User: mbellew
  * Date: May 24, 2004
- * Time: 9:09:24 PM
  */
-// alternative to ArrayList<Double>
 public class DoubleArray
 {
     private static final int ARRAY_LEN = 1024;
-    ArrayList list = new ArrayList();
+    ArrayList<double[]> list = new ArrayList<>();
     double[] arrayLast;
     int lenLast = 0;
     int size = 0;
@@ -35,7 +34,6 @@ public class DoubleArray
 
     public DoubleArray()
     {
-        list = new ArrayList<Double>();
         arrayLast = new double[ARRAY_LEN];
         list.add(arrayLast);
     }
@@ -56,7 +54,7 @@ public class DoubleArray
 
     public double get(int i)
     {
-        return ((double[]) list.get(i / ARRAY_LEN))[i % ARRAY_LEN];
+        return list.get(i / ARRAY_LEN)[i % ARRAY_LEN];
     }
 
 
@@ -74,11 +72,11 @@ public class DoubleArray
         double[] src;
         for (; i < list.size() - 1; i++)
         {
-            src = (double[]) list.get(i);
+            src = list.get(i);
             System.arraycopy(src, 0, dst, end, src.length);
             end += src.length;
         }
-        src = (double[]) list.get(i);
+        src = list.get(i);
         System.arraycopy(src, 0, dst, end, lenLast);
         return dst;
     }

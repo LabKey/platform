@@ -37,7 +37,10 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-
+/**
+ * Representation of a dynamic URL expression that can substitute in parameter values, typically filled in via
+ * the values of database columns from a ResultSet.
+ */
 public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression implements HasViewContext
 {
     public static final Pattern actionPattern = Pattern.compile("/?[\\w\\-]+/[\\w\\-]+.view?.*");

@@ -16,6 +16,7 @@
 package org.labkey.api.exp.api;
 
 /**
+ * Base interface for the different types of objects that can be the input to an {@link ExpRun}.
  * User: jeckels
  * Date: Oct 31, 2008
  */

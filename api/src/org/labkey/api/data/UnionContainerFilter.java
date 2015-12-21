@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
+ * Combines multiple ContainerFilters, gathers their Containers, and uses the union of them when filtering.
  * User: jeckels
  * Date: 10/25/12
  */

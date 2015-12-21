@@ -26,14 +26,18 @@ import java.io.File;
 import java.net.URI;
 import java.sql.SQLException;
 
+/**
+ * Represents a virtual experiment object. Typically a file on disk, but could be something pointed at by a URI.
+ */
 public interface ExpData extends ExpProtocolOutput
 {
-    public static final String DEFAULT_CPAS_TYPE = "Data";
+    String DEFAULT_CPAS_TYPE = "Data";
 
     @Nullable
     String getDescription();
 
     DataType getDataType();
+    /** Strongly typed variant of getDataFileUrl() */
     URI getDataFileURI();
 
     void setDataFileURI(URI uri);
@@ -42,11 +46,14 @@ public interface ExpData extends ExpProtocolOutput
 
     String getDataFileUrl();
 
+    /** @return the file if this data is backed by a 'file:'-style URI. */
     @Nullable
     File getFile();
 
+    /** @return if this represents an image that can be rendered directly by a web browser */
     boolean isInlineImage();
 
+    /** @return true if this points at a file that's currently available to the server as a {@link java.io.File} */
     boolean isFileOnDisk();
 
     /**

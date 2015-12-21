@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 /**
+ * Hook point for customizing a user schema and the tables and queries that it contains.
  * User: kevink
  * Date: 5/10/13
  */

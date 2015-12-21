@@ -32,10 +32,7 @@ public interface NavTrailAction
      *
      * Base class implementations may use the entry as the page title by default.
      *
-     * @returns Return the tree handed in for convenience
-     *
-     * @param root
-     * @return
+     * @return Return the tree handed in for convenience
      */
     NavTree appendNavTrail(NavTree root);
 }

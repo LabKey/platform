@@ -23,38 +23,39 @@ import org.labkey.api.security.User;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * An individual step inside of an {@link ExpRun}, which can consume or produce {@link ExpData} or {@link ExpMaterial}
+ */
 public interface ExpProtocolApplication extends ExpObject
 {
     @NotNull
-    public List<? extends ExpDataRunInput> getDataInputs();
+    List<? extends ExpDataRunInput> getDataInputs();
     @NotNull
-    public List<? extends ExpData> getInputDatas();
+    List<? extends ExpData> getInputDatas();
     @NotNull
-    public List<? extends ExpData> getOutputDatas();
+    List<? extends ExpData> getOutputDatas();
     @NotNull
-    public List<? extends ExpMaterialRunInput> getMaterialInputs();
+    List<? extends ExpMaterialRunInput> getMaterialInputs();
     @NotNull
-    public List<? extends ExpMaterial> getInputMaterials();
+    List<? extends ExpMaterial> getInputMaterials();
 
     @NotNull
     List<? extends ExpMaterial> getOutputMaterials();
 
-    public ExpProtocol getProtocol();
+    ExpProtocol getProtocol();
 
     /**
      * Add a data input
-     * @param user
-     * @param input
      * @param inputRole optional argument specifying the input role name
      */
-    public void addDataInput(User user, ExpData input, String inputRole);
-    public void removeDataInput(User user, ExpData data);
-    public void addMaterialInput(User user, ExpMaterial material, @Nullable String inputRole);
-    public void removeMaterialInput(User user, ExpMaterial material);
+    void addDataInput(User user, ExpData input, String inputRole);
+    void removeDataInput(User user, ExpData data);
+    void addMaterialInput(User user, ExpMaterial material, @Nullable String inputRole);
+    void removeMaterialInput(User user, ExpMaterial material);
 
-    public ExpRun getRun();
-    public int getActionSequence();
-    public ExpProtocol.ApplicationType getApplicationType();
+    ExpRun getRun();
+    int getActionSequence();
+    ExpProtocol.ApplicationType getApplicationType();
 
     Date getActivityDate();
 
@@ -66,19 +67,19 @@ public interface ExpProtocolApplication extends ExpObject
 
     String getComments();
 
-    public void setRun(ExpRun run);
+    void setRun(ExpRun run);
 
-    public void setActionSequence(int actionSequence);
+    void setActionSequence(int actionSequence);
 
-    public void setProtocol(ExpProtocol protocol);
+    void setProtocol(ExpProtocol protocol);
 
-    public void setActivityDate(Date date);
+    void setActivityDate(Date date);
 
-    public void setStartTime(Date date);
+    void setStartTime(Date date);
 
-    public void setEndTime(Date date);
+    void setEndTime(Date date);
 
-    public void setRecordCount(Integer recordCount);
+    void setRecordCount(Integer recordCount);
     
     void save(User user);
 }

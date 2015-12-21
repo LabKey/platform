@@ -21,11 +21,10 @@ import java.util.ArrayList;
 
 
 /**
+ * Alternative to ArrayList<Integer>
  * User: mbellew
  * Date: May 24, 2004
- * Time: 9:09:24 PM
  */
-// alternative to ArrayList<Integer>
 public class IntegerArray
 {
     private static final int ARRAY_LEN = 1024;

@@ -27,12 +27,16 @@ import java.util.List;
 import java.util.Collection;
 import java.util.Set;
 
+/**
+ * Defines a repeatable process (perhaps a sample derivation, aliquotting, or data analysis),
+ * of which there can be multiple instances represented by {@link ExpRun}.
+ */
 public interface ExpProtocol extends ExpObject
 {
-    public static final String ASSAY_DOMAIN_PREFIX = "AssayDomain-";
-    public static final String ASSAY_DOMAIN_RUN = AssayDomainTypes.Run.getPrefix();
-    public static final String ASSAY_DOMAIN_BATCH = AssayDomainTypes.Batch.getPrefix();
-    public static final String ASSAY_DOMAIN_DATA = AssayDomainTypes.Result.getPrefix();
+    String ASSAY_DOMAIN_PREFIX = "AssayDomain-";
+    String ASSAY_DOMAIN_RUN = AssayDomainTypes.Run.getPrefix();
+    String ASSAY_DOMAIN_BATCH = AssayDomainTypes.Batch.getPrefix();
+    String ASSAY_DOMAIN_DATA = AssayDomainTypes.Result.getPrefix();
 
     /**
      * List of well-known domain types.  AssayProviders may
@@ -89,10 +93,10 @@ public interface ExpProtocol extends ExpObject
         ExperimentRunOutput,
     }
 
-    public List<ExpProtocolAction> getSteps();
-    public ApplicationType getApplicationType();
-    public ProtocolImplementation getImplementation();
-    public String getDescription();
+    List<ExpProtocolAction> getSteps();
+    ApplicationType getApplicationType();
+    ProtocolImplementation getImplementation();
+    String getDescription();
     Integer getMaxInputDataPerInstance();
     Integer getMaxInputMaterialPerInstance();
     String getProtocolDescription();
@@ -107,14 +111,14 @@ public interface ExpProtocol extends ExpObject
     /**
      * Adds a step and persists it to the database
      */
-    public ExpProtocolAction addStep(User user, ExpProtocol childProtocol, int actionSequence);
+    ExpProtocolAction addStep(User user, ExpProtocol childProtocol, int actionSequence);
 
-    public List<? extends ExpProtocol> getParentProtocols();
+    List<? extends ExpProtocol> getParentProtocols();
     
     List<? extends ExpRun> getExpRuns();
 
     Set<Container> getExpRunContainers();
 
-    public void setApplicationType(ApplicationType type);
-    public void setDescription(String description);
+    void setApplicationType(ApplicationType type);
+    void setDescription(String description);
 }

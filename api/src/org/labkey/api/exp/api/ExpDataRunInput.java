@@ -16,10 +16,11 @@
 
 package org.labkey.api.exp.api;
 
+/** Maps an {@link ExpData} to be the input into an {@link ExpRun}. */
 public interface ExpDataRunInput extends ExpRunInput
 {
-    public static final String DEFAULT_ROLE = "Data";
-    public static final String IMPORTED_DATA_ROLE = "ImportedData";
+    String DEFAULT_ROLE = "Data";
+    String IMPORTED_DATA_ROLE = "ImportedData";
 
     ExpData getData();
 }

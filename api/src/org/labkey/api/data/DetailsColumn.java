@@ -20,8 +20,8 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringExpression;
 
 import java.util.Map;
-import java.util.Set;
 
+/** Renders the details link for a row in a grid */
 public class DetailsColumn extends UrlColumn
 {
     TableInfo tinfo;

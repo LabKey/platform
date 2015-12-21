@@ -15,12 +15,14 @@
  */
 package org.labkey.api.exp.pipeline;
 
+import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.util.FileType;
 
-/*
-* User: jeckels
-* Date: Jul 28, 2008
-*/
+/**
+ * Pointer for {@link TaskId}
+ * User: jeckels
+ * Date: Jul 28, 2008
+ */
 public class XarGeneratorId
 {
     public static final FileType FT_XAR_XML = new FileType(".xar.xml");

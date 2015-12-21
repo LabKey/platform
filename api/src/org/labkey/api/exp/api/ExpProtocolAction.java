@@ -20,6 +20,9 @@ import org.labkey.api.security.User;
 
 import java.util.List;
 
+/**
+ * One of the steps in an {@link ExpProtocol}. Specific instances within a {@link ExpRun} are backed by {@link ExpProtocolApplication}
+ */
 public interface ExpProtocolAction
 {
     int getRowId();

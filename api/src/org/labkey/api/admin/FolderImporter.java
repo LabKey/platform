@@ -26,6 +26,7 @@ import java.util.Collection;
 
 
 /**
+ * Importer for a particular type of data, used during folder import.
  * User: cnathe
  * Date: Jan 18, 2012
  */

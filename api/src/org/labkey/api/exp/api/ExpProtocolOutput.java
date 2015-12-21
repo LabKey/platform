@@ -15,6 +15,8 @@
  */
 package org.labkey.api.exp.api;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.List;
 
 /*
@@ -27,7 +29,9 @@ public interface ExpProtocolOutput extends ExpObject
     ExpProtocol getSourceProtocol();
 
     /** @return the ExpRun that claims this object as an output. That is, the one that created it. */
+    @Nullable
     ExpRun getRun();
+
     /**
      * @return the id of the run that claims this object as an output.
      * That is, the one that created it. In most cases, use getRun() instead - this method avoids the creation of the
@@ -45,6 +49,7 @@ public interface ExpProtocolOutput extends ExpObject
      * @return the ExpProtocolApplication that claims this object as an output.
      * That is, the one that created it, and part of the ExpRun identified by getRun()
      */
+    @Nullable
     ExpProtocolApplication getSourceApplication();
 
     void setRun(ExpRun run);

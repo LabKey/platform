@@ -53,9 +53,9 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Representation of zero or more filters to be used with a database query after being translated to a WHERE clause.
  * User: arauch
  * Date: Jan 11, 2005
- * Time: 8:04:37 AM
  */
 public class SimpleFilter implements Filter
 {

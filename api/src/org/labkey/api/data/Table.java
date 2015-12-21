@@ -785,7 +785,7 @@ public class Table
         if (columnPK.size() == 1 && !pkVals.getClass().isArray())
             keys.put(columnPK.get(0).getName(), pkVals);
         else if (pkVals instanceof Map)
-            keys.putAll((Map)pkVals);
+            keys.putAll((Map<? extends String, ?>)pkVals);
         else
         {
             Object[] pkValueArray = (Object[]) pkVals;

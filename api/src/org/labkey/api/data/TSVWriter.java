@@ -28,7 +28,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
-public class TSVWriter extends TextWriter
+/**
+ * Writes out a TSV-style file (can also be configured to use other delimeters)
+ */
+public abstract class TSVWriter extends TextWriter
 {
     private String _filenamePrefix = "tsv";
 

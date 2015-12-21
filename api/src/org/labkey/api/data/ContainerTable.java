@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
 import org.labkey.api.portal.ProjectUrls;
@@ -221,6 +222,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
             return false;
         }
 
+        @NotNull
         @Override
         public String getFormattedValue(RenderContext ctx)
         {

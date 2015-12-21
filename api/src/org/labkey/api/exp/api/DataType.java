@@ -20,6 +20,10 @@ import com.google.common.base.Objects;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.exp.Lsid;
 
+/**
+ * Recognizes {@link ExpData} based on their LSIDs to identify specific flavors that have custom handling within the
+ * application
+ */
 public class DataType
 {
     protected String _namespacePrefix;

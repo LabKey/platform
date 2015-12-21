@@ -363,11 +363,11 @@ public class OntologyManager
                     validatorMap.put(dp.getPropertyURI(), validators);
             }
 
-            ColumnInfo[] columns = table.getColumns().toArray(new ColumnInfo[table.getColumns().size()]);
-            PropertyType[] propertyTypes = new PropertyType[columns.length];
-            for (int i = 0; i < columns.length; i++)
+            List<ColumnInfo> columns = table.getColumns();
+            PropertyType[] propertyTypes = new PropertyType[columns.size()];
+            for (int i = 0; i < columns.size(); i++)
             {
-                String propertyURI = columns[i].getPropertyURI();
+                String propertyURI = columns.get(i).getPropertyURI();
                 DomainProperty dp = null==propertyURI ? null : propertiesMap.get(propertyURI);
                 PropertyDescriptor pd = null==dp ? null : dp.getPropertyDescriptor();
                 if (null != pd)
@@ -394,9 +394,9 @@ public class OntologyManager
                 // However, we bind by name, and there may be parameters that do not correspond to columninfo
                 //
 
-                for (int i = 0; i < columns.length; i++)
+                for (int i = 0; i < columns.size(); i++)
 				{
-                    ColumnInfo col = columns[i];
+                    ColumnInfo col = columns.get(i);
                     if (col.isMvIndicatorColumn() || col.isRawValueColumn()) //TODO col.isNotUpdatableForSomeReasonSoContinue()
                         continue;
                     String propertyURI = col.getPropertyURI();
@@ -1728,7 +1728,7 @@ public class OntologyManager
     }
 
     
-	private static void insertProperties(Container c, ObjectProperty[] props) throws SQLException, ValidationException
+	private static void insertProperties(Container c, List<ObjectProperty> props) throws SQLException, ValidationException
 	{
 		HashMap<String,PropertyDescriptor> descriptors = new HashMap<>();
 		HashMap<String,Integer> objects = new HashMap<>();
@@ -1778,11 +1778,11 @@ public class OntologyManager
         }
         if (!errors.isEmpty())
             throw new ValidationException(errors);
-        insertPropertiesBulk(c, Arrays.asList((PropertyRow[])props));
+        insertPropertiesBulk(c, props);
 	}
 
 
-	private static void insertPropertiesBulk(Container container, List<PropertyRow> props) throws SQLException
+	private static void insertPropertiesBulk(Container container, List<? extends PropertyRow> props) throws SQLException
 	{
         List<List<?>> floats = new ArrayList<>();
 		List<List<?>> dates = new ArrayList<>();
@@ -1946,7 +1946,7 @@ public class OntologyManager
             {
                 oprop.setObjectOwnerId(parentId);
             }
-            insertProperties(container, properties);
+            insertProperties(container, Arrays.asList(properties));
 
             transaction.commit();
         }
@@ -1982,20 +1982,20 @@ public class OntologyManager
 
         //TODO: Currently no way to edit these descriptors. But once there is, need to invalidate the cache.
         String sql = " SELECT * FROM " + getTinfoPropertyDescriptor() + " WHERE PropertyURI = ? AND Project IN (?,?)";
-        PropertyDescriptor[] pdArray = new SqlSelector(getExpSchema(), sql, propertyURI,
+        List<PropertyDescriptor> pdArray = new SqlSelector(getExpSchema(), sql, propertyURI,
                                                                 proj,
-                                                                _sharedContainer.getId()).getArray(PropertyDescriptor.class);
-        if (pdArray.length > 0)
+                                                                _sharedContainer.getId()).getArrayList(PropertyDescriptor.class);
+        if (!pdArray.isEmpty())
         {
-            pd = pdArray[0];
+            pd = pdArray.get(0);
 
             // if someone has explicitly inserted a descriptor with the same URI as an existing one ,
             // and one of the two is in the shared project, use the project-level descriiptor.
-            if (pdArray.length > 1)
+            if (pdArray.size() > 1)
             {
                 _log.debug("Multiple PropertyDescriptors found for "+ propertyURI);
                 if (pd.getProject().equals(_sharedContainer))
-                    pd = pdArray[1];
+                    pd = pdArray.get(1);
             }
 
             key = getCacheKey(pd);
@@ -2039,20 +2039,20 @@ public class OntologyManager
             proj=c;
 
         String sql = " SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE DomainURI = ? AND Project IN (?,?) ";
-        DomainDescriptor[] ddArray = new SqlSelector(getExpSchema(),  sql, domainURI,
+        List<DomainDescriptor> ddArray = new SqlSelector(getExpSchema(),  sql, domainURI,
                 proj,
-                _sharedContainer.getId()).getArray(DomainDescriptor.class);
-        if (ddArray.length > 0)
+                _sharedContainer.getId()).getArrayList(DomainDescriptor.class);
+        if (!ddArray.isEmpty())
         {
-            dd = ddArray[0];
+            dd = ddArray.get(0);
 
             // if someone has explicitly inserted a descriptor with the same URI as an existing one ,
             // and one of the two is in the shared project, use the project-level descriptor.
-            if (ddArray.length > 1)
+            if (ddArray.size() > 1)
             {
                 _log.debug("Multiple DomainDescriptors found for " + domainURI);
                 if (dd.getProject().equals(_sharedContainer))
-                    dd = ddArray[1];
+                    dd = ddArray.get(0);
             }
             key = getURICacheKey(dd);
             domainDescByURICache.put(key, dd);
@@ -2070,15 +2070,13 @@ public class OntologyManager
 
         if (null != project)
         {
-            DomainDescriptor[] dds = new SqlSelector(getExpSchema(), sql, project).getArray(DomainDescriptor.class);
-            for (DomainDescriptor dd : dds)
+            for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, project).getArrayList(DomainDescriptor.class))
             {
                 ret.put(dd.getDomainURI(), dd);
             }
             if (!project.equals(_sharedContainer))
             {
-                DomainDescriptor[] projectDDs = new SqlSelector(getExpSchema(), sql, ContainerManager.getSharedContainer()).getArray(DomainDescriptor.class);
-                for (DomainDescriptor dd : projectDDs)
+                for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, ContainerManager.getSharedContainer()).getArrayList(DomainDescriptor.class))
                 {
                     if (!ret.containsKey(dd.getDomainURI()))
                     {
@@ -2130,20 +2128,19 @@ public class OntologyManager
             return result;
         }
 
-        String sql = " SELECT PD.*,Required " +
+        SQLFragment sql = new SQLFragment(" SELECT PD.*,Required " +
                  " FROM " + getTinfoPropertyDescriptor() + " PD " +
                  "   INNER JOIN " + getTinfoPropertyDomain() + " PDM ON (PD.PropertyId = PDM.PropertyId) " +
                  "   INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (DD.DomainId = PDM.DomainId) " +
-                 "  WHERE DD.DomainURI = ?  AND DD.Project IN (?,?) ORDER BY PDM.SortOrder, PD.PropertyId";
+                 "  WHERE DD.DomainURI = ?  AND DD.Project IN (?,?) ORDER BY PDM.SortOrder, PD.PropertyId");
 
-        Object[] params = new Object[]
-        {
+        sql.addAll(
             typeURI,
             // If we're in the root, just double-up the shared project's id
             c.getProject() == null ? _sharedContainer.getProject().getId() : c.getProject().getId(),
             _sharedContainer.getProject().getId()
-        };
-        result = Collections.unmodifiableList(new SqlSelector(getExpSchema(), sql, params).getArrayList(PropertyDescriptor.class));
+        );
+        result = Collections.unmodifiableList(new SqlSelector(getExpSchema(), sql).getArrayList(PropertyDescriptor.class));
         //NOTE: cached descriptors may have differing values of isRequired() as that is a per-domain setting
         //Descriptors returned from this method come direct from DB and have correct values.
         List<Pair<String, Boolean>> propertyURIs = new ArrayList<>(result.size());

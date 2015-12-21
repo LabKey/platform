@@ -20,12 +20,13 @@ import org.labkey.api.view.JspView;
 import org.springframework.validation.BindException;
 
 /**
+ * View that renders an error collection.
  * User: adam
  * Date: Sep 26, 2007
- * Time: 9:24:09 AM
  */
 public class SimpleErrorView extends JspView<Boolean>
 {
+    /** @param includeButtons whether to include Back and Home buttons in the rendered view */
     public SimpleErrorView(BindException errors, boolean includeButtons)
     {
         super("/org/labkey/api/action/simpleErrorView.jsp", includeButtons, errors);

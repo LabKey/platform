@@ -16,18 +16,21 @@
 
 package org.labkey.api.exp.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.PropertyDescriptor;
 
 import java.util.Map;
 
+/** Represents a physical object in the experiment data model - typically a sample or specimen */
 public interface ExpMaterial extends ExpProtocolOutput
 {
-    public static final String DEFAULT_CPAS_TYPE = "Material";
+    String DEFAULT_CPAS_TYPE = "Material";
 
-    public ExpSampleSet getSampleSet();
+    @Nullable
+    ExpSampleSet getSampleSet();
 
-    public Map<PropertyDescriptor, Object> getPropertyValues();
+    Map<PropertyDescriptor, Object> getPropertyValues();
 
     /** @return the search document id for this material */
-    public String getDocumentId();
+    String getDocumentId();
 }

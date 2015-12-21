@@ -21,6 +21,10 @@ import org.labkey.api.security.User;
 
 import java.util.List;
 
+/**
+ * A grouping of {@link ExpRun}. "Batches" are a special type which restrict all runs
+ * to be instances of the same {@link ExpProtocol}.
+ */
 public interface ExpExperiment extends ExpObject
 {
     List<? extends ExpRun> getRuns();
@@ -63,8 +67,7 @@ public interface ExpExperiment extends ExpObject
 
 
     /** Stored in the exp.experimentrun table */
-    public String getComments();
+    String getComments();
     /** Stored in the exp.experimentrun table */
-    public void setComments(String comments);
-
+    void setComments(String comments);
 }

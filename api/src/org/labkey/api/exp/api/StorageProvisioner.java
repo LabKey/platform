@@ -70,11 +70,11 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
+ * Creates and maintains "hard" tables in the underlying database based on dynamically configured data types.
+ * Will do CREATE TABLE and ALTER TABLE statements to make sure the table has the right set of requested columns.
  * User: newton
  * Date: Aug 11, 2010
- * Time: 2:52:33 PM
  */
-
 public class StorageProvisioner
 {
     private static final Logger log = Logger.getLogger(StorageProvisioner.class);

@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Serializes and deserializes JSON for assay-related APIs
  * User: jeckels
  * Date: Jan 21, 2009
  */

@@ -24,6 +24,8 @@ import java.util.Collection;
 import java.util.Set;
 
 /**
+ * Useful when you need to match a ContainerFiler (say, across a lookup), but the desired ContainerFilter
+ * may not yet be set on the base object.
  * User: jeckels
  * Date: Feb 4, 2009
  */

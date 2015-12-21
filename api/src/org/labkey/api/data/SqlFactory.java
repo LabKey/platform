@@ -27,11 +27,11 @@ import java.sql.SQLException;
  */
 public interface SqlFactory
 {
-    // Returns the SQL to execute. If null, execution is skipped and handler is called with null parameters, allowing
-    // it to return its default value, e.g., empty map, empty array, 0 count, etc.
+    /** Returns the SQL to execute. If null, execution is skipped and handler is called with null parameters, allowing
+        it to return its default value, e.g., empty map, empty array, 0 count, etc. */
     @Nullable SQLFragment getSql();
 
-    // Returns the value to set on Statement.maxRows(). Null in most cases; only needed on SAS (which has no LIMIT SQL syntax)
+    /** Returns the value to set on Statement.maxRows(). Null in most cases; only needed on SAS (which has no LIMIT SQL syntax) */
     @Nullable Integer getStatementMaxRows();
 
     void processResultSet(ResultSet rs) throws SQLException;

@@ -24,6 +24,7 @@ import java.io.Writer;
 import java.util.Collections;
 import java.util.Map;
 
+/** Column that renders a link (either fixed or dynamic) with fixed text */
 public class UrlColumn extends SimpleDisplayColumn
 {
     public UrlColumn(StringExpression urlExpression, String text)

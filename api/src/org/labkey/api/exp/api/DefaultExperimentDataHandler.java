@@ -28,6 +28,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import java.io.File;
 
 /**
+ * A default, essentially no-op handler for datas that are not recognized by any other handlers.
  * User: jeckels
  * Date: Jul 10, 2007
  */
