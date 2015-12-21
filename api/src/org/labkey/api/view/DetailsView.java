@@ -15,6 +15,7 @@
  */
 package org.labkey.api.view;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.Filter;
@@ -46,6 +47,14 @@ public class DetailsView extends DataView
     {
         super(dataRegion, (BindException) null);
         _pk = pk;
+    }
+
+    @Override
+    public void setTitle(CharSequence title)
+    {
+        super.setTitle(title);
+        if (StringUtils.isNotEmpty(title) && getFrame()==FrameType.DIV)
+            setFrame(FrameType.PORTAL);
     }
 
     protected boolean isColumnIncluded(ColumnInfo col)
