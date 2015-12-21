@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.exp.Lsid;
@@ -95,6 +96,7 @@ public class ExpMaterialImpl extends AbstractProtocolOutputImpl<Material> implem
         return ret;
     }
 
+    @Nullable
     public ExpSampleSet getSampleSet()
     {
         String type = _object.getCpasType();

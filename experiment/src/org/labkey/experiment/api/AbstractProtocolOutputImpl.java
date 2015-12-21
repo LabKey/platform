@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -111,6 +112,7 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
         return null;
     }
 
+    @Nullable
     public ExpProtocolApplication getSourceApplication()
     {
         if (null != _sourceApp)
@@ -145,6 +147,7 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
         return _object.getModified();
     }
 
+    @Nullable
     public ExpRunImpl getRun()
     {
         if (_object.getRunId() == null)

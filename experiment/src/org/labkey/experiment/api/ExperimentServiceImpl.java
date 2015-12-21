@@ -1398,7 +1398,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public DbSchema getExpSchema()
     {
-        return DbSchema.get("exp");
+        return DbSchema.get("exp", DbSchemaType.Module);
     }
 
     public TableInfo getTinfoExperiment()
@@ -2011,15 +2011,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             int[] orphanedProtocolIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql).getArray(Integer.class));
             deleteProtocolByRowIds(c, user, orphanedProtocolIds);
 
-            transaction.addCommitTask(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    // Be sure that we clear the cache after we commit the overall transaction, in case it
-                    // gets repopulated by another thread before then
-                    AssayService.get().clearProtocolCache();
-                }
+            transaction.addCommitTask(() -> {
+                // Be sure that we clear the cache after we commit the overall transaction, in case it
+                // gets repopulated by another thread before then
+                AssayService.get().clearProtocolCache();
             }, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.IMMEDIATE);
 
             transaction.commit();
@@ -2672,10 +2667,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         for (ExpProtocolApplicationImpl protocolStep : protocolSteps)
         {
             protStepMap.put(protocolStep.getRowId(), protocolStep);
-            protocolStep.setInputMaterials(new ArrayList<ExpMaterialImpl>());
-            protocolStep.setInputDatas(new ArrayList<ExpDataImpl>());
-            protocolStep.setOutputMaterials(new ArrayList<ExpMaterialImpl>());
-            protocolStep.setOutputDatas(new ArrayList<ExpDataImpl>());
+            protocolStep.setInputMaterials(new ArrayList<>());
+            protocolStep.setInputDatas(new ArrayList<>());
+            protocolStep.setOutputMaterials(new ArrayList<>());
+            protocolStep.setOutputDatas(new ArrayList<>());
         }
 
         sort = new Sort("RowId");
@@ -2731,7 +2726,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             startingMaterialMap.put(mat.getRowId(), mat);
             MaterialInput input = materialInputs.get(index++);
             expRun.getMaterialInputs().put(mat, input.getRole());
-            mat.setSuccessorAppList(new ArrayList<ExpProtocolApplication>());
+            mat.setSuccessorAppList(new ArrayList<>());
         }
 
         // and starting data
@@ -2771,35 +2766,30 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 + " WHERE PA.RunId = ?)"
                 + " ORDER BY TargetApplicationId, MaterialId";
 
-        new SqlSelector(getExpSchema(), dataSQL, runId).forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet materialInputRS) throws SQLException
+        new SqlSelector(getExpSchema(), dataSQL, runId).forEach(materialInputRS -> {
+            Integer appId = materialInputRS.getInt("TargetApplicationId");
+            int matId = materialInputRS.getInt("MaterialId");
+            ExpProtocolApplicationImpl pa = protStepMap.get(appId);
+            ExpMaterialImpl mat;
+
+            if (runMaterialMap.containsKey(matId))
+                mat = runMaterialMap.get(matId);
+            else
+                mat = startingMaterialMap.get(matId);
+
+            if (mat == null)
             {
-                Integer appId = materialInputRS.getInt("TargetApplicationId");
-                int matId = materialInputRS.getInt("MaterialId");
-                ExpProtocolApplicationImpl pa = protStepMap.get(appId);
-                ExpMaterialImpl mat;
+                mat = getExpMaterial(matId);
+                mat.setSuccessorAppList(new ArrayList<>());
+            }
 
-                if (runMaterialMap.containsKey(matId))
-                    mat = runMaterialMap.get(matId);
-                else
-                    mat = startingMaterialMap.get(matId);
+            pa.getInputMaterials().add(mat);
+            mat.getSuccessorApps().add(pa);
 
-                if (mat == null)
-                {
-                    mat = getExpMaterial(matId);
-                    mat.setSuccessorAppList(new ArrayList<ExpProtocolApplication>());
-                }
-
-                pa.getInputMaterials().add(mat);
-                mat.getSuccessorApps().add(pa);
-
-                if (pa.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput)
-                {
-                    expRun.getMaterialOutputs().add(mat);
-                    outputMaterialMap.put(mat.getRowId(), mat);
-                }
+            if (pa.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput)
+            {
+                expRun.getMaterialOutputs().add(mat);
+                outputMaterialMap.put(mat.getRowId(), mat);
             }
         });
 
@@ -2811,35 +2801,30 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 + " WHERE PA.RunId = ?)"
                 + " ORDER BY TargetApplicationId, DataId";
 
-        new SqlSelector(getExpSchema(), dataSQL, runId).forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet dataInputRS) throws SQLException
+        new SqlSelector(getExpSchema(), dataSQL, runId).forEach(dataInputRS -> {
+            Integer appId = dataInputRS.getInt("TargetApplicationId");
+            Integer datId = dataInputRS.getInt("DataId");
+            ExpProtocolApplicationImpl pa = protStepMap.get(appId);
+            ExpDataImpl dat;
+
+            if (runDataMap.containsKey(datId))
+                dat = runDataMap.get(datId);
+            else
+                dat = startingDataMap.get(datId);
+
+            if (dat == null)
             {
-                Integer appId = dataInputRS.getInt("TargetApplicationId");
-                Integer datId = dataInputRS.getInt("DataId");
-                ExpProtocolApplicationImpl pa = protStepMap.get(appId);
-                ExpDataImpl dat;
+                dat = getExpData(datId.intValue());
+                dat.markSuccessorAppsAsPopulated();
+            }
 
-                if (runDataMap.containsKey(datId))
-                    dat = runDataMap.get(datId);
-                else
-                    dat = startingDataMap.get(datId);
+            pa.getInputDatas().add(dat);
+            dat.getSuccessorApps().add(pa);
 
-                if (dat == null)
-                {
-                    dat = getExpData(datId.intValue());
-                    dat.markSuccessorAppsAsPopulated();
-                }
-
-                pa.getInputDatas().add(dat);
-                dat.getSuccessorApps().add(pa);
-
-                if (pa.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput)
-                {
-                    expRun.getDataOutputs().add(dat);
-                    outputDataMap.put(dat.getRowId(), dat);
-                }
+            if (pa.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput)
+            {
+                expRun.getDataOutputs().add(dat);
+                outputDataMap.put(dat.getRowId(), dat);
             }
         });
 
@@ -2859,16 +2844,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             sql.append(" AND PA.RunId <> ? ORDER BY TargetApplicationId, MaterialId");
             sql.add(runId);
 
-            new SqlSelector(getExpSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
-            {
-                @Override
-                public void exec(ResultSet materialOutputRS) throws SQLException
-                {
-                    Integer successorRunId = materialOutputRS.getInt("RunId");
-                    Integer matId = materialOutputRS.getInt("MaterialId");
-                    ExpMaterialImpl mat = outputMaterialMap.get(matId);
-                    mat.addSuccessorRunId(successorRunId);
-                }
+            new SqlSelector(getExpSchema(), sql).forEach(materialOutputRS -> {
+                Integer successorRunId = materialOutputRS.getInt("RunId");
+                Integer matId = materialOutputRS.getInt("MaterialId");
+                ExpMaterialImpl mat = outputMaterialMap.get(matId);
+                mat.addSuccessorRunId(successorRunId);
             });
         }
 
@@ -2889,16 +2869,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                         + " AND PA.RunId <> ? "
                         + " ORDER BY TargetApplicationId, DataId ;";
 
-                new SqlSelector(getExpSchema(), dataSQL, runId).forEach(new Selector.ForEachBlock<ResultSet>()
-                {
-                    @Override
-                    public void exec(ResultSet dataOutputRS) throws SQLException
-                    {
-                        int successorRunId = dataOutputRS.getInt("RunId");
-                        Integer datId = dataOutputRS.getInt("DataId");
-                        ExpDataImpl dat = outputDataMap.get(datId);
-                        dat.addSuccessorRunId(successorRunId);
-                    }
+                new SqlSelector(getExpSchema(), dataSQL, runId).forEach(dataOutputRS -> {
+                    int successorRunId = dataOutputRS.getInt("RunId");
+                    Integer datId = dataOutputRS.getInt("DataId");
+                    ExpDataImpl dat = outputDataMap.get(datId);
+                    dat.addSuccessorRunId(successorRunId);
                 });
             }
         }
@@ -3016,15 +2991,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             savePropertyCollection(protocol.retrieveObjectProperties(), protocol.getLSID(), protocol.getContainer(), !newProtocol);
             AssayService.get().clearProtocolCache();
 
-            getExpSchema().getScope().addCommitTask(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    // Be sure that we clear the cache after we commit the overall transaction, in case it
-                    // gets repopulated by another thread before then
-                    AssayService.get().clearProtocolCache();
-                }
+            getExpSchema().getScope().addCommitTask(() -> {
+                // Be sure that we clear the cache after we commit the overall transaction, in case it
+                // gets repopulated by another thread before then
+                AssayService.get().clearProtocolCache();
             }, DbScope.CommitTaskOption.POSTCOMMIT);
 
             transaction.commit();
@@ -3353,7 +3323,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         User user = info.getUser();
         XarContext context = new XarContext("Simple Run Creation", info.getContainer(), user);
         Date date = new Date();
-        DeriveSamplesBulkHelper helper = new DeriveSamplesBulkHelper(info.getContainer(), user, context);
+        DeriveSamplesBulkHelper helper = new DeriveSamplesBulkHelper(info.getContainer(), context);
 
         try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
         {
@@ -3418,7 +3388,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     private class DeriveSamplesBulkHelper
     {
         private Container _container;
-        private User _user;
         private XarContext _context;
 
         private List<List<?>> _runParams = new ArrayList<>();
@@ -3427,10 +3396,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         private List<List<?>> _materialInputParams = new ArrayList<>();
         private List<List<?>> _dataInputParams = new ArrayList<>();
 
-        public DeriveSamplesBulkHelper(Container container, User user, XarContext context)
+        public DeriveSamplesBulkHelper(Container container, XarContext context)
         {
             _container = container;
-            _user = user;
             _context = context;
         }
 
