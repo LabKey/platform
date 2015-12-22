@@ -176,7 +176,7 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
     }
 
     @Override
-    protected void done(Throwable throwable)
+    public void done(Throwable throwable)
     {
         super.done(throwable);
 
