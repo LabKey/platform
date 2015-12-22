@@ -1,0 +1,99 @@
+package org.labkey.api.settings;
+
+import org.labkey.api.data.Container;
+import org.labkey.api.exp.property.Lookup;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class ConceptURIProperties extends AbstractWriteableSettingsGroup
+{
+    private static final String GROUP_NAME = "ConceptURIMapping";
+
+    private final Container _c;
+
+    private ConceptURIProperties(Container c, boolean writable)
+    {
+        _c = c;
+        if (writable)
+            makeWriteable(c);
+    }
+
+    public static ConceptURIProperties getInstance(Container c, boolean writable)
+    {
+        return new ConceptURIProperties(c, writable);
+    }
+
+    @Override
+    protected String getGroupName()
+    {
+        return GROUP_NAME;
+    }
+
+    @Override
+    protected String getType()
+    {
+        return "concept URI lookup mappings";
+    }
+
+    public void clearLookup(String uri)
+    {
+        remove(uri);
+    }
+
+    public void setLookup(String uri, Lookup lookup)
+    {
+        storeStringValue(uri, lookup.toJSONString());
+    }
+
+    public Lookup getLookup(String uri)
+    {
+        String lookupStr = lookupStringValue(_c, uri, null);
+        if (lookupStr == null)
+            return null;
+
+        Lookup lookup = new Lookup();
+        lookup.fromJSONString(lookupStr);
+        return lookup;
+    }
+
+    public void removeLookup(String uri)
+    {
+        remove(uri);
+    }
+
+    public static Map<String, Lookup> getMappings(Container c)
+    {
+        Map<String, Lookup> conceptURIMappings = new HashMap<>();
+
+        ConceptURIProperties props = ConceptURIProperties.getInstance(c, false);
+        for (Map.Entry<String, String> entry : props.getProperties(c).entrySet())
+        {
+            Lookup lookup = new Lookup();
+            lookup.fromJSONString(entry.getValue());
+            conceptURIMappings.put(entry.getKey(), lookup);
+        }
+
+        return conceptURIMappings;
+    }
+
+    public static void setLookup(Container c, String uri, Lookup lookup)
+    {
+        ConceptURIProperties props = ConceptURIProperties.getInstance(c, true);
+        props.setLookup(uri, lookup);
+        props.save();
+    }
+
+    public static Lookup getLookup(Container c, String uri)
+    {
+        ConceptURIProperties props = ConceptURIProperties.getInstance(c, false);
+        return props.getLookup(uri);
+    }
+
+    public static void removeLookup(Container c, String uri)
+    {
+        ConceptURIProperties props = ConceptURIProperties.getInstance(c, true);
+        props.removeLookup(uri);
+        props.save();
+    }
+}

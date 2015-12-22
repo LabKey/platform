@@ -21,9 +21,11 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.settings.ConceptURIProperties;
 import org.labkey.api.util.StringExpression;
 
 public class PdLookupForeignKey extends AbstractForeignKey
@@ -41,18 +43,30 @@ public class PdLookupForeignKey extends AbstractForeignKey
         assert container != null : "Container cannot be null";
         _currentContainer = container;
         _targetContainer = _pd.getLookupContainer() == null ? null : ContainerManager.getForId(_pd.getLookupContainer());
+
+        // check for conceptURI if the lookup container/schema/query are not already specified
+        if (pd.getConceptURI() != null && _targetContainer == null && _lookupSchemaName == null && _tableName == null)
+        {
+            Lookup lookup = ConceptURIProperties.getLookup(container, pd.getConceptURI());
+            if (lookup != null)
+            {
+                _targetContainer = lookup.getContainer();
+                _lookupSchemaName = lookup.getSchemaName();
+                _tableName = lookup.getQueryName();
+            }
+        }
     }
 
     @Override
     public String getLookupTableName()
     {
-        return _pd.getLookupQuery();
+        return _tableName;
     }
 
     @Override
     public String getLookupSchemaName()
     {
-        return _pd.getLookupSchema();
+        return _lookupSchemaName;
     }
 
 
@@ -65,7 +79,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
 
     public TableInfo getLookupTableInfo()
     {
-        if (_pd.getLookupSchema() == null || _pd.getLookupQuery() == null)
+        if (_lookupSchemaName == null || _tableName == null)
             return null;
 
         TableInfo table;
@@ -112,11 +126,11 @@ public class PdLookupForeignKey extends AbstractForeignKey
         if (null != _tableInfo)
             return _tableInfo;
 
-        UserSchema schema = QueryService.get().getUserSchema(_user, container, _pd.getLookupSchema());
+        UserSchema schema = QueryService.get().getUserSchema(_user, container, _lookupSchemaName);
         if (schema == null)
             return null;
 
-        _tableInfo = schema.getTable(_pd.getLookupQuery());
+        _tableInfo = schema.getTable(_tableName);
         return _tableInfo;
     }
 
