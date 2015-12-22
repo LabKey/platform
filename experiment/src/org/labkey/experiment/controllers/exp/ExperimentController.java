@@ -96,6 +96,7 @@ import org.labkey.api.exp.form.DeleteForm;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.query.ExpInputTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
@@ -133,6 +134,7 @@ import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -174,10 +176,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
-import org.labkey.data.xml.domainTemplate.DataClassIndex;
-import org.labkey.data.xml.domainTemplate.DataClassOptions;
 import org.labkey.data.xml.domainTemplate.DataClassTemplateDocument;
 import org.labkey.experiment.ChooseExperimentTypeBean;
 import org.labkey.experiment.ConfirmDeleteView;
@@ -202,6 +201,7 @@ import org.labkey.experiment.StandardAndCustomPropertiesView;
 import org.labkey.experiment.XarExportPipelineJob;
 import org.labkey.experiment.XarExportType;
 import org.labkey.experiment.XarExporter;
+import org.labkey.api.settings.ConceptURIProperties;
 import org.labkey.experiment.api.DataClass;
 import org.labkey.experiment.api.ExpDataClassImpl;
 import org.labkey.experiment.api.ExpDataImpl;
@@ -952,7 +952,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(DeletePermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class DeleteDataClassAction extends AbstractDeleteAction
     {
         public DeleteDataClassAction()
@@ -1042,7 +1042,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(InsertPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class InsertDataClassAction extends FormViewAction<InsertDataClassForm>
     {
         private ActionURL _successUrl;
@@ -1176,6 +1176,144 @@ public class ExperimentController extends SpringActionController
         public void setXmlParseErrors(Set<String> xmlParseErrors)
         {
             _xmlParseErrors = xmlParseErrors;
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class ManageConceptsAction extends FormViewAction<ConceptLookupForm>
+    {
+        private Container _container = null;
+
+        @Override
+        public void validateCommand(ConceptLookupForm form, Errors errors)
+        {
+            // validate that the required input fields are provied
+            String missingRequired = "", sep = "";
+            if (form.getConceptURI() == null)
+            {
+                missingRequired += "conceptURI";
+                sep = ", ";
+            }
+            if (form.getSchemaName() == null)
+            {
+                missingRequired += sep + "schemaName";
+                sep = ", ";
+            }
+            if (form.getQueryName() == null)
+                missingRequired += sep + "queryName";
+            if (missingRequired.length() > 0)
+                errors.reject(ERROR_MSG, "Missing required field(s): " + missingRequired + ".");
+
+            // validate that, if provided, the containerId matches an existing container
+            if (form.getContainerId() != null)
+            {
+                _container = ContainerManager.getForId(form.getContainerId());
+                if (_container == null)
+                    errors.reject(ERROR_MSG, "Container does not exist for containerId provided.");
+            }
+
+            // validate that the schema and query names provided exist
+            if (form.getSchemaName() != null && form.getQueryName() != null)
+            {
+                Container c = _container != null ? _container : getContainer();
+                UserSchema schema = QueryService.get().getUserSchema(getUser(), c, form.getSchemaName());
+                if (schema == null)
+                    errors.reject(ERROR_MSG, "UserSchema '" + form.getSchemaName() + "' not found.");
+                else if (schema.getTable(form.getQueryName()) == null)
+                    errors.reject(ERROR_MSG, "Table '" + form.getSchemaName() + "." + form.getQueryName() + "' not found.");
+            }
+        }
+
+        @Override
+        public ModelAndView getView(ConceptLookupForm form, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/experiment/manageConcepts.jsp", form, errors);
+        }
+
+        @Override
+        public boolean handlePost(ConceptLookupForm form, BindException errors) throws Exception
+        {
+            Lookup lookup = new Lookup(_container, form.getSchemaName(), form.getQueryName());
+            ConceptURIProperties.setLookup(getContainer(), form.getConceptURI(), lookup);
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(ConceptLookupForm form)
+        {
+            return getViewContext().getActionURL();
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Manage Concept Mappings");
+        }
+    }
+
+    public static class ConceptLookupForm
+    {
+        private String _conceptURI;
+        private String _containerId;
+        private String _schemaName;
+        private String _queryName;
+
+        public String getConceptURI()
+        {
+            return _conceptURI;
+        }
+
+        public void setConceptURI(String conceptURI)
+        {
+            _conceptURI = conceptURI;
+        }
+
+        public String getContainerId()
+        {
+            return _containerId;
+        }
+
+        public void setContainerId(String containerId)
+        {
+            _containerId = containerId;
+        }
+
+        public String getSchemaName()
+        {
+            return _schemaName;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            _schemaName = schemaName;
+        }
+
+        public String getQueryName()
+        {
+            return _queryName;
+        }
+
+        public void setQueryName(String queryName)
+        {
+            _queryName = queryName;
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class RemoveConceptMappingAction extends ApiAction<ConceptLookupForm>
+    {
+        @Override
+        public void validateForm(ConceptLookupForm form, Errors errors)
+        {
+            if (form.getConceptURI() == null || ConceptURIProperties.getLookup(getContainer(), form.getConceptURI()) == null)
+                errors.reject(ERROR_MSG, "Concept URI not found: " + form.getConceptURI());
+        }
+
+        @Override
+        public Object execute(ConceptLookupForm form, BindException errors) throws Exception
+        {
+            ConceptURIProperties.removeLookup(getContainer(), form.getConceptURI());
+            return new ApiSimpleResponse("success", true);
         }
     }
 

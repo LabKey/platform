@@ -28,6 +28,8 @@
     JspView<ExperimentController.InsertDataClassForm> me = (JspView<ExperimentController.InsertDataClassForm>) HttpView.currentView();
     ExperimentController.InsertDataClassForm bean = me.getModelBean();
     String returnUrl = getViewContext().getActionURL().getParameter("returnUrl");
+
+    List<String> templateNames = new ArrayList<>(bean.getAvailableDomainTemplateNames());
 %>
 
 <style type="text/css">
@@ -81,8 +83,8 @@
     </div>
 
     <div class="form-radio">
-        <input type="radio" id="useTemplate2" name="useTemplate" value="true">
-        <label for="useTemplate2">Using Template</label>
+        <input type="radio" id="useTemplate2" name="useTemplate" value="true" <%=h(templateNames.size()==0?"disabled":"")%>>
+        <label for="useTemplate2" class="<%=h(templateNames.size()==0?"form-disabled":"")%>">Using Template</label>
     </div>
 
     <div id='template-div' class="form-item form-disabled">
@@ -90,7 +92,6 @@
         <select class="form-select" id="domainTemplate" name="domainTemplate" disabled="disabled">
             <option value=""></option>
             <%
-                List<String> templateNames = new ArrayList<>(bean.getAvailableDomainTemplateNames());
                 Collections.sort(templateNames);
                 for (String templateName : templateNames)
                 {

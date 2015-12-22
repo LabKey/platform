@@ -254,16 +254,21 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                 DomainProperty dp = properties.get(propertyURI);
                 PropertyDescriptor pd = (null==dp) ? null : dp.getPropertyDescriptor();
 
-                if (null != dp && pd.getLookupQuery() != null)
-                    col.setFk(new PdLookupForeignKey(schema.getUser(), pd, schema.getContainer()));
-
-                if (pd != null && pd.getPropertyType() == PropertyType.MULTI_LINE)
+                if (null != dp && null != pd)
                 {
-                    col.setDisplayColumnFactory(colInfo -> {
-                        DataColumn dc = new DataColumn(colInfo);
-                        dc.setPreserveNewlines(true);
-                        return dc;
-                    });
+                    if (pd.getLookupQuery() != null || pd.getConceptURI() != null)
+                    {
+                        col.setFk(new PdLookupForeignKey(schema.getUser(), pd, schema.getContainer()));
+                    }
+
+                    if (pd.getPropertyType() == PropertyType.MULTI_LINE)
+                    {
+                        col.setDisplayColumnFactory(colInfo -> {
+                            DataColumn dc = new DataColumn(colInfo);
+                            dc.setPreserveNewlines(true);
+                            return dc;
+                        });
+                    }
                 }
             }
 

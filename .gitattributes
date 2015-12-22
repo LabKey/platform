@@ -836,6 +836,7 @@ experiment/src/org/labkey/experiment/deriveSamplesChooseTarget.jsp -text
 experiment/src/org/labkey/experiment/experimentRunQueryHeader.jsp -text
 experiment/src/org/labkey/experiment/fileExportOptions.jsp -text
 experiment/src/org/labkey/experiment/insertDataClass.jsp -text
+experiment/src/org/labkey/experiment/manageConcepts.jsp -text
 experiment/src/org/labkey/experiment/moveRunsLocation.jsp -text
 experiment/src/org/labkey/experiment/pipeline/ExpGeneratorHelper.java -text
 experiment/src/org/labkey/experiment/pipeline/ExperimentPipelineJob.java -text
