@@ -45,6 +45,7 @@ import org.labkey.api.etl.StandardETL;
 import org.labkey.api.etl.TriggerDataBuilderHelper;
 import org.labkey.api.etl.WrapperDataIterator;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
@@ -473,6 +474,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         List<Map<String, Object>> result = new ArrayList<>(rows.size());
         List<Map<String, Object>> oldRows = new ArrayList<>(rows.size());
+        boolean streaming = _queryTable.canStreamTriggers(container) && _queryTable.getAuditBehavior() != AuditBehaviorType.NONE;
 
         for (int i = 0; i < rows.size(); i++)
         {
@@ -481,18 +483,25 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             try
             {
                 Map<String, Object> oldKey = oldKeys == null ? row : oldKeys.get(i);
-                Map<String, Object> oldRow = getRow(user, container, oldKey);
-                if (oldRow == null)
-                    throw new NotFoundException("The existing row was not found.");
+                Map<String, Object> oldRow = null;
+                if (!streaming)
+                {
+                    oldRow = getRow(user, container, oldKey);
+                    if (oldRow == null)
+                        throw new NotFoundException("The existing row was not found.");
+                }
 
                 getQueryTable().fireRowTrigger(container, TableInfo.TriggerType.UPDATE, true, i, row, oldRow, extraScriptContext);
                 Map<String, Object> updatedRow = updateRow(user, container, row, oldRow);
-                if (updatedRow == null)
+                if (!streaming && updatedRow == null)
                     continue;
 
                 getQueryTable().fireRowTrigger(container, TableInfo.TriggerType.UPDATE, false, i, updatedRow, oldRow, extraScriptContext);
-                result.add(updatedRow);
-                oldRows.add(oldRow);
+                if (!streaming)
+                {
+                    result.add(updatedRow);
+                    oldRows.add(oldRow);
+                }
             }
             catch (ValidationException vex)
             {
@@ -530,20 +539,26 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         errors.setExtraContext(extraScriptContext);
         getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.DELETE, true, errors, extraScriptContext);
 
+        boolean streaming = _queryTable.canStreamTriggers(container) && _queryTable.getAuditBehavior() != AuditBehaviorType.NONE;
+
         List<Map<String, Object>> result = new ArrayList<>(keys.size());
         for (int i = 0; i < keys.size(); i++)
         {
             Map<String, Object> key = keys.get(i);
             try
             {
-                Map<String, Object> oldRow = getRow(user, container, key);
-                // if row doesn't exist, bail early
-                if (oldRow == null)
-                    continue;
+                Map<String, Object> oldRow = null;
+                if (!streaming)
+                {
+                    oldRow = getRow(user, container, key);
+                    // if row doesn't exist, bail early
+                    if (oldRow == null)
+                        continue;
+                }
 
                 getQueryTable().fireRowTrigger(container, TableInfo.TriggerType.DELETE, true, i, null, oldRow, extraScriptContext);
                 Map<String, Object> updatedRow = deleteRow(user, container, oldRow);
-                if (updatedRow == null)
+                if (!streaming && updatedRow == null)
                     continue;
 
                 getQueryTable().fireRowTrigger(container, TableInfo.TriggerType.DELETE, false, i, null, updatedRow, extraScriptContext);

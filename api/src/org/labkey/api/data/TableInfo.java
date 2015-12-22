@@ -451,7 +451,15 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
                                   @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext)
             throws ValidationException;
 
+    /**
+     * Return true if there are trigger scripts associated with this table.
+     */
     public boolean hasTriggers(Container c);
+
+    /**
+     * Return true if all trigger scripts support streaming.
+     */
+    default boolean canStreamTriggers(Container c) { return false; }
 
     /**
      * Reset the trigger script context by reloading them. Note there could still be caches that need to be reset

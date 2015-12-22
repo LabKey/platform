@@ -27,10 +27,12 @@ import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.triggers.ScriptTriggerScriptFactory;
+import org.labkey.api.data.triggers.TriggerScript;
+import org.labkey.api.data.triggers.TriggerScriptFactory;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.gwt.client.AuditBehaviorType;
-import org.labkey.api.module.Module;
 import org.labkey.api.query.AggregateRowConfig;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
@@ -45,17 +47,12 @@ import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.SchemaTreeVisitor;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.resource.Resource;
-import org.labkey.api.script.ScriptReference;
-import org.labkey.api.script.ScriptService;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContainerContext;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.MemTrackable;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
@@ -64,7 +61,6 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.AuditType;
@@ -74,7 +70,6 @@ import org.labkey.data.xml.ImportTemplateType;
 import org.labkey.data.xml.PositionTypeEnum;
 import org.labkey.data.xml.TableType;
 
-import javax.script.ScriptException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -87,6 +82,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 abstract public class AbstractTableInfo implements TableInfo, MemTrackable
 {
@@ -174,6 +170,7 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         _schema = schema;
         _columnMap = constructColumnMap();
         setName(name);
+        addTriggerScriptFactory(new ScriptTriggerScriptFactory());
         MemTracker.getInstance().put(this);
     }
 
@@ -1249,124 +1246,74 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         return null;
     }
 
+    List<TriggerScriptFactory> triggerScriptFactories = new ArrayList<>();
+
+    public void addTriggerScriptFactory(TriggerScriptFactory factory)
+    {
+        checkLocked();
+        triggerScriptFactories.add(factory);
+    }
+
     public boolean hasTriggers(Container c)
     {
-        try
+        return !getTriggerScripts(c).isEmpty();
+    }
+
+    public boolean canStreamTriggers(Container c)
+    {
+        for (TriggerScript script : getTriggerScripts(c))
         {
-            return null != getTableScript(c);
+            if (script.canStream())
+                return false;
         }
-        catch (ScriptException x)
-        {
-            return true;
-        }
+
+        return true;
     }
 
 
-    boolean scriptLoaded = false;
-    ScriptReference tableScript = null;
+    boolean triggersLoaded = false;
+    Collection<TriggerScript> triggerScripts = Collections.emptyList();
 
-    protected ScriptReference getTableScript(Container c) throws ScriptException
+    @NotNull
+    protected Collection<TriggerScript> getTriggerScripts(Container c)
     {
-        if (!scriptLoaded)
+        if (!triggersLoaded)
         {
-            ScriptReference script = loadScript(c);
-            tableScript = script;
-            scriptLoaded = true;
+            Collection<TriggerScript> scripts = loadScripts(c);
+            triggerScripts = scripts;
+            triggersLoaded = true;
         }
-        return tableScript;
+        return triggerScripts;
     }
 
 
-    private ScriptReference loadScript(Container c) throws ScriptException
+    @NotNull
+    private Collection<TriggerScript> loadScripts(Container c)
     {
-        ScriptService svc = ServiceRegistry.get().getService(ScriptService.class);
-        assert svc != null;
-        if (svc == null)
-            return null;
+        if (triggerScriptFactories == null || triggerScriptFactories.isEmpty())
+            return Collections.emptyList();
 
-        if (getPublicSchemaName() == null || getName() == null)
-            return null;
-
-        // Create legal path name
-        Path pathNew = new Path(QueryService.MODULE_QUERIES_DIRECTORY,
-                FileUtil.makeLegalName(getPublicSchemaName()),
-                FileUtil.makeLegalName(getName()) + ".js");
-
-        // For backwards compat with 10.2
-        Path pathOld = new Path(QueryService.MODULE_QUERIES_DIRECTORY,
-                getPublicSchemaName().replaceAll("\\W", "_"),
-                getName().replaceAll("\\W", "_") + ".js");
-
-        Set<Path> paths = new HashSet<>();
-        paths.add(pathNew);
-        paths.add(pathOld);
-
-        if (null != getTitle() && !getName().equals(getTitle()))
+        List<TriggerScript> scripts = new ArrayList<>(triggerScriptFactories.size());
+        for (TriggerScriptFactory factory : triggerScriptFactories)
         {
-            Path pathLabel = new Path(QueryService.MODULE_QUERIES_DIRECTORY,
-                    FileUtil.makeLegalName(getPublicSchemaName()),
-                    FileUtil.makeLegalName(getTitle()) + ".js");
-            paths.add(pathLabel);
+            scripts.addAll(factory.createTriggerScript(c, this, null));
         }
 
-        // UNDONE: get all table scripts instead of just first found
-        Resource r = null;
-        OUTER: for (Module m : c.getActiveModules())
+        if (LOG.isDebugEnabled() && !scripts.isEmpty())
         {
-            for (Path p : paths)
-            {
-                r = m.getModuleResource(p);
-                if (r != null && r.isFile())
-                    break OUTER;
-            }
+            LOG.debug("Trigger scripts for '" + getPublicSchemaName() + "', '" + getName() + "': " +
+                    scripts.stream().map(TriggerScript::getDebugName).collect(Collectors.joining(", ")));
         }
-        if (r == null || !r.isFile())
-            return null;
 
-        return svc.compile(r);
+        return scripts;
     }
 
     @Override
     public void resetTriggers(Container c)
     {
-        scriptLoaded = false;
-        tableScript = null;
+        triggersLoaded = false;
+        triggerScripts = Collections.emptyList();
     }
-
-    protected <T> T invokeTableScript(Container c, Class<T> resultType, String methodName, Map<String, Object> extraContext, Object... args)
-    {
-        try
-        {
-            ScriptReference script = getTableScript(c);
-            if (script == null)
-                return null;
-
-            if (!script.evaluated())
-            {
-                Map<String, Object> bindings = new HashMap<>();
-                if (extraContext == null)
-                    extraContext = new HashMap<>();
-                bindings.put("extraContext", extraContext);
-                bindings.put("schemaName", getPublicSchemaName());
-                bindings.put("tableName", getPublicName());
-
-                script.eval(bindings);
-            }
-
-            if (script.hasFn(methodName))
-            {
-                return script.invokeFn(resultType, methodName, args);
-            }
-        }
-        catch (NoSuchMethodException | ScriptException e)
-        {
-            throw new UnexpectedException(e);
-        }
-
-        return null;
-    }
-
-    private Object[] EMPTY_ARGS = new Object[0];
 
     @Override
     public void fireBatchTrigger(Container c, TriggerType type, boolean before, BatchValidationException batchErrors, Map<String, Object> extraContext)
@@ -1374,8 +1321,19 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
     {
         assert batchErrors != null;
 
-        String triggerMethod = (before ? "init" : "complete");
-        Boolean success = invokeTableScript(c, Boolean.class, triggerMethod, extraContext, type.name().toLowerCase(), batchErrors);
+        Collection<TriggerScript> triggers = getTriggerScripts(c);
+        if (triggers.isEmpty())
+            return;
+
+        final String triggerMethod = (before ? "init" : "complete");
+        Boolean success = null;
+        for (TriggerScript script : triggers)
+        {
+            success = script.batchTrigger(this, c, type, before, batchErrors, extraContext);
+            if (success != null && !success)
+                break; // CONSIDER: continue running all scripts?
+        }
+
         if (success != null && !success)
             batchErrors.addRowError(new ValidationException(triggerMethod + " validation failed"));
 
@@ -1385,7 +1343,7 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
 
     @Override
     public void fireRowTrigger(Container c, TriggerType type, boolean before, int rowNumber,
-                                  Map<String, Object> newRow, Map<String, Object> oldRow, Map<String, Object> extraContext)
+                               @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext)
             throws ValidationException
     {
         ValidationException errors = new ValidationException();
@@ -1394,30 +1352,19 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         errors.setRow(newRow);
         errors.setRowNumber(rowNumber);
 
-        String triggerMethod = (before ? "before" : "after") + type.getMethodName();
+        Collection<TriggerScript> triggers = getTriggerScripts(c);
+        if (triggers.isEmpty())
+            return;
 
-        Object[] args = EMPTY_ARGS;
-        if (before)
+        final String triggerMethod = (before ? "before" : "after") + type.getMethodName();
+        Boolean success = null;
+        for (TriggerScript script : triggers)
         {
-            switch (type)
-            {
-                case SELECT: args = new Object[] { oldRow, errors };         break;
-                case INSERT: args = new Object[] { newRow, errors };         break;
-                case UPDATE: args = new Object[] { newRow, oldRow, errors }; break;
-                case DELETE: args = new Object[] { oldRow, errors };         break;
-            }
+            success = script.rowTrigger(this, c, type, before, rowNumber, newRow, oldRow, errors, extraContext);
+            if (success != null && !success)
+                break; // CONSIDER: continue running all scripts?
         }
-        else
-        {
-            switch (type)
-            {
-                case SELECT: args = new Object[] { newRow, errors };         break;
-                case INSERT: args = new Object[] { newRow, errors };         break;
-                case UPDATE: args = new Object[] { newRow, oldRow, errors }; break;
-                case DELETE: args = new Object[] { oldRow, errors };         break;
-            }
-        }
-        Boolean success = invokeTableScript(c, Boolean.class, triggerMethod, extraContext, args);
+
         if (success != null && !success)
             errors.addGlobalError(triggerMethod + " validation failed");
 

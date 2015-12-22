@@ -326,6 +326,11 @@ class ScriptReferenceImpl implements ScriptReference
         }
     }
 
+    public String toString()
+    {
+        return r.toString();
+    }
+
     // This is factored out of the CacheLoader to provide access in the uncached case
     private static CompiledScript compile(Resource r, RhinoEngine engine)
     {
