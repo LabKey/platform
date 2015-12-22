@@ -15,10 +15,13 @@
  */
 package org.labkey.api.reader;
 
+import org.apache.tika.detect.AutoDetectReader;
+import org.apache.tika.exception.TikaException;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Iterator;
 
@@ -72,10 +75,12 @@ public abstract class FastaLoader<T> implements Iterable<T>
         {
             try
             {
-                _reader = new BufferedReader(new FileReader(_fastaFile));
+                // Let tika figure out the Charset encoding used in the file
+                _reader = new AutoDetectReader(new FileInputStream(_fastaFile));
+
                 String line = getLine();
 
-                //Iterator expects _header to be initialized...
+                //Iterator expects _header to be initialized... STRIP BOM
                 if (null != line && line.length() > 0 && line.charAt(0) == '>')
                 {
                     _header = line.substring(1);
@@ -89,7 +94,7 @@ public abstract class FastaLoader<T> implements Iterable<T>
                     throw new IllegalArgumentException("Invalid FASTA file. The file did not start with \">\".");
                 }
             }
-            catch (IOException x)
+            catch (TikaException | IOException x)
             {
                 if (null != _reader)
                 {

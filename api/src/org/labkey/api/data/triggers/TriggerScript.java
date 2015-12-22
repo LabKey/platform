@@ -30,9 +30,15 @@ public interface TriggerScript
             return complete(table, c, event, errors, extraContext);
     }
 
-    Boolean init(TableInfo table, Container c, TableInfo.TriggerType event, BatchValidationException errors, Map<String, Object> extraContext);
+    default Boolean init(TableInfo table, Container c, TableInfo.TriggerType event, BatchValidationException errors, Map<String, Object> extraContext)
+    {
+        return null;
+    }
 
-    Boolean complete(TableInfo table, Container c, TableInfo.TriggerType event, BatchValidationException errors, Map<String, Object> extraContext);
+    default Boolean complete(TableInfo table, Container c, TableInfo.TriggerType event, BatchValidationException errors, Map<String, Object> extraContext)
+    {
+        return null;
+    }
 
 
     default Boolean rowTrigger(TableInfo table, Container c, TableInfo.TriggerType event, boolean before, int rowNumber,
@@ -74,29 +80,47 @@ public interface TriggerScript
         return success;
     }
 
-    Boolean beforeInsert(TableInfo table, Container c,
+    default Boolean beforeInsert(TableInfo table, Container c,
                          @Nullable Map<String, Object> newRow,
-                         ValidationException errors, Map<String, Object> extraContext);
+                         ValidationException errors, Map<String, Object> extraContext)
+    {
+        return null;
+    }
 
-    Boolean beforeUpdate(TableInfo table, Container c,
+    default Boolean beforeUpdate(TableInfo table, Container c,
                          @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow,
-                         ValidationException errors, Map<String, Object> extraContext);
+                         ValidationException errors, Map<String, Object> extraContext)
+    {
+        return null;
+    }
 
-    Boolean beforeDelete(TableInfo table, Container c,
+    default Boolean beforeDelete(TableInfo table, Container c,
                          @Nullable Map<String, Object> oldRow,
-                         ValidationException errors, Map<String, Object> extraContext);
+                         ValidationException errors, Map<String, Object> extraContext)
+    {
+        return null;
+    }
 
-    Boolean afterInsert(TableInfo table, Container c,
+    default Boolean afterInsert(TableInfo table, Container c,
                         @Nullable Map<String, Object> newRow,
-                        ValidationException errors, Map<String, Object> extraContext);
+                        ValidationException errors, Map<String, Object> extraContext)
+    {
+        return null;
+    }
 
-    Boolean afterUpdate(TableInfo table, Container c,
+    default Boolean afterUpdate(TableInfo table, Container c,
                         @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow,
-                        ValidationException errors, Map<String, Object> extraContext);
+                        ValidationException errors, Map<String, Object> extraContext)
+    {
+        return null;
+    }
 
-    Boolean afterDelete(TableInfo table, Container c,
+    default Boolean afterDelete(TableInfo table, Container c,
                         @Nullable Map<String, Object> oldRow,
-                        ValidationException errors, Map<String, Object> extraContext);
+                        ValidationException errors, Map<String, Object> extraContext)
+    {
+        return null;
+    }
 
 
 }

@@ -70,7 +70,6 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
         {
             throw new NotFoundException("Query not found");
         }
-        _table.overlayMetadata(_table.getName(), _schema, new ArrayList<QueryException>());
         QueryUpdateForm command = new QueryUpdateForm(_table, getViewContext(), null);
         if (command.isBulkUpdate())
             command.setValidateRequired(false);
