@@ -16,6 +16,7 @@ import org.labkey.api.util.UnexpectedException;
 import javax.script.ScriptException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -42,20 +43,21 @@ public class ScriptTriggerScriptFactory implements TriggerScriptFactory
         }
     }
 
+    @NotNull
     protected Collection<TriggerScript> createTriggerScript(Container c, TableInfo table)
              throws ScriptException
     {
         ScriptService svc = ServiceRegistry.get().getService(ScriptService.class);
         assert svc != null;
         if (svc == null)
-            return null;
+            return Collections.emptyList();
 
         final String schemaName = table.getPublicSchemaName();
         final String name = table.getName();
         final String title = table.getTitle();
 
         if (schemaName == null || name == null)
-            return null;
+            return Collections.emptyList();
 
         // Create legal path name
         Path pathNew = new Path(QueryService.MODULE_QUERIES_DIRECTORY,
@@ -90,7 +92,7 @@ public class ScriptTriggerScriptFactory implements TriggerScriptFactory
             }
         }
         if (rs.isEmpty())
-            return null;
+            return Collections.emptyList();
 
         Collection<TriggerScript> scripts = new ArrayList<>();
         for (Resource r : rs)
