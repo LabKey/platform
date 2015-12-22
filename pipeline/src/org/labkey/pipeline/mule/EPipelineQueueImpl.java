@@ -326,6 +326,6 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
 
     public void done(PipelineJob job)
     {
-        throw new UnsupportedOperationException("Mini-pipeline maintenance notification not supported.");
+        // No-op
     }
 }

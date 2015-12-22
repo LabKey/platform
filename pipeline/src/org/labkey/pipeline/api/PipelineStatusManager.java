@@ -239,6 +239,12 @@ public class PipelineStatusManager
             // Notify if this is not a split job
             if (job.getParentGUID() == null)
                 PipelineManager.sendNotificationEmail(sfSet, job.getContainer(), user);
+
+            // The non-enterprise pipeline will invoke this via JobRunner.afterExecute()
+            if (PipelineService.get().isEnterprisePipeline())
+            {
+                job.done(null);
+            }
         }
         return true;
     }
