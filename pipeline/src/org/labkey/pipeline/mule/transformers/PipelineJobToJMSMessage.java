@@ -46,6 +46,7 @@ public class PipelineJobToJMSMessage extends AbstractEventAwareTransformer
         }
         catch (Exception e)
         {
+            logger.error("Failed transforming job " + src, e);
             throw new TransformerException(this, e);
         }
     }
