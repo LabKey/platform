@@ -942,7 +942,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             {
                 Thread.sleep(TRY_QUANTA);
 
-                if (job.isDone())
+                if (isDone(job))
                 {
                     // wait for us to finish updating transformrun table before continuing
                     Date endTime = new TableSelector(ti.getColumn("EndTime"), f, null).getObject(Date.class);
@@ -951,7 +951,24 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
                 }
             }
 
-            assertTrue("Job did not finish", job.isDone());
+            assertTrue("Job did not finish", isDone(job));
+        }
+
+        private boolean isDone(PipelineJob job)
+        {
+            PipelineStatusFile statusFile = PipelineService.get().getStatusFile(job.getLogFile());
+            if (statusFile == null)
+            {
+                return false;
+            }
+            for (PipelineJob.TaskStatus status : PipelineJob.TaskStatus.values())
+            {
+                if (status.matches(statusFile.getStatus()))
+                {
+                    return !status.isActive();
+                }
+            }
+            return false;
         }
 
 

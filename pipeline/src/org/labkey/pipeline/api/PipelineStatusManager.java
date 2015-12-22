@@ -229,6 +229,12 @@ public class PipelineStatusManager
         {
             // Count this error on the job.
             job.setErrors(job.getErrors() + 1);
+
+            // The non-enterprise pipeline will invoke this via JobRunner.afterExecute()
+            if (PipelineService.get().isEnterprisePipeline())
+            {
+                job.done(null);
+            }
         }
         else if (PipelineJob.TaskStatus.complete.matches(status))
         {
