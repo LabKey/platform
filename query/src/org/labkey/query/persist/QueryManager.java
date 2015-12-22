@@ -317,6 +317,22 @@ public class QueryManager
         updateExternalSchemas(def.lookupContainer());
     }
 
+    public LinkedSchemaDef insertLinkedSchema(User user, LinkedSchemaDef def)
+    {
+        LinkedSchemaDef newDef = Table.insert(user, getTableInfoExternalSchema(), def);
+        updateExternalSchemas(def.lookupContainer());
+        return newDef;
+    }
+
+    public void deleteLinkedSchema(Container container, String userSchemaName)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromString("UserSchemaName"), userSchemaName);
+        filter.addCondition(FieldKey.fromString("SchemaType"), AbstractExternalSchemaDef.SchemaType.linked);
+        Table.delete(getTableInfoExternalSchema(), filter);
+        updateExternalSchemas(container);
+    }
+
     // Uncaches and re-indexes all external schemas in a container. Called any time an external schema or linked schema
     // changes in any way (insert/update/delete).
     public void updateExternalSchemas(Container c)

@@ -33,6 +33,12 @@ public class LinkedSchemaDef extends AbstractExternalSchemaDef
         return false;
     }
 
+    @Override
+    public SchemaType getSchemaType()
+    {
+        return SchemaType.linked;
+    }
+
     @NotNull
     @Override
     public String getDataSource()

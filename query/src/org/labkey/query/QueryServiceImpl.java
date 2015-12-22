@@ -1372,6 +1372,33 @@ public class QueryServiceImpl extends QueryService
         return null;
     }
 
+    public UserSchema createLinkedSchema(User user, Container c, String name, String sourceContainerId, String sourceSchemaName,
+                                         String metadata, String tables, String template)
+    {
+        LinkedSchemaDef def = new LinkedSchemaDef();
+        def.setContainer(c.getId());
+        def.setUserSchemaName(name);
+        def.setDataSource(sourceContainerId);
+        def.setSourceSchemaName(sourceSchemaName);
+        def.setMetaData(metadata);
+        def.setTables(tables);
+        def.setSchemaTemplate(template);
+        LinkedSchemaDef newDef = QueryManager.get().insertLinkedSchema(user, def);
+        return LinkedSchema.get(user, c, newDef);
+    }
+
+    public void deleteLinkedSchema(User user, Container c, String name)
+    {
+        try
+        {
+            QueryManager.get().deleteLinkedSchema(c, name);
+        }
+        catch (Exception e)
+        {
+            Logger.getLogger(QueryServiceImpl.class).error("Error deleting linked schema " + name, e);
+        }
+    }
+
     public TemplateSchemaType getSchemaTemplate(Container c, String templateName)
     {
         if (templateName == null)

@@ -56,6 +56,12 @@ public class ExternalSchemaDef extends AbstractExternalSchemaDef
     }
 
     @Override
+    public SchemaType getSchemaType()
+    {
+        return SchemaType.external;
+    }
+
+    @Override
     public boolean equals(Object o)
     {
         if (this == o) return true;

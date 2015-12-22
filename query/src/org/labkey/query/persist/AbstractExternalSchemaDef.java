@@ -154,6 +154,8 @@ public abstract class AbstractExternalSchemaDef extends Entity
 
     public abstract boolean isIndexable();
 
+    public abstract SchemaType getSchemaType();
+
     @Override
     public boolean equals(Object o)
     {
