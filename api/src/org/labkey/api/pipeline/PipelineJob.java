@@ -1660,7 +1660,7 @@ abstract public class PipelineJob extends Job implements Serializable
     }
 
     @Override
-    protected void done(Throwable throwable)
+    public void done(Throwable throwable)
     {
         if (null != throwable)
         {
