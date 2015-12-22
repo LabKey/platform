@@ -113,6 +113,11 @@ abstract public class QueryService
     /** Get schema for SchemaKey path. */
     abstract public UserSchema getUserSchema(User user, Container container, SchemaKey schemaPath);
 
+    abstract public UserSchema getLinkedSchema(User user, Container container, String name);
+    abstract public UserSchema createLinkedSchema(User user, Container container, String name, String sourceContainerId, String sourceSchemaName,
+                                                  String metadata, String tables, String template);
+    abstract public void deleteLinkedSchema(User user, Container container, String name);
+
     /**
      * Get the list of custom views.
      * If schema, query, or owner is null, return custom views for all schemas/queries/users.
