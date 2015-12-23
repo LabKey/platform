@@ -170,7 +170,8 @@ public class DbScope
             sb.append("DbScope=").append(scope.getDisplayName()).append(" " );
         }
         sb.append(message);
-        throw new IllegalStateException(sb.toString());
+        Throwable t = conn != null ? conn.getSuspiciousCloseStackTrace() : null;
+        throw new IllegalStateException(sb.toString(), t);
     }
 
 

@@ -896,6 +896,11 @@ public class ConnectionWrapper implements java.sql.Connection
         _suspiciousCloseStackTrace = new Throwable("This connection may have been closed by a codepath that did not intend to leave it in this state");
     }
 
+    public Throwable getSuspiciousCloseStackTrace()
+    {
+        return _suspiciousCloseStackTrace;
+    }
+
 
     private class LoggingDatabaseMetaDataWrapper extends DatabaseMetaDataWrapper
     {
