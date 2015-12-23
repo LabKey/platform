@@ -109,7 +109,7 @@ public class PropertyColumn extends LookupColumn
             }
         }
 
-        if (pd.getLookupSchema() != null && pd.getLookupQuery() != null && user != null)
+        if (user != null && ((pd.getLookupSchema() != null && pd.getLookupQuery() != null) || pd.getConceptURI() != null))
             to.setFk(new PdLookupForeignKey(user, pd, container));
 
         to.setDefaultValueType(pd.getDefaultValueTypeEnum());

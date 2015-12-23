@@ -363,7 +363,7 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
     public ColumnInfo createColumnInfo(TableInfo baseTable, String lsidCol, User user, Container container)
     {
         ColumnInfo info = new PropertyColumn(this, baseTable, lsidCol, container, user, false);
-        if (getLookupQuery() != null)
+        if (getLookupQuery() != null || getConceptURI() != null)
             info.setFk(new PdLookupForeignKey(user, this, container));
         return info;
     }

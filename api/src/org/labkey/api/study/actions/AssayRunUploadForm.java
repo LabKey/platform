@@ -354,9 +354,14 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             return AbstractAssayProvider.findType(value, getProvider().getParticipantVisitResolverTypes()).getDescription();
         }
 
-        if (key.getLookupQuery() != null)
+        PdLookupForeignKey lookupKey = null;
+        if (key.getLookupQuery() != null || key.getConceptURI() != null)
         {
-            PdLookupForeignKey lookupKey = new PdLookupForeignKey(getUser(), key, getContainer());
+            lookupKey = new PdLookupForeignKey(getUser(), key, getContainer());
+        }
+
+        if (lookupKey != null)
+        {
             TableInfo lookupTable = lookupKey.getLookupTableInfo();
             if (lookupTable != null)
             {
