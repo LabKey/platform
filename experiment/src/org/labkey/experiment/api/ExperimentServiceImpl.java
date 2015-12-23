@@ -2594,8 +2594,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             transaction.commit();
         }
-        SchemaKey schemaPath = SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME);
-        QueryService.get().fireQueryDeleted(user, c, null, schemaPath, Collections.singleton(source.getName()));
+        SchemaKey samplesSchema = SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME);
+        QueryService.get().fireQueryDeleted(user, c, null, samplesSchema, Collections.singleton(source.getName()));
+
+        SchemaKey expMaterialsSchema = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.NestedSchemas.materials.toString());
+        QueryService.get().fireQueryDeleted(user, c, null, expMaterialsSchema, Collections.singleton(source.getName()));
 
     }
 
@@ -2632,15 +2635,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         if (!dataClass.getContainer().equals(c))
             throw new ExperimentException("Trying to delete a DataClass from a different container");
 
-        Domain d = dataClass.getDomain();
-
         try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
         {
             DbSequenceManager.delete(c, ExpDataClassImpl.GENID_SEQUENCE_NAME, dataClass.getRowId());
 
             truncateDataClass(dataClass, null);
-
-            d.delete(user);
 
             deleteDomainObjects(dataClass.getContainer(), dataClass.getLSID());
 
@@ -2649,6 +2648,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             transaction.commit();
         }
+
+        SchemaKey expDataSchema = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.NestedSchemas.data.toString());
+        QueryService.get().fireQueryDeleted(user, c, null, expDataSchema, Collections.singleton(dataClass.getName()));
     }
 
     public ExpRunImpl populateRun(final ExpRunImpl expRun)
