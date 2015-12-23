@@ -51,6 +51,7 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUploadXarContext;
 import org.labkey.api.study.assay.DefaultAssayRunCreator;
 import org.labkey.api.study.assay.TsvDataHandler;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -234,7 +235,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 pw.append(Props.runDataUploadedFile.name());
                 pw.append('\t');
                 pw.append(data.getAbsolutePath());
-                pw.append('\n');
+                pw.println();
                 _filesToIgnore.add(data);
 
                 // for the data map sent to validation or transform scripts, we want to attempt type conversion, but if it fails, return
@@ -291,7 +292,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 pw.append('\t');
                 pw.append(transformedData.getAbsolutePath());
             }
-            pw.append('\n');
+            pw.println();
         }
         return new HashSet<>(dataFiles);
     }
@@ -308,7 +309,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         pw.append('\t');
         File originalFile = transformResult.getUploadedFile();
         pw.append(originalFile.getAbsolutePath());
-        pw.append('\n');
+        pw.println();
 
         Set<File> result = new HashSet<>();
         result.add(originalFile);
@@ -333,7 +334,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             pw.append('\t');
             pw.append(transformedData.getAbsolutePath());
 
-            pw.append('\n');
+            pw.println();
         }
         return result;
     }
@@ -674,8 +675,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         _filesToIgnore.add(scriptFile);
 
         // Get data for processing errors and warnings
-        RunInfo info;
-        info = processRunInfo(runInfo);
+        RunInfo info = processRunInfo(runInfo);
 
         // check to see if any errors were generated
         processValidationOutput(info, context.getLogger());
@@ -747,10 +747,10 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                     }
                 }
 
-                List<File> tempFiles = new ArrayList<>();
+                List<File> tempOutputFiles = new ArrayList<>();
                 if(runDataUploadedFile != null)
                 {
-                    tempFiles.add(runDataUploadedFile);
+                    tempOutputFiles.add(runDataUploadedFile);
                 }
 
                 // Loop through all of the files that are left after running the transform script
@@ -777,7 +777,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                         if(file.getName().equals(TRANS_ERR_FILE))
                             transErrorFile = targetFile.getPath();
                         else
-                            tempFiles.add(targetFile);
+                            tempOutputFiles.add(targetFile);
 
 
                         // Copy the file to the same directory as the original data file
@@ -802,6 +802,12 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
                     for (Map.Entry<String, File> entry : transformedData.entrySet())
                     {
+                        // Copy to the directory where it's available for review before the user proceeds
+                        File tempDirCopy = new File(workingDirectory, entry.getValue().getName());
+                        FileUtils.copyFile(entry.getValue(), tempDirCopy);
+                        // Add it as an artifact the user can download
+                        tempOutputFiles.add(tempDirCopy);
+
                         ExpData data = ExperimentService.get().getExpDataByURL(entry.getValue(), context.getContainer());
                         if (data == null)
                         {
@@ -872,7 +878,10 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 if (runDataUploadedFile != null)
                     result.setUploadedFile(runDataUploadedFile);
 
-                processWarningsOutput(result, transformedProps, info, transErrorFile, tempFiles);
+                // Don't offer up input or other files as "outputs" of the script
+                tempOutputFiles.removeAll(_filesToIgnore);
+
+                processWarningsOutput(result, transformedProps, info, transErrorFile, tempOutputFiles);
             }
             catch (Exception e)
             {
