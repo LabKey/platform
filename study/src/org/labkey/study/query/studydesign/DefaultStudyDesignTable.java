@@ -80,7 +80,7 @@ public class DefaultStudyDesignTable extends FilteredTable<UserSchema>
                     PropertyDescriptor pd = property.getPropertyDescriptor();
                     if (pd != null)
                     {
-                        if (pd.getLookupQuery() != null)
+                        if (pd.getLookupQuery() != null || pd.getConceptURI() != null)
                             col.setFk(new PdLookupForeignKey(schema.getUser(), pd, schema.getContainer()));
 
                         if (pd.getPropertyType() == PropertyType.MULTI_LINE)

@@ -1344,10 +1344,10 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 ColumnInfo wrapped = newDatasetColumnInfo(user, this, col, p.getPropertyDescriptor());
                 addColumn(wrapped);
 
-                // Set the FK if the property descriptor is configured as a lookup. DatasetSchemaTableInfos aren't
-                // cached, so it's safe to include the current user 
+                // Set the FK if the property descriptor is configured as a lookup or a conceptURI.
+                // DatasetSchemaTableInfos aren't cached, so it's safe to include the current user
                 PropertyDescriptor pd = p.getPropertyDescriptor();
-                if (null != pd && pd.getLookupQuery() != null)
+                if (null != pd && (pd.getLookupQuery() != null || pd.getConceptURI() != null))
                     wrapped.setFk(new PdLookupForeignKey(user, pd, getContainer()));
 
                 if (p.isMvEnabled())
