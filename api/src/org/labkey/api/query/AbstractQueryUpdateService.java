@@ -526,6 +526,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             }
         }
 
+        // Fire triggers, if any, and also throw if there are any errors
         getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.UPDATE, false, errors, extraScriptContext);
 
         if (!isBulkLoad())
@@ -589,6 +590,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             }
         }
 
+        // Fire triggers, if any, and also throw if there are any errors
         getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.DELETE, false, errors, extraScriptContext);
 
         if (!isBulkLoad())

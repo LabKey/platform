@@ -1246,12 +1246,12 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         return null;
     }
 
-    List<TriggerScriptFactory> triggerScriptFactories = new ArrayList<>();
+    Map<Class<? extends TriggerScriptFactory>, TriggerScriptFactory> triggerScriptFactories = new LinkedHashMap<>();
 
     public void addTriggerScriptFactory(TriggerScriptFactory factory)
     {
         checkLocked();
-        triggerScriptFactories.add(factory);
+        triggerScriptFactories.put(factory.getClass(), factory);
     }
 
     public boolean hasTriggers(Container c)
@@ -1294,7 +1294,7 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
             return Collections.emptyList();
 
         List<TriggerScript> scripts = new ArrayList<>(triggerScriptFactories.size());
-        for (TriggerScriptFactory factory : triggerScriptFactories)
+        for (TriggerScriptFactory factory : triggerScriptFactories.values())
         {
             scripts.addAll(factory.createTriggerScript(c, this, null));
         }
@@ -1322,8 +1322,6 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         assert batchErrors != null;
 
         Collection<TriggerScript> triggers = getTriggerScripts(c);
-        if (triggers.isEmpty())
-            return;
 
         final String triggerMethod = (before ? "init" : "complete");
         Boolean success = null;
@@ -1353,8 +1351,6 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         errors.setRowNumber(rowNumber);
 
         Collection<TriggerScript> triggers = getTriggerScripts(c);
-        if (triggers.isEmpty())
-            return;
 
         final String triggerMethod = (before ? "before" : "after") + type.getMethodName();
         Boolean success = null;
