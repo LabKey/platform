@@ -16,6 +16,7 @@
         <script path="File/panel/EmailProps.js"/>
         <script path="File/panel/EditCustomFileProps.js"/>
         <script path="File/panel/ContextMenu.js"/>
+        <script path="File/util/IconUtil.js"/>
         <script path="File/FileContent.css"/>
     </library>
     <dependencies>

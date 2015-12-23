@@ -849,25 +849,27 @@ Ext4.define('File.panel.Browser', {
     },
 
     // minor hack call with scope having decorateIcon functions
-    iconRenderer : function(value, metadata, record, rowIndex, colIndex, store, grid)
+    iconRenderer: function (value, metadata, record, rowIndex, colIndex, store, grid)
     {
         if (!value)
         {
             if (record.get("collection"))
             {
-                value = LABKEY.FileSystem.FOLDER_ICON;
+                value = "fa fa-folder-o";
             }
             else
             {
                 var name = record.get("name");
                 var i = name.lastIndexOf(".");
-                var ext = i >= 0 ? name.substring(i) : name;
-                value = LABKEY.contextPath + "/project/icon.view?name=" + ext;
+                var ext = i >= 0 ? name.substring(i + 1) : name;
+                value = File.util.IconUtil.getFontAwesomeIcon(ext);
             }
         }
-        var img = {tag:'img', width:16, height:16, src:value, id:Ext4.id(null,'icon')};
+
+        value = value + " labkey-file-icon";
+        var img = {tag: 'span', 'class': value, id: Ext4.id(null, 'icon')};
         var html = Ext4.DomHelper.markup(img);
-        Ext4.defer(this.attachPreview,10,this,[img.id,record]);
+        Ext4.defer(this.attachPreview, 10, this, [img.id, record]);
         return html;
     },
 
@@ -877,7 +879,7 @@ Ext4.define('File.panel.Browser', {
             //xtype : 'templatecolumn', tpl : '<img height="16px" width="16px" src="{icon}" alt="{type}">',
             renderer : this.iconRenderer,
             text  : '',
-            dataIndex : 'icon',
+            dataIndex : 'iconfacls',
             sortable : !this.bufferFiles,
             width : 25,
             height : 20,

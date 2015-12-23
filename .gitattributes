@@ -939,6 +939,7 @@ filecontent/webapp/File/panel/Toolbar.js -text
 filecontent/webapp/File/panel/Upload.js -text
 filecontent/webapp/File/system/Abstract.js -text
 filecontent/webapp/File/system/Webdav.js -text
+filecontent/webapp/File/util/IconUtil.js -text
 filecontent/webapp/FileContent.js -text
 filecontent/webapp/FileProperties.js -text
 filecontent/webapp/PipelineAction.js -text

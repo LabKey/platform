@@ -1967,6 +1967,8 @@ public class DavController extends SpringActionController
                 
                     xml.writeProperty(null, "iconHref", h(resource.getIconHref()));
 
+                    xml.writeProperty(null, "iconFontCls", h(resource.getIconFontCls()));
+
                     xml.writeProperty(null, "source", "");
 
 //					 String supportedLocks = "<lockentry>"
@@ -2013,6 +2015,7 @@ public class DavController extends SpringActionController
 					xml.writeElement(null, "actions", XMLWriter.NO_CONTENT);
 					xml.writeElement(null, "description", XMLWriter.NO_CONTENT);
 					xml.writeElement(null, "iconHref", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "iconFontCls", XMLWriter.NO_CONTENT);
 					xml.writeElement(null, "history", XMLWriter.NO_CONTENT);
 					xml.writeElement(null, "md5sum", XMLWriter.NO_CONTENT);
 					xml.writeElement(null, "href", XMLWriter.NO_CONTENT);
@@ -2183,6 +2186,10 @@ public class DavController extends SpringActionController
 						{
                             xml.writeProperty(null, "iconHref", h(resource.getIconHref()));
 						}
+                        else if (property.equals("iconFontCls"))
+                        {
+                            xml.writeProperty(null, "iconFontCls", h(resource.getIconFontCls()));
+                        }
 						else if (property.equals("ishidden"))
 						{
 							xml.writeElement(null, "ishidden", XMLWriter.OPENING);
@@ -2572,6 +2579,7 @@ public class DavController extends SpringActionController
             json.key("href").value(resource.getLocalHref(getViewContext()));
             json.key("text").value(displayName);
             json.key("iconHref").value(resource.getIconHref());
+            json.key("iconFontCls").value(resource.getIconFontCls());
             json.key("options").value(determineMethodsAllowed(resource));
 
             long created = resource.getCreated();

@@ -738,3 +738,7 @@ div.headermenu {
 .labkey-ribbon .tabs-left > .nav-tabs {
     background-color: #<%= grid %>;
 }
+
+span.labkey-file-icon {
+    color: #<%= link %>;
+}
