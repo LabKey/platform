@@ -593,7 +593,9 @@ public class XarExporter
             addPropertyValidator(xProp, validator);
         }
 
-        xProp.setScale(domainProp.getScale());
+        //Only export scale if storage field is a string type
+        if (domainProp.getRangeURI().equals("http://www.w3.org/2001/XMLSchema#string"))
+            xProp.setScale(domainProp.getScale());
 
         ConditionalFormat.convertToXML(domainProp.getConditionalFormats(), xProp);
     }
