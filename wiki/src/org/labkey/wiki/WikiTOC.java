@@ -57,10 +57,12 @@ public class WikiTOC extends NavTreeMenu
         setFrame(FrameType.PORTAL);
 
         //set specified web part title
-        Object title = context.get("title");
-        if (title == null)
-            title = "Pages";
-        setTitle(title.toString());
+        String title = "Pages";
+        if (null != part && part.getPropertyMap().get("title") != null)
+        {
+            title = part.getPropertyMap().get("title");
+        }
+        setTitle(title);
 
         // get stored property value for source container for toc
         String id = (null != part ? part.getPropertyMap().get("webPartContainer") : null);
