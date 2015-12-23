@@ -321,7 +321,7 @@ public class ExcelColumn extends RenderColumn
                     break;
 
                 case TYPE_FILE:
-                    String filePath = o.toString().replaceAll("\r\n", "\n");
+                    String filePath = o.toString().toLowerCase().replaceAll("\r\n", "\n");
                     cell.setCellValue(filePath);
                     if (_style != null)
                         cell.setCellStyle(_style);
@@ -390,6 +390,7 @@ public class ExcelColumn extends RenderColumn
                                 ClientAnchor anchor = createAnchor(row, column, rowRatio, colRatio, helper);
                                 Picture pict = drawing.createPicture(anchor, pictureIdx);
                                 setImagePicture(ctx, row, column, pict);
+                                cell.setCellType(Cell.CELL_TYPE_BLANK);
                             }
                         }
                     }
