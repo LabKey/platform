@@ -390,7 +390,6 @@ public class ExcelColumn extends RenderColumn
                                 ClientAnchor anchor = createAnchor(row, column, rowRatio, colRatio, helper);
                                 Picture pict = drawing.createPicture(anchor, pictureIdx);
                                 setImagePicture(ctx, row, column, pict);
-                                cell.setCellType(Cell.CELL_TYPE_BLANK);
                             }
                         }
                     }
@@ -765,7 +764,15 @@ public class ExcelColumn extends RenderColumn
                         break;
 
                     default:
-                        formatted = cell.getStringCellValue();
+                        Pair<Integer, Integer> size = getImageSize(ctx, row, column);
+                        if (size != null)
+                        {
+                            // added 2 margin pixels per side and 1 for the gridline
+                            int width = size.first;
+                            length = (width + 5) / 7;//PIXELS_TO_CHARACTERS);
+                        }
+                        else
+                            formatted = cell.getStringCellValue();
                         break;
                 }
 
