@@ -49,14 +49,6 @@ public class DetailsView extends DataView
         _pk = pk;
     }
 
-    @Override
-    public void setTitle(CharSequence title)
-    {
-        super.setTitle(title);
-        if (StringUtils.isNotEmpty(title) && getFrame()==FrameType.DIV)
-            setFrame(FrameType.PORTAL);
-    }
-
     protected boolean isColumnIncluded(ColumnInfo col)
     {
         return col.isShownInDetailsView();

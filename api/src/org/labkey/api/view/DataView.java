@@ -117,6 +117,14 @@ public abstract class DataView extends WebPartView<RenderContext>
         getRenderContext().setResults(new ResultsImpl(rs));
     }
 
+    @Override
+    public void setTitle(CharSequence title)
+    {
+        super.setTitle(title);
+        if (StringUtils.isNotEmpty(title) && getFrame()==FrameType.DIV)
+            setFrame(FrameType.PORTAL);
+    }
+
     public RenderContext getRenderContext()
     {
         return getModelBean();
