@@ -179,6 +179,13 @@ public class WebdavResourceReadOnly implements WebdavResource
 
     @Override
     @Nullable
+    public String getIconFontCls()
+    {
+        return getDelegate().getIconFontCls();
+    }
+
+    @Override
+    @Nullable
     public DirectRequest getDirectGetRequest(ViewContext context, String contentDisposition)
     {
         return getDelegate().getDirectGetRequest(context, contentDisposition);

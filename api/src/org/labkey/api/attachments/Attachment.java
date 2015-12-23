@@ -34,6 +34,8 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -53,6 +55,61 @@ public class Attachment implements Serializable
     private long _created;
     private File _file;
     private Date _lastIndexed;
+
+    private static final Map<String, String> extensionFontClsMap = new HashMap<>();
+
+    static {
+        extensionFontClsMap.put("_deleted", "fa fa-file-o");
+        extensionFontClsMap.put("_generic", "fa fa-file-o");
+        extensionFontClsMap.put("application", "fa fa-list-alt");
+        extensionFontClsMap.put("audio", "fa fa-file-audio-o");
+        extensionFontClsMap.put("dll", "fa fa-file-code-o");
+        extensionFontClsMap.put("doc", "fa fa-file-word-o");
+        extensionFontClsMap.put("docm", "fa fa-file-word-o");
+        extensionFontClsMap.put("docx", "fa fa-file-word-o");
+        extensionFontClsMap.put("dotm", "fa fa-file-word-o");
+        extensionFontClsMap.put("dotx", "fa fa-file-word-o");
+        extensionFontClsMap.put("exe", "fa fa-file-code-o");
+        extensionFontClsMap.put("file_temporary", "fa fa-file-o");
+        extensionFontClsMap.put("folder", "fa fa-folder-o");
+        extensionFontClsMap.put("gz", "fa fa-file-archive-o");
+        extensionFontClsMap.put("html", "fa fa-file-code-o");
+        extensionFontClsMap.put("icon_folder1", "");
+        extensionFontClsMap.put("icon_folder2", "");
+        extensionFontClsMap.put("image", "fa fa-file-image-o");
+        extensionFontClsMap.put("iqy", "fa fa-file-code-o");
+        extensionFontClsMap.put("jar", "fa fa-file-archive-o");
+        extensionFontClsMap.put("log", "fa fa-file-text-o");
+        extensionFontClsMap.put("mdb", "fa fa-database");
+        extensionFontClsMap.put("pdf", "fa fa-file-pdf-o");
+        extensionFontClsMap.put("potm", "fa fa-file-powerpoint-o");
+        extensionFontClsMap.put("potx", "fa fa-file-powerpoint-o");
+        extensionFontClsMap.put("ppsm", "fa fa-file-powerpoint-o");
+        extensionFontClsMap.put("ppsx", "fa fa-file-powerpoint-o");
+        extensionFontClsMap.put("ppt", "fa fa-file-powerpoint-o");
+        extensionFontClsMap.put("pptm", "fa fa-file-powerpoint-o");
+        extensionFontClsMap.put("pptx", "fa fa-file-powerpoint-o");
+        extensionFontClsMap.put("prg", "fa fa-file-code-o");
+        extensionFontClsMap.put("ps", "fa fa-print");
+        extensionFontClsMap.put("rtf", "fa fa-file-word-o");
+        extensionFontClsMap.put("tar", "fa fa-file-archive-o");
+        extensionFontClsMap.put("text", "fa fa-file-text-o");
+        extensionFontClsMap.put("tgz", "fa fa-file-archive-o");
+        extensionFontClsMap.put("tsv", "fa fa-file-excel-o");
+        extensionFontClsMap.put("txt", "fa fa-file-text-o");
+        extensionFontClsMap.put("video", "fa fa-file-video-o");
+        extensionFontClsMap.put("vsd", "fa fa-file-image-o");
+        extensionFontClsMap.put("wiki", "fa fa-file-code-o");
+        extensionFontClsMap.put("xar", "fa fa-file-archive-o");
+        extensionFontClsMap.put("xls", "fa fa-file-excel-o");
+        extensionFontClsMap.put("xlsb", "fa fa-file-excel-o");
+        extensionFontClsMap.put("xlsm", "fa fa-file-excel-o");
+        extensionFontClsMap.put("xlsx", "fa fa-file-excel-o");
+        extensionFontClsMap.put("xltm", "fa fa-file-excel-o");
+        extensionFontClsMap.put("xltx", "fa fa-file-excel-o");
+        extensionFontClsMap.put("xml", "fa fa-file-code-o");
+        extensionFontClsMap.put("zip", "fa fa-file-archive-o");
+    }
 
     public Attachment()
     {
@@ -108,6 +165,21 @@ public class Attachment implements Serializable
         return icon;
     }
 
+    public static String getFileIconFontCls(String name)
+    {
+        String fileName = getFileIcon(name);
+        if (fileName == null)
+            return null;
+        int index = fileName.lastIndexOf('/');
+        int dot = fileName.lastIndexOf('.');
+        if (dot > index)
+        {
+            String extension = fileName.substring(index + 1, dot).toLowerCase();
+            return extensionFontClsMap.get(extension);
+        }
+
+        return null;
+    }
 
     static MimeMap mime = new MimeMap();
     private static final ConcurrentHashMap<String, String> icons = new ConcurrentHashMap<>();

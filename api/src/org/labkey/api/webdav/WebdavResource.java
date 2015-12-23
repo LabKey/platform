@@ -106,6 +106,9 @@ public interface WebdavResource extends Resource
     @Nullable
     String getIconHref();
 
+    @Nullable
+    String getIconFontCls();
+
     /**
      * Get the request used for sending a direct GET request for this resource which
      * may include additional http headers.

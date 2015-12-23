@@ -62,6 +62,7 @@ import java.util.Set;
  */
 public abstract class AbstractWebdavResource extends AbstractResource implements WebdavResource
 {
+    private static final String FOLDER_FONT_CLS = "fa fa-folder-o";
     private SecurityPolicy _policy;
     protected String _containerId;
 
@@ -196,6 +197,13 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         if (isCollection())
             return AppProps.getInstance().getContextPath() + "/_icons/folder.gif";
         return AppProps.getInstance().getContextPath() + Attachment.getFileIcon(getName());
+    }
+
+    public String getIconFontCls()
+    {
+        if (isCollection())
+            return FOLDER_FONT_CLS;
+        return Attachment.getFileIconFontCls(getName());
     }
 
     @Nullable
