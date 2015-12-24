@@ -41,7 +41,6 @@ public class ModuleQueryMetadataDef extends ResourceRef
     private String _name;
     private String _queryMetaData;
     private String _description;
-    private String _moduleName;
     private double _schemaVersion;
     private boolean _hidden = false;
 
@@ -52,11 +51,6 @@ public class ModuleQueryMetadataDef extends ResourceRef
         if (_name.endsWith(ModuleQueryDef.META_FILE_EXTENSION))
         {
             _name = _name.substring(0, _name.length() - ModuleQueryDef.META_FILE_EXTENSION.length());
-        }
-
-        if (resource.getResolver() != null)
-        {
-            _moduleName = resource.getResolver().toString();
         }
 
         try
@@ -127,11 +121,6 @@ public class ModuleQueryMetadataDef extends ResourceRef
     public String getName()
     {
         return _name;
-    }
-
-    public String getModuleName()
-    {
-        return _moduleName;
     }
 
     public String getQueryMetaData()

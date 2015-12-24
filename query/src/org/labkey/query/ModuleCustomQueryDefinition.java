@@ -15,7 +15,9 @@
  */
 package org.labkey.query;
 
+import org.labkey.api.module.Module;
 import org.labkey.api.query.QueryChangeListener;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
@@ -32,10 +34,10 @@ public class ModuleCustomQueryDefinition extends CustomQueryDefinitionImpl
 {
     private final String _moduleName;
 
-    public ModuleCustomQueryDefinition(ModuleQueryDef moduleQueryDef, User user, Container container)
+    public ModuleCustomQueryDefinition(Module module, ModuleQueryDef moduleQueryDef, SchemaKey schemaKey, User user, Container container)
     {
-        super(user, container, moduleQueryDef.toQueryDef(container));
-        _moduleName = moduleQueryDef.getModuleName();
+        super(user, container, moduleQueryDef.toQueryDef(container, schemaKey));
+        _moduleName = module.getName();
     }
 
     @Override

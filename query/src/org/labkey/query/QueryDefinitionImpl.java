@@ -91,13 +91,16 @@ import java.util.Objects;
 @SuppressWarnings({"ThrowableInstanceNeverThrown"})
 public abstract class QueryDefinitionImpl implements QueryDefinition
 {
-    final static private QueryManager mgr = QueryManager.get();
-    final static private Logger log = Logger.getLogger(QueryDefinitionImpl.class);
-    protected User _user = null;
-    protected Container _container = null;
+    private static final QueryManager mgr = QueryManager.get();
+    private static final Logger log = Logger.getLogger(QueryDefinitionImpl.class);
+
+    protected final User _user;
+    protected final Container _container;
+
     protected UserSchema _schema = null;
     protected QueryDef _queryDef;
     protected List<QueryPropertyChange> _changes = null;
+
     private boolean _dirty;
     private ContainerFilter _containerFilter;
     private boolean _temporary = false;

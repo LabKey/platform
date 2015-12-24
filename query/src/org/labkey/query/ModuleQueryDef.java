@@ -16,8 +16,10 @@
 package org.labkey.query;
 
 import org.apache.commons.io.IOUtils;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceRef;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.api.data.Container;
 
@@ -40,25 +42,22 @@ public class ModuleQueryDef extends ResourceRef
     public static final String FILE_EXTENSION = ".sql";
     public static final String META_FILE_EXTENSION = ".query.xml";
 
-    private String _name;
-    private String _schemaName;
-    private String _moduleName;
-    private String _sql;
-    private ModuleQueryMetadataDef _metadataRef;
+    private final String _name;
 
-    public ModuleQueryDef(Resource r, String schemaName, String moduleName)
+    private String _sql;
+    private ModuleQueryMetadataDef _metadataDef;
+
+    public ModuleQueryDef(Resource r)
     {
         super(r);
 
-        _schemaName = schemaName;
         _name = getNameFromFile();
-        _moduleName = moduleName;
 
         //load the sql from the sqlFile
         try (InputStream is = r.getInputStream())
         {
             if (is != null)
-                _sql = IOUtils.toString(is);
+                _sql = IOUtils.toString(is, StringUtilsLabKey.DEFAULT_CHARSET);
         }
         catch (IOException e)
         {
@@ -72,13 +71,8 @@ public class ModuleQueryDef extends ResourceRef
             Resource metadataResource = parent.find(_name + META_FILE_EXTENSION);
             if (metadataResource != null)
             {
-                _metadataRef = new ModuleQueryMetadataDef(metadataResource);
-                addDependency(_metadataRef);
-
-                if (_metadataRef.getModuleName() != null)
-                {
-                    _moduleName = _metadataRef.getModuleName();
-                }
+                _metadataDef = new ModuleQueryMetadataDef(metadataResource);
+                addDependency(_metadataDef);
             }
         }
     }
@@ -91,22 +85,12 @@ public class ModuleQueryDef extends ResourceRef
 
     public String getName()
     {
-        return _metadataRef == null ? _name : _metadataRef.getName();
-    }
-
-    public String getModuleName()
-    {
-        return _moduleName;
-    }
-
-    public String getSchemaName()
-    {
-        return _schemaName;
+        return _metadataDef == null ? _name : _metadataDef.getName();
     }
 
     public boolean isHidden()
     {
-        return _metadataRef == null ? false : _metadataRef.isHidden();
+        return _metadataDef == null ? false : _metadataDef.isHidden();
     }
 
     public String getSql()
@@ -116,25 +100,25 @@ public class ModuleQueryDef extends ResourceRef
 
     public String getQueryMetaData()
     {
-        return _metadataRef == null ? null : _metadataRef.getQueryMetaData();
+        return _metadataDef == null ? null : _metadataDef.getQueryMetaData();
     }
 
     public String getDescription()
     {
-        return _metadataRef == null ? null : _metadataRef.getDescription();
+        return _metadataDef == null ? null : _metadataDef.getDescription();
     }
 
     public double getSchemaVersion()
     {
-        return _metadataRef == null ? 0 : _metadataRef.getSchemaVersion();
+        return _metadataDef == null ? 0 : _metadataDef.getSchemaVersion();
     }
 
-    public QueryDef toQueryDef(Container container)
+    public QueryDef toQueryDef(Container container, SchemaKey schemaKey)
     {
         QueryDef ret;
-        if (_metadataRef != null)
+        if (_metadataDef != null)
         {
-            ret = _metadataRef.toQueryDef(container);
+            ret = _metadataDef.toQueryDef(container);
         }
         else
         {
@@ -142,7 +126,7 @@ public class ModuleQueryDef extends ResourceRef
             ret.setContainer(container.getId());
         }
         ret.setName(getName());
-        ret.setSchema(getSchemaName());
+        ret.setSchemaPath(schemaKey);
         ret.setSql(getSql());
 
         return ret;
