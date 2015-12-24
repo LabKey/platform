@@ -39,5 +39,8 @@ public interface QueryBasedModuleResourceCacheHandler<V>
      * @return A directory listener with implementation specific handling. Return null for default behavior.
      */
     @Nullable
-    FileSystemDirectoryListener createChainedDirectoryListener(Module module);
+    default FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+    {
+        return null;
+    }
 }
