@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * User: adam
@@ -95,25 +96,18 @@ class UserCache
     }
 
 
-    // Returns a deep copy of the active users list, allowing callers to interogate user permissions without affecting
+    // Returns a deep copy of the active users list, allowing callers to interrogate user permissions without affecting
     // cached users. Collection is ordered by email... maybe it should be ordered by display name?
     static @NotNull Collection<User> getActiveUsers()
     {
         List<User> activeUsers = getUserCollections().getActiveUsers();
-        List<User> copy = new LinkedList<>();
 
-        for (User user : activeUsers)
-            copy.add(user.cloneUser());
-
-        return copy;
+        return activeUsers
+            .stream()
+            .map(User::cloneUser)
+            .collect(Collectors.toCollection(LinkedList::new));
     }
 
-
-    // Emails are returned sorted
-    static @NotNull List<String> getActiveUserEmails()
-    {
-        return new LinkedList<>(getUserCollections().getActiveEmails());
-    }
 
     static @NotNull List<Integer> getUserIds()
     {
@@ -122,7 +116,7 @@ class UserCache
 
     static int getActiveUserCount()
     {
-        return getActiveUsers().size();
+        return getUserCollections().getActiveUserCount();
     }
 
 
@@ -147,14 +141,12 @@ class UserCache
         private final Map<Integer, User> _userIdMap;
         private final Map<ValidEmail, User> _emailMap;
         private final List<User> _activeUsers;
-        private final List<String> _activeEmails;
 
-        private UserCollections(Map<Integer, User> userIdMap, Map<ValidEmail, User> emailMap, List<User> activeUsers, List<String> activeEmails)
+        private UserCollections(Map<Integer, User> userIdMap, Map<ValidEmail, User> emailMap, List<User> activeUsers)
         {
             _userIdMap = Collections.unmodifiableMap(userIdMap);
             _emailMap = Collections.unmodifiableMap(emailMap);
             _activeUsers = Collections.unmodifiableList(activeUsers);
-            _activeEmails = Collections.unmodifiableList(activeEmails);
         }
 
         private Map<Integer, User> getUserIdMap()
@@ -172,9 +164,9 @@ class UserCache
             return _activeUsers;
         }
 
-        private List<String> getActiveEmails()
+        private int getActiveUserCount()
         {
-            return _activeEmails;
+            return _activeUsers.size();
         }
     }
 
@@ -189,7 +181,6 @@ class UserCache
             Map<Integer, User> userIdMap = new HashMap<>((int)(1.3 * allUsers.size()));
             Map<ValidEmail, User> emailMap = new HashMap<>((int)(1.3 * allUsers.size()));
             List<User> activeUsers = new LinkedList<>();
-            List<String> activeEmails = new LinkedList<>();
 
             // We're using the same User object in multiple lists... UserCache must clone all users it return to prevent
             // concurrency issues (e.g., a caller might indirectly modify a cached User's group list, leading to stale credentials)
@@ -210,13 +201,10 @@ class UserCache
                 }
 
                 if (user.isActive())
-                {
                     activeUsers.add(user);
-                    activeEmails.add(user.getEmail());  // This list will be sorted, since allUsers is sorted by email address
-                }
             }
 
-            return new UserCollections(userIdMap, emailMap, activeUsers, activeEmails);
+            return new UserCollections(userIdMap, emailMap, activeUsers);
         }
     }
 }

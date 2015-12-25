@@ -26,7 +26,6 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -50,7 +49,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -64,10 +62,8 @@ public class UserManager
     private static final Logger LOG = Logger.getLogger(UserManager.class);
     private static final CoreSchema CORE = CoreSchema.getInstance();
 
-    // NOTE: This static map will slowly grow, since user IDs & timestamps are added and never removed.  It's a trivial amount of data, though.
+    // NOTE: This static map will slowly grow, since user IDs & timestamps are added and never removed. It's a trivial amount of data, though.
     private static final Map<Integer, Long> RECENT_USERS = new HashMap<>(100);
-
-    private static final String USER_PREF_MAP = "UserPreferencesMap";
 
     public static final String USER_AUDIT_EVENT = "UserAuditEvent";
 
@@ -246,14 +242,7 @@ public class UserManager
             }
 
             // Sort by number of minutes
-            Collections.sort(recentUsers, new Comparator<Pair<String, Long>>()
-                {
-                    public int compare(Pair<String, Long> o1, Pair<String, Long> o2)
-                    {
-                        return (o1.second).compareTo(o2.second);
-                    }
-                }
-            );
+            Collections.sort(recentUsers, (o1, o2) -> (o1.second).compareTo(o2.second));
 
             return recentUsers;
         }
@@ -321,12 +310,6 @@ public class UserManager
         return UserCache.getActiveUsers();
     }
 
-
-    // Returns a modifiable, sorted collection of email addresses for the active users
-    public static List<String> getActiveUserEmails()
-    {
-        return UserCache.getActiveUserEmails();
-    }
 
     public static List<Integer> getUserIds()
     {
@@ -583,17 +566,9 @@ public class UserManager
         }
     }
 
-    public static @NotNull Map<String, String> getUserPreferences(boolean writable)
-    {
-        if (writable)
-            return PropertyManager.getWritableProperties(USER_PREF_MAP, true);
-        else
-            return PropertyManager.getProperties(USER_PREF_MAP);
-    }
-
     /**
      *  Get completions from list of all site users
-      */
+     */
     public static List<AjaxCompletion> getAjaxCompletions(User currentUser, Container c) throws SQLException
     {
         return getAjaxCompletions(getActiveUsers(), currentUser, c);

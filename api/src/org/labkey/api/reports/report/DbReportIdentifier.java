@@ -17,7 +17,6 @@ package org.labkey.api.reports.report;
 
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.writer.ContainerUser;
 
