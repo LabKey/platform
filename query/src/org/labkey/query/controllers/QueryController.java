@@ -2998,7 +2998,7 @@ public class QueryController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ImportAction extends AbstractQueryImportAction<QueryForm>
     {
-        QueryForm _form;
+        private QueryForm _form;
 
         public ImportAction()
         {
@@ -4096,9 +4096,10 @@ public class QueryController extends SpringActionController
 
             TableInfo ti = QueryManager.get().getTableInfoExternalSchema();
 
-            for (ColumnInfo ci : ti.getColumns())
-                if (null != ci.getDescription())
-                    _help.put(ci.getName(), ci.getDescription());
+            ti.getColumns()
+                .stream()
+                .filter(ci -> null != ci.getDescription())
+                .forEach(ci -> _help.put(ci.getName(), ci.getDescription()));
 
             initSources();
         }
