@@ -28,13 +28,14 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Map;
 
 public class VisitUpdateService extends DefaultQueryUpdateService
 {
     public VisitUpdateService(VisitTable table)
     {
-        super(table, table.getRealTable());
+        super(table, table.getRealTable(), Collections.singletonMap("Container", "Folder"));
     }
 
     @Override
