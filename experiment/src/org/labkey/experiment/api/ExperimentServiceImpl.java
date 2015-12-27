@@ -1088,7 +1088,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         Data data = new SqlSelector(table.getSchema().getScope(), sql).getObject(Data.class);
 
-        return new ExpDataImpl(data);
+        return data == null ? null : new ExpDataImpl(data);
     }
 
     @Override
@@ -1111,7 +1111,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         Data data = new SqlSelector(table.getSchema().getScope(), sql).getObject(Data.class);
 
-        return new ExpDataImpl(data);
+        return data == null ? null : new ExpDataImpl(data);
     }
 
     public ExpExperiment createHiddenRunGroup(Container container, User user, ExpRun... runs)
@@ -2235,14 +2235,14 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 }
             }
 
-            OntologyManager.deleteAllObjects(c, user);
-
             // Delete DataClasses and their exp.Data members
             // Need to delete DataClass before SampleSets since they may be referenced by the DataClass
             for (ExpDataClassImpl dataClass : dataClasses)
             {
                 dataClass.delete(user);
             }
+
+            OntologyManager.deleteAllObjects(c, user);
 
             // delete material sources
             // now call the specialized function to delete the Materials that belong to the Material Source,
@@ -2629,11 +2629,15 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         if (!dataClass.getContainer().equals(c))
             throw new ExperimentException("Trying to delete a DataClass from a different container");
 
+        Domain d = dataClass.getDomain();
+
         try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
         {
             DbSequenceManager.delete(c, ExpDataClassImpl.GENID_SEQUENCE_NAME, dataClass.getRowId());
 
             truncateDataClass(dataClass, null);
+
+            d.delete(user);
 
             deleteDomainObjects(dataClass.getContainer(), dataClass.getLSID());
 
@@ -3922,7 +3926,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return ss;
     }
 
-    public ExpDataClass createDataClass(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, Integer sampleSetId, String nameExpression)
+    public ExpDataClassImpl createDataClass(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, Integer sampleSetId, String nameExpression)
             throws ExperimentException
     {
         ExpDataClass existing = getDataClass(c, u, name, true);

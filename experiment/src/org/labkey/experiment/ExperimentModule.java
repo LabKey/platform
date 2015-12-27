@@ -55,6 +55,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.experiment.api.DataClassDomainKind;
+import org.labkey.experiment.api.ExpDataClassDataTestCase;
 import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.LogDataType;
@@ -291,6 +292,10 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         }
         */
 
+        int dataClassCount = ExperimentService.get().getDataClasses(c, null, false).size();
+        if (dataClassCount > 0)
+            list.add(dataClassCount + " Data Class" + (dataClassCount > 1 ? "es" : ""));
+
         int sampleSetCount = ExperimentService.get().getSampleSets(c, null, false).size();
         if (sampleSetCount > 0)
             list.add(sampleSetCount + " Sample Set" + (sampleSetCount > 1 ? "s" : ""));
@@ -304,8 +309,9 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     public Set<Class> getIntegrationTests()
     {
         return new HashSet<Class>(Arrays.asList(
-            OntologyManager.TestCase.class,
-            DomainPropertyImpl.TestCase.class));
+                OntologyManager.TestCase.class,
+                DomainPropertyImpl.TestCase.class,
+                ExpDataClassDataTestCase.class));
     }
 
     @NotNull
