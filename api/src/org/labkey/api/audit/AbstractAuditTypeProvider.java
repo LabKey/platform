@@ -49,11 +49,14 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -100,21 +103,6 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         PropertyService.get().registerDomainKind(domainKind);
 
         Domain domain = getDomain();
-
-        // NOTE: Remove domains created prior to migration that used DomainKind base properties instead of normal PropertyDescriptors
-        // NOTE: This check will drop domains from servers built from source during 13.3 dev prior to the audit hard table migration.
-        if (domain != null && domain.getProperties().isEmpty() && !AuditLogService.get().hasEventTypeMigrated(getEventName()))
-        {
-            try
-            {
-                domain.delete(user);
-                domain = null;
-            }
-            catch (DomainNotFoundException e)
-            {
-                throw new RuntimeException(e);
-            }
-        }
 
         // if the domain doesn't exist, create it
         if (domain == null)
@@ -267,26 +255,6 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         return ContainerManager.getSharedContainer();
     }
 
-    protected <K extends AuditTypeEvent> void copyStandardFields(K bean, AuditLogEvent event)
-    {
-        bean.setImpersonatedBy(event.getImpersonatedBy());
-        bean.setComment(event.getComment());
-        bean.setProjectId(event.getProjectId());
-        bean.setContainer(event.getContainerId());
-        bean.setEventType(event.getEventType());
-        bean.setCreated(event.getCreated());
-        bean.setCreatedBy(event.getCreatedBy());
-    }
-
-    @Override
-    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event, @Nullable Map<String, Object> dataMap)
-    {
-        if (dataMap == null)
-            return convertEvent(event);
-        else
-            throw new IllegalArgumentException("Provider needs to override convertEvent in order to handle a non-null dataMap");
-    }
-
     protected void appendValueMapColumns(AbstractTableInfo table)
     {
         ColumnInfo oldCol = table.getColumn(FieldKey.fromString(OLD_RECORD_PROP_NAME));
@@ -328,5 +296,109 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     public ActionURL getAuditUrl()
     {
         return AuditLogService.get().getAuditUrl();
+    }
+
+    public static Map<String, String> decodeFromDataMap(String properties)
+    {
+        try
+        {
+            if (properties != null)
+            {
+                return PageFlowUtil.mapFromQueryString(properties);
+            }
+            return Collections.emptyMap();
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static int MAX_FIELD_SIZE = 4000;
+
+    public static String encodeForDataMap(Map<String, Object> properties)
+    {
+        if (properties == null) return null;
+
+        Map<String,String> stringMap = new HashMap<>();
+        for (Map.Entry<String,Object> entry :  properties.entrySet())
+        {
+            Object value = entry.getValue();
+            stringMap.put(entry.getKey(), value == null ? null : value.toString());
+        }
+        return encodeForDataMap(stringMap, true);
+    }
+
+    // helper to encode map information into a form that can be saved into an ontology column,
+    // if validate size is set, the returned String will be guaranteed to fit into the field.
+    //
+    public static String encodeForDataMap(Map<String, String> properties, boolean validateSize)
+    {
+        try
+        {
+            String data = PageFlowUtil.toQueryString(properties.entrySet());
+            if (data == null)
+                return null;
+
+            int count = 0;
+
+            while (validateSize && data.length() > MAX_FIELD_SIZE)
+            {
+                _truncateEntry(properties, (data.length() - MAX_FIELD_SIZE));
+                data = PageFlowUtil.toQueryString(properties.entrySet());
+                if (count++ > 4)
+                    break;
+            }
+
+            // if the overall size couldn't be reduced by truncating the largest entries, just
+            // start reducing the overall size of the map
+            if (validateSize && data.length() > MAX_FIELD_SIZE)
+            {
+                List<Map.Entry<String, String>> newProps = new ArrayList<>();
+                newProps.addAll(properties.entrySet());
+                int newSize = Math.max(1, newProps.size());
+
+                while (data.length() > MAX_FIELD_SIZE)
+                {
+                    newSize = Math.max(1, newSize - 10);
+                    if (newSize == 1)
+                        break;
+                    List<Map.Entry<String, String>> a = newProps.subList(0, newSize);
+                    data = PageFlowUtil.toQueryString(a);
+                }
+            }
+
+            return data;
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected static void _truncateEntry(Map<String, String> properties, int diff)
+    {
+        diff = diff * 13 / 10;
+        diff = Math.max(diff, 200);
+
+        int max = 0;
+        String largest = null;
+
+        for (Map.Entry<String, String> entry : properties.entrySet())
+        {
+            if (entry.getValue() != null && entry.getValue().length() > max)
+            {
+                max = entry.getValue().length();
+                largest = entry.getKey();
+            }
+        }
+
+        if (largest != null && max > diff)
+        {
+            String newValue = properties.get(largest).substring(0, max - diff) + "...";
+            properties.put(largest, newValue);
+        }
+        else
+            properties.put(largest, "contents too large to display");
     }
 }

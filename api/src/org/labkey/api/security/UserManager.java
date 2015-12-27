@@ -358,7 +358,8 @@ public class UserManager
         }
         catch (RuntimeException ignored){}
 
-        AuditLogService.get().addEvent(user, c, USER_AUDIT_EVENT, principal.getUserId(), message);
+        UserAuditEvent event = new UserAuditEvent(c.getId(), message, principal);
+        AuditLogService.get().addEvent(user, event);
     }
 
 
@@ -673,14 +674,8 @@ public class UserManager
      */
     public static void addAuditEvent(User user, Container c,  @Nullable User modifiedUser, String msg)
     {
-        AuditLogService.get().addEvent(user, c, UserManager.USER_AUDIT_EVENT,
-                modifiedUser != null ? modifiedUser.getUserId() : 0, msg);
-
-        // new implementation
-/*
-        UserAuditEvent event = new UserAuditEvent(ContainerManager.getRoot().getId(), msg, modifiedUser);
+        UserAuditEvent event = new UserAuditEvent(c.getId(), msg, modifiedUser);
         AuditLogService.get().addEvent(user, event);
-*/
     }
 
     /**

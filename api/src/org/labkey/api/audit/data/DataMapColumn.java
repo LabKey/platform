@@ -17,7 +17,7 @@ package org.labkey.api.audit.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.audit.SimpleAuditViewFactory;
+import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
@@ -71,7 +71,7 @@ public class DataMapColumn extends DataColumn
             String delim = "";
             StringBuilder sb = new StringBuilder();
 
-            for (Map.Entry<String, String> entry : SimpleAuditViewFactory.decodeFromDataMap((String) contents).entrySet())
+            for (Map.Entry<String, String> entry : AbstractAuditTypeProvider.decodeFromDataMap((String) contents).entrySet())
             {
                 sb.append(delim);
                 sb.append(entry.getKey()).append(": ").append(entry.getValue());

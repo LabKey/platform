@@ -16,8 +16,8 @@
 
 package org.labkey.api.audit;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -48,7 +48,6 @@ public class AuditLogService
 {
     static private I _instance;
     static private final I _defaultProvider = new DefaultAuditProvider(); 
-    private static Map<String, AuditViewFactory> _auditViewFactories = new ConcurrentHashMap<>();
     private static Map<String, AuditTypeProvider> _auditTypeProviders = new ConcurrentHashMap<>();
 
     public static void registerAuditType(AuditTypeProvider provider)
@@ -82,46 +81,6 @@ public class AuditLogService
         return _auditTypeProviders.get(eventType.toLowerCase());
     }
 
-    @Deprecated
-    public static void addAuditViewFactory(AuditViewFactory factory)
-    {
-        if (!(AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(factory.getEventType())))
-        {
-            AuditViewFactory previous = _auditViewFactories.put(factory.getEventType(), factory);
-
-            if (null != previous)
-                throw new IllegalStateException("AuditViewFactory \"" + factory.getEventType() + "\" is already registered: "
-                        + previous.getClass().getName() + " vs. " + factory.getClass().getName());
-        }
-    }
-
-    // AuditViewFactory will be removed during audit log migration upgrade
-    public static void removeAuditViewFactory(String eventType)
-    {
-        _auditViewFactories.remove(eventType);
-    }
-
-    @Deprecated
-    public static AuditViewFactory getAuditViewFactory(String eventType)
-    {
-        return _auditViewFactories.get(eventType);
-    }
-
-    @Deprecated
-    public static List<AuditViewFactory> getAuditViewFactories()
-    {
-        List<AuditViewFactory> factories = new ArrayList<>(_auditViewFactories.values());
-
-        Collections.sort(factories, new Comparator<AuditViewFactory>()
-        {
-            public int compare(AuditViewFactory o1, AuditViewFactory o2)
-            {
-                return (o1.getName().compareToIgnoreCase(o2.getName()));
-            }
-        });
-        return Collections.unmodifiableList(factories);
-    }
-
     static public synchronized I get()
     {
         return _instance != null ? _instance : _defaultProvider;
@@ -148,33 +107,9 @@ public class AuditLogService
         /**
          * Specifies whether the provider produces displayable views.
          */
-        public boolean isViewable();
+        boolean isViewable();
 
-        @Deprecated // Use non-ViewContext version
-        public AuditLogEvent addEvent(ViewContext context, String eventType, String key, String message);
-
-        @Deprecated // use AuditTypeEvent version
-        public AuditLogEvent addEvent(User user, Container c, String eventType, String key, String message);
-        @Deprecated // use AuditTypeEvent version
-        public AuditLogEvent addEvent(User user, Container c, String eventType, String key1, String key2, String message);
-        @Deprecated // use AuditTypeEvent version
-        public AuditLogEvent addEvent(User user, Container c, String eventType, int key, String message);
-        @Deprecated // use AuditTypeEvent version
-        public AuditLogEvent addEvent(AuditLogEvent event);
-
-        public <K extends AuditTypeEvent> K addEvent(User user, K event);
-
-        /**
-         * Adds the audit event, plus additional properties contained in the dataMap. The dataMap should map
-         * property names to values, with the properties coming from the valid set of properties from the
-         * specified domain. The domain and associated properties must have been created in advance, in order
-         * for the query views to correctly display the additional properties, URI's for domains and properties
-         * should be created using the methods on this service.
-         *
-         * @deprecated Replaced by {@link #addEvent(org.labkey.api.security.User, AuditTypeEvent)}.
-         */
-        @Deprecated
-        public <K extends AuditTypeEvent> AuditLogEvent addEvent(AuditLogEvent event, Map<String, Object> dataMap, String domainURI);
+        <K extends AuditTypeEvent> K addEvent(User user, K event);
 
         /**
          * Convenience methods to properly construct lsids with the correct audit namespace
@@ -182,69 +117,20 @@ public class AuditLogService
          */
         @Deprecated
         public String getDomainURI(String eventType);
-        @Deprecated
-        public String getPropertyURI(String eventType, String propertyName);
-
-        @Deprecated
-        public List<AuditLogEvent> getEvents(String eventType, String key);
-        @Deprecated
-        public List<AuditLogEvent> getEvents(String eventType, int key);
-        @Deprecated
-        public List<AuditLogEvent> getEvents(SimpleFilter filter);
-        @Deprecated
-        public List<AuditLogEvent> getEvents(SimpleFilter filter, Sort sort);
-
-        @Deprecated // convert usages to getAuditEvent
-        public AuditLogEvent getEvent(int rowId);
 
         @Nullable
         public <K extends AuditTypeEvent> K getAuditEvent(User user, String eventType, int rowId);
         public <K extends AuditTypeEvent> List<K> getAuditEvents(Container container, User user, String eventType, @Nullable SimpleFilter filter, @Nullable Sort sort);
 
-        @Deprecated
-        public AuditLogQueryView createQueryView(ViewContext context, @Nullable SimpleFilter filter);
-
-        /**
-         * Creates a query view specific to the audit view factory specified by the eventType parameter.
-         * The audit view factory is able to customize the table info of the underlying query view.
-         * @see org.labkey.api.audit.AuditLogService.AuditViewFactory
-         */
-        @Deprecated
-        public AuditLogQueryView createQueryView(ViewContext context, @Nullable SimpleFilter filter, String eventType);
-
         public String getTableName();
         public TableInfo getTable(ViewContext context, String name);
         public UserSchema createSchema(User user, Container container);
-
-        /**
-         * An audit view factory is for creating customized views of specific audit event types.
-         */
-        @Deprecated
-        public void addAuditViewFactory(AuditViewFactory factory);
-        @Deprecated
-        public AuditViewFactory getAuditViewFactory(String eventType);
-        @Deprecated
-        public List<AuditViewFactory> getAuditViewFactories();
 
         public void registerAuditType(AuditTypeProvider provider);
         public List<AuditTypeProvider> getAuditProviders();
         public AuditTypeProvider getAuditProvider(String eventType);
 
         public ActionURL getAuditUrl();
-
-        /**
-         * Check if the event type has been migrated from using the old audit log table to the new provisioned audit log tables.
-         * For a new install, this flag won't be set -- check {@link #isMigrateComplete()} before checking if the event type has been migrated.
-         *
-         * @param eventType The event type name.
-         * @return true if the event type has been migrated.
-         */
-        public boolean hasEventTypeMigrated(String eventType);
-
-        /**
-         * @return true when all event types have been migrated.
-         */
-        public boolean isMigrateComplete();
     }
 
     /**

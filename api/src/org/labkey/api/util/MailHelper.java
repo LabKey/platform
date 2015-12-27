@@ -19,27 +19,47 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.ContainerManager;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.provider.MessageAuditProvider;
+import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.security.User;
-import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.audit.AuditLogEvent;
-import org.labkey.api.data.Container;
 import org.springframework.mock.web.MockHttpServletResponse;
 
-import javax.mail.*;
+import javax.mail.Address;
+import javax.mail.Authenticator;
+import javax.mail.BodyPart;
+import javax.mail.Message;
 import javax.mail.Message.RecipientType;
-import javax.mail.internet.*;
+import javax.mail.MessagingException;
+import javax.mail.Multipart;
+import javax.mail.NoSuchProviderException;
+import javax.mail.PasswordAuthentication;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.AddressException;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeBodyPart;
+import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMultipart;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.Writer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
 
 /**
  * Provides static functions for help with sending email.
@@ -196,23 +216,16 @@ public class MailHelper
 
     private static void addAuditEvent(@Nullable User user, @Nullable Container c, Message m) throws MessagingException
     {
-        AuditLogEvent event = new AuditLogEvent();
+        MessageAuditProvider.MessageAuditEvent event = new MessageAuditProvider.MessageAuditEvent(c != null ? c.getId() : null, "The Email Message: (" + m.getSubject() + ") was sent");
 
         try
         {
-            event.setEventType(MESSAGE_AUDIT_EVENT);
-            if (user != null)
-                event.setCreatedBy(user);
-            if (c != null)
-                event.setContainerId(c.getId());
-            else
-                event.setContainerId(ContainerManager.getRoot().getId());
             event.setComment("The Email Message: (" + m.getSubject() + ") was sent");
-            event.setKey1(getAddressStr(m.getFrom()));
-            event.setKey2(getAddressStr(m.getAllRecipients()));
-            event.setKey3(m.getContentType());
+            event.setFrom(getAddressStr(m.getFrom()));
+            event.setTo(getAddressStr(m.getAllRecipients()));
+            event.setContentType(m.getContentType());
 
-            AuditLogService.get().addEvent(event);
+            AuditLogService.get().addEvent(user, event);
         }
         catch (MessagingException me)
         {

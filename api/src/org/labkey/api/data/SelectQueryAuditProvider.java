@@ -17,14 +17,11 @@ package org.labkey.api.data;
 
 
 import org.labkey.api.audit.AbstractAuditTypeProvider;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
-import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.UserSchema;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -71,12 +68,6 @@ public class SelectQueryAuditProvider extends AbstractAuditTypeProvider
     public String getDescription()
     {
         return "Information about select queries that have logged columns";
-    }
-
-    @Override
-    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event)
-    {
-        throw new UnsupportedOperationException("Postdates migration, no need to convert");
     }
 
     @Override

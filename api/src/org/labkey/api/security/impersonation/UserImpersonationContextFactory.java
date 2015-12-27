@@ -91,10 +91,13 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
         SecurityManager.setAuthenticatedUser(request, impersonatedUser);
         User adminUser = getAdminUser();
 
-        AuditLogService.get().addEvent(adminUser, context.getContainer(), UserManager.USER_AUDIT_EVENT, adminUser.getUserId(),
-                adminUser.getEmail() + " impersonated " + impersonatedUser.getEmail());
-        AuditLogService.get().addEvent(adminUser, context.getContainer(), UserManager.USER_AUDIT_EVENT, impersonatedUser.getUserId(),
-                impersonatedUser.getEmail() + " was impersonated by " + adminUser.getEmail());
+        UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(context.getContainer().getId(),
+                adminUser.getEmail() + " impersonated " + impersonatedUser.getEmail(), adminUser);
+        AuditLogService.get().addEvent(adminUser, event);
+
+        UserManager.UserAuditEvent event2 = new UserManager.UserAuditEvent(context.getContainer().getId(),
+                impersonatedUser.getEmail() + " was impersonated by " + adminUser.getEmail(), impersonatedUser);
+        AuditLogService.get().addEvent(adminUser, event2);
     }
 
 
@@ -111,10 +114,14 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
             User adminUser = getAdminUser();
             Container project = null == _projectId ? ContainerManager.getRoot() : ContainerManager.getForId(_projectId);
 
-            AuditLogService.get().addEvent(adminUser, project, UserManager.USER_AUDIT_EVENT, impersonatedUser.getUserId(),
-                impersonatedUser.getEmail() + " was no longer impersonated by " + adminUser.getEmail());
-            AuditLogService.get().addEvent(adminUser, project, UserManager.USER_AUDIT_EVENT, adminUser.getUserId(),
-                adminUser.getEmail() + " stopped impersonating " + impersonatedUser.getEmail());
+            UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(project.getId(),
+                    impersonatedUser.getEmail() + " was no longer impersonated by " + adminUser.getEmail(), impersonatedUser);
+            AuditLogService.get().addEvent(adminUser, event);
+
+            UserManager.UserAuditEvent event2 = new UserManager.UserAuditEvent(project.getId(),
+                    adminUser.getEmail() + " stopped impersonating " + impersonatedUser.getEmail(), adminUser);
+            AuditLogService.get().addEvent(adminUser, event2);
+
         }
     }
 

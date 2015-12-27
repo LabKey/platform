@@ -26,7 +26,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.data.Container;
@@ -47,9 +46,10 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.AuthenticationProvider.ResetPasswordProvider;
+import org.labkey.api.audit.provider.GroupAuditProvider;
+import org.labkey.api.security.impersonation.DisallowGlobalRolesContext;
 import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
 import org.labkey.api.security.impersonation.ImpersonationContextFactory;
-import org.labkey.api.security.impersonation.DisallowGlobalRolesContext;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -68,7 +68,6 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
@@ -90,10 +89,8 @@ import org.labkey.api.view.ViewServlet;
 import org.labkey.api.wiki.WikiService;
 import org.springframework.dao.DataIntegrityViolationException;
 
-import javax.mail.Address;
 import javax.mail.Message;
 import javax.mail.MessagingException;
-import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import javax.naming.NamingException;
 import javax.servlet.ServletException;
@@ -2755,18 +2752,12 @@ public class SecurityManager
     {
         if (user != null)
         {
-            AuditLogEvent event = new AuditLogEvent();
-
-            event.setCreatedBy(user);
-            event.setComment(comment);
-
-            event.setContainerId(c.getId());
+            GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(c.getId(), comment);
+            event.setGroup(groupId);
             if (c.getProject() != null)
                 event.setProjectId(c.getProject().getId());
 
-            event.setIntKey2(groupId);
-            event.setEventType(GroupManager.GROUP_AUDIT_EVENT);
-            AuditLogService.get().addEvent(event);
+            AuditLogService.get().addEvent(user, event);
         }
     }
 

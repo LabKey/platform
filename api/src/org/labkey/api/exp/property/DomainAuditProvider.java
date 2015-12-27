@@ -16,25 +16,33 @@
 package org.labkey.api.exp.property;
 
 import org.labkey.api.audit.AbstractAuditTypeProvider;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.writer.DefaultContainerUser;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -102,7 +110,7 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
                     {
                         public DisplayColumn createRenderer(ColumnInfo colInfo)
                         {
-                            return new DomainAuditViewFactory.DomainColumn(colInfo, container, name);
+                            return new DomainAuditProvider.DomainColumn(colInfo, container, name);
                         }
                     });
                 }
@@ -114,18 +122,6 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
     public List<FieldKey> getDefaultVisibleColumns()
     {
         return defaultVisibleColumns;
-    }
-
-    @Override
-    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event)
-    {
-        DomainAuditEvent bean = new DomainAuditEvent();
-        copyStandardFields(bean, event);
-
-        bean.setDomainUri(event.getKey1());
-        bean.setDomainName(event.getKey3());
-
-        return (K)bean;
     }
 
     @Override
@@ -212,6 +208,69 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
         public String getKindName()
         {
             return NAME;
+        }
+    }
+
+    public static class DomainColumn extends DataColumn
+    {
+        private ColumnInfo _containerId;
+        private ColumnInfo _defaultName;
+
+        public DomainColumn(ColumnInfo col, ColumnInfo containerId, ColumnInfo defaultName)
+        {
+            super(col);
+            _containerId = containerId;
+            _defaultName = defaultName;
+        }
+
+        public String getName()
+        {
+            return getColumnInfo().getLabel();
+        }
+
+        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        {
+            String uri = (String)getBoundColumn().getValue(ctx);
+            String cId = (String)ctx.get("ContainerId");
+            if (cId == null)
+                cId = (String)ctx.get("Container");
+
+            if (uri != null && cId != null)
+            {
+                Container c = ContainerManager.getForId(cId);
+                if (c != null)
+                {
+                    Domain domain = PropertyService.get().getDomain(c, uri);
+                    if (domain != null)
+                    {
+                        DomainKind kind = PropertyService.get().getDomainKind(domain.getTypeURI());
+                        if (kind != null)
+                            out.write("<a href=\"" + kind.urlShowData(domain, new DefaultContainerUser(c, ctx.getViewContext().getUser())) + "\">" + PageFlowUtil.filter(domain.getName()) + "</a>");
+                        else
+                            out.write(PageFlowUtil.filter(domain.getName()));
+                        return;
+                    }
+                }
+            }
+
+            if (_defaultName != null)
+                out.write(Objects.toString(PageFlowUtil.filter(_defaultName.getValue(ctx)), "&nbsp;").toString());
+            else
+                out.write("&nbsp;");
+        }
+
+        public void addQueryColumns(Set<ColumnInfo> columns)
+        {
+            super.addQueryColumns(columns);
+            if (_containerId != null)
+                columns.add(_containerId);
+            if (_defaultName != null)
+                columns.add(_defaultName);
+        }
+
+        public boolean isFilterable()
+        {
+            return false;
         }
     }
 }

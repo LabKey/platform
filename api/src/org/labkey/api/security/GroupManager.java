@@ -23,13 +23,13 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -357,21 +357,18 @@ public class GroupManager
                 // ignore
             }
 
-            AuditLogEvent event = new AuditLogEvent();
-
-            event.setEventType(GROUP_AUDIT_EVENT);
-            event.setCreatedBy(user);
-            event.setIntKey1(principal.getUserId());
-            event.setIntKey2(group.getUserId());
+            GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(group.getContainer(), message);
+            event.setUser(principal.getUserId());
+            event.setGroup(group.getUserId());
 
             Container c = ContainerManager.getForId(group.getContainer());
             if (c != null && c.getProject() != null)
                 event.setProjectId(c.getProject().getId());
 
-            event.setContainerId(group.getContainer() != null ? group.getContainer() : ContainerManager.getRoot().getId());
-            event.setComment(message);
+            if (c == null)
+                event.setContainer(ContainerManager.getRoot().getId());
 
-            AuditLogService.get().addEvent(event);
+            AuditLogService.get().addEvent(user, event);
         }
 
         public void propertyChange(PropertyChangeEvent evt)

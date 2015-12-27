@@ -16,8 +16,8 @@
 package org.labkey.api.settings;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.provider.SiteSettingsAuditProvider;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
@@ -25,7 +25,6 @@ import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -35,7 +34,6 @@ import java.util.Map;
  */
 public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGroup
 {
-    public final static String AUDIT_EVENT_TYPE = "AppPropsEvent";
     public final static String AUDIT_PROP_DIFF = "AppPropsDiff";
 
     protected PropertyMap _properties = null;
@@ -101,19 +99,13 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
 
         if (null != diff)
         {
-            AuditLogEvent event = new AuditLogEvent();
-            event.setCreatedBy(user);
-            event.setContainerId(c.getId());
+            SiteSettingsAuditProvider.SiteSettingsAuditEvent event = new SiteSettingsAuditProvider.SiteSettingsAuditEvent(c.getId(), "The " + getType() + " were changed (see details).");
+
             if (c.getProject() != null)
                 event.setProjectId(c.getProject().getId());
-            event.setComment("The " + getType() + " were changed (see details).");
-            event.setEventType(AUDIT_EVENT_TYPE);
+            event.setChanges(diff);
 
-            Map<String,Object> map = new HashMap<>();
-            map.put(AUDIT_PROP_DIFF, diff);
-
-            String domainUri = AuditLogService.get().getDomainURI(AUDIT_EVENT_TYPE);
-            AuditLogService.get().addEvent(event, map, domainUri);
+            AuditLogService.get().addEvent(user, event);
         }
     }
 

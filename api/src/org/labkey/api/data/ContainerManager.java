@@ -28,8 +28,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditTypeEvent;
+import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -130,7 +131,6 @@ public class ContainerManager
     private static final String PROJECT_LIST_ID = "Projects";
 
     public static final String HOME_PROJECT_PATH = "/home";
-    public static final String CONTAINER_AUDIT_EVENT = "ContainerAuditEvent";
 
     private static final StringKeyCache<Object> CACHE = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Containers");
     private static final ReentrantLock DATABASE_QUERY_LOCK = new ReentrantLock();
@@ -1492,17 +1492,11 @@ public class ContainerManager
     {
         if (user != null)
         {
-            AuditLogEvent event = new AuditLogEvent();
-
-            event.setCreatedBy(user);
-            event.setEventType(ContainerManager.CONTAINER_AUDIT_EVENT);
-            event.setContainerId(c.getId());
-            event.setComment(comment);
-
+            AuditTypeEvent event = new AuditTypeEvent(ContainerAuditProvider.CONTAINER_AUDIT_EVENT, c.getId(), comment);
             if (c.getProject() != null)
                 event.setProjectId(c.getProject().getId());
 
-            AuditLogService.get().addEvent(event);
+            AuditLogService.get().addEvent(user, event);
         }
     }
 

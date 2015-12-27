@@ -26,6 +26,7 @@ import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
+import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;

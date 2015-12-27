@@ -16,15 +16,11 @@
 package org.labkey.api.security;
 
 import org.labkey.api.audit.AbstractAuditTypeProvider;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
-import org.labkey.api.audit.query.DefaultAuditTypeTable;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.UserSchema;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -74,12 +70,6 @@ public class AuthenticationProviderConfigAuditTypeProvider extends AbstractAudit
     public String getDescription()
     {
         return "Displays information about modifications to the authentication provider configuration.";
-    }
-
-    @Override
-    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event)
-    {
-        throw new UnsupportedOperationException("Postdates migration, no need to convert");
     }
 
     @Override

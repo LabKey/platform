@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.webdav;
+package org.labkey.api.audit.provider;
 
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
@@ -29,43 +29,45 @@ import java.util.Set;
 
 /**
  * User: klum
- * Date: 7/21/13
+ * Date: 7/19/13
  */
-public class FileSystemBatchAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
+public class ContainerAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
-    public static final String EVENT_TYPE = "FileSystemBatch";
-
+    public static final String CONTAINER_AUDIT_EVENT = "ContainerAuditEvent";
     static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
 
     static {
 
-        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED));
-        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CONTAINER));
-        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
+        defaultVisibleColumns.add(FieldKey.fromParts("Created"));
+        defaultVisibleColumns.add(FieldKey.fromParts("CreatedBy"));
+        defaultVisibleColumns.add(FieldKey.fromParts("ImpersonatedBy"));
+        defaultVisibleColumns.add(FieldKey.fromParts("ProjectId"));
+        defaultVisibleColumns.add(FieldKey.fromParts("Container"));
+        defaultVisibleColumns.add(FieldKey.fromParts("Comment"));
     }
 
     @Override
     protected AbstractAuditDomainKind getDomainKind()
     {
-        return new FileSystemBatchAuditDomainKind();
+        return new ContainerAuditDomainKind();
     }
 
     @Override
     public String getEventName()
     {
-        return EVENT_TYPE;
+        return CONTAINER_AUDIT_EVENT;
     }
 
     @Override
     public String getLabel()
     {
-        return "File batch events";
+        return "Project and Folder events";
     }
 
     @Override
     public String getDescription()
     {
-        return "Displays information about file system digest notifications.";
+        return "Information about project and folder modifications.";
     }
 
     @Override
@@ -80,14 +82,14 @@ public class FileSystemBatchAuditProvider extends AbstractAuditTypeProvider impl
         return (Class<K>)AuditTypeEvent.class;
     }
 
-    public static class FileSystemBatchAuditDomainKind extends AbstractAuditDomainKind
+    public static class ContainerAuditDomainKind extends AbstractAuditDomainKind
     {
-        public static final String NAME = "FileSystemBatchAuditDomain";
+        public static final String NAME = "ContainerAuditDomain";
         public static String NAMESPACE_PREFIX = "Audit-" + NAME;
 
-        public FileSystemBatchAuditDomainKind()
+        public ContainerAuditDomainKind()
         {
-            super(EVENT_TYPE);
+            super(CONTAINER_AUDIT_EVENT);
         }
 
         @Override

@@ -98,27 +98,6 @@ public class ClientApiAuditProvider extends AbstractAuditTypeProvider implements
     }
 
     @Override
-    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event)
-    {
-        ClientApiAuditEvent bean = new ClientApiAuditEvent();
-        copyStandardFields(bean, event);
-
-        // 'key1' mapped to 'subtype' and other 'keyN' are mapped to 'stringN-1'
-        bean.setSubType(event.getKey1());
-        bean.setString1(event.getKey2());
-        bean.setString2(event.getKey3());
-
-        if (event.getIntKey1() != null)
-            bean.setInt1(event.getIntKey1());
-        if (event.getIntKey2() != null)
-            bean.setInt2(event.getIntKey2());
-        if (event.getIntKey3() != null)
-            bean.setInt3(event.getIntKey3());
-
-        return (K)bean;
-    }
-
-    @Override
     public Map<FieldKey, String> legacyNameMap()
     {
         Map<FieldKey, String> legacyNames = super.legacyNameMap();

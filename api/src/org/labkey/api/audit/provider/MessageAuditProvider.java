@@ -13,20 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.webdav;
+package org.labkey.api.audit.provider;
 
 import org.labkey.api.audit.AbstractAuditTypeProvider;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
-import org.labkey.api.audit.query.DefaultAuditTypeTable;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.MailHelper;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,15 +33,13 @@ import java.util.Set;
 
 /**
  * User: klum
- * Date: 7/19/13
+ * Date: 7/21/13
  */
-public class FileSystemAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
+public class MessageAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
-    public static final String EVENT_TYPE = "FileSystem";
-
-    public static final String COLUMN_NAME_DIRECTORY = "Directory";
-    public static final String COLUMN_NAME_FILE = "File";
-    public static final String COLUMN_NAME_RESOURCE_PATH = "ResourcePath";
+    public static final String COLUMN_NAME_FROM = "From";
+    public static final String COLUMN_NAME_TO = "To";
+    public static final String COLUMN_NAME_CONTENT_TYPE = "ContentType";
 
     static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
 
@@ -54,62 +48,49 @@ public class FileSystemAuditProvider extends AbstractAuditTypeProvider implement
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED_BY));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_IMPERSONATED_BY));
-        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_DIRECTORY));
-        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_FILE));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_FROM));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_TO));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
     }
 
     @Override
     protected AbstractAuditDomainKind getDomainKind()
     {
-        return new FileSystemAuditDomainKind();
+        return new MessageAuditDomainKind();
     }
 
     @Override
     public String getEventName()
     {
-        return EVENT_TYPE;
+        return MailHelper.MESSAGE_AUDIT_EVENT;
     }
 
     @Override
     public String getLabel()
     {
-        return "File events";
+        return "Message events";
     }
 
     @Override
     public String getDescription()
     {
-        return "Displays information about file uploads and modifications.";
-    }
-
-    @Override
-    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event)
-    {
-        FileSystemAuditEvent bean = new FileSystemAuditEvent();
-        copyStandardFields(bean, event);
-
-        bean.setDirectory(event.getKey1());
-        bean.setFile(event.getKey2());
-        bean.setResourcePath(event.getKey3());
-
-        return (K)bean;
+        return "Message events";
     }
 
     @Override
     public Map<FieldKey, String> legacyNameMap()
     {
         Map<FieldKey, String> legacyNames = super.legacyNameMap();
-        legacyNames.put(FieldKey.fromParts("key1"), COLUMN_NAME_DIRECTORY);
-        legacyNames.put(FieldKey.fromParts("key2"), COLUMN_NAME_FILE);
-        legacyNames.put(FieldKey.fromParts("key3"), COLUMN_NAME_RESOURCE_PATH);
+        legacyNames.put(FieldKey.fromParts("key1"), COLUMN_NAME_FROM);
+        legacyNames.put(FieldKey.fromParts("key2"), COLUMN_NAME_TO);
+        legacyNames.put(FieldKey.fromParts("key3"), COLUMN_NAME_CONTENT_TYPE);
         return legacyNames;
     }
 
     @Override
     public <K extends AuditTypeEvent> Class<K> getEventClass()
     {
-        return (Class<K>)FileSystemAuditEvent.class;
+        return (Class<K>)MessageAuditEvent.class;
     }
 
     @Override
@@ -118,68 +99,69 @@ public class FileSystemAuditProvider extends AbstractAuditTypeProvider implement
         return defaultVisibleColumns;
     }
 
-    public static class FileSystemAuditEvent extends AuditTypeEvent
-    {
-        private String _directory;      // the directory name
-        private String _file;           // the file name
-        private String _resourcePath;   // the webdav resource path
 
-        public FileSystemAuditEvent()
+    public static class MessageAuditEvent extends AuditTypeEvent
+    {
+        private String _from;
+        private String _to;
+        private String _contentType;
+
+        public MessageAuditEvent()
         {
             super();
         }
 
-        public FileSystemAuditEvent(String container, String comment)
+        public MessageAuditEvent(String container, String comment)
         {
-            super(EVENT_TYPE, container, comment);
+            super(MailHelper.MESSAGE_AUDIT_EVENT, container, comment);
         }
 
-        public String getDirectory()
+        public String getFrom()
         {
-            return _directory;
+            return _from;
         }
 
-        public void setDirectory(String directory)
+        public void setFrom(String from)
         {
-            _directory = directory;
+            _from = from;
         }
 
-        public String getFile()
+        public String getTo()
         {
-            return _file;
+            return _to;
         }
 
-        public void setFile(String file)
+        public void setTo(String to)
         {
-            _file = file;
+            _to = to;
         }
 
-        public String getResourcePath()
+        public String getContentType()
         {
-            return _resourcePath;
+            return _contentType;
         }
 
-        public void setResourcePath(String resourcePath)
+        public void setContentType(String contentType)
         {
-            _resourcePath = resourcePath;
+            _contentType = contentType;
         }
     }
 
-    public static class FileSystemAuditDomainKind extends AbstractAuditDomainKind
+    public static class MessageAuditDomainKind extends AbstractAuditDomainKind
     {
-        public static final String NAME = "FileSystemAuditDomain";
+        public static final String NAME = "MessageAuditDomain";
         public static String NAMESPACE_PREFIX = "Audit-" + NAME;
 
         private final Set<PropertyDescriptor> _fields;
 
-        public FileSystemAuditDomainKind()
+        public MessageAuditDomainKind()
         {
-            super(EVENT_TYPE);
+            super(MailHelper.MESSAGE_AUDIT_EVENT);
 
             Set<PropertyDescriptor> fields = new LinkedHashSet<>();
-            fields.add(createPropertyDescriptor(COLUMN_NAME_DIRECTORY, PropertyType.STRING));
-            fields.add(createPropertyDescriptor(COLUMN_NAME_FILE, PropertyType.STRING));
-            fields.add(createPropertyDescriptor(COLUMN_NAME_RESOURCE_PATH, PropertyType.STRING));
+            fields.add(createPropertyDescriptor("From", PropertyType.STRING));
+            fields.add(createPropertyDescriptor("To", PropertyType.STRING));
+            fields.add(createPropertyDescriptor("ContentType", PropertyType.STRING));
             _fields = Collections.unmodifiableSet(fields);
         }
 

@@ -20,8 +20,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.resource.AbstractResource;
 import org.labkey.api.resource.Resource;
@@ -534,17 +534,13 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
 
 //        String subject = "File Management Tool notification: " + message;
 
-        AuditLogEvent event = new AuditLogEvent();
+        FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(c.getId(), message);
 
-        event.setCreatedBy(context.getUser());
-        event.setContainerId(c.getId());
-        event.setEventType("FileSystem" /*FileSystemAuditViewFactory.EVENT_TYPE*/);
-        event.setKey1(dir);
-        event.setKey2(name);
-        event.setKey3(getPath().toString());
-        event.setComment(message);
+        event.setDirectory(dir);
+        event.setFile(name);
+        event.setResourcePath(getPath().toString());
 
-        AuditLogService.get().addEvent(event);
+        AuditLogService.get().addEvent(context.getUser(), event);
     }
 
     protected void setProperty(String key, String value)

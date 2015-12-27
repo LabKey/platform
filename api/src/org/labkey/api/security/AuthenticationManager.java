@@ -493,7 +493,10 @@ public class AuthenticationManager
             return;
         authMessages.put(key, msg);
         if (user.isGuest())
-            AuditLogService.get().addEvent(user, ContainerManager.getRoot(), UserManager.USER_AUDIT_EVENT, null, msg);
+        {
+            UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(ContainerManager.getRoot().getId(), msg, user);
+            AuditLogService.get().addEvent(user, event);
+        }
         else
             UserManager.addAuditEvent(user, ContainerManager.getRoot(), user, msg);
     }

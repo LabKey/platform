@@ -49,17 +49,6 @@ public interface AuditTypeProvider
     Domain getDomain();
     TableInfo createTableInfo(UserSchema schema);
 
-    /**
-     * Conversion from legacy untyped event fields to new provider specific
-     * fields
-     */
-    default <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event)
-    {
-        throw new UnsupportedOperationException("Postdates migration, no need to convert");
-    }
-
-    <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event, @Nullable Map<String, Object> dataMap);
-
     <K extends AuditTypeEvent> Class<K> getEventClass();
 
     /**
@@ -68,5 +57,4 @@ public interface AuditTypeProvider
     Map<FieldKey, String> legacyNameMap();
 
     ActionURL getAuditUrl();
-
 }

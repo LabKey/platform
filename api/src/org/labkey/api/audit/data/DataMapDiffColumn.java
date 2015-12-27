@@ -15,7 +15,7 @@
  */package org.labkey.api.audit.data;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.audit.SimpleAuditViewFactory;
+import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
@@ -120,10 +120,10 @@ public class DataMapDiffColumn extends AliasedColumn
                 Map<String, String> newValues = Collections.emptyMap();
 
                 if (oldContent instanceof String)
-                    oldValues = SimpleAuditViewFactory.decodeFromDataMap((String)oldContent);
+                    oldValues = AbstractAuditTypeProvider.decodeFromDataMap((String)oldContent);
 
                 if (newContent instanceof String)
-                    newValues = SimpleAuditViewFactory.decodeFromDataMap((String)newContent);
+                    newValues = AbstractAuditTypeProvider.decodeFromDataMap((String)newContent);
 
                 for (Map.Entry<String, String> entry : oldValues.entrySet())
                 {
