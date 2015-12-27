@@ -21,7 +21,6 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportOptions;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
@@ -67,6 +66,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyReloadSource;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.UnionTable;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayTableMetadata;
@@ -74,9 +74,9 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.study.assay.AssayPublishManager;
+import org.labkey.study.assay.query.AssayAuditProvider;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.dataset.DatasetAuditViewFactory;
+import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.importer.StudyImportJob;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.QCStateSet;
@@ -99,7 +99,6 @@ import org.labkey.study.query.SpecimenDetailTable;
 import org.labkey.study.query.SpecimenSummaryTable;
 import org.labkey.study.query.SpecimenWrapTable;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.api.study.UnionTable;
 import org.labkey.study.query.VialTable;
 import org.labkey.study.security.roles.SpecimenCoordinatorRole;
 import org.labkey.study.security.roles.SpecimenRequesterRole;
@@ -250,26 +249,19 @@ public class StudyServiceImpl implements StudyService.Service
 
     public void addAssayRecallAuditEvent(Dataset def, int rowCount, Container sourceContainer, User user)
     {
-        AuditLogEvent event = new AuditLogEvent();
-
-        event.setCreatedBy(user);
-        event.setEventType(AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT);
-        event.setContainerId(sourceContainer.getId());
-        event.setKey1(def.getStudy().getContainer().getId());
-
         String assayName = def.getLabel();
         ExpProtocol protocol = def.getAssayProtocol();
         if (protocol != null)
-        {
             assayName = protocol.getName();
-            event.setIntKey1(protocol.getRowId());
-        }
 
-        event.setComment(rowCount + " row(s) were recalled to the assay: " + assayName);
+        AssayAuditProvider.AssayAuditEvent event = new AssayAuditProvider.AssayAuditEvent(sourceContainer.getId(), rowCount + " row(s) were recalled to the assay: " + assayName);
 
-        Map<String,Object> dataMap = Collections.<String,Object>singletonMap(DatasetDefinition.DATASETKEY, def.getDatasetId());
+        if (protocol != null)
+            event.setProtocol(protocol.getRowId());
+        event.setTargetStudy(def.getStudy().getContainer().getId());
+        event.setDatasetId(def.getDatasetId());
 
-        AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT));
+        AuditLogService.get().addEvent(user, event);
     }
 
 
@@ -295,69 +287,51 @@ public class StudyServiceImpl implements StudyService.Service
      */
     public static void addDatasetAuditEvent(User u, Dataset def, Map<String, Object> oldRecord, Map<String, Object> newRecord, String auditComment)
     {
-        AuditLogEvent event = new AuditLogEvent();
-        event.setCreatedBy(u);
-
         Container c = def.getContainer();
-        event.setContainerId(c.getId());
+        DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(c.getId(), auditComment);
+
         if (c.getProject() != null)
             event.setProjectId(c.getProject().getId());
-
-        event.setIntKey1(def.getDatasetId());
-
-        // IntKey2 is non-zero because we have details (a previous or new datamap)
-        event.setIntKey2(1);
-
-        event.setEventType(DatasetAuditViewFactory.DATASET_AUDIT_EVENT);
+        event.setDatasetId(def.getDatasetId());
+        event.setHasDetails(true);
 
         String oldRecordString = null;
         String newRecordString = null;
         Object lsid;
         if (oldRecord == null)
         {
-            newRecordString = DatasetAuditViewFactory.encodeForDataMap(newRecord);
+            newRecordString = DatasetAuditProvider.encodeForDataMap(newRecord);
             lsid = newRecord.get("lsid");
         }
         else if (newRecord == null)
         {
-            oldRecordString = DatasetAuditViewFactory.encodeForDataMap(oldRecord);
+            oldRecordString = DatasetAuditProvider.encodeForDataMap(oldRecord);
             lsid = oldRecord.get("lsid");
         }
         else
         {
-            oldRecordString = DatasetAuditViewFactory.encodeForDataMap(oldRecord);
-            newRecordString = DatasetAuditViewFactory.encodeForDataMap(newRecord);
+            oldRecordString = DatasetAuditProvider.encodeForDataMap(oldRecord);
+            newRecordString = DatasetAuditProvider.encodeForDataMap(newRecord);
             lsid = newRecord.get("lsid");
         }
-        event.setKey1(lsid == null ? null : lsid.toString());
+        event.setLsid(lsid == null ? null : lsid.toString());
 
-        event.setComment(auditComment);
+        if (oldRecordString != null) event.setOldRecordMap(oldRecordString);
+        if (newRecordString != null) event.setNewRecordMap(newRecordString);
 
-        Map<String,Object> dataMap = new HashMap<>();
-        if (oldRecordString != null) dataMap.put(DatasetAuditViewFactory.OLD_RECORD_PROP_NAME, oldRecordString);
-        if (newRecordString != null) dataMap.put(DatasetAuditViewFactory.NEW_RECORD_PROP_NAME, newRecordString);
-
-        AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(DatasetAuditViewFactory.DATASET_AUDIT_EVENT));
+        AuditLogService.get().addEvent(u, event);
     }
 
     public static void addDatasetAuditEvent(User u, Container c, Dataset def, String comment, UploadLog ul /*optional*/)
     {
-        AuditLogEvent event = new AuditLogEvent();
-        event.setCreatedBy(u);
+        DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(c.getId(), comment);
 
-        event.setContainerId(c.getId());
         if (c.getProject() != null)
             event.setProjectId(c.getProject().getId());
-
-        event.setIntKey1(def.getDatasetId());
-
-        event.setEventType(DatasetAuditViewFactory.DATASET_AUDIT_EVENT);
-
-        event.setComment(comment);
-
+        event.setDatasetId(def.getDatasetId());
         if (ul != null)
         {
-            event.setKey1(ul.getFilePath());
+            event.setLsid(ul.getFilePath());
         }
 /*
         AuditLogService.get().addEvent(event,

@@ -19,7 +19,6 @@ package org.labkey.audit.model;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
@@ -29,7 +28,6 @@ import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.Filter;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
@@ -41,7 +39,6 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.view.HttpView;
@@ -76,23 +73,6 @@ public class LogManager
     public TableInfo getTinfoAuditLog()
     {
         return getSchema().getTable("auditlog");
-    }
-
-    public <K extends AuditTypeEvent> AuditLogEvent insertEvent(User user, AuditLogEvent event)
-    {
-        AuditTypeProvider provider = AuditLogService.get().getAuditProvider(event.getEventType());
-
-        if (provider != null && (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(event.getEventType())))
-        {
-            K bean = provider.convertEvent(event);
-            bean = _insertEvent(user, bean);
-            return event;
-        }
-        else
-        {
-            validateFields(event);
-            return Table.insert(user, getTinfoAuditLog(), event);
-        }
     }
 
     public <K extends AuditTypeEvent> K _insertEvent(User user, K type)
@@ -130,12 +110,6 @@ public class LogManager
         return null;
     }
 
-    public AuditLogEvent getEvent(int rowId)
-    {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowId);
-        return new TableSelector(getTinfoAuditLog(), filter, null).getObject(AuditLogEvent.class);
-    }
-
     @Nullable
     public <K extends AuditTypeEvent> K getAuditEvent(User user, String eventType, int rowId)
     {
@@ -171,23 +145,6 @@ public class LogManager
             }
         }
         return Collections.emptyList();
-    }
-
-    public List<AuditLogEvent> getEvents(Filter filter, Sort sort)
-    {
-        return new TableSelector(getTinfoAuditLog(), filter, sort).getArrayList(AuditLogEvent.class);
-    }
-
-    /**
-     * Ensure that the string key fields don't exceed the length specified in the schema
-     */
-    private void validateFields(AuditLogEvent event)
-    {
-        event.setKey1(ensureMaxLength(event.getKey1(), STRING_KEY_MAX));
-        event.setKey2(ensureMaxLength(event.getKey2(), STRING_KEY_MAX));
-        event.setKey3(ensureMaxLength(event.getKey3(), STRING_KEY_MAX));
-
-        event.setComment(ensureMaxLength(event.getComment(), COMMENT_MAX));
     }
 
     private String ensureMaxLength(String input, int max)

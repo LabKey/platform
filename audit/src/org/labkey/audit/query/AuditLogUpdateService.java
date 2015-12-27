@@ -18,9 +18,8 @@ package org.labkey.audit.query;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.audit.ClientAPIAuditViewFactory;
+import org.labkey.api.audit.ClientApiAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.AbstractQueryUpdateService;
@@ -54,39 +53,34 @@ public class AuditLogUpdateService extends AbstractQueryUpdateService
     @Override
     protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        AuditLogEvent event = new AuditLogEvent();
-        event.setContainerId(container.getId());
-        event.setCreatedBy(user);
+        ClientApiAuditProvider.ClientApiAuditEvent event = new ClientApiAuditProvider.ClientApiAuditEvent(container.getId(), getString(row, "Comment"));
         if (row.get("EventType") != null)
         {
             String eventType = row.get("EventType").toString();
-            if (!ClientAPIAuditViewFactory.EVENT_TYPE.equalsIgnoreCase(eventType))
+            if (!ClientApiAuditProvider.EVENT_TYPE.equalsIgnoreCase(eventType))
             {
-                throw new ValidationException("Only audit entries with EventType '" + ClientAPIAuditViewFactory.EVENT_TYPE + "' can be inserted.");
+                throw new ValidationException("Only audit entries with EventType '" + ClientApiAuditProvider.EVENT_TYPE + "' can be inserted.");
             }
         }
-        event.setComment(getString(row, "Comment"));
-        event.setKey1(getString(row, "Key1"));
-        event.setKey2(getString(row, "Key2"));
-        event.setKey3(getString(row, "Key3"));
+        event.setSubType(getString(row, "Key1"));
+        event.setString1(getString(row, "Key2"));
+        event.setString2(getString(row, "Key3"));
         Integer intKey1 = getInteger(row, "IntKey1");
         if (intKey1 != null)
         {
-            event.setIntKey1(intKey1.intValue());
+            event.setInt1(intKey1.intValue());
         }
         Integer intKey2 = getInteger(row, "IntKey2");
         if (intKey2 != null)
         {
-            event.setIntKey2(intKey2.intValue());
+            event.setInt2(intKey2.intValue());
         }
         Integer intKey3 = getInteger(row, "IntKey3");
         if (intKey3 != null)
         {
-            event.setIntKey3(intKey3.intValue());
+            event.setInt3(intKey3.intValue());
         }
-        event.setEventType(ClientAPIAuditViewFactory.EVENT_TYPE);
-        event = AuditLogService.get().addEvent(event);
-
+        event = AuditLogService.get().addEvent(user, event);
         try
         {
             return getRow(user, container, Collections.<String, Object>singletonMap("RowId", event.getRowId()));

@@ -16,17 +16,12 @@
 package org.labkey.search.audit;
 
 import org.labkey.api.audit.AbstractAuditTypeProvider;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
-import org.labkey.api.audit.query.DefaultAuditTypeTable;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.UserSchema;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -79,17 +74,6 @@ public class SearchAuditProvider extends AbstractAuditTypeProvider implements Au
     public String getDescription()
     {
         return "Search queries";
-    }
-
-    @Override
-    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event)
-    {
-        SearchAuditEvent bean = new SearchAuditEvent();
-        copyStandardFields(bean, event);
-
-        bean.setQuery(event.getKey1());
-
-        return (K)bean;
     }
 
     @Override

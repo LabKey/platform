@@ -32,7 +32,7 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.audit.query.AuditLogQueryView;
+import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
@@ -43,7 +43,6 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UrlColumn;
 import org.labkey.api.data.validator.ColumnValidators;
@@ -62,7 +61,6 @@ import org.labkey.api.query.UserSchemaAction;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.Group;
-import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.MemberType;
 import org.labkey.api.security.RequiresLogin;
@@ -114,10 +112,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.view.template.TemplateHeaderView;
 import org.labkey.core.query.CoreQuerySchema;
-import org.labkey.core.query.GroupAuditProvider;
-import org.labkey.core.query.GroupAuditViewFactory;
 import org.labkey.core.query.UserAuditProvider;
-import org.labkey.core.query.UserAuditViewFactory;
 import org.labkey.core.query.UsersDomainKind;
 import org.labkey.core.query.UsersTable;
 import org.labkey.core.security.SecurityController;
@@ -724,27 +719,18 @@ public class UserController extends SpringActionController
 
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-
-            if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(UserManager.USER_AUDIT_EVENT))
+            UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
+            if (schema != null)
             {
-                UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
-                if (schema != null)
-                {
-                    QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
+                QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
 
-                    SimpleFilter projectMemberFilter = UsersTable.authorizeAndGetProjectMemberFilter(getContainer(), getUser(), UserAuditProvider.COLUMN_NAME_USER);
+                SimpleFilter projectMemberFilter = UsersTable.authorizeAndGetProjectMemberFilter(getContainer(), getUser(), UserAuditProvider.COLUMN_NAME_USER);
 
-                    settings.setBaseFilter(projectMemberFilter);
-                    settings.setQueryName(UserManager.USER_AUDIT_EVENT);
-                    return schema.createView(getViewContext(), settings, errors);
-                }
-                return null;
+                settings.setBaseFilter(projectMemberFilter);
+                settings.setQueryName(UserManager.USER_AUDIT_EVENT);
+                return schema.createView(getViewContext(), settings, errors);
             }
-            else
-            {
-                SimpleFilter projectMemberFilter = UsersTable.authorizeAndGetProjectMemberFilter(getContainer(), getUser(), "IntKey1");
-                return UserAuditViewFactory.getInstance().createUserHistoryView(getViewContext(), projectMemberFilter);
-            }
+            return null;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1284,17 +1270,11 @@ public class UserController extends SpringActionController
         {
             if (getContainer().isRoot())
             {
-                if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(GroupManager.GROUP_AUDIT_EVENT))
-                    return GroupAuditProvider.createSiteUserView(getViewContext(), form.getUserId(), errors);
-                else
-                    return GroupAuditViewFactory.getInstance().createSiteUserView(getViewContext(), form.getUserId());
+                return GroupAuditProvider.createSiteUserView(getViewContext(), form.getUserId(), errors);
             }
             else
             {
-                if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(GroupManager.GROUP_AUDIT_EVENT))
-                    return GroupAuditProvider.createProjectMemberView(getViewContext(), form.getUserId(), getContainer().getProject(), errors);
-                else
-                    return GroupAuditViewFactory.getInstance().createProjectMemberView(getViewContext(), form.getUserId());
+                return GroupAuditProvider.createProjectMemberView(getViewContext(), form.getUserId(), getContainer().getProject(), errors);
             }
         }
 
@@ -1478,44 +1458,29 @@ public class UserController extends SpringActionController
 
             if (isProjectAdminOrBetter)
             {
-                if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(UserManager.USER_AUDIT_EVENT))
+                UserSchema auditLogSchema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
+                if (auditLogSchema != null)
                 {
-                    UserSchema auditLogSchema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
-                    if (auditLogSchema != null)
-                    {
-                        QuerySettings settings = new QuerySettings(getViewContext(), "auditHistory");
-                        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(UserAuditProvider.COLUMN_NAME_USER), _detailsUserId);
-                        if (getContainer().isRoot())
-                            settings.setContainerFilterName(ContainerFilter.Type.AllFolders.name());
+                    QuerySettings settings = new QuerySettings(getViewContext(), "auditHistory");
+                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(UserAuditProvider.COLUMN_NAME_USER), _detailsUserId);
+                    if (getContainer().isRoot())
+                        settings.setContainerFilterName(ContainerFilter.Type.AllFolders.name());
 
 
-                        List<FieldKey> columns = new ArrayList<>();
+                    List<FieldKey> columns = new ArrayList<>();
 
-                        columns.add(FieldKey.fromParts(UserAuditProvider.COLUMN_NAME_CREATED));
-                        columns.add(FieldKey.fromParts(UserAuditProvider.COLUMN_NAME_CREATED_BY));
-                        columns.add(FieldKey.fromParts(UserAuditProvider.COLUMN_NAME_COMMENT));
+                    columns.add(FieldKey.fromParts(UserAuditProvider.COLUMN_NAME_CREATED));
+                    columns.add(FieldKey.fromParts(UserAuditProvider.COLUMN_NAME_CREATED_BY));
+                    columns.add(FieldKey.fromParts(UserAuditProvider.COLUMN_NAME_COMMENT));
 
-                        settings.setFieldKeys(columns);
-                        settings.setBaseFilter(filter);
-                        settings.setQueryName(UserManager.USER_AUDIT_EVENT);
+                    settings.setFieldKeys(columns);
+                    settings.setBaseFilter(filter);
+                    settings.setQueryName(UserManager.USER_AUDIT_EVENT);
 
-                        QueryView auditView = auditLogSchema.createView(getViewContext(), settings, errors);
-                        auditView.setTitle("History:");
+                    QueryView auditView = auditLogSchema.createView(getViewContext(), settings, errors);
+                    auditView.setTitle("History:");
 
-                        view.addView(auditView);
-                    }
-                }
-                else
-                {
-                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("IntKey1"), _detailsUserId);
-                    filter.addCondition(FieldKey.fromParts("EventType"), UserManager.USER_AUDIT_EVENT);
-
-                    AuditLogQueryView queryView = AuditLogService.get().createQueryView(getViewContext(), filter, UserManager.USER_AUDIT_EVENT);
-                    queryView.setVisibleColumns(new String[]{"CreatedBy", "Date", "Comment"});
-                    queryView.setTitle("History:");
-                    queryView.setSort(new Sort("-Date"));
-
-                    view.addView(queryView);
+                    view.addView(auditView);
                 }
             }
 

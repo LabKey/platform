@@ -24,7 +24,6 @@ import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -122,7 +121,7 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
-import org.labkey.experiment.ExperimentAuditViewFactory;
+import org.labkey.experiment.ExperimentAuditProvider;
 import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.XarExportType;
 import org.labkey.experiment.XarReader;
@@ -222,23 +221,18 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String comment)
     {
-        AuditLogEvent event = new AuditLogEvent();
-
-        event.setCreatedBy(user);
-        event.setComment(comment);
-
         Container c = run != null ? run.getContainer() : protocol.getContainer();
-        event.setContainerId(c.getId());
+        ExperimentAuditProvider.ExperimentAuditEvent event = new ExperimentAuditProvider.ExperimentAuditEvent(c.getId(), comment);
+
         event.setProjectId(c.getProject() == null ? null : c.getProject().getId());
-        event.setIntKey1(runGroup == null ? null : runGroup.getRowId());
-
-        event.setKey1(protocol.getLSID());
+        if (runGroup != null)
+            event.setRunGroup(runGroup.getRowId());
+        event.setProtocolLsid(protocol.getLSID());
         if (run != null)
-            event.setKey2(run.getLSID());
-        event.setKey3(ExperimentAuditViewFactory.getKey3(protocol, run));
-        event.setEventType(ExperimentAuditViewFactory.EXPERIMENT_AUDIT_EVENT);
+            event.setRunLsid(run.getLSID());
+        event.setProtocolRun(ExperimentAuditProvider.getKey3(protocol, run));
 
-        AuditLogService.get().addEvent(event);
+        AuditLogService.get().addEvent(user, event);
     }
 
     @Override

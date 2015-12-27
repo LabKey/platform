@@ -15,9 +15,7 @@
  */
 package org.labkey.study.assay.query;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.data.ProtocolColumn;
@@ -31,7 +29,6 @@ import org.labkey.api.data.PropertyStorageSpec.Index;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
@@ -39,7 +36,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.StudySchema;
-import org.labkey.study.assay.AssayPublishManager;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -54,6 +50,7 @@ import java.util.Set;
  */
 public class AssayAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
+    public static final String ASSAY_PUBLISH_AUDIT_EVENT = "AssayPublishAuditEvent";
 
     public static final String COLUMN_NAME_PROTOCOL = "Protocol";
     public static final String COLUMN_NAME_TARGET_STUDY = "TargetStudy";
@@ -77,7 +74,7 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
     @Override
     public String getEventName()
     {
-        return AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT;
+        return ASSAY_PUBLISH_AUDIT_EVENT;
     }
 
     @Override
@@ -164,39 +161,6 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
     }
 
     @Override
-    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event)
-    {
-        AssayAuditEvent bean = new AssayAuditEvent();
-        copyStandardFields(bean, event);
-
-        if (event.getIntKey1() != null)
-            bean.setProtocol(event.getIntKey1());
-
-        bean.setTargetStudy(event.getKey1());
-
-        return (K)bean;
-    }
-
-    @Override
-    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event, @Nullable Map<String, Object> dataMap)
-    {
-        AssayAuditEvent bean = convertEvent(event);
-
-        if (dataMap != null)
-        {
-            if (dataMap.containsKey("datasetId"))
-                bean.setDatasetId((Integer)dataMap.get("datasetId"));
-
-            if (dataMap.containsKey("sourceLsid"))
-                bean.setSourceLsid(String.valueOf(dataMap.get("sourceLsid")));
-
-            if (dataMap.containsKey("recordCount"))
-                bean.setRecordCount((Integer)dataMap.get("recordCount"));
-        }
-        return (K)bean;
-    }
-
-    @Override
     public Map<FieldKey, String> legacyNameMap()
     {
         Map<FieldKey, String> legacyMap =  super.legacyNameMap();
@@ -230,7 +194,7 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
 
         public AssayAuditEvent(String container, String comment)
         {
-            super(AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT, container, comment);
+            super(ASSAY_PUBLISH_AUDIT_EVENT, container, comment);
         }
 
         public int getProtocol()
@@ -293,7 +257,7 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
 
         public AssayAuditDomainKind()
         {
-            super(AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT);
+            super(ASSAY_PUBLISH_AUDIT_EVENT);
 
             Set<PropertyDescriptor> fields = new LinkedHashSet<>();
             fields.add(createPropertyDescriptor(COLUMN_NAME_PROTOCOL, PropertyType.INTEGER));

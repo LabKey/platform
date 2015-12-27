@@ -31,7 +31,6 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.DefaultExperimentDataHandler;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainAuditProvider;
-import org.labkey.api.exp.property.DomainAuditViewFactory;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.SystemProperty;
@@ -217,9 +216,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         });
         ExperimentService.get().registerExperimentDataHandler(new DefaultExperimentDataHandler());
         ExperimentService.get().registerDataType(new LogDataType());
-        AuditLogService.get().addAuditViewFactory(DomainAuditViewFactory.getInstance());
-        AuditLogService.get().addAuditViewFactory(ExperimentAuditViewFactory.getInstance());
-        AuditLogService.get().addAuditViewFactory(SampleSetAuditViewFactory.getInstance());
 
         AuditLogService.registerAuditType(new DomainAuditProvider());
         AuditLogService.registerAuditType(new ExperimentAuditProvider());

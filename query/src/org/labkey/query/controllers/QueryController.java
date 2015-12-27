@@ -35,7 +35,6 @@ import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.view.AuditChangesView;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -46,7 +45,6 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.etl.ListofMapsDataIterator;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.*;
@@ -106,9 +104,7 @@ import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.TableWriter;
 import org.labkey.query.TableXML;
 import org.labkey.query.audit.QueryAuditProvider;
-import org.labkey.query.audit.QueryAuditViewFactory;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
-import org.labkey.query.audit.QueryUpdateAuditViewFactory;
 import org.labkey.query.design.DgMessage;
 import org.labkey.query.design.ErrorsDocument;
 import org.labkey.query.metadata.MetadataServiceImpl;
@@ -2330,32 +2326,15 @@ public class QueryController extends SpringActionController
                 {
                     ActionURL auditURL = new ActionURL(url);
 
-                    if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(QueryUpdateAuditProvider.QUERY_UPDATE_AUDIT_EVENT))
-                    {
-                        QueryView historyView = QueryUpdateAuditProvider.createDetailsQueryView(getViewContext(),
-                                auditURL.getParameter(QueryParam.schemaName),
-                                auditURL.getParameter(QueryParam.queryName),
-                                auditURL.getParameter("keyValue"), errors);
+                    QueryView historyView = QueryUpdateAuditProvider.createDetailsQueryView(getViewContext(),
+                            auditURL.getParameter(QueryParam.schemaName),
+                            auditURL.getParameter(QueryParam.queryName),
+                            auditURL.getParameter("keyValue"), errors);
 
+                    historyView.setFrame(WebPartView.FrameType.PORTAL);
+                    historyView.setTitle("History");
 
-                        historyView.setFrame(WebPartView.FrameType.PORTAL);
-                        historyView.setTitle("History");
-
-                        view.addView(historyView);
-                    }
-                    else
-                    {
-                        QueryView historyView = QueryUpdateAuditViewFactory.getInstance().createDetailsQueryView(getViewContext(),
-                                auditURL.getParameter(QueryParam.schemaName),
-                                auditURL.getParameter(QueryParam.queryName),
-                                auditURL.getParameter("keyValue"));
-
-
-                        historyView.setFrame(WebPartView.FrameType.PORTAL);
-                        historyView.setTitle("History");
-
-                        view.addView(historyView);
-                    }
+                    view.addView(historyView);
                 }
             }
             return view;
@@ -5808,10 +5787,7 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(QueryUpdateAuditProvider.QUERY_UPDATE_AUDIT_EVENT))
-                return QueryUpdateAuditProvider.createHistoryQueryView(getViewContext(), form, errors);
-            else
-                return QueryUpdateAuditViewFactory.getInstance().createHistoryQueryView(getViewContext(), form);
+            return QueryUpdateAuditProvider.createHistoryQueryView(getViewContext(), form, errors);
         }
 
         @Override
@@ -5827,10 +5803,7 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(QueryDetailsForm form, BindException errors) throws Exception
         {
-            if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(QueryUpdateAuditProvider.QUERY_UPDATE_AUDIT_EVENT))
-                return QueryUpdateAuditProvider.createDetailsQueryView(getViewContext(), form, errors);
-            else
-                return QueryUpdateAuditViewFactory.getInstance().createDetailsQueryView(getViewContext(), form);
+            return QueryUpdateAuditProvider.createDetailsQueryView(getViewContext(), form, errors);
         }
 
         @Override
@@ -5866,39 +5839,19 @@ public class QueryController extends SpringActionController
             String oldRecord = null;
             String newRecord = null;
 
-            if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(QueryUpdateAuditProvider.QUERY_UPDATE_AUDIT_EVENT))
-            {
-                QueryUpdateAuditProvider.QueryUpdateAuditEvent event = AuditLogService.get().getAuditEvent(getUser(), QueryUpdateAuditProvider.QUERY_UPDATE_AUDIT_EVENT, auditRowId);
+            QueryUpdateAuditProvider.QueryUpdateAuditEvent event = AuditLogService.get().getAuditEvent(getUser(), QueryUpdateAuditProvider.QUERY_UPDATE_AUDIT_EVENT, auditRowId);
 
-                if (event != null)
-                {
-                    comment = event.getComment();
-                    oldRecord = event.getOldRecordMap();
-                    newRecord = event.getNewRecordMap();
-                }
-            }
-            else
+            if (event != null)
             {
-                AuditLogEvent event = AuditLogService.get().getEvent(auditRowId);
-                if (event == null)
-                {
-                    throw new NotFoundException("Could not find event " + auditRowId + " to display.");
-                }
-
-                Map<String, Object> dataMap = OntologyManager.getProperties(ContainerManager.getSharedContainer(), event.getLsid());
                 comment = event.getComment();
-                oldRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(
-                        QueryUpdateAuditViewFactory.QUERY_UPDATE_AUDIT_EVENT,
-                        QueryUpdateAuditViewFactory.OLD_RECORD_PROP_NAME));
-                newRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(
-                        QueryUpdateAuditViewFactory.QUERY_UPDATE_AUDIT_EVENT,
-                        QueryUpdateAuditViewFactory.NEW_RECORD_PROP_NAME));
+                oldRecord = event.getOldRecordMap();
+                newRecord = event.getNewRecordMap();
             }
 
             if (oldRecord != null || newRecord != null)
             {
-                Map<String,String> oldData = QueryAuditViewFactory.decodeFromDataMap(oldRecord);
-                Map<String,String> newData = QueryAuditViewFactory.decodeFromDataMap(newRecord);
+                Map<String,String> oldData = QueryAuditProvider.decodeFromDataMap(oldRecord);
+                Map<String,String> newData = QueryAuditProvider.decodeFromDataMap(newRecord);
 
                 return new AuditChangesView(comment, oldData, newData);
             }

@@ -41,7 +41,6 @@ import org.labkey.list.model.FolderListImporter;
 import org.labkey.list.model.FolderListWriter;
 import org.labkey.list.model.IntegerListDomainKind;
 import org.labkey.list.model.ListAuditProvider;
-import org.labkey.list.model.ListAuditViewFactory;
 import org.labkey.list.model.ListDef;
 import org.labkey.list.model.ListDomainType;
 import org.labkey.list.model.ListManager;
@@ -104,8 +103,6 @@ public class ListModule extends DefaultModule
 
     public void doStartup(ModuleContext moduleContext)
     {
-        AuditLogService.get().addAuditViewFactory(ListAuditViewFactory.getInstance());
-
         AuditLogService.registerAuditType(new ListAuditProvider());
 
         FolderSerializationRegistry folderRegistry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);

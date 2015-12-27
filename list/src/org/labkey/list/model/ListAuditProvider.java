@@ -15,9 +15,7 @@
  */
 package org.labkey.list.model;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
@@ -28,8 +26,7 @@ import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainAuditViewFactory;
+import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
@@ -108,7 +105,7 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
                     {
                         public DisplayColumn createRenderer(ColumnInfo colInfo)
                         {
-                            return new DomainAuditViewFactory.DomainColumn(colInfo, containerCol, nameCol);
+                            return new DomainAuditProvider.DomainColumn(colInfo, containerCol, nameCol);
                         }
                     });
                 }
@@ -126,37 +123,6 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
     public List<FieldKey> getDefaultVisibleColumns()
     {
         return defaultVisibleColumns;
-    }
-
-    @Override
-    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event)
-    {
-        ListAuditEvent bean = new ListAuditEvent();
-        copyStandardFields(bean, event);
-
-        if (event.getIntKey1() != null)
-            bean.setListId(event.getIntKey1());
-
-        bean.setListDomainUri(event.getKey1());
-        bean.setListItemEntityId(event.getKey2());
-        bean.setListName(event.getKey3());
-
-        return (K)bean;
-    }
-
-    @Override
-    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event, @Nullable Map<String, Object> dataMap)
-    {
-        ListAuditEvent bean = convertEvent(event);
-
-        if (dataMap != null)
-        {
-            if (dataMap.containsKey(ListAuditDomainKind.OLD_RECORD_PROP_NAME))
-                bean.setOldRecordMap(String.valueOf(dataMap.get(ListAuditDomainKind.OLD_RECORD_PROP_NAME)));
-            if (dataMap.containsKey(ListAuditDomainKind.NEW_RECORD_PROP_NAME))
-                bean.setNewRecordMap(String.valueOf(dataMap.get(ListAuditDomainKind.NEW_RECORD_PROP_NAME)));
-        }
-        return (K)bean;
     }
 
     @Override

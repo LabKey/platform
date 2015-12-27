@@ -94,7 +94,6 @@ import org.labkey.study.assay.FileBasedModuleDataHandler;
 import org.labkey.study.assay.ModuleAssayLoader;
 import org.labkey.study.assay.TsvAssayProvider;
 import org.labkey.study.assay.query.AssayAuditProvider;
-import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.assay.query.AssaySchemaImpl;
 import org.labkey.study.controllers.CohortController;
 import org.labkey.study.controllers.CreateChildStudyAction;
@@ -113,7 +112,6 @@ import org.labkey.study.controllers.security.SecurityController;
 import org.labkey.study.controllers.specimen.SpecimenApiController;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.dataset.DatasetAuditProvider;
-import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.dataset.DatasetNotificationInfoProvider;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
@@ -155,7 +153,6 @@ import org.labkey.study.security.roles.AssayDesignerRole;
 import org.labkey.study.security.roles.SpecimenCoordinatorRole;
 import org.labkey.study.security.roles.SpecimenRequesterRole;
 import org.labkey.study.specimen.SpecimenCommentAuditProvider;
-import org.labkey.study.specimen.SpecimenCommentAuditViewFactory;
 import org.labkey.study.specimen.SpecimenSearchWebPart;
 import org.labkey.study.specimen.SpecimenWebPart;
 import org.labkey.study.view.AssayBatchesWebPartFactory;
@@ -384,10 +381,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             }
             return result;
         });
-        AuditLogService.get().addAuditViewFactory(AssayAuditViewFactory.getInstance());
-        AuditLogService.get().addAuditViewFactory(DatasetAuditViewFactory.getInstance());
-        AuditLogService.get().addAuditViewFactory(SpecimenCommentAuditViewFactory.getInstance());
-
         AuditLogService.registerAuditType(new AssayAuditProvider());
         AuditLogService.registerAuditType(new DatasetAuditProvider());
         AuditLogService.registerAuditType(new SpecimenCommentAuditProvider());

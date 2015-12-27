@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.audit.AuditLogEvent"%>
 <%@ page import="org.labkey.api.files.FileContentEmailPref" %>
 <%@ page import="org.labkey.api.files.FileUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
@@ -29,6 +28,7 @@
 <%@ page import="org.labkey.api.webdav.WebdavService" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.audit.provider.FileSystemAuditProvider" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -54,7 +54,7 @@
     <table width="100%">
         <tr><th>Time</th><th>User</th><th>Comment</th></tr>
     <%
-        for (Map.Entry<Path, List<AuditLogEvent>> record : form.getRecords().entrySet())
+        for (Map.Entry<Path, List<FileSystemAuditProvider.FileSystemAuditEvent>> record : form.getRecords().entrySet())
         {
             Path path = record.getKey();
             WebdavResource resource = WebdavService.get().getResolver().lookup(path);
@@ -67,7 +67,7 @@
         <%  }
 
             int i=0;
-            for (AuditLogEvent event : record.getValue())
+            for (FileSystemAuditProvider.FileSystemAuditEvent event : record.getValue())
             {
                 // TODO: Just hard-code rowCls? It's always the same
                 String rowCls = (i % 2 == 0) ? "labkey-row" : "labkey-row";

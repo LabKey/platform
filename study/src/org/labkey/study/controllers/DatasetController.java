@@ -22,7 +22,6 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.view.AuditChangesView;
 import org.labkey.api.data.ButtonBar;
@@ -32,7 +31,6 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableViewForm;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -48,7 +46,6 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.VBox;
 import org.labkey.study.StudySchema;
 import org.labkey.study.dataset.DatasetAuditProvider;
-import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -129,43 +126,22 @@ public class DatasetController extends BaseStudyController
 
             VBox view = new VBox();
 
-            if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(DatasetAuditProvider.DATASET_AUDIT_EVENT))
+            DatasetAuditProvider.DatasetAuditEvent event = AuditLogService.get().getAuditEvent(getUser(), DatasetAuditProvider.DATASET_AUDIT_EVENT, auditRowId);
+            if (event != null)
             {
-                DatasetAuditProvider.DatasetAuditEvent event = AuditLogService.get().getAuditEvent(getUser(), DatasetAuditProvider.DATASET_AUDIT_EVENT, auditRowId);
-
-                if (event != null)
-                {
-                    comment = event.getComment();
-                    oldRecord = event.getOldRecordMap();
-                    newRecord = event.getNewRecordMap();
-                    datasetId = event.getDatasetId();
-                    eventContainer = ContainerManager.getForId(event.getContainer());
-                }
+                comment = event.getComment();
+                oldRecord = event.getOldRecordMap();
+                newRecord = event.getNewRecordMap();
+                datasetId = event.getDatasetId();
+                eventContainer = ContainerManager.getForId(event.getContainer());
             }
-            else
-            {
-                AuditLogEvent event = AuditLogService.get().getEvent(auditRowId);
-                if (event == null)
-                {
-                    throw new NotFoundException("Could not find event " + auditRowId + " to display.");
-                }
-                Map<String, Object> dataMap = OntologyManager.getProperties(ContainerManager.getSharedContainer(), event.getLsid());
-                oldRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(DatasetAuditViewFactory.DATASET_AUDIT_EVENT,
-                        DatasetAuditViewFactory.OLD_RECORD_PROP_NAME));
-                newRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(DatasetAuditViewFactory.DATASET_AUDIT_EVENT,
-                        DatasetAuditViewFactory.NEW_RECORD_PROP_NAME));
-
-                datasetId = null==event.getIntKey1() ? -1 : event.getIntKey1().intValue();
-                eventContainer = ContainerManager.getForId(event.getContainerId());
-            }
-
 
             Map<String,String> oldData = null;
             Map<String,String> newData = null;
             // If the record was deleted, newRecord will be null. Otherwise we might be able to find it
             if (newRecord != null)
             {
-                newData = DatasetAuditViewFactory.decodeFromDataMap(newRecord);
+                newData = DatasetAuditProvider.decodeFromDataMap(newRecord);
                 String lsid = newData.get("lsid");
                 if (lsid != null)
                 {
@@ -197,7 +173,7 @@ public class DatasetController extends BaseStudyController
 
             if (oldRecord != null)
             {
-                oldData = DatasetAuditViewFactory.decodeFromDataMap(oldRecord);
+                oldData = DatasetAuditProvider.decodeFromDataMap(oldRecord);
             }
             if (oldData != null || newData != null)
             {
@@ -209,11 +185,7 @@ public class DatasetController extends BaseStudyController
                     {
                         ActionURL history = new ActionURL("audit", "begin", eventContainer);
                         history.addParameter("view","DatasetAuditEvent");
-
-                        if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(DatasetAuditProvider.DATASET_AUDIT_EVENT))
-                            history.addParameter("query.lsid~eq", oldLsid);
-                        else
-                            history.addParameter("audit.Key1~eq", oldLsid);
+                        history.addParameter("query.lsid~eq", oldLsid);
 
                         view.addView(new HtmlView(
                             "Key values were modified.  <a href=\"" + history + "\">[previous history]</a>"

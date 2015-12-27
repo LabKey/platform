@@ -560,23 +560,18 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             DatasetDefinition dsDef = StudyManager.getInstance().getDatasetDefinitionByName(study, def.getName());
             if (dsDef != null)
             {
-                if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(DatasetAuditProvider.DATASET_AUDIT_EVENT))
+                UserSchema schema = AuditLogService.getAuditLogSchema(context.getUser(), context.getContainer());
+                if (schema != null)
                 {
-                    UserSchema schema = AuditLogService.getAuditLogSchema(context.getUser(), context.getContainer());
-                    if (schema != null)
-                    {
-                        QuerySettings settings = new QuerySettings(context, QueryView.DATAREGIONNAME_DEFAULT);
-                        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(DatasetAuditProvider.COLUMN_NAME_DATASET_ID), dsDef.getRowId());
+                    QuerySettings settings = new QuerySettings(context, QueryView.DATAREGIONNAME_DEFAULT);
+                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(DatasetAuditProvider.COLUMN_NAME_DATASET_ID), dsDef.getRowId());
 
-                        settings.setBaseFilter(filter);
-                        settings.setQueryName(DatasetAuditProvider.DATASET_AUDIT_EVENT);
+                    settings.setBaseFilter(filter);
+                    settings.setQueryName(DatasetAuditProvider.DATASET_AUDIT_EVENT);
 
-                        return schema.createView(context, settings);
-                    }
-                    return null;
+                    return schema.createView(context, settings);
                 }
-                else
-                    return DatasetAuditViewFactory.getInstance().createDatasetView(context, dsDef);
+                return null;
             }
         }
         return null;

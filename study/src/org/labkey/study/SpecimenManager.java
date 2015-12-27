@@ -85,7 +85,7 @@ import org.labkey.study.requirements.RequirementProvider;
 import org.labkey.study.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.study.security.permissions.ManageRequestsPermission;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
-import org.labkey.study.specimen.SpecimenCommentAuditViewFactory;
+import org.labkey.study.specimen.SpecimenCommentAuditProvider;
 import org.labkey.study.specimen.report.SpecimenCountSummary;
 import org.labkey.study.specimen.settings.DisplaySettings;
 import org.labkey.study.specimen.settings.RepositorySettings;
@@ -2860,8 +2860,10 @@ public class SpecimenManager implements ContainerManager.ContainerListener
                 message += "New value: " + newConflictState + "\n";
         }
 
-        AuditLogService.get().addEvent(user, vial.getContainer(),
-                SpecimenCommentAuditViewFactory.SPECIMEN_COMMENT_EVENT, vial.getGlobalUniqueId(), message);
+        SpecimenCommentAuditProvider.SpecimenCommentAuditEvent event = new SpecimenCommentAuditProvider.SpecimenCommentAuditEvent(vial.getContainer().getId(), message);
+        event.setVialId(vial.getGlobalUniqueId());
+
+        AuditLogService.get().addEvent(user, event);
     }
 
     public SpecimenComment setSpecimenComment(User user, Vial vial, String commentText, boolean qualityControlFlag, boolean qualityControlFlagForced) throws SQLException

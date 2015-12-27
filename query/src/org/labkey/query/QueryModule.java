@@ -75,9 +75,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.data.QueryLoggingAuditTypeProvider;
 import org.labkey.query.audit.QueryAuditProvider;
-import org.labkey.query.audit.QueryAuditViewFactory;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
-import org.labkey.query.audit.QueryUpdateAuditViewFactory;
 import org.labkey.api.data.ScopeQueryLoggingProfilerListener;
 import org.labkey.query.controllers.OlapController;
 import org.labkey.query.controllers.QueryController;
@@ -264,9 +262,6 @@ public class QueryModule extends DefaultModule
             ServiceRegistry.get(SearchService.class).addSearchCategory(ExternalSchemaDocumentProvider.externalTableCategory);
         }
         PropertyService.get().registerDomainKind(new SimpleTableDomainKind());
-
-        AuditLogService.get().addAuditViewFactory(QueryAuditViewFactory.getInstance());
-        AuditLogService.get().addAuditViewFactory(QueryUpdateAuditViewFactory.getInstance());
 
         AuditLogService.registerAuditType(new QueryAuditProvider());
         AuditLogService.registerAuditType(new QueryUpdateAuditProvider());

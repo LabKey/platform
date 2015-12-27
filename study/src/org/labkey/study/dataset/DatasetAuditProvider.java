@@ -15,9 +15,7 @@
  */
 package org.labkey.study.dataset;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
@@ -26,7 +24,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
@@ -37,7 +34,7 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.study.StudySchema;
-import org.labkey.study.assay.AssayPublishManager;
+import org.labkey.study.assay.query.AssayAuditProvider;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 
@@ -168,39 +165,6 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
     }
 
     @Override
-    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event)
-    {
-        DatasetAuditEvent bean = new DatasetAuditEvent();
-        copyStandardFields(bean, event);
-
-        if (event.getIntKey1() != null)
-            bean.setDatasetId(event.getIntKey1());
-
-        if (event.getIntKey2() != null)
-            bean.setHasDetails(event.getIntKey2() == 1);
-
-        bean.setLsid(event.getKey1());
-
-        return (K)bean;
-    }
-
-    @Override
-    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event, @Nullable Map<String, Object> dataMap)
-    {
-        DatasetAuditEvent bean = convertEvent(event);
-
-        if (dataMap != null)
-        {
-            if (dataMap.containsKey(DatasetAuditDomainKind.OLD_RECORD_PROP_NAME))
-                bean.setOldRecordMap(String.valueOf(dataMap.get(DatasetAuditDomainKind.OLD_RECORD_PROP_NAME)));
-
-            if (dataMap.containsKey(DatasetAuditDomainKind.NEW_RECORD_PROP_NAME))
-                bean.setNewRecordMap(String.valueOf(dataMap.get(DatasetAuditDomainKind.NEW_RECORD_PROP_NAME)));
-        }
-        return (K)bean;
-    }
-
-    @Override
     public Map<FieldKey, String> legacyNameMap()
     {
         Map<FieldKey, String> legacyNames = super.legacyNameMap();
@@ -233,7 +197,7 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
 
         public DatasetAuditEvent(String container, String comment)
         {
-            super(AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT, container, comment);
+            super(DATASET_AUDIT_EVENT, container, comment);
         }
 
         public int getDatasetId()

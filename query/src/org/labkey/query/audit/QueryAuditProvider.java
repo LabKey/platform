@@ -16,7 +16,6 @@
 package org.labkey.query.audit;
 
 import org.labkey.api.audit.AbstractAuditTypeProvider;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
@@ -25,7 +24,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
@@ -90,22 +88,6 @@ public class QueryAuditProvider extends AbstractAuditTypeProvider implements Aud
     public String getDescription()
     {
         return "Query export events";
-    }
-
-    @Override
-    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event)
-    {
-        QueryAuditEvent bean = new QueryAuditEvent();
-        copyStandardFields(bean, event);
-
-        bean.setSchemaName(event.getKey1());
-        bean.setQueryName(event.getKey2());
-        bean.setDetailsUrl(event.getKey3());
-
-        if (event.getIntKey1() != null)
-            bean.setDataRowCount(event.getIntKey1());
-
-        return (K)bean;
     }
 
     @Override

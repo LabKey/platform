@@ -27,8 +27,8 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
@@ -70,8 +70,8 @@ import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
 import org.labkey.data.xml.externalSchema.TemplateSchemaDocument;
 import org.labkey.data.xml.externalSchema.TemplateSchemaType;
-import org.labkey.query.audit.QueryAuditViewFactory;
-import org.labkey.query.audit.QueryUpdateAuditViewFactory;
+import org.labkey.query.audit.QueryAuditProvider;
+import org.labkey.query.audit.QueryUpdateAuditProvider;
 import org.labkey.query.controllers.QueryController;
 import org.labkey.query.olap.ServerManager;
 import org.labkey.query.persist.CstmView;
@@ -2446,25 +2446,23 @@ public class QueryServiceImpl extends QueryService
     @Override
     public void addAuditEvent(User user, Container c, String schemaName, String queryName, ActionURL sortFilter, String comment, @Nullable Integer dataRowCount)
     {
-        AuditLogEvent event = new AuditLogEvent();
-        event.setCreatedBy(user);
+        QueryAuditProvider.QueryAuditEvent event = new QueryAuditProvider.QueryAuditEvent(c.getId(), comment);
+
         if (c.getProject() != null)
             event.setProjectId(c.getProject().getId());
-        event.setContainerId(c.getId());
-        event.setEventType(QueryAuditViewFactory.QUERY_AUDIT_EVENT);
-        event.setComment(comment);
-        event.setKey1(schemaName);
-        event.setKey2(queryName);
-        event.setIntKey1(dataRowCount);
+        event.setSchemaName(schemaName);
+        event.setQueryName(queryName);
+        if (dataRowCount != null)
+            event.setDataRowCount(dataRowCount);
 
         ActionURL url = sortFilter.clone();
         url.deleteParameter(ActionURL.Param.cancelUrl);
         url.deleteParameter(ActionURL.Param.redirectUrl);
         url.deleteParameter(ActionURL.Param.returnUrl);
         DetailsURL detailsURL = new DetailsURL(url);
-        event.setKey3(detailsURL.toString());
+        event.setDetailsUrl(detailsURL.toString());
 
-        AuditLogService.get().addEvent(event);
+        AuditLogService.get().addEvent(user, event);
     }
 
     @Override
@@ -2484,8 +2482,8 @@ public class QueryServiceImpl extends QueryService
                 case SUMMARY:
                 case DETAILED:
                     String comment = AuditAction.TRUNCATE.getCommentSummary();
-                    AuditLogEvent event = _createAuditRecord(user, c, table, comment, null);
-                    AuditLogService.get().addEvent(event);
+                    AuditTypeEvent event = _createAuditRecord(user, c, table, comment, null);
+                    AuditLogService.get().addEvent(user, event);
                     return;
             }
         }
@@ -2501,9 +2499,9 @@ public class QueryServiceImpl extends QueryService
 
                 List<Map<String, Object>> rows = params[0];
                 String comment = String.format(action.getCommentSummary(), rows.size());
-                AuditLogEvent event = _createAuditRecord(user, c, table, comment, rows.get(0));
+                AuditTypeEvent event = _createAuditRecord(user, c, table, comment, rows.get(0));
 
-                AuditLogService.get().addEvent(event);
+                AuditLogService.get().addEvent(user, event);
                 break;
             }
             case DETAILED:
@@ -2513,26 +2511,25 @@ public class QueryServiceImpl extends QueryService
                 List<Map<String, Object>> rows = params[0];
                 for (int i=0; i < rows.size(); i++)
                 {
-                    Map<String,Object> dataMap = new HashMap<>();
                     Map<String, Object> row = rows.get(i);
                     String comment = String.format(action.getCommentDetailed(), row.size());
 
-                    AuditLogEvent event = _createAuditRecord(user, c, table, comment, row);
+                    QueryUpdateAuditProvider.QueryUpdateAuditEvent event = _createAuditRecord(user, c, table, comment, row);
 
                     switch (action)
                     {
                         case INSERT:
                         {
-                            String oldRecord = QueryAuditViewFactory.encodeForDataMap(row);
-                            if (oldRecord != null)
-                                dataMap.put(QueryAuditViewFactory.NEW_RECORD_PROP_NAME, oldRecord);
+                            String newRecord = QueryAuditProvider.encodeForDataMap(row);
+                            if (newRecord != null)
+                                event.setNewRecordMap(newRecord);
                             break;
                         }
                         case DELETE:
                         {
-                            String oldRecord = QueryAuditViewFactory.encodeForDataMap(row);
+                            String oldRecord = QueryAuditProvider.encodeForDataMap(row);
                             if (oldRecord != null)
-                                dataMap.put(QueryAuditViewFactory.OLD_RECORD_PROP_NAME, oldRecord);
+                                event.setOldRecordMap(oldRecord);
                             break;
                         }
                         case UPDATE:
@@ -2559,35 +2556,31 @@ public class QueryServiceImpl extends QueryService
                                 }
                             }
 
-                            String oldRecord = QueryAuditViewFactory.encodeForDataMap(originalRow);
+                            String oldRecord = QueryAuditProvider.encodeForDataMap(originalRow);
                             if (oldRecord != null)
-                                dataMap.put(QueryAuditViewFactory.OLD_RECORD_PROP_NAME, oldRecord);
+                                event.setOldRecordMap(oldRecord);
 
-                            String newRecord = QueryAuditViewFactory.encodeForDataMap(modifiedRow);
+                            String newRecord = QueryAuditProvider.encodeForDataMap(modifiedRow);
                             if (newRecord != null)
-                                dataMap.put(QueryAuditViewFactory.NEW_RECORD_PROP_NAME, newRecord);
+                                event.setNewRecordMap(newRecord);
                             break;
                         }
                     }
-                    AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(QueryUpdateAuditViewFactory.QUERY_UPDATE_AUDIT_EVENT));
+                    AuditLogService.get().addEvent(user, event);
                 }
                 break;
             }
         }
     }
 
-    private static AuditLogEvent _createAuditRecord(User user, Container c, TableInfo tinfo, String comment, @Nullable Map<String, Object> row)
+    private static QueryUpdateAuditProvider.QueryUpdateAuditEvent _createAuditRecord(User user, Container c, TableInfo tinfo, String comment, @Nullable Map<String, Object> row)
     {
-        AuditLogEvent event = new AuditLogEvent();
+        QueryUpdateAuditProvider.QueryUpdateAuditEvent event = new QueryUpdateAuditProvider.QueryUpdateAuditEvent(c.getId(), comment);
 
-        event.setCreatedBy(user);
         if (c.getProject() != null)
             event.setProjectId(c.getProject().getId());
-        event.setContainerId(c.getId());
-        event.setEventType(QueryUpdateAuditViewFactory.QUERY_UPDATE_AUDIT_EVENT);
-        event.setComment(comment);
-        event.setKey2(tinfo.getPublicSchemaName());
-        event.setKey3(tinfo.getPublicName());
+        event.setSchemaName(tinfo.getPublicSchemaName());
+        event.setQueryName(tinfo.getPublicName());
 
         FieldKey rowPk = tinfo.getAuditRowPk();
         if (rowPk != null && row != null)
@@ -2595,7 +2588,7 @@ public class QueryServiceImpl extends QueryService
             if (row.containsKey(rowPk.toString()))
             {
                 Object pk = row.get(rowPk.toString());
-                event.setKey1(String.valueOf(pk));
+                event.setRowPk(String.valueOf(pk));
             }
         }
         return event;

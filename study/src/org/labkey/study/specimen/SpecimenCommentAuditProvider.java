@@ -16,7 +16,6 @@
 package org.labkey.study.specimen;
 
 import org.labkey.api.audit.AbstractAuditTypeProvider;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
@@ -31,12 +30,11 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.study.assay.AssayPublishManager;
+import org.labkey.study.assay.query.AssayAuditProvider;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.query.SpecimenQueryView;
 
@@ -94,17 +92,6 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
     public String getDescription()
     {
         return "Specimen Comments and QC";
-    }
-
-    @Override
-    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event)
-    {
-        SpecimenCommentAuditEvent bean = new SpecimenCommentAuditEvent();
-        copyStandardFields(bean, event);
-
-        bean.setVialId(event.getKey1());
-
-        return (K)bean;
     }
 
     @Override
@@ -200,7 +187,7 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
 
         public SpecimenCommentAuditEvent(String container, String comment)
         {
-            super(AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT, container, comment);
+            super(AssayAuditProvider.ASSAY_PUBLISH_AUDIT_EVENT, container, comment);
         }
 
         public String getVialId()

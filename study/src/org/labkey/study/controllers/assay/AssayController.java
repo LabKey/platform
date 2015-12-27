@@ -102,13 +102,11 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.study.assay.AssayImportServiceImpl;
 import org.labkey.study.assay.AssayManager;
-import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.AssayServiceImpl;
 import org.labkey.study.assay.FileBasedModuleDataHandler;
 import org.labkey.study.assay.ModuleAssayProvider;
 import org.labkey.study.assay.TsvImportAction;
 import org.labkey.study.assay.query.AssayAuditProvider;
-import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.assay.actions.GetAssayBatchAction;
 import org.labkey.study.controllers.assay.actions.ImportRunApiAction;
 import org.labkey.study.controllers.assay.actions.SaveAssayBatchAction;
@@ -612,27 +610,20 @@ public class AssayController extends SpringActionController
             VBox view = new VBox();
             view.addView(new AssayHeaderView(_protocol, form.getProvider(), false, true, containerFilter));
 
-            if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT))
+            UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
+
+            if (schema != null)
             {
-                UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
+                QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
 
-                if (schema != null)
-                {
-                    QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
+                SimpleFilter filter = new SimpleFilter();
+                if (_protocol.getRowId() != -1)
+                    filter.addCondition(FieldKey.fromParts(AssayAuditProvider.COLUMN_NAME_PROTOCOL), _protocol.getRowId());
+                filter.addCondition(containerFilter.createFilterClause(ExperimentService.get().getSchema(), FieldKey.fromParts(AssayAuditProvider.COLUMN_NAME_CONTAINER), getContainer()));
 
-                    SimpleFilter filter = new SimpleFilter();
-                    if (_protocol.getRowId() != -1)
-                        filter.addCondition(FieldKey.fromParts(AssayAuditProvider.COLUMN_NAME_PROTOCOL), _protocol.getRowId());
-                    filter.addCondition(containerFilter.createFilterClause(ExperimentService.get().getSchema(), FieldKey.fromParts(AssayAuditProvider.COLUMN_NAME_CONTAINER), getContainer()));
-
-                    settings.setBaseFilter(filter);
-                    settings.setQueryName(AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT);
-                    view.addView(schema.createView(getViewContext(), settings, errors));
-                }
-            }
-            else
-            {
-                view.addView(AssayAuditViewFactory.getInstance().createPublishHistoryView(getViewContext(), _protocol.getRowId(), containerFilter));
+                settings.setBaseFilter(filter);
+                settings.setQueryName(AssayAuditProvider.ASSAY_PUBLISH_AUDIT_EVENT);
+                view.addView(schema.createView(getViewContext(), settings, errors));
             }
             setHelpTopic(new HelpTopic("publishHistory"));
             return view;

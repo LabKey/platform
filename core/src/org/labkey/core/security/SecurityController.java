@@ -32,9 +32,8 @@ import org.labkey.api.action.LabkeyError;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.audit.query.AuditLogQueryView;
+import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -86,8 +85,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.core.query.CoreQuerySchema;
-import org.labkey.core.query.GroupAuditProvider;
-import org.labkey.core.query.GroupAuditViewFactory;
 import org.labkey.core.user.UserController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -512,20 +509,16 @@ public class SecurityController extends SpringActionController
 
     private void addGroupAuditEvent(ContainerUser context, Group group, String message)
     {
-        AuditLogEvent event = new AuditLogEvent();
+        GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(group.getContainer(), message);
 
-        event.setEventType(GroupManager.GROUP_AUDIT_EVENT);
-        event.setCreatedBy(context.getUser());
-        event.setIntKey2(group.getUserId());
+        event.setGroup(group.getUserId());
         Container c = ContainerManager.getForId(group.getContainer());
         if (c != null && c.getProject() != null)
             event.setProjectId(c.getProject().getId());
         else
             event.setProjectId(ContainerManager.getRoot().getId());
-        event.setComment(message);
-        event.setContainerId(context.getContainer().getId());
 
-        AuditLogService.get().addEvent(event);
+        AuditLogService.get().addEvent(context.getUser(), event);
     }
 
 
@@ -812,36 +805,27 @@ public class SecurityController extends SpringActionController
 
         if (getUser().isSiteAdmin())
         {
-            if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(GroupManager.GROUP_AUDIT_EVENT))
+            UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
+            if (schema != null)
             {
-                UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
-                if (schema != null)
-                {
-                    QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
+                QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
 
-                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_GROUP), group.getUserId());
-                    List<FieldKey> columns = new ArrayList<>();
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_GROUP), group.getUserId());
+                List<FieldKey> columns = new ArrayList<>();
 
-                    columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_CREATED));
-                    columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_CREATED_BY));
-                    columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_CONTAINER));
-                    columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_COMMENT));
+                columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_CREATED));
+                columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_CREATED_BY));
+                columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_CONTAINER));
+                columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_COMMENT));
 
-                    settings.setBaseFilter(filter);
-                    settings.setQueryName(GroupManager.GROUP_AUDIT_EVENT);
-                    settings.setFieldKeys(columns);
-                    QueryView auditView = schema.createView(getViewContext(), settings, errors);
-                    auditView.setFrame(WebPartView.FrameType.TITLE);
-                    auditView.setTitle("Group Membership History");
+                settings.setBaseFilter(filter);
+                settings.setQueryName(GroupManager.GROUP_AUDIT_EVENT);
+                settings.setFieldKeys(columns);
+                QueryView auditView = schema.createView(getViewContext(), settings, errors);
+                auditView.setFrame(WebPartView.FrameType.TITLE);
+                auditView.setTitle("Group Membership History");
 
-                    view.addView(auditView);
-                }
-            }
-            else
-            {
-                AuditLogQueryView log = GroupAuditViewFactory.getInstance().createGroupView(getViewContext(), group.getUserId());
-                log.setFrame(WebPartView.FrameType.TITLE);
-                view.addView(log);
+                view.addView(auditView);
             }
         }
 
@@ -1796,22 +1780,17 @@ public class SecurityController extends SpringActionController
             UserController.AccessDetail bean = new UserController.AccessDetail(rows, true, true);
             view.addView(new JspView<>("/org/labkey/core/user/userAccess.jsp", bean, errors));
 
-            if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(GroupManager.GROUP_AUDIT_EVENT))
+            UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
+            if (schema != null)
             {
-                UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
-                if (schema != null)
-                {
-                    QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
+                QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
 
-                    settings.setQueryName(GroupManager.GROUP_AUDIT_EVENT);
-                    QueryView auditView = schema.createView(getViewContext(), settings, errors);
-                    auditView.setTitle("Access Modification History For This Folder");
+                settings.setQueryName(GroupManager.GROUP_AUDIT_EVENT);
+                QueryView auditView = schema.createView(getViewContext(), settings, errors);
+                auditView.setTitle("Access Modification History For This Folder");
 
-                    view.addView(auditView);
-                }
+                view.addView(auditView);
             }
-            else
-                view.addView(GroupAuditViewFactory.getInstance().createFolderView(getViewContext(), getContainer()));
             return view;
         }
 

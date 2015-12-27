@@ -30,7 +30,6 @@ import org.labkey.api.attachments.DocumentWriter;
 import org.labkey.api.attachments.FileAttachmentFile;
 import org.labkey.api.attachments.SecureDocumentParent;
 import org.labkey.api.attachments.SpringAttachmentFile;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.CompareType;
@@ -55,7 +54,6 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
@@ -86,12 +84,11 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.DialogTemplate;
 import org.labkey.api.webdav.AbstractDocumentResource;
 import org.labkey.api.webdav.AbstractWebdavResourceCollection;
-import org.labkey.api.webdav.FileSystemAuditViewFactory;
+import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.core.CoreModule;
 import org.labkey.core.query.AttachmentAuditProvider;
-import org.labkey.core.query.AttachmentAuditViewFactory;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartFile;
@@ -214,38 +211,28 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
         if (parent != null)
         {
-            {
-            AuditLogEvent event = new AuditLogEvent();
-            event.setEventType(AttachmentService.ATTACHMENT_AUDIT_EVENT);
-            event.setCreatedBy(user);
-            event.setEntityId(parent.getEntityId());
-            event.setContainerId(parent.getContainerId());
-            event.setKey1(filename);
             Container c = ContainerManager.getForId(parent.getContainerId());
-            if (c != null && c.getProject() != null)
-                event.setProjectId(c.getProject().getId());
-            event.setComment(comment);
-            AuditLogService.get().addEvent(event);
-            }
+            AttachmentAuditProvider.AttachmentAuditEvent attachmentEvent = new AttachmentAuditProvider.AttachmentAuditEvent(c != null ? c.getId() : null, comment);
+
+            attachmentEvent.setAttachmentParentEntityId(parent.getEntityId());
+            attachmentEvent.setAttachment(filename);
+
+            AuditLogService.get().addEvent(user, attachmentEvent);
 
             if (parent instanceof AttachmentDirectory)
             {
-                AuditLogEvent event = new AuditLogEvent();
-                event.setEventType(FileSystemAuditViewFactory.EVENT_TYPE);
-                event.setCreatedBy(user);
-                event.setContainerId(parent.getContainerId());
+                FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(c != null ? c.getId() : null, comment);
                 try
                 {
-                    event.setKey1(((AttachmentDirectory)parent).getFileSystemDirectory().getPath());
+                    event.setDirectory(((AttachmentDirectory)parent).getFileSystemDirectory().getPath());
                 }
                 catch (MissingRootDirectoryException ex)
                 {
                     // UNDONE: AttachmentDirectory.getFileSystemPath()...
-                    event.setKey1("path not found");
+                    event.setDirectory("path not found");
                 }
-                event.setKey2(filename);
-                event.setComment(comment);
-                AuditLogService.get().addEvent(event);
+                event.setFile(filename);
+                AuditLogService.get().addEvent(user, event);
             }
         }
     }
@@ -253,29 +240,24 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     @Override
     public HttpView getHistoryView(ViewContext context, AttachmentParent parent)
     {
-        if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(AttachmentService.ATTACHMENT_AUDIT_EVENT))
+        UserSchema schema = AuditLogService.getAuditLogSchema(context.getUser(), context.getContainer());
+        if (schema != null)
         {
-            UserSchema schema = AuditLogService.getAuditLogSchema(context.getUser(), context.getContainer());
-            if (schema != null)
-            {
-                checkSecurityPolicy(context.getUser(), parent);
-                QuerySettings settings = new QuerySettings(context, QueryView.DATAREGIONNAME_DEFAULT);
+            checkSecurityPolicy(context.getUser(), parent);
+            QuerySettings settings = new QuerySettings(context, QueryView.DATAREGIONNAME_DEFAULT);
 
-                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(AttachmentAuditProvider.COLUMN_NAME_CONTAINER), parent.getContainerId());
-                filter.addCondition(FieldKey.fromParts(AttachmentAuditProvider.COLUMN_NAME_ATTACHMENT_PARENT_ENTITY_ID), parent.getEntityId());
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(AttachmentAuditProvider.COLUMN_NAME_CONTAINER), parent.getContainerId());
+            filter.addCondition(FieldKey.fromParts(AttachmentAuditProvider.COLUMN_NAME_ATTACHMENT_PARENT_ENTITY_ID), parent.getEntityId());
 
-                settings.setBaseFilter(filter);
-                settings.setQueryName(AttachmentService.ATTACHMENT_AUDIT_EVENT);
+            settings.setBaseFilter(filter);
+            settings.setQueryName(AttachmentService.ATTACHMENT_AUDIT_EVENT);
 
-                QueryView view = schema.createView(context, settings);
-                view.setTitle("Attachments History:");
+            QueryView view = schema.createView(context, settings);
+            view.setTitle("Attachments History:");
 
-                return view;
-            }
-            return null;
+            return view;
         }
-        else
-            return AttachmentAuditViewFactory.createAttachmentView(context, parent);
+        return null;
     }
 
     @Override

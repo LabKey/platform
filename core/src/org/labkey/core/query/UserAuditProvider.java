@@ -16,7 +16,6 @@
 package org.labkey.core.query;
 
 import org.labkey.api.audit.AbstractAuditTypeProvider;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
@@ -26,7 +25,6 @@ import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
@@ -82,18 +80,6 @@ public class UserAuditProvider extends AbstractAuditTypeProvider implements Audi
     protected AbstractAuditDomainKind getDomainKind()
     {
         return new UserAuditDomainKind();
-    }
-
-    @Override
-    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event)
-    {
-        UserManager.UserAuditEvent bean = new UserManager.UserAuditEvent();
-        copyStandardFields(bean, event);
-
-        if (event.getIntKey1() != null)
-            bean.setUser(event.getIntKey1());
-
-        return (K)bean;
     }
 
     @Override

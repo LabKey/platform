@@ -34,6 +34,7 @@ import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.announcements.api.AnnouncementService;
 import org.labkey.api.announcements.api.TourService;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.provider.MessageAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SqlExecutor;
@@ -155,7 +156,6 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         ContainerManager.addContainerListener(listener);
         UserManager.addUserListener(listener);
         SecurityManager.addGroupListener(listener);
-        AuditLogService.get().addAuditViewFactory(MessageAuditViewFactory.getInstance());
         AuditLogService.registerAuditType(new MessageAuditProvider());
         ServiceRegistry.get().registerService(EmailService.I.class, new EmailServiceImpl());
 

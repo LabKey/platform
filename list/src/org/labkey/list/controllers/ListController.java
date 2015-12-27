@@ -43,7 +43,6 @@ import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.DownloadURL;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.view.AuditChangesView;
 import org.labkey.api.data.ActionButton;
@@ -58,7 +57,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UrlColumn;
 import org.labkey.api.defaults.ClearDefaultValuesAction;
 import org.labkey.api.defaults.SetDefaultValuesListAction;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
@@ -111,7 +109,6 @@ import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.api.writer.ZipUtil;
 import org.labkey.list.model.ListAuditProvider;
-import org.labkey.list.model.ListAuditViewFactory;
 import org.labkey.list.model.ListDefinitionImpl;
 import org.labkey.list.model.ListEditorServiceImpl;
 import org.labkey.list.model.ListImporter;
@@ -668,28 +665,19 @@ public class ListController extends SpringActionController
                 linkView.setFrame(WebPartView.FrameType.NONE);
                 view.addView(linkView);
 
-                if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(ListManager.LIST_AUDIT_EVENT))
+                UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
+                if (schema != null)
                 {
-                    UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
-                    if (schema != null)
-                    {
-                        QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
+                    QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
 
-                        SimpleFilter filter = new SimpleFilter();
-                        filter.addCondition(FieldKey.fromParts(ListAuditProvider.COLUMN_NAME_LIST_ITEM_ENTITY_ID), item.getEntityId());
+                    SimpleFilter filter = new SimpleFilter();
+                    filter.addCondition(FieldKey.fromParts(ListAuditProvider.COLUMN_NAME_LIST_ITEM_ENTITY_ID), item.getEntityId());
 
-                        settings.setBaseFilter(filter);
-                        settings.setQueryName(ListManager.LIST_AUDIT_EVENT);
-                        QueryView history = schema.createView(getViewContext(), settings, errors);
+                    settings.setBaseFilter(filter);
+                    settings.setQueryName(ListManager.LIST_AUDIT_EVENT);
+                    QueryView history = schema.createView(getViewContext(), settings, errors);
 
-                        history.setTitle("List Item History:");
-                        history.setFrame(WebPartView.FrameType.NONE);
-                        view.addView(history);
-                    }
-                }
-                else
-                {
-                    WebPartView history = ListAuditViewFactory.getInstance().createListItemDetailsView(getViewContext(), item.getEntityId());
+                    history.setTitle("List Item History:");
                     history.setFrame(WebPartView.FrameType.NONE);
                     view.addView(history);
                 }
@@ -824,44 +812,39 @@ public class ListController extends SpringActionController
             _list = form.getList();
             if (_list != null)
             {
-                if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(ListManager.LIST_AUDIT_EVENT))
+                UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
+                if (schema != null)
                 {
-                    UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
-                    if (schema != null)
-                    {
-                        VBox box = new VBox();
-                        String domainUri = _list.getDomain().getTypeURI();
+                    VBox box = new VBox();
+                    String domainUri = _list.getDomain().getTypeURI();
 
-                        // list audit events
-                        QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
-                        SimpleFilter eventFilter = new SimpleFilter();
-                        eventFilter.addCondition(FieldKey.fromParts(ListManager.LISTID_FIELD_NAME), _list.getListId());
-                        settings.setBaseFilter(eventFilter);
-                        settings.setQueryName(ListManager.LIST_AUDIT_EVENT);
+                    // list audit events
+                    QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
+                    SimpleFilter eventFilter = new SimpleFilter();
+                    eventFilter.addCondition(FieldKey.fromParts(ListManager.LISTID_FIELD_NAME), _list.getListId());
+                    settings.setBaseFilter(eventFilter);
+                    settings.setQueryName(ListManager.LIST_AUDIT_EVENT);
 
-                        QueryView view = schema.createView(getViewContext(), settings, errors);
-                        view.setTitle("List Events");
-                        box.addView(view);
+                    QueryView view = schema.createView(getViewContext(), settings, errors);
+                    view.setTitle("List Events");
+                    box.addView(view);
 
-                        // domain audit events associated with this list
-                        QuerySettings domainSettings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
+                    // domain audit events associated with this list
+                    QuerySettings domainSettings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
 
-                        SimpleFilter domainFilter = new SimpleFilter();
-                        domainFilter.addCondition(FieldKey.fromParts(DomainAuditProvider.COLUMN_NAME_DOMAIN_URI), domainUri);
-                        domainSettings.setBaseFilter(domainFilter);
+                    SimpleFilter domainFilter = new SimpleFilter();
+                    domainFilter.addCondition(FieldKey.fromParts(DomainAuditProvider.COLUMN_NAME_DOMAIN_URI), domainUri);
+                    domainSettings.setBaseFilter(domainFilter);
 
-                        domainSettings.setQueryName(DomainAuditProvider.EVENT_TYPE);
-                        QueryView domainView = schema.createView(getViewContext(), domainSettings, errors);
+                    domainSettings.setQueryName(DomainAuditProvider.EVENT_TYPE);
+                    QueryView domainView = schema.createView(getViewContext(), domainSettings, errors);
 
-                        domainView.setTitle("List Design Changes");
-                        box.addView(domainView);
+                    domainView.setTitle("List Design Changes");
+                    box.addView(domainView);
 
-                        return box;
-                    }
-                    return new HtmlView("Unable to create the List history view");
+                    return box;
                 }
-                else
-                    return ListAuditViewFactory.getInstance().createListHistoryView(getViewContext(), _list);
+                return new HtmlView("Unable to create the List history view");
             }
             else
                 return new HtmlView("Unable to find the specified List");
@@ -896,47 +879,19 @@ public class ListController extends SpringActionController
             String oldRecord = null;
             String newRecord = null;
 
-            if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(ListManager.LIST_AUDIT_EVENT))
-            {
-                ListAuditProvider.ListAuditEvent event = AuditLogService.get().getAuditEvent(getUser(), ListManager.LIST_AUDIT_EVENT, id);
+            ListAuditProvider.ListAuditEvent event = AuditLogService.get().getAuditEvent(getUser(), ListManager.LIST_AUDIT_EVENT, id);
 
-                if (event != null)
-                {
-                    comment = event.getComment();
-                    oldRecord = event.getOldRecordMap();
-                    newRecord = event.getNewRecordMap();
-                }
-            }
-            else
+            if (event != null)
             {
-                AuditLogEvent event = AuditLogService.get().getEvent(id);
-                if (event != null && event.getLsid() != null)
-                {
-                    comment = event.getComment();
-                    Map<String, Object> dataMap = OntologyManager.getProperties(ContainerManager.getSharedContainer(), event.getLsid());
-                    if (dataMap != null)
-                    {
-                        if (dataMap.containsKey(AuditLogService.get().getPropertyURI(ListManager.LIST_AUDIT_EVENT, ListAuditViewFactory.OLD_RECORD_PROP_NAME)) ||
-                                dataMap.containsKey(AuditLogService.get().getPropertyURI(ListManager.LIST_AUDIT_EVENT, ListAuditViewFactory.NEW_RECORD_PROP_NAME)))
-                        {
-                            oldRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(ListManager.LIST_AUDIT_EVENT, ListAuditViewFactory.OLD_RECORD_PROP_NAME));
-                            newRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(ListManager.LIST_AUDIT_EVENT, ListAuditViewFactory.NEW_RECORD_PROP_NAME));
-                        }
-                        else
-                        {
-                            oldRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(ListManager.LIST_AUDIT_EVENT, "oldRecord"));
-                            newRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(ListManager.LIST_AUDIT_EVENT, "newRecord"));
-                        }
-                    }
-                }
-                else
-                    throw new NotFoundException("Unable to find the audit history detail for this event");
+                comment = event.getComment();
+                oldRecord = event.getOldRecordMap();
+                newRecord = event.getNewRecordMap();
             }
 
             if (!StringUtils.isEmpty(oldRecord) || !StringUtils.isEmpty(newRecord))
             {
-                Map<String,String> oldData = ListAuditViewFactory.decodeFromDataMap(oldRecord);
-                Map<String,String> newData = ListAuditViewFactory.decodeFromDataMap(newRecord);
+                Map<String,String> oldData = ListAuditProvider.decodeFromDataMap(oldRecord);
+                Map<String,String> newData = ListAuditProvider.decodeFromDataMap(newRecord);
 
                 String srcUrl = getViewContext().getActionURL().getParameter(ActionURL.Param.redirectUrl);
                 if (srcUrl == null)
@@ -1021,8 +976,8 @@ public class ListController extends SpringActionController
 
         private void _renderViewEncoded(PrintWriter out)
         {
-            Map<String, String> prevProps = ListAuditViewFactory.decodeFromDataMap(_oldRecord);
-            Map<String, String> newProps = ListAuditViewFactory.decodeFromDataMap(_newRecord);
+            Map<String, String> prevProps = ListAuditProvider.decodeFromDataMap(_oldRecord);
+            Map<String, String> newProps = ListAuditProvider.decodeFromDataMap(_newRecord);
             int modified = 0;
 
             out.write("<table>\n");

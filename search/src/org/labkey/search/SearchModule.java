@@ -20,20 +20,12 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.audit.SimpleAuditViewFactory;
-import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.Sort;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.QueryView;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -43,7 +35,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.WebdavResource;
@@ -60,7 +51,6 @@ import javax.servlet.ServletContext;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 
 
@@ -189,7 +179,6 @@ public class SearchModule extends DefaultModule
             });
         }
 
-        AuditLogService.get().addAuditViewFactory(new SearchAuditViewFactory());
         AuditLogService.registerAuditType(new SearchAuditProvider());
 
         // add a container listener so we'll know when containers are deleted
@@ -236,57 +225,5 @@ public class SearchModule extends DefaultModule
             }
         };
         ContextListener.addStartupListener(l);
-    }
-    
-
-    public static final String EVENT_TYPE = "SearchAuditEvent";
-
-    private static class SearchAuditViewFactory extends SimpleAuditViewFactory
-    {
-        public String getEventType()
-        {
-            return EVENT_TYPE;
-        }
-
-        @Override
-        public String getName()
-        {
-            return "Search";
-        }
-
-        @Override
-        public String getDescription()
-        {
-            return "Search queries";
-        }
-
-        @Override
-        public void setupTable(FilteredTable table, UserSchema schema)
-        {
-            super.setupTable(table, schema);
-            ColumnInfo col = table.getColumn("Key1");
-            col.setLabel("Query");
-        }
-
-        @Override
-        public List<FieldKey> getDefaultVisibleColumns()
-        {
-            List<FieldKey> columns = new ArrayList<>();
-            columns.add(FieldKey.fromParts("Date"));
-            columns.add(FieldKey.fromParts("CreatedBy"));
-            columns.add(FieldKey.fromParts("ImpersonatedBy"));
-            columns.add(FieldKey.fromParts("Key1"));
-            columns.add(FieldKey.fromParts("Comment"));
-            columns.add(FieldKey.fromParts("ContainerId"));
-            return columns;
-        }
-
-        public QueryView createDefaultQueryView(ViewContext context)
-        {
-            AuditLogQueryView view = AuditLogService.get().createQueryView(context, null, getEventType());
-            view.setSort(new Sort("-Date"));
-
-            return view;
-        }
     }
 }

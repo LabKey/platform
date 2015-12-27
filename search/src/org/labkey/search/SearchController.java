@@ -67,6 +67,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.search.audit.SearchAuditProvider;
 import org.labkey.search.model.AbstractSearchService;
 import org.labkey.search.model.ExternalAnalyzer;
 import org.labkey.search.model.ExternalIndexProperties;
@@ -1340,6 +1341,9 @@ public class SearchController extends SpringActionController
         if (query.length() > 200)
             query = query.substring(0, 197) + "...";
 
-        audit.addEvent(user, c, SearchModule.EVENT_TYPE, query, comment);
+        SearchAuditProvider.SearchAuditEvent event = new SearchAuditProvider.SearchAuditEvent(c.getId(), comment);
+        event.setQuery(query);
+
+        AuditLogService.get().addEvent(user, event);
     }
 }

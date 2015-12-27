@@ -65,7 +65,7 @@ public class AuditLogTable extends FilteredTable<UserSchema>
     {
         super(tInfo, schema);
 
-        _viewFactory = AuditLogService.get().getAuditViewFactory(viewFactoryName);
+        //_viewFactory = AuditLogService.get().getAuditViewFactory(viewFactoryName);
         setInsertURL(LINK_DISABLER);
 
         ColumnInfo createdBy = wrapColumn("CreatedBy", getRealTable().getColumn("CreatedBy"));

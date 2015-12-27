@@ -25,7 +25,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
@@ -772,22 +771,17 @@ public class ListManager implements SearchService.DocumentProvider
     {
         if (null != user)
         {
-            AuditLogEvent event = new AuditLogEvent();
-
-            event.setCreatedBy(user);
-            event.setComment(comment);
+            ListAuditProvider.ListAuditEvent event = new ListAuditProvider.ListAuditEvent(list.getContainer().getId(), comment);
 
             Container c = list.getContainer();
-            event.setContainerId(c.getId());
             if (c.getProject() != null)
                 event.setProjectId(c.getProject().getId());
-            event.setKey1(list.getDomain().getTypeURI());
 
-            event.setEventType(LIST_AUDIT_EVENT);
-            event.setIntKey1(list.getListId());
-            event.setKey3(list.getName());
+            event.setListDomainUri(list.getDomain().getTypeURI());
+            event.setListId(list.getListId());
+            event.setListName(list.getName());
 
-            AuditLogService.get().addEvent(event);
+            AuditLogService.get().addEvent(user, event);
         }
     }
 
@@ -796,30 +790,21 @@ public class ListManager implements SearchService.DocumentProvider
      */
     public void addAuditEvent(ListDefinitionImpl list, User user, Container c, String comment, String entityId, @Nullable String oldRecord, @Nullable String newRecord)
     {
-        AuditLogEvent event = new AuditLogEvent();
+        ListAuditProvider.ListAuditEvent event = new ListAuditProvider.ListAuditEvent(c.getId(), comment);
 
-        event.setCreatedBy(user);
-        event.setComment(comment);
-
-        event.setContainerId(c.getId());
         Container project = c.getProject();
         if (null != project)
             event.setProjectId(project.getId());
 
-        event.setKey1(list.getDomain().getTypeURI());
-        event.setEventType(ListManager.LIST_AUDIT_EVENT);
-        event.setIntKey1(list.getListId());
-        event.setKey2(entityId);
-        event.setKey3(list.getName());
+        event.setListDomainUri(list.getDomain().getTypeURI());
+        event.setListId(list.getListId());
+        event.setListItemEntityId(entityId);
+        event.setListName(list.getName());
 
-        final Map<String, Object> dataMap = new HashMap<>();
-        if (oldRecord != null) dataMap.put(ListAuditViewFactory.OLD_RECORD_PROP_NAME, oldRecord);
-        if (newRecord != null) dataMap.put(ListAuditViewFactory.NEW_RECORD_PROP_NAME, newRecord);
+        if (oldRecord != null) event.setOldRecordMap(oldRecord);
+        if (newRecord != null) event.setNewRecordMap(newRecord);
 
-        if (!dataMap.isEmpty())
-            AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(LIST_AUDIT_EVENT));
-        else
-            AuditLogService.get().addEvent(event);
+        AuditLogService.get().addEvent(user, event);
     }
 
     public String formatAuditItem(ListDefinitionImpl list, User user, Map<String, Object> props)
@@ -881,7 +866,7 @@ public class ListManager implements SearchService.DocumentProvider
             }
 
             if (!recordChangedMap.isEmpty())
-                itemRecord = ListAuditViewFactory.encodeForDataMap(recordChangedMap, true);
+                itemRecord = ListAuditProvider.encodeForDataMap(recordChangedMap, true);
         }
 
         return itemRecord;

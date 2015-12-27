@@ -21,7 +21,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -79,6 +78,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.study.StudySchema;
+import org.labkey.study.assay.query.AssayAuditProvider;
 import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetDomainKind;
@@ -114,7 +114,6 @@ public class AssayPublishManager implements AssayPublishService.Service
 {
     private TableInfo tinfoUpdateLog;
     private static final int MIN_ASSAY_ID = 5000;
-    public static final String ASSAY_PUBLISH_AUDIT_EVENT = "AssayPublishAuditEvent";
 
     public synchronized static AssayPublishManager getInstance()
     {
@@ -351,22 +350,16 @@ public class AssayPublishManager implements AssayPublishService.Service
         {
             for (Map.Entry<String, int[]> entry : getSourceLSID(dataMaps).entrySet())
             {
-                AuditLogEvent event = new AuditLogEvent();
+                AssayAuditProvider.AssayAuditEvent event = new AssayAuditProvider.AssayAuditEvent(sourceContainer.getId(),
+                        entry.getValue()[0] + " row(s) were copied to a study from the assay: " + protocol.getName());
 
-                event.setCreatedBy(user);
-                event.setEventType(ASSAY_PUBLISH_AUDIT_EVENT);
-                event.setIntKey1(protocol.getRowId());
-                event.setComment(entry.getValue()[0] + " row(s) were copied to a study from the assay: " + protocol.getName());
-                event.setKey1(targetContainer.getId());
-                event.setContainerId(sourceContainer.getId());
+                event.setProtocol(protocol.getRowId());
+                event.setTargetStudy(targetContainer.getId());
+                event.setDatasetId(dataset.getDatasetId());
+                event.setSourceLsid(entry.getKey());
+                event.setRecordCount(entry.getValue()[0]);
 
-                Map<String, Object> dataMap = new HashMap<>();
-                dataMap.put("datasetId", dataset.getDatasetId());
-
-                dataMap.put("sourceLsid", entry.getKey());
-                dataMap.put("recordCount", entry.getValue()[0]);
-
-                AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(ASSAY_PUBLISH_AUDIT_EVENT));
+                AuditLogService.get().addEvent(user, event);
             }
         }
         //Make sure that the study is updated with the correct timepoints.

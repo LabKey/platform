@@ -38,21 +38,10 @@ public class AuditUpgradeCode implements UpgradeCode
     private static final Logger _log = Logger.getLogger(AuditUpgradeCode.class);
 
     /**
-     * This upgrade code isn't called directly by an upgrade script, but
-     * is called immediately after all modules have started up during the 13.2 to 13.3 upgrade.
-     *
-     * When this migration code is removed in release 16.1 (per our two-year upgrade policy)
-     * we can remove all the deprecated AuditLogEvent, AuditViewFactory, and related classes.
-     */
-    public static void migrateProviders(AuditLogImpl audit)
-    {
-        audit.migrateProviders();
-    }
-
-    /**
      * Convert erroneous user field values of 0 to null in the group audit event table. This problem was introduced
      * when the new audit provider framework was introduced in 13.3.
      *
+     * we should be able to remove this code in 16.2
      * invoked from audit-13.30-13.31.sql
      */
     @DeferredUpgrade
@@ -60,26 +49,23 @@ public class AuditUpgradeCode implements UpgradeCode
     {
         if (!context.isNewInstall())
         {
-            if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(GroupManager.GROUP_AUDIT_EVENT))
+            // get the new table for the group audit provider
+            AuditTypeProvider provider = AuditLogService.get().getAuditProvider(GroupManager.GROUP_AUDIT_EVENT);
+            if (provider != null)
             {
-                // get the new table for the group audit provider
-                AuditTypeProvider provider = AuditLogService.get().getAuditProvider(GroupManager.GROUP_AUDIT_EVENT);
-                if (provider != null)
-                {
-                    provider.initializeProvider(context.getUpgradeUser());
+                provider.initializeProvider(context.getUpgradeUser());
 
-                    Domain domain = provider.getDomain();
-                    DbSchema dbSchema = AuditSchema.getInstance().getSchema();
-                    TableInfo table = StorageProvisioner.createTableInfo(domain);
+                Domain domain = provider.getDomain();
+                DbSchema dbSchema = AuditSchema.getInstance().getSchema();
+                TableInfo table = StorageProvisioner.createTableInfo(domain);
 
-                    SQLFragment sql = new SQLFragment();
-                    sql.append("UPDATE ").append(table.getSelectName()).append(" SET \"user\" = NULL WHERE \"user\" = 0");
+                SQLFragment sql = new SQLFragment();
+                sql.append("UPDATE ").append(table.getSelectName()).append(" SET \"user\" = NULL WHERE \"user\" = 0");
 
-                    new SqlExecutor(dbSchema).execute(sql);
-                }
-                else
-                    _log.error("Unable to get the audit type provider for the event: " + GroupManager.GROUP_AUDIT_EVENT);
+                new SqlExecutor(dbSchema).execute(sql);
             }
+            else
+                _log.error("Unable to get the audit type provider for the event: " + GroupManager.GROUP_AUDIT_EVENT);
         }
     }
 }

@@ -18,7 +18,6 @@ package org.labkey.experiment.api.property;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConditionalFormat;
@@ -46,7 +45,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainAuditViewFactory;
+import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -503,21 +502,15 @@ public class DomainImpl implements Domain
     {
         if (user != null)
         {
-            AuditLogEvent event = new AuditLogEvent();
+            DomainAuditProvider.DomainAuditEvent event = new DomainAuditProvider.DomainAuditEvent(getContainer().getId(), comment);
 
-            event.setCreatedBy(user);
-            event.setComment(comment);
-
-            Container c = getContainer();
-            event.setContainerId(c.getId());
             if (_dd.getProject() != null)
                 event.setProjectId(_dd.getProject().getId());
 
-            event.setKey1(getTypeURI());
-            event.setKey3(getName());
-            event.setEventType(DomainAuditViewFactory.DOMAIN_AUDIT_EVENT);
+            event.setDomainUri(getTypeURI());
+            event.setDomainName(getName());
 
-            AuditLogService.get().addEvent(event);
+            AuditLogService.get().addEvent(user, event);
         }
     }
 

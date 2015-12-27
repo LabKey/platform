@@ -20,7 +20,6 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
@@ -47,7 +46,6 @@ import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
-import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
@@ -55,7 +53,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.experiment.SampleSetAuditViewFactory;
+import org.labkey.experiment.SampleSetAuditProvider;
 import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpSampleSetImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
@@ -619,17 +617,13 @@ public class UploadSamplesHelper
             }
         }
 
-        AuditLogEvent event = new AuditLogEvent();
+        SampleSetAuditProvider.SampleSetAuditEvent event = new SampleSetAuditProvider.SampleSetAuditEvent(getContainer().getId(), "Samples inserted or updated in: " + _form.getName());
 
-        event.setCreatedBy(_form.getUser());
-        event.setContainerId(getContainer().getId());
-        event.setEventType(SampleSetAuditViewFactory.EVENT_TYPE);
-        event.setKey1(source.getLSID());
-        event.setKey2(_form.getName());
-        event.setKey3(_form.getInsertUpdateChoice());
-        event.setComment("Samples inserted or updated in: " + _form.getName());
+        event.setSourceLsid(source.getLSID());
+        event.setSampleSetName(_form.getName());
+        event.setInsertUpdateChoice(_form.getInsertUpdateChoice());
 
-        AuditLogService.get().addEvent(event);
+        AuditLogService.get().addEvent(_form.getUser(), event);
         _log.info("finished inserting samples : time elapsed " + (System.currentTimeMillis() - start));
 
         return helper._materials;

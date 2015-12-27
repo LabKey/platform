@@ -110,8 +110,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.webdav.FileSystemAuditProvider;
-import org.labkey.api.webdav.FileSystemAuditViewFactory;
+import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.webdav.FileSystemResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
@@ -1540,20 +1539,15 @@ public class FileContentController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(FileSystemAuditProvider.EVENT_TYPE))
-            {
-                UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
+            UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
 
-                if (schema != null)
-                {
-                    QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
-                    settings.setQueryName(FileSystemAuditProvider.EVENT_TYPE);
-                    return schema.createView(getViewContext(), settings, errors);
-                }
-                return null;
+            if (schema != null)
+            {
+                QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
+                settings.setQueryName(FileSystemAuditProvider.EVENT_TYPE);
+                return schema.createView(getViewContext(), settings, errors);
             }
-            else
-                return FileSystemAuditViewFactory.getInstance().createFileContentView(getViewContext());
+            return null;
         }
 
         public NavTree appendNavTrail(NavTree root)

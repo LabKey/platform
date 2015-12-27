@@ -15,9 +15,7 @@
  */
 package org.labkey.query.audit;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
@@ -28,7 +26,6 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryForm;
@@ -97,34 +94,6 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
     }
 
     @Override
-    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event)
-    {
-        QueryUpdateAuditEvent bean = new QueryUpdateAuditEvent();
-        copyStandardFields(bean, event);
-
-        bean.setRowPk(event.getKey1());
-        bean.setSchemaName(event.getKey2());
-        bean.setQueryName(event.getKey3());
-
-        return (K)bean;
-    }
-
-    @Override
-    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event, @Nullable Map<String, Object> dataMap)
-    {
-        QueryUpdateAuditEvent bean = convertEvent(event);
-
-        if (dataMap != null)
-        {
-            if (dataMap.containsKey(QueryUpdateAuditDomainKind.OLD_RECORD_PROP_NAME))
-                bean.setOldRecordMap(String.valueOf(dataMap.get(QueryUpdateAuditDomainKind.OLD_RECORD_PROP_NAME)));
-            if (dataMap.containsKey(QueryUpdateAuditDomainKind.NEW_RECORD_PROP_NAME))
-                bean.setNewRecordMap(String.valueOf(dataMap.get(QueryUpdateAuditDomainKind.NEW_RECORD_PROP_NAME)));
-        }
-        return (K)bean;
-    }
-
-    @Override
     public Map<FieldKey, String> legacyNameMap()
     {
         Map<FieldKey, String> legacyMap =  super.legacyNameMap();
@@ -178,24 +147,19 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
 
     public static QueryView createHistoryQueryView(ViewContext context, QueryForm form, BindException errors)
     {
-        if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(QUERY_UPDATE_AUDIT_EVENT))
+        UserSchema schema = AuditLogService.getAuditLogSchema(context.getUser(), context.getContainer());
+        if (schema != null)
         {
-            UserSchema schema = AuditLogService.getAuditLogSchema(context.getUser(), context.getContainer());
-            if (schema != null)
-            {
-                QuerySettings settings = new QuerySettings(context, QueryView.DATAREGIONNAME_DEFAULT);
+            QuerySettings settings = new QuerySettings(context, QueryView.DATAREGIONNAME_DEFAULT);
 
-                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(QueryUpdateAuditProvider.COLUMN_NAME_SCHEMA_NAME), form.getSchemaName());
-                filter.addCondition(FieldKey.fromParts(QueryUpdateAuditProvider.COLUMN_NAME_QUERY_NAME), form.getQueryName());
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(QueryUpdateAuditProvider.COLUMN_NAME_SCHEMA_NAME), form.getSchemaName());
+            filter.addCondition(FieldKey.fromParts(QueryUpdateAuditProvider.COLUMN_NAME_QUERY_NAME), form.getQueryName());
 
-                settings.setBaseFilter(filter);
-                settings.setQueryName(QUERY_UPDATE_AUDIT_EVENT);
-                return schema.createView(context, settings, errors);
-            }
-            return null;
+            settings.setBaseFilter(filter);
+            settings.setQueryName(QUERY_UPDATE_AUDIT_EVENT);
+            return schema.createView(context, settings, errors);
         }
-        else
-            throw new IllegalArgumentException("Hard table logging is not enabled for this audit event type");
+        return null;
     }
 
     public static QueryView createDetailsQueryView(ViewContext context, QueryController.QueryDetailsForm form, BindException errors)
@@ -205,25 +169,20 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
 
     public static QueryView createDetailsQueryView(ViewContext context, String schemaName, String queryName, String keyValue, BindException errors)
     {
-        if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(QUERY_UPDATE_AUDIT_EVENT))
+        UserSchema schema = AuditLogService.getAuditLogSchema(context.getUser(), context.getContainer());
+        if (schema != null)
         {
-            UserSchema schema = AuditLogService.getAuditLogSchema(context.getUser(), context.getContainer());
-            if (schema != null)
-            {
-                QuerySettings settings = new QuerySettings(context, QueryView.DATAREGIONNAME_DEFAULT);
+            QuerySettings settings = new QuerySettings(context, QueryView.DATAREGIONNAME_DEFAULT);
 
-                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(QueryUpdateAuditProvider.COLUMN_NAME_SCHEMA_NAME), schemaName);
-                filter.addCondition(FieldKey.fromParts(QueryUpdateAuditProvider.COLUMN_NAME_QUERY_NAME), queryName);
-                filter.addCondition(FieldKey.fromParts(QueryUpdateAuditProvider.COLUMN_NAME_ROW_PK), keyValue);
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(QueryUpdateAuditProvider.COLUMN_NAME_SCHEMA_NAME), schemaName);
+            filter.addCondition(FieldKey.fromParts(QueryUpdateAuditProvider.COLUMN_NAME_QUERY_NAME), queryName);
+            filter.addCondition(FieldKey.fromParts(QueryUpdateAuditProvider.COLUMN_NAME_ROW_PK), keyValue);
 
-                settings.setBaseFilter(filter);
-                settings.setQueryName(QUERY_UPDATE_AUDIT_EVENT);
-                return schema.createView(context, settings, errors);
-            }
-            return null;
+            settings.setBaseFilter(filter);
+            settings.setQueryName(QUERY_UPDATE_AUDIT_EVENT);
+            return schema.createView(context, settings, errors);
         }
-        else
-            throw new IllegalArgumentException("Hard table logging is not enabled for this audit event type");
+        return null;
     }
 
     public static class QueryUpdateAuditEvent extends AuditTypeEvent

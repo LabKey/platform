@@ -16,9 +16,9 @@
 package org.labkey.experiment;
 
 import org.labkey.api.audit.AbstractAuditTypeProvider;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
+import org.labkey.api.audit.data.ExperimentAuditColumn;
 import org.labkey.api.audit.data.ProtocolColumn;
 import org.labkey.api.audit.data.RunColumn;
 import org.labkey.api.audit.data.RunGroupColumn;
@@ -30,7 +30,8 @@ import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 
@@ -93,22 +94,6 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
     }
 
     @Override
-    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event)
-    {
-        ExperimentAuditEvent bean = new ExperimentAuditEvent();
-        copyStandardFields(bean, event);
-
-        bean.setProtocolLsid(event.getKey1());
-        bean.setRunLsid(event.getKey2());
-        bean.setProtocolRun(event.getKey3());
-
-        if (event.getIntKey1() != null)
-            bean.setRunGroup(event.getIntKey1());
-
-        return (K)bean;
-    }
-
-    @Override
     public Map<FieldKey, String> legacyNameMap()
     {
         Map<FieldKey, String> legacyNames = super.legacyNameMap();
@@ -123,6 +108,11 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
     public <K extends AuditTypeEvent> Class<K> getEventClass()
     {
         return (Class<K>)ExperimentAuditEvent.class;
+    }
+
+    public static String getKey3(ExpProtocol protocol, ExpRun run)
+    {
+        return protocol.getName() + ExperimentAuditColumn.KEY_SEPARATOR + (run != null ? run.getName() : "");
     }
 
     @Override

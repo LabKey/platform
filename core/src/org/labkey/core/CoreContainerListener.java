@@ -17,8 +17,9 @@ package org.labkey.core;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditTypeEvent;
+import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.MvUtil;
@@ -90,17 +91,8 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
     {
         if (user != null)
         {
-            AuditLogEvent event = new AuditLogEvent();
-
-            event.setCreatedBy(user);
-            event.setEventType(ContainerManager.CONTAINER_AUDIT_EVENT);
-            event.setContainerId(c.getId());
-            event.setComment(comment);
-
-            if (c.getProject() != null)
-                event.setProjectId(c.getProject().getId());
-
-            AuditLogService.get().addEvent(event);
+            AuditTypeEvent event = new AuditTypeEvent(ContainerAuditProvider.CONTAINER_AUDIT_EVENT, c.getId(), comment);
+            AuditLogService.get().addEvent(user, event);
         }
     }
 

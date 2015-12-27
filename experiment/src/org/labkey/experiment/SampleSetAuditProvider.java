@@ -16,19 +16,16 @@
 package org.labkey.experiment;
 
 import org.labkey.api.audit.AbstractAuditTypeProvider;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
-import org.labkey.api.audit.query.DefaultAuditTypeTable;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.UserSchema;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -40,6 +37,10 @@ public class SampleSetAuditProvider extends AbstractAuditTypeProvider implements
 {
     public static final String EVENT_TYPE = "SampleSetAuditEvent";
 
+    public static final String COLUMN_NAME_SOURCE_LSID = "SourceLsid";
+    public static final String COLUMN_NAME_SAMPLE_SET_NAME = "SampleSetName";
+    public static final String COLUMN_NAME_INSERT_UPDATE_CHOICE = "InsertUpdateChoice";
+
     static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
 
     static {
@@ -47,6 +48,7 @@ public class SampleSetAuditProvider extends AbstractAuditTypeProvider implements
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED_BY));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_IMPERSONATED_BY));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_SAMPLE_SET_NAME));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_PROJECT_ID));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CONTAINER));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
@@ -77,18 +79,9 @@ public class SampleSetAuditProvider extends AbstractAuditTypeProvider implements
     }
 
     @Override
-    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event)
-    {
-        AuditTypeEvent bean = new AuditTypeEvent();
-        copyStandardFields(bean, event);
-
-        return (K)bean;
-    }
-
-    @Override
     public <K extends AuditTypeEvent> Class<K> getEventClass()
     {
-        return (Class<K>)AuditTypeEvent.class;
+        return (Class<K>)SampleSetAuditEvent.class;
     }
 
     @Override
@@ -97,20 +90,74 @@ public class SampleSetAuditProvider extends AbstractAuditTypeProvider implements
         return defaultVisibleColumns;
     }
 
+    public static class SampleSetAuditEvent extends AuditTypeEvent
+    {
+        private String _sourceLsid;
+        private String _sampleSetName;
+        private String _insertUpdateChoice;
+
+        public SampleSetAuditEvent()
+        {
+            super();
+        }
+
+        public SampleSetAuditEvent(String container, String comment)
+        {
+            super(EVENT_TYPE, container, comment);
+        }
+
+        public String getSourceLsid()
+        {
+            return _sourceLsid;
+        }
+
+        public void setSourceLsid(String sourceLsid)
+        {
+            _sourceLsid = sourceLsid;
+        }
+
+        public String getSampleSetName()
+        {
+            return _sampleSetName;
+        }
+
+        public void setSampleSetName(String sampleSetName)
+        {
+            _sampleSetName = sampleSetName;
+        }
+
+        public String getInsertUpdateChoice()
+        {
+            return _insertUpdateChoice;
+        }
+
+        public void setInsertUpdateChoice(String insertUpdateChoice)
+        {
+            _insertUpdateChoice = insertUpdateChoice;
+        }
+    }
+
     public static class SampleSetAuditDomainKind extends AbstractAuditDomainKind
     {
         public static final String NAME = "SampleSetAuditDomain";
         public static String NAMESPACE_PREFIX = "Audit-" + NAME;
+        private final Set<PropertyDescriptor> _fields;
 
         public SampleSetAuditDomainKind()
         {
             super(EVENT_TYPE);
+
+            Set<PropertyDescriptor> fields = new LinkedHashSet<>();
+            fields.add(createPropertyDescriptor(COLUMN_NAME_SOURCE_LSID, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_SAMPLE_SET_NAME, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_INSERT_UPDATE_CHOICE, PropertyType.STRING));
+            _fields = Collections.unmodifiableSet(fields);
         }
 
         @Override
         public Set<PropertyDescriptor> getProperties()
         {
-            return Collections.emptySet();
+            return _fields;
         }
 
         @Override

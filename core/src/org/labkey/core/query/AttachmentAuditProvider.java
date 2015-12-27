@@ -17,18 +17,13 @@ package org.labkey.core.query;
 
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
-import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.PropertyStorageSpec.Index;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.util.ArrayList;
@@ -82,18 +77,6 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
     public String getDescription()
     {
         return "Displays information about attachment events.";
-    }
-
-    @Override
-    public <K extends AuditTypeEvent> K convertEvent(AuditLogEvent event)
-    {
-        AttachmentAuditEvent bean = new AttachmentAuditEvent();
-        copyStandardFields(bean, event);
-
-        bean.setAttachmentParentEntityId(event.getEntityId());
-        bean.setAttachment(event.getKey1());
-
-        return (K)bean;
     }
 
     @Override

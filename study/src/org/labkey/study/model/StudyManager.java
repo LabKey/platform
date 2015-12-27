@@ -30,9 +30,8 @@ import org.junit.Test;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.audit.AuditLogEvent;
+import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
@@ -134,7 +133,7 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.assay.AssayManager;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.dataset.DatasetAuditViewFactory;
+import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.designer.StudyDesignManager;
 import org.labkey.study.importer.SchemaReader;
 import org.labkey.study.importer.StudyImportContext;
@@ -2258,26 +2257,16 @@ public class StudyManager
             String auditComment = "QC state was changed for " + updateLsids.size() + " record" +
                     (updateLsids.size() == 1 ? "" : "s") + ".  User comment: " + comments;
 
-            AuditLogEvent event = new AuditLogEvent();
-            event.setCreatedBy(user);
+            DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(container.getId(), auditComment);
 
-            event.setContainerId(container.getId());
             if (container.getProject() != null)
                 event.setProjectId(container.getProject().getId());
+            event.setDatasetId(datasetId);
+            event.setHasDetails(true);
+            event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(oldQCStates, false));
+            event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(newQCStates, false));
 
-            event.setIntKey1(datasetId);
-
-            // IntKey2 is non-zero because we have details (a previous or new datamap)
-            event.setIntKey2(1);
-
-            event.setEventType(DatasetAuditViewFactory.DATASET_AUDIT_EVENT);
-            event.setComment(auditComment);
-
-            Map<String, Object> dataMap = new HashMap<>();
-            dataMap.put(DatasetAuditViewFactory.OLD_RECORD_PROP_NAME, SimpleAuditViewFactory.encodeForDataMap(oldQCStates, false));
-            dataMap.put(DatasetAuditViewFactory.NEW_RECORD_PROP_NAME, SimpleAuditViewFactory.encodeForDataMap(newQCStates, false));
-            AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(DatasetAuditViewFactory.DATASET_AUDIT_EVENT));
-
+            AuditLogService.get().addEvent(user, event);
             clearCaches(container, false);
 
             transaction.commit();

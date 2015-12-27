@@ -73,21 +73,10 @@ public class AuditQuerySchema extends UserSchema
     {
         LinkedHashSet<String> tables = new LinkedHashSet<>();
 
-        // once migration is complete, we will not show the union query (although exsiting queries over it will continue to work)
-        if (!AuditLogService.get().isMigrateComplete())
-            tables.add(AUDIT_TABLE_NAME);
-
-        // old method of acquiring table names
-        for (AuditLogService.AuditViewFactory factory : AuditLogService.get().getAuditViewFactories())
-        {
-            tables.add(factory.getEventType());
-        }
-
         // new audit table names
         for (AuditTypeProvider provider : AuditLogService.get().getAuditProviders())
         {
-            if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(provider.getEventName()))
-                tables.add(provider.getEventName());
+            tables.add(provider.getEventName());
         }
 
         return Collections.unmodifiableSet(tables);
@@ -96,20 +85,12 @@ public class AuditQuerySchema extends UserSchema
     public TableInfo createTable(String name)
     {
         // event specific audit views are implemented as queries on the audit schema
-        if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(name))
-        {
-            AuditTypeProvider provider = AuditLogService.get().getAuditProvider(name);
-            if (provider != null)
-                return provider.createTableInfo(this);
-        }
+        AuditTypeProvider provider = AuditLogService.get().getAuditProvider(name);
+        if (provider != null)
+            return provider.createTableInfo(this);
 
-        if (AUDIT_TABLE_NAME.equalsIgnoreCase(name) || (AuditLogService.get().getAuditViewFactory(name) != null))
-        {
-            if (AuditLogService.get().isMigrateComplete())
-                return new AuditLogUnionTable(this);
-            else
-                return new AuditLogTable(this, LogManager.get().getTinfoAuditLog(), name);
-        }
+        if (AUDIT_TABLE_NAME.equalsIgnoreCase(name))
+            return new AuditLogUnionTable(this);
 
         return null;
     }
@@ -118,12 +99,9 @@ public class AuditQuerySchema extends UserSchema
     public QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
     {
         String queryName = settings.getQueryName();
-        if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(queryName))
-        {
-            AuditTypeProvider provider = AuditLogService.get().getAuditProvider(queryName);
-            if (provider != null)
-                return new AuditQueryView(this, settings, errors);
-        }
+        AuditTypeProvider provider = AuditLogService.get().getAuditProvider(queryName);
+        if (provider != null)
+            return new AuditQueryView(this, settings, errors);
 
         return super.createView(context, settings, errors);
     }

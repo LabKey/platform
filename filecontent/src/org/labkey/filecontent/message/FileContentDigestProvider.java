@@ -18,8 +18,8 @@ package org.labkey.filecontent.message;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -42,15 +42,11 @@ import org.labkey.api.security.roles.CanSeeAuditLogRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewServlet;
-import org.labkey.api.webdav.FileSystemAuditProvider;
-import org.labkey.api.webdav.FileSystemAuditViewFactory;
-import org.labkey.api.webdav.FileSystemBatchAuditProvider;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 
@@ -86,31 +82,18 @@ public class FileContentDigestProvider implements MessageDigest.Provider
     {
         Set<Container> containers = new HashSet<>();
 
-        if (AuditLogService.get().isMigrateComplete())
-        {
-            User user = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), true);
-            UserSchema userSchema = AuditLogService.getAuditLogSchema(user, ContainerManager.getSharedContainer());
-            FilteredTable table = (FilteredTable)userSchema.getTable(FileSystemAuditProvider.EVENT_TYPE);
+        User user = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), true);
+        UserSchema userSchema = AuditLogService.getAuditLogSchema(user, ContainerManager.getSharedContainer());
+        FilteredTable table = (FilteredTable)userSchema.getTable(FileSystemAuditProvider.EVENT_TYPE);
 
-            if (table != null)
-            {
-                SQLFragment sql = new SQLFragment("SELECT DISTINCT(Container) FROM " + table.getRealTable().getSelectName() + " WHERE Created >= ? and Created < ?", start, end);
-                Collection<String> containerIds = new SqlSelector(table.getSchema(), sql).getCollection(String.class);
-
-                for (String id : containerIds)
-                {
-                    Container c = ContainerManager.getForId(id);
-                    if (c != null)
-                        containers.add(c);
-                }
-            }
-        }
-        else
+        if (table != null)
         {
-            List<AuditLogEvent> events = getAuditEvents(null, start, end);
-            for (AuditLogEvent event : events)
+            SQLFragment sql = new SQLFragment("SELECT DISTINCT(Container) FROM " + table.getRealTable().getSelectName() + " WHERE Created >= ? and Created < ?", start, end);
+            Collection<String> containerIds = new SqlSelector(table.getSchema(), sql).getCollection(String.class);
+
+            for (String id : containerIds)
             {
-                Container c = ContainerManager.getForId(event.getContainerId());
+                Container c = ContainerManager.getForId(id);
                 if (c != null)
                     containers.add(c);
             }
@@ -128,70 +111,30 @@ public class FileContentDigestProvider implements MessageDigest.Provider
         return new LimitedUser(UserManager.getGuestUser(), new int[0], roles, true);
     }
 
-    private List<AuditLogEvent> getAuditEvents(Container container, Date start, Date end)
+    private List<FileSystemAuditProvider.FileSystemAuditEvent> getAuditEvents(Container container, Date start, Date end)
     {
-        if (AuditLogService.get().isMigrateComplete())
-        {
-            User user = getLimitedUser();
-            SimpleFilter filter = new SimpleFilter();
-            filter.addCondition(FieldKey.fromParts("Created"), start, CompareType.GTE);
-            filter.addCondition(FieldKey.fromParts("Created"), end, CompareType.LT);
+        User user = getLimitedUser();
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("Created"), start, CompareType.GTE);
+        filter.addCondition(FieldKey.fromParts("Created"), end, CompareType.LT);
 
-            if (container != null)
-                filter.addCondition(FieldKey.fromParts("Container"), container.getId());
+        if (container != null)
+            filter.addCondition(FieldKey.fromParts("Container"), container.getId());
 
-            Sort sort = new Sort("Created");
+        Sort sort = new Sort("Created");
 
-            List<AuditLogEvent> events = new ArrayList<>();
-            Container c = container != null ? container : ContainerManager.getSharedContainer();
-            List<FileSystemAuditProvider.FileSystemAuditEvent> newEvents = AuditLogService.get().getAuditEvents(container, user, FileSystemAuditProvider.EVENT_TYPE, filter, sort);
-
-            // have to convert back to the old format
-            for (FileSystemAuditProvider.FileSystemAuditEvent event : newEvents)
-            {
-                AuditLogEvent e = new AuditLogEvent();
-
-                e.setImpersonatedBy(event.getImpersonatedBy());
-                e.setComment(event.getComment());
-                e.setProjectId(event.getProjectId());
-                e.setContainerId(event.getContainer());
-                e.setEventType(event.getEventType());
-                e.setCreated(event.getCreated());
-                e.setCreatedBy(event.getCreatedBy());
-                e.setKey1(event.getDirectory());
-                e.setKey2(event.getFile());
-                e.setKey3(event.getResourcePath());
-
-                events.add(e);
-            }
-
-            return events;
-        }
-        else
-        {
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("EventType"), FileSystemAuditViewFactory.EVENT_TYPE);
-            Sort sort = new Sort("Created");
-
-            filter.addCondition(FieldKey.fromParts("Created"), start, CompareType.GTE);
-            filter.addCondition(FieldKey.fromParts("Created"), end, CompareType.LT);
-
-
-            if (container != null)
-                filter.addCondition(FieldKey.fromParts("ContainerId"), container.getId());
-
-            return AuditLogService.get().getEvents(filter, sort);
-        }
+        return AuditLogService.get().getAuditEvents(container, user, FileSystemAuditProvider.EVENT_TYPE, filter, sort);
     }
 
     private void sendDigest(Container c, Date min, Date max) throws Exception
     {
-        List<AuditLogEvent> events = getAuditEvents(c, min, max);
-        Map<Path, List<AuditLogEvent>> recordMap = new LinkedHashMap<>();
+        List<FileSystemAuditProvider.FileSystemAuditEvent> events = getAuditEvents(c, min, max);
+        Map<Path, List<FileSystemAuditProvider.FileSystemAuditEvent>> recordMap = new LinkedHashMap<>();
 
         // group audit events by webdav resource
-        for (AuditLogEvent event : events)
+        for (FileSystemAuditProvider.FileSystemAuditEvent event : events)
         {
-            String resourcePath = event.getKey3();
+            String resourcePath = event.getResourcePath();
             if (resourcePath != null)
             {
                 Path path = Path.parse(resourcePath);
@@ -201,7 +144,7 @@ public class FileContentDigestProvider implements MessageDigest.Provider
                 {
                     if (!recordMap.containsKey(path))
                     {
-                        recordMap.put(path, new ArrayList<AuditLogEvent>());
+                        recordMap.put(path, new ArrayList<FileSystemAuditProvider.FileSystemAuditEvent>());
                     }
                     recordMap.get(path).add(event);
                 }
@@ -241,14 +184,8 @@ public class FileContentDigestProvider implements MessageDigest.Provider
                 svc.sendMessage(messages, null, c);
             }
 
-            AuditLogEvent event = new AuditLogEvent();
-
-            //event.setCreatedBy(getUser());
-            event.setContainerId(c.getId());
-            event.setEventType(FileSystemBatchAuditProvider.EVENT_TYPE);
-            event.setComment(events.size() + " Files modified");
-
-            AuditLogService.get().addEvent(event);
+            FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(c.getId(), events.size() + " Files modified");
+            AuditLogService.get().addEvent(null, event);
        }
         catch (Exception e)
         {
@@ -280,18 +217,18 @@ public class FileContentDigestProvider implements MessageDigest.Provider
 
     public static class FileDigestForm
     {
-        Map<Path, List<AuditLogEvent>> _records;
+        Map<Path, List<FileSystemAuditProvider.FileSystemAuditEvent>> _records;
         User _user;
         Container _container;
 
-        public FileDigestForm(User user, Container container, Map<Path, List<AuditLogEvent>> records)
+        public FileDigestForm(User user, Container container, Map<Path, List<FileSystemAuditProvider.FileSystemAuditEvent>> records)
         {
             _user = user;
             _container = container;
             _records = records;
         }
 
-        public Map<Path, List<AuditLogEvent>> getRecords()
+        public Map<Path, List<FileSystemAuditProvider.FileSystemAuditEvent>> getRecords()
         {
             return _records;
         }

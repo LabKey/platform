@@ -19,6 +19,7 @@ package org.labkey.audit;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.provider.SiteSettingsAuditProvider;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
@@ -68,7 +69,6 @@ public class AuditModule extends DefaultModule
     public void doStartup(ModuleContext moduleContext)
     {
         AuditQuerySchema.register(this);
-        AuditLogService.get().addAuditViewFactory(new SiteSettingsAuditViewFactory());
         AuditLogService.registerAuditType(new SiteSettingsAuditProvider());
 
         AuditController.registerAdminConsoleLinks();

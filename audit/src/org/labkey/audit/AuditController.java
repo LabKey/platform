@@ -18,28 +18,25 @@ package org.labkey.audit;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.audit.provider.SiteSettingsAuditProvider;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.view.*;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.audit.AuditLogEvent;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.admin.AdminUrls;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
 
 import java.util.Date;
-import java.util.Map;
 
 /**
  * User: adam
@@ -95,22 +92,11 @@ public class AuditController extends SpringActionController
             if (selected == null)
                 selected = AuditLogService.get().getAuditProviders().get(0).getEventName();
 
-            if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(selected))
-            {
-                UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
-                QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, selected);
-                settings.setContainerFilterName(ContainerFilter.Type.AllFolders.name());
+            UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
+            QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, selected);
+            settings.setContainerFilterName(ContainerFilter.Type.AllFolders.name());
 
-                return schema.createView(getViewContext(), settings, errors);
-            }
-            else
-            {
-                AuditLogService.AuditViewFactory factory = AuditLogService.get().getAuditViewFactory(selected);
-                if (factory != null)
-                    return factory.createDefaultQueryView(getViewContext());
-
-                return null;
-            }
+            return schema.createView(getViewContext(), settings, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -168,30 +154,11 @@ public class AuditController extends SpringActionController
             User createdBy = null;
             Date created = null;
 
-            if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(WriteableAppProps.AUDIT_EVENT_TYPE))
+            SiteSettingsAuditProvider.SiteSettingsAuditEvent event = AuditLogService.get().getAuditEvent(getUser(), SiteSettingsAuditProvider.AUDIT_EVENT_TYPE, form.getId());
+
+            if (event != null)
             {
-                SiteSettingsAuditProvider.SiteSettingsAuditEvent event = AuditLogService.get().getAuditEvent(getUser(), WriteableAppProps.AUDIT_EVENT_TYPE, form.getId());
-
-                if (event != null)
-                {
-                    diff = event.getChanges();
-                    createdBy = event.getCreatedBy();
-                    created = event.getCreated();
-                }
-            }
-            else
-            {
-                //get the audit event
-                AuditLogEvent event = AuditLogService.get().getEvent(form.getId().intValue());
-
-                if (null == event)
-                    throw new NotFoundException("Could not find the audit log event with id '" + form.getId().toString() + "'!");
-
-                Map<String, Object> eventProps = OntologyManager.getProperties(ContainerManager.getSharedContainer(), event.getLsid());
-
-                //create the model and view
-
-                diff = (String)(eventProps.get(AuditLogService.get().getPropertyURI(WriteableAppProps.AUDIT_EVENT_TYPE, WriteableAppProps.AUDIT_PROP_DIFF)));
+                diff = event.getChanges();
                 createdBy = event.getCreatedBy();
                 created = event.getCreated();
             }
@@ -205,7 +172,7 @@ public class AuditController extends SpringActionController
             root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL());
 
             ActionURL urlLog = new ActionURL(ShowAuditLogAction.class, ContainerManager.getRoot());
-            urlLog.addParameter("view", WriteableAppProps.AUDIT_EVENT_TYPE);
+            urlLog.addParameter("view", SiteSettingsAuditProvider.AUDIT_EVENT_TYPE);
             root = root.addChild("Audit Log", urlLog);
             return root.addChild("Site Settings Audit Event Details");
         }
