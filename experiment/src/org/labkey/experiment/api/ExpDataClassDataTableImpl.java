@@ -5,9 +5,12 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -61,9 +64,11 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -634,6 +639,8 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
     private class DataClassDataUpdateService extends DefaultQueryUpdateService
     {
+        private String ENTITY_KEY = "entityId";
+
         public DataClassDataUpdateService(ExpDataClassDataTableImpl table)
         {
             super(table, table.getRealTable());
@@ -657,8 +664,13 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
         @Override
         public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws DuplicateKeyException, QueryUpdateServiceException, SQLException
         {
-            List<Map<String, Object>> result = super._insertRowsUsingETL(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
-            return result;
+            List<Map<String, Object>> results = super._insertRowsUsingETL(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
+
+            // handle attachments
+            for (Map<String, Object> result : results)
+                addAttachments(user, container, result, (String)result.get(ENTITY_KEY));
+
+            return results;
         }
 
         @Override
@@ -695,6 +707,10 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("LSID"), lsid);
             ret.putAll(Table.update(user, t, row, keys, filter, Level.DEBUG));
 
+            // handle attachments
+            removePreviousAttachments(user, c, row, oldRow);
+            addAttachments(user, c, ret, (String)oldRow.get(ENTITY_KEY));
+
             return ret;
         }
 
@@ -709,12 +725,74 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             //Table.delete(getDbTable(), new SimpleFilter(FieldKey.fromParts("lsid"), lsid));
             ExpData data = ExperimentService.get().getExpData(lsid);
             data.delete(getUserSchema().getUser());
+
+            if (row.containsKey(ENTITY_KEY))
+                ExperimentServiceImpl.get().deleteDataClassAttachments(c, Collections.singletonList((String)row.get(ENTITY_KEY)));
         }
 
         @Override
         protected int truncateRows(User user, Container container) throws QueryUpdateServiceException, SQLException
         {
             return ExperimentServiceImpl.get().truncateDataClass(_dataClass, container);
+        }
+
+        private void removePreviousAttachments(User user, Container c, Map<String, Object> newRow, Map<String, Object> oldRow)
+        {
+            if (oldRow.containsKey(ENTITY_KEY))
+            {
+                for (Map.Entry<String, Object> entry : newRow.entrySet())
+                {
+                    if (isAttachmentProperty(entry.getKey()) && oldRow.get(entry.getKey()) != null)
+                    {
+                        AttachmentParentEntity parent = new AttachmentParentEntity();
+                        parent.setEntityId((String) oldRow.get(ENTITY_KEY));
+                        parent.setContainer(c.getId());
+
+                        AttachmentService.get().deleteAttachment(parent, (String) oldRow.get(entry.getKey()), user);
+                    }
+                }
+            }
+        }
+
+        private boolean isAttachmentProperty(String name)
+        {
+            DomainProperty dp = _dataClass.getDomain().getPropertyByName(name);
+            if (dp != null)
+                return PropertyType.ATTACHMENT.equals(dp.getPropertyDescriptor().getPropertyType());
+            return false;
+        }
+
+        private void addAttachments(User user, Container c, Map<String, Object> row, String entityId)
+        {
+            if (row != null && entityId != null)
+            {
+                ArrayList<AttachmentFile> attachmentFiles = new ArrayList<>();
+                for (Map.Entry<String, Object> entry : row.entrySet())
+                {
+                    if (isAttachmentProperty(entry.getKey()) && entry.getValue() instanceof AttachmentFile)
+                    {
+                        AttachmentFile file = (AttachmentFile) entry.getValue();
+                        if (null != file.getFilename())
+                            attachmentFiles.add(file);
+                    }
+                }
+
+                if (!attachmentFiles.isEmpty())
+                {
+                    AttachmentParentEntity parent = new AttachmentParentEntity();
+                    parent.setEntityId(entityId);
+                    parent.setContainer(c.getId());
+
+                    try
+                    {
+                        AttachmentService.get().addAttachments(parent, attachmentFiles, user);
+                    }
+                    catch (IOException e)
+                    {
+                        throw UnexpectedException.wrap(e);
+                    }
+                }
+            }
         }
     }
 }

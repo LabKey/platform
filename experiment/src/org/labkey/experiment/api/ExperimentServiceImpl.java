@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.DbCache;
@@ -2604,6 +2605,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     {
         assert getExpSchema().getScope().isTransactionActive();
 
+        truncateDataClassAttachments(dataClass);
+
         SimpleFilter filter = c == null ? new SimpleFilter() : SimpleFilter.createContainerFilter(c);
         filter.addCondition(FieldKey.fromParts("classId"), dataClass.getRowId());
 
@@ -2649,6 +2652,42 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         SchemaKey expDataSchema = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.NestedSchemas.data.toString());
         QueryService.get().fireQueryDeleted(user, c, null, expDataSchema, Collections.singleton(dataClass.getName()));
+    }
+
+    private void truncateDataClassAttachments(ExpDataClass dataClass)
+    {
+        if (dataClass != null && dataClass instanceof ExpDataClassImpl)
+        {
+            if (dataClass.getDomain() != null && dataClass.getDomain().getPropertyByName("EntityId") != null)
+            {
+                TableInfo table = ((ExpDataClassImpl) dataClass).getTinfo();
+
+                SQLFragment sql = new SQLFragment()
+                        .append("SELECT t.EntityId FROM ").append(getTinfoData(), "d")
+                        .append(" LEFT OUTER JOIN ").append(table, "t")
+                        .append(" ON d.lsid = t.lsid")
+                        .append(" WHERE d.Container = ?").add(dataClass.getContainer().getEntityId())
+                        .append(" AND d.ClassId = ?").add(dataClass.getRowId());
+
+                List<String> entityIds = new SqlSelector(table.getSchema().getScope(), sql).getArrayList(String.class);
+                deleteDataClassAttachments(dataClass.getContainer(), entityIds);
+            }
+        }
+    }
+
+    public void deleteDataClassAttachments(Container container, List<String> entityIds)
+    {
+        List<AttachmentParent> attachmentParents = new ArrayList<>();
+
+        for (String entityId : entityIds)
+        {
+            AttachmentParentEntity parent = new AttachmentParentEntity();
+            parent.setContainer(container.getId());
+            parent.setEntityId(entityId);
+            attachmentParents.add(parent);
+        }
+
+        AttachmentService.get().deleteAttachments(attachmentParents);
     }
 
     public ExpRunImpl populateRun(final ExpRunImpl expRun)

@@ -46,8 +46,11 @@ import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.attachments.AttachmentForm;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
@@ -229,6 +232,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.imageio.ImageIO;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
 import java.io.BufferedOutputStream;
@@ -1314,6 +1318,35 @@ public class ExperimentController extends SpringActionController
         {
             ConceptURIProperties.removeLookup(getContainer(), form.getConceptURI());
             return new ApiSimpleResponse("success", true);
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class DataClassAttachmentDownloadAction extends SimpleViewAction<AttachmentForm>
+    {
+        public ModelAndView getView(AttachmentForm form, BindException errors) throws Exception
+        {
+            getPageConfig().setTemplate(PageConfig.Template.None);
+            AttachmentParentEntity parent = new AttachmentParentEntity();
+            parent.setEntityId(form.getEntityId());
+            parent.setContainer(getContainer().getId());
+            return getAttachmentView(form, parent);
+        }
+
+        private ModelAndView getAttachmentView(final AttachmentForm form, final AttachmentParentEntity parent) throws Exception
+        {
+            return new HttpView()
+            {
+                protected void renderInternal(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
+                {
+                    AttachmentService.get().download(response, parent, form.getName());
+                }
+            };
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
         }
     }
 
