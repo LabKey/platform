@@ -108,6 +108,7 @@ import org.labkey.study.assay.ModuleAssayProvider;
 import org.labkey.study.assay.TsvImportAction;
 import org.labkey.study.assay.query.AssayAuditProvider;
 import org.labkey.study.controllers.assay.actions.GetAssayBatchAction;
+import org.labkey.study.controllers.assay.actions.GetAssayBatchesAction;
 import org.labkey.study.controllers.assay.actions.ImportRunApiAction;
 import org.labkey.study.controllers.assay.actions.SaveAssayBatchAction;
 import org.springframework.validation.BindException;
@@ -143,6 +144,7 @@ public class AssayController extends SpringActionController
 {
     private static final DefaultActionResolver _resolver = new DefaultActionResolver(AssayController.class,
             GetAssayBatchAction.class,
+            GetAssayBatchesAction.class,
             SaveAssayBatchAction.class,
             PublishStartAction.class,
             PublishConfirmAction.class,

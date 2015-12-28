@@ -1889,6 +1889,7 @@ study/src/org/labkey/study/controllers/VisitForm.java -text
 study/src/org/labkey/study/controllers/assay/AssayController.java -text
 study/src/org/labkey/study/controllers/assay/actions/AbstractAssayAPIAction.java -text
 study/src/org/labkey/study/controllers/assay/actions/GetAssayBatchAction.java -text
+study/src/org/labkey/study/controllers/assay/actions/GetAssayBatchesAction.java -text
 study/src/org/labkey/study/controllers/assay/actions/ImportRunApiAction.java -text
 study/src/org/labkey/study/controllers/assay/actions/SaveAssayBatchAction.java -text
 study/src/org/labkey/study/controllers/designer/DesignerController.java -text
