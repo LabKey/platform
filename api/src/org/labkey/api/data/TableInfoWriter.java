@@ -201,7 +201,9 @@ public class TableInfoWriter
         if (PHI.NotPHI != column.getPHI())
             columnXml.setPhi(PhiType.Enum.forString(column.getPHI().toString()));
 
-        columnXml.setScale(column.getScale());
+        //Only export scale if column is a string
+        if (column.isStringType())
+            columnXml.setScale(column.getScale());
     }
 
     protected String getConceptURI(ColumnInfo column)
