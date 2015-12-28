@@ -692,7 +692,27 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
     @Override
     public Report getReport(Container c, int rowId)
     {
-        return ReportCache.getReport(c, rowId);
+        Report report = ReportCache.getReport(c, rowId);
+
+        if (null != report)
+            return report;
+
+        while (!c.isRoot())
+        {
+            c = c.getParent();
+            report = ReportCache.getReport(c, rowId);
+
+            if (null != report)
+            {
+                if ((report.getDescriptor().getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0)
+                    return report;
+                else
+                    return null;
+            }
+        }
+
+        // Look for this report in the shared project
+        return (!ContainerManager.getSharedContainer().equals(c)) ? ReportCache.getReport(ContainerManager.getSharedContainer(), rowId) : null;
     }
 
     public ReportIdentifier getReportIdentifier(String reportId)
