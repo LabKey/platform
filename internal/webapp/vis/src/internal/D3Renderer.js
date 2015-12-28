@@ -16,11 +16,14 @@ LABKEY.vis.internal.Axis = function() {
         borderSel, grid, scalesList = [], gridLinesVisible = 'both', tickDigits, tickLabelMax,
         tickColor = '#000000', tickTextColor = '#000000', gridLineColor = '#DDDDDD', borderColor = '#000000',
         tickPadding = 0, tickLength = 8, tickWidth = 1, tickOverlapRotation = 15, gridLineWidth = 1, borderWidth = 1,
-        fontFamily = 'verdana, arial, helvetica, sans-serif', fontSize = 10, adjustedStarts, adjustedEnds;
+        fontFamily = 'verdana, arial, helvetica, sans-serif', fontSize = 10, adjustedStarts, adjustedEnds, xLogGutterBorder = 0, yLogGutterBorder = 0,
+        yGutterXOffset = 0, xGutterYOffset = 0, addLogGutterLabel = false, xGridExtension = 0, yGridExtension = 0, logGutterSel;
+
+    var lowerEqualThanZero = '\u22640', emptyDrawing='M0,0L0,0Z', logGutterWidth = 30;
 
     var axis = function(selection) {
         var data, textAnchor, textXFn, textYFn, gridLineFn, tickFn, border, gridLineData, hasOverlap, bBoxA, bBoxB, i,
-                tickEls, gridLineEls, textAnchors, textEls;
+                tickEls, gridLineEls, textAnchors, textEls, logGutterBackground;
 
         if (scale.ticks) {
             data = scale.ticks(ticks);
@@ -78,23 +81,59 @@ LABKEY.vis.internal.Axis = function() {
 
         if (orientation == 'left') {
             textAnchor = 'end';
-            textYFn = function(v) {return Math.floor(scale(v)) + .5;};
+            textYFn = function(v) {
+                if (v === lowerEqualThanZero)
+                    return grid.bottomEdge + logGutterWidth/2;
+                return Math.floor(scale(v)) + .5;
+            };
             textXFn = function() {return grid.leftEdge - tickLength - 2 - tickPadding};
-            tickFn = function(v) {v = Math.floor(scale(v)) + .5; return 'M' + grid.leftEdge + ',' + v + 'L' + (grid.leftEdge - tickLength) + ',' + v + 'Z';};
-            gridLineFn = function(v) {v = Math.floor(scale(v)) + .5; return 'M' + grid.rightEdge + ',' + v + 'L' + grid.leftEdge + ',' + v + 'Z';};
-            border = 'M' + (Math.floor(grid.leftEdge) + .5) + ',' + (grid.bottomEdge + 1) + 'L' + (Math.floor(grid.leftEdge) + .5) + ',' + grid.topEdge + 'Z';
+            tickFn = function(v) {
+                if (v === lowerEqualThanZero)
+                    return emptyDrawing;
+                v = Math.floor(scale(v)) + .5; return 'M' + grid.leftEdge + ',' + v + 'L' + (grid.leftEdge - tickLength) + ',' + v + 'Z';};
+            gridLineFn = function(v) {
+                if (v === lowerEqualThanZero)
+                    return emptyDrawing;
+                v = Math.floor(scale(v)) + .5;
+                return 'M' + grid.rightEdge + ',' + v + 'L' + (grid.leftEdge - yGridExtension) + ',' + v + 'Z';
+            };
+            border = function() {
+                return 'M' + (Math.floor(grid.leftEdge) + xGutterYOffset + .5) + ',' + (grid.bottomEdge + 1 + xLogGutterBorder) + 'L' + (Math.floor(grid.leftEdge) + xGutterYOffset + .5) + ',' + grid.topEdge + 'Z';
+            };
+            logGutterBackground = function() {
+                return 'M' + (Math.floor(grid.leftEdge) + xGutterYOffset + .5 - logGutterWidth/2) + ',' + (grid.bottomEdge + 1 - 2) + 'L' + (Math.floor(grid.leftEdge) + xGutterYOffset + .5  - logGutterWidth/2) + ',' + grid.topEdge + 'Z';
+            };
             // Don't overlap gridlines with x axis border.
             if (scalesList.indexOf('x') != -1 && Math.floor(scale(data[0])) == Math.floor(grid.bottomEdge)) {
                 gridLineData = gridLineData.slice(1);
             } else if (scalesList.indexOf('xTop') != -1 && Math.floor(scale(data[gridLineData.length-1])) == Math.floor(grid.topEdge)) {
                 gridLineData = gridLineData.slice(0, gridLineData.length-1)
             }
+            if (addLogGutterLabel) {
+                // hide the first label so that log gutter label is not cluttered
+                gridLineData.shift();
+                gridLineData.unshift(lowerEqualThanZero);
+            }
+
         } else if (orientation == 'right') {
             textAnchor = 'start';
-            textYFn = function(v) {return Math.floor(scale(v)) + .5;};
+            textYFn = function(v) {
+                if (v === lowerEqualThanZero)
+                    return 0;
+                return Math.floor(scale(v)) + .5;
+            };
             textXFn = function() {return grid.rightEdge + tickLength + 2 + tickPadding};
-            tickFn = function(v) {v = Math.floor(scale(v)) + .5; return 'M' + grid.rightEdge + ',' + v + 'L' + (grid.rightEdge + tickLength) + ',' + v + 'Z';};
-            gridLineFn = function(v) {v = Math.floor(scale(v)) + .5; return 'M' + grid.rightEdge + ',' + v + 'L' + (grid.leftEdge + 1) + ',' + v + 'Z';};
+            tickFn = function(v) {
+                if (v === lowerEqualThanZero)
+                    return emptyDrawing;
+                v = Math.floor(scale(v)) + .5;
+                return 'M' + grid.rightEdge + ',' + v + 'L' + (grid.rightEdge + tickLength) + ',' + v + 'Z';
+            };
+            gridLineFn = function(v) {
+                if (v === lowerEqualThanZero)
+                    return emptyDrawing;
+                v = Math.floor(scale(v)) + .5; return 'M' + grid.rightEdge + ',' + v + 'L' + (grid.leftEdge + 1) + ',' + v + 'Z';
+            };
             border = 'M' + (Math.floor(grid.rightEdge) + .5) + ',' + (grid.bottomEdge + 1) + 'L' + (Math.floor(grid.rightEdge) + .5) + ',' + grid.topEdge + 'Z';
             // Don't overlap gridlines with x axis border.
             if (scalesList.indexOf('x') != -1 && Math.floor(scale(data[0])) == Math.floor(grid.bottomEdge)) {
@@ -102,34 +141,87 @@ LABKEY.vis.internal.Axis = function() {
             } else if (scalesList.indexOf('xTop') != -1 && Math.floor(scale(data[gridLineData.length-1])) == Math.floor(grid.topEdge)) {
                 gridLineData = gridLineData.slice(0, gridLineData.length-1)
             }
+            if (addLogGutterLabel) {
+                gridLineData.shift();
+                gridLineData.unshift(lowerEqualThanZero);
+            }
         }else if(orientation == 'top') {
             textAnchor = 'middle';
-            textXFn = function(v) {return (Math.floor(scale(v)) +.5);};
+            textXFn = function(v) {
+                if (v === lowerEqualThanZero)
+                    return 0;
+                return (Math.floor(scale(v)) +.5);
+            };
             textYFn = function() {return grid.topEdge - tickPadding};
-            tickFn = function(v) {v = (Math.floor(scale(v)) +.5); return 'M' + v + ',' + grid.topEdge + 'L' + v + ',' + (grid.topEdge - tickLength) + 'Z';};
-            gridLineFn = function(v) {v = (Math.floor(scale(v)) +.5); return 'M' + v + ',' + grid.bottomEdge + 'L' + v + ',' + grid.topEdge + 'Z';};
+            tickFn = function(v) {
+                if (v === lowerEqualThanZero)
+                    return emptyDrawing;
+                v = (Math.floor(scale(v)) +.5);
+                return 'M' + v + ',' + grid.topEdge + 'L' + v + ',' + (grid.topEdge - tickLength) + 'Z';
+            };
+            gridLineFn = function(v) {
+                if (v === lowerEqualThanZero)
+                    return emptyDrawing;
+                v = (Math.floor(scale(v)) +.5); return 'M' + v + ',' + grid.bottomEdge + 'L' + v + ',' + grid.topEdge + 'Z';
+            };
             border = 'M' + grid.leftEdge + ',' + (Math.floor(grid.topEdge) + .5) + 'L' + grid.rightEdge + ',' + (Math.floor(grid.topEdge) + .5) + 'Z';
             // Don't overlap gridlines with y-left axis border.
             if (scale(data[0]) == grid.leftEdge) {
                 gridLineData = gridLineData.slice(1);
             }
+            if (addLogGutterLabel) {
+                gridLineData.shift();
+                gridLineData.unshift(lowerEqualThanZero);
+            }
         } else {
             // Assume bottom otherwise.
             orientation = 'bottom';
             textAnchor = 'middle';
-            textXFn = function(v) {return (Math.floor(scale(v)) +.5);};
+            textXFn = function(v) {
+                if (v === lowerEqualThanZero)
+                    return grid.leftEdge - logGutterWidth/2;
+                return (Math.floor(scale(v)) + 0.5);
+            };
             textYFn = function() {return grid.bottomEdge + tickLength + 2 + tickPadding};
-            tickFn = function(v) {v = (Math.floor(scale(v)) +.5); return 'M' + v + ',' + grid.bottomEdge + 'L' + v + ',' + (grid.bottomEdge + tickLength) + 'Z';};
-            gridLineFn = function(v) {v = (Math.floor(scale(v)) +.5); return 'M' + v + ',' + grid.bottomEdge + 'L' + v + ',' + grid.topEdge + 'Z';};
-            border = 'M' + grid.leftEdge + ',' + (Math.floor(grid.bottomEdge) + .5) + 'L' + grid.rightEdge + ',' + (Math.floor(grid.bottomEdge) + .5) + 'Z';
+            tickFn = function(v) {
+                if (v === lowerEqualThanZero)
+                    return emptyDrawing;
+
+                v = (Math.floor(scale(v)) +.5); return 'M' + v + ',' + grid.bottomEdge + 'L' + v + ',' + (grid.bottomEdge + tickLength) + 'Z';
+            };
+            gridLineFn = function(v) {
+                if (v === lowerEqualThanZero)
+                    return emptyDrawing;
+                v = (Math.floor(scale(v)) +.5); return 'M' + v + ',' + (grid.bottomEdge + xGridExtension) + 'L' + v + ',' + grid.topEdge + 'Z';};
+            border = function() {
+                return 'M' + (grid.leftEdge - yLogGutterBorder) + ',' + (Math.floor(grid.bottomEdge) - yGutterXOffset + .5) + 'L' + grid.rightEdge + ',' + (Math.floor(grid.bottomEdge) - yGutterXOffset + .5) + 'Z';
+            };
+            logGutterBackground = function() {
+                return 'M' + (grid.leftEdge - yLogGutterBorder) + ',' + (Math.floor(grid.bottomEdge) - yGutterXOffset + .5 + logGutterWidth/2) + 'L' + grid.rightEdge + ',' + (Math.floor(grid.bottomEdge) - yGutterXOffset + .5 + logGutterWidth/2) + 'Z';
+            };
             // Don't overlap gridlines with y-left axis border.
             if (scale(data[0]) == grid.leftEdge) {
                 gridLineData = gridLineData.slice(1);
+            }
+            if (addLogGutterLabel) {
+                gridLineData.shift();
+                gridLineData.unshift(lowerEqualThanZero);
             }
         }
 
         if (!axisSel) {
             axisSel = selection.append('g').attr('class', 'axis');
+        }
+
+        if (xGridExtension > 0 || yGridExtension > 0) {
+            if (!logGutterSel) {
+                logGutterSel = axisSel.append('g').attr('class', 'log-gutter');
+            }
+            logGutterSel.selectAll('path').remove();
+            logGutterSel.append('path')
+                        .attr('stroke', '#FFFFFF')
+                        .attr('stroke-width', logGutterWidth)
+                        .attr('d', logGutterBackground);
         }
 
         if (!tickSel) {
@@ -369,6 +461,51 @@ LABKEY.vis.internal.Axis = function() {
     axis.tickMouseOut = function(h) {tickMouseOut = h; return axis;};
     axis.scalesList = function(h) {scalesList = h; return axis;};
 
+    axis.xGridExtension = function(p) {
+        if (p !== null && p !== undefined) {
+            xGridExtension = p;
+        }
+        return axis;
+    };
+
+    axis.yGridExtension = function(p) {
+        if (p !== null && p !== undefined) {
+            yGridExtension = p;
+        }
+        return axis;
+    };
+
+    axis.addLogGutterLabel = function() {
+        addLogGutterLabel = true;
+        return axis;
+    };
+
+    axis.yGutterXOffset = function(p) {
+        if (p !== null && p !== undefined) {
+            yGutterXOffset = p;
+        }
+        return axis;
+    };
+
+    axis.xGutterYOffset = function(p) {
+        if (p !== null && p !== undefined) {
+            xGutterYOffset = p;
+        }
+        return axis;
+    };
+
+    axis.xLogGutterBorder = function(p) {
+        if (p !== null && p !== undefined) {
+            xLogGutterBorder = p;
+        }
+        return axis;
+    };
+    axis.yLogGutterBorder = function(p) {
+        if (p !== null && p !== undefined) {
+            yLogGutterBorder = p;
+        }
+        return axis;
+    };
     axis.tickPadding = function(p) {
         if (p !== null && p !== undefined) {
             tickPadding = p;
@@ -459,6 +596,19 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         defaultBrushFillColor = '#EBF7F8', defaultBrushFillOpacity = .75, defaultBrushStrokeColor = '#14C9CC',
         defaultAxisFontSize = 14, defaultMainFontSize = 18, defaultHandleLen = 30;
 
+    var isMainPlot = plot.isMainPlot, xLogGutter = plot.xLogGutter, yLogGutter = plot.yLogGutter,
+        isShowYAxisGutter = plot.isShowYAxisGutter, isShowXAxisGutter = plot.isShowXAxisGutter;
+
+    // adjust the plot range to reserve space for log gutter
+    var logGutterWidth = 30;
+
+    // the amount user need to drag in order to brush log gutter,
+    // after implementing the 'snap' feature, would want to reduce this to 1
+    var logGutterBrushExtent = 15;
+
+    // position log gutter data relative to x or y axis
+    var logGutterPointsOffset = 15;
+
     var initLabelElements = function() {
         labelElements = {}; labelBkgds = {};
         var fontFamily = plot.fontFamily ? plot.fontFamily : 'verdana, arial, helvetica, sans-serif';
@@ -474,7 +624,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                     .style('font', fontSize + 'px ' + fontFamily);
 
             if(plot.labels[name] && plot.labels[name].cls) {
-                labelEl.dom.attr("class", plot.labels[name].cls)
+                labelEl.dom.attr("class", plot.labels[name].cls);
             }
 
             return labelEl;
@@ -673,9 +823,28 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         if (plot.scales.x && plot.scales.x.scale)
         {
-            xAxis.scale(plot.scales.x.scale).tickPadding(10).ticks(7);
+            var padding = 10;
+            var xBorderExtension = 0, gridExtension = 0;
+            if (xLogGutter && isMainPlot) {
+                padding = 40;
+                gridExtension = logGutterWidth;
+            }
+
+            if (yLogGutter) {
+                if (isMainPlot) {
+                    xBorderExtension = logGutterWidth;
+
+                }
+                xAxis.addLogGutterLabel();
+            }
+
+            xAxis.yLogGutterBorder(xBorderExtension).xGridExtension(gridExtension);
+            xAxis.scale(plot.scales.x.scale).tickPadding(padding).ticks(7);
             configureAxis(xAxis);
             updateIndividualAxisConfig(xAxis, 'x');
+            if (isShowXAxisGutter) {
+                xAxis.yGutterXOffset(logGutterWidth).borderColor("#CCC8C8");
+            }
             this.canvas.call(xAxis);
         }
     };
@@ -683,6 +852,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     var renderXTopAxis = function() {
         if (!xTopAxis) {
             xTopAxis = LABKEY.vis.internal.Axis().orient('top');
+        }
+
+        if (yLogGutter) {
+            xTopAxis.addLogGutterLabel();
         }
 
         if (plot.scales.xTop && plot.scales.xTop.scale)
@@ -700,9 +873,26 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
 
         if (plot.scales.yLeft && plot.scales.yLeft.scale) {
-            leftAxis.scale(plot.scales.yLeft.scale).ticks(10);
+            var padding = 0;
+            var yBorderExtension, gridExtension= 0;
+            if (yLogGutter && isMainPlot) {
+                padding = 30;
+                gridExtension = logGutterWidth;
+            }
+
+            if (xLogGutter) {
+                if (isMainPlot) {
+                    yBorderExtension = logGutterWidth;
+                    leftAxis.addLogGutterLabel();
+                }
+            }
+
+            leftAxis.scale(plot.scales.yLeft.scale).tickPadding(padding).ticks(10).xLogGutterBorder(yBorderExtension).yGridExtension(gridExtension);
             configureAxis(leftAxis);
             updateIndividualAxisConfig(leftAxis, 'yLeft');
+            if (isShowYAxisGutter) {
+                leftAxis.xGutterYOffset(logGutterWidth).borderColor("#CCC8C8");
+            }
             this.canvas.call(leftAxis);
         }
     };
@@ -710,6 +900,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     var renderYRightAxis = function() {
         if (!rightAxis) {
             rightAxis = LABKEY.vis.internal.Axis().orient('right');
+        }
+        if (xLogGutter) {
+            rightAxis.addLogGutterLabel();
         }
         if (plot.scales.yRight && plot.scales.yRight.scale) {
             rightAxis.scale(plot.scales.yRight.scale).ticks(10);
@@ -1034,6 +1227,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             else
             {
                 xScale = xAxis.scale;
+                if (isMainPlot && yLogGutter) {
+                    xScale.domain([xScale.invert(plot.grid.leftEdge - logGutterWidth), xScale.invert(plot.grid.rightEdge)]);
+                    xScale.range([plot.grid.leftEdge - logGutterWidth, plot.grid.rightEdge]);
+                }
             }
 
             if (plot.scales.yLeft) {
@@ -1052,6 +1249,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             else
             {
                 yScale = yAxis.scale;
+                if (isMainPlot && xLogGutter) {
+                    yScale.domain([yScale.invert(plot.grid.bottomEdge + logGutterWidth), yScale.invert(plot.grid.topEdge - scalePadding)]);
+                    yScale.range([plot.grid.bottomEdge + logGutterWidth, plot.grid.topEdge - scalePadding]);
+                }
             }
 
             if (!plot.brushing.dimension || plot.brushing.dimension == 'x' || plot.brushing.dimension == 'xTop' || plot.brushing.dimension == 'both') {
@@ -1145,6 +1346,34 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     var getBrushExtent = function() {
         if (brush) {
             var extent = brush.extent();
+            var yAxisZero = Number.MAX_VALUE;
+            var xAxisZero = Number.MAX_VALUE;
+
+            // for log gutter, invert of bottomEdge is the 0 on axis
+            if (xLogGutter && plot.scales.yLeft && plot.scales.yLeft.scale && plot.scales.yLeft.scale.invert) {
+                yAxisZero = plot.scales.yLeft.scale.invert(plot.grid.bottomEdge + logGutterBrushExtent);
+            }
+
+            if (yLogGutter && plot.scales.x && plot.scales.x.scale && plot.scales.x.scale.invert) {
+                xAxisZero = plot.scales.x.scale.invert(plot.grid.leftEdge - logGutterBrushExtent);
+            }
+
+            if (xHandleBrush && yHandleBrush) {
+                if (extent[0][0] < xAxisZero && yLogGutter) {
+                    extent[0][0] = Number.NEGATIVE_INFINITY;
+                }
+                if (extent[0][1] < yAxisZero && xLogGutter) {
+                    extent[0][1] = Number.NEGATIVE_INFINITY;
+                }
+            }
+            else if (xHandleBrush && yLogGutter) {
+                if (extent[0] < xAxisZero)
+                    extent[0] = Number.NEGATIVE_INFINITY;
+            }
+            else if (yHandleBrush && xLogGutter) {
+                if (extent[0] < yAxisZero)
+                    extent[0] = Number.NEGATIVE_INFINITY;
+            }
 
             if (brushSelectionType == 'both') {
                 if (xHandleBrush && yHandleBrush) {
@@ -1622,7 +1851,14 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 return value;
             };
         } else {
-            xAcc = function(row) {return geom.getX(row);};
+            xAcc = function(row) {
+                var value = geom.getX(row);
+                var originalVal = row.x;
+                if (yLogGutter && !isNaN(parseFloat(originalVal)) && originalVal != null && originalVal <= 0) {
+                    value = geom.xScale.range[0] + logGutterPointsOffset;
+                }
+                return value;
+            };
         }
 
         if (geom.yScale.scaleType == 'discrete' && geom.position == 'jitter') {
@@ -1635,6 +1871,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         } else {
             yAcc = function(row) {
                 var value = geom.getY(row);
+                var originalVal = row.y;
+                if (xLogGutter && !isNaN(parseFloat(originalVal)) && originalVal != null && originalVal <= 0) {
+                    value = geom.yScale.range[0] - logGutterPointsOffset;
+                }
                 if (value == null || isNaN(value)) {return null;}
                 return value;
             };
@@ -1669,7 +1909,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             // the legend, even if the points are null.
             if (typeof colorAcc == 'function') { colorAcc(d); }
             if (shapeAcc != defaultShape) { shapeAcc(d);}
-            return x !== null && y !== null;
+            return (xLogGutter || yLogGutter) || (x !== null && y !== null);
         }, this);
 
         // reset the jitterIndex since we will call xAcc again via translateAcc
@@ -1938,7 +2178,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         groupedData = LABKEY.vis.groupData(data, geom.xAes.getValue);
         for (groupName in groupedData) {
             if (groupedData.hasOwnProperty(groupName)) {
-                summary = LABKEY.vis.Stat.summary(groupedData[groupName], geom.yAes.getValue);
+                var filteredGroupData = filterLogGroupData.call(this, groupedData[groupName], geom);
+                summary = LABKEY.vis.Stat.summary(filteredGroupData, geom.yAes.getValue);
                 if (summary.sortedValues.length > 0) {
                     summaries.push({
                         name: groupName,
@@ -1950,6 +2191,22 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
 
         return summaries;
+    };
+
+    // for log scale, box plot is generated using the subset of positive values only
+    var filterLogGroupData = function(groupedData, geom) {
+        if (!xLogGutter) {
+            return groupedData;
+        }
+        var filteredData = [];
+        for(var i = 0; i < groupedData.length; i++){
+            var value = groupedData[i];
+            if (isNaN(parseFloat(value.y)) || value.y == null || value.y <= 0) {
+                continue;
+            }
+            filteredData.push(value);
+        }
+        return filteredData;
     };
 
     var renderBoxPlotGeom = function(data, geom) {
@@ -2213,12 +2470,21 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             offset = xBinWidth / 4;
 
             if (x == null) {return null;}
+
+            var originalVal = row.x;
+            if (yLogGutter && !isNaN(parseFloat(originalVal)) && originalVal != null && originalVal <= 0) {
+                x = geom.xScale.range[0] + logGutterPointsOffset;
+            }
             return x + (Math.random() * offset);
         };
 
         yAcc = function(row) {
             var value = geom.getY(row);
             if (value == null || isNaN(value)) {return null;}
+            var originalVal = row.y;
+            if (xLogGutter && !isNaN(parseFloat(originalVal)) && originalVal != null && originalVal <= 0) {
+                value = geom.yScale.range[0] - logGutterPointsOffset;
+            }
             return value;
         };
 
@@ -2324,8 +2590,23 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var translatePointsForBin = function(geom, data) {
-        var xAcc = function(row) {return geom.getX(row);};
-        var yAcc = function(row) {return geom.getY(row);};
+        var xAcc = function(row) {
+            var value =  geom.getX(row);
+            var originalVal = row.x;
+            if (yLogGutter && !isNaN(parseFloat(originalVal)) && originalVal != null && originalVal <= 0) {
+                value = geom.xScale.range[0] + logGutterPointsOffset;
+            }
+            return value;
+
+        };
+        var yAcc = function(row) {
+            var value =  geom.getY(row);
+            var originalVal = row.y;
+            if (xLogGutter && !isNaN(parseFloat(originalVal)) && originalVal != null && originalVal <= 0) {
+                value = geom.yScale.range[0] - logGutterPointsOffset;
+            }
+            return value;
+        };
 
         var points = [], x, y;
         for (var d=0; d < data.length; d++) {

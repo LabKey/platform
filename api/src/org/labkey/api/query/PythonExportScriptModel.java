@@ -104,7 +104,11 @@ public class PythonExportScriptModel extends ExportScriptModel
             sb.append("server_context = labkey.utils.create_server_context(");
             sb.append(PageFlowUtil.jsString(baseUrl.getAuthority())).append(", ");
             sb.append(PageFlowUtil.jsString(getFolderPath().substring(1))).append(", ");
-            sb.append(PageFlowUtil.jsString(baseUrl.getPath().substring(1))).append(", ");
+
+            // 25082: The server may not have a context path
+            if (baseUrl.getPath() != null && baseUrl.getPath().length() > 1)
+                sb.append(PageFlowUtil.jsString(baseUrl.getPath().substring(1))).append(", ");
+
             sb.append("use_ssl=").append(baseUrl.getProtocol().equals("https") ? "True" : "False");
             sb.append(")\n");
         }

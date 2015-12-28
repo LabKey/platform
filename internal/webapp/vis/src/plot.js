@@ -127,6 +127,21 @@
  *      If true the plot will throw an error instead of displaying an error when necessary and possible. Defaults to
  *      false.
  *
+ * @param {Boolean} [config.requireYLogGutter] (Optional) Used to indicate that the plot has non-positive data on x dimension
+ *      that should be displayed in y log gutter in log scale.
+ * @param {Boolean} [config.requireXLogGutter] (Optional) Used to indicate that the plot has non-positive data on y dimension
+ *      that should be displayed in x log gutter in log scale.
+ * @param {Boolean} [config.isMainPlot] (Optional) Used in combination with requireYLogGutter and requireXLogGutter to
+ *      shift the main plot's axis position in order to show log gutters.
+ * @param {Boolean} [config.isShowYAxis] (Optional) Used to draw the Y axis to separate positive and negative values
+ *      for log scale plot in the undefined X gutter plot.
+ * @param {Boolean} [config.isShowXAxis] (Optional) Used to draw the X axis to separate positive and negative values
+ *      for log scale plot in the undefined Y gutter plot.
+ * @param {Float} [config.minXPositiveValue] (Optional) Used to adjust domains with non-positive lower bound and generate x axis
+ *      log scale wrapper for plots that contain <= 0 x value.
+ * @param {Float} [config.minYPositiveValue] (Optional) Used to adjust domains with non-positive lower bound and generate y axis
+ *      log scale wrapper for plots that contain <= 0 y value.
+ *
  *
   @example
  In this example we will create a simple scatter plot.
@@ -588,21 +603,21 @@ boxPlot.render();
         }
     };
 
-    var getLogScale = function (domain, range) {
+    var getLogScale = function (domain, range, minPositiveValue) {
         var scale, scaleWrapper, increment = 0;
 
         // Issue 24727: adjust domain range to compensate for log scale fitting error margin
         // With log scale, log transformation is applied before the mapping (fitting) to result range
         // Javascript has binary floating points calculation issues. Use a small error constant to compensate.
-        var scaleRoundingEpsilon = 0.00001;
+        var scaleRoundingEpsilon = 0.0001 * 0.5; // divide by half so that <= 0 value can be distinguashed from > 0 value
+        if (minPositiveValue) {
+            scaleRoundingEpsilon = minPositiveValue * 0.5;
+        }
 
         // domain must not include or cross zero
         if (domain[0] <= scaleRoundingEpsilon) {
             // Issue 24967: incrementing domain is causing issue with brushing extent
             // Ideally we'd increment as little as possible
-
-            // We set domain to [0, 1] if all values are null for an axis
-            // With the fix for issue 24695, the only case that would enter here is domain[0] == 0, so the adjustment will be small
             increment = scaleRoundingEpsilon - domain[0];
             domain[0] = domain[0] + increment;
             domain[1] = domain[1] + increment;
@@ -615,13 +630,13 @@ boxPlot.render();
         scale = d3.scale.log().domain(domain).range(range);
 
         scaleWrapper = function(val) {
-            if(val != null && val >= 0) {
-                if (increment > 0 && val === 0) {
-                    // values <=0 should have been filtered out for log scale, keeping this block just to be safe
-                    return scale(val + increment);
+            if(val != null) {
+                if (increment > 0 && val <= scaleRoundingEpsilon) {
+                    // <= 0 points are now part of the main plot, it's illegal to pass negative value to a log scale with positive domain.
+                    // Since we don't care about the relative values of those gutter data, we can use domain's lower bound for all <=0 as a mock
+                    return scale(scaleRoundingEpsilon);
                 }
-                // incrementing the parameter causes shifting of axis label and brushing extents
-                // since the increment is small (should be == scaleRoundingEpsilon), we can skip incrementing here
+                // use the original value to calculate the scaled value for all > 0 data
                 return scale(val);
             }
 
@@ -657,10 +672,28 @@ boxPlot.render();
         return scaleWrapper;
     };
 
-    var instantiateScales = function(userScales, scales, grid, margins) {
+    var instantiateScales = function(plot, margins) {
+        var userScales = plot.originalScales, scales = plot.scales, grid = plot.grid, isMainPlot = plot.isMainPlot,
+            xLogGutter = plot.xLogGutter, yLogGutter = plot.yLogGutter, minXPositiveValue = plot.minXPositiveValue, minYPositiveValue = plot.minYPositiveValue;
+
         var scaleName, scale, userScale;
 
         calculateAxisScaleRanges(scales, grid, margins);
+
+        if (isMainPlot) {
+            // adjust the plot range to reserve space for log gutter
+            var mainPlotRangeAdjustment = 30;
+            if (xLogGutter) {
+                if (scales.yLeft && Ext.isArray(scales.yLeft.range)) {
+                    scales.yLeft.range = [scales.yLeft.range[0] + mainPlotRangeAdjustment, scales.yLeft.range[1]];
+                }
+            }
+            if (yLogGutter) {
+                if (scales.x && Ext.isArray(scales.x.range)) {
+                    scales.x.range = [scales.x.range[0] - mainPlotRangeAdjustment, scales.x.range[1]];
+                }
+            }
+        }
 
         for (scaleName in scales) {
             if (scales.hasOwnProperty(scaleName)) {
@@ -701,7 +734,12 @@ boxPlot.render();
                         if (scale.trans == 'linear') {
                             scale.scale = d3.scale.linear().domain(scale.domain).range(scale.range);
                         } else {
-                            scale.scale = getLogScale(scale.domain, scale.range);
+                            if (scaleName == 'x' || scaleName == 'xTop') {
+                                scale.scale = getLogScale(scale.domain, scale.range, minXPositiveValue);
+                            }
+                            else {
+                                scale.scale = getLogScale(scale.domain, scale.range, minYPositiveValue);
+                            }
                         }
                     }
                 }
@@ -709,7 +747,9 @@ boxPlot.render();
         }
     };
 
-    var initializeScales = function(userScales, scales, allAes, allData, grid, margins, errorFn) {
+    var initializeScales = function(plot, allAes, allData, margins, errorFn) {
+        var userScales = plot.originalScales, scales = plot.scales;
+
         for (var i = 0; i < allAes.length; i++) {
             setupDefaultScales(scales, allAes[i]);
         }
@@ -731,7 +771,7 @@ boxPlot.render();
         }
 
         calculateDomains(userScales, scales, allAes, allData);
-        instantiateScales(userScales, scales, grid, margins);
+        instantiateScales(plot, margins);
 
         if ((scales.x && !scales.x.scale) || (scales.xTop && !scales.xTop.scale)) {
             errorFn('Unable to create an x scale, rendering aborted.');
@@ -775,6 +815,14 @@ boxPlot.render();
 
     LABKEY.vis.Plot = function(config){
         if(config.hasOwnProperty('rendererType') && config.rendererType == 'd3') {
+            this.yLogGutter = config.requireYLogGutter ? true : false;
+            this.xLogGutter = config.requireXLogGutter ? true : false;
+            this.isMainPlot = config.isMainPlot ? true : false;
+            this.isShowYAxisGutter = config.isShowYAxis ? true : false;
+            this.isShowXAxisGutter = config.isShowXAxis ? true : false;
+            this.minXPositiveValue = config.minXPositiveValue;
+            this.minYPositiveValue = config.minYPositiveValue;
+
             this.renderer = new LABKEY.vis.internal.D3Renderer(this);
         } else {
             this.renderer = new LABKEY.vis.internal.RaphaelRenderer(this);
@@ -903,7 +951,7 @@ boxPlot.render();
                 allAes.push(this.layers[i].aes ? this.layers[i].aes : this.aes);
             }
 
-            if(!initializeScales(this.originalScales, this.scales, allAes, allData, this.grid, margins, errorFn)){  // Sets up the scales.
+            if(!initializeScales(this, allAes, allData, margins, errorFn)){  // Sets up the scales.
                 return false; // if we have a critical error when trying to initialize the scales we don't continue with rendering.
             }
 

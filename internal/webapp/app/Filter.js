@@ -242,7 +242,7 @@ Ext.define('LABKEY.app.model.Filter', {
                         return LABKEY.app.model.Filter.emptyLabelText;
                     }
                     var value = gf.getValue();
-                    if (!Ext.isBoolean(value) && !value) {
+                    if (value === undefined || value === null) {
                         value = '';
                     }
                     return LABKEY.app.model.Filter.getShortFilter(gf.getFilterType().getDisplayText()) + ' ' + Ext.htmlEncode(value);
