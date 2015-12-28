@@ -49,6 +49,7 @@ public class AssayJSONConverter
     // Top level properties
     public static final String ASSAY_ID = "assayId";
     public static final String BATCH_ID = "batchId";
+    public static final String BATCH_IDS = "batchIds";
     public static final String BATCH = "batch";
     public static final String BATCHES = "batches";
     public static final String RUNS = "runs";
