@@ -25,7 +25,7 @@ public interface ExpDataClass extends ExpObject
     ActionURL detailsURL();
 
     /** Get all ExpData that are members of the ExpDataClass. */
-    List<? extends ExpData> getDatas(Container c);
+    List<? extends ExpData> getDatas();
 
     ExpData getData(Container c, String name);
 

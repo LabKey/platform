@@ -29,7 +29,7 @@ public class DataClassUserSchema extends AbstractExpSchema
     {
         Map<String, ExpDataClass> map = new CaseInsensitiveTreeMap<>();
         // User can be null if we're running in a background thread, such as doing a study export.
-        for (ExpDataClass dataClass : ExperimentService.get().getDataClasses(container, user, user != null))
+        for (ExpDataClass dataClass : ExperimentService.get().getDataClasses(container, user, true))
         {
             map.put(dataClass.getName(), dataClass);
         }
