@@ -804,7 +804,10 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                     {
                         // Copy to the directory where it's available for review before the user proceeds
                         File tempDirCopy = new File(workingDirectory, entry.getValue().getName());
-                        FileUtils.copyFile(entry.getValue(), tempDirCopy);
+                        if (!entry.getValue().equals(tempDirCopy))
+                        {
+                            FileUtils.copyFile(entry.getValue(), tempDirCopy);
+                        }
                         // Add it as an artifact the user can download
                         tempOutputFiles.add(tempDirCopy);
 
