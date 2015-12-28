@@ -16,6 +16,7 @@
 package org.labkey.audit.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.data.ColumnInfo;
@@ -26,8 +27,14 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.VirtualTable;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.audit.AuditSchema;
 
 import java.util.Map;
@@ -59,7 +66,7 @@ public class AuditLogUnionTable extends FilteredTable<AuditQuerySchema>
 
             _query = new SQLFragment();
             _query.appendComment("<AuditUnionTableInfo>", getSchema().getSqlDialect());
-
+            setInsertURL(LINK_DISABLER);
             String union = "";
 
             for (AuditTypeProvider provider : AuditLogService.get().getAuditProviders())
@@ -112,6 +119,7 @@ public class AuditLogUnionTable extends FilteredTable<AuditQuerySchema>
             addColumn(impersonatedByCol);
 
             ColumnInfo rowIdCol = new ColumnInfo("RowId", this);
+            rowIdCol.setKeyField(true);
             rowIdCol.setJdbcType(JdbcType.INTEGER);
             addColumn(rowIdCol);
 
@@ -194,5 +202,25 @@ public class AuditLogUnionTable extends FilteredTable<AuditQuerySchema>
         {
             return _query;
         }
+    }
+
+    private boolean isGuest(UserPrincipal user)
+    {
+        return user instanceof User && user.isGuest();
+    }
+
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    {
+        // Don't allow deletes or updates for audit events, and don't let guests insert
+        return ((perm.equals(InsertPermission.class) && !isGuest(user)) || perm.equals(ReadPermission.class)) &&
+                getContainer().hasPermission(user, perm);
+    }
+
+    @Nullable
+    @Override
+    public QueryUpdateService getUpdateService()
+    {
+        return new AuditLogUpdateService(this);
     }
 }

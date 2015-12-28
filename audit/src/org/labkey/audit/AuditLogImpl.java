@@ -172,7 +172,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
             }
             else
             {
-                LogManager.get()._insertEvent(user, event);
+                return LogManager.get()._insertEvent(user, event);
             }
         }
         catch (Exception e)

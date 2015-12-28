@@ -108,7 +108,6 @@ audit/src/org/labkey/audit/AuditUpgradeCode.java -text
 audit/src/org/labkey/audit/SiteSettingsAuditDetailsModel.java -text
 audit/src/org/labkey/audit/auditLog.jsp -text
 audit/src/org/labkey/audit/model/LogManager.java -text
-audit/src/org/labkey/audit/query/AuditLogTable.java -text
 audit/src/org/labkey/audit/query/AuditLogUnionTable.java -text
 audit/src/org/labkey/audit/query/AuditLogUpdateService.java -text
 audit/src/org/labkey/audit/query/AuditQuerySchema.java -text

@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.ClientApiAuditProvider;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.DuplicateKeyException;
@@ -39,7 +40,7 @@ import java.util.Map;
  */
 public class AuditLogUpdateService extends AbstractQueryUpdateService
 {
-    public AuditLogUpdateService(AuditLogTable table)
+    public AuditLogUpdateService(TableInfo table)
     {
         super(table);
     }
