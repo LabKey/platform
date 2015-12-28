@@ -81,8 +81,11 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
             }
 
             String displayName = getFileName(filename);
+            boolean isImage = filename.toLowerCase().endsWith(".png")
+                    || filename.toLowerCase().endsWith(".jpeg")
+                    || filename.toLowerCase().endsWith(".jpg");
 
-            if (url != null && thumbnail && _map.isInlineImageFor(new File(filename)))
+            if (url != null && thumbnail && isImage)
             {
                 StringBuilder popupHtml = new StringBuilder();
                 popupHtml.append("<img style=\"max-width:300px; height:auto;\" src=\"");
@@ -105,7 +108,16 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
                 icon.append("\" alt=\"icon\"");
                 icon.append("/>&nbsp;").append(PageFlowUtil.filter(displayName));
 
-                out.write(icon.toString());
+                if (url != null && thumbnail && _map.isInlineImageFor(new File(filename)) ) {
+                    StringBuilder thumbnailHtml = new StringBuilder();
+                    thumbnailHtml.append("<img style=\"max-width:300px; height:auto;\" src=\"");
+                    thumbnailHtml.append(PageFlowUtil.filter(url));
+                    thumbnailHtml.append("\" />");
+
+                    out.write(PageFlowUtil.helpPopup(displayName, thumbnailHtml.toString(), true, icon.toString(), 310, url == null ? null : "window.location = '" + url + "'"));
+                }
+                else
+                    out.write(icon.toString());
             }
 
             if (link && null != url)
