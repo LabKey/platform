@@ -95,7 +95,7 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     }
 
     @Override
-    public List<? extends ExpData> getDatas(Container c)
+    public List<? extends ExpData> getDatas()
     {
         return ExperimentService.get().getExpDatas(this);
     }

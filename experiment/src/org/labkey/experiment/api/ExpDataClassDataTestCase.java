@@ -1,5 +1,6 @@
 package org.labkey.experiment.api;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,7 +28,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestWhen;
-import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 
 import java.util.ArrayList;
@@ -43,30 +43,49 @@ import java.util.Map;
 @TestWhen(TestWhen.When.BVT)
 public class ExpDataClassDataTestCase
 {
+    Container c;
+
     @Before
     public void setUp() throws Exception
     {
-        JunitUtil.deleteTestContainer();
+        // NOTE: We need to use a project to create the DataClass so we can insert rows into sub-folders
+        c = ContainerManager.getForPath("_testDataClass");
+        if (c != null)
+            ContainerManager.deleteAll(c, TestContext.get().getUser());
+        c = ContainerManager.createContainer(ContainerManager.getRoot(), "_testDataClass");
     }
 
-    private static List<Map<String, Object>> insertRows(Container c, List<Map<String, Object>> rows, BatchValidationException errors)
+    @After
+    public void tearDown() throws Exception
+    {
+        ContainerManager.deleteAll(c, TestContext.get().getUser());
+    }
+
+    private static List<Map<String, Object>> insertRows(Container c, List<Map<String, Object>> rows)
             throws Exception
     {
         final User user = TestContext.get().getUser();
         final SchemaKey expDataSchemaKey = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.NestedSchemas.data.toString());
 
-        UserSchema schemaSub = QueryService.get().getUserSchema(user, c, expDataSchemaKey);
-        TableInfo tableSub = schemaSub.getTable("testing");
-        QueryUpdateService qusSub = tableSub.getUpdateService();
+        BatchValidationException errors = new BatchValidationException();
+        //UserSchema schema = QueryService.get().getUserSchema(user, JunitUtil.getTestContainer(), expDataSchemaKey);
+        UserSchema schema = QueryService.get().getUserSchema(user, c, expDataSchemaKey);
+        TableInfo table = schema.getTable("testing");
+        Assert.assertNotNull(table);
 
-        return qusSub.insertRows(user, c, rows, errors, null, null);
+        QueryUpdateService qus = table.getUpdateService();
+        Assert.assertNotNull(qus);
+
+        List<Map<String, Object>> ret = qus.insertRows(user, c, rows, errors, null, null);
+        if (errors.hasErrors())
+            throw errors;
+        return ret;
     }
 
     @Test
     public void testDataClass() throws Exception
     {
         final User user = TestContext.get().getUser();
-        final Container c = JunitUtil.getTestContainer();
         final Container sub = ContainerManager.createContainer(c, "sub");
 
         List<GWTPropertyDescriptor> props = new ArrayList<>();
@@ -100,10 +119,13 @@ public class ExpDataClassDataTestCase
             row.put("bb", "hi");
             rows.add(row);
 
-            BatchValidationException errors = new BatchValidationException();
-            List<Map<String, Object>> ret = table.getUpdateService().insertRows(user, c, rows, errors, null, null);
+            List<Map<String, Object>> ret = null;
+            try (DbScope.Transaction tx = table.getSchema().getScope().beginTransaction())
+            {
+                ret = insertRows(c, rows);
+                tx.commit();
+            }
 
-            Assert.assertTrue("Unexpected errors:\n" + errors.toString(), !errors.hasErrors());
             Assert.assertEquals(1, ret.size());
             Assert.assertEquals(1, ret.get(0).get("genId"));
             Assert.assertEquals(expectedName, ret.get(0).get("name"));
@@ -112,6 +134,9 @@ public class ExpDataClassDataTestCase
             ExpData data = ExperimentService.get().getExpData(rowId);
             ExpData data1 = ExperimentService.get().getExpData(dataClass, "JUNIT-1-20");
             Assert.assertEquals(data, data1);
+
+            TableSelector ts = new TableSelector(table);
+            Assert.assertEquals(1L, ts.getRowCount());
         }
 
         // test insert duplicate values for 'aa' column fails
@@ -122,16 +147,20 @@ public class ExpDataClassDataTestCase
             row.put("bb", "bye");
             rows.add(row);
 
-            BatchValidationException errors = new BatchValidationException();
-            List<Map<String, Object>> ret;
             try (DbScope.Transaction tx = table.getSchema().getScope().beginTransaction())
             {
-                ret = table.getUpdateService().insertRows(user, c, rows, errors, null, null);
+                insertRows(c, rows);
                 tx.commit();
+                Assert.fail("Expected exception");
+            }
+            catch (BatchValidationException e)
+            {
+                // ok, expected
             }
 
-            Assert.assertNull(ret);
-            Assert.assertTrue(errors.hasErrors());
+            TableSelector ts = new TableSelector(table);
+            Assert.assertEquals(1L, ts.getRowCount());
+            Assert.assertEquals(1, dataClass.getDatas().size());
         }
 
         // test insert into sub-folder
@@ -140,31 +169,45 @@ public class ExpDataClassDataTestCase
             List<Map<String, Object>> rows = new ArrayList<>();
             Map<String, Object> row = new CaseInsensitiveHashMap<>();
             row.put("aa", 30);
+            row.put("container", sub);
             row.put("bb", "bye");
             rows.add(row);
 
-            BatchValidationException errors = new BatchValidationException();
-            List<Map<String, Object>> ret = table.getUpdateService().insertRows(user, sub, rows, errors, null, null);
+            List<Map<String, Object>> ret;
+            try (DbScope.Transaction tx = table.getSchema().getScope().beginTransaction())
+            {
+                ret = insertRows(sub, rows);
+                tx.commit();
+            }
 
-            Assert.assertTrue("Unexpected errors:\n" + errors.toString(), !errors.hasErrors());
             Assert.assertEquals(1, ret.size());
             Assert.assertEquals(sub.getId(), ret.get(0).get("container"));
-            Assert.assertNotNull(ExperimentService.get().getExpData(dataClass, expectedSubName));
+
+            ExpData data = ExperimentService.get().getExpData(dataClass, expectedSubName);
+            Assert.assertNotNull(data);
+            Assert.assertEquals(sub, data.getContainer());
+
+            // TODO: Why is my filter not working?
+//            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("container"), Arrays.asList(c, sub), CompareType.IN);
+//            TableSelector ts = new TableSelector(table, filter, null);
+//            Assert.assertEquals(2L, ts.getRowCount());
+
+            Assert.assertEquals(2, dataClass.getDatas().size());
         }
 
         // test truncate rows deletes all rows from all containers
         {
-            TableSelector ts = new TableSelector(table);
-            Assert.assertEquals(2L, ts.getRowCount());
-
             int count;
             try (DbScope.Transaction tx = table.getSchema().getScope().beginTransaction())
             {
-                count = table.getUpdateService().truncateRows(user, c, null, null);
+                // TODO: truncate rows API doesn't support truncating from all containers
+                //count = table.getUpdateService().truncateRows(user, c, null, null);
+                count = ExperimentServiceImpl.get().truncateDataClass(dataClass, null);
                 tx.commit();
             }
             Assert.assertEquals(2, count);
 
+            Assert.assertEquals(0, dataClass.getDatas().size());
             Assert.assertNull(ExperimentService.get().getExpData(dataClass, expectedName));
             Assert.assertNull(ExperimentService.get().getExpData(dataClass, expectedSubName));
         }
@@ -185,18 +228,16 @@ public class ExpDataClassDataTestCase
             MapLoader mapLoader = new MapLoader(rows);
             int count = table.getUpdateService().loadRows(user, c, mapLoader, new DataIteratorContext(), null);
             Assert.assertEquals(2, count);
+            Assert.assertEquals(2, dataClass.getDatas().size());
         }
 
         // test delete ExpData deletes DataClass row
         {
-            TableSelector ts = new TableSelector(table);
-            Assert.assertEquals(2L, ts.getRowCount());
-
-            List<? extends ExpData> datas = dataClass.getDatas(c);
+            List<? extends ExpData> datas = dataClass.getDatas();
             Assert.assertEquals(2, datas.size());
 
             datas.get(0).delete(user);
-            Assert.assertEquals(1L, ts.getRowCount());
+            Assert.assertEquals(1, dataClass.getDatas().size());
         }
 
         // test delete ExpDataClass
@@ -227,7 +268,6 @@ public class ExpDataClassDataTestCase
     public void testContainerDelete() throws Exception
     {
         final User user = TestContext.get().getUser();
-        final Container c = JunitUtil.getTestContainer();
         final Container sub = ContainerManager.createContainer(c, "sub");
 
         List<GWTPropertyDescriptor> props = new ArrayList<>();
@@ -245,11 +285,16 @@ public class ExpDataClassDataTestCase
         {
             List<Map<String, Object>> rows = new ArrayList<>();
             Map<String, Object> row = new CaseInsensitiveHashMap<>();
+            row.put("name", "first");
             row.put("aa", 20);
             rows.add(row);
 
-            BatchValidationException errors = new BatchValidationException();
-            List<Map<String, Object>> ret = table.getUpdateService().insertRows(user, c, rows, errors, null, null);
+            List<Map<String, Object>> ret;
+            try (DbScope.Transaction tx = table.getSchema().getScope().beginTransaction())
+            {
+                ret = insertRows(c, rows);
+                tx.commit();
+            }
 
             Assert.assertEquals(1, ret.size());
             dataRowId1 = ((Integer)ret.get(0).get("RowId")).intValue();
@@ -258,17 +303,18 @@ public class ExpDataClassDataTestCase
         // setup: insert into sub container
         int dataRowId2;
         {
-            UserSchema subSchema = QueryService.get().getUserSchema(user, c, expDataSchemaKey);
-            TableInfo subTable = subSchema.getTable("testing");
-            QueryUpdateService subQus = subTable.getUpdateService();
-
             List<Map<String, Object>> rows = new ArrayList<>();
             Map<String, Object> row = new CaseInsensitiveHashMap<>();
+            row.put("name", "second");
             row.put("aa", 30);
             rows.add(row);
 
-            BatchValidationException errors = new BatchValidationException();
-            List<Map<String, Object>> ret = subQus.insertRows(user, c, rows, errors, null, null);
+            List<Map<String, Object>> ret;
+            try (DbScope.Transaction tx = table.getSchema().getScope().beginTransaction())
+            {
+                ret = insertRows(sub, rows);
+                tx.commit();
+            }
 
             Assert.assertEquals(1, ret.size());
             dataRowId2 = ((Integer)ret.get(0).get("RowId")).intValue();
