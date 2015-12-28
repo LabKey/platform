@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.MessageAuditProvider;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
@@ -216,7 +217,8 @@ public class MailHelper
 
     private static void addAuditEvent(@Nullable User user, @Nullable Container c, Message m) throws MessagingException
     {
-        MessageAuditProvider.MessageAuditEvent event = new MessageAuditProvider.MessageAuditEvent(c != null ? c.getId() : null, "The Email Message: (" + m.getSubject() + ") was sent");
+        MessageAuditProvider.MessageAuditEvent event = new MessageAuditProvider.MessageAuditEvent(c != null ? c.getId() : ContainerManager.getRoot().getId(),
+                "The Email Message: (" + m.getSubject() + ") was sent");
 
         try
         {
