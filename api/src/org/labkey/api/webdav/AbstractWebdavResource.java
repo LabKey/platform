@@ -199,6 +199,8 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return AppProps.getInstance().getContextPath() + Attachment.getFileIcon(getName());
     }
 
+    @Nullable
+    @Override
     public String getIconFontCls()
     {
         if (isCollection())
