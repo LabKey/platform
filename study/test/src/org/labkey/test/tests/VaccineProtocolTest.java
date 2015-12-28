@@ -294,7 +294,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
         clickProject(projectName);
         portalHelper.addWebPart("Assay List");
 
-        _assayHelper.uploadXarFileAsAssayDesign(TestFileUtils.getSampledataPath() + "/studyextra/TestAssay1.xar", 1);
+        _assayHelper.uploadXarFileAsAssayDesign(TestFileUtils.getSampleData("studyextra/TestAssay1.xar"), 1);
         goToProjectHome();
 
     } //defineAssay()
