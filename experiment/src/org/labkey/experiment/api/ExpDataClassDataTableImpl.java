@@ -96,6 +96,8 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
     private ExpDataClassImpl _dataClass;
     private TableExtension _extension;
 
+    private String ENTITY_KEY = "entityId";
+
     public ExpDataClassDataTableImpl(String name, UserSchema schema, ExpDataClassImpl dataClass)
     {
         super(name, ExperimentService.get().getTinfoData(), schema, dataClass);
@@ -247,6 +249,8 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             cols.add(_extension.addExtensionColumn(col, newName));
         }
 
+        boolean hasEntityProperty = getDomain().getPropertyByName(ENTITY_KEY) != null;
+
         HashMap<String,DomainProperty> properties = new HashMap<>();
         for (DomainProperty dp : getDomain().getProperties())
             properties.put(dp.getPropertyURI(), dp);
@@ -273,6 +277,14 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                             dc.setPreserveNewlines(true);
                             return dc;
                         });
+                    }
+                    else if (pd.getPropertyType() == PropertyType.ATTACHMENT && hasEntityProperty)
+                    {
+                        col.setURL(StringExpressionFactory.createURL(
+                                new ActionURL(ExperimentController.DataClassAttachmentDownloadAction.class, schema.getContainer())
+                                    .addParameter(ENTITY_KEY, "${" + ENTITY_KEY + "}")
+                                    .addParameter("name", "${" + col.getName() + "}")
+                        ));
                     }
                 }
             }
@@ -639,8 +651,6 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
     private class DataClassDataUpdateService extends DefaultQueryUpdateService
     {
-        private String ENTITY_KEY = "entityId";
-
         public DataClassDataUpdateService(ExpDataClassDataTableImpl table)
         {
             super(table, table.getRealTable());
@@ -667,8 +677,11 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             List<Map<String, Object>> results = super._insertRowsUsingETL(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
 
             // handle attachments
-            for (Map<String, Object> result : results)
-                addAttachments(user, container, result, (String)result.get(ENTITY_KEY));
+            if (results != null && !results.isEmpty())
+            {
+                for (Map<String, Object> result : results)
+                    addAttachments(user, container, result, (String) result.get(ENTITY_KEY));
+            }
 
             return results;
         }
