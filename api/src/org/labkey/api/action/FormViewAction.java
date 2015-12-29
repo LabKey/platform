@@ -61,7 +61,7 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
     {
         FORM form;
         BindException errors;
-        try (Timing t = MiniProfiler.step("bind"))
+        try (Timing ignored = MiniProfiler.step("bind"))
         {
             if (null != getCommandClass())
             {
@@ -88,14 +88,14 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
         {
             setReshow(true);
 
-            try (Timing t = MiniProfiler.step("validate"))
+            try (Timing ignored = MiniProfiler.step("validate"))
             {
                 if (success && null != form)
                     validate(form, errors);
             }
             success = errors == null || !errors.hasErrors();
 
-            try (Timing t = MiniProfiler.step("handlePost"))
+            try (Timing ignored = MiniProfiler.step("handlePost"))
             {
                 if (success)
                     success = handlePost(form, errors);
@@ -106,7 +106,7 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
                 URLHelper url = getSuccessURL(form);
                 if (null != url)
                     return HttpView.redirect(url);
-                try (Timing t = MiniProfiler.step("createView"))
+                try (Timing ignored = MiniProfiler.step("createView"))
                 {
                     ModelAndView successView = getSuccessView(form);
                     if (null != successView)
@@ -115,7 +115,7 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
             }
         }
 
-        try (Timing t = MiniProfiler.step("createView"))
+        try (Timing ignored = MiniProfiler.step("createView"))
         {
             return getView(form, getReshow(), errors);
         }
