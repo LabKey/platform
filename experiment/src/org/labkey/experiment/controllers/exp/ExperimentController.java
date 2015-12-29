@@ -1183,84 +1183,9 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
-    public class ManageConceptsAction extends FormViewAction<ConceptLookupForm>
-    {
-        private Container _container = null;
-
-        @Override
-        public void validateCommand(ConceptLookupForm form, Errors errors)
-        {
-            // validate that the required input fields are provied
-            String missingRequired = "", sep = "";
-            if (form.getConceptURI() == null)
-            {
-                missingRequired += "conceptURI";
-                sep = ", ";
-            }
-            if (form.getSchemaName() == null)
-            {
-                missingRequired += sep + "schemaName";
-                sep = ", ";
-            }
-            if (form.getQueryName() == null)
-                missingRequired += sep + "queryName";
-            if (missingRequired.length() > 0)
-                errors.reject(ERROR_MSG, "Missing required field(s): " + missingRequired + ".");
-
-            // validate that, if provided, the containerId matches an existing container
-            if (form.getContainerId() != null)
-            {
-                _container = ContainerManager.getForId(form.getContainerId());
-                if (_container == null)
-                    errors.reject(ERROR_MSG, "Container does not exist for containerId provided.");
-            }
-
-            // validate that the schema and query names provided exist
-            if (form.getSchemaName() != null && form.getQueryName() != null)
-            {
-                Container c = _container != null ? _container : getContainer();
-                UserSchema schema = QueryService.get().getUserSchema(getUser(), c, form.getSchemaName());
-                if (schema == null)
-                    errors.reject(ERROR_MSG, "UserSchema '" + form.getSchemaName() + "' not found.");
-                else if (schema.getTable(form.getQueryName()) == null)
-                    errors.reject(ERROR_MSG, "Table '" + form.getSchemaName() + "." + form.getQueryName() + "' not found.");
-            }
-        }
-
-        @Override
-        public ModelAndView getView(ConceptLookupForm form, boolean reshow, BindException errors) throws Exception
-        {
-            return new JspView<>("/org/labkey/experiment/manageConcepts.jsp", form, errors);
-        }
-
-        @Override
-        public boolean handlePost(ConceptLookupForm form, BindException errors) throws Exception
-        {
-            Lookup lookup = new Lookup(_container, form.getSchemaName(), form.getQueryName());
-            ConceptURIProperties.setLookup(getContainer(), form.getConceptURI(), lookup);
-            return true;
-        }
-
-        @Override
-        public URLHelper getSuccessURL(ConceptLookupForm form)
-        {
-            return getViewContext().getActionURL();
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Manage Concept Mappings");
-        }
-    }
-
-    public static class ConceptLookupForm
+    public static class ConceptURIForm
     {
         private String _conceptURI;
-        private String _containerId;
-        private String _schemaName;
-        private String _queryName;
 
         public String getConceptURI()
         {
@@ -1271,50 +1196,20 @@ public class ExperimentController extends SpringActionController
         {
             _conceptURI = conceptURI;
         }
-
-        public String getContainerId()
-        {
-            return _containerId;
-        }
-
-        public void setContainerId(String containerId)
-        {
-            _containerId = containerId;
-        }
-
-        public String getSchemaName()
-        {
-            return _schemaName;
-        }
-
-        public void setSchemaName(String schemaName)
-        {
-            _schemaName = schemaName;
-        }
-
-        public String getQueryName()
-        {
-            return _queryName;
-        }
-
-        public void setQueryName(String queryName)
-        {
-            _queryName = queryName;
-        }
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class RemoveConceptMappingAction extends ApiAction<ConceptLookupForm>
+    public class RemoveConceptMappingAction extends ApiAction<ConceptURIForm>
     {
         @Override
-        public void validateForm(ConceptLookupForm form, Errors errors)
+        public void validateForm(ConceptURIForm form, Errors errors)
         {
             if (form.getConceptURI() == null || ConceptURIProperties.getLookup(getContainer(), form.getConceptURI()) == null)
                 errors.reject(ERROR_MSG, "Concept URI not found: " + form.getConceptURI());
         }
 
         @Override
-        public Object execute(ConceptLookupForm form, BindException errors) throws Exception
+        public Object execute(ConceptURIForm form, BindException errors) throws Exception
         {
             ConceptURIProperties.removeLookup(getContainer(), form.getConceptURI());
             return new ApiSimpleResponse("success", true);

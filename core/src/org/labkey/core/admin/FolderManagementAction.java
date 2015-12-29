@@ -37,6 +37,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.FolderType;
@@ -63,6 +64,7 @@ import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.ConceptURIProperties;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.study.StudyService;
@@ -146,6 +148,10 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             if (provider != null)
                 provider.validateCommand(getViewContext(), errors);
         }
+        else if (form.isConceptsTab())
+        {
+            validateConceptPost(form, errors);
+        }
     }
 
     public ModelAndView getView(FolderManagementForm form, boolean reshow, BindException errors) throws Exception
@@ -176,6 +182,8 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             return handleImportPost(form, errors);
         else if (form.isSettingsTab())
             return handleSettingsPost(form, errors);
+        else if (form.isConceptsTab())
+            return handleConceptsPost(form, errors);
         else
             return handleFolderTreePost(form, errors);
     }
@@ -279,6 +287,55 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             return false;
         _successURL = getViewContext().getActionURL();
 
+        return true;
+    }
+
+    private void validateConceptPost(FolderManagementForm form, Errors errors)
+    {
+        // validate that the required input fields are provied
+        String missingRequired = "", sep = "";
+        if (form.getConceptURI() == null)
+        {
+            missingRequired += "conceptURI";
+            sep = ", ";
+        }
+        if (form.getSchemaName() == null)
+        {
+            missingRequired += sep + "schemaName";
+            sep = ", ";
+        }
+        if (form.getQueryName() == null)
+            missingRequired += sep + "queryName";
+        if (missingRequired.length() > 0)
+            errors.reject(SpringActionController.ERROR_MSG, "Missing required field(s): " + missingRequired + ".");
+
+        // validate that, if provided, the containerId matches an existing container
+        Container postContainer = null;
+        if (form.getContainerId() != null)
+        {
+            postContainer = ContainerManager.getForId(form.getContainerId());
+            if (postContainer == null)
+                errors.reject(SpringActionController.ERROR_MSG, "Container does not exist for containerId provided.");
+        }
+
+        // validate that the schema and query names provided exist
+        if (form.getSchemaName() != null && form.getQueryName() != null)
+        {
+            Container c = postContainer != null ? postContainer : getContainer();
+            UserSchema schema = QueryService.get().getUserSchema(getUser(), c, form.getSchemaName());
+            if (schema == null)
+                errors.reject(SpringActionController.ERROR_MSG, "UserSchema '" + form.getSchemaName() + "' not found.");
+            else if (schema.getTable(form.getQueryName()) == null)
+                errors.reject(SpringActionController.ERROR_MSG, "Table '" + form.getSchemaName() + "." + form.getQueryName() + "' not found.");
+        }
+    }
+
+    private boolean handleConceptsPost(FolderManagementForm form, BindException errors)
+    {
+        Lookup lookup = new Lookup(ContainerManager.getForId(form.getContainerId()), form.getSchemaName(), form.getQueryName());
+        ConceptURIProperties.setLookup(getContainer(), form.getConceptURI(), lookup);
+
+        _successURL = getViewContext().getActionURL();
         return true;
     }
 
@@ -672,8 +729,13 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         // default format settings
         private String _defaultDateFormat;
         private String _defaultNumberFormat;
-
         private boolean _restrictedColumnsEnabled;
+
+        // concepts settings
+        private String _conceptURI;
+        private String _containerId;
+        private String _schemaName;
+        private String _queryName;
 
         public String[] getActiveModules()
         {
@@ -781,6 +843,11 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         public boolean isSettingsTab()
         {
             return "settings".equals(getTabId());
+        }
+
+        public boolean isConceptsTab()
+        {
+            return "concepts".equals(getTabId());
         }
 
         public boolean isInheritMvIndicators()
@@ -1019,6 +1086,45 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             _restrictedColumnsEnabled = restrictedColumnsEnabled;
         }
 
+        public String getConceptURI()
+        {
+            return _conceptURI;
+        }
+
+        public void setConceptURI(String conceptURI)
+        {
+            _conceptURI = conceptURI;
+        }
+
+        public String getContainerId()
+        {
+            return _containerId;
+        }
+
+        public void setContainerId(String containerId)
+        {
+            _containerId = containerId;
+        }
+
+        public String getSchemaName()
+        {
+            return _schemaName;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            _schemaName = schemaName;
+        }
+
+        public String getQueryName()
+        {
+            return _queryName;
+        }
+
+        public void setQueryName(String queryName)
+        {
+            _queryName = queryName;
+        }
     }
 
 
@@ -1054,10 +1160,11 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             tabs.add(new TabInfo("Missing Values", "mvIndicators", url));
 
             //only show module properties tab if a module w/ properties to set is present
+            Set<Module> activeModules = getViewContext().getContainer().getActiveModules();
             boolean showProps = _container.isRoot();
             if (!showProps)
             {
-                for (Module m : getViewContext().getContainer().getActiveModules())
+                for (Module m : activeModules)
                 {
                     if(m.getModuleProperties().size() > 0)
                     {
@@ -1068,6 +1175,10 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             }
             if (showProps)
                 tabs.add(new TabInfo("Module Properties", "props", url));
+
+            // only show the Concepts tab if the experiment module is enabled
+            if (activeModules.contains(ModuleLoader.getInstance().getModule("Experiment")))
+                tabs.add(new TabInfo("Concepts", "concepts", url));
 
             if (!_container.isRoot())
             {
@@ -1121,6 +1232,8 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                     return new JspView<>("/org/labkey/core/admin/folderType.jsp", _form, _errors);
                 case "mvIndicators":
                     return new JspView<>("/org/labkey/core/admin/mvIndicators.jsp", _form, _errors);
+                case "concepts":
+                    return new JspView<>("/org/labkey/core/admin/manageConcepts.jsp", _form, _errors);
                 case "fullTextSearch":
                     return new JspView<>("/org/labkey/core/admin/fullTextSearch.jsp", _form, _errors);
                 case "files":
@@ -1229,9 +1342,11 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
             view.addView(new JspView<Object>("/org/labkey/core/admin/view/folderSettingsHeader.jsp", Object.class, _errors));
             VBox defaultsView = new VBox();
-            defaultsView.setTitle("Default Settings");
-            defaultsView.setFrame(FrameType.PORTAL);
-            defaultsView.addView(new HtmlView("You can change this folder's default settings for email notifications here."));
+            defaultsView.addView(
+                new HtmlView(
+                    "<div class='labkey-announcement-title'><span>Default Settings</span></div><div class='labkey-title-area-line'></div>" +
+                    "You can change this folder's default settings for email notifications here.")
+            );
             PanelConfig config = new PanelConfig(getViewContext().getActionURL().clone(), key);
             for (MessageConfigService.ConfigTypeProvider provider : MessageConfigService.getInstance().getConfigTypes())
             {
@@ -1239,13 +1354,14 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             }
             view.addView(defaultsView);
             VBox usersView = new VBox();
-            usersView.setTitle("User Settings");
-            usersView.setFrame(FrameType.PORTAL);
-            usersView.addView(new HtmlView("The list below contains all users with READ access to this folder who are able to receive notifications\n" +
-                    "        by email for message boards and file content events. A user's current message or file notification setting is\n" +
-                    "        visible in the appropriately named column.<br/><br/>\n" +
-                    "\n" +
-                    "        To bulk edit individual settings: select one or more users, click the 'Update User Settings' menu, and select the notification type."));
+            usersView.addView(
+                new HtmlView(
+                    "<div class='labkey-announcement-title'><span>User Settings</span></div><div class='labkey-title-area-line'></div>" +
+                    "The list below contains all users with READ access to this folder who are able to receive notifications<br/>" +
+                    "by email for message boards and file content events. A user's current message or file notification setting is<br/>" +
+                    "visible in the appropriately named column.<br/><br/>" +
+                    "To bulk edit individual settings: select one or more users, click the 'Update User Settings' menu, and select the notification type.")
+            );
             usersView.addView(queryView);
             view.addView(usersView);
             return view;

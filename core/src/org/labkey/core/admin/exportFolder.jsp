@@ -49,6 +49,15 @@ String subjectNoun = study != null ? study.getSubjectNounSingular() : null;
 String subjectNounLowercase = subjectNoun != null ? subjectNoun.toLowerCase() : null;
 %>
 
+<style type="text/css">
+    .labkey-announcement-title {
+        padding: 30px 0 5px 0 !important;
+    }
+    .labkey-title-area-line {
+        margin-right: 15px !important;
+    }
+</style>
+
 <labkey:errors/>
 <div id="exportForm"></div>
 
@@ -56,7 +65,10 @@ String subjectNounLowercase = subjectNoun != null ? subjectNoun.toLowerCase() : 
 
     Ext.onReady(function(){
 
-        var formItems = [{xtype: "label", text: "Folder objects to export:"}];
+        var formItemsCol1 = [], formItemsCol2 = [];
+
+        formItemsCol1.push({xtype: 'box', cls: 'labkey-announcement-title', html: '<span>Folder objects to export:</span>'});
+        formItemsCol1.push({xtype: 'box', cls: 'labkey-title-area-line', html: ''});
 <%
             Collection<FolderWriter> writers = new LinkedList<>(FolderSerializationRegistryImpl.get().getRegisteredFolderWriters());
             boolean showStudyOptions = false;
@@ -66,7 +78,7 @@ String subjectNounLowercase = subjectNoun != null ? subjectNoun.toLowerCase() : 
                 if (null != parent && writer.show(c) && !(c.isDataspace() && "Study".equals(parent)))
                 {
                     boolean checked = writer.selectedByDefault(form.getExportType());
-                    %>formItems.push({xtype: "checkbox", hideLabel: true, boxLabel: "<%=parent%>", name: "types", itemId: "<%=parent%>", inputValue: "<%=parent%>", checked: <%=checked%>, objectType: "parent"});<%
+                    %>formItemsCol1.push({xtype: "checkbox", hideLabel: true, boxLabel: "<%=parent%>", name: "types", itemId: "<%=parent%>", inputValue: "<%=parent%>", checked: <%=checked%>, objectType: "parent"});<%
 
                     Collection<Writer> children = writer.getChildren(true);
                     if (null != children && children.size() > 0)
@@ -77,7 +89,7 @@ String subjectNounLowercase = subjectNoun != null ? subjectNoun.toLowerCase() : 
                             {
                                 String text = child.getSelectionText();
                                 %>
-                                formItems.push({xtype: "checkbox", style: {marginLeft: "20px"}, hideLabel: true, boxLabel: "<%=text%>", name: "types", itemId: "<%=text%>",
+        formItemsCol1.push({xtype: "checkbox", style: {marginLeft: "20px"}, hideLabel: true, boxLabel: "<%=text%>", name: "types", itemId: "<%=text%>",
                                    inputValue: "<%=text%>", checked: <%=checked%>, objectType: "child", parentId: "<%=parent%>"});
                                 <%
                             }
@@ -90,16 +102,17 @@ String subjectNounLowercase = subjectNoun != null ? subjectNoun.toLowerCase() : 
                 }
             }
 %>
-        formItems.push({xtype: "spacer", height: 20});
-        formItems.push({xtype: "label", text: "Options:"});
-        formItems.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!c.hasChildren()%>, boxLabel: 'Include Subfolders<%=PageFlowUtil.helpPopup("Include Subfolders", "Recursively export subfolders.")%>', name: 'includeSubfolders', objectType: 'otherOptions'});
-        formItems.push({xtype: 'checkbox', hideLabel: true, boxLabel: 'Remove All Columns Tagged as Protected<%=PageFlowUtil.helpPopup("Remove Protected Columns", "Selecting this option will exclude all dataset, list, and specimen columns that have been tagged as protected columns.")%>', name: 'removeProtected', objectType: 'otherOptions'});
-        formItems.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!showStudyOptions%>, boxLabel: 'Shift <%=h(subjectNoun)%> Dates<%=PageFlowUtil.helpPopup("Shift Date Columns", "Selecting this option will shift selected date values associated with a " + h(subjectNounLowercase) + " by a random, " + h(subjectNounLowercase) + " specific, offset (from 1 to 365 days).")%>', name: 'shiftDates', objectType: 'otherOptions'});
-        formItems.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!showStudyOptions%>, boxLabel: 'Export Alternate <%=h(subjectNoun)%> IDs<%=PageFlowUtil.helpPopup("Export Alternate " + h(subjectNoun) + " IDs", "Selecting this option will replace each " + h(subjectNounLowercase) + " id by an alternate randomly generated id.")%>', name: 'alternateIds', objectType: 'otherOptions'});
-        formItems.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!showStudyOptions%>, boxLabel: 'Mask Clinic Names<%=PageFlowUtil.helpPopup("Mask Clinic Names", "Selecting this option will change the labels for clinics in the exported list of locations to a generic label (i.e. Clinic).")%>', name: 'maskClinic', objectType: 'otherOptions'});
-        formItems.push({xtype: "spacer", height: 20});
-        formItems.push({xtype: "label", text: "Export to:"});
-        formItems.push({
+        formItemsCol1.push({xtype: "spacer", height: 20});
+        formItemsCol2.push({xtype: 'box', cls: 'labkey-announcement-title', html: '<span>Options:</span>'});
+        formItemsCol2.push({xtype: 'box', cls: 'labkey-title-area-line', html: ''});
+        formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!c.hasChildren()%>, boxLabel: 'Include Subfolders<%=PageFlowUtil.helpPopup("Include Subfolders", "Recursively export subfolders.")%>', name: 'includeSubfolders', objectType: 'otherOptions'});
+        formItemsCol2.push({xtype: 'checkbox', hideLabel: true, boxLabel: 'Remove All Columns Tagged as Protected<%=PageFlowUtil.helpPopup("Remove Protected Columns", "Selecting this option will exclude all dataset, list, and specimen columns that have been tagged as protected columns.")%>', name: 'removeProtected', objectType: 'otherOptions'});
+        formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!showStudyOptions%>, boxLabel: 'Shift <%=h(subjectNoun)%> Dates<%=PageFlowUtil.helpPopup("Shift Date Columns", "Selecting this option will shift selected date values associated with a " + h(subjectNounLowercase) + " by a random, " + h(subjectNounLowercase) + " specific, offset (from 1 to 365 days).")%>', name: 'shiftDates', objectType: 'otherOptions'});
+        formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!showStudyOptions%>, boxLabel: 'Export Alternate <%=h(subjectNoun)%> IDs<%=PageFlowUtil.helpPopup("Export Alternate " + h(subjectNoun) + " IDs", "Selecting this option will replace each " + h(subjectNounLowercase) + " id by an alternate randomly generated id.")%>', name: 'alternateIds', objectType: 'otherOptions'});
+        formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!showStudyOptions%>, boxLabel: 'Mask Clinic Names<%=PageFlowUtil.helpPopup("Mask Clinic Names", "Selecting this option will change the labels for clinics in the exported list of locations to a generic label (i.e. Clinic).")%>', name: 'maskClinic', objectType: 'otherOptions'});
+        formItemsCol2.push({xtype: 'box', cls: 'labkey-announcement-title', html: '<span>Export to:</span>'});
+        formItemsCol2.push({xtype: 'box', cls: 'labkey-title-area-line', html: ''});
+        formItemsCol2.push({
             xtype: 'radiogroup',
             hideLabel: true,
             columns: 1,
@@ -109,12 +122,24 @@ String subjectNounLowercase = subjectNoun != null ? subjectNoun.toLowerCase() : 
                 {boxLabel: "Browser as zip file", name: "location", inputValue: 2, checked: true, style:"margin-left: 2px"}
             ]
         });
+        formItemsCol2.push({xtype: "spacer", height: 20});
 
         var exportForm = new LABKEY.ext.FormPanel({
             renderTo: 'exportForm',
             border: false,
             standardSubmit: true,
-            items:formItems,
+            layout: 'column',
+            defaults: {
+                xtype: 'container',
+                layout: 'form'
+            },
+            items: [{
+                items: formItemsCol1,
+                width: 450
+            },{
+                items: formItemsCol2,
+                width: 450
+            }],
             buttons:[{
                 text:'Export',
                 type:'submit',
