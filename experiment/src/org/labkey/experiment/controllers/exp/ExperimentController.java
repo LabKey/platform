@@ -1217,18 +1217,23 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class DataClassAttachmentDownloadAction extends SimpleViewAction<AttachmentForm>
+    public class DataClassAttachmentDownloadAction extends SimpleViewAction<DataClassAttachmentForm>
     {
-        public ModelAndView getView(AttachmentForm form, BindException errors) throws Exception
+        public ModelAndView getView(DataClassAttachmentForm form, BindException errors) throws Exception
         {
+            if (form.getLsid() == null || form.getName() == null)
+                return new HtmlView("Error: missing required param 'lsid' or 'name'.");
+
             getPageConfig().setTemplate(PageConfig.Template.None);
+
+            Lsid lsid = new Lsid(form.getLsid());
             AttachmentParentEntity parent = new AttachmentParentEntity();
-            parent.setEntityId(form.getEntityId());
+            parent.setEntityId(lsid.getObjectId());
             parent.setContainer(getContainer().getId());
             return getAttachmentView(form, parent);
         }
 
-        private ModelAndView getAttachmentView(final AttachmentForm form, final AttachmentParentEntity parent) throws Exception
+        private ModelAndView getAttachmentView(final DataClassAttachmentForm form, final AttachmentParentEntity parent) throws Exception
         {
             return new HttpView()
             {
@@ -1242,6 +1247,21 @@ public class ExperimentController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
+        }
+    }
+
+    public static class DataClassAttachmentForm extends LsidForm
+    {
+        private String _name;
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
         }
     }
 

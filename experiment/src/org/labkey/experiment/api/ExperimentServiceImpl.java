@@ -2658,32 +2658,34 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     {
         if (dataClass != null && dataClass instanceof ExpDataClassImpl)
         {
-            if (dataClass.getDomain() != null && dataClass.getDomain().getPropertyByName("EntityId") != null)
+            if (dataClass.getDomain() != null)
             {
                 TableInfo table = ((ExpDataClassImpl) dataClass).getTinfo();
 
                 SQLFragment sql = new SQLFragment()
-                        .append("SELECT t.EntityId FROM ").append(getTinfoData(), "d")
+                        .append("SELECT t.lsid FROM ").append(getTinfoData(), "d")
                         .append(" LEFT OUTER JOIN ").append(table, "t")
                         .append(" ON d.lsid = t.lsid")
                         .append(" WHERE d.Container = ?").add(dataClass.getContainer().getEntityId())
                         .append(" AND d.ClassId = ?").add(dataClass.getRowId());
 
-                List<String> entityIds = new SqlSelector(table.getSchema().getScope(), sql).getArrayList(String.class);
-                deleteDataClassAttachments(dataClass.getContainer(), entityIds);
+                List<String> lsids = new SqlSelector(table.getSchema().getScope(), sql).getArrayList(String.class);
+                deleteDataClassAttachments(dataClass.getContainer(), lsids);
             }
         }
     }
 
-    public void deleteDataClassAttachments(Container container, List<String> entityIds)
+    public void deleteDataClassAttachments(Container container, List<String> lsids)
     {
         List<AttachmentParent> attachmentParents = new ArrayList<>();
 
-        for (String entityId : entityIds)
+        for (String lsidStr : lsids)
         {
+            Lsid lsid = new Lsid(lsidStr);
+
             AttachmentParentEntity parent = new AttachmentParentEntity();
             parent.setContainer(container.getId());
-            parent.setEntityId(entityId);
+            parent.setEntityId(lsid.getObjectId());
             attachmentParents.add(parent);
         }
 

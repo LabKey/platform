@@ -35,6 +35,7 @@ import org.labkey.api.etl.MapDataIterator;
 import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.etl.TableInsertDataIterator;
 import org.labkey.api.etl.WrapperDataIterator;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
@@ -95,8 +96,6 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
     private ExpDataClassImpl _dataClass;
     private TableExtension _extension;
-
-    private String ENTITY_KEY = "entityId";
 
     public ExpDataClassDataTableImpl(String name, UserSchema schema, ExpDataClassImpl dataClass)
     {
@@ -249,8 +248,6 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             cols.add(_extension.addExtensionColumn(col, newName));
         }
 
-        boolean hasEntityProperty = getDomain().getPropertyByName(ENTITY_KEY) != null;
-
         HashMap<String,DomainProperty> properties = new HashMap<>();
         for (DomainProperty dp : getDomain().getProperties())
             properties.put(dp.getPropertyURI(), dp);
@@ -278,11 +275,11 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                             return dc;
                         });
                     }
-                    else if (pd.getPropertyType() == PropertyType.ATTACHMENT && hasEntityProperty)
+                    else if (pd.getPropertyType() == PropertyType.ATTACHMENT)
                     {
                         col.setURL(StringExpressionFactory.createURL(
                                 new ActionURL(ExperimentController.DataClassAttachmentDownloadAction.class, schema.getContainer())
-                                    .addParameter(ENTITY_KEY, "${" + ENTITY_KEY + "}")
+                                    .addParameter("lsid", "${LSID}")
                                     .addParameter("name", "${" + col.getName() + "}")
                         ));
                     }
@@ -680,7 +677,10 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             if (results != null && !results.isEmpty())
             {
                 for (Map<String, Object> result : results)
-                    addAttachments(user, container, result, (String) result.get(ENTITY_KEY));
+                {
+                    String lsid = (String) result.get("LSID");
+                    addAttachments(user, container, result, lsid);
+                }
             }
 
             return results;
@@ -722,7 +722,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
             // handle attachments
             removePreviousAttachments(user, c, row, oldRow);
-            addAttachments(user, c, ret, (String)oldRow.get(ENTITY_KEY));
+            addAttachments(user, c, ret, lsid);
 
             return ret;
         }
@@ -739,8 +739,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             ExpData data = ExperimentService.get().getExpData(lsid);
             data.delete(getUserSchema().getUser());
 
-            if (row.containsKey(ENTITY_KEY))
-                ExperimentServiceImpl.get().deleteDataClassAttachments(c, Collections.singletonList((String)row.get(ENTITY_KEY)));
+            ExperimentServiceImpl.get().deleteDataClassAttachments(c, Collections.singletonList(lsid));
         }
 
         @Override
@@ -751,18 +750,17 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
         private void removePreviousAttachments(User user, Container c, Map<String, Object> newRow, Map<String, Object> oldRow)
         {
-            if (oldRow.containsKey(ENTITY_KEY))
-            {
-                for (Map.Entry<String, Object> entry : newRow.entrySet())
-                {
-                    if (isAttachmentProperty(entry.getKey()) && oldRow.get(entry.getKey()) != null)
-                    {
-                        AttachmentParentEntity parent = new AttachmentParentEntity();
-                        parent.setEntityId((String) oldRow.get(ENTITY_KEY));
-                        parent.setContainer(c.getId());
+            Lsid lsid = new Lsid((String)oldRow.get("LSID"));
 
-                        AttachmentService.get().deleteAttachment(parent, (String) oldRow.get(entry.getKey()), user);
-                    }
+            for (Map.Entry<String, Object> entry : newRow.entrySet())
+            {
+                if (isAttachmentProperty(entry.getKey()) && oldRow.get(entry.getKey()) != null)
+                {
+                    AttachmentParentEntity parent = new AttachmentParentEntity();
+                    parent.setEntityId(lsid.getObjectId());
+                    parent.setContainer(c.getId());
+
+                    AttachmentService.get().deleteAttachment(parent, (String) oldRow.get(entry.getKey()), user);
                 }
             }
         }
@@ -775,9 +773,9 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             return false;
         }
 
-        private void addAttachments(User user, Container c, Map<String, Object> row, String entityId)
+        private void addAttachments(User user, Container c, Map<String, Object> row, String lsidStr)
         {
-            if (row != null && entityId != null)
+            if (row != null && lsidStr != null)
             {
                 ArrayList<AttachmentFile> attachmentFiles = new ArrayList<>();
                 for (Map.Entry<String, Object> entry : row.entrySet())
@@ -792,8 +790,10 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
                 if (!attachmentFiles.isEmpty())
                 {
+                    Lsid lsid = new Lsid(lsidStr);
+
                     AttachmentParentEntity parent = new AttachmentParentEntity();
-                    parent.setEntityId(entityId);
+                    parent.setEntityId(lsid.getObjectId());
                     parent.setContainer(c.getId());
 
                     try
