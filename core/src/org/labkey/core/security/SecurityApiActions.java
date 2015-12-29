@@ -22,28 +22,16 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.FormApiAction;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditTypeEvent;
+import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.data.Container;
-import org.labkey.api.security.CSRF;
-import org.labkey.api.security.Group;
-import org.labkey.api.security.IgnoresTermsOfUse;
-import org.labkey.api.security.InvalidGroupMembershipException;
-import org.labkey.api.security.MemberType;
-import org.labkey.api.security.MutableSecurityPolicy;
-import org.labkey.api.security.RequiresLogin;
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.security.RoleAssignment;
-import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurityPolicyManager;
-import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
-import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -62,10 +50,12 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.audit.provider.GroupAuditProvider;
+import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -86,6 +76,8 @@ import java.util.Set;
  */
 public class SecurityApiActions
 {
+
+
     public static class GetGroupPermsForm
     {
         private boolean _includeSubfolders = false;
@@ -949,6 +941,488 @@ public class SecurityApiActions
             AuditLogService.get().addEvent(getUser(), event);
         }
     }
+
+    @RequiresPermission(AdminPermission.class)
+    @CSRF
+    @Marshal(Marshaller.Jackson)
+    public static class BulkUpdateGroupAction extends MutatingApiAction<GroupForm>
+    {
+        Group _group;
+
+        @Override
+        public void validateForm(GroupForm form, Errors errors)
+        {
+            if (form == null)
+            {
+                errors.reject("invalidFormat", "Invalid format for request.  Please check your JSON syntax.");
+            }
+            else
+            {
+                if (form.getGroupId() == null && form.getGroupName() == null)
+                {
+                    errors.reject("requiredError", "Group not specified");
+                }
+                else if (form.getGroupId() != null)
+                {
+                    _group = SecurityManager.getGroup(form.getGroupId());
+                    if (_group == null)
+                        errors.rejectValue("groupId", "invalidError", "Invalid group id " + form.getGroupId());
+                }
+                else // group name is not null
+                {
+                    String validationMsg = UserManager.validGroupName(form.getGroupName(), PrincipalType.GROUP);
+                    if (validationMsg != null)
+                    {
+                        errors.rejectValue("groupName", "invalidError", validationMsg);
+                    }
+                    else
+                    {
+                        try
+                        {
+                            Integer groupId = SecurityManager.getGroupId(getContainer(), StringUtils.trimToNull(form.getGroupName()));
+                            _group = SecurityManager.getGroup(groupId);
+                        }
+                        catch (NotFoundException e)
+                        {
+                            if (!form.getCreateGroup())
+                            {
+                                errors.rejectValue("groupName", "invalidError", "Group '" + form.getGroupName() + "' does not exist.  Specify 'createGroup': 'true' to have it created.");
+                            }
+                        }
+                    }
+                }
+
+                if (form.getEditOperation() == null)
+                {
+                    errors.rejectValue("editOperation", "requiredError", "editOperation not specified.");
+                }
+            }
+
+        }
+
+        @Override
+        public ApiResponse execute(GroupForm form, BindException errors) throws Exception
+        {
+            Container container = getContainer();
+            if (!container.isRoot() && !container.isProject())
+                throw new IllegalArgumentException("You may not create groups at the folder level. Call this API at the project or root level.");
+
+            if (_group == null && form.getCreateGroup())
+            {
+                _group = SecurityManager.createGroup(getContainer().getProject(), form.getGroupName());
+                writeToAuditLog(_group, this.getViewContext());
+            }
+
+            Map<String, String> memberErrors = new HashMap<>();
+            List<User> newUsers = new ArrayList<>();
+            Map<String, List<UserPrincipal>> members = new HashMap<>();
+            if (form.getMembers() != null)
+            {
+                switch (form.getEditOperation())
+                {
+                    case add:
+                    case replace:
+                        addOrReplaceMembers(form, members, memberErrors, newUsers);
+                        break;
+                    case delete:
+                        deleteMembers(form, members, memberErrors);
+                        break;
+                }
+            }
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("id", _group.getUserId());
+            resp.put("name", _group.getName());
+            if (!newUsers.isEmpty())
+            {
+                List<Map<String, Object>> userList = new ArrayList<>();
+                for (User user : newUsers)
+                {
+                    Map<String, Object> userData = new HashMap<>();
+                    userData.put("email", user.getEmail());
+                    userData.put("userId", user.getUserId());
+                    userList.add(userData);
+                }
+                resp.put("newUsers", userList);
+            }
+            if (!members.isEmpty())
+            {
+                Map<String, Integer> counts = new HashMap<>();
+                for (String memberGroup : members.keySet())
+                {
+                    counts.put(memberGroup, members.get(memberGroup).size());
+                }
+                resp.put("members", counts);
+            }
+            if (!memberErrors.isEmpty())
+            {
+                resp.put("errors", memberErrors);
+            }
+            return resp;
+        }
+
+
+        protected void writeToAuditLog(Group newGroup, ViewContext viewContext)
+        {
+            AuditTypeEvent event = new AuditTypeEvent(GroupManager.GROUP_AUDIT_EVENT, viewContext.getContainer().getId(),"A new security group named " + newGroup.getName() + " was created." );
+            AuditLogService.get().addEvent(viewContext.getUser(), event);
+        }
+
+        private void deleteMembers(GroupForm form, Map<String, List<UserPrincipal>> members, Map<String, String> memberErrors)
+        {
+            members.put("deleted", new ArrayList<>());
+            for (GroupMember member : form.getMembers())
+            {
+                try
+                {
+                    UserPrincipal principal = member.getUserPrincipal(getContainer());
+
+                    if (principal != null)
+                    {
+                        SecurityManager.deleteMember(_group, principal);
+                        members.get("deleted").add(principal);
+                    }
+                    else
+                    {
+                        memberErrors.put(member.toString(), "Identifier for user or group not provided.");
+                    }
+                }
+                catch (Exception e)
+                {
+                    memberErrors.put(member.toString(), e.getMessage());
+                }
+            }
+        }
+
+        private void addOrReplaceMembers(GroupForm form, Map<String, List<UserPrincipal>> members, Map<String, String> memberErrors, List<User> newUsers)
+        {
+            List<UserPrincipal> currentMembers = new ArrayList<>();
+            currentMembers.addAll(SecurityManager.getGroupMembers(_group, MemberType.ALL_GROUPS_AND_USERS));
+            Boolean doReplacement = form.getEditOperation() == MemberEditOperation.replace;
+            if (doReplacement)
+            {
+                SecurityManager.deleteMembers(_group, currentMembers);
+            }
+
+            members.put("added", new ArrayList<>());
+            for (GroupMember member : form.getMembers())
+            {
+                try
+                {
+                    UserPrincipal principal = member.getUserPrincipal(getContainer());
+
+                    if (principal == null && member.getEmail() != null) // create the user
+                    {
+                        User updatedUser = new User();
+                        updatedUser.setEmail(member.getEmail());
+                        updatedUser.setFirstName(member.getFirstName());
+                        updatedUser.setLastName(member.getLastName());
+                        updatedUser.setDisplayName(member.getDisplayName());
+                        updatedUser.setIM(member.getIm());
+                        updatedUser.setMobile(member.getMobile());
+                        updatedUser.setPager(member.getPager());
+                        updatedUser.setPrincipalType(PrincipalType.USER);
+                        SecurityManager.NewUserStatus status = null;
+                        try
+                        {
+                            status = SecurityManager.addUser(new ValidEmail(member.getEmail()), getUser());
+                            newUsers.add(status.getUser());
+                            UserManager.updateUser(updatedUser, status.getUser());
+                            principal = status.getUser();
+                        }
+                        catch (SecurityManager.UserManagementException | SQLException | ValidEmail.InvalidEmailException  e)
+                        {
+                            memberErrors.put(member.getEmail(), e.getMessage());
+                        }
+                    }
+                    if (principal != null && !currentMembers.contains(principal))
+                    {
+                        try
+                        {
+                            SecurityManager.addMember(_group, principal);
+                            members.get("added").add(principal);
+                            if (doReplacement)
+                            {
+                                currentMembers.remove(principal);
+                            }
+                        }
+                        catch (InvalidGroupMembershipException e)
+                        {
+                            memberErrors.put(member.getEmail(), e.getMessage());
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    memberErrors.put(member.toString(), e.getMessage());
+                }
+            }
+            if (doReplacement && !currentMembers.isEmpty())
+            {
+                members.put("deleted", currentMembers);
+            }
+        }
+    }
+
+
+    public enum MemberEditOperation {
+        add,        // add the given members; do not fail if any already exist
+        update,     // update members that already exist and add the ones that do not
+        replace,    // replace the current entities with the new list (same as delete all then add)
+        delete,     // delete the given members; does not fail if member does not exist in group; does not delete group if it becomes empty
+    }
+
+
+    public static class GroupMember
+    {
+        private String _email;
+        private String _lastName;
+        private String _firstName;
+        private String _displayName;
+        private String _phone;
+        private String _mobile;
+        private String _pager;
+        private String _im;
+        private String _description;
+        private Integer _userId;
+        private String _groupName;
+        private Integer _groupId;
+
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public void setDescription(String description)
+        {
+            _description = description;
+        }
+
+        public String getDisplayName()
+        {
+            return _displayName;
+        }
+
+        public void setDisplayName(String displayName)
+        {
+            _displayName = displayName;
+        }
+
+        public String getEmail()
+        {
+            return _email;
+        }
+
+        public void setEmail(String email)
+        {
+            _email = email;
+        }
+
+        public String getFirstName()
+        {
+            return _firstName;
+        }
+
+        public void setFirstName(String firstName)
+        {
+            _firstName = firstName;
+        }
+
+        public Integer getGroupId()
+        {
+            return _groupId;
+        }
+
+        public void setGroupId(Integer groupId)
+        {
+            _groupId = groupId;
+        }
+
+        public String getGroupName()
+        {
+            return _groupName;
+        }
+
+        public void setGroupName(String groupName)
+        {
+            _groupName = groupName;
+        }
+
+        public String getIm()
+        {
+            return _im;
+        }
+
+        public void setIm(String im)
+        {
+            _im = im;
+        }
+
+        public String getLastName()
+        {
+            return _lastName;
+        }
+
+        public void setLastName(String lastName)
+        {
+            _lastName = lastName;
+        }
+
+        public String getMobile()
+        {
+            return _mobile;
+        }
+
+        public void setMobile(String mobile)
+        {
+            _mobile = mobile;
+        }
+
+        public String getPager()
+        {
+            return _pager;
+        }
+
+        public void setPager(String pager)
+        {
+            _pager = pager;
+        }
+
+        public String getPhone()
+        {
+            return _phone;
+        }
+
+        public void setPhone(String phone)
+        {
+            _phone = phone;
+        }
+
+        public Integer getUserId()
+        {
+            return _userId;
+        }
+
+        public void setUserId(Integer userId)
+        {
+            _userId = userId;
+        }
+
+        public String toString()
+        {
+            if (getEmail() != null)
+                return getEmail();
+            else if (getUserId() != null)
+                return "userId " + getUserId();
+            else if (getGroupId() != null)
+                return "groupId " + getGroupId();
+            else if (getGroupName() != null)
+                return getGroupName();
+            else return "Unknown";
+        }
+
+        public UserPrincipal getUserPrincipal(Container container) throws Exception
+        {
+            if (getUserId() != null)
+            {
+                User user = UserManager.getUser(getUserId());
+                if (user == null)
+                {
+                    throw new Exception("Invalid user id.  User must already exist when using id.");
+                }
+                return user;
+            }
+            else if (getEmail() != null)
+            {
+                ValidEmail email = new ValidEmail(getEmail());
+                return UserManager.getUser(email);
+            }
+            else if (getGroupId() != null)
+            {
+                Group memberGroup = SecurityManager.getGroup(getGroupId());
+                if (memberGroup == null)
+                {
+                   throw new Exception("Invalid group id.  Member groups must already exist.");
+                }
+                return memberGroup;
+            }
+            else if (getGroupName() != null)
+            {
+                Integer groupId = SecurityManager.getGroupId(container, getGroupName());
+                if (groupId == null)
+                {
+                   throw new Exception( "Invalid group name.  Member groups must already exist.");
+                }
+                else
+                {
+                    return SecurityManager.getGroup(groupId);
+                }
+            }
+            else
+            {
+                throw new Exception("No id, name or email specified");
+            }
+        }
+    }
+
+    public static class GroupForm
+    {
+        private Integer _groupId;        // Nullable; used first as identifier for group;
+        private String _groupName;      // Nullable; required for creating a group
+        private List<GroupMember> _members;      // can be used to provide more data than just email address; can be empty
+        private Boolean _createGroup = false;   // if true, the group should be created if it doesn't exist; otherwise the operation will fail if the group does not exist
+        private MemberEditOperation _editOperation; // indicates the action to be performed with the given users in this group
+
+        public String getGroupName()
+        {
+            return _groupName;
+        }
+
+        public void setGroupName(String groupName)
+        {
+            _groupName = groupName;
+        }
+
+        public Integer getGroupId()
+        {
+            return _groupId;
+        }
+
+        public void setGroupId(Integer groupId)
+        {
+            _groupId = groupId;
+        }
+
+        public Boolean getCreateGroup()
+        {
+            return _createGroup;
+        }
+
+        public void setCreateGroup(Boolean createGroup)
+        {
+            _createGroup = createGroup;
+        }
+
+        public List<GroupMember> getMembers()
+        {
+            return _members;
+        }
+
+        public void setMembers(List<GroupMember> members)
+        {
+            _members = members;
+        }
+
+        public MemberEditOperation getEditOperation()
+        {
+            return _editOperation;
+        }
+
+        public void setEditOperation(MemberEditOperation editOperation)
+        {
+            _editOperation = editOperation;
+        }
+    }
+
 
     @RequiresPermission(AdminPermission.class)
     @CSRF

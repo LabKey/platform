@@ -239,6 +239,7 @@
             };
             req.open("POST", url, true);
             req.setRequestHeader("content-type", "application/json");
+            req.setRequestHeader('X-LABKEY-CSRF', LABKEY.CSRF);
             req.send(postMsg);
         }
         catch(e)

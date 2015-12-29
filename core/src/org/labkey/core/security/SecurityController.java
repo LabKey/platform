@@ -117,6 +117,7 @@ import static org.labkey.api.util.PageFlowUtil.filter;
 public class SecurityController extends SpringActionController
 {
     private static DefaultActionResolver _actionResolver = new DefaultActionResolver(SecurityController.class,
+        SecurityApiActions.BulkUpdateGroupAction.class,
         SecurityApiActions.GetGroupPermsAction.class,
         SecurityApiActions.GetUserPermsAction.class,
         SecurityApiActions.GetGroupsForCurrentUserAction.class,
