@@ -367,7 +367,7 @@ public class QueryServiceImpl extends QueryService
                      OLD_MODULE_QUERY_DEFS_CACHE.put(cacheKey, moduleQueryDef);
                 }
 
-                oldRet.add(new ModuleCustomQueryDefinition(module, moduleQueryDef, SchemaKey.fromParts(schemaName), user, container));
+                oldRet.add(new ModuleCustomQueryDefinition(module, moduleQueryDef, SchemaKey.fromString(schemaName), user, container));
             }
         }
 
@@ -377,7 +377,7 @@ public class QueryServiceImpl extends QueryService
         {
             MODULE_QUERY_DEFS_CACHE.getResource(module, path)
                 .stream()
-                .map(queryDef -> new ModuleCustomQueryDefinition(module, queryDef, SchemaKey.fromParts(schemaName), user, container))
+                .map(queryDef -> new ModuleCustomQueryDefinition(module, queryDef, SchemaKey.fromString(schemaName), user, container))
                 .forEach(ret::add);
         }
 
