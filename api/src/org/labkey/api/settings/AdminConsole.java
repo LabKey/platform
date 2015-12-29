@@ -15,9 +15,17 @@
  */
 package org.labkey.api.settings;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.view.ActionURL;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeSet;
 
 /**
  * User: adam
@@ -98,9 +106,9 @@ public class AdminConsole
         }
 
         @Override
-        public int compareTo(AdminLink o)
+        public int compareTo(@NotNull AdminLink o)
         {
-            return getText().compareTo(o.getText());
+            return getText().compareToIgnoreCase(o.getText());
         }
     }
 
