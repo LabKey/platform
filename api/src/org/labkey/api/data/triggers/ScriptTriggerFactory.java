@@ -25,13 +25,13 @@ import java.util.Set;
  * User: kevink
  * Date: 12/21/15
  *
- * TriggerScriptFactory for server-side JavaScript triggers found in file-based modules.
+ * TriggerFactory for server-side JavaScript triggers found in file-based modules.
  */
-public class ScriptTriggerScriptFactory implements TriggerScriptFactory
+public class ScriptTriggerFactory implements TriggerFactory
 {
     @Override
     @NotNull
-    public Collection<TriggerScript> createTriggerScript(Container c, TableInfo table, Map<String, Object> extraContext)
+    public Collection<Trigger> createTrigger(Container c, TableInfo table, Map<String, Object> extraContext)
     {
         try
         {
@@ -44,7 +44,7 @@ public class ScriptTriggerScriptFactory implements TriggerScriptFactory
     }
 
     @NotNull
-    protected Collection<TriggerScript> createTriggerScript(Container c, TableInfo table)
+    protected Collection<Trigger> createTriggerScript(Container c, TableInfo table)
              throws ScriptException
     {
         ScriptService svc = ServiceRegistry.get().getService(ScriptService.class);
@@ -94,12 +94,12 @@ public class ScriptTriggerScriptFactory implements TriggerScriptFactory
         if (rs.isEmpty())
             return Collections.emptyList();
 
-        Collection<TriggerScript> scripts = new ArrayList<>();
+        Collection<Trigger> scripts = new ArrayList<>();
         for (Resource r : rs)
         {
             ScriptReference script = svc.compile(r);
             if (script != null)
-                scripts.add(new ScriptTriggerScript(c, table, script));
+                scripts.add(new ScriptTrigger(c, table, script));
         }
 
         return scripts;

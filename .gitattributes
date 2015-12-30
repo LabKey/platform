@@ -466,10 +466,10 @@ api/src/org/labkey/api/data/statistics/DoublePoint.java -text
 api/src/org/labkey/api/data/statistics/FitFailedException.java -text
 api/src/org/labkey/api/data/statistics/MathStat.java -text
 api/src/org/labkey/api/data/statistics/StatsService.java -text
-api/src/org/labkey/api/data/triggers/ScriptTriggerScript.java -text
-api/src/org/labkey/api/data/triggers/ScriptTriggerScriptFactory.java -text
-api/src/org/labkey/api/data/triggers/TriggerScript.java -text
-api/src/org/labkey/api/data/triggers/TriggerScriptFactory.java -text
+api/src/org/labkey/api/data/triggers/ScriptTrigger.java -text
+api/src/org/labkey/api/data/triggers/ScriptTriggerFactory.java -text
+api/src/org/labkey/api/data/triggers/Trigger.java -text
+api/src/org/labkey/api/data/triggers/TriggerFactory.java -text
 api/src/org/labkey/api/data/validator/AbstractColumnValidator.java -text
 api/src/org/labkey/api/data/validator/ColumnValidator.java -text
 api/src/org/labkey/api/data/validator/ColumnValidators.java -text

@@ -27,9 +27,9 @@ import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.data.triggers.ScriptTriggerScriptFactory;
-import org.labkey.api.data.triggers.TriggerScript;
-import org.labkey.api.data.triggers.TriggerScriptFactory;
+import org.labkey.api.data.triggers.ScriptTriggerFactory;
+import org.labkey.api.data.triggers.Trigger;
+import org.labkey.api.data.triggers.TriggerFactory;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.gwt.client.AuditBehaviorType;
@@ -170,7 +170,7 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         _schema = schema;
         _columnMap = constructColumnMap();
         setName(name);
-        addTriggerScriptFactory(new ScriptTriggerScriptFactory());
+        addTriggerScriptFactory(new ScriptTriggerFactory());
         MemTracker.getInstance().put(this);
     }
 
@@ -1246,9 +1246,9 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         return null;
     }
 
-    Map<Class<? extends TriggerScriptFactory>, TriggerScriptFactory> triggerScriptFactories = new LinkedHashMap<>();
+    Map<Class<? extends TriggerFactory>, TriggerFactory> triggerScriptFactories = new LinkedHashMap<>();
 
-    public void addTriggerScriptFactory(TriggerScriptFactory factory)
+    public void addTriggerScriptFactory(TriggerFactory factory)
     {
         checkLocked();
         triggerScriptFactories.put(factory.getClass(), factory);
@@ -1256,12 +1256,12 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
 
     public boolean hasTriggers(Container c)
     {
-        return !getTriggerScripts(c).isEmpty();
+        return !getTriggers(c).isEmpty();
     }
 
     public boolean canStreamTriggers(Container c)
     {
-        for (TriggerScript script : getTriggerScripts(c))
+        for (Trigger script : getTriggers(c))
         {
             if (script.canStream())
                 return false;
@@ -1272,37 +1272,37 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
 
 
     boolean triggersLoaded = false;
-    Collection<TriggerScript> triggerScripts = Collections.emptyList();
+    Collection<Trigger> _triggers = Collections.emptyList();
 
     @NotNull
-    protected Collection<TriggerScript> getTriggerScripts(Container c)
+    protected Collection<Trigger> getTriggers(Container c)
     {
         if (!triggersLoaded)
         {
-            Collection<TriggerScript> scripts = loadScripts(c);
-            triggerScripts = scripts;
+            Collection<Trigger> triggers = loadTriggers(c);
+            _triggers = triggers;
             triggersLoaded = true;
         }
-        return triggerScripts;
+        return _triggers;
     }
 
 
     @NotNull
-    private Collection<TriggerScript> loadScripts(Container c)
+    private Collection<Trigger> loadTriggers(Container c)
     {
         if (triggerScriptFactories == null || triggerScriptFactories.isEmpty())
             return Collections.emptyList();
 
-        List<TriggerScript> scripts = new ArrayList<>(triggerScriptFactories.size());
-        for (TriggerScriptFactory factory : triggerScriptFactories.values())
+        List<Trigger> scripts = new ArrayList<>(triggerScriptFactories.size());
+        for (TriggerFactory factory : triggerScriptFactories.values())
         {
-            scripts.addAll(factory.createTriggerScript(c, this, null));
+            scripts.addAll(factory.createTrigger(c, this, null));
         }
 
         if (LOG.isDebugEnabled() && !scripts.isEmpty())
         {
             LOG.debug("Trigger scripts for '" + getPublicSchemaName() + "', '" + getName() + "': " +
-                    scripts.stream().map(TriggerScript::getDebugName).collect(Collectors.joining(", ")));
+                    scripts.stream().map(Trigger::getDebugName).collect(Collectors.joining(", ")));
         }
 
         return scripts;
@@ -1312,7 +1312,7 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
     public void resetTriggers(Container c)
     {
         triggersLoaded = false;
-        triggerScripts = Collections.emptyList();
+        _triggers = Collections.emptyList();
     }
 
     @Override
@@ -1321,22 +1321,14 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
     {
         assert batchErrors != null;
 
-        Collection<TriggerScript> triggers = getTriggerScripts(c);
+        Collection<Trigger> triggers = getTriggers(c);
 
-        final String triggerMethod = (before ? "init" : "complete");
-        Boolean success = null;
-        for (TriggerScript script : triggers)
+        for (Trigger script : triggers)
         {
-            success = script.batchTrigger(this, c, type, before, batchErrors, extraContext);
-            if (success != null && !success)
-                break; // CONSIDER: continue running all scripts?
+            script.batchTrigger(this, c, type, before, batchErrors, extraContext);
+            if (batchErrors.hasErrors())
+                throw batchErrors;
         }
-
-        if (success != null && !success)
-            batchErrors.addRowError(new ValidationException(triggerMethod + " validation failed"));
-
-        if (batchErrors.hasErrors())
-            throw batchErrors;
     }
 
     @Override
@@ -1350,22 +1342,14 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         errors.setRow(newRow);
         errors.setRowNumber(rowNumber);
 
-        Collection<TriggerScript> triggers = getTriggerScripts(c);
+        Collection<Trigger> triggers = getTriggers(c);
 
-        final String triggerMethod = (before ? "before" : "after") + type.getMethodName();
-        Boolean success = null;
-        for (TriggerScript script : triggers)
+        for (Trigger script : triggers)
         {
-            success = script.rowTrigger(this, c, type, before, rowNumber, newRow, oldRow, errors, extraContext);
-            if (success != null && !success)
-                break; // CONSIDER: continue running all scripts?
+            script.rowTrigger(this, c, type, before, rowNumber, newRow, oldRow, errors, extraContext);
+            if (errors.hasErrors())
+                throw errors; // CONSIDER: continue running all scripts?
         }
-
-        if (success != null && !success)
-            errors.addGlobalError(triggerMethod + " validation failed");
-
-        if (errors.hasErrors())
-            throw errors;
     }
 
 

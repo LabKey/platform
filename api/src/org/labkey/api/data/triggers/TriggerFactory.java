@@ -11,8 +11,8 @@ import java.util.Map;
  * User: kevink
  * Date: 12/21/15
  */
-public interface TriggerScriptFactory
+public interface TriggerFactory
 {
     @NotNull
-    Collection<TriggerScript> createTriggerScript(Container c, TableInfo table, Map<String, Object> extraContext);
+    Collection<Trigger> createTrigger(Container c, TableInfo table, Map<String, Object> extraContext);
 }
