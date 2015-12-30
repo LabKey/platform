@@ -1540,7 +1540,8 @@ public class AnnouncementsController extends SpringActionController
 
         public boolean handlePost(EmailOptionsForm form, BindException errors) throws Exception
         {
-            AnnouncementManager.saveEmailPreference(getUser(), getContainer(), form.getEmailOption(), form.getSrcIdentifier());
+            int emailOption = form.getResetFolderDefault() ? -1 : form.getEmailOption();
+            AnnouncementManager.saveEmailPreference(getUser(), getContainer(), emailOption, form.getSrcIdentifier());
 
             _message = "Setting changed successfully.";
 
@@ -2001,6 +2002,7 @@ public class AnnouncementsController extends SpringActionController
         private int _notificationType = 0;
         private String _srcIdentifier;
         private String _srcUrl = null;
+        private boolean _resetFolderDefault = false;
 
         // Email option is a single int that contains the conversation preference AND a bit for digest vs. individual
         // This method splits them apart
@@ -2058,6 +2060,16 @@ public class AnnouncementsController extends SpringActionController
         public void setSrcIdentifier(String srcIdentifier)
         {
             _srcIdentifier = srcIdentifier;
+        }
+
+        public boolean getResetFolderDefault()
+        {
+            return _resetFolderDefault;
+        }
+
+        public void setResetFolderDefault(boolean resetFolderDefault)
+        {
+            _resetFolderDefault = resetFolderDefault;
         }
     }
 

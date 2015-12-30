@@ -19,6 +19,23 @@
 <%@ page import="org.labkey.announcements.AnnouncementsController" %>
 <%@ page extends="org.labkey.announcements.EmailPreferencesPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<script type="text/javascript">
+    function toggleOptions()
+    {
+        var checkBoxElem = document.getElementById("resetFolderDefault");
+
+        var isReset = checkBoxElem.checked;
+        if (checkBoxElem != null)
+        {
+            var inputs = document.getElementsByTagName('input');
+            for(var i = 0; i < inputs.length; i++) {
+                if(inputs[i].type.toLowerCase() === 'radio') {
+                    inputs[i].disabled = isReset;
+                }
+            }
+        }
+    }
+</script>
 <b><%=h(message)%></b>
 <labkey:form action="<%=h(buildURL(AnnouncementsController.EmailPreferencesAction.class))%>" method="post">
     <br>Send email notifications for these <%=h(conversationName)%>s<br>
@@ -34,6 +51,8 @@
     <b>Individual</b> - send a separate email after each post<br>
     <input type="radio" value="<%=AnnouncementManager.EmailOption.NOTIFICATION_TYPE_DIGEST%>" name="notificationType"<%=checked(notificationType == AnnouncementManager.EmailOption.NOTIFICATION_TYPE_DIGEST)%>>
     <b>Daily Digest</b> - send one email each day that summarizes all posts<br>
+
+   <br><input type=checkbox id="resetFolderDefault" name="resetFolderDefault" onclick="toggleOptions();"><b> Reset</b> - Reset to folder default setting<br>
 
     <br><input type=hidden name="srcUrl" value="<%=h(srcURL)%>"/>
     <br><input type=hidden name="srcIdentifier" value="<%=h(srcIdentifier)%>"/>
