@@ -28,10 +28,10 @@ import java.io.IOException;
  */
 public interface AttachmentFile extends FileStream
 {
-    public long getSize() throws IOException;
-    public String getError();
-    public String getFilename();
-    public String getContentType();
-    public InputStream openInputStream() throws IOException;
-    public void closeInputStream() throws IOException;
+    long getSize() throws IOException;
+    String getError();
+    String getFilename();
+    String getContentType();
+    InputStream openInputStream() throws IOException;
+    void closeInputStream() throws IOException;
 }

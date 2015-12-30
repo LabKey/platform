@@ -270,21 +270,19 @@ public class Parameter implements AutoCloseable
                 final AttachmentFile attachmentFile = (AttachmentFile) value;
 
                 // Set up to close it
-                _autoCloseable = new AutoCloseable()
-                {
-                    @Override
-                    public void close()
+                _autoCloseable = () -> {
+                    try
                     {
-                        try
-                        {
-                            attachmentFile.closeInputStream();
-                        }
-                        catch (IOException ignored) {}
+                        attachmentFile.closeInputStream();
                     }
+                    catch (IOException ignored) {}
                 };
 
                 if (setFileAsName)
-                    _stmt.setString(_indexes[0], attachmentFile.getFilename());
+                {
+                    value = attachmentFile.getFilename();
+                    _stmt.setString(_indexes[0], (String)value);
+                }
                 else
                 {
                     try
