@@ -133,7 +133,9 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         try
         {
             // verify underlying table was created correctly (could throw illegal state exception)
-            ListTable table = new ListTable(new ListQuerySchema(getUser(), getContainer()), def);
+            if (null == def.getDomain())
+                throw new IllegalStateException("Domain not found.");
+            ListTable table = new ListTable(new ListQuerySchema(getUser(), getContainer()), def, def.getDomain());
         }
         catch (IllegalStateException e)
         {

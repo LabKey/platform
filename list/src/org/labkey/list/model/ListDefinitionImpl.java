@@ -632,8 +632,16 @@ public class ListDefinitionImpl implements ListDefinition
         ListTable table;
         try
         {
-            table = new ListTable(new ListQuerySchema(user, c), this);
-            table.afterConstruct();
+            if (null != getDomain())
+            {
+                table = new ListTable(new ListQuerySchema(user, c), this, getDomain());
+                table.afterConstruct();
+            }
+            else
+            {
+                table = null;
+                LOG.error("Failed to construct list table because domain not found");
+            }
         }
         catch (IllegalStateException e)
         {

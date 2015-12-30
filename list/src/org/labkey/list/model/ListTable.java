@@ -70,9 +70,9 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
 {
     private final ListDefinition _list;
 
-    public ListTable(ListQuerySchema schema, ListDefinition listDef)
+    public ListTable(ListQuerySchema schema, ListDefinition listDef, @NotNull Domain domain)
     {
-        super(StorageProvisioner.createTableInfo(listDef.getDomain()), schema);
+        super(StorageProvisioner.createTableInfo(domain), schema);  // domain passed separately to allow @NotNull verification
         setName(listDef.getName());
         setDescription(listDef.getDescription());
         _list = listDef;
