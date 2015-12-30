@@ -536,9 +536,9 @@ public class RequestabilityManager
 
             SQLFragment vialListSql = Table.getSelectSQL(tinfo, Collections.singleton(globalUniqueIdCol), viewFilter, null);
 
-            SQLFragment updateFilter = new SQLFragment("GlobalUniqueId IN (");
+            SQLFragment updateFilter = new SQLFragment("GlobalUniqueId IN (SELECT GlobalUniqueId FROM (");
             updateFilter.append(vialListSql);
-            updateFilter.append(")");
+            updateFilter.append(") X )");
 
             return updateFilter;
         }
