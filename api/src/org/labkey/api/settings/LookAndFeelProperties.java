@@ -137,7 +137,8 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
 
     public String getSystemEmailAddress()
     {
-        return lookupStringValue(SYSTEM_EMAIL_ADDRESS_PROP, "cpas@fhcrc.org");
+        //initial login will be used as the default value. During setup user will be prompted to change.
+        return lookupStringValue(SYSTEM_EMAIL_ADDRESS_PROP, "");
     }
 
     public String getUnsubstitutedReportAProblemPath()
