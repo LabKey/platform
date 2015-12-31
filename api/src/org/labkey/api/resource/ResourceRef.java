@@ -19,8 +19,6 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.HeartBeat;
 
-import java.util.HashSet;
-
 /**
  * Base-class for resource references. This class provides
  * some basic functionality, such as tracking if this instance is stale compared
@@ -29,13 +27,12 @@ import java.util.HashSet;
  */
 public class ResourceRef
 {
-    protected static final Logger _log = Logger.getLogger(ResourceRef.class);
+    private static final Logger _log = Logger.getLogger(ResourceRef.class);
 
-    protected Resource _resource;
-    protected long _version;
+    private final Resource _resource;
+    private final long _version;
+
     private int _counter;
-
-    HashSet<ResourceRef> _dependencies;
 
     public ResourceRef(@NotNull Resource resource)
     {
@@ -67,21 +64,7 @@ public class ResourceRef
             return true;
         }
 
-        if (_dependencies != null)
-        {
-            for (ResourceRef ref : _dependencies)
-                if (ref.isStale())
-                    return true;
-        }
-
         return false;
-    }
-
-    public void addDependency(ResourceRef dependency)
-    {
-        if (_dependencies == null)
-            _dependencies = new HashSet<>();
-        _dependencies.add(dependency);
     }
 }
 

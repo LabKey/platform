@@ -35,6 +35,7 @@ import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.PathBasedModuleResourceCache;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.Readers;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceRef;
 import org.labkey.api.services.ServiceRegistry;
@@ -75,7 +76,6 @@ import javax.script.ScriptEngineFactory;
 import javax.script.ScriptException;
 import javax.script.SimpleScriptContext;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.Reader;
@@ -254,19 +254,14 @@ class ScriptReferenceImpl implements ScriptReference
 {
     private static final ModuleResourceCacheHandler<Path, CompiledScript> CACHE_HANDLER = new ModuleResourceCacheHandler<Path, CompiledScript>()
     {
-        private final CacheLoader<String, CompiledScript> _loader = new CacheLoader<String, CompiledScript>()
-        {
-            @Override
-            public CompiledScript load(String key, Object argument)
-            {
-                RhinoEngine engine = (RhinoEngine)argument;
+        private final CacheLoader<String, CompiledScript> _loader = (key, argument) -> {
+            RhinoEngine engine1 = (RhinoEngine)argument;
 
-                ModuleResourceCache.CacheId cid = ModuleResourceCache.parseCacheKey(key);
-                Path path = Path.parse(cid.getName());
-                Resource r = cid.getModule().getModuleResource(path);
+            ModuleResourceCache.CacheId cid = ModuleResourceCache.parseCacheKey(key);
+            Path path = Path.parse(cid.getName());
+            Resource r1 = cid.getModule().getModuleResource(path);
 
-                return compile(r, engine);
-            }
+            return compile(r1, engine1);
         };
 
         @Override
@@ -336,7 +331,7 @@ class ScriptReferenceImpl implements ScriptReference
     {
         RhinoService.LOG.info("Compiling script '" + r.getPath().toString() + "'");
 
-        try (InputStreamReader reader = new InputStreamReader(r.getInputStream()))
+        try (Reader reader = Readers.getReader(r.getInputStream()))
         {
             engine.put(ScriptEngine.FILENAME, r.getPath().toString());
             return engine.compile(reader);
@@ -572,7 +567,7 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
         {
             try
             {
-                return new InputStreamReader(_ref.getResource().getInputStream());
+                return Readers.getReader(_ref.getResource().getInputStream());
             }
             catch (IOException e)
             {
@@ -820,7 +815,6 @@ class RhinoEngine extends RhinoScriptEngine
             throw new IllegalStateException();
         return super.compile(script);
     }
-
 }
 
 /**
@@ -959,9 +953,9 @@ class SandboxContextFactory extends ContextFactory
 
     private static class SandboxContext extends Context
     {
-        protected long startTime;
+        private final long startTime;
 
-        SandboxContext(SandboxContextFactory factory)
+        private SandboxContext(SandboxContextFactory factory)
         {
             super(factory);
             setLanguageVersion(Context.VERSION_1_8);
