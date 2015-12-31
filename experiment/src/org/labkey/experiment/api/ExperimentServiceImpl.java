@@ -3570,14 +3570,29 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 Integer rowId = protAppRowMap.get(rec._protApp.getLSID());
                 rec._protApp._object.setRowId(rowId);
 
-                // optimize, should be only 1 material input
-                for (Map.Entry<ExpMaterial, String> entry : rec._runRecord.getInputMaterialMap().entrySet())
+                // wire the input materials to the protocol inputs for actions 1&2
+                if (rec._action.getSequence() == SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE ||
+                        rec._action.getSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE)
                 {
-
-                    materialInputParams.add(Arrays.asList(
-                            entry.getKey().getRowId(),
-                            rowId,
-                            entry.getValue()));
+                    // optimize, should be only 1 material input
+                    for (Map.Entry<ExpMaterial, String> entry : rec._runRecord.getInputMaterialMap().entrySet())
+                    {
+                        materialInputParams.add(Arrays.asList(
+                                entry.getKey().getRowId(),
+                                rowId,
+                                entry.getValue()));
+                    }
+                }
+                // wire the output materials to the protocol input for the last action
+                else if (rec._action.getSequence() == SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE)
+                {
+                    for (Map.Entry<ExpMaterial, String> entry : rec._runRecord.getOutputMaterialMap().entrySet())
+                    {
+                        materialInputParams.add(Arrays.asList(
+                                entry.getKey().getRowId(),
+                                rowId,
+                                entry.getValue()));
+                    }
                 }
             }
         }
