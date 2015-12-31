@@ -26,6 +26,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.StatementWrapper;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
@@ -435,6 +436,8 @@ public class Parameter implements AutoCloseable
             return ((Enum)value).name();
         else if (value instanceof Class)
             return (((Class) value).getName());
+        else if (value instanceof Lsid)
+            return value.toString();
 
         return value;
     }
