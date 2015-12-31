@@ -29,28 +29,20 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StartupListener;
-import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.audit.model.LogManager;
 import org.labkey.audit.query.AuditQuerySchema;
 
 import javax.servlet.ServletContext;
-import java.beans.XMLDecoder;
-import java.io.ByteArrayInputStream;
-import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -63,7 +55,6 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
     private static final AuditLogImpl _instance = new AuditLogImpl();
 
     private static final Logger _log = Logger.getLogger(AuditLogImpl.class);
-    private static final String OBJECT_XML_KEY = "objectXML";
 
     private Queue<Pair<User, AuditTypeEvent>> _eventTypeQueue = new LinkedList<>();
     private AtomicBoolean  _logToDatabase = new AtomicBoolean(false);
@@ -107,15 +98,6 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
     public <K extends AuditTypeEvent> K addEvent(User user, K type)
     {
         return _addEvent(user, type);
-    }
-
-    private void initializeProviders()
-    {
-        User auditUser = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
-        for (AuditTypeProvider provider : getAuditProviders())
-        {
-            provider.initializeProvider(auditUser);
-        }
     }
 
     private <K extends AuditTypeEvent> K _addEvent(User user, K event)
@@ -183,23 +165,6 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         return null;
     }
 
-    private Map<String, Object> decodeFromXML(String objectXML)
-    {
-        try {
-            XMLDecoder dec = new XMLDecoder(new ByteArrayInputStream(objectXML.getBytes(StringUtilsLabKey.DEFAULT_CHARSET)));
-            Object o = dec.readObject();
-            if (Map.class.isAssignableFrom(o.getClass()))
-                return (Map<String, Object>)o;
-
-            dec.close();
-        }
-        catch (Exception e)
-        {
-            _log.error("An error occurred parsing the object xml", e);
-        }
-        return Collections.emptyMap();
-    }
-
     public String getTableName()
     {
         return AuditQuerySchema.AUDIT_TABLE_NAME;
@@ -249,18 +214,8 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
     }
 
     @Override
-    public String getDomainURI(String eventType)
-    {
-        return new Lsid("AuditLogService", eventType).toString();
-    }
-
-    @Override
     public ActionURL getAuditUrl()
     {
         return new ActionURL(AuditController.ShowAuditLogAction.class, ContainerManager.getRoot());
     }
-
-    // TODO: delete from the property manager, they were previously used to track audit migration progress
-    private static final String AUDIT_MIGRATE_PROPSET = "audit-hardtable-migration-13.3";
-    private static final String AUDIT_MIGRATE_COMPLETE = "migration-complete";
 }
