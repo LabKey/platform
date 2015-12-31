@@ -183,7 +183,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
             if (filename.endsWith(".sql"))
             {
-                return PageFlowUtil.getStreamContentsAsString(r.getInputStream(), StandardCharsets.UTF_8);
+                return PageFlowUtil.getStreamContentsAsString(r.getInputStream());
             }
             else // jsp, the only other format allowed by FileSqlScript
             {

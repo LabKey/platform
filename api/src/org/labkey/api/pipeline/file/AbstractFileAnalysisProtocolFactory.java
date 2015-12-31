@@ -20,6 +20,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.*;
+import org.labkey.api.reader.Readers;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 
@@ -237,7 +238,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
 
         public Reader createReader() throws IOException
         {
-            return new FileReader(_fileDefaults);
+            return Readers.getReader(_fileDefaults);
         }
     }
     

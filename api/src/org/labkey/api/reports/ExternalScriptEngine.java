@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.miniprofiler.CustomTiming;
 import org.labkey.api.miniprofiler.MiniProfiler;
+import org.labkey.api.reader.Readers;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
@@ -399,7 +400,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine
                 File file = getConsoleOutputFile(context);
                 if (file != null)
                 {
-                    br = new BufferedReader(new FileReader(file));
+                    br = Readers.getReader(file);
                     String l;
                     while ((l = br.readLine()) != null)
                     {

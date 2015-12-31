@@ -100,11 +100,11 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
@@ -973,35 +973,6 @@ public class PageFlowUtil
     }
 
 
-    // Fetch the contents of a text file, and return it in a String.
-    @Deprecated  // TODO: Remove -- this uses the server's default character encoding, which is unpredictable
-    public static String getFileContentsAsString(File aFile)
-    {
-        StringBuilder contents = new StringBuilder();
-
-        try (BufferedReader input = Readers.getReader(aFile))
-        {
-            String line;
-            while ((line = input.readLine()) != null)
-            {
-                contents.append(line);
-                contents.append(_newline);
-            }
-        }
-        catch (FileNotFoundException e)
-        {
-            _log.error(e);
-            contents.append("File not found");
-            contents.append(_newline);
-        }
-        catch (IOException e)
-        {
-            _log.error(e);
-        }
-        return contents.toString();
-    }
-
-
     public static class Content
     {
         public Content(String s)
@@ -1152,11 +1123,37 @@ public class PageFlowUtil
     }
 
 
-	// UNDONE: Move to FileUtil
-    /** Fetch the contents of an InputStream using the specified charset and return in a String. Closes the reader after consuming it */
+    // Fetch the contents of a text file, and return it in a String.
+    public static String getFileContentsAsString(File aFile)
+    {
+        try
+        {
+            return getReaderContentsAsString(Readers.getReader(aFile));
+        }
+        catch (FileNotFoundException e)
+        {
+            StringBuilder contents = new StringBuilder();
+
+            _log.error(e);
+            contents.append("File not found");
+            contents.append(_newline);
+
+            return contents.toString();
+        }
+    }
+
+
+    @Deprecated // TODO: Delete after verifying that no modules or branches use this version any more
     public static String getStreamContentsAsString(InputStream is, Charset charset)
     {
-		return getReaderContentsAsString(new BufferedReader(new InputStreamReader(is, charset)));
+        return getReaderContentsAsString(Readers.getReader(is));
+    }
+
+
+    /** Fetch the contents of an InputStream using the standard LabKey charset (currently UTF-8) and return in a String. Closes the reader after consuming it */
+    public static String getStreamContentsAsString(InputStream is)
+    {
+		return getReaderContentsAsString(Readers.getReader(is));
     }
 
 
@@ -1164,9 +1161,10 @@ public class PageFlowUtil
 	public static String getReaderContentsAsString(BufferedReader reader)
 	{
 		StringBuilder contents = new StringBuilder();
-		String line;
-		try
+		try (Reader ignored = reader)
 		{
+            String line;
+
 			while ((line = reader.readLine()) != null)
 			{
 				contents.append(line);
@@ -1177,20 +1175,8 @@ public class PageFlowUtil
 		{
 			_log.error("getStreamContentsAsString", e);
 		}
-		finally
-		{
-			IOUtils.closeQuietly(reader);
-		}
 		return contents.toString();
 	}
-
-
-    // Fetch the contents of an input stream, and return it in a list.
-    // Assumes stream is encoded using the LabKey standard character set
-    public static List<String> getStreamContentsAsList(InputStream is) throws IOException
-    {
-        return getStreamContentsAsList(is, false);
-    }
 
 
     // Fetch the contents of an input stream, and return it in a list, skipping comment lines is skipComments == true.

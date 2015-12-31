@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Reader;
 
 /**
  * User: adam
@@ -36,7 +37,9 @@ public interface DocumentConversionService
     @Nullable BufferedImage pdfToImage(InputStream pdfStream, int page, int bufferedImageType, int resolution);
 
     // Use the dimensions in the SVG
-    public void svgToPng(String svg, OutputStream os) throws TranscoderException;
+    void svgToPng(String svg, OutputStream os) throws TranscoderException;
     // If height is provided, auto-size keeping the aspect ratio; if null, use the dimensions in the SVG
-    public void svgToPng(String svg, OutputStream os, @Nullable Float height) throws TranscoderException;
+    void svgToPng(String svg, OutputStream os, @Nullable Float height) throws TranscoderException;
+    // If height is provided, auto-size keeping the aspect ratio; if null, use the dimensions in the SVG
+    void svgToPng(Reader reader, OutputStream os, @Nullable Float height) throws TranscoderException;
 }

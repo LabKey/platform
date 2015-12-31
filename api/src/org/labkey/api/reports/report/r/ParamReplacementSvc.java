@@ -18,10 +18,12 @@ package org.labkey.api.reports.report.r;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.reader.Readers;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.r.view.HrefOutput;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.writer.PrintWriters;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -281,14 +283,12 @@ public class ParamReplacementSvc
 
     public void toFile(List<ParamReplacement> outputSubst, File file) throws Exception
      {
-         try (BufferedWriter bw = new BufferedWriter(new FileWriter(file)))
+         try (PrintWriter bw = PrintWriters.getPrintWriter(file))
          {
-             for (ParamReplacement output : outputSubst)
-             {
-                 if (output.getName() != null && output.getFile() != null)
-                     bw.write(output.getId() + '\t' + output.getName() + '\t' + output.getFile().getAbsolutePath() + '\t' +
-                             PageFlowUtil.toQueryString(output.getProperties().entrySet()) + '\n');
-             }
+             outputSubst
+                 .stream()
+                 .filter(output -> output.getName() != null && output.getFile() != null)
+                 .forEach(output -> bw.write(output.getId() + '\t' + output.getName() + '\t' + output.getFile().getAbsolutePath() + '\t' + PageFlowUtil.toQueryString(output.getProperties().entrySet()) + '\n'));
          }
      }
 
@@ -298,7 +298,7 @@ public class ParamReplacementSvc
 
          if (file.exists())
          {
-             try (BufferedReader br = new BufferedReader(new FileReader(file)))
+             try (BufferedReader br = Readers.getReader(file))
              {
                  String l;
                  while ((l = br.readLine()) != null)

@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.reader.Readers;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -47,7 +48,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.Collections;
@@ -208,7 +208,7 @@ public class ScssServlet extends HttpServlet
                     "Must be on server path. (PATH=" + env.get("PATH") + ")", eio);
         }
 
-        try (BufferedReader procReader = new BufferedReader(new InputStreamReader(proc.getInputStream())))
+        try (BufferedReader procReader = Readers.getReader(proc.getInputStream()))
         {
             String line;
             while ((line = procReader.readLine()) != null)
@@ -333,7 +333,7 @@ public class ScssServlet extends HttpServlet
     {
         try (InputStream in = new FileInputStream(file))
         {
-            return IOUtils.toString(in);
+            return PageFlowUtil.getStreamContentsAsString(in);
         }
     }
 
@@ -342,7 +342,7 @@ public class ScssServlet extends HttpServlet
     {
         try (InputStream in = r.getInputStream())
         {
-            return IOUtils.toString(in);
+            return PageFlowUtil.getStreamContentsAsString(in);
         }
     }
 
@@ -358,7 +358,7 @@ public class ScssServlet extends HttpServlet
         if (!dependencies.add(scss.getPath()))
             return;
 
-        Matcher m = imports.matcher(IOUtils.toString(scss.getInputStream()));
+        Matcher m = imports.matcher(PageFlowUtil.getStreamContentsAsString(scss.getInputStream()));
         while (m.find())
         {
             Path fileName = Path.parse(m.group(1));

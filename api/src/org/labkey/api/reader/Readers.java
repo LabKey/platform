@@ -15,12 +15,14 @@
  */
 package org.labkey.api.reader;
 
+import org.apache.commons.io.input.XmlStreamReader;
 import org.labkey.api.util.StringUtilsLabKey;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -50,5 +52,17 @@ public class Readers
     public static BufferedReader getReader(File file) throws FileNotFoundException
     {
         return new BufferedReader(getUnbufferedReader(file));
+    }
+
+    // Detects XML file character encoding based on BOM, XML prolog, or content type... falling back on UTF-8
+    public static BufferedReader getXmlReader(InputStream in) throws IOException
+    {
+        return new BufferedReader(new XmlStreamReader(in));
+    }
+
+    // Detects XML file character encoding based on BOM, XML prolog, or content type... falling back on UTF-8
+    public static BufferedReader getXmlReader(File file) throws IOException
+    {
+        return new BufferedReader(new XmlStreamReader(file));
     }
 }

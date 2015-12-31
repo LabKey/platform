@@ -34,6 +34,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Filter;
+import org.labkey.api.writer.PrintWriters;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -135,7 +136,15 @@ public class TabLoader extends DataLoader
         @NotNull @Override
         public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
-            TabLoader loader = new TabLoader(new InputStreamReader(is), hasColumnHeaders, mvIndicatorContainer);
+            TabLoader loader;
+            try
+            {
+                loader = new TabLoader(new AutoDetectReader(is), hasColumnHeaders, mvIndicatorContainer);
+            }
+            catch (TikaException e)
+            {
+                throw new IOException(e);
+            }
             loader.setDelimiters(fieldTerminator,lineTerminator);
             loader.setParseQuotes(false);
             return loader;
@@ -177,21 +186,16 @@ public class TabLoader extends DataLoader
 
     public TabLoader(final File inputFile, Boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
     {
-        this(new ReaderFactory()
-        {
-            @Override
-            public BufferedReader getReader() throws IOException
+        this(() -> {
+            verifyFile(inputFile);
+            try
             {
-                verifyFile(inputFile);
-                try
-                {
-                    // Let tika figure out the Charset encoding used in the file
-                    return new AutoDetectReader(new FileInputStream(inputFile));
-                }
-                catch (TikaException e)
-                {
-                    throw new IOException(e);
-                }
+                // Let tika figure out the Charset encoding used in the file
+                return new AutoDetectReader(new FileInputStream(inputFile));
+            }
+            catch (TikaException e)
+            {
+                throw new IOException(e);
             }
         }, hasColumnHeaders, mvIndicatorContainer);
 
@@ -207,12 +211,8 @@ public class TabLoader extends DataLoader
     // This constructor doesn't support MV Indicators:
     public TabLoader(final CharSequence src, Boolean hasColumnHeaders) throws IOException
     {
-        this(new ReaderFactory() {
-            @Override
-            public BufferedReader getReader()
-            {
-                return new BufferedReader(new CharSequenceReader(src));
-            }
+        this(() -> {
+            return new BufferedReader(new CharSequenceReader(src));
         }, hasColumnHeaders, null);
 
         if (src == null)
@@ -736,7 +736,7 @@ public class TabLoader extends DataLoader
             File f = File.createTempFile("junit", ext);
             f.deleteOnExit();
 
-            try (Writer w = new FileWriter(f))
+            try (Writer w = PrintWriters.getPrintWriter(f))
             {
                 w.write(data);
             }
@@ -795,7 +795,7 @@ public class TabLoader extends DataLoader
         public void testTSVReader() throws IOException
         {
             File csv = _createTempFile(tsvData, ".tsv");
-            Reader r = new FileReader(csv);
+            Reader r = Readers.getReader(csv);
             TabLoader l = new TabLoader(r, true);
             List<Map<String, Object>> maps = l.load();
             assertEquals(l.getColumns().length, 18);
@@ -833,7 +833,7 @@ public class TabLoader extends DataLoader
         public void testCSVReader() throws IOException
         {
             File csv = _createTempFile(csvData, ".csv");
-            Reader r = new FileReader(csv);
+            Reader r = Readers.getReader(csv);
             TabLoader l = new TabLoader(r, true);
             l.parseAsCSV();
             List<Map<String, Object>> maps = l.load();

@@ -21,6 +21,7 @@ import org.apache.xmlbeans.XmlException;
 import org.labkey.api.data.Container;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.query.xml.ReportDescriptorType;
 
 import java.io.IOException;
@@ -90,13 +91,11 @@ public class ModuleReportResource
             }
             catch(IOException e)
             {
-                Logger.getLogger(ModuleReportResource.class).warn("Unable to load report metadata from file "
-                        + _metaDataFile.getPath(), e);
+                Logger.getLogger(ModuleReportResource.class).warn("Unable to load report metadata from file " + _metaDataFile.getPath(), e);
             }
             catch(XmlException e)
             {
-                Logger.getLogger(ModuleReportResource.class).warn("Unable to load query report metadata from file "
-                        + _sourceFile.getPath(), e);
+                Logger.getLogger(ModuleReportResource.class).warn("Unable to load query report metadata from file " + _sourceFile.getPath(), e);
             }
         }
         return d;
@@ -106,7 +105,7 @@ public class ModuleReportResource
     {
         try (InputStream is = file.getInputStream())
         {
-            return IOUtils.toString(is);
+            return PageFlowUtil.getStreamContentsAsString(is);
         }
     }
 

@@ -17,6 +17,7 @@
 package org.labkey.api.study.assay.plate;
 
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.Readers;
 import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.exp.ExperimentException;
 import org.apache.commons.lang3.StringUtils;
@@ -53,7 +54,7 @@ public class TextPlateReader extends AbstractPlateReader implements PlateReader
 
         try {
             double[][] cellValues = new double[template.getRows()][template.getColumns()];
-            LineNumberReader reader = new LineNumberReader(new FileReader(dataFile));
+            LineNumberReader reader = new LineNumberReader(Readers.getReader(dataFile));
             try
             {
                 List<String> data = new ArrayList<>();

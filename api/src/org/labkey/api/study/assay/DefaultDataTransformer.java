@@ -22,6 +22,7 @@ import org.labkey.api.qc.*;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.Readers;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileUtil;
@@ -84,10 +85,9 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
             // read the contents of the script file
             if (scriptFile.exists())
             {
-                BufferedReader br = null;
-                StringBuffer sb = new StringBuffer();
-                try {
-                    br = new BufferedReader(new FileReader(scriptFile));
+                StringBuilder sb = new StringBuilder();
+                try (BufferedReader br = Readers.getReader(scriptFile))
+                {
                     String l;
                     while ((l = br.readLine()) != null)
                         sb.append(l).append('\n');
@@ -95,11 +95,6 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
                 catch (Exception e)
                 {
                     throw new ValidationException(e.getMessage());
-                }
-                finally
-                {
-                    if (br != null)
-                        try {br.close();} catch(IOException ignored) {}
                 }
 
                 ScriptEngine engine = ServiceRegistry.get().getService(ScriptEngineManager.class).getEngineByExtension(FileUtil.getExtension(scriptFile));

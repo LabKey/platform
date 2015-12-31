@@ -318,7 +318,7 @@ public class MailHelper
         Map<String, String> map = new HashMap<>();
 
         handleBodyParts(mm,
-            (contentType, part) -> map.put(contentType, PageFlowUtil.getStreamContentsAsString(part.getInputStream(), StringUtilsLabKey.DEFAULT_CHARSET)),
+            (contentType, part) -> map.put(contentType, PageFlowUtil.getStreamContentsAsString(part.getInputStream())),
                 map::put);
 
         return map;
