@@ -15,9 +15,9 @@
  */
 package org.labkey.query;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.resource.ResourceRef;
 import org.labkey.api.util.DOMUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.query.persist.QueryDef;
@@ -36,8 +36,10 @@ import java.io.IOException;
  * User: jeckels
  * Date: May 12, 2010
  */
-public class ModuleQueryMetadataDef extends ResourceRef
+public class ModuleQueryMetadataDef
 {
+    private static final Logger LOG = Logger.getLogger(ModuleQueryMetadataDef.class);
+
     private String _name;
     private String _queryMetaData;
     private String _description;
@@ -46,8 +48,8 @@ public class ModuleQueryMetadataDef extends ResourceRef
 
     public ModuleQueryMetadataDef(Resource resource)
     {
-        super(resource);
         _name = resource.getName();
+
         if (_name.endsWith(ModuleQueryDef.META_FILE_EXTENSION))
         {
             _name = _name.substring(0, _name.length() - ModuleQueryDef.META_FILE_EXTENSION.length());
@@ -95,7 +97,7 @@ public class ModuleQueryMetadataDef extends ResourceRef
                 }
                 else
                 {
-                    _log.warn("Query metadata XML does not have <query> or <tables> as its root element, its contents will be ignored: " + resource);
+                    LOG.warn("Query metadata XML does not have <query> or <tables> as its root element, its contents will be ignored: " + resource);
                 }
             }
             else
@@ -105,7 +107,7 @@ public class ModuleQueryMetadataDef extends ResourceRef
         }
         catch (IOException | TransformerException | ParserConfigurationException | SAXException e)
         {
-            _log.warn("Unable to load meta-data from module query file " + resource.getPath(), e);
+            LOG.warn("Unable to load meta-data from module query file " + resource.getPath(), e);
         }
     }
 

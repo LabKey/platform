@@ -83,7 +83,6 @@ import org.labkey.query.persist.QuerySnapshotDef;
 import org.labkey.query.sql.Query;
 import org.labkey.query.sql.QueryTableInfo;
 import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.util.ObjectUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -116,20 +115,14 @@ import java.util.stream.Collectors;
 
 public class QueryServiceImpl extends QueryService
 {
-    private static final Cache<String, Collection<? extends Resource>> MODULE_RESOURCES_CACHE = CacheManager.getCache(50000, CacheManager.DAY, "Module resources cache");
-
-    private static final Cache<String, ModuleQueryDef> OLD_MODULE_QUERY_DEFS_CACHE = CacheManager.getCache(5000, CacheManager.DAY, "Module query defs cache");
-    private static final QueryBasedModuleResourceCache<ModuleQueryDef> MODULE_QUERY_DEFS_CACHE = ModuleResourceCaches.createQueryBasedCache(new Path(MODULE_QUERIES_DIRECTORY), "Module query definitions cache", new QueryDefResourceCacheHandler());
-
-    private static final Cache<String, ModuleQueryMetadataDef> OLD_MODULE_QUERY_METADATA_DEF_CACHE = CacheManager.getCache(5000, CacheManager.DAY, "Module query metadata defs cache");
-    private static final QueryBasedModuleResourceCache<ModuleQueryMetadataDef> MODULE_QUERY_METADATA_DEF_CACHE = ModuleResourceCaches.createQueryBasedCache(new Path(MODULE_QUERIES_DIRECTORY), "Module query definitions cache", new QueryMetaDataDefResourceCacheHandler());
-
-    private static final QueryBasedModuleResourceCache<ModuleCustomViewDef> MODULE_CUSTOM_VIEW_CACHE = ModuleResourceCaches.createQueryBasedCache(new Path(MODULE_QUERIES_DIRECTORY), "Module custom view definitions cache", new CustomViewResourceCacheHandler());
-    private static final Cache<String, List<String>> NAMED_SET_CACHE = CacheManager.getCache(100, CacheManager.DAY, "Named sets for IN clause cache");
-    private static final String QUERYDEF_SET_CACHE_ENTRY = "QUERYDEFS:";
-    private static final String QUERYDEF_METADATA_SET_CACHE_ENTRY = "QUERYDEFSMETADATA:";
-    private static final String NAMED_SET_CACHE_ENTRY = "NAMEDSETS:";
     private static final Logger _log = Logger.getLogger(QueryServiceImpl.class);
+
+    private static final QueryBasedModuleResourceCache<ModuleQueryDef> MODULE_QUERY_DEFS_CACHE = ModuleResourceCaches.createQueryBasedCache(new Path(MODULE_QUERIES_DIRECTORY), "Module query definitions cache", new QueryDefResourceCacheHandler());
+    private static final QueryBasedModuleResourceCache<ModuleQueryMetadataDef> MODULE_QUERY_METADATA_DEF_CACHE = ModuleResourceCaches.createQueryBasedCache(new Path(MODULE_QUERIES_DIRECTORY), "Module query meta data cache", new QueryMetaDataDefResourceCacheHandler());
+    private static final QueryBasedModuleResourceCache<ModuleCustomViewDef> MODULE_CUSTOM_VIEW_CACHE = ModuleResourceCaches.createQueryBasedCache(new Path(MODULE_QUERIES_DIRECTORY), "Module custom view definitions cache", new CustomViewResourceCacheHandler());
+
+    private static final Cache<String, List<String>> NAMED_SET_CACHE = CacheManager.getCache(100, CacheManager.DAY, "Named sets for IN clause cache");
+    private static final String NAMED_SET_CACHE_ENTRY = "NAMEDSETS:";
 
     static public QueryServiceImpl get()
     {
@@ -323,53 +316,7 @@ public class QueryServiceImpl extends QueryService
     {
         Collection<Module> modules = new HashSet<>(container.getActiveModules(user));
         modules.addAll(Arrays.asList(extraModules));
-
         modules = ModuleLoader.getInstance().orderModules(modules);
-
-        List<QueryDefinition> oldRet = new ArrayList<>();
-
-        for (Module module : modules)
-        {
-            Collection<? extends Resource> queries;
-
-            //always scan the file system in dev mode
-            if (AppProps.getInstance().isDevMode())
-            {
-                Resource schemaDir = module.getModuleResolver().lookup(path);
-                queries = getModuleQueries(schemaDir, ModuleQueryDef.FILE_EXTENSION);
-            }
-            else
-            {
-                //in production, cache the set of query defs for each module on first request
-                String fileSetCacheKey = QUERYDEF_SET_CACHE_ENTRY + module.toString() + "." + schemaName + "." + path;
-                //noinspection unchecked
-                queries = MODULE_RESOURCES_CACHE.get(fileSetCacheKey);
-
-                if (null == queries)
-                {
-                    Resource schemaDir = module.getModuleResolver().lookup(path);
-                    queries = getModuleQueries(schemaDir, ModuleQueryDef.FILE_EXTENSION);
-                    MODULE_RESOURCES_CACHE.put(fileSetCacheKey, queries);
-                }
-            }
-
-            for (Resource query : queries)
-            {
-                // Include both schemaName and path in key because some queries come from the same file on disk
-                // but are exposed in multiple schemas. For example, we support queries supplied as part
-                // of an assay provider that are exposed as part of each assay design of that type. See issue 16595
-                // Also include module, as multiple modules may provide the same resource - see issue 20628
-                String cacheKey = module.getName() + "||" + query.getPath().toString() + "||" + schemaName;
-                ModuleQueryDef moduleQueryDef = OLD_MODULE_QUERY_DEFS_CACHE.get(cacheKey);
-                if (null == moduleQueryDef || moduleQueryDef.isStale())
-                {
-                    moduleQueryDef = new ModuleQueryDef(query);
-                     OLD_MODULE_QUERY_DEFS_CACHE.put(cacheKey, moduleQueryDef);
-                }
-
-                oldRet.add(new ModuleCustomQueryDefinition(module, moduleQueryDef, SchemaKey.fromString(schemaName), user, container));
-            }
-        }
 
         List<QueryDefinition> ret = new LinkedList<>();
 
@@ -381,40 +328,7 @@ public class QueryServiceImpl extends QueryService
                 .forEach(ret::add);
         }
 
-        String error = getError(oldRet, ret);
-        if (null != error)
-            throw new IllegalStateException("ModuleCustomQueryDefinitions for " + schemaName + " didn't match - " + error);
-
         return ret;
-    }
-
-    private @Nullable String getError(List<QueryDefinition> oldList, List<QueryDefinition> newList)
-    {
-        if (oldList.size() != newList.size())
-            return "Size mismatch: " + oldList.size() + " vs. " + newList.size();
-
-        for (int i = 0; i < oldList.size(); i++)
-        {
-            QueryDefinition oldDef = oldList.get(i);
-            QueryDefinition newDef = newList.get(i);
-
-            if (!oldDef.getName().equals(newDef.getName()))
-                return "Name mismatch: " + oldDef.getName() + " vs. " + newDef.getName();
-
-            if (!oldDef.getSchemaPath().equals(newDef.getSchemaPath()))
-                return "SchemaPath mismatch: " + oldDef.getSchemaPath() + " vs. " + newDef.getSchemaPath();
-
-            if (!oldDef.getSql().equals(newDef.getSql()))
-                return oldDef.getName() + ": SQL mismatch";
-
-            if (!ObjectUtils.nullSafeEquals(oldDef.getDescription(), newDef.getDescription()))
-                return oldDef.getName() + ": Description mismatch";
-
-            if (!oldDef.getTitle().equals(newDef.getTitle()))
-                return oldDef.getName() + ": Title mismatch";
-        }
-
-        return null;
     }
 
     private static class QueryDefResourceCacheHandler implements QueryBasedModuleResourceCacheHandler<ModuleQueryDef>
@@ -449,21 +363,6 @@ public class QueryServiceImpl extends QueryService
                 }
             };
         }
-    }
-
-    @NotNull
-    private Collection<? extends Resource> getModuleQueries(@Nullable Resource schemaDir, String fileExtension)
-    {
-        if (schemaDir == null)
-            return Collections.emptyList();
-
-        Collection<? extends Resource> queries = schemaDir.list();
-        List<Resource> result = new ArrayList<>(queries.size());
-        for (Resource query : queries)
-            if (query.getName().endsWith(fileExtension))
-                result.add(query);
-
-        return result;
     }
 
     public QueryDefinition getQueryDef(User user, @NotNull Container container, String schema, String name)
@@ -1802,9 +1701,6 @@ public class QueryServiceImpl extends QueryService
         // Look for file-based definitions in modules
         Collection<Module> modules = allModules ? ModuleLoader.getInstance().getModules() : schema.getContainer().getActiveModules(schema.getUser());
 
-        QueryDef newMetaDataDef = null;
-
-        foo:
         for (Module module : modules)
         {
             Collection<ModuleQueryMetadataDef> metadataDefs = MODULE_QUERY_METADATA_DEF_CACHE.getResource(module, dir);
@@ -1815,86 +1711,10 @@ public class QueryServiceImpl extends QueryService
                 {
                     QueryDef result = metadataDef.toQueryDef(schema.getContainer());
                     result.setSchema(schemaName);
-                    newMetaDataDef = result;
-                    break foo;
-                }
-            }
-        }
-
-        for (Module module : modules)
-        {
-            Collection<? extends Resource> queryMetadatas;
-
-            //always scan the file system in dev mode
-            if (AppProps.getInstance().isDevMode())
-            {
-                Resource schemaDir = module.getModuleResolver().lookup(dir);
-                queryMetadatas = getModuleQueries(schemaDir, ModuleQueryDef.META_FILE_EXTENSION);
-            }
-            else
-            {
-                //in production, cache the set of query defs for each module on first request
-                String fileSetCacheKey = QUERYDEF_METADATA_SET_CACHE_ENTRY + module.toString() + "." + dir.toString();
-                //noinspection unchecked
-                queryMetadatas = MODULE_RESOURCES_CACHE.get(fileSetCacheKey);
-
-                if (null == queryMetadatas)
-                {
-                    Resource schemaDir = module.getModuleResolver().lookup(dir);
-                    queryMetadatas = getModuleQueries(schemaDir, ModuleQueryDef.META_FILE_EXTENSION);
-                    MODULE_RESOURCES_CACHE.put(fileSetCacheKey, queryMetadatas);
-                }
-            }
-
-            for (Resource query : queryMetadatas)
-            {
-                // Scope to the source module as multiple modules may supply the same resource path
-                String cacheKey = module.getName() + "||" + query.getPath().toString();
-                ModuleQueryMetadataDef metadataDef = OLD_MODULE_QUERY_METADATA_DEF_CACHE.get(cacheKey);
-                if (null == metadataDef || metadataDef.isStale())
-                {
-                    metadataDef = new ModuleQueryMetadataDef(query);
-                    OLD_MODULE_QUERY_METADATA_DEF_CACHE.put(cacheKey, metadataDef);
-                }
-
-                if (metadataDef.getName().equalsIgnoreCase(tableName))
-                {
-                    QueryDef result = metadataDef.toQueryDef(schema.getContainer());
-                    result.setSchema(schemaName);
-
-                    String error = getError(result, newMetaDataDef);
-
-                    if (null != error)
-                        throw new IllegalStateException("Meta data override mismatch for " + schemaName + "." + tableName + ": " + error);
-
                     return result;
                 }
             }
         }
-
-        if (null != newMetaDataDef)
-            throw new IllegalStateException("Expected meta data override to be null for " + schemaName + "." + tableName);
-
-        return null;
-    }
-
-
-    private @Nullable String getError(QueryDef oldDef, QueryDef newDef)
-    {
-        if (!oldDef.getName().equals(newDef.getName()))
-            return "Name mismatch: " + oldDef.getName() + " vs. " + newDef.getName();
-
-        if (!oldDef.getSchemaPath().equals(newDef.getSchemaPath()))
-            return "SchemaPath mismatch: " + oldDef.getSchemaPath() + " vs. " + newDef.getSchemaPath();
-
-        if (!ObjectUtils.nullSafeEquals(oldDef.getSql(), newDef.getSql()))
-            return oldDef.getName() + ": SQL mismatch";
-
-        if (!oldDef.getMetaData().equals(newDef.getMetaData()))
-            return oldDef.getName() + ": Meta data mismatch";
-
-        if (!ObjectUtils.nullSafeEquals(oldDef.getDescription(), newDef.getDescription()))
-            return oldDef.getName() + ": Description mismatch";
 
         return null;
     }

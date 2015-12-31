@@ -16,12 +16,11 @@
 package org.labkey.query;
 
 import org.apache.commons.io.IOUtils;
+import org.labkey.api.data.Container;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.resource.ResourceRef;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.query.persist.QueryDef;
-import org.labkey.api.data.Container;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,11 +36,12 @@ import java.io.InputStream;
  * This is separate from ModuleCustomQueryDefinition so that it can be cached and
  * used for multiple containers.
  */
-public class ModuleQueryDef extends ResourceRef
+public class ModuleQueryDef
 {
     public static final String FILE_EXTENSION = ".sql";
     public static final String META_FILE_EXTENSION = ".query.xml";
 
+    private final Resource _resource;
     private final String _name;
 
     private String _sql;
@@ -49,8 +49,7 @@ public class ModuleQueryDef extends ResourceRef
 
     public ModuleQueryDef(Resource r)
     {
-        super(r);
-
+        _resource = r;
         _name = getNameFromFile();
 
         //load the sql from the sqlFile
@@ -70,16 +69,13 @@ public class ModuleQueryDef extends ResourceRef
         {
             Resource metadataResource = parent.find(_name + META_FILE_EXTENSION);
             if (metadataResource != null)
-            {
                 _metadataDef = new ModuleQueryMetadataDef(metadataResource);
-                addDependency(_metadataDef);
-            }
-        }
+      }
     }
 
     protected String getNameFromFile()
     {
-        String name = getResource().getName();
+        String name = _resource.getName();
         return name.substring(0, name.length() - FILE_EXTENSION.length());
     }
 
