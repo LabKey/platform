@@ -23,6 +23,7 @@ import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.qc.DataLoaderSettings;
+import org.labkey.api.reader.Readers;
 import org.labkey.api.study.assay.AbstractAssayTsvDataHandler;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
@@ -131,7 +132,7 @@ public class CBCDataHandler extends AbstractAssayTsvDataHandler
                 map.put("AbsTotalLYMPH", absTotalLymph);
             }
 
-            // Study preferes timepoints in days, so remove time portion
+            // Study prefers timepoints in days, so remove time portion
             Date date = (Date) map.get("Date");
             if (date != null)
             {
@@ -148,17 +149,14 @@ public class CBCDataHandler extends AbstractAssayTsvDataHandler
 
     protected List<Map<String, Object>> loadTsv(Map<String, PropertyDescriptor> propertyNameToDescriptor, File inputFile) throws ExperimentException
     {
-        Reader fileReader = null;
-        try
+        try (BufferedReader reader = Readers.getReader(inputFile))
         {
-            fileReader = new FileReader(inputFile);
-            StringBuffer sb = new StringBuffer((int)(inputFile.length()));
+            StringBuilder sb = new StringBuilder((int)(inputFile.length()));
 
             // replace "n/a" with "0"
-            BufferedReader br = new BufferedReader(fileReader);
             String line;
             Pattern p = Pattern.compile("\\bn/a\\b");
-            while (null != (line = br.readLine()))
+            while (null != (line = reader.readLine()))
                 sb.append(p.matcher(line).replaceAll("0")).append("\n");
 
             TabLoader loader = new TabLoader(sb, true);
@@ -191,10 +189,5 @@ public class CBCDataHandler extends AbstractAssayTsvDataHandler
         {
             throw new ExperimentException(e);
         }
-        finally
-        {
-            try { if (fileReader != null) fileReader.close(); } catch (IOException e) {}
-        }
     }
-
 }

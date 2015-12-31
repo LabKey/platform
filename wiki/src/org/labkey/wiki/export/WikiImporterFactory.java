@@ -183,7 +183,7 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
             InputStream contentSteam = contentSteamPair.second;
 
             WikiVersion wikiversion = new WikiVersion(wiki.getName());
-            wikiversion.setBody(PageFlowUtil.getStreamContentsAsString(contentSteam, StandardCharsets.UTF_8));
+            wikiversion.setBody(PageFlowUtil.getStreamContentsAsString(contentSteam));
             wikiversion.setRendererTypeEnum(WikiRendererType.getType(contentFileName));
 
             List<AttachmentFile> attachments = new ArrayList<>();

@@ -15,10 +15,8 @@
  */
 package org.labkey.announcements.model;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.labkey.announcements.AnnouncementsController;
-import org.labkey.announcements.DailyDigestPage;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.data.Container;
@@ -26,7 +24,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.jsp.JspLoader;
 import org.labkey.api.message.digest.MessageDigest;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -38,14 +35,10 @@ import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.WebPartView;
 
 import javax.mail.Message;
 import javax.mail.internet.InternetAddress;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.DateFormat;
@@ -212,7 +205,7 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
             {
                 try (InputStream is = DailyDigestEmailTemplate.class.getResourceAsStream(BODY_PATH))
                 {
-                    return IOUtils.toString(is);
+                    return PageFlowUtil.getStreamContentsAsString(is);
                 }
             }
             catch (IOException e)

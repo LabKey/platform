@@ -15,8 +15,8 @@
  */
 package org.labkey.study.importer;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.xmlbeans.XmlObject;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.CustomParticipantView;
@@ -74,7 +74,7 @@ public class StudyViewsImporter implements InternalStudyImporter
 
                                     if (!view.isModuleParticipantView())
                                     {
-                                        view.setBody(IOUtils.toString(is));
+                                        view.setBody(PageFlowUtil.getStreamContentsAsString(is));
                                         view.setActive(participantView.getActive());
                                         StudyManager.getInstance().saveCustomParticipantView(study, ctx.getUser(), view);
                                     }

@@ -57,7 +57,7 @@ public class SpecimenRequestNotificationEmailTemplate extends EmailTemplate
         {
             try (InputStream is = SpecimenRequestNotificationEmailTemplate.class.getResourceAsStream("/org/labkey/study/view/specimen/notification.txt"))
             {
-                return IOUtils.toString(is);
+                return PageFlowUtil.getStreamContentsAsString(is);
             }
         }
         catch (IOException e)

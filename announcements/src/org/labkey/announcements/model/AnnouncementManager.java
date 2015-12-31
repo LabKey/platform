@@ -16,7 +16,6 @@
 package org.labkey.announcements.model;
 
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -24,7 +23,6 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.announcements.AnnouncementsController;
-import org.labkey.announcements.EmailNotificationPage;
 import org.labkey.announcements.config.AnnouncementEmailConfig;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
@@ -46,7 +44,6 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.jsp.JspLoader;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.search.SearchService;
@@ -60,7 +57,6 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.MailHelper.BulkEmailer;
-import org.labkey.api.util.MailHelper.ViewMessage;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -70,19 +66,15 @@ import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.util.emailTemplate.UserOriginatedEmailTemplate;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 
 import javax.mail.MessagingException;
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
@@ -1040,7 +1032,7 @@ public class AnnouncementManager
             {
                 try (InputStream is = NotificationEmailTemplate.class.getResourceAsStream(BODY_PATH))
                 {
-                    return IOUtils.toString(is);
+                    return PageFlowUtil.getStreamContentsAsString(is);
                 }
             }
             catch (IOException e)

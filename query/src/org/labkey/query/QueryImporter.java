@@ -125,7 +125,7 @@ public class QueryImporter implements FolderImporter
                 if (null == queryDoc)
                     throw new ServletException("QueryImport: SQL file \"" + sqlFileName + "\" has no corresponding meta data file.");
 
-                String sql = PageFlowUtil.getStreamContentsAsString(queriesDir.getInputStream(sqlFileName), StandardCharsets.UTF_8);
+                String sql = PageFlowUtil.getStreamContentsAsString(queriesDir.getInputStream(sqlFileName));
 
                 QueryType queryXml = queryDoc.getQuery();
 

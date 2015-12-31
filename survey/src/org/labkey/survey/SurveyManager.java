@@ -646,7 +646,7 @@ public class SurveyManager
                         Collection<SurveyDesign> surveyDesigns = new LinkedList<>();
                         for (Resource r : viewResources)
                         {
-                            String metadata = PageFlowUtil.getStreamContentsAsString(r.getInputStream(), StandardCharsets.UTF_8);
+                            String metadata = PageFlowUtil.getStreamContentsAsString(r.getInputStream());
 
                             try
                             {

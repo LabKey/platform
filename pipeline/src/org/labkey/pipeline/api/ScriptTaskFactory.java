@@ -15,7 +15,6 @@
  */
 package org.labkey.pipeline.api;
 
-import org.apache.commons.io.IOUtils;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.TaskId;
@@ -29,6 +28,7 @@ import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.pipeline.analysis.CommandTaskImpl;
 import org.labkey.pipeline.xml.ScriptTaskType;
@@ -108,7 +108,7 @@ public class ScriptTaskFactory extends SimpleTaskFactory
 
             try (InputStream is = r.getInputStream())
             {
-                source = IOUtils.toString(is);
+                source = PageFlowUtil.getStreamContentsAsString(is);
             }
             catch (IOException e)
             {

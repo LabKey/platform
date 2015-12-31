@@ -15,10 +15,10 @@
  */
 package org.labkey.query.olap;
 
-import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.Module;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,7 +48,7 @@ public class ModuleOlapSchemaDescriptor extends OlapSchemaDescriptor
     {
         try
         {
-            return IOUtils.toString(_resource.getInputStream());
+            return PageFlowUtil.getStreamContentsAsString(_resource.getInputStream());
         }
         catch (IOException e)
         {

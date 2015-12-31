@@ -52,6 +52,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -3345,7 +3346,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             {
                 try (InputStream is = entry.getValue().getInputStream())
                 {
-                    String body = IOUtils.toString(is);
+                    String body = PageFlowUtil.getStreamContentsAsString(is);
                     body = ModuleHtmlView.replaceTokens(body, context);
                     return ExtendedSpecimenRequestView.createView(body);
                 }
@@ -3365,14 +3366,8 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         // TODO: LinkedList?
         final List<Vial> vials = new ArrayList<>();
 
-        getSpecimensSelector(container, user, filter).forEachMap(new ForEachBlock<Map<String, Object>>()
-        {
-            @Override
-            public void exec(Map<String, Object> map) throws SQLException
-            {
-                vials.add(new Vial(container, map));
-            }
-        });
+        getSpecimensSelector(container, user, filter)
+            .forEachMap(map -> vials.add(new Vial(container, map)));
 
         return vials;
     }

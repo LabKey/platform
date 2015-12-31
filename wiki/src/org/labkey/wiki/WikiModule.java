@@ -183,7 +183,7 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
         wikiversion.setTitle(new HString(title));
 
         InputStream is = getClass().getResourceAsStream(resource);
-        String body = PageFlowUtil.getStreamContentsAsString(is, StandardCharsets.UTF_8);
+        String body = PageFlowUtil.getStreamContentsAsString(is);
         wikiversion.setBody(body);
 
         if (renderAs == null)

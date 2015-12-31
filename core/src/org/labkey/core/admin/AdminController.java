@@ -904,7 +904,7 @@ public class AdminController extends SpringActionController
         // New way... in /resources/credits
         InputStream is = module.getResourceStream("credits/" + filename);
 
-        return null == is ? null : PageFlowUtil.getStreamContentsAsString(is, StandardCharsets.UTF_8);
+        return null == is ? null : PageFlowUtil.getStreamContentsAsString(is);
     }
 
 

@@ -30,6 +30,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.io.StringReader;
 import java.util.List;
 
@@ -52,7 +53,14 @@ public class DocumentConversionServiceImpl implements DocumentConversionService
     @Override
     public void svgToPng(String svg, OutputStream os, @Nullable Float height) throws TranscoderException
     {
-        TranscoderInput xIn = new TranscoderInput(new StringReader(svg));
+        svgToPng(new StringReader(svg), os, height);
+    }
+
+    // If height is provided, auto-size keeping the aspect ratio; if null, use the dimensions in the SVG
+    @Override
+    public void svgToPng(Reader reader, OutputStream os, @Nullable Float height) throws TranscoderException
+    {
+        TranscoderInput xIn = new TranscoderInput(reader);
 
         PNGTranscoder transcoder = new PNGTranscoder();
         transcoder.addTranscodingHint(PNGTranscoder.KEY_BACKGROUND_COLOR, java.awt.Color.WHITE);

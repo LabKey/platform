@@ -25,6 +25,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.reader.Readers;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
@@ -1076,10 +1077,8 @@ public class StatusController extends SpringActionController
 
     private void renderFile(PrintWriter out, File f)
     {
-        BufferedReader br = null;
-        try
+        try (BufferedReader br = Readers.getReader(f))
         {
-            br = new BufferedReader(new FileReader(f));
             String line;
 
             while ((line = br.readLine()) != null)
@@ -1092,19 +1091,6 @@ public class StatusController extends SpringActionController
         {
             out.write("...Error reading file...");
             out.write(_newline);
-        }
-        finally
-        {
-            if (br != null)
-            {
-                try
-                {
-                    br.close();
-                }
-                catch (Exception e)
-                {
-                }
-            }
         }
     }
 

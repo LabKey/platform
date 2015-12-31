@@ -57,7 +57,7 @@ public class ReportAndDatasetChangeDigestEmailTemplate extends EmailTemplate
         {
             try (InputStream is = ReportAndDatasetChangeDigestEmailTemplate.class.getResourceAsStream("/org/labkey/query/reports/view/reportAndDatasetChangeDigestNotify.txt"))
             {
-                return IOUtils.toString(is);
+                return PageFlowUtil.getStreamContentsAsString(is);
             }
         }
         catch (IOException e)
