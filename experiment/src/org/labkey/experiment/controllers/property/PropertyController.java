@@ -240,9 +240,11 @@ public class PropertyController extends SpringActionController
                 }
             }
 
-            createDomain(kindName, newDomain, options, getContainer(), getUser());
+            Domain domain = createDomain(kindName, newDomain, options, getContainer(), getUser());
 
-            return new ApiSimpleResponse();
+            ApiSimpleResponse resp = convertDomainToApiResponse(DomainUtil.getDomainDescriptor(getUser(), domain));
+            resp.put("success", true);
+            return resp;
         }
     }
 
@@ -654,7 +656,7 @@ public class PropertyController extends SpringActionController
     }
 
     @SuppressWarnings("unchecked")
-    private static ApiResponse convertDomainToApiResponse(@NotNull GWTDomain domain)
+    private static ApiSimpleResponse convertDomainToApiResponse(@NotNull GWTDomain domain)
     {
         ApiSimpleResponse response = new ApiSimpleResponse();
         try
@@ -732,6 +734,18 @@ public class PropertyController extends SpringActionController
         Boolean required = (Boolean)obj.get("required");
         if (required != null)
             prop.setRequired(required.booleanValue());
+
+        Boolean shownInInsertView = (Boolean)obj.get("shownInInsertView");
+        if (shownInInsertView != null)
+            prop.setShownInInsertView(shownInInsertView);
+
+        Boolean shownInUpdateView = (Boolean)obj.get("shownInUpdateView");
+        if (shownInUpdateView != null)
+            prop.setShownInUpdateView(shownInUpdateView);
+
+        Boolean shownInDetailsView = (Boolean)obj.get("shownInDetailsView");
+        if (shownInDetailsView != null)
+            prop.setShownInDetailsView(shownInDetailsView);
 
         prop.setPropertyURI((String)obj.get("propertyURI"));
         prop.setOntologyURI((String)obj.get("ontologyURI"));

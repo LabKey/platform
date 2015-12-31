@@ -106,6 +106,8 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
         // Filter exp.data to only those rows that are members of the DataClass
         addCondition(new SimpleFilter(FieldKey.fromParts("classId"), _dataClass.getRowId()));
+
+        setContainerFilter(new ContainerFilter.CurrentPlusProjectAndShared(_userSchema.getUser()));
     }
 
     @NotNull
@@ -446,7 +448,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             final ExperimentService.Interface svc = ExperimentService.get();
 
             SimpleTranslator step0 = new SimpleTranslator(input, context);
-            step0.selectAll(Sets.newCaseInsensitiveHashSet("lsid", "dataClass"));
+            step0.selectAll(Sets.newCaseInsensitiveHashSet("lsid", "dataClass", "genId"));
 
             TableInfo expData = svc.getTinfoData();
             ColumnInfo lsidCol = expData.getColumn("lsid");
