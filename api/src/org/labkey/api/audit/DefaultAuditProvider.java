@@ -97,11 +97,6 @@ public class DefaultAuditProvider implements AuditLogService.I, AuditLogService.
         return AuditLogService.getAuditProvider(eventType);
     }
 
-    public String getDomainURI(String eventType)
-    {
-        return new Lsid("AuditLogService", eventType).toString();
-    }
-
     @Override
     public ActionURL getAuditUrl()
     {

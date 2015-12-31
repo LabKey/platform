@@ -16,26 +16,20 @@
 
 package org.labkey.api.audit;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.writer.ContainerUser;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,9 +40,10 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class AuditLogService
 {
-    static private I _instance;
-    static private final I _defaultProvider = new DefaultAuditProvider(); 
-    private static Map<String, AuditTypeProvider> _auditTypeProviders = new ConcurrentHashMap<>();
+    private static final I _defaultProvider = new DefaultAuditProvider();
+    private static final Map<String, AuditTypeProvider> _auditTypeProviders = new ConcurrentHashMap<>();
+
+    private static I _instance;
 
     public static void registerAuditType(AuditTypeProvider provider)
     {
@@ -64,13 +59,7 @@ public class AuditLogService
     {
         List<AuditTypeProvider> providers = new ArrayList<>(_auditTypeProviders.values());
 
-        Collections.sort(providers, new Comparator<AuditTypeProvider>()
-        {
-            public int compare(AuditTypeProvider o1, AuditTypeProvider o2)
-            {
-                return (o1.getLabel().compareToIgnoreCase(o2.getLabel()));
-            }
-        });
+        Collections.sort(providers, (o1, o2) -> (o1.getLabel().compareToIgnoreCase(o2.getLabel())));
         return Collections.unmodifiableList(providers);
     }
 
@@ -111,48 +100,19 @@ public class AuditLogService
 
         <K extends AuditTypeEvent> K addEvent(User user, K event);
 
-        /**
-         * Convenience methods to properly construct lsids with the correct audit namespace
-         * @deprecated Only used for old AuditViewFactory Domains.
-         */
-        @Deprecated
-        public String getDomainURI(String eventType);
-
         @Nullable
-        public <K extends AuditTypeEvent> K getAuditEvent(User user, String eventType, int rowId);
-        public <K extends AuditTypeEvent> List<K> getAuditEvents(Container container, User user, String eventType, @Nullable SimpleFilter filter, @Nullable Sort sort);
+        <K extends AuditTypeEvent> K getAuditEvent(User user, String eventType, int rowId);
+        <K extends AuditTypeEvent> List<K> getAuditEvents(Container container, User user, String eventType, @Nullable SimpleFilter filter, @Nullable Sort sort);
 
-        public String getTableName();
-        public TableInfo getTable(ViewContext context, String name);
-        public UserSchema createSchema(User user, Container container);
+        String getTableName();
+        TableInfo getTable(ViewContext context, String name);
+        UserSchema createSchema(User user, Container container);
 
-        public void registerAuditType(AuditTypeProvider provider);
-        public List<AuditTypeProvider> getAuditProviders();
-        public AuditTypeProvider getAuditProvider(String eventType);
+        void registerAuditType(AuditTypeProvider provider);
+        List<AuditTypeProvider> getAuditProviders();
+        AuditTypeProvider getAuditProvider(String eventType);
 
-        public ActionURL getAuditUrl();
-    }
-
-    /**
-     * @deprecated Replaced by {@link AuditTypeProvider}.
-     */
-    @Deprecated
-    public interface AuditViewFactory
-    {
-        public String getEventType();
-        public String getName();
-        public String getDescription();
-        
-        public QueryView createDefaultQueryView(ViewContext context);
-        public List<FieldKey> getDefaultVisibleColumns();
-        public void setupTable(FilteredTable table, UserSchema schema);
-
-        /**
-         * Provides a way for factories to perform one time additional initialization (domain creation),
-         * prior to logging an audit event.
-         * @param context
-         */
-        public void initialize(ContainerUser context) throws Exception;
+        ActionURL getAuditUrl();
     }
 
     public interface Replaceable{}
