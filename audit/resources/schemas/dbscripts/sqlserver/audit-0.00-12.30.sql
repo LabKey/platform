@@ -47,4 +47,5 @@ CREATE INDEX IX_Audit_Container ON audit.AuditLog(ContainerId);
 CREATE INDEX IX_AuditLog_IntKey1 ON audit.AuditLog(IntKey1);
 ALTER TABLE audit.AuditLog DROP CONSTRAINT PK_AuditLog;
 CREATE CLUSTERED INDEX IX_AuditLog_EventType_Created ON audit.AuditLog(EventType, Created DESC);
-ALTER TABLE audit.AuditLog ADD CONSTRAINT PK_AuditLog PRIMARY KEY (RowId);   -- NONCLUSTERED
+-- NONCLUSTERED
+ALTER TABLE audit.AuditLog ADD CONSTRAINT PK_AuditLog PRIMARY KEY (RowId);

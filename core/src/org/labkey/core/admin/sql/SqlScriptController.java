@@ -187,6 +187,7 @@ public class SqlScriptController extends SpringActionController
                 html.append(PageFlowUtil.textLink("consolidate scripts", new ActionURL(ConsolidateScriptsAction.class, ContainerManager.getRoot())));
                 html.append(PageFlowUtil.textLink("orphaned scripts", new ActionURL(OrphanedScriptsAction.class, ContainerManager.getRoot())));
                 html.append(PageFlowUtil.textLink("scripts with errors", new ActionURL(ScriptsWithErrorsAction.class, ContainerManager.getRoot())));
+//                html.append(PageFlowUtil.textLink("reorder all scripts", new ActionURL(ReorderAllScriptsAction.class, ContainerManager.getRoot())));
                 html.append("</td></tr>");
                 html.append("<tr><td>&nbsp;</td></tr>");
             }
@@ -1013,7 +1014,8 @@ public class SqlScriptController extends SpringActionController
         @Override
         protected void renderInternal(SqlScript script, PrintWriter out) throws Exception
         {
-            String contents = script.getContents();
+            // First, review contents for errors
+            script.getContents();
             String errorMessage = script.getErrorMessage();
 
             if (null == errorMessage)
@@ -1063,6 +1065,45 @@ public class SqlScriptController extends SpringActionController
         protected String getActionDescription()
         {
             return "Reorder " + super.getActionDescription();
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class ReorderAllScriptsAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new HttpView()
+            {
+                @Override
+                protected void renderInternal(Object model, PrintWriter out) throws Exception
+                {
+                    for (Module module : ModuleLoader.getInstance().getModules())
+                    {
+                        FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
+
+                        for (DbSchema schema : provider.getSchemas())
+                        {
+                            for (SqlScript script : provider.getScripts(schema))
+                            {
+                                ScriptReorderer reorderer = new ScriptReorderer(schema, script.getContents());
+                                out.println("<table>");
+                                out.println("<tr><td><b>" + script.getDescription() + "</b></td></tr>\n");
+                                out.println(reorderer.getReorderedScript(true));
+                                out.println("</table>");
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Reorder all scripts");
         }
     }
 
@@ -1123,21 +1164,18 @@ public class SqlScriptController extends SpringActionController
         public ModelAndView getView(ConsolidateForm form, BindException errors) throws Exception
         {
             List<Module> modules = ModuleLoader.getInstance().getModules();
-            Set<SqlScript> unreachableScripts = new TreeSet<>(new Comparator<SqlScript>() {
-                public int compare(SqlScript s1, SqlScript s2)
-                {
-                    // Order scripts by fromVersion.  If fromVersion is the same, use standard compare order (schema + from + to)
-                    int fromCompare = new Double(s1.getFromVersion()).compareTo(s2.getFromVersion());
+            Set<SqlScript> unreachableScripts = new TreeSet<>((Comparator<SqlScript>) (s1, s2) -> {
+                // Order scripts by fromVersion.  If fromVersion is the same, use standard compare order (schema + from + to)
+                int fromCompare = new Double(s1.getFromVersion()).compareTo(s2.getFromVersion());
 
-                    if (0 != fromCompare)
-                        return fromCompare;
+                if (0 != fromCompare)
+                    return fromCompare;
 
-                    return s1.compareTo(s2);
-                }
+                return s1.compareTo(s2);
             });
 
             // Update this array after each release and each bump of ModuleLoader.EARLIEST_UPGRADE_VERSION
-            double[] fromVersions = new double[]{0.00, 12.1, 12.2, 12.3, 13.1, 13.2, 13.3, 14.1};
+            double[] fromVersions = new double[]{0.00, 13.3, 14.1, 14.2, 14.3, 15.1, 15.2, 15.3};
             double toVersion = form.getToVersion();
 
             for (Module module : modules)
