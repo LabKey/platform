@@ -41,7 +41,9 @@ public enum PHI
 
     private final int rank;
     private final Class<? extends Permission> permission;
-    private PHI(int rank, @Nullable Class<? extends Permission> permission) {
+
+    PHI(int rank, @Nullable Class<? extends Permission> permission)
+    {
         this.rank = rank;
         this.permission = permission;
     }
