@@ -88,7 +88,6 @@ import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.ModuleUpgrader.Execution;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -173,7 +172,6 @@ import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -570,19 +568,13 @@ public class AdminController extends SpringActionController
             }
             getPageConfig().setTemplate(Template.Dialog);
 
-            boolean upgradeRequired = ModuleLoader.getInstance().isUpgradeRequired();
             boolean upgradeInProgress = ModuleLoader.getInstance().isUpgradeInProgress();
             boolean startupInProgress = ModuleLoader.getInstance().isStartupInProgress();
             boolean maintenanceMode = AppProps.getInstance().isUserRequestedAdminOnlyMode();
 
             String title = "This site is currently undergoing maintenance.";
             String content = title;
-            if (upgradeRequired)
-            {
-                title = "Upgrade required";
-                content = "Upgrade required: site admin must log in to begin upgrade.";
-            }
-            else if (upgradeInProgress)
+            if (upgradeInProgress)
             {
                 title = "Upgrade in progress";
                 content = "Upgrade in progress: only site admins may login at this time. Your browser will be redirected when startup is complete.";
@@ -3479,7 +3471,6 @@ public class AdminController extends SpringActionController
         public ModelAndView getView(ReturnUrlForm form, BindException errors) throws Exception
         {
             ModuleLoader loader = ModuleLoader.getInstance();
-            loader.startNonCoreUpgrade(getUser(), Execution.Asynchronous);
 
             VBox vbox = new VBox();
 
@@ -3858,7 +3849,7 @@ public class AdminController extends SpringActionController
             tdoc.save(sw, xOpt);
 
             sw.flush();
-            PageFlowUtil.streamFileBytes(response, fullyQualifiedSchemaName + ".xml", sw.toString().getBytes(), true);
+            PageFlowUtil.streamFileBytes(response, fullyQualifiedSchemaName + ".xml", sw.toString().getBytes(StringUtilsLabKey.DEFAULT_CHARSET), true);
         }
     }
 

@@ -345,7 +345,7 @@ public class LoginController extends SpringActionController
                     errors.addError(new FormattedError("Please <a href=\"mailto:" + PageFlowUtil.filter(laf.getSystemEmailAddress()) + "\">contact a system administrator</a> to have your account created."));
                     break;
                 case  PasswordExpired:
-                     AuthenticationManager.setLoginReturnProperties(request,  new LoginReturnProperties(result.getRedirectURL(), form.getUrlhash(), form.getSkipProfile()));
+                     AuthenticationManager.setLoginReturnProperties(request, new LoginReturnProperties(result.getRedirectURL(), form.getUrlhash(), form.getSkipProfile()));
                     break;
                 case  Complexity:
                     AuthenticationManager.setLoginReturnProperties(request, new LoginReturnProperties(result.getRedirectURL(), form.getUrlhash(), form.getSkipProfile()));
@@ -1996,6 +1996,16 @@ public class LoginController extends SpringActionController
         protected String getEmailForForm(SetPasswordForm form)
         {
             return null;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(SetPasswordForm form)
+        {
+            // Call super to login the admin user, but ignore the usual password reset redirect
+            super.getSuccessURL(form);
+
+            // Always go to module status to continue the wizard
+            return AdminController.getModuleStatusURL(null);
         }
     }
 
