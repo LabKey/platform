@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.util.ExceptionReportingLevel;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.MothershipReport;
@@ -215,8 +216,26 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
 
     public String getDefaultLsidAuthority()
     {
-        String result = lookupStringValue(DEFAULT_LSID_AUTHORITY_PROP, "localhost");
-        if (result == null || "".equals(result))
+        String result = lookupStringValue(DEFAULT_LSID_AUTHORITY_PROP, "NOT_SET");
+
+        if ("NOT_SET".equals(result))
+        {
+            while (UserManager.hasNoUsers())
+            {
+                try
+                {
+                    Thread.sleep(1000);
+                }
+                catch (InterruptedException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            result = lookupStringValue(DEFAULT_LSID_AUTHORITY_PROP, "NOT_SET");
+        }
+
+        if (result == null || "".equals(result) || "NOT_SET".equals(result))
         {
             // We now prevent empty values but in case there's an installation that has one, convert to "localhost"
             return "localhost";

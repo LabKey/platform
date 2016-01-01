@@ -58,10 +58,8 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.ValidEmail;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContextListener;
@@ -117,6 +115,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * User: migra
@@ -151,7 +150,7 @@ public class ModuleLoader implements Filter
     private boolean _deferUsageReport = false;
     private File _webappDir;
     private UpgradeState _upgradeState;
-    private User upgradeUser = null;
+    private User _upgradeUser = null;
 
     // NOTE: the following startup fields are synchronized under STARTUP_LOCK
     private StartupState _startupState = StartupState.StartupIncomplete;
@@ -208,9 +207,9 @@ public class ModuleLoader implements Filter
     }
 
 
-    private Map<String, ModuleContext> contextMap = new HashMap<>();
-    private Map<String, Module> moduleMap = new CaseInsensitiveHashMap<>();
-    private Map<Class<? extends Module>, Module> moduleClassMap = new HashMap<>();
+    private Map<String, ModuleContext> _contextMap = new HashMap<>();
+    private Map<String, Module> _moduleMap = new CaseInsensitiveHashMap<>();
+    private Map<Class<? extends Module>, Module> _moduleClassMap = new HashMap<>();
 
     private List<Module> _modules;
 
@@ -274,8 +273,8 @@ public class ModuleLoader implements Filter
 
         for (Module module : _modules)
         {
-            moduleMap.put(module.getName(), module);
-            moduleClassMap.put(module.getClass(), module);
+            _moduleMap.put(module.getName(), module);
+            _moduleClassMap.put(module.getClass(), module);
         }
 
         return _modules;
@@ -347,16 +346,16 @@ public class ModuleLoader implements Filter
         upgradeLabKeySchemaInExternalDataSources();
 
         for (ModuleContext context : getAllModuleContexts())
-            contextMap.put(context.getName(), context);
+            _contextMap.put(context.getName(), context);
 
         //Make sure we have a context for all modules, even ones we haven't seen before
         for (Module module : _modules)
         {
-            ModuleContext context = contextMap.get(module.getName());
+            ModuleContext context = _contextMap.get(module.getName());
             if (null == context)
             {
                 context = new ModuleContext(module);
-                contextMap.put(context.getName(), context);
+                _contextMap.put(context.getName(), context);
             }
             if (context.getInstalledVersion() < module.getVersion())
                 context.setModuleState(ModuleState.InstallRequired);
@@ -369,7 +368,7 @@ public class ModuleLoader implements Filter
         }
 
         // Core module should be upgraded and ready-to-run
-        ModuleContext coreCtx = contextMap.get(DefaultModule.CORE_MODULE_NAME);
+        ModuleContext coreCtx = _contextMap.get(DefaultModule.CORE_MODULE_NAME);
         assert (ModuleState.ReadyToStart == coreCtx.getModuleState());
 
         List<String> modulesRequiringUpgrade = new LinkedList<>();
@@ -391,64 +390,27 @@ public class ModuleLoader implements Filter
             }
         }
 
-        User upgradeUser = null;
-        String upgradeUserParameter = System.getProperty("upgradeUser");
+        if (!modulesRequiringUpgrade.isEmpty())
+            _log.info("Modules requiring upgrade: " + modulesRequiringUpgrade.toString());
 
-        if (upgradeUserParameter != null)
-        {
-            ValidEmail upgradeUserEmail = new ValidEmail(upgradeUserParameter);
-            upgradeUser = UserManager.getUser(upgradeUserEmail);
+        if (!additionalSchemasRequiringUpgrade.isEmpty())
+            _log.info((modulesRequiringUpgrade.isEmpty() ? "Schemas" : "Additional schemas") + " requiring upgrade: " + additionalSchemasRequiringUpgrade.toString());
 
-            if (null == upgradeUser)
-            {
-                if (isNewInstall())
-                {
-                    // Must set the LSID authority early, since all audit LSIDs get created with this domain
-                    // TODO: Using email domain seems extremely questionable, but that's what we've always done
-                    String email = upgradeUserEmail.getEmailAddress();
-                    int atSign = email.indexOf('@');
-                    String defaultDomain = email.substring(atSign + 1);
-                    WriteableAppProps appProps = AppProps.getWriteableInstance();
-                    appProps.setDefaultDomain(defaultDomain);
-                    appProps.setDefaultLsidAuthority(defaultDomain);
-                    appProps.save();
+        boolean terminateAfterStartup = Boolean.valueOf(System.getProperty("terminateAfterStartup"));
+        Execution execution = terminateAfterStartup ? Execution.Synchronous : Execution.Asynchronous;
 
-                    upgradeUser = User.getSearchUser();
-                }
-                else
-                {
-                    throw new ServletException("Invalid upgrade user; \"" + upgradeUserParameter + "\" is not a valid user.");
-                }
-            }
-        }
+        upgradeAndStartupModules(coreRequiredUpgrade, execution);
 
-        if (modulesRequiringUpgrade.isEmpty() && additionalSchemasRequiringUpgrade.isEmpty())
-        {
-            completeUpgrade(coreRequiredUpgrade);
-        }
-        else
-        {
-            setUpgradeState(UpgradeState.UpgradeRequired);
+        _log.info("LabKey Server startup is complete; " + (Execution.Synchronous == execution ? "all modules have been upgraded and initialized" : "modules are being upgraded and initialized in the background"));
 
-            if (!modulesRequiringUpgrade.isEmpty())
-                _log.info("Modules requiring upgrade: " + modulesRequiringUpgrade.toString());
+        if (terminateAfterStartup)
+            System.exit(0);
+    }
 
-            if (!additionalSchemasRequiringUpgrade.isEmpty())
-                _log.info((modulesRequiringUpgrade.isEmpty() ? "Schemas" : "Additional schemas" ) + " requiring upgrade: " + additionalSchemasRequiringUpgrade.toString());
-
-            if (upgradeUser != null)
-                startNonCoreUpgrade(upgradeUser, Execution.Synchronous);
-        }
-
-        if (upgradeUser != null)
-        {
-            initiateModuleStartup(Execution.Synchronous);
-            _log.info("LabKey Server startup is complete; all modules have been initialized");
-        }
-        else
-        {
-            _log.info("LabKey Server startup is complete; modules will be initialized after the first HTTP/HTTPS request");
-        }
+    private void upgradeAndStartupModules(boolean coreRequiredUpgrade, Execution execution) throws Exception
+    {
+        setUpgradeState(UpgradeState.UpgradeRequired);
+        startNonCoreUpgrade(User.getSearchUser(), execution);  // TODO: Change to system user
     }
 
     // If in production mode then make sure this isn't a development build, #21567
@@ -516,8 +478,8 @@ public class ModuleLoader implements Filter
 
         // Make the collections of modules read-only since we expect no further modifications
         _modules = Collections.unmodifiableList(_modules);
-        moduleMap = Collections.unmodifiableMap(moduleMap);
-        moduleClassMap = Collections.unmodifiableMap(moduleClassMap);
+        _moduleMap = Collections.unmodifiableMap(_moduleMap);
+        _moduleClassMap = Collections.unmodifiableMap(_moduleClassMap);
 
         // All modules are initialized (controllers are registered), so initialize the controller-related maps
         ViewServlet.initialize();
@@ -533,7 +495,7 @@ public class ModuleLoader implements Filter
     private void verifyDependencies(Module module)
     {
         for (String dependency : module.getModuleDependenciesAsSet())
-            if (!moduleMap.containsKey(dependency))
+            if (!_moduleMap.containsKey(dependency))
                 throw new ModuleDependencyException(dependency);
     }
 
@@ -561,8 +523,8 @@ public class ModuleLoader implements Filter
         }
 
         iterator.remove();
-        removeMapValue(current, moduleClassMap);
-        removeMapValue(current, moduleMap);
+        removeMapValue(current, _moduleClassMap);
+        removeMapValue(current, _moduleMap);
     }
 
     private void removeMapValue(Module module, Map<?, Module> map)
@@ -785,7 +747,7 @@ public class ModuleLoader implements Filter
 
         try
         {
-            return (Module)applicationContext.getBean("moduleBean", Module.class);
+            return applicationContext.getBean("moduleBean", Module.class);
         }
         catch (NoSuchBeanDefinitionException x)
         {
@@ -1063,7 +1025,7 @@ public class ModuleLoader implements Filter
             _log.debug("Upgrading core module from " + ModuleContext.formatVersion(coreContext.getInstalledVersion()) + " to " + coreModule.getFormattedVersion());
         }
 
-        contextMap.put(coreModule.getName(), coreContext);
+        _contextMap.put(coreModule.getName(), coreContext);
 
         try
         {
@@ -1162,7 +1124,7 @@ public class ModuleLoader implements Filter
 
     public ModuleContext getModuleContext(Module module)
     {
-        return contextMap.get(module.getName());
+        return _contextMap.get(module.getName());
     }
 
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException
@@ -1170,10 +1132,6 @@ public class ModuleLoader implements Filter
         if (isUpgradeRequired())
         {
             setDeferUsageReport(true);
-        }
-        else
-        {
-            initiateModuleStartup(Execution.Asynchronous);
         }
 
         filterChain.doFilter(servletRequest, servletResponse);
@@ -1467,15 +1425,17 @@ public class ModuleLoader implements Filter
                 setUpgradeUser(user);
 
                 ModuleUpgrader upgrader = new ModuleUpgrader(modules);
-                upgrader.upgrade(() -> completeUpgrade(true), execution);
+                upgrader.upgrade(() -> {
+                    afterUpgrade(true, execution);
+                }, execution);
             }
         }
     }
 
 
-    // Very final step in upgrade process: set the upgrade state to complete and perform any post-upgrade tasks.
+    // Final step in upgrade process: set the upgrade state to complete, perform post-upgrade tasks, and start up the modules.
     // performedUpgrade is true if any module required upgrading
-    private void completeUpgrade(boolean performedUpgrade)
+    private void afterUpgrade(boolean performedUpgrade, Execution execution)
     {
         setUpgradeState(UpgradeState.UpgradeComplete);
 
@@ -1484,15 +1444,19 @@ public class ModuleLoader implements Filter
             handleUnkownModules();
             updateModuleProperties();
         }
+
+        initiateModuleStartup(execution);
     }
 
 
     // Remove all unknown modules that are marked as AutoUninstall
     public void handleUnkownModules()
     {
-        for (ModuleContext moduleContext : getUnknownModuleContexts().values())
-            if (moduleContext.isAutoUninstall())
-                removeModule(moduleContext);
+        getUnknownModuleContexts()
+            .values()
+            .stream()
+            .filter(ModuleContext::isAutoUninstall)
+            .forEach(this::removeModule);
     }
 
 
@@ -1521,8 +1485,8 @@ public class ModuleLoader implements Filter
     {
         synchronized(UPGRADE_LOCK)
         {
-            assert null == upgradeUser;
-            upgradeUser = user;
+            assert null == _upgradeUser;
+            _upgradeUser = user;
         }
     }
 
@@ -1530,7 +1494,7 @@ public class ModuleLoader implements Filter
     {
         synchronized(UPGRADE_LOCK)
         {
-            return upgradeUser;
+            return _upgradeUser;
         }
     }
 
@@ -1558,7 +1522,7 @@ public class ModuleLoader implements Filter
         }
     }
 
-    // Did this server start up with no modules installed?  If so, it's a new install.  This lets us tailor the
+    // Did this server start up with no modules installed?  If so, it's a new install. This lets us tailor the
     // module upgrade UI to "install" or "upgrade," as appropriate.
     public boolean isNewInstall()
     {
@@ -1567,31 +1531,27 @@ public class ModuleLoader implements Filter
 
     public void destroy()
     {
-        // in the case of a startup failure, _modules may be null.
-        // we want to allow a context reload to succeed in this case,
+        // In the case of a startup failure, _modules may be null. We want to allow a context reload to succeed in this case,
         // since the reload may contain the code change to fix the problem
         if (_modules != null)
         {
-            for (Module module : _modules)
-            {
-                module.destroy();
-            }
+            _modules.forEach(Module::destroy);
         }
     }
 
     public boolean hasModule(String name)
     {
-        return moduleMap.containsKey(name);
+        return _moduleMap.containsKey(name);
     }
 
     public Module getModule(String name)
     {
-        return moduleMap.get(name);
+        return _moduleMap.get(name);
     }
 
     public <M extends Module> M getModule(Class<M> moduleClass)
     {
-        return (M)moduleClassMap.get(moduleClass);
+        return (M) _moduleClassMap.get(moduleClass);
     }
 
     public Module getCoreModule()
@@ -1610,24 +1570,19 @@ public class ModuleLoader implements Filter
         if (userHasEnableRestrictedModulesPermission)
             return getModules();
 
-        List<Module> modules = new ArrayList<>();
-        for (Module module : _modules)
-            if (!module.getRequireSitePermission())
-                modules.add(module);
-        return modules;
+        return _modules
+            .stream()
+            .filter(module -> !module.getRequireSitePermission())
+            .collect(Collectors.toList());
     }
 
     /** @return the modules, sorted in reverse dependency order. Typically used to resolve the most specific version of a resource */
     public Collection<Module> orderModules(Collection<Module> modules)
     {
         List<Module> result = new ArrayList<>(modules.size());
-        for (Module module : ModuleLoader.getInstance().getModules())
-        {
-            if (modules.contains(module))
-            {
-                result.add(module);
-            }
-        }
+        result.addAll(ModuleLoader.getInstance().getModules()
+            .stream().filter(modules::contains)
+            .collect(Collectors.toList()));
         Collections.reverse(result);
         return result;
     }
