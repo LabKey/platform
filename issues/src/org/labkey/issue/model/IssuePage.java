@@ -21,7 +21,6 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Collections2;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.attachments.Attachment;
-import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -36,10 +35,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.issue.ColumnType;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.IssuesController.DownloadAction;
-import org.labkey.issue.model.Issue;
-import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.IssueManager.CustomColumnConfiguration;
-import org.labkey.issue.model.KeywordManager;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -290,7 +286,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     // Limit number of characters in an integer field
     public String writeIntegerInput(ColumnType type, int tabIndex)
     {
-        return writeInput(type.getColumnName(), type.getValue(getIssue()), "maxlength=\"10\" tabIndex=\"" + tabIndex + "\" size=\"8\"");
+        return writeInput(type.getColumnName(), type.getValue(getIssue()), "type=\"number\" maxlength=\"10\" tabIndex=\"" + tabIndex + "\" size=\"8\"");
     }
 
     public String writeInput(String field, String value, int tabIndex)

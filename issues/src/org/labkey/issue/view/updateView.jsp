@@ -23,19 +23,19 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.issue.ColumnType" %>
-<%@ page import="org.labkey.issue.model.IssuePage" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
 <%@ page import="org.labkey.issue.model.Issue" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="org.labkey.issue.model.IssueManager.EntryTypeNames" %>
+<%@ page import="org.labkey.issue.model.IssuePage" %>
 <%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
-<%@ page import="java.util.List" %>
-<%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -112,11 +112,6 @@
         return true;
     }
 
-    function filterNumber(e, input)
-    {
-        return filterRe(e, input, /[-\d]/);
-    }
-
     function filterCommaSepNumber(e, input)
     {
         return filterRe(e, input, /^[\d,\s]+$/);
@@ -128,7 +123,7 @@
     <%
         if (null != errors && 0 != errors.getErrorCount())
         {
-            for (ObjectError e : (List<ObjectError>) errors.getAllErrors())
+            for (ObjectError e : errors.getAllErrors())
             {
                 %><tr><td colspan=3><font class="labkey-error"><%=h(context.getMessage(e))%></font></td></tr><%
             }
@@ -175,7 +170,7 @@
                                 {
                                     //Enabled duplicate field.
                         %>
-                                    <%=text(bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), "tabindex=\"2\""))%>
+                                    <%=text(bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), "type=\"number\" min=\"1\" tabindex=\"2\""))%>
                         <%
                                 }
                                 else
@@ -209,7 +204,6 @@
                                     resolutionSelect.addEventListener('change', updateDuplicateInput, false);
                                 else if (window.attachEvent)
                                     resolutionSelect.attachEvent('onchange', updateDuplicateInput);
-                                Ext4.EventManager.on(duplicateInput, 'keypress', filterNumber);
                             </script>
                         <%
                             }
@@ -233,21 +227,7 @@
                         </script>
 
                         <%=text(bean.writeCustomColumn(ColumnType.INT1, 2, true))%>
-
-                        <script type="text/javascript">
-                            var els = document.getElementsByName('int1');
-                            if (els.length > 0)
-                                Ext4.EventManager.on( els[0], 'keypress', filterNumber);
-                        </script>
-
                         <%=text(bean.writeCustomColumn(ColumnType.INT2, 2, true))%>
-
-                        <script type="text/javascript">
-                            var els = document.getElementsByName('int2');
-                            if (els.length > 0)
-                                Ext4.EventManager.on( els[0], 'keypress', filterNumber);
-                        </script>
-
                         <%=text(bean.writeCustomColumn(ColumnType.STRING1, 2, true))%>
                     </table>
                 </td>

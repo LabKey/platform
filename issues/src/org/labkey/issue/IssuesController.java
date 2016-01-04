@@ -1207,7 +1207,7 @@ public class IssuesController extends SpringActionController
     {
         String requiredFields = IssueManager.getRequiredIssueFields(getContainer());
         final Map<String, String> newFields = form.getStrings();
-        if (!"0".equals(newFields.get("issueId")) && requiredFields.indexOf("comment") != -1)
+        if (!"0".equals(newFields.get("issueId")) && requiredFields.contains("comment"))
         {
             // When updating an existing issue (which will have a unique IssueId), never require a comment
             requiredFields = requiredFields.replace("comment", "");
@@ -1302,8 +1302,9 @@ public class IssuesController extends SpringActionController
                 if (user != null)
                     continue;
                 // Trying to generate user object from the "name" will not be enough if the username is for the default domain
-                // TODO: most of this logic can be reduced when we change the Schema and fix the typing of these fields. (making announcments and issues consistent)
-                try {
+                // TODO: most of this logic can be reduced when we change the Schema and fix the typing of these fields. (making announcements and issues consistent)
+                try
+                {
                     user = UserManager.getUser( new ValidEmail(username) );
                 }
                 catch (ValidEmail.InvalidEmailException e)
