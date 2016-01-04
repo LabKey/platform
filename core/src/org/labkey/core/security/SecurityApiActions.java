@@ -992,9 +992,9 @@ public class SecurityApiActions
                     }
                 }
 
-                if (form.getEditOperation() == null)
+                if (form.getMethod() == null)
                 {
-                    errors.rejectValue("editOperation", "requiredError", "editOperation not specified.");
+                    errors.rejectValue("method", "requiredError", "method not specified.");
                 }
             }
 
@@ -1018,14 +1018,14 @@ public class SecurityApiActions
             Map<String, List<UserPrincipal>> members = new HashMap<>();
             if (form.getMembers() != null)
             {
-                switch (form.getEditOperation())
+                switch (form.getMethod())
                 {
                     case add:
                     case replace:
                         addOrReplaceMembers(form, members, memberErrors, newUsers);
                         break;
                     case delete:
-                        deleteMembers(form, members, memberErrors);
+                        removeMembers(form, members, memberErrors);
                         break;
                 }
             }
@@ -1046,12 +1046,27 @@ public class SecurityApiActions
             }
             if (!members.isEmpty())
             {
-                Map<String, Integer> counts = new HashMap<>();
+                Map<String, List<Map<String, Object>>> memberUpdates = new HashMap<>();
                 for (String memberGroup : members.keySet())
                 {
-                    counts.put(memberGroup, members.get(memberGroup).size());
+                    List<Map<String, Object>> memberData = new ArrayList<>();
+                    for (UserPrincipal member : members.get(memberGroup))
+                    {
+                        Map<String, Object> userData = new HashMap<>();
+                        if (member.getPrincipalType() == PrincipalType.USER)
+                        {
+                            userData.put("email", ((User) member).getEmail());
+                        }
+                        else
+                        {
+                            userData.put("name", member.getName());
+                        }
+                        userData.put("userId", member.getUserId());
+                        memberData.add(userData);
+                    }
+                    memberUpdates.put(memberGroup, memberData);
                 }
-                resp.put("members", counts);
+                resp.put("members", memberUpdates);
             }
             if (!memberErrors.isEmpty())
             {
@@ -1067,9 +1082,9 @@ public class SecurityApiActions
             AuditLogService.get().addEvent(viewContext.getUser(), event);
         }
 
-        private void deleteMembers(GroupForm form, Map<String, List<UserPrincipal>> members, Map<String, String> memberErrors)
+        private void removeMembers(GroupForm form, Map<String, List<UserPrincipal>> members, Map<String, String> memberErrors)
         {
-            members.put("deleted", new ArrayList<>());
+            members.put("removed", new ArrayList<>());
             for (GroupMember member : form.getMembers())
             {
                 try
@@ -1079,7 +1094,7 @@ public class SecurityApiActions
                     if (principal != null)
                     {
                         SecurityManager.deleteMember(_group, principal);
-                        members.get("deleted").add(principal);
+                        members.get("removed").add(principal);
                     }
                     else
                     {
@@ -1097,7 +1112,7 @@ public class SecurityApiActions
         {
             List<UserPrincipal> currentMembers = new ArrayList<>();
             currentMembers.addAll(SecurityManager.getGroupMembers(_group, MemberType.ALL_GROUPS_AND_USERS));
-            Boolean doReplacement = form.getEditOperation() == MemberEditOperation.replace;
+            Boolean doReplacement = form.getMethod() == MemberEditOperation.replace;
             if (doReplacement)
             {
                 SecurityManager.deleteMembers(_group, currentMembers);
@@ -1158,7 +1173,7 @@ public class SecurityApiActions
             }
             if (doReplacement && !currentMembers.isEmpty())
             {
-                members.put("deleted", currentMembers);
+                members.put("removed", currentMembers);
             }
         }
     }
@@ -1166,7 +1181,6 @@ public class SecurityApiActions
 
     public enum MemberEditOperation {
         add,        // add the given members; do not fail if any already exist
-        update,     // update members that already exist and add the ones that do not
         replace,    // replace the current entities with the new list (same as delete all then add)
         delete,     // delete the given members; does not fail if member does not exist in group; does not delete group if it becomes empty
     }
@@ -1184,7 +1198,6 @@ public class SecurityApiActions
         private String _im;
         private String _description;
         private Integer _userId;
-        private String _groupName;
         private Integer _groupId;
 
         public String getDescription()
@@ -1235,16 +1248,6 @@ public class SecurityApiActions
         public void setGroupId(Integer groupId)
         {
             _groupId = groupId;
-        }
-
-        public String getGroupName()
-        {
-            return _groupName;
-        }
-
-        public void setGroupName(String groupName)
-        {
-            _groupName = groupName;
         }
 
         public String getIm()
@@ -1315,8 +1318,6 @@ public class SecurityApiActions
                 return "userId " + getUserId();
             else if (getGroupId() != null)
                 return "groupId " + getGroupId();
-            else if (getGroupName() != null)
-                return getGroupName();
             else return "Unknown";
         }
 
@@ -1324,6 +1325,10 @@ public class SecurityApiActions
         {
             if (getUserId() != null)
             {
+                if (getEmail() != null)
+                {
+                    throw new Exception("Specify either userId or email but not both.");
+                }
                 User user = UserManager.getUser(getUserId());
                 if (user == null)
                 {
@@ -1345,18 +1350,6 @@ public class SecurityApiActions
                 }
                 return memberGroup;
             }
-            else if (getGroupName() != null)
-            {
-                Integer groupId = SecurityManager.getGroupId(container, getGroupName());
-                if (groupId == null)
-                {
-                   throw new Exception( "Invalid group name.  Member groups must already exist.");
-                }
-                else
-                {
-                    return SecurityManager.getGroup(groupId);
-                }
-            }
             else
             {
                 throw new Exception("No id, name or email specified");
@@ -1370,7 +1363,7 @@ public class SecurityApiActions
         private String _groupName;      // Nullable; required for creating a group
         private List<GroupMember> _members;      // can be used to provide more data than just email address; can be empty
         private Boolean _createGroup = false;   // if true, the group should be created if it doesn't exist; otherwise the operation will fail if the group does not exist
-        private MemberEditOperation _editOperation; // indicates the action to be performed with the given users in this group
+        private MemberEditOperation _method; // indicates the action to be performed with the given users in this group
 
         public String getGroupName()
         {
@@ -1412,14 +1405,14 @@ public class SecurityApiActions
             _members = members;
         }
 
-        public MemberEditOperation getEditOperation()
+        public MemberEditOperation getMethod()
         {
-            return _editOperation;
+            return _method;
         }
 
-        public void setEditOperation(MemberEditOperation editOperation)
+        public void setMethod(MemberEditOperation method)
         {
-            _editOperation = editOperation;
+            _method = method;
         }
     }
 
