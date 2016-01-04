@@ -509,7 +509,8 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             var params = {
                 schemaName: this.schemaName,
                 "query.queryName": this.queryName,
-                "query.containerFilterName": this.containerFilter
+                "query.containerFilterName": this.containerFilter,
+                "query.showRows": 'all'
             };
 
             if (this.columns) {
