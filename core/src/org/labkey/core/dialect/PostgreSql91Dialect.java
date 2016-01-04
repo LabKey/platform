@@ -1703,6 +1703,8 @@ public class PostgreSql91Dialect extends SqlDialect
         passthroughFn.put("lcase","lower");
         passthroughFn.put("ucase","upper");
         passthroughFn.put("now","now");
+        // JDBC driver seems broken, rand() gets passed through as rand() instead of random()
+        passthroughFn.put("rand","random");
     }
 
     @Override
@@ -1712,9 +1714,36 @@ public class PostgreSql91Dialect extends SqlDialect
         String nativeFn = passthroughFn.get(fn);
         if (null != nativeFn)
             return formatFunction(call, nativeFn, arguments);
+        else if (fn.equalsIgnoreCase("timestampdiff"))
+            return timestampdiff(arguments);
         else
             return super.formatJdbcFunction(fn, arguments);
     }
+
+
+    /* 25146: timestampdiff() inconsistent between sql server and postgres
+     * As of dec/2015 {fn timestampdiff()} is not implemented correctly in pgjdbc
+     */
+    private SQLFragment timestampdiff(SQLFragment... arguments)
+    {
+        if (arguments[0].getSQL().equals("SQL_TSI_DAY"))
+            return super.formatJdbcFunction("timestampdiff", arguments);
+
+        SQLFragment epoch = new SQLFragment("EXTRACT(epoch FROM ");
+        epoch.append("(").append(arguments[2]).append(") - (").append(arguments[1]).append("))");
+
+        if (arguments[0].getSQL().equals("SQL_TSI_SECOND"))
+            return epoch;
+
+        if (arguments[0].getSQL().equals("SQL_TSI_MINUTE"))
+            return epoch.append("/60.0");
+
+        if (arguments[0].getSQL().equals("SQL_TSI_HOUR"))
+            return epoch.append("/3600.0");
+
+        return super.formatJdbcFunction("timestampdiff", arguments);
+}
+
 
     public static class TestCase extends Assert
     {
