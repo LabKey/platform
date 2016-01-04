@@ -29,10 +29,10 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-class ScriptReorderer
+public class ScriptReorderer
 {
+    public static final String COMMENT_REGEX = "((/\\*.+?\\*/)|(^[ \\t]*--.+?$))\\s*";   // Single-line or block comment, followed by white space
     private static final String SCHEMA_NAME_REGEX = "(?:(?:\\w+)\\.)?";
-    private static final String COMMENT_REGEX = "((/\\*.+?\\*/)|(^--.+?$))\\s*";   // Single-line or block comment, followed by white space
 
     private final List<Map<String, Collection<Statement>>> _statementLists = new LinkedList<>();
     private final List<String> _endingStatements = new LinkedList<>();

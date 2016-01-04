@@ -36,6 +36,7 @@ import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.core.admin.sql.ScriptReorderer;
 import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
 
 import javax.servlet.ServletException;
@@ -54,11 +55,13 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -894,6 +897,26 @@ public class PostgreSql91Dialect extends SqlDialect
             return "numeric";
         }
         return super.getJDBCArrayType(object);
+    }
+
+    @Override
+    public Collection<String> getScriptWarnings(String name, String sql)
+    {
+        // Strip out all block- and single-line comments
+        Pattern commentPattern = Pattern.compile(ScriptReorderer.COMMENT_REGEX, Pattern.DOTALL + Pattern.MULTILINE);
+        Matcher matcher = commentPattern.matcher(sql);
+        String noComments = matcher.replaceAll("");
+
+        List<String> warnings = new LinkedList<>();
+
+        // Split statements by semi-colon and CRLF
+        for (String statement : noComments.split(";[\\n\\r]+"))
+        {
+            if (StringUtils.startsWithIgnoreCase(statement.trim(), "SET "))
+                warnings.add(statement);
+        }
+
+        return warnings;
     }
 
     @Override
