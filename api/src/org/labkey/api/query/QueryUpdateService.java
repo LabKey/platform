@@ -24,12 +24,6 @@ import org.labkey.api.security.User;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
-/*
- * User: Dave
- * Date: Jun 9, 2008
- * Time: 4:36:22 PM
- */
-
 /**
  * This interface should be implemented by modules that expose queries
  * that can be updated by the HTTP-based APIs, or any other code that
@@ -44,6 +38,8 @@ import java.util.Map;
  * which uses BeanUtils to convert maps into hard-typed beans, and vice-versa.
  * This allows the implementation to work primarily with beans instead of maps.
  * </p>
+ * User: Dave
+ * Date: Jun 9, 2008
  */
 public interface QueryUpdateService
 {

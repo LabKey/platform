@@ -23,6 +23,10 @@ import org.labkey.api.data.RenderContext;
 
 import java.util.Objects;
 
+/**
+ * Renders a column that contains values that point to core.UsersData.UserId rows, handling Guests and other special
+ * users intelligently.
+ */
 public class UserIdRenderer extends DataColumn
 {
     static public boolean isGuestUserId(Object value)

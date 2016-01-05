@@ -33,6 +33,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * {@link ForeignKey} implementation that points at a schema/query known to QueryService and resolvable
+ * by name through a {@link QuerySchema}. Lazily initialized as much as possible to prevent perf hit creating schemas
+ * tables that aren't actually needed.
+ */
 public class QueryForeignKey implements ForeignKey
 {
     TableInfo _table;

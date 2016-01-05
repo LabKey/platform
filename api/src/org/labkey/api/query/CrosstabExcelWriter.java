@@ -40,17 +40,13 @@ public class CrosstabExcelWriter extends ExcelWriter
     private boolean _includeDimensionHeader = false;
     private CrosstabTableInfo _table;
     private int _numRowAxisCols = 0;
-    private int _numMeasures = 0;
-    private int _numMemberMeasures = 0;
     private List<Pair<CrosstabMember, List<DisplayColumn>>> _groupedByMember;
 
-    public CrosstabExcelWriter(CrosstabTableInfo table, Results rs, List<DisplayColumn> displayColumns, int numRowAxisCols, int numMeasures, int numMembmerMeasures, ExcelDocumentType docType)
+    public CrosstabExcelWriter(CrosstabTableInfo table, Results rs, List<DisplayColumn> displayColumns, int numRowAxisCols, ExcelDocumentType docType)
     {
         super(rs, displayColumns, docType);
         _table = table;
         _numRowAxisCols = numRowAxisCols;
-        _numMeasures = numMeasures;
-        _numMemberMeasures = numMembmerMeasures;
 
         _groupedByMember = CrosstabView.columnsByMember(displayColumns);
     }

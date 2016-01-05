@@ -30,11 +30,10 @@ import java.net.URI;
 import java.util.List;
 
 /**
- *
+ * Represents a pipeline root directory, from which the server will look for files for import and analysis.
  *
  * User: Nick
  * Date: Jul 7, 2007
- * Time: 8:09:14 PM
  */
 public interface PipeRoot extends SecurableResource
 {

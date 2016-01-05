@@ -18,6 +18,7 @@ package org.labkey.api.query;
 import org.json.JSONObject;
 
 /**
+ * Indicates an error during query metadata parsing that will prevent it from completing successfully.
  * User: Nick Arnold
  * Date: 3/6/13
  */

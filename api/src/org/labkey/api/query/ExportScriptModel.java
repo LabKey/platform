@@ -36,9 +36,9 @@ import java.util.Date;
 import java.util.List;
 
 /**
+ * Holds configuration information about a {@link QueryView}, to be used by a {@link ExportScriptFactory}.
  * User: adam
  * Date: Jan 27, 2009
- * Time: 3:51:42 PM
  */
 public abstract class ExportScriptModel
 {

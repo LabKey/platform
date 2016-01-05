@@ -24,8 +24,13 @@ import org.labkey.api.data.TableInfo;
 
 import java.util.Map;
 
+/**
+ * {@link ColumnInfo} backed by a {@link SQLFragment} with the expression to generate the desired value. A typical way
+ * to inject calculated columns into a {@link TableInfo}.
+ */
 public class ExprColumn extends ColumnInfo
 {
+    /** Placeholder that is later substituted with the table/subquery alias during SQL generation */
     public static final String STR_TABLE_ALIAS = "'''~~TABLE~~'''";
 
     private SQLFragment _sql;

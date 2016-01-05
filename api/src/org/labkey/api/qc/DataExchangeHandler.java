@@ -30,30 +30,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/*
-* User: Karl Lum
-* Date: Jan 7, 2009
-* Time: 5:13:12 PM
-*/
-
 /**
  * Used to process input and output data between the server and externally executed qc and analysis scripts.
+ * User: Karl Lum
+ * Date: Jan 7, 2009
  */
 public interface DataExchangeHandler
 {
-    public Pair<File, Set<File>> createTransformationRunInfo(AssayRunUploadContext<? extends AssayProvider> context, ExpRun run, File scriptDir, Map<DomainProperty, String> runProperties, Map<DomainProperty, String> batchProperties) throws Exception;
-    public void createSampleData(@NotNull ExpProtocol protocol, ViewContext viewContext, File scriptDir) throws Exception;
+    Pair<File, Set<File>> createTransformationRunInfo(AssayRunUploadContext<? extends AssayProvider> context, ExpRun run, File scriptDir, Map<DomainProperty, String> runProperties, Map<DomainProperty, String> batchProperties) throws Exception;
+    void createSampleData(@NotNull ExpProtocol protocol, ViewContext viewContext, File scriptDir) throws Exception;
 
-    public TransformResult processTransformationOutput(AssayRunUploadContext<? extends AssayProvider> context, File runInfo, ExpRun run, File scriptFile, TransformResult mergeResult, Set<File> inputDataFiles) throws ValidationException;
+    TransformResult processTransformationOutput(AssayRunUploadContext<? extends AssayProvider> context, File runInfo, ExpRun run, File scriptFile, TransformResult mergeResult, Set<File> inputDataFiles) throws ValidationException;
 
-    public DataSerializer getDataSerializer();
+    DataSerializer getDataSerializer();
     
-    public interface DataSerializer
+    interface DataSerializer
     {
         /**
          * Called to save or import transformed or QC'd run data to the specified reader or writer.
          */
-        public void exportRunData(ExpProtocol protocol, List<Map<String, Object>> data, File runData) throws Exception;
-        public List<Map<String, Object>> importRunData(ExpProtocol protocol, File runData) throws Exception;
+        void exportRunData(ExpProtocol protocol, List<Map<String, Object>> data, File runData) throws Exception;
+        List<Map<String, Object>> importRunData(ExpProtocol protocol, File runData) throws Exception;
     }
 }

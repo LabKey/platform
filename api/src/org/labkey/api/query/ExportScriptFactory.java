@@ -16,13 +16,14 @@
 package org.labkey.api.query;
 
 /**
+ * Factory for generating script snippets in a given client language that know how to fetch the data currently
+ * being shown by a specific {@link QueryView}.
  * User: adam
  * Date: Jan 27, 2009
- * Time: 2:15:15 PM
  */
 public interface ExportScriptFactory
 {
-    public String getScriptType();
-    public String getMenuText();
-    public ExportScriptModel getModel(QueryView queryView);
+    String getScriptType();
+    String getMenuText();
+    ExportScriptModel getModel(QueryView queryView);
 }

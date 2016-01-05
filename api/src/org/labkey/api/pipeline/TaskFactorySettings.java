@@ -33,7 +33,7 @@ public interface TaskFactorySettings
 
     Module getDeclaringModule();
 
-    public interface Provider
+    interface Provider
     {
         List<TaskFactorySettings> getSettings();
     }

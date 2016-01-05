@@ -1005,7 +1005,6 @@ api/src/org/labkey/api/query/JavaExportScriptModel.java -text
 api/src/org/labkey/api/query/JavaScriptExportScriptFactory.java -text
 api/src/org/labkey/api/query/JavaScriptExportScriptModel.java -text
 api/src/org/labkey/api/query/LookupForeignKey.java -text
-api/src/org/labkey/api/query/MetadataException.java -text
 api/src/org/labkey/api/query/MetadataParseException.java -text
 api/src/org/labkey/api/query/MetadataParseWarning.java -text
 api/src/org/labkey/api/query/NotificationInfoProvider.java -text
@@ -1027,7 +1026,6 @@ api/src/org/labkey/api/query/QueryForeignKey.java -text
 api/src/org/labkey/api/query/QueryForm.java -text
 api/src/org/labkey/api/query/QueryHelper.java -text
 api/src/org/labkey/api/query/QueryKey.java -text
-api/src/org/labkey/api/query/QueryMethod.java -text
 api/src/org/labkey/api/query/QueryNestingOption.java -text
 api/src/org/labkey/api/query/QueryNotFoundException.java -text
 api/src/org/labkey/api/query/QueryParam.java -text

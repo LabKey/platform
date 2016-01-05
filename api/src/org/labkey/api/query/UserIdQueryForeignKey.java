@@ -18,15 +18,11 @@ package org.labkey.api.query;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 
-/*
-* User: Dave
-* Date: Jul 28, 2008
-* Time: 4:57:59 PM
-*/
-
 /**
  * Foreign key class for use with Query and the 'core'
  * User Schema. Use this when setting FKs on AbstractTables
+ * User: Dave
+ * Date: Jul 28, 2008
  */
 public class UserIdQueryForeignKey extends QueryForeignKey
 {

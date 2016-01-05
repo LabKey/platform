@@ -26,12 +26,6 @@ import org.labkey.api.view.NotFoundException;
 
 import java.sql.SQLException;
 import java.util.Map;
-/*
- * User: Dave
- * Date: Jun 9, 2008
- * Time: 5:16:09 PM
- */
-
 /**
  * Helpful base class for implementations of QueryUpdateSerivce. This class allows
  * the derived class to work with strongly-typed beans rather than
@@ -45,6 +39,9 @@ import java.util.Map;
  * This class uses BeanUtils to convert between the maps in the
  * QueryUpdateService interface to beans of type T, and keys of
  * type K.</p>
+ *
+ * User: Dave
+ * Date: Jun 9, 2008
  */
 public abstract class AbstractBeanQueryUpdateService<T,K> extends AbstractQueryUpdateService
 {

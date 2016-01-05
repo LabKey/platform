@@ -29,7 +29,7 @@ import java.util.Map;
 import java.io.IOException;
 
 /**
- * Additional information about a custom view beyond what's exposed in CustomViewInfo.
+ * Additional information about a custom view beyond what's exposed in {@link CustomViewInfo}.
  */
 public interface CustomView extends CustomViewInfo
 {

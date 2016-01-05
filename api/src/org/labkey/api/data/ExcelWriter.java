@@ -56,11 +56,11 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
- *
+ * Knows how to create an Excel file (of various formats) based on the {@link Results} of a database query.
  */
-
 public class ExcelWriter implements ExportWriter
 {
+    /** Flavors of supported Excel file formats */
     public enum ExcelDocumentType
     {
         xls
@@ -127,7 +127,7 @@ public class ExcelWriter implements ExportWriter
         public abstract int getMaxColumns();
     }
 
-    public static final int MAX_ROWS = 65535;
+    public static final int MAX_ROWS_EXCEL_97 = 65535;
 
     protected static final String SHEET_DRAWING = "~~excel-sheet-drawing~~";
     protected static final String SHEET_IMAGE_SIZES = "~~excel-sheet-image-sizes~~";

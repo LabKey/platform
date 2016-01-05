@@ -28,12 +28,14 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Basic support for importing and fetching individual proteins
+ *
  * User: jeckels
  * Date: May 3, 2012
  */
 public interface ProteinService
 {
-    public int ensureProtein(String sequence, String organism, String name, String description);
+    int ensureProtein(String sequence, String organism, String name, String description);
 
     /**
      *
@@ -41,38 +43,35 @@ public interface ProteinService
      * @param typeAndIdentifiers A map of identifier types to identifiers.
      * Identifier type (e.g. SwissProtAccn) --> set of identifiers (e.g. B7Z1V4, P80404)
      */
-    public void ensureIdentifiers(int seqId, Map<String, Set<String>> typeAndIdentifiers);
+    void ensureIdentifiers(int seqId, Map<String, Set<String>> typeAndIdentifiers);
 
     /**
-     *
-     * @param description
-     * @param names
-     * @return  A map of identifier types to identifiers
      * Identifier type (e.g. SwissProtAccn) --> set of identifiers (e.g. B7Z1V4, P80404)
+     * @return  A map of identifier types to identifiers
      */
-    public Map<String, Set<String>> getIdentifiers(String description, String... names);
+    Map<String, Set<String>> getIdentifiers(String description, String... names);
 
-    public void registerProteinSearchView(QueryViewProvider<ProteinSearchForm> provider);
-    public void registerPeptideSearchView(QueryViewProvider<PeptideSearchForm> provider);
+    void registerProteinSearchView(QueryViewProvider<ProteinSearchForm> provider);
+    void registerPeptideSearchView(QueryViewProvider<PeptideSearchForm> provider);
 
-    public List<QueryViewProvider<PeptideSearchForm>> getPeptideSearchViews();
+    List<QueryViewProvider<PeptideSearchForm>> getPeptideSearchViews();
 
     /** @param aaRowWidth the number of amino acids to display in a single row */
-    public WebPartView getProteinCoverageView(int seqId, String[] peptides, int aaRowWidth, boolean showEntireFragmentInCoverage);
+    WebPartView getProteinCoverageView(int seqId, String[] peptides, int aaRowWidth, boolean showEntireFragmentInCoverage);
 
     /** @return a web part with all of the annotations and identifiers we know for a given protein */
-    public WebPartView getAnnotationsView(int seqId);
+    WebPartView getAnnotationsView(int seqId);
 
-    public String getProteinSequence(int seqId);
+    String getProteinSequence(int seqId);
 
-    public interface QueryViewProvider<FormType>
+    interface QueryViewProvider<FormType>
     {
-        public String getDataRegionName();
+        String getDataRegionName();
         @Nullable
-        public QueryView createView(ViewContext viewContext, FormType form, BindException errors);
+        QueryView createView(ViewContext viewContext, FormType form, BindException errors);
     }
 
-    public static abstract class PeptideSearchForm extends QueryViewAction.QueryExportForm
+    abstract class PeptideSearchForm extends QueryViewAction.QueryExportForm
     {
         public enum ParamNames
         {
@@ -130,7 +129,7 @@ public interface ProteinService
         public abstract SimpleFilter.FilterClause createFilter(String sequenceColumnName);
     }
 
-    public abstract static class ProteinSearchForm extends QueryViewAction.QueryExportForm
+    abstract class ProteinSearchForm extends QueryViewAction.QueryExportForm
     {
         private String _identifier;
         private String _peptideFilterType = "none";

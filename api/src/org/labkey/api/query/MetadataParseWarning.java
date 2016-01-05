@@ -19,6 +19,7 @@ import org.apache.log4j.Level;
 import org.json.JSONObject;
 
 /**
+ * Indicates a non-fatal error parsing query metadata.
  * User: Nick Arnold
  * Date: 3/6/13
  */

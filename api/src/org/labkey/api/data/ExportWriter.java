@@ -24,5 +24,5 @@ package org.labkey.api.data;
 public interface ExportWriter
 {
     /** @return the number of data rows exported by this writer */
-    public int getDataRowCount();
+    int getDataRowCount();
 }

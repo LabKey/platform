@@ -45,7 +45,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * A table that filters down to a particular set of values. A typical example
+ * A table that filters down to a particular set of rows from an underlying, wrapped table/subquery. A typical example
  * would be filtering to only show rows that are part of a particular container.
  */
 public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableInfo implements ContainerFilterable

@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
+ * Convenience base class for {@link ForeignKey} implementors.
  * User: kevink
  * Date: Nov 29, 2007 5:30:26 PM
  */
@@ -46,7 +47,6 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
 
     // Map original FieldKey to query's remapped FieldKey.
     private Map<FieldKey, FieldKey> _remappedFields;
-    private StackTraceElement[] _remappedStackTrace;
 
     protected AbstractForeignKey()
     {
@@ -154,9 +154,6 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
     @Override
     public ForeignKey remapFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> mapping)
     {
-        boolean assertsEnabled = false;
-        assert assertsEnabled = true;
-
         Set<FieldKey> suggested = getSuggestedColumns();
         if (suggested == null || suggested.isEmpty())
             return this;
@@ -181,8 +178,6 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
         {
             AbstractForeignKey cloned = (AbstractForeignKey)this.clone();
             cloned._remappedFields = remappedSuggested;
-            if (assertsEnabled)
-                cloned._remappedStackTrace = Thread.currentThread().getStackTrace();
             return cloned;
         }
         catch (CloneNotSupportedException e)

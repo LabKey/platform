@@ -20,7 +20,6 @@ import org.labkey.api.data.AggregateColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CrosstabDataRegion;
 import org.labkey.api.data.CrosstabMember;
-import org.labkey.api.data.CrosstabTable;
 import org.labkey.api.data.CrosstabTableInfo;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
@@ -262,7 +261,7 @@ public class CrosstabView extends QueryView
             CrosstabTableInfo table = (CrosstabTableInfo)getTable();
             List<DisplayColumn> displayColumns = rgn.getDisplayColumns();
 
-            return new CrosstabExcelWriter(table, rs, getExportColumns(displayColumns), _numRowAxisCols, _numMeasures, _numMemberMeasures, docType);
+            return new CrosstabExcelWriter(table, rs, getExportColumns(displayColumns), _numRowAxisCols, docType);
         }
         catch (SQLException e)
         {

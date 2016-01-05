@@ -16,14 +16,10 @@
 package org.labkey.api.query;
 
 import java.util.Map;
-/*
- * User: Dave
- * Date: Jun 9, 2008
- * Time: 4:45:49 PM
- */
-
 /**
  * This class is thrown if the key(s) provided were not valid database keys
+ * User: Dave
+ * Date: Jun 9, 2008
  */
 public class InvalidKeyException extends Exception
 {

@@ -18,9 +18,10 @@ package org.labkey.api.query;
 import java.util.Collection;
 
 /**
-* User: kevink
-* Date: 4/17/13
-*/
+ * Callback for implementations that are interested to know when a user-defined {@link CustomView} is being modified.
+ * User: kevink
+ * Date: 4/17/13
+ */
 public interface CustomViewChangeListener
 {
     void viewCreated(CustomView view);
