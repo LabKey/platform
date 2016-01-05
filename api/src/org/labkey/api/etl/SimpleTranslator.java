@@ -250,7 +250,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         protected Object convert(Object o)
         {
-            if (o instanceof String && JdbcType.VARCHAR.equals(type) && "".equals(o))
+            if (o instanceof String && JdbcType.VARCHAR.equals(type) && "".equals(o) && _preserveEmptyString)
                 return "";
             return null==type ? o : type.convert(o);
         }

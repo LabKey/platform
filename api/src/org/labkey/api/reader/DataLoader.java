@@ -143,7 +143,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         return _includeBlankLines;
     }
 
-    /** When true (the default), lines that have no values will be skipped.  When values, an row of null values is returned. */
+    /** When false (the default), lines that have no values will be skipped.  When values, an row of null values is returned. */
     public void setIncludeBlankLines(boolean includeBlankLines)
     {
         _includeBlankLines = includeBlankLines;
