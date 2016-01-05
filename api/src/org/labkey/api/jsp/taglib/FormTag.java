@@ -138,7 +138,7 @@ public class FormTag extends BodyTagSupport
             {
                 s = String.valueOf(action);
                 if (AppProps.getInstance().getUseContainerRelativeURL() &&
-                    StringUtils.containsNone("/-") && (StringUtils.endsWith(s, ".view") || StringUtils.endsWith(s, ".post")))
+                    StringUtils.containsNone(s,"/-") && (StringUtils.endsWith(s, ".view") || StringUtils.endsWith(s, ".post")))
                 {
                     ViewContext ctx = HttpView.getRootContext();
                     if (null != ctx)
