@@ -2433,7 +2433,7 @@ Ext4.define('File.panel.Browser', {
     },
 
     onEmailPreferences : function() {
-        Ext4.create('File.panel.EmailProps', { containerPath: this.containerPath }).show();
+        Ext4.create('File.panel.EmailProps', { containerPath: this.containerPath });
     },
 
     onMovePath : function() {

@@ -5,182 +5,206 @@
  */
 Ext4.define('File.panel.EmailProps', {
 
-    extend : 'Ext.util.Observable',
-    fileFields : [],    // array of extra field information to collect/display for each file uploaded
-    files : [],         // array of file information for each file being transferred
-    fileIndex : 0,
-    emailPrefDefault : 0,
+    extend : 'Ext.panel.Panel',
 
-    constructor : function(config)
-    {
-        Ext4.apply(this, config);
+    bodyStyle: 'background-color: transparent;',
+    border: false,
+    buttonAlign: 'left',
+    fileIndex: 0,
+    padding: 10,
 
-        this.addEvents(
-                /**
-                 * @event emailPrefsChanged
-                 * Fires after the user's email preferences have been updated.
-                 */
-                'emailPrefsChanged'
-        );
-
-        this.callParent([config]);
+    statics: {
+        preferences: {
+            FOLDERDEFAULT: {
+                value: -1,
+                label: 'Folder Default',
+                description: 'use the defaults configured for this folder by an administrator.'
+            },
+            MINUTEDIGEST: {
+                value: 513,
+                label: '15 Minute Digest',
+                description: 'send a email for file changes within a fifteen minute span.'
+            },
+            DAILYDIGEST: {
+                value: 514,
+                label: 'Daily Digest',
+                description: 'send one email each day that summarizes file changes in this folder.'
+            },
+            NONE: {
+                value: 512,
+                label: 'None',
+                description: 'don\'t send any email for file changes in this folder.'
+            }
+        }
     },
 
-    show : function()
+    initComponent : function()
     {
+        Ext4.applyIf(this, {
+            defaults: {
+                bodyStyle: 'background-color: transparent;'
+            },
+            fileFields: [],   // Extra field information to collect/display for each file uploaded
+            files: []         // File information for each file being transferred
+        });
+
+        this.items = [];
+
+        this.displayInWindow = !this.renderTo;
+
+        // add the buttons directly to this panel if not in a window
+        if (!this.displayInWindow) {
+            this.dockedItems = [{
+                xtype: 'toolbar',
+                dock: 'bottom',
+                ui: 'footer',
+                style: 'background-color: transparent;',
+                items: [{
+                    text: 'Submit',
+                    handler: this.onFormSubmit,
+                    scope: this
+                },{
+                    text: 'Cancel',
+                    handler: this.onFormCancel,
+                    scope: this
+                }]
+            }];
+        }
+
+        this.callParent();
+
         Ext4.Ajax.request({
-            url: LABKEY.ActionURL.buildURL("filecontent", "getEmailPref", this.containerPath),
+            url: LABKEY.ActionURL.buildURL('filecontent', 'getEmailPref.api', this.containerPath),
             method: 'GET',
-            disableCaching: false,
-            success : this.getEmailPref,
+            success: this.getEmailPref,
             failure: LABKEY.Utils.displayAjaxErrorResponse,
-            updateSelection: true,
             scope: this
         });
     },
 
     getEmailPref : function(response)
     {
-        var o = Ext4.decode(response.responseText);
+        var json = Ext4.decode(response.responseText),
+            preferences = File.panel.EmailProps.preferences,
+            emailPrefValue = json.emailPref,
+            emailPrefDefault = parseInt(json.emailPrefDefault),
+            defaultLabel = '';
 
-        if (o.success)
-        {
-            var emailPref = o.emailPref;
-            this.emailPrefDefault = o.emailPrefDefault;
+        function generateOption(preference, currentPreference) {
+            return {
+                checked: preference.value == currentPreference,
+                inputValue: preference.value,
+                boxLabel: '<span class="labkey-strong">' + preference.label + '</span> - ' + preference.description
+            };
+        }
 
-            var formPanel = Ext4.create('Ext.form.Panel', {
-                bodyStyle : 'padding:10px;',
-                labelWidth: 5,
-                flex: 1,
-                border: false,
-                items: [{
-                    xtype: 'radiogroup',
-                    columns: 1,
-                    width : 630,
-                    labelSeparator: '',
-                    defaults: {width: 600},
-                    items: [{
-                        checked: emailPref == -1,
-                        boxLabel: "<span class='labkey-strong'>Folder Default</span> - use the defaults configured for this folder by an administrator.",
-                        name: 'emailPref', inputValue: -1,
-                        handler: this.onFolderDefault,
-                        scope: this
-                    },{
-                        checked: emailPref == 513,
-                        boxLabel: '<span class="labkey-strong">15 Minute Digest</span> - send a email for file changes within a fifteen minute span.',
-                        name: 'emailPref', inputValue: 513
-                    },{
-                        checked: emailPref == 514,
-                        boxLabel: '<span class="labkey-strong">Daily Digest</span> - send one email each day that summarizes file changes in this folder.',
-                        name: 'emailPref', inputValue: 514
-                    },{
-                        checked: emailPref == 512,
-                        boxLabel: "<span class='labkey-strong'>None</span> - don't send any email for file changes in this folder.",
-                        name: 'emailPref', inputValue: 512
-                    }]
+        // Determine the default label
+        Ext4.iterate(preferences, function(p, preference) {
+            if (emailPrefDefault == preference.value) {
+                defaultLabel = preference.label;
+                return false;
+            }
+        });
+
+        this.add([{
+            xtype: 'form',
+            itemId: 'emailPrefForm',
+            labelWidth: 5,
+            flex: 1,
+            border: false,
+            items: [{
+                xtype: 'radiogroup',
+                itemId: 'emailPref',
+                columns: 1,
+                width : 630,
+                labelSeparator: '',
+                defaults: {width: 600, name: 'emailPref'},
+                items: [
+                    generateOption(preferences.FOLDERDEFAULT, emailPrefValue),
+                    generateOption(preferences.MINUTEDIGEST, emailPrefValue),
+                    generateOption(preferences.DAILYDIGEST, emailPrefValue),
+                    generateOption(preferences.NONE, emailPrefValue)
+                ]
+            }]
+        },{
+            xtype: 'box',
+            style: 'padding: 0 0 10px 5px',
+            tpl: new Ext4.XTemplate(
+                '<tpl if="emailPref == File.panel.EmailProps.preferences.FOLDERDEFAULT.value">',
+                    'The default setting for this folder is: <span class="labkey-strong">{defaultLabel}</span>',
+                '<tpl else>',
+                    '&nbsp;',
+                '</tpl>'
+            ),
+            data: {
+                emailPref: emailPrefValue,
+                defaultLabel: defaultLabel
+            },
+            listeners: {
+                afterrender: {
+                    fn: function(msg) {
+                        this.getComponent('emailPrefForm').getComponent('emailPref').on('change', function(rg, newValue) {
+                            msg.update({
+                                emailPref: newValue.emailPref,
+                                defaultLabel: defaultLabel
+                            });
+                        });
+                    },
+                    scope: this,
+                    single: true
+                }
+            }
+        }]);
+
+        if (this.displayInWindow) {
+            Ext4.create('Ext.Window', {
+                title: 'Email Notification Settings',
+                cls: 'data-window',
+                autoScroll: true,
+                closeAction: 'close',
+                modal: true,
+                layout: 'fit',
+                autoShow: true,
+                items: [this],
+                buttons: [{
+                    text: 'Submit',
+                    handler: this.onFormSubmit,
+                    scope: this
+                },{
+                    text: 'Cancel',
+                    handler: this.onFormCancel,
+                    scope: this
                 }]
             });
-
-            var items = [formPanel,{
-                xtype: 'panel',
-                id: 'email-pref-msg',
-                border: false,
-                height: 40,
-                listeners: emailPref == -1 ? { afterrender: function() { this.onFolderDefault(null, true); }, scope: this } : undefined,
-                scope: this
-            }];
-
-            if (this.renderTo)
-            {
-                Ext4.create('Ext.panel.Panel', {
-                    renderTo: this.renderTo,
-                    border: false,
-                    height: 175,
-                    items: items,
-                    buttonAlign: 'left',
-                    buttons: [{
-                        text: 'Submit',
-                        handler: function() {
-                            formPanel.getForm().doAction('submit', {
-                                url: LABKEY.ActionURL.buildURL("filecontent", "setEmailPref", this.containerPath),
-                                waitMsg:'Saving Settings...',
-                                method: 'POST',
-                                success: function(){ window.location = LABKEY.ActionURL.buildURL('filecontent', 'begin', this.containerPath); },
-                                failure: LABKEY.Utils.displayAjaxErrorResponse,
-                                scope: this,
-                                clientValidation: false
-                            });
-                        },
-                        scope: this
-                    },{
-                        text:'Cancel',
-                        handler: function() { window.location = LABKEY.ActionURL.buildURL('filecontent', 'begin', this.containerPath); }
-                    }]
-                })
-            }
-            else
-            {
-                var win = Ext4.create('Ext.Window', {
-                    title: 'Email Notification Settings',
-                    cls: 'data-window',
-                    autoScroll: true,
-                    closeAction: 'close',
-                    modal: true,
-                    layout: 'fit',
-                    autoShow: true,
-                    items: [{
-                        xtype: 'panel',
-                        frame: false,
-                        border: false,
-                        layout: 'vbox',
-                        layoutConfig: {
-                            align: 'stretch',
-                            pack: 'start'
-                        },
-                        bodyStyle : 'padding:10px;',
-                        items: items
-                    }],
-                    buttons: [{
-                        text: 'Submit',
-                        handler: function(btn) {
-                            formPanel.getForm().doAction('submit', {
-                                url: LABKEY.ActionURL.buildURL("filecontent", "setEmailPref", this.containerPath),
-                                method: 'POST',
-                                waitMsg: 'Saving Settings...',
-                                clientValidation: false,
-                                success: function(){ btn.up('window').close(); },
-                                failure: LABKEY.Utils.displayAjaxErrorResponse,
-                                scope: this
-                            });
-                        },
-                        scope: this
-                    },{
-                        text: 'Cancel',
-                        handler: function(btn) { btn.up('window').close(); }
-                    }]
-                });
-            }
         }
-        else
-            Ext4.Msg.alert('Error', 'An error occurred getting the user email settings.');
     },
 
-    onFolderDefault : function(cb, checked)
-    {
-        if (checked)
-        {
-            var msg = 'The default setting for this folder is: <span class="labkey-strong">None</span>';
-            if (this.emailPrefDefault == 513)
-                msg = 'The default setting for this folder is: <span class="labkey-strong">15 Minute Digest</span>';
-            else if (this.emailPrefDefault == 514)
-                msg = 'The default setting for this folder is: <span class="labkey-strong">Daily Digest</span>';
-        }
-        else
-            msg = '';
+    onFormSubmit : function(btn) {
+        this.getComponent('emailPrefForm').getForm().doAction('submit', {
+            url: LABKEY.ActionURL.buildURL('filecontent', 'setEmailPref.api', this.containerPath),
+            method: 'POST',
+            waitMsg: 'Saving Settings...',
+            clientValidation: false,
+            success: function() {
+                if (this.displayInWindow) {
+                    btn.up('window').close();
+                }
+                else {
+                    window.location = LABKEY.ActionURL.buildURL('filecontent', 'begin', this.containerPath);
+                }
+            },
+            failure: LABKEY.Utils.displayAjaxErrorResponse,
+            scope: this
+        });
+    },
 
-        var el = Ext4.getCmp('email-pref-msg');
-        if (el)
-            el.update(msg);
+    onFormCancel : function(btn) {
+        if (this.displayInWindow) {
+            btn.up('window').close();
+        }
+        else {
+            window.location = LABKEY.ActionURL.buildURL('filecontent', 'begin', this.containerPath);
+        }
     }
 });
 

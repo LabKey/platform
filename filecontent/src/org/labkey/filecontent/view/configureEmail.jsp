@@ -15,17 +15,19 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
 
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromPath("File"));
+        return resources;
+    }
+%>
+<div id="email-props"></div>
 <script type="text/javascript">
-    LABKEY.requiresScript("ActionsAdmin.js");
+    Ext4.onReady(function() { Ext4.create('File.panel.EmailProps', { renderTo: 'email-props' }); });
 </script>
-
-<script type="text/javascript">
-    Ext.onReady(function(){
-        var prefDlg = new LABKEY.EmailPreferencesPanel({renderTo: 'emailDiv'});
-        prefDlg.show();
-    });
-</script>
-
-<div id='emailDiv'/>
