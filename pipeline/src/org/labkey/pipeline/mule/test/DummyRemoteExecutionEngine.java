@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.pipeline.AbstractRemoteExecutionEngineConfig;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.RemoteExecutionEngine;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
@@ -64,6 +65,12 @@ public class DummyRemoteExecutionEngine implements RemoteExecutionEngine
     public int getCancelCount()
     {
         return _cancelCount;
+    }
+
+    @Override
+    public PipelineJobService.RemoteExecutionEngineConfig getConfig()
+    {
+        return new DummyConfig();
     }
 
     public static class DummyConfig extends AbstractRemoteExecutionEngineConfig
