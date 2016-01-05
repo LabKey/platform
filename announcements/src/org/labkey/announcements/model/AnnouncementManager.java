@@ -138,7 +138,7 @@ public class AnnouncementManager
 
         public static Boolean isValid(int intValue)
         {
-            return map.containsKey(intValue);
+            return map.containsKey(intValue & PREFERENCE_MASK);
         }
     }
 
