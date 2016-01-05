@@ -1672,6 +1672,9 @@ abstract public class PipelineJob extends Job implements Serializable
             }
             catch (Exception ignored) {}
         }
-        _queue.done(this);
+        if (_queue != null)
+        {
+            _queue.done(this);
+        }
     }
 }

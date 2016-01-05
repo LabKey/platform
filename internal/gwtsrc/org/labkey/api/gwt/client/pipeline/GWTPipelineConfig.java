@@ -25,25 +25,18 @@ import java.util.List;
 public class GWTPipelineConfig implements Serializable
 {
     private List<GWTPipelineTask> _tasks;
-    private List<GWTPipelineLocation> _locations;
 
     public GWTPipelineConfig()
     {
     }
 
-    public GWTPipelineConfig(List<GWTPipelineTask> tasks, List<GWTPipelineLocation> locations)
+    public GWTPipelineConfig(List<GWTPipelineTask> tasks)
     {
         _tasks = tasks;
-        _locations = locations;
     }
 
     public List<GWTPipelineTask> getTasks()
     {
         return _tasks;
-    }
-
-    public List<GWTPipelineLocation> getLocations()
-    {
-        return _locations;
     }
 }

@@ -6580,7 +6580,6 @@ internal/gwtsrc/org/labkey/api/gwt/client/model/GWTPropertyValidator.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/model/GWTSampleSet.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/model/PropertyValidatorType.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/pipeline/GWTPipelineConfig.java -text
-internal/gwtsrc/org/labkey/api/gwt/client/pipeline/GWTPipelineLocation.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/pipeline/GWTPipelineTask.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/pipeline/PipelineGWTService.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/pipeline/PipelineGWTServiceAsync.java -text

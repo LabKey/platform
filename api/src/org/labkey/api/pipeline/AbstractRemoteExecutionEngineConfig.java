@@ -51,13 +51,6 @@ public class AbstractRemoteExecutionEngineConfig implements PipelineJobService.R
 
     @NotNull
     @Override
-    public Set<String> getAvailableQueues()
-    {
-        return _queues;
-    }
-
-    @NotNull
-    @Override
     public PathMapper getPathMapper()
     {
         return _mapper;

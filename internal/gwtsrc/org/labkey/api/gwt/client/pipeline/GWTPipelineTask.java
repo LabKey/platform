@@ -26,21 +26,16 @@ public class GWTPipelineTask implements Serializable
     private String _taskId;
     private String _name;
     private String _groupName;
-    private boolean _cluster;
-
-    private GWTPipelineLocation _defaultLocation;
 
     public GWTPipelineTask()
     {
     }
 
-    public GWTPipelineTask(String taskId, String name, String groupName, boolean cluster, GWTPipelineLocation defaultLocation)
+    public GWTPipelineTask(String taskId, String name, String groupName)
     {
         _taskId = taskId;
         _name = name;
         _groupName = groupName;
-        _cluster = cluster;
-        _defaultLocation = defaultLocation;
     }
 
     public String getTaskId()
@@ -56,15 +51,5 @@ public class GWTPipelineTask implements Serializable
     public String getGroupName()
     {
         return _groupName;
-    }
-
-    public boolean isCluster()
-    {
-        return _cluster;
-    }
-
-    public GWTPipelineLocation getDefaultLocation()
-    {
-        return _defaultLocation;
     }
 }

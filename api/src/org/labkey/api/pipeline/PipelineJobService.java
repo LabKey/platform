@@ -22,7 +22,6 @@ import org.labkey.api.pipeline.file.PathMapper;
 
 import java.io.FileNotFoundException;
 import java.util.List;
-import java.util.Set;
 
 /**
  * <code>PipelineJobService</code> exposes the interface for dealing with
@@ -97,10 +96,6 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
         /** @return the type of engine. Must match a registered engine's {@link RemoteExecutionEngine#getType()} */
         @NotNull
         String getType();
-
-        /** @return the queues available for submitting at the remote engine, if any. May be empty. */
-        @NotNull
-        Set<String> getAvailableQueues();
 
         /** @return the path mapper that knows how to translate file paths from the web server's perspective to the remote execution engine's perspective */
         @NotNull
