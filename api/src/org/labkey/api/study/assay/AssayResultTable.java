@@ -210,9 +210,9 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
 
         getColumn("RowId").setShownInUpdateView(false);
 
-        SQLFragment runIdSQL = new SQLFragment("(SELECT RunId FROM ");
-        runIdSQL.append(ExperimentService.get().getTinfoData(), "d");
-        runIdSQL.append(" WHERE d.RowId = " + ExprColumn.STR_TABLE_ALIAS + ".DataId)");
+        SQLFragment runIdSQL = new SQLFragment();
+        runIdSQL.append(ExprColumn.STR_TABLE_ALIAS);
+        runIdSQL.append(".RunId");
         ExprColumn runColumn = new ExprColumn(this, "Run", runIdSQL, JdbcType.INTEGER);
         runColumn.setFk(new LookupForeignKey("RowID")
         {
@@ -280,6 +280,20 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
             clearConditions(containerColumn);
             addCondition(filter.getSQLFragment(getSchema(), new SQLFragment("(SELECT d.Container FROM exp.Data d WHERE d.RowId = DataId)"), getContainer()), containerColumn);
         }
+    }
+
+    @NotNull
+    @Override
+    public SQLFragment getFromSQL(String alias)
+    {
+        SQLFragment result = new SQLFragment();
+        result.append("(SELECT innerResults.*, innerData.RunId FROM\n");
+        result.append(super.getFromSQL("innerResults"));
+        result.append("\nINNER JOIN ");
+        result.append(ExperimentService.get().getTinfoData(), "innerData");
+        result.append(" ON (innerData.RowId = innerResults.DataId)) ");
+        result.append(alias);
+        return result;
     }
 
     @Override
