@@ -15,14 +15,10 @@
  */
 package org.labkey.pipeline;
 
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.gwt.client.pipeline.GWTPipelineConfig;
-import org.labkey.api.gwt.client.pipeline.GWTPipelineLocation;
 import org.labkey.api.gwt.client.pipeline.GWTPipelineTask;
 import org.labkey.api.gwt.client.pipeline.PipelineGWTService;
 import org.labkey.api.gwt.server.BaseRemoteService;
-import org.labkey.api.pipeline.PipelineJobService;
-import org.labkey.api.pipeline.RemoteExecutionEngine;
 import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
@@ -32,7 +28,6 @@ import org.labkey.pipeline.api.PipelineJobServiceImpl;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * User: jeckels
@@ -56,29 +51,14 @@ public class PipelineGWTServiceImpl extends BaseRemoteService implements Pipelin
                 throw new NotFoundException("Can't find pipelineId: " + pipelineId);
             }
 
-            Map<String, GWTPipelineLocation> locations = new CaseInsensitiveHashMap<>();
-            Map<String, PipelineJobService.RemoteExecutionEngineConfig> remoteProperties = new CaseInsensitiveHashMap<>();
-            for (RemoteExecutionEngine engine : PipelineJobServiceImpl.get().getRemoteExecutionEngines())
-            {
-                remoteProperties.put(engine.getConfig().getLocation(), engine.getConfig());
-                String name = engine.getConfig().getLocation();
-                locations.put(name, new GWTPipelineLocation(name, new ArrayList<>(engine.getConfig().getAvailableQueues())));
-            }
-
             List<GWTPipelineTask> tasks = new ArrayList<>();
             for (TaskId taskId : taskPipeline.getTaskProgression())
             {
                 TaskFactory taskFactory = PipelineJobServiceImpl.get().getTaskFactory(taskId);
-                GWTPipelineLocation location = locations.get(taskFactory.getExecutionLocation());
-                if (location == null)
-                {
-                    location = new GWTPipelineLocation(taskFactory.getExecutionLocation(), null);
-                    locations.put(location.getLocation(), location);
-                }
-                tasks.add(new GWTPipelineTask(taskId.toString(), taskFactory.getStatusName(), taskFactory.getGroupParameterName(), location.isCluster(), location));
+                tasks.add(new GWTPipelineTask(taskId.toString(), taskFactory.getStatusName(), taskFactory.getGroupParameterName()));
             }
 
-            return new GWTPipelineConfig(tasks, new ArrayList<>(locations.values()));
+            return new GWTPipelineConfig(tasks);
         }
         catch (ClassNotFoundException e)
         {
