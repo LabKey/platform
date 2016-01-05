@@ -32,6 +32,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.springframework.dao.DuplicateKeyException;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -193,9 +194,9 @@ public class SavePaths implements DavCrawler.SavePaths
                 return getId(path);
             return ident;
         }
-        catch (RuntimeSQLException x)
+        catch (RuntimeSQLException|DuplicateKeyException x)
         {
-            if (RuntimeSQLException.isConstraintException(x.getSQLException()))
+            if (x instanceof DuplicateKeyException || (x instanceof RuntimeSQLException && ((RuntimeSQLException)x).isConstraintException()))
             {
                 return getId(path);
             }
