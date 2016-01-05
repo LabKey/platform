@@ -33,7 +33,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.MetadataException;
 import org.labkey.api.query.MetadataParseException;
 import org.labkey.api.query.MetadataParseWarning;
 import org.labkey.api.query.QueryAction;
@@ -551,7 +550,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                 ret = applyQueryMetadata(schema, metadataErrors, query, (AbstractTableInfo) ret);
                 for (QueryException qe : metadataErrors)
                 {
-                    if (!(qe instanceof MetadataException) && !(qe instanceof QueryParseWarning))
+                    if (!(qe instanceof QueryParseWarning))
                         errors.add(qe);
                 }
             }
