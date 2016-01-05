@@ -22,7 +22,6 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.ShutdownListener;
 
-import javax.servlet.ServletContextEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -317,13 +316,13 @@ public class TempTableTracker extends WeakReference<Object>
         }
 
 
-        public void shutdownPre(ServletContextEvent servletContextEvent)
+        public void shutdownPre()
         {
             _shutdown.set(true);
             interrupt();
         }
 
-        public void shutdownStarted(ServletContextEvent servletContextEvent)
+        public void shutdownStarted()
         {
             synchronized(createdTableNames)
             {

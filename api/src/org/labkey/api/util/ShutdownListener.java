@@ -16,8 +16,6 @@
 
 package org.labkey.api.util;
 
-import javax.servlet.ServletContextEvent;
-
 /**
  * User: brittp
  * Date: Dec 3, 2005
@@ -34,10 +32,10 @@ public interface ShutdownListener
      * called first, should be used only for non-blocking operations (set _shuttingDown=true, interrupt threads)
      * also possible to launch an async shutdown task here!
      */
-    void shutdownPre(ServletContextEvent servletContextEvent);
+    void shutdownPre();
 
     /**
      * perform shutdown tasks
      */
-    void shutdownStarted(ServletContextEvent servletContextEvent);
+    void shutdownStarted();
 }

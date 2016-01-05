@@ -19,7 +19,6 @@ package org.labkey.api.util;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.DbScope;
 
-import javax.servlet.ServletContextEvent;
 import java.util.HashMap;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -72,12 +71,12 @@ public class JobRunner implements Executor
                 return "Job Runner";
             }
 
-            public void shutdownPre(ServletContextEvent servletContextEvent)
+            public void shutdownPre()
             {
                 _executor.shutdown();
             }
 
-            public void shutdownStarted(ServletContextEvent servletContextEvent)
+            public void shutdownStarted()
             {
             }
         });

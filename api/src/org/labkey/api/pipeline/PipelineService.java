@@ -102,6 +102,11 @@ abstract public class PipelineService
      */
     abstract public void queueJob(PipelineJob job) throws PipelineValidationException;
 
+    /**
+     * This will update the active task status of this job and re-queue that job if the task is complete
+     */
+    abstract public void setPipelineJobStatus(PipelineJob job, PipelineJob.TaskStatus status) throws PipelineJobException;
+
     abstract public void setPipelineProperty(Container container, String name, String value);
 
     abstract public String getPipelineProperty(Container container, String name);

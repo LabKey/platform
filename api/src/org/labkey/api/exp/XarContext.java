@@ -23,6 +23,7 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.RemoteExecutionEngine;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
@@ -222,9 +223,9 @@ public class XarContext
         // Path mappers deal with URIs, not file paths
         String uri = "file:" + (path.startsWith("/") ? path : "/" + path);
         // This PathMapper considers "local" from a cluster node's point of view.
-        for (PipelineJobService.RemoteExecutionEngineConfig config : PipelineJobService.get().getRemoteExecutionEngineConfigs())
+        for (RemoteExecutionEngine<?> engine : PipelineJobService.get().getRemoteExecutionEngines())
         {
-            String mappedURI = config.getPathMapper().localToRemote(uri);
+            String mappedURI = engine.getConfig().getPathMapper().localToRemote(uri);
             // If we have translated Windows paths, they won't be legal URIs, so convert slashes
             mappedURI = mappedURI.replace('\\', '/');
             try

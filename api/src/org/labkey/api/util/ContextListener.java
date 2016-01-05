@@ -44,6 +44,21 @@ public class ContextListener implements ServletContextListener
     {
         ViewServlet.setShuttingDown(0);
 
+        callShutdownListeners();
+
+        ViewServlet.setShuttingDown(1000);
+        getSpringContextListener().contextDestroyed(servletContextEvent);
+        CacheManager.shutdown();   // Don't use a listener... we want this shutdown late
+        org.apache.log4j.LogManager.shutdown();
+        org.apache.log4j.LogManager.resetConfiguration();
+        org.apache.commons.beanutils.PropertyUtils.clearDescriptors();
+        org.apache.commons.beanutils.ConvertUtils.deregister();
+        java.beans.Introspector.flushCaches();
+        LogFactory.releaseAll();       // Might help with PermGen.  See 8/02/07 post at http://raibledesigns.com/rd/entry/why_i_like_tomcat_5
+    }
+
+    public static void callShutdownListeners()
+    {
         // Want exact same list for shutdownPre() and shutdownStarted()
         List<ShutdownListener> shutdownListeners = _shutdownListeners;
 
@@ -52,7 +67,7 @@ public class ContextListener implements ServletContextListener
             try
             {
                 _log.info("Calling " + listener.getName() + " shutdownPre()");
-                listener.shutdownPre(servletContextEvent);
+                listener.shutdownPre();
             }
             catch (Throwable t)
             {
@@ -65,23 +80,13 @@ public class ContextListener implements ServletContextListener
             try
             {
                 _log.info("Calling " + listener.getName() + " shutdownStarted()");
-                listener.shutdownStarted(servletContextEvent);
+                listener.shutdownStarted();
             }
             catch (Throwable t)
             {
                 _log.error("Exception during shutdownStarted(): ", t);
             }
         }
-
-        ViewServlet.setShuttingDown(1000);
-        getSpringContextListener().contextDestroyed(servletContextEvent);
-        CacheManager.shutdown();   // Don't use a listener... we want this shutdown late
-        org.apache.log4j.LogManager.shutdown();
-        org.apache.log4j.LogManager.resetConfiguration();
-        org.apache.commons.beanutils.PropertyUtils.clearDescriptors();
-        org.apache.commons.beanutils.ConvertUtils.deregister();
-        java.beans.Introspector.flushCaches();
-        LogFactory.releaseAll();       // Might help with PermGen.  See 8/02/07 post at http://raibledesigns.com/rd/entry/why_i_like_tomcat_5
     }
 
     public static void addShutdownListener(ShutdownListener listener)

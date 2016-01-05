@@ -44,7 +44,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 
-import javax.servlet.ServletContextEvent;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
@@ -571,12 +570,12 @@ public class QueryProfiler
         private final QueryStatTsvWriter shutdownWriter = new QueryStatTsvWriter();
 
 
-        public void shutdownPre(ServletContextEvent servletContextEvent)
+        public void shutdownPre()
         {
             interrupt();
         }
 
-        public void shutdownStarted(ServletContextEvent servletContextEvent)
+        public void shutdownStarted()
         {
             Logger logger = Logger.getLogger(QueryProfilerThread.class);
 

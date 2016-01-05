@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
  * Created by: jeckels
  * Date: 11/16/15
  */
-public interface RemoteExecutionEngine
+public interface RemoteExecutionEngine<ConfigType extends PipelineJobService.RemoteExecutionEngineConfig>
 {
     /** @return a unique name for this type of execution engine, such as 'HTCondor' */
     @NotNull
@@ -27,4 +27,6 @@ public interface RemoteExecutionEngine
 
     /** Cancel a job, if possible, that is currently marked as being run/queued at a location managed by this engine */
     void cancelJob(@NotNull String jobId) throws PipelineJobException;
+
+    ConfigType getConfig();
 }

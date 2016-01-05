@@ -20,7 +20,6 @@ import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ShutdownListener;
 
-import javax.servlet.ServletContextEvent;
 import java.io.IOException;
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileSystems;
@@ -157,14 +156,14 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         }
 
         @Override
-        public void shutdownPre(ServletContextEvent servletContextEvent)
+        public void shutdownPre()
         {
             _continue = false;
             close();
         }
 
         @Override
-        public void shutdownStarted(ServletContextEvent servletContextEvent)
+        public void shutdownStarted()
         {
         }
 

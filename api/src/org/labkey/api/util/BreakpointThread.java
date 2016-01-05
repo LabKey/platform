@@ -21,7 +21,6 @@ import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.module.ModuleLoader;
 
-import javax.servlet.ServletContextEvent;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
@@ -181,13 +180,13 @@ public class BreakpointThread extends Thread implements ShutdownListener
         _remainingRequestedThreadDumps = 3;
     }
 
-    public void shutdownPre(ServletContextEvent servletContextEvent)
+    public void shutdownPre()
     {
         _shutdown = true;
         interrupt();
     }
 
-    public void shutdownStarted(ServletContextEvent servletContextEvent)
+    public void shutdownStarted()
     {
         try
         {

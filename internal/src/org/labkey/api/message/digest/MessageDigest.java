@@ -21,7 +21,6 @@ import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ShutdownListener;
 
-import javax.servlet.ServletContextEvent;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -154,12 +153,12 @@ public abstract class MessageDigest
             return "Message digest timer task";
         }
 
-        public void shutdownPre(ServletContextEvent servletContextEvent)
+        public void shutdownPre()
         {
             _timer.cancel();
         }
 
-        public void shutdownStarted(ServletContextEvent servletContextEvent)
+        public void shutdownStarted()
         {
         }
     }

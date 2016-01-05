@@ -17,8 +17,6 @@ package org.labkey.api.util;
 
 import org.apache.log4j.Logger;
 
-import javax.servlet.ServletContextEvent;
-
 /**
  * HeatBeatThread is faster than using System.currentTimeMillis() for
  * checking if some period of time has passed.
@@ -95,13 +93,13 @@ public class HeartBeat
             //_log.debug("shutdown heartbeat");
         }
 
-        public void shutdownPre(ServletContextEvent servletContextEvent)
+        public void shutdownPre()
         {
             _shutdown = true;
             interrupt();
         }
 
-        public void shutdownStarted(ServletContextEvent servletContextEvent)
+        public void shutdownStarted()
         {
         }
     }

@@ -46,7 +46,6 @@ import org.xhtmlrenderer.util.XRLog;
 import org.xhtmlrenderer.util.XRLogger;
 
 import javax.imageio.ImageIO;
-import javax.servlet.ServletContextEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -410,13 +409,13 @@ public class ImageUtil
                 }
 
                 @Override
-                public void shutdownPre(ServletContextEvent servletContextEvent)
+                public void shutdownPre()
                                                                             {
                                                                                PlatformImpl.exit();
                                                                                                                                                           }
 
                 @Override
-                public void shutdownStarted(ServletContextEvent servletContextEvent)
+                public void shutdownStarted()
                 {
                 }
             }

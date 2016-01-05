@@ -116,11 +116,8 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
     @NotNull
     abstract public LocationType getLocationType();
 
-    @NotNull
-    abstract public List<? extends RemoteExecutionEngineConfig> getRemoteExecutionEngineConfigs();
-
     /** @return all of the engines that are currently known to the pipeline module */
-    abstract public List<? extends RemoteExecutionEngine> getRemoteExecutionEngines();
+    abstract public List<? extends RemoteExecutionEngine<?>> getRemoteExecutionEngines();
 
     /** Registers a remote execution engine. Intended for calling during module startup */
     abstract public void registerRemoteExecutionEngine(RemoteExecutionEngine engine);
