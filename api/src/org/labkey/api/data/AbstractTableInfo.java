@@ -1327,8 +1327,11 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         {
             script.batchTrigger(this, c, type, before, batchErrors, extraContext);
             if (batchErrors.hasErrors())
-                throw batchErrors;
+                break;
         }
+
+        if (batchErrors.hasErrors())
+            throw batchErrors;
     }
 
     @Override
@@ -1348,8 +1351,11 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         {
             script.rowTrigger(this, c, type, before, rowNumber, newRow, oldRow, errors, extraContext);
             if (errors.hasErrors())
-                throw errors; // CONSIDER: continue running all scripts?
+                break;
         }
+
+        if (errors.hasErrors())
+            throw errors;
     }
 
 
