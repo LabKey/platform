@@ -1350,28 +1350,36 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             var xAxisZero = Number.MAX_VALUE;
 
             // for log gutter, invert of bottomEdge is the 0 on axis
+            // brushing in main plot
             if (xLogGutter && plot.scales.yLeft && plot.scales.yLeft.scale && plot.scales.yLeft.scale.invert) {
                 yAxisZero = plot.scales.yLeft.scale.invert(plot.grid.bottomEdge + logGutterBrushExtent);
+            }
+            // brushing in gutter plot
+            else if (xLogGutter && plot.scales.yRight && plot.scales.yRight.scale && plot.scales.yRight.scale.invert) {
+                yAxisZero = plot.scales.yRight.scale.invert(plot.grid.bottomEdge - logGutterBrushExtent);
             }
 
             if (yLogGutter && plot.scales.x && plot.scales.x.scale && plot.scales.x.scale.invert) {
                 xAxisZero = plot.scales.x.scale.invert(plot.grid.leftEdge - logGutterBrushExtent);
             }
+            else if (yLogGutter && plot.scales.xTop && plot.scales.xTop.scale && plot.scales.xTop.scale.invert) {
+                xAxisZero = plot.scales.xTop.scale.invert(plot.grid.leftEdge + logGutterBrushExtent);
+            }
 
             if (xHandleBrush && yHandleBrush) {
-                if (extent[0][0] < xAxisZero && yLogGutter) {
+                if (xAxisZero !== Number.MAX_VALUE && extent[0][0] < xAxisZero && yLogGutter) {
                     extent[0][0] = Number.NEGATIVE_INFINITY;
                 }
-                if (extent[0][1] < yAxisZero && xLogGutter) {
+                if (yAxisZero !== Number.MAX_VALUE && extent[0][1] < yAxisZero && xLogGutter) {
                     extent[0][1] = Number.NEGATIVE_INFINITY;
                 }
             }
             else if (xHandleBrush && yLogGutter) {
-                if (extent[0] < xAxisZero)
+                if (xAxisZero !== Number.MAX_VALUE && extent[0] < xAxisZero)
                     extent[0] = Number.NEGATIVE_INFINITY;
             }
             else if (yHandleBrush && xLogGutter) {
-                if (extent[0] < yAxisZero)
+                if (yAxisZero !== Number.MAX_VALUE && extent[0] < yAxisZero)
                     extent[0] = Number.NEGATIVE_INFINITY;
             }
 
@@ -1909,7 +1917,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             // the legend, even if the points are null.
             if (typeof colorAcc == 'function') { colorAcc(d); }
             if (shapeAcc != defaultShape) { shapeAcc(d);}
-            return (xLogGutter || yLogGutter) || (x !== null && y !== null);
+            return x !== null && y !== null;
         }, this);
 
         // reset the jitterIndex since we will call xAcc again via translateAcc
@@ -2389,17 +2397,36 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     var renderDataspaceBoxes = function(selection, plot, geom) {
         var xBinWidth, padding, boxWidth, boxWrappers, rects, medians, whiskers, xAcc, yAcc, hAcc, whiskerAcc,
                 medianAcc, hoverAcc;
+        var emptyDrawing='M0,0L0,0Z',
 
         xBinWidth = ((plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length)) / 2;
         padding = Math.max(xBinWidth * .05, 5); // Pad the space between the box and points.
         boxWidth = xBinWidth / 4;
 
-        hAcc = function(d) {return Math.floor(geom.yScale.scale(d.summary.Q1) - geom.yScale.scale(d.summary.Q3));};
+        hAcc = function(d) {
+            if (d.noSummary) {
+                return 0;
+            }
+            return Math.floor(geom.yScale.scale(d.summary.Q1) - geom.yScale.scale(d.summary.Q3));
+        };
         xAcc = function(d) {return geom.xScale.scale(d.name) - boxWidth - padding;};
-        yAcc = function(d) {return Math.floor(geom.yScale.scale(d.summary.Q3)) + .5};
-        hoverAcc = geom.hoverTextAes ? function(d) {return geom.hoverTextAes.value(d.name, d.summary)} : null;
+        yAcc = function(d) {
+            if (d.noSummary) {
+                return 0;
+            }
+            return Math.floor(geom.yScale.scale(d.summary.Q3)) + .5;
+        };
+        hoverAcc = geom.hoverTextAes ? function(d) {
+                if (d.noSummary) {
+                    return '';
+                }
+                return geom.hoverTextAes.value(d.name, d.summary)
+            } : null;
 
         whiskerAcc = function(d) {
+            if (d.noSummary) {
+                return emptyDrawing;
+            }
             var x, top, bottom, offset;
             x = geom.xScale.scale(d.name) - (boxWidth /2) - padding;
             top = Math.floor(geom.yScale.scale(getTopWhisker(d.summary))) +.5;
@@ -2415,6 +2442,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         };
 
         medianAcc = function(d) {
+            if (d.noSummary) {
+                return emptyDrawing;
+            }
             var x1, x2, y;
             x1 = geom.xScale.scale(d.name) - boxWidth - padding;
             x2 = geom.xScale.scale(d.name) - padding;
@@ -2582,11 +2612,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             return;
         }
 
-        summaries = prepBoxPlotData(data, geom);
+        summaries = prepDataspaceBoxPlotData(data, geom);
 
-        if (summaries.length > 0) {
-            layer.call(renderDataspaceBoxGroups, plot, geom, data, summaries);
-        }
+        layer.call(renderDataspaceBoxGroups, plot, geom, data, summaries);
     };
 
     var translatePointsForBin = function(geom, data) {
@@ -2715,6 +2743,27 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             if (!plot.legendData)
                 plot.legendData = [{text: 'Total', color: geom.fillTotal}, {text: 'Individual', color: geom.fill}];
         }
+    };
+
+    // <=0 data are filtered out for box plot in log scale but should still show in log gutter
+    // it's possible for plot to have no box plot but not empty. use noSummary to turn off box plot
+    var prepDataspaceBoxPlotData = function(data, geom) {
+        var groupName, groupedData, summary, summaries = [];
+        groupedData = LABKEY.vis.groupData(data, geom.xAes.getValue);
+        for (groupName in groupedData) {
+            if (groupedData.hasOwnProperty(groupName)) {
+                var filteredGroupData = filterLogGroupData.call(this, groupedData[groupName], geom);
+                summary = LABKEY.vis.Stat.summary(filteredGroupData, geom.yAes.getValue);
+                summaries.push({
+                    name: groupName,
+                    summary: summary,
+                    noSummary: summary.sortedValues.length === 0,
+                    rawData: groupedData[groupName]
+                });
+            }
+        }
+
+        return summaries;
     };
 
     return {
