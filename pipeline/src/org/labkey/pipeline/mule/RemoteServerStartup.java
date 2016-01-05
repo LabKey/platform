@@ -52,16 +52,7 @@ public class RemoteServerStartup extends AbstractPipelineStartup
 
         _log.info("Starting up LabKey Remote Server");
 
-        // Start up a thread that listens for a thread dump request, and lets us hit a breakpoint easily
-        for (File moduleFile : moduleFiles)
-        {
-            if (moduleFile.getName().startsWith("core"))
-            {
-                BreakpointThread thread = new BreakpointThread(moduleFile.getParentFile());
-                thread.start();
-                break;
-            }
-        }
+        doSharedStartup(moduleFiles);
 
         PipelineJobService.RemoteServerProperties props = PipelineJobServiceImpl.get().getRemoteServerProperties();
         if (props == null)
@@ -72,19 +63,10 @@ public class RemoteServerStartup extends AbstractPipelineStartup
         if (muleConfig == null)
             muleConfig = "org/labkey/pipeline/mule/config/remoteMuleConfig.xml";
 
-        PipelineJobServiceImpl.get().getStatusWriter().setHostName(props.getHostName());
-
-        LabKeySpringContainerContext.setContext(factories.get(PipelineService.MODULE_NAME));
-
-        // Hack - wait a little bit for Mule to connect to the JMS server
-        Thread.sleep(5000);
+        setupMuleConfig(muleConfig, factories, props.getHostName());
 
         // Grab the set of job ids before we start trying to process anything
         RequeueLostJobsRequest request = getRequeueRequest(factories.get("Pipeline"));
-
-        // Spin up the mule configuration
-        MuleXmlConfigurationBuilder builder = new MuleXmlConfigurationBuilder();
-        builder.configure(muleConfig);
 
         // Request the the server requeue any jobs that might have been in process when this location shut down
         MuleClient client = null;

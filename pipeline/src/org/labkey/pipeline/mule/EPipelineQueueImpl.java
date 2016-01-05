@@ -127,9 +127,9 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
     private boolean cancelRemoteExecutionEngineJob(final PipelineStatusFile statusFile, final PipelineJob job)
     {
         TaskFactory taskFactory = job.getActiveTaskFactory();
-        for (PipelineJobService.RemoteExecutionEngineConfig config : PipelineJobServiceImpl.get().getRemoteExecutionEngineConfigs())
+        for (RemoteExecutionEngine engine : PipelineJobServiceImpl.get().getRemoteExecutionEngines())
         {
-            String name = config.getLocation();
+            String name = engine.getConfig().getLocation();
             // Check if it's running through a remote execution engine
             if (taskFactory != null && taskFactory.getExecutionLocation() != null && taskFactory.getExecutionLocation().equals(name))
             {
@@ -137,7 +137,6 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
                 JobRunner.getDefault().execute(() -> {
                     try
                     {
-                        RemoteExecutionEngine engine = PipelineJobServiceImpl.get().getRemoteExecutionEngine(config.getType());
                         job.getLogger().info("Cancelling remote job by submitting request to " + engine);
                         PipelineJob.logStartStopInfo("Cancelling job by submitting request to " + engine + ". Job ID: " + job.getJobGUID() + ", " + statusFile.getFilePath());
                         engine.cancelJob(job.getJobGUID());

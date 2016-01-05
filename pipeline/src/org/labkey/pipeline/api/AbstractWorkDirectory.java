@@ -25,6 +25,7 @@ import org.labkey.api.pipeline.WorkDirFactory;
 import org.labkey.api.pipeline.WorkDirectory;
 import org.labkey.api.pipeline.cmd.TaskPath;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
+import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
@@ -60,6 +61,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
     protected final HashMap<File, File> _copiedInputs = new HashMap<>();
 
     protected CopyingResource _copyingResource;
+    protected File _transferToDirOnFailure = null;
 
     public static abstract class AbstractFactory implements WorkDirFactory
     {
@@ -525,10 +527,28 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
     public void remove(boolean success) throws IOException
     {
         discardCopiedInputs();
-        
+
         if (NetworkDrive.exists(_dir))
         {
-            if (!_dir.delete() && success)
+            if (!success && _transferToDirOnFailure != null)
+            {
+                AssayFileWriter writer = new AssayFileWriter();
+                File dest = writer.findUniqueFileName(_dir.getName(), _transferToDirOnFailure);
+                _jobLog.debug("after failure, moving working directory to: " + dest.getPath());
+
+                try
+                {
+                    FileUtils.moveDirectory(_dir, dest);
+                }
+                catch (IOException e)
+                {
+                    _jobLog.error("failed moving working directory from : " + _dir.getPath());
+                    _jobLog.error("to: " + dest.getPath());
+
+                    throw e;
+                }
+            }
+            else if (!_dir.delete() && success)
             {
                 StringBuffer message = new StringBuffer();
                 message.append("Failed to remove work directory ").append(_dir);

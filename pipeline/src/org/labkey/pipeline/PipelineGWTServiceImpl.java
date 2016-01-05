@@ -22,6 +22,7 @@ import org.labkey.api.gwt.client.pipeline.GWTPipelineTask;
 import org.labkey.api.gwt.client.pipeline.PipelineGWTService;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.RemoteExecutionEngine;
 import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
@@ -57,11 +58,11 @@ public class PipelineGWTServiceImpl extends BaseRemoteService implements Pipelin
 
             Map<String, GWTPipelineLocation> locations = new CaseInsensitiveHashMap<>();
             Map<String, PipelineJobService.RemoteExecutionEngineConfig> remoteProperties = new CaseInsensitiveHashMap<>();
-            for (PipelineJobService.RemoteExecutionEngineConfig config : PipelineJobServiceImpl.get().getRemoteExecutionEngineConfigs())
+            for (RemoteExecutionEngine engine : PipelineJobServiceImpl.get().getRemoteExecutionEngines())
             {
-                remoteProperties.put(config.getLocation(), config);
-                String name = config.getLocation();
-                locations.put(name, new GWTPipelineLocation(name, new ArrayList<>(config.getAvailableQueues())));
+                remoteProperties.put(engine.getConfig().getLocation(), engine.getConfig());
+                String name = engine.getConfig().getLocation();
+                locations.put(name, new GWTPipelineLocation(name, new ArrayList<>(engine.getConfig().getAvailableQueues())));
             }
 
             List<GWTPipelineTask> tasks = new ArrayList<>();

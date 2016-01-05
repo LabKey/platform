@@ -1174,6 +1174,7 @@ pipeline/src/org/labkey/pipeline/mule/StatusChangeRequest.java -text
 pipeline/src/org/labkey/pipeline/mule/StatusRequest.java -text
 pipeline/src/org/labkey/pipeline/mule/StatusRequestHandler.java -text
 pipeline/src/org/labkey/pipeline/mule/config/cluster.log4j.properties -text
+pipeline/src/org/labkey/pipeline/mule/config/clusterRemoteMuleConfig.xml -text
 pipeline/src/org/labkey/pipeline/mule/config/remote.log4j.properties -text
 pipeline/src/org/labkey/pipeline/mule/config/remoteMuleConfig.xml -text
 pipeline/src/org/labkey/pipeline/mule/config/webserverMuleConfig.xml -text

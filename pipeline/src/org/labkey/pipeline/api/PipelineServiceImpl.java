@@ -30,6 +30,7 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineProtocolFactory;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineQueue;
@@ -284,6 +285,31 @@ public class PipelineServiceImpl extends PipelineService
     public void queueJob(PipelineJob job) throws PipelineValidationException
     {
         getPipelineQueue().addJob(job);
+    }
+
+    public void setPipelineJobStatus(PipelineJob job, PipelineJob.TaskStatus status) throws PipelineJobException
+    {
+        job.setActiveTaskStatus(status);
+
+        // Only re-queue the job if status is 'complete' (not 'running' or 'error').
+        if (status == PipelineJob.TaskStatus.complete)
+        {
+            try
+            {
+                PipelineStatusFileImpl sf = PipelineStatusManager.getStatusFile(job.getLogFile());
+                if (sf != null)
+                {
+                    sf.setActiveHostName(null);  //indicates previous task was complete
+                    PipelineStatusManager.updateStatusFile(sf);
+                }
+
+                EPipelineQueueImpl.dispatchJob(job);
+            }
+            catch (UMOException e)
+            {
+                throw new PipelineJobException(e);
+            }
+        }
     }
 
     public void setPipelineProperty(Container container, String name, String value)

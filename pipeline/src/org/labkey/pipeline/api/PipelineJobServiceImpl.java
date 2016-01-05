@@ -37,6 +37,7 @@ import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
+import org.labkey.api.pipeline.RemoteExecutionEngine;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.RemoteExecutionEngine;
 import org.labkey.api.pipeline.TaskFactory;
@@ -145,9 +146,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
     private RemoteServerProperties _remoteServerProperties;
 
     @NotNull
-    private List<RemoteExecutionEngineConfig> _remoteExecutionEngineConfigs = new ArrayList<>();
-    @NotNull
-    private List<RemoteExecutionEngine> _remoteExecutionEngines = new CopyOnWriteArrayList<>();
+    private List<RemoteExecutionEngine<?>> _remoteExecutionEngines = new CopyOnWriteArrayList<>();
 
     private PipelineStatusFile.StatusWriter _statusWriter;
     private PipelineStatusFile.JobStore _jobStore;
@@ -179,7 +178,6 @@ public class PipelineJobServiceImpl extends PipelineJobService
             _appProperties = current._appProperties;
             _configProperties = current._configProperties;
             _remoteServerProperties = current._remoteServerProperties;
-            _remoteExecutionEngineConfigs = current._remoteExecutionEngineConfigs;
             _remoteExecutionEngines = current._remoteExecutionEngines;
             _statusWriter = current._statusWriter;
             _workDirFactory = current._workDirFactory;
@@ -567,34 +565,13 @@ public class PipelineJobServiceImpl extends PipelineJobService
     }
 
     @NotNull
-    public List<RemoteExecutionEngineConfig> getRemoteExecutionEngineConfigs()
-    {
-        return _remoteExecutionEngineConfigs;
-    }
-
-    public void setRemoteExecutionEngineConfigs(@NotNull List<RemoteExecutionEngineConfig> remoteExecutionEngineConfigs)
-    {
-        Set<String> locations = new CaseInsensitiveHashSet();
-        for (RemoteExecutionEngineConfig config : remoteExecutionEngineConfigs)
-        {
-            if (!locations.add(config.getLocation()))
-            {
-                throw new IllegalArgumentException("Duplicate remote execution engine location: " + config.getLocation());
-            }
-            getRemoteExecutionEngine(config.getType());
-        }
-        _remoteExecutionEngineConfigs = remoteExecutionEngineConfigs;
-    }
-
-    @NotNull
-    public List<RemoteExecutionEngine> getRemoteExecutionEngines()
+    public List<RemoteExecutionEngine<?>> getRemoteExecutionEngines()
     {
         return _remoteExecutionEngines;
     }
 
     public void registerRemoteExecutionEngine(RemoteExecutionEngine engine)
     {
-        Set<String> types = new CaseInsensitiveHashSet();
         for (RemoteExecutionEngine existingEngine : _remoteExecutionEngines)
         {
             if (engine.getType().equals(existingEngine.getType()))
@@ -605,18 +582,17 @@ public class PipelineJobServiceImpl extends PipelineJobService
         _remoteExecutionEngines.add(engine);
     }
 
-    /** @throws IllegalArgumentException if the requested type is not available */
-    @NotNull
-    public RemoteExecutionEngine getRemoteExecutionEngine(@NotNull String type)
+    public void setRemoteExecutionEngines(@NotNull List<RemoteExecutionEngine<?>> remoteExecutionEngines)
     {
-        for (RemoteExecutionEngine engine : _remoteExecutionEngines)
+        Set<String> locations = new CaseInsensitiveHashSet();
+        for (RemoteExecutionEngine engine : remoteExecutionEngines)
         {
-            if (type.equalsIgnoreCase(engine.getType()))
+            if (!locations.add(engine.getConfig().getLocation()))
             {
-                return engine;
+                throw new IllegalArgumentException("Duplicate remote execution engine location: " + engine.getConfig().getLocation());
             }
         }
-        throw new IllegalArgumentException("Unknown remote execution engine type: " + type);
+        _remoteExecutionEngines = remoteExecutionEngines;
     }
 
     private String getVersionedPath(String path, String packageName, String ver)
@@ -830,12 +806,6 @@ public class PipelineJobServiceImpl extends PipelineJobService
             _impl.setConfigProperties(_props);
         }
 
-        @Test(expected = IllegalArgumentException.class)
-        public void testUnknownEngine()
-        {
-            _impl.getRemoteExecutionEngine("!!NoSuchEngine!!");
-        }
-
         @Test
         public void testDummySubmit() throws PipelineValidationException, InterruptedException, PipelineProvider.HandlerException
         {
@@ -849,47 +819,35 @@ public class PipelineJobServiceImpl extends PipelineJobService
             _impl._remoteExecutionEngines.add(dummyEngine);
             try
             {
-                assertEquals(dummyEngine, _impl.getRemoteExecutionEngine(dummyEngine.getType()));
+                Container c = JunitUtil.getTestContainer();
 
-                int dummyConfigIndex = _impl._remoteExecutionEngineConfigs.size();
-                DummyRemoteExecutionEngine.DummyConfig dummyConfig = new DummyRemoteExecutionEngine.DummyConfig();
-                _impl._remoteExecutionEngineConfigs.add(dummyConfig);
-                try
+                PipelineJob job = new DummyPipelineJob(c, TestContext.get().getUser());
+
+                PipelineService.get().queueJob(job);
+
+                int seconds = 0;
+                while (seconds++ < 10 && dummyEngine.getSubmitCount() == 0)
                 {
-                    Container c = JunitUtil.getTestContainer();
-
-                    PipelineJob job = new DummyPipelineJob(c, TestContext.get().getUser());
-
-                    PipelineService.get().queueJob(job);
-
-                    int seconds = 0;
-                    while (seconds++ < 10 && dummyEngine.getSubmitCount() == 0)
-                    {
-                        Thread.sleep(1000);
-                    }
-                    assertEquals("Job was never submitted", 1, dummyEngine.getSubmitCount());
-
-                    PipelineStatusFile file = PipelineStatusManager.getStatusFile(job.getLogFile());
-                    assertNotNull("No status file found!", file);
-
-                    PipelineStatusManager.cancelStatus(job.getInfo(), Collections.singleton(file.getRowId()));
-
-                    seconds = 0;
-                    while (seconds++ < 10 && dummyEngine.getCancelCount() == 0)
-                    {
-                        Thread.sleep(1000);
-                    }
-                    assertEquals("Job was never cancelled", 1, dummyEngine.getCancelCount());
-
-                    // Will fail if job didn't get moved from Cancelling to Cancelled
-                    PipelineStatusManager.deleteStatus(job.getInfo(), true, Collections.singleton(file.getRowId()));
-
-                    job.getLogFile().delete();
+                    Thread.sleep(1000);
                 }
-                finally
+                assertEquals("Job was never submitted", 1, dummyEngine.getSubmitCount());
+
+                PipelineStatusFile file = PipelineStatusManager.getStatusFile(job.getLogFile());
+                assertNotNull("No status file found!", file);
+
+                PipelineStatusManager.cancelStatus(job.getInfo(), Collections.singleton(file.getRowId()));
+
+                seconds = 0;
+                while (seconds++ < 10 && dummyEngine.getCancelCount() == 0)
                 {
-                    _impl._remoteExecutionEngineConfigs.remove(dummyConfigIndex);
+                    Thread.sleep(1000);
                 }
+                assertEquals("Job was never cancelled", 1, dummyEngine.getCancelCount());
+
+                // Will fail if job didn't get moved from Cancelling to Cancelled
+                PipelineStatusManager.deleteStatus(job.getInfo(), true, Collections.singleton(file.getRowId()));
+
+                job.getLogFile().delete();
             }
             finally
             {

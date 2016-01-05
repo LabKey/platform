@@ -54,7 +54,6 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.search.view.DefaultSearchResultTemplate;
 
-import javax.servlet.ServletContextEvent;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -827,7 +826,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         return "Search service";
     }
 
-    public void shutdownPre(ServletContextEvent servletContextEvent)
+    public void shutdownPre()
     {
         _shuttingDown = true;
         _crawlerPaused = true;
@@ -840,7 +839,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    public void shutdownStarted(ServletContextEvent servletContextEvent)
+    public void shutdownStarted()
     {
         try
         {

@@ -58,7 +58,6 @@ import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.VisitMapKey;
 import org.labkey.study.query.StudyQuerySchema;
 
-import javax.servlet.ServletContextEvent;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -760,10 +759,10 @@ public abstract class VisitManager
         }
 
         @Override
-        public void shutdownPre(ServletContextEvent servletContextEvent) {}
+        public void shutdownPre() {}
 
         @Override
-        public void shutdownStarted(ServletContextEvent servletContextEvent)
+        public void shutdownStarted()
         {
             if (TIMER != null)
             {

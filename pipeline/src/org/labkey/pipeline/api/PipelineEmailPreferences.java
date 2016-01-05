@@ -34,7 +34,6 @@ import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ShutdownListener;
 
-import javax.servlet.ServletContextEvent;
 import java.text.ParseException;
 import java.util.Calendar;
 import java.util.Date;
@@ -441,13 +440,13 @@ public class PipelineEmailPreferences
             return "Pipeline email notification timer";
         }
 
-        public void shutdownPre(ServletContextEvent servletContextEvent)
+        public void shutdownPre()
         {
             ContextListener.removeShutdownListener(this);
             _timer.cancel();
         }
 
-        public void shutdownStarted(ServletContextEvent servletContextEvent)
+        public void shutdownStarted()
         {
         }
     }

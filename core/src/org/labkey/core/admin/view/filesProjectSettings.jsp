@@ -31,6 +31,8 @@
 <%@ page import="java.io.File" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Collections" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.files.FileUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -109,6 +111,12 @@
                         <td><input type="text" id="folderRootPath" name="folderRootPath" size="64" value="<%=h(bean.getFolderRootPath())%>"></td>
                     </tr>
                 </table>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <br>
+                <a href="<%=h(urlProvider(FileUrls.class).urlShowAdmin(getContainer()))%>">Manage Additional File Roots</a>
             </td>
         </tr>
     </table>

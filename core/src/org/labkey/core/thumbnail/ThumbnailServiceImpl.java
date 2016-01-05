@@ -32,7 +32,6 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.view.ViewContext;
 
-import javax.servlet.ServletContextEvent;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.concurrent.BlockingQueue;
@@ -189,13 +188,13 @@ public class ThumbnailServiceImpl implements ThumbnailService
         }
 
         @Override
-        public void shutdownPre(ServletContextEvent servletContextEvent)
+        public void shutdownPre()
         {
             interrupt();
         }
 
         @Override
-        public void shutdownStarted(ServletContextEvent servletContextEvent)
+        public void shutdownStarted()
         {
         }
     }

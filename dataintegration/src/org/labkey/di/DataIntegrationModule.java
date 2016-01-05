@@ -47,7 +47,6 @@ import org.labkey.di.view.DataIntegrationController;
 import org.labkey.di.view.ProcessJobsView;
 
 import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
 import java.beans.PropertyChangeEvent;
 import java.util.Arrays;
 import java.util.Collection;
@@ -182,13 +181,13 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
     // ShutdownListener
     //
 
-    public void shutdownPre(ServletContextEvent servletContextEvent)
+    public void shutdownPre()
     {
         TransformManager.get().shutdownPre();
     }
 
 
-    public void shutdownStarted(ServletContextEvent servletContextEvent)
+    public void shutdownStarted()
     {
         TransformManager.get().shutdownStarted();
     }

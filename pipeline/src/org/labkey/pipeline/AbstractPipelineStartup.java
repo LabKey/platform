@@ -21,9 +21,18 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleDependencySorter;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceLoader;
+import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineStatusFile;
+import org.labkey.api.util.BreakpointThread;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
+import org.labkey.pipeline.mule.JMSStatusWriter;
+import org.labkey.pipeline.mule.LabKeySpringContainerContext;
 import org.labkey.pipeline.mule.LoggerUtil;
+import org.mule.config.ConfigurationException;
+import org.mule.config.builders.MuleXmlConfigurationBuilder;
+import org.mule.umo.manager.UMOManager;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 
@@ -118,6 +127,51 @@ public abstract class AbstractPipelineStartup
         }
 
         return result;
+    }
+
+    /**
+     * Start up a thread that listens for a thread dump request, and lets us hit a breakpoint easily
+     */
+    protected static void doSharedStartup(List<File> moduleFiles)
+    {
+        for (File moduleFile : moduleFiles)
+        {
+            if (moduleFile.getName().startsWith("core"))
+            {
+                BreakpointThread thread = new BreakpointThread(moduleFile.getParentFile());
+                thread.start();
+                break;
+            }
+        }
+    }
+
+    /**
+     * Check if JMS is configured and spin up mule configuration if true
+     */
+    protected UMOManager setupMuleConfig(String muleConfig, Map<String, BeanFactory> factories, String hostName) throws PipelineJobException
+    {
+        PipelineStatusFile.StatusWriter writer = PipelineJobServiceImpl.get().getStatusWriter();
+        if (writer instanceof JMSStatusWriter)
+        {
+            try
+            {
+                PipelineJobServiceImpl.get().getStatusWriter().setHostName(hostName);
+                LabKeySpringContainerContext.setContext(factories.get(PipelineService.MODULE_NAME));
+
+                // Hack - wait a little bit for Mule to connect to the JMS server
+                Thread.sleep(5000);
+
+                // Spin up the mule configuration
+                MuleXmlConfigurationBuilder builder = new MuleXmlConfigurationBuilder();
+                return builder.configure(muleConfig);
+            }
+            catch (InterruptedException | ConfigurationException e)
+            {
+                throw new PipelineJobException(e);
+            }
+        }
+
+        return null;
     }
 
     private File findFile(List<File> files, String name)

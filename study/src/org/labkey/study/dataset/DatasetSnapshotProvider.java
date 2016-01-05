@@ -36,7 +36,6 @@ import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
@@ -82,7 +81,6 @@ import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.writer.DatasetWriter;
 import org.springframework.validation.BindException;
 
-import javax.servlet.ServletContextEvent;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -705,12 +703,12 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             }
         }
 
-        public void shutdownPre(ServletContextEvent servletContextEvent)
+        public void shutdownPre()
         {
             interrupt();
         }
 
-        public void shutdownStarted(ServletContextEvent servletContextEvent)
+        public void shutdownStarted()
         {
         }
     }

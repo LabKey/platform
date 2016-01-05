@@ -16,16 +16,22 @@
 
 package org.labkey.pipeline.cluster;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.util.ContextListener;
 import org.labkey.pipeline.AbstractPipelineStartup;
+import org.mule.umo.manager.UMOManager;
+import org.springframework.beans.factory.BeanFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: jeckels
@@ -38,7 +44,7 @@ public class ClusterStartup extends AbstractPipelineStartup
      */
     public void run(List<File> moduleFiles, List<File> moduleConfigFiles, List<File> customConfigFiles, File webappDir, String[] args) throws IOException, URISyntaxException, PipelineJobException
     {
-        initContext("org/labkey/pipeline/mule/config/cluster.log4j.properties", moduleFiles, moduleConfigFiles, customConfigFiles, webappDir, PipelineJobService.LocationType.RemoteExecutionEngine);
+        Map<String, BeanFactory> factories = initContext("org/labkey/pipeline/mule/config/cluster.log4j.properties", moduleFiles, moduleConfigFiles, customConfigFiles, webappDir, PipelineJobService.LocationType.RemoteExecutionEngine);
 
         if (args.length < 1)
         {
@@ -46,30 +52,67 @@ public class ClusterStartup extends AbstractPipelineStartup
         }
 
         String localFile = PipelineJobService.get().getPathMapper().remoteToLocal(args[0]);
-        
+        if (StringUtils.trimToNull(localFile) == null)
+        {
+            System.out.println("No job file provided, exiting");
+            return;
+        }
+
         File file = new File(new URI(localFile));
         if (!file.isFile())
         {
             throw new IllegalArgumentException("Could not find file " + file.getAbsolutePath());
         }
 
-        PipelineJob job = PipelineJob.readFromFile(file);
-        
-        System.out.println("Starting to run task for job " + job);
-        job.runActiveTask();
-        System.out.println("Finished running task for job " + job);
+        doSharedStartup(moduleFiles);
 
-        job.writeToFile(file);
+        String hostName = InetAddress.getLocalHost().getHostName();
+        UMOManager manager = setupMuleConfig("org/labkey/pipeline/mule/config/clusterRemoteMuleConfig.xml", factories, hostName);
 
-        if (job.getActiveTaskStatus() == PipelineJob.TaskStatus.error)
+        try
         {
-            job.error("Task failed");
-            System.exit(1);
+            PipelineJob job = PipelineJob.readFromFile(file);
+
+            System.out.println("Starting to run task for job " + job);
+            //this is debugging to verify jms.
+            job.setStatus("RUNNING ON CLUSTER");
+            job.runActiveTask();
+            System.out.println("Finished running task for job " + job);
+
+            job.writeToFile(file);
+
+            if (job.getActiveTaskStatus() == PipelineJob.TaskStatus.error)
+            {
+                job.error("Task failed");
+                System.exit(1);
+            }
+            else if (job.getActiveTaskStatus() != PipelineJob.TaskStatus.complete)
+            {
+                job.error("Task finished running but was not marked as complete - it was in state " + job.getActiveTaskStatus());
+                System.exit(1);
+            }
         }
-        else if (job.getActiveTaskStatus() != PipelineJob.TaskStatus.complete)
+        finally
         {
-            job.error("Task finished running but was not marked as complete - it was in state " + job.getActiveTaskStatus());
-            System.exit(1);
+            if (manager != null)
+            {
+                try
+                {
+                    System.out.println("Stopping mule.  manager is running: " + manager.isStarted());
+                    manager.stop();
+                    manager.dispose();
+                }
+                catch (Exception e)
+                {
+                    System.out.println("Failed to stop mule");
+                    System.out.println(e.getMessage());
+                    System.out.println(e.getStackTrace());
+                }
+            }
+
+            ContextListener.callShutdownListeners();
         }
+
+        //System.exit(0);
     }
 }

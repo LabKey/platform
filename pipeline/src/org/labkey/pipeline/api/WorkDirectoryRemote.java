@@ -65,6 +65,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
         private String _tempDirectory;
         private boolean _sharedTempDirectory;
         private boolean _cleanupOnStartup;
+        private String _transferToDirOnFailure = null;
 
         public void afterPropertiesSet() throws Exception
         {
@@ -128,7 +129,8 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
             }
 
             File lockDir = (_lockDirectory == null ? null : new File(_lockDirectory));
-            return new WorkDirectoryRemote(support, this, log, lockDir, tempDir);
+            File transferToDirOnFailure = (_transferToDirOnFailure == null ? null : new File(_transferToDirOnFailure));
+            return new WorkDirectoryRemote(support, this, log, lockDir, tempDir, transferToDirOnFailure);
         }
 
         public String getLockDirectory()
@@ -207,13 +209,37 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
         {
             _sharedTempDirectory = sharedTempDirectory;
         }
+
+        public String getTransferToDirOnFailure()
+        {
+            if (_transferToDirOnFailure != null)
+            {
+                // Do the validation on get instead of set because we may not have the NetworkDrive
+                // configuration loaded in time at startup
+                File tempDir = new File(_transferToDirOnFailure);
+                if (!NetworkDrive.exists(tempDir) || !tempDir.isDirectory())
+                    throw new IllegalArgumentException("The directory " + _transferToDirOnFailure + " does not exist.");
+            }
+
+            return _transferToDirOnFailure;
+        }
+
+        /**
+         * If a directory is provided, when a remote job fails, the working directory will
+         * be moved from the working location to a directory under this folder
+         */
+        public void setTransferToDirOnFailure(String transferToDirOnFailure)
+        {
+            _transferToDirOnFailure = transferToDirOnFailure;
+        }
     }
 
-    public WorkDirectoryRemote(FileAnalysisJobSupport support, WorkDirFactory factory, Logger log, File lockDir, File tempDir) throws IOException
+    public WorkDirectoryRemote(FileAnalysisJobSupport support, WorkDirFactory factory, Logger log, File lockDir, File tempDir, File transferToDirOnFailure) throws IOException
     {
         super(support, factory, tempDir, log);
 
         _lockDirectory = lockDir;
+        _transferToDirOnFailure = transferToDirOnFailure;
     }
 
     /**

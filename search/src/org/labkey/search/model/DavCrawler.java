@@ -45,7 +45,6 @@ import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 
-import javax.servlet.ServletContextEvent;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.util.Arrays;
@@ -175,7 +174,7 @@ public class DavCrawler implements ShutdownListener
         return "DAV crawler";
     }
 
-    public void shutdownPre(ServletContextEvent servletContextEvent)
+    public void shutdownPre()
     {
         _shuttingDown = true;
         if (null != _crawlerThread)
@@ -183,7 +182,7 @@ public class DavCrawler implements ShutdownListener
     }
 
 
-    public void shutdownStarted(ServletContextEvent servletContextEvent)
+    public void shutdownStarted()
     {
         if (null != _crawlerThread)
         try

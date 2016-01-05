@@ -16,6 +16,7 @@
 package org.labkey.pipeline.mule.filters;
 
 import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.RemoteExecutionEngine;
 import org.labkey.pipeline.mule.test.DummyRemoteExecutionEngine;
 
 import java.util.List;
@@ -30,11 +31,11 @@ public class TaskRemoteExecutionEngineJmsSelectorFilter extends TaskJmsSelectorF
 {
     public TaskRemoteExecutionEngineJmsSelectorFilter()
     {
-        List<? extends PipelineJobService.RemoteExecutionEngineConfig> allConfigs = PipelineJobService.get().getRemoteExecutionEngineConfigs();
+        List<? extends RemoteExecutionEngine<?>> allEngines = PipelineJobService.get().getRemoteExecutionEngines();
 
-        for (PipelineJobService.RemoteExecutionEngineConfig config : allConfigs)
+        for (RemoteExecutionEngine engine : allEngines)
         {
-            _locations.add(config.getLocation());
+            _locations.add(engine.getConfig().getLocation());
         }
 
         // For unit testing purposes. See PipelineJobServiceImpl.TestCase.testDummySubmit()

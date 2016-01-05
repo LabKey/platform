@@ -18,6 +18,7 @@ package org.labkey.pipeline;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.sitevalidation.SiteValidationService;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
@@ -33,6 +34,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineQueue;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.RemoteExecutionEngine;
 import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -315,7 +317,13 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             else if (!queue.isLocal() && queue instanceof EPipelineQueueImpl)
             {
                 // Restart jobs that have been dropped from the queue and are supposed to run on the web server
-                new RemoteServerStartup().getRequeueRequest(((EPipelineQueueImpl) queue).getJMSFactory(), TaskJmsSelectorFilter.getAllLocalLocations(), null).performRequest();
+                // Ignore RemoteExecutionEngines
+                Set<String> locations = new CaseInsensitiveHashSet(TaskJmsSelectorFilter.getAllLocalLocations());
+                for (RemoteExecutionEngine<?> engine : PipelineJobService.get().getRemoteExecutionEngines())
+                {
+                    locations.remove(engine.getConfig().getLocation());
+                }
+                new RemoteServerStartup().getRequeueRequest(((EPipelineQueueImpl) queue).getJMSFactory(), locations, null).performRequest();
             }
         }
 

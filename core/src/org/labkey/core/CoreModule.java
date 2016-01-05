@@ -625,7 +625,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
 
             @Override
-            public void shutdownPre(ServletContextEvent servletContextEvent)
+            public void shutdownPre()
             {
                 Logger logger = Logger.getLogger(ActionsTsvWriter.class);
 
@@ -656,7 +656,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
 
             @Override
-            public void shutdownStarted(ServletContextEvent servletContextEvent)
+            public void shutdownStarted()
             {
             }
         });

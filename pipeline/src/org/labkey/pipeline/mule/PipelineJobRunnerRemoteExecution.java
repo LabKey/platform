@@ -56,9 +56,9 @@ public class PipelineJobRunnerRemoteExecution implements Callable, ResumableDesc
                 TaskJmsSelectorFilter filter = (TaskJmsSelectorFilter) endpoint.getFilter();
                 final Map<String, List<PipelineStatusFileImpl>> allLocations = new HashMap<>();
                 Map<String, RemoteExecutionEngine> configuredLocations = new CaseInsensitiveHashMap<>();
-                for (PipelineJobService.RemoteExecutionEngineConfig config : PipelineJobService.get().getRemoteExecutionEngineConfigs())
+                for (RemoteExecutionEngine<?> engine : PipelineJobService.get().getRemoteExecutionEngines())
                 {
-                    configuredLocations.put(config.getLocation(), PipelineJobServiceImpl.get().getRemoteExecutionEngine(config.getType()));
+                    configuredLocations.put(engine.getConfig().getLocation(), engine);
                 }
                 for (String location : filter.getLocations())
                 {
@@ -127,11 +127,11 @@ public class PipelineJobRunnerRemoteExecution implements Callable, ResumableDesc
             throw new IllegalStateException("Could not get taskFactory for job " + job.getJobGUID());
         }
 
-        for (PipelineJobService.RemoteExecutionEngineConfig config : PipelineJobServiceImpl.get().getRemoteExecutionEngineConfigs())
+        for (RemoteExecutionEngine<?> engine : PipelineJobServiceImpl.get().getRemoteExecutionEngines())
         {
-            if (config.getLocation().equalsIgnoreCase(taskFactory.getExecutionLocation()))
+            if (engine.getConfig().getLocation().equalsIgnoreCase(taskFactory.getExecutionLocation()))
             {
-                return PipelineJobServiceImpl.get().getRemoteExecutionEngine(config.getType());
+                return engine;
             }
         }
 

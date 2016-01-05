@@ -19,7 +19,6 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.StartupListener;
 
-import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContext;
 
 /**
@@ -48,13 +47,13 @@ public class EPipelineContextListener implements StartupListener, ShutdownListen
         }
     }
 
-    public void shutdownPre(ServletContextEvent servletContextEvent)
+    public void shutdownPre()
     {
     }
 
-    public void shutdownStarted(ServletContextEvent servletContextEvent)
+    public void shutdownStarted()
     {
         if (_muleListenerHelper != null)
-            _muleListenerHelper.contextDestroyed(servletContextEvent);
+            _muleListenerHelper.contextDestroyed();
     }
 }

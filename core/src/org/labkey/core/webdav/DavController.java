@@ -108,7 +108,6 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -6342,12 +6341,12 @@ public class DavController extends SpringActionController
             }
 
             @Override
-            public void shutdownPre(ServletContextEvent servletContextEvent)
+            public void shutdownPre()
             {
             }
 
             @Override
-            public void shutdownStarted(ServletContextEvent servletContextEvent)
+            public void shutdownStarted()
             {
                 for (Object path : _tempFiles.toArray())
                     new File((String)path).delete();

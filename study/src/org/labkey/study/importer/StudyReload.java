@@ -62,7 +62,6 @@ import org.quartz.TriggerKey;
 import org.quartz.impl.StdSchedulerFactory;
 import org.springframework.validation.BindException;
 
-import javax.servlet.ServletContextEvent;
 import java.io.File;
 import java.util.Date;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -91,12 +90,12 @@ public class StudyReload
                 return RELOAD_THREAD.getName();
             }
 
-            public void shutdownPre(ServletContextEvent servletContextEvent)
+            public void shutdownPre()
             {
                 RELOAD_THREAD.interrupt();
             }
 
-            public void shutdownStarted(ServletContextEvent servletContextEvent)
+            public void shutdownStarted()
             {
             }
         });

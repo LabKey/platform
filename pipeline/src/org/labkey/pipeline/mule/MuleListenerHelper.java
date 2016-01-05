@@ -119,7 +119,7 @@ public class MuleListenerHelper implements ServletContext
         }
     }
     
-    public void contextDestroyed(ServletContextEvent servletContextEvent)
+    public void contextDestroyed()
     {
         boolean hasJms;
         try
@@ -131,7 +131,7 @@ public class MuleListenerHelper implements ServletContext
             hasJms = true;
         }
 
-        _muleContextListener.contextDestroyed(servletContextEvent);
+        _muleContextListener.contextDestroyed(null);
 
         // If we have JMS, we assume it is ActiveMQ for now.  Hopefully
         // this will get fixed with MULE-2496

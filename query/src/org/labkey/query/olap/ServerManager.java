@@ -72,7 +72,6 @@ import org.olap4j.metadata.Level;
 import org.olap4j.metadata.Schema;
 import org.springframework.validation.BindException;
 
-import javax.servlet.ServletContextEvent;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
@@ -143,13 +142,13 @@ public class ServerManager
             }
 
             @Override
-            public void shutdownPre(ServletContextEvent servletContextEvent)
+            public void shutdownPre()
             {
                 SERVERS.clear();
             }
 
             @Override
-            public void shutdownStarted(ServletContextEvent servletContextEvent)
+            public void shutdownStarted()
             {
                 SERVERS.clear();
             }
