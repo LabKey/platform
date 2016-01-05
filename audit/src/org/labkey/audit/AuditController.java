@@ -25,6 +25,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.*;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.RequiresPermission;
@@ -101,6 +102,7 @@ public class AuditController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic(new HelpTopic("audits"));
             return PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Audit Log", getURL());
         }
 
