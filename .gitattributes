@@ -6550,6 +6550,7 @@ api/webapp/gtheme/img/rdr.png -text
 api/webapp/report/Rlogo.jpg -text
 api/webapp/report/report.jpg -text
 internal/gwtsrc/org/labkey/api/gwt/Internal.gwt.xml -text
+internal/gwtsrc/org/labkey/api/gwt/client/AbstractDesignerMainPanel.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/AuditBehaviorType.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/DefaultScaleType.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/DefaultValueType.java -text

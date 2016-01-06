@@ -37,12 +37,12 @@ import com.google.gwt.user.client.ui.InlineHTML;
 import com.google.gwt.user.client.ui.InlineLabel;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
-import com.google.gwt.user.client.ui.PushButton;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
+import org.labkey.api.gwt.client.AbstractDesignerMainPanel;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.client.model.GWTContainer;
 import org.labkey.api.gwt.client.model.GWTDomain;
@@ -79,24 +79,16 @@ import java.util.Map;
  * Date: Jun 20, 2007
  * Time: 2:24:04 PM
  */
-public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GWTProtocol>, DirtyCallback
+public class AssayDesignerMainPanel extends AbstractDesignerMainPanel implements Saveable<GWTProtocol>, DirtyCallback
 {
-    private RootPanel _rootPanel;
     private AssayServiceAsync _testService;
     private final String _providerName;
     private Integer _protocolId;
     protected GWTProtocol _assay;
-    private boolean _dirty;
-    private List<PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor>> _domainEditors = new ArrayList<PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor>>();
-    private HTML _statusLabel = new HTML("<br/>");
-    private static final String STATUS_SUCCESSFUL = "Save successful.<br/>";
     private BoundTextBox _nameBox;
     private CheckBox _autoCopyCheckBox;
     private ListBox _autoCopyTargetListBox;
     private boolean _copy;
-    private final String _returnURL;
-    private SaveButtonBar saveBarTop;
-    private SaveButtonBar saveBarBottom;
     private HandlerRegistration _closeHandlerManager;
     private List<GWTContainer> _autoCopyTargets;
     private boolean _isPlateBased;
@@ -106,9 +98,6 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
     private BooleanProperty _backgroundUpload = new BooleanProperty(false);
     private FlexTable _transformScriptTable;
     private boolean _allowSpacesInPath;
-    private String _designerURL;
-
-    private boolean _saveInProgress = false;
 
     private static final int TRANSFORM_SCRIPT_PATH_COLUMN_INDEX = 0;
     private static final int TRANSFORM_SCRIPT_DRAG_LABEL_COLUMN_INDEX = 2;
@@ -116,14 +105,11 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
 
     public AssayDesignerMainPanel(RootPanel rootPanel)
     {
-        _rootPanel = rootPanel;
-
-        _designerURL = Window.Location.getHref();
+        super(rootPanel);
 
         String protocolIdStr = PropertyUtil.getServerProperty("protocolId");
         _protocolId = protocolIdStr != null ? new Integer(Integer.parseInt(protocolIdStr)) : null;
         _providerName = PropertyUtil.getServerProperty("providerName");
-        _returnURL = PropertyUtil.getReturnURL();
         String copyStr = PropertyUtil.getServerProperty("copy");
         _copy = copyStr != null && Boolean.TRUE.toString().equals(copyStr);
 
@@ -292,16 +278,9 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
         else
             setDirty(_copy);
 
-        _closeHandlerManager = Window.addWindowClosingHandler(new AssayCloseListener());
+        _closeHandlerManager = Window.addWindowClosingHandler(new DesignerClosingListener());
 
         syncAutoCopy();
-    }
-
-    protected void addErrorMessage(String message)
-    {
-        VerticalPanel mainPanel = new VerticalPanel();
-        mainPanel.add(new Label(message));
-        _rootPanel.add(mainPanel);
     }
 
     private class DomainProtocolSaveable implements Saveable<GWTDomain>
@@ -817,39 +796,6 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
         return _autoCopyTargets != null && !_autoCopyTargets.isEmpty();
     }
 
-    public void setDirty(boolean dirty)
-    {
-        if (dirty && _statusLabel.getText().equalsIgnoreCase(STATUS_SUCCESSFUL))
-            _statusLabel.setHTML("<br/>");
-
-        setAllowSave(dirty);
-
-        _dirty = dirty;
-    }
-
-    public boolean isDirty()
-    {
-        return _dirty;
-    }
-
-    private void setAllowSave(boolean dirty)
-    {
-        if (_saveInProgress)
-        {
-            if (saveBarTop != null)
-                saveBarTop.disableAll();
-            if (saveBarBottom != null)
-                saveBarBottom.disableAll();
-        }
-        else
-        {
-            if (saveBarTop != null)
-                saveBarTop.setAllowSave(dirty);
-            if (saveBarBottom != null)
-                saveBarBottom.setAllowSave(dirty);
-        }
-    }
-
     private boolean validate()
     {
         List<String> errors = new ArrayList<String>();
@@ -901,11 +847,6 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
     private BoundTextBox getTransformScriptTextBox(int row)
     {
         return (BoundTextBox) _transformScriptTable.getWidget(row, TRANSFORM_SCRIPT_PATH_COLUMN_INDEX);
-    }
-
-    public String getCurrentURL()
-    {
-        return _designerURL;
     }
 
     public void save()
@@ -1044,20 +985,6 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                     WindowUtil.setLocation(doneLink);
                 }
             });
-        }
-    }
-
-    class AssayCloseListener implements Window.ClosingHandler
-    {
-        public void onWindowClosing(Window.ClosingEvent event)
-        {
-            boolean dirty = _dirty;
-            for (int i = 0; i < _domainEditors.size() && !dirty; i++)
-            {
-                dirty = _domainEditors.get(i).isDirty();
-            }
-            if (dirty)
-                event.setMessage("Changes have not been saved and will be discarded.");
         }
     }
 
