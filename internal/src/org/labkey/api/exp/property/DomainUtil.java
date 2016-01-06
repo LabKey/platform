@@ -297,6 +297,16 @@ public class DomainUtil
         return properties;
     }
 
+    public static Set<String> getPropertyNames(DataClassTemplateDocument templateDoc)
+    {
+        Set<String> propNames = new CaseInsensitiveHashSet();
+        for (GWTPropertyDescriptor pd : DomainUtil.getPropertyDescriptors(templateDoc))
+        {
+            propNames.add(pd.getName());
+        }
+        return propNames;
+    }
+
     public static List<GWTIndex> getUniqueIndices(DataClassTemplateDocument templateDoc)
     {
         List<GWTIndex> indices = new ArrayList<>();
@@ -340,8 +350,6 @@ public class DomainUtil
 
         if (columnXml.isSetColumnTitle())
             gwtProp.setLabel(columnXml.getColumnTitle());
-        if (columnXml.isSetConceptURI())
-            gwtProp.setConceptURI(columnXml.getConceptURI());
         if (columnXml.isSetPropertyURI())
             gwtProp.setPropertyURI(columnXml.getPropertyURI());
         if (columnXml.isSetRangeURI())
@@ -354,6 +362,10 @@ public class DomainUtil
             gwtProp.setLookupSchema(columnXml.getFk().getFkDbSchema());
             gwtProp.setLookupQuery(columnXml.getFk().getFkTable());
         }
+
+        // issue 25278: don't allow conceptURI lookups for attachment columns
+        if (columnXml.isSetConceptURI() && !PropertyType.ATTACHMENT.getTypeUri().equals(gwtProp.getRangeURI()))
+            gwtProp.setConceptURI(columnXml.getConceptURI());
 
         // Display properties
         if (columnXml.isSetDescription())
