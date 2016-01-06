@@ -26,6 +26,7 @@ import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
+import org.labkey.api.gwt.client.AbstractDesignerMainPanel;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.BoundTextBox;
@@ -48,35 +49,21 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class SpecimenDesignerMainPanel extends VerticalPanel implements Saveable<List<String>>, DirtyCallback
+public class SpecimenDesignerMainPanel extends AbstractDesignerMainPanel implements Saveable<List<String>>, DirtyCallback
 {
-    private RootPanel _rootPanel;
     private SpecimenServiceAsync _testService;
 
     private GWTDomain<GWTPropertyDescriptor> domainEvent;
     private GWTDomain<GWTPropertyDescriptor> domainVial;
     private GWTDomain<GWTPropertyDescriptor> domainSpecimen;
 
-    private boolean _dirty;
-    private List<PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor>> _domainEditors = new ArrayList<PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor>>();
-    private HTML _statusLabel = new HTML("<br/>");
-    private static final String STATUS_SUCCESSFUL = "Save successful.<br/>";
-    private final String _returnURL;
-    private SaveButtonBar saveBarTop;
-    private SaveButtonBar saveBarBottom;
     private HandlerRegistration _closeHandlerManager;
-    private String _designerURL;
     private boolean _showing = false;
-
-    private boolean _saveInProgress = false;
 
     public SpecimenDesignerMainPanel(RootPanel rootPanel)
     {
-        _rootPanel = rootPanel;
-
-        _designerURL = Window.Location.getHref();
-        String returnURL = PropertyUtil.getReturnURL();
-        _returnURL = (null != returnURL) ? returnURL : PropertyUtil.getRelativeURL("manageStudy.view", "study");
+        super(rootPanel);
+        _returnURL = (null != _returnURL) ? _returnURL : PropertyUtil.getRelativeURL("manageStudy.view", "study");
     }
 
     public void showAsync()
@@ -164,53 +151,13 @@ public class SpecimenDesignerMainPanel extends VerticalPanel implements Saveable
         saveBarBottom = new SaveButtonBar(this);
         _rootPanel.add(saveBarBottom);
 
-        _closeHandlerManager = Window.addWindowClosingHandler(new AssayCloseListener());
+        _closeHandlerManager = Window.addWindowClosingHandler(new DesignerClosingListener());
         _showing = false;
     }
 
     private boolean isShowing()
     {
         return _showing;
-    }
-
-    protected void addErrorMessage(String message)
-    {
-        VerticalPanel mainPanel = new VerticalPanel();
-        mainPanel.add(new Label(message));
-        _rootPanel.add(mainPanel);
-    }
-
-    public void setDirty(boolean dirty)
-    {
-        if (dirty && _statusLabel.getText().equalsIgnoreCase(STATUS_SUCCESSFUL))
-            _statusLabel.setHTML("<br/>");
-
-        setAllowSave(dirty);
-
-        _dirty = dirty;
-    }
-
-    public boolean isDirty()
-    {
-        return _dirty;
-    }
-
-    private void setAllowSave(boolean dirty)
-    {
-        if (_saveInProgress)
-        {
-            if (saveBarTop != null)
-                saveBarTop.disableAll();
-            if (saveBarBottom != null)
-                saveBarBottom.disableAll();
-        }
-        else
-        {
-            if (saveBarTop != null)
-                saveBarTop.setAllowSave(dirty);
-            if (saveBarBottom != null)
-                saveBarBottom.setAllowSave(dirty);
-        }
     }
 
     private void validate(final AsyncCallback<List<String>> callback, final boolean saveAndClose)
@@ -344,11 +291,6 @@ public class SpecimenDesignerMainPanel extends VerticalPanel implements Saveable
         );
     }
 
-    public String getCurrentURL()
-    {
-        return _designerURL;
-    }
-
     public void save()
     {
         save(null);
@@ -443,21 +385,6 @@ public class SpecimenDesignerMainPanel extends VerticalPanel implements Saveable
                     WindowUtil.setLocation(doneLink);
                 }
             }, true);
-        }
-    }
-
-
-    class AssayCloseListener implements Window.ClosingHandler
-    {
-        public void onWindowClosing(Window.ClosingEvent event)
-        {
-            boolean dirty = _dirty;
-            for (int i = 0; i < _domainEditors.size() && !dirty; i++)
-            {
-                dirty = _domainEditors.get(i).isDirty();
-            }
-            if (dirty)
-                event.setMessage("Changes have not been saved and will be discarded.");
         }
     }
 
