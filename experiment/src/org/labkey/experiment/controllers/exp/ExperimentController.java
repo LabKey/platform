@@ -1067,7 +1067,27 @@ public class ExperimentController extends SpringActionController
                 else
                 {
                     DataClassTemplateDocument template = _moduleTemplates.get(form.getDomainTemplate());
-                    name = template.getDataClassTemplate().getTable().getTableName();
+                    TableType dataClassTable = template.getDataClassTemplate().getTable();
+                    name = dataClassTable.getTableName();
+
+                    // issue 25275: verify that there are no duplicate property names defined in the template
+                    Set<String> propNames = DomainUtil.getPropertyNames(template);
+                    if (propNames.size() != dataClassTable.getColumns().getColumnArray().length)
+                        errors.reject(ERROR_MSG, "Duplicate column name definition in selected template.");
+
+                    // issue 25273: verify that each index column name exists in the domain
+                    List<GWTIndex> indices = DomainUtil.getUniqueIndices(template);
+                    if (indices != null && !indices.isEmpty())
+                    {
+                        for (GWTIndex index : indices)
+                        {
+                            for (String indexColName : index.getColumnNames())
+                            {
+                                if (!propNames.contains(indexColName))
+                                    errors.reject(ERROR_MSG, "Index column name '" + indexColName + "' does not exist in selected template.");
+                            }
+                        }
+                    }
                 }
             }
 

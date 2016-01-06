@@ -20,18 +20,8 @@
 <%@ page import="org.labkey.api.exp.property.Lookup" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%!
-    public LinkedHashSet<ClientDependency> getClientDependencies()
-    {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("Ext4"));
-        return resources;
-    }
-%>
 <%
     Map<String, Lookup> conceptURIs = ConceptURIProperties.getMappings(getContainer());
 %>
@@ -41,13 +31,8 @@
         width: 514px;
     }
 
-    .form-item, .form-buttons {
+    .form-buttons {
         padding: 3px 0;
-    }
-
-    .form-label {
-        width: 110px;
-        display: inline-block;
     }
 
     .concept-tile {
@@ -69,22 +54,7 @@
 %>
 <labkey:errors/>
 <labkey:form action="" method="POST">
-    <div class="form-item">
-        <div class="form-label"><label for="conceptURI">Concept URI:</label></div>
-        <input type="text" id="conceptURI" name="conceptURI" style="width: 300px;">
-    </div>
-    <div class="form-item">
-        <div class="form-label"><label for="containerId">Container Id:</label></div>
-        <input type="text" id="containerId" name="containerId" style="width: 300px;">
-    </div>
-    <div class="form-item">
-        <div class="form-label"><label for="schemaName">Schema Name:</label></div>
-        <input type="text" id="schemaName" name="schemaName">
-    </div>
-    <div class="form-item">
-        <div class="form-label"><label for="queryName">Query Name:</label></div>
-        <input type="text" id="queryName" name="queryName">
-    </div>
+    <div id="SQVPicker"></div>
     <div class="form-buttons">
         <%=button("Save").submit(true)%>
     </div>
@@ -141,5 +111,59 @@
                     }
                 }
         );
-    }
+    };
+
+    // note: client dependencies declared in FolderManagementAction.FolderManagementTabStrip
+    Ext4.onReady(function()
+    {
+        var sqvModel = Ext4.create('LABKEY.sqv.Model', {});
+
+        var conceptTextField = Ext4.create('Ext.form.field.Text', {
+            name: 'conceptURI',
+            fieldLabel: 'Concept URI',
+            allowBlank: false,
+            width: 510
+        });
+
+        var containerIdTextField = Ext4.create('Ext.form.field.Text', {
+            name: 'containerId',
+            hidden: true
+        });
+
+        var containerComboField = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeContainerComboConfig({
+            name: 'container',
+            editable: false,
+            width: 510,
+            listeners: {
+                select: function(combo) {
+                    containerIdTextField.setValue(combo.getValue());
+                }
+            }
+        }));
+
+        var schemaComboField = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeSchemaComboConfig({
+            name: 'schemaName',
+            forceSelection: true,
+            width: 300
+        }));
+
+        var queryComboField = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeQueryComboConfig({
+            name: 'queryName',
+            forceSelection: true,
+            width: 300
+        }));
+
+        Ext4.create('Ext.form.Panel', {
+            border : false,
+            renderTo : 'SQVPicker',
+            items : [
+                conceptTextField,
+                containerIdTextField,
+                containerComboField,
+                schemaComboField,
+                queryComboField,
+                { xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF }
+            ]
+        });
+    });
 </script>

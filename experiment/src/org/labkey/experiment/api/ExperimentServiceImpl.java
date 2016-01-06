@@ -4004,8 +4004,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         DomainKind kind = domain.getDomainKind();
 
         Set<String> reservedNames = kind.getReservedPropertyNames(domain);
-        Set<String> lowerReservedNames = reservedNames.stream().map(String::
-                toLowerCase).collect(Collectors.toSet());
+        Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(Collectors.toSet());
 
         Map<DomainProperty, Object> defaultValues = new HashMap<>();
         Set<String> propertyUris = new HashSet<>();
@@ -4014,6 +4013,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             String propertyName = pd.getName().toLowerCase();
             if (lowerReservedNames.contains(propertyName))
                 throw new IllegalArgumentException("Property name '" + propertyName + "' is a reserved name");
+            else if (domain.getPropertyByName(propertyName) != null) // issue 25275
+                throw new IllegalArgumentException("Property name '" + propertyName + "' is already defined for this domain");
 
             DomainProperty dp = DomainUtil.addProperty(domain, pd, defaultValues, propertyUris, null);
         }
@@ -4021,6 +4022,13 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         Set<PropertyStorageSpec.Index> propertyIndices = new HashSet<>();
         for (GWTIndex index : indices)
         {
+            // issue 25273: verify that each index column name exists in the domain
+            for (String indexColName : index.getColumnNames())
+            {
+                if (!lowerReservedNames.contains(indexColName.toLowerCase()) && domain.getPropertyByName(indexColName) == null)
+                    throw new IllegalArgumentException("Index column name '" + indexColName + "' does not exist");
+            }
+
             PropertyStorageSpec.Index propIndex = new PropertyStorageSpec.Index(index.isUnique(), index.getColumnNames());
             propertyIndices.add(propIndex);
         }
