@@ -76,6 +76,7 @@
                 itemId: 'browser',
                 border : false,
                 isWebDav  : true,
+                useHistory: true,
                 fileSystem : fileSystem,
                 gridConfig : {
                     selModel: {
