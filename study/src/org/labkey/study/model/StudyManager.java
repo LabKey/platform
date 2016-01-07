@@ -700,25 +700,29 @@ public class StudyManager
         }
     }
 
-    @Deprecated
-    /** Use the variant that accepts an errors list */
-    public void updateDatasetDefinition(User user, DatasetDefinition datasetDefinition)
+    public void updateDatasetDefinition(User user, DatasetDefinition datasetDefinition, List<String> errors)
     {
-        List<String> errors = new ArrayList<>();
-        updateDatasetDefinition(user, datasetDefinition, errors);
-        if (!errors.isEmpty())
-            throw new IllegalArgumentException(errors.get(0));
+        try
+        {
+            updateDatasetDefinition(user, datasetDefinition);
+        }
+        catch (IllegalArgumentException ex)
+        {
+            errors.add(ex.getMessage());
+        }
     }
 
 
-    public boolean updateDatasetDefinition(User user, final DatasetDefinition datasetDefinition, List<String> errors)
+    /* most users should call the List<String> errors version to avoid uncaught exceptions */
+    @Deprecated
+    public boolean updateDatasetDefinition(User user, final DatasetDefinition datasetDefinition)
     {
         if (datasetDefinition.isShared())
         {
             // check if we're updating the dataset property overrides in a sub-folder
             if (!datasetDefinition.getContainer().equals(datasetDefinition.getDefinitionContainer()))
             {
-                return updateDatasetPropertyOverrides(user, datasetDefinition, errors);
+                return updateDatasetPropertyOverrides(user, datasetDefinition);
             }
         }
 
@@ -742,8 +746,7 @@ public class StudyManager
                 // let's not change the shared setting if there are existing rows
                 if (new TableSelector(datasetDefinition.getStorageTableInfo()).exists())
                 {
-                    errors.add("Can't change data sharing setting if there are existing data rows.");
-                    return false;
+                    throw new IllegalArgumentException("Can't change data sharing setting if there are existing data rows.");
                 }
             }
             if (isProvisioned && isKeyChanged)
@@ -766,8 +769,7 @@ public class StudyManager
                     ColumnInfo col = storageTableInfo.getColumn(datasetDefinition.getKeyPropertyName());
                     if (null == col)
                     {
-                        errors.add("Cannot find 'key' column: " + datasetDefinition.getKeyPropertyName());
-                        return false;
+                        throw new IllegalArgumentException("Cannot find 'key' column: " + datasetDefinition.getKeyPropertyName());
                     }
                     SQLFragment colFrag = col.getValueSql(tableName);
                     if (col.getJdbcType() == JdbcType.TIMESTAMP)
@@ -787,11 +789,9 @@ public class StudyManager
                 catch (DataIntegrityViolationException x)
                 {
                     if (datasetDefinition.isDemographicData())
-                        errors.add("Can not change dataset type to demographic");
+                        throw new IllegalArgumentException("Can not change dataset type to demographic");
                     else
-                        errors.add("Changing the dataset key would result in a duplicate keys");
-                    transaction.close();
-                    return false;
+                        throw new IllegalArgumentException("Changing the dataset key would result in duplicate keys");
                 }
             }
             Object[] pk = new Object[]{datasetDefinition.getContainer().getId(), datasetDefinition.getDatasetId()};
@@ -834,12 +834,11 @@ public class StudyManager
      * </ul>
      * @return true if successful.
      */
-    private boolean updateDatasetPropertyOverrides(User user, final DatasetDefinition datasetDefinition, List<String> errors)
+    private boolean updateDatasetPropertyOverrides(User user, final DatasetDefinition datasetDefinition)
     {
         if (!datasetDefinition.isShared() || datasetDefinition.getContainer().isProject())
         {
-            errors.add("Dataset property overrides can only be applied to shared datasets and in sub-containers");
-            return false;
+            throw new IllegalArgumentException("Dataset property overrides can only be applied to shared datasets and in sub-containers");
         }
 
         DbScope scope = StudySchema.getInstance().getScope();
@@ -858,18 +857,15 @@ public class StudyManager
             // Error if any other properties have been changed
             if (!Objects.equals(old.getLabel(), datasetDefinition.getLabel()))
             {
-                errors.add("Shared dataset label can't be changed");
-                return false;
+                throw new IllegalArgumentException("Shared dataset label can't be changed");
             }
             if (!Objects.equals(old.getCategoryId(), datasetDefinition.getCategoryId()))
             {
-                errors.add("Shared dataset category can't be changed");
-                return false;
+                throw new IllegalArgumentException("Shared dataset category can't be changed");
             }
             if (!Objects.equals(old.getCohortId(), datasetDefinition.getCohortId()))
             {
-                errors.add("Shared dataset cohort can't be changed");
-                return false;
+                throw new IllegalArgumentException("Shared dataset cohort can't be changed");
             }
 
             // track added and removed properties against the shared dataset in the definition container
