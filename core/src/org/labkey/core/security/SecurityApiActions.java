@@ -992,7 +992,7 @@ public class SecurityApiActions
                     }
                 }
 
-                if (form.getMethod() == null)
+                if (form.getMembers() != null && !form.getMembers().isEmpty() && form.getMethod() == null)
                 {
                     errors.rejectValue("method", "requiredError", "method not specified.");
                 }
@@ -1056,17 +1056,21 @@ public class SecurityApiActions
                         if (member.getPrincipalType() == PrincipalType.USER)
                         {
                             userData.put("email", ((User) member).getEmail());
+                            userData.put("userId", member.getUserId());
                         }
                         else
                         {
                             userData.put("name", member.getName());
+                            userData.put("id", member.getUserId());
                         }
-                        userData.put("userId", member.getUserId());
+
                         memberData.add(userData);
                     }
-                    memberUpdates.put(memberGroup, memberData);
+                    if (!memberData.isEmpty())
+                        memberUpdates.put(memberGroup, memberData);
                 }
-                resp.put("members", memberUpdates);
+                if (!memberUpdates.isEmpty())
+                    resp.put("members", memberUpdates);
             }
             if (!memberErrors.isEmpty())
             {
@@ -1091,14 +1095,14 @@ public class SecurityApiActions
                 {
                     UserPrincipal principal = member.getUserPrincipal(getContainer());
 
-                    if (principal != null)
+                    if (principal == null)
+                    {
+                        memberErrors.put(member.toString(), "Identifier for user or group not provided.");
+                    }
+                    else if (principal.isInGroup(_group.getUserId()))
                     {
                         SecurityManager.deleteMember(_group, principal);
                         members.get("removed").add(principal);
-                    }
-                    else
-                    {
-                        memberErrors.put(member.toString(), "Identifier for user or group not provided.");
                     }
                 }
                 catch (Exception e)
@@ -1110,12 +1114,12 @@ public class SecurityApiActions
 
         private void addOrReplaceMembers(GroupForm form, Map<String, List<UserPrincipal>> members, Map<String, String> memberErrors, List<User> newUsers)
         {
-            List<UserPrincipal> currentMembers = new ArrayList<>();
-            currentMembers.addAll(SecurityManager.getGroupMembers(_group, MemberType.ALL_GROUPS_AND_USERS));
+            List<UserPrincipal> originalMembers = new ArrayList<>();
+            originalMembers.addAll(SecurityManager.getGroupMembers(_group, MemberType.ALL_GROUPS_AND_USERS));
             Boolean doReplacement = form.getMethod() == MemberEditOperation.replace;
             if (doReplacement)
             {
-                SecurityManager.deleteMembers(_group, currentMembers);
+                SecurityManager.deleteMembers(_group, originalMembers);
             }
 
             members.put("added", new ArrayList<>());
@@ -1141,28 +1145,31 @@ public class SecurityApiActions
                         {
                             status = SecurityManager.addUser(new ValidEmail(member.getEmail()), getUser());
                             newUsers.add(status.getUser());
-                            UserManager.updateUser(updatedUser, status.getUser());
+                            updatedUser.setUserId(status.getUser().getUserId());
+                            UserManager.updateUser(status.getUser(), updatedUser);
                             principal = status.getUser();
                         }
                         catch (SecurityManager.UserManagementException | SQLException | ValidEmail.InvalidEmailException  e)
                         {
+
                             memberErrors.put(member.getEmail(), e.getMessage());
                         }
                     }
-                    if (principal != null && !currentMembers.contains(principal))
+                    if (principal != null)
                     {
                         try
                         {
                             SecurityManager.addMember(_group, principal);
-                            members.get("added").add(principal);
-                            if (doReplacement)
+                            if (!originalMembers.contains(principal))
+                                members.get("added").add(principal);
+                            else if (doReplacement)
                             {
-                                currentMembers.remove(principal);
+                                originalMembers.remove(principal);  // originalMembers should end up with the members that were removed and not replaced
                             }
                         }
                         catch (InvalidGroupMembershipException e)
                         {
-                            memberErrors.put(member.getEmail(), e.getMessage());
+                            memberErrors.put(principal.getName(), e.getMessage());
                         }
                     }
                 }
@@ -1171,9 +1178,9 @@ public class SecurityApiActions
                     memberErrors.put(member.toString(), e.getMessage());
                 }
             }
-            if (doReplacement && !currentMembers.isEmpty())
+            if (doReplacement && !originalMembers.isEmpty())
             {
-                members.put("removed", currentMembers);
+                members.put("removed", originalMembers);
             }
         }
     }
