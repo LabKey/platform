@@ -1136,10 +1136,13 @@ public class SecurityApiActions
                         updatedUser.setFirstName(member.getFirstName());
                         updatedUser.setLastName(member.getLastName());
                         updatedUser.setDisplayName(member.getDisplayName());
-                        updatedUser.setIM(member.getIm());
+                        updatedUser.setPhone(member.getPhone());
                         updatedUser.setMobile(member.getMobile());
                         updatedUser.setPager(member.getPager());
+                        updatedUser.setIM(member.getIm());
+                        updatedUser.setDescription(member.getDescription());
                         updatedUser.setPrincipalType(PrincipalType.USER);
+
                         SecurityManager.NewUserStatus status = null;
                         try
                         {
