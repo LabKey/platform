@@ -3337,6 +3337,8 @@ public class QueryController extends SpringActionController
             }
 
             Map<String, Object> extraContext = json.optJSONObject("extraContext");
+            if (extraContext == null)
+                extraContext = new CaseInsensitiveHashMap<>();
 
             //setup the response, providing the schema name, query name, and operation
             //so that the client can sort out which request this response belongs to

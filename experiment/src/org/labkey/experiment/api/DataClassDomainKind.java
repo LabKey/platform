@@ -9,6 +9,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpDataClass;
@@ -17,10 +18,12 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.query.DataClassUserSchema;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
@@ -172,6 +175,9 @@ public class DataClassDomainKind extends AbstractDomainKind
     public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user)
     {
         String name = domain.getName();
+        if (name == null)
+            throw new IllegalArgumentException("DataClass name required");
+
         String description = domain.getDescription();
         List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
         List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
@@ -216,5 +222,12 @@ public class DataClassDomainKind extends AbstractDomainKind
             throw new NotFoundException("DataClass not found: " + domain.getTypeURI());
 
         dc.delete(user);
+    }
+
+    @Override
+    public TableInfo getTableInfo(User user, Container container, String name)
+    {
+        UserSchema schema = new DataClassUserSchema(container, user);
+        return schema.getTable(name);
     }
 }

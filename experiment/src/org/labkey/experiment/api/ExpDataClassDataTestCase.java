@@ -21,7 +21,8 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.property.DomainTemplate;
+import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpSchema;
@@ -39,8 +40,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.ConceptURIProperties;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.TestContext;
-import org.labkey.data.xml.TableType;
-import org.labkey.data.xml.domainTemplate.DataClassTemplateDocument;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -288,26 +287,23 @@ public class ExpDataClassDataTestCase
     {
         final User user = TestContext.get().getUser();
         final Container sub = ContainerManager.createContainer(c, "sub2");
+        final String domainName = "mydataclass";
 
         Set<Module> activeModules = new HashSet<>(c.getActiveModules());
         activeModules.add(ModuleLoader.getInstance().getModule("simpletest"));
         c.setActiveModules(activeModules);
 
-        Map<String, DataClassTemplateDocument> templateDocs = DomainUtil.getModuleDomainTemplateDocs(c, new HashSet<>());
-        DataClassTemplateDocument templateDoc = templateDocs.get("test-dataclass:testingFromTemplate");
-        Assert.assertNotNull(templateDoc);
+        DomainTemplateGroup templateGroup = DomainTemplateGroup.get(c, "TestingFromTemplate");
+        Assert.assertNotNull(templateGroup);
 
-        TableType templateTable = templateDoc.getDataClassTemplate().getTable();
-        Map<String, Object> options = DomainUtil.getDataClassOptions(templateDoc, sub);
+        DomainTemplate template = templateGroup.getTemplate("testingFromTemplate");
+        Assert.assertNotNull(template);
 
-        final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user,
-            templateTable.getTableName(), templateTable.getDescription(), DomainUtil.getPropertyDescriptors(templateDoc),
-            DomainUtil.getUniqueIndices(templateDoc), (Integer)options.get("sampleSetId"), (String)options.get("nameExpression")
-        );
-        Assert.assertNotNull(dataClass);
-
-        final Domain domain = dataClass.getDomain();
+        final Domain domain = template.createAndImport(c, user, domainName, true, false);
         Assert.assertNotNull(domain);
+
+        ExpDataClassImpl dataClass = (ExpDataClassImpl)ExperimentService.get().getDataClass(c, domainName);
+        Assert.assertNotNull(dataClass);
 
         // add ConceptURI mappings for this container
         String listName = createConceptLookupList(c, user);
@@ -315,7 +311,7 @@ public class ExpDataClassDataTestCase
         ConceptURIProperties.setLookup(c, "http://cpas.labkey.com/Experiment#Testing", lookup);
 
         UserSchema schema = QueryService.get().getUserSchema(user, c, expDataSchemaKey);
-        TableInfo table = schema.getTable("testingFromTemplate");
+        TableInfo table = schema.getTable(domainName);
         Assert.assertNotNull("data class not in query schema", table);
 
         // verify that the lookup from the ConceptURI mapping is applied as a FK to the column

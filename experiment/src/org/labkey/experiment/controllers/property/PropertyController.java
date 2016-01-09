@@ -24,6 +24,7 @@ import org.labkey.api.action.AbstractFileUploadAction;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.Marshal;
@@ -38,6 +39,8 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.property.DomainTemplate;
+import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
@@ -45,6 +48,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
@@ -66,7 +70,6 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.data.xml.domainTemplate.DataClassTemplateDocument;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -197,32 +200,45 @@ public class PropertyController extends SpringActionController
             JSONObject jsonObj = getForm.getJsonObject();
             Map<String, Object> options = new HashMap<>();
             GWTDomain newDomain;
-            String kindName;
+            Domain domain = null;
+            List<Domain> domains = null;
 
+            String kindName = jsonObj.getString("kind");
             String domainGroup = jsonObj.getString("domainGroup");
-            String domainTemplate = jsonObj.getString("domainTemplate");
-            if (domainGroup != null && domainTemplate != null)
+            String domainName = jsonObj.optString("domainName", null);
+
+            if (domainGroup != null)
             {
-                kindName = "DataClass";
+                String module = jsonObj.optString("module", null);
+                String domainTemplate = jsonObj.optString("domainTemplate", null);
 
-                String templateName = domainGroup + ":" + domainTemplate;
-                DataClassTemplateDocument templateDoc = DomainUtil.getModuleDomainTemplateDocs(getContainer(), null).get(templateName);
-                if (templateDoc == null)
-                    throw new IllegalArgumentException("Domain template '" + domainTemplate + "' not found in group '" + domainGroup + "'.");
+                boolean createDomain = jsonObj.optBoolean("createDomain", true);
+                boolean importData = jsonObj.optBoolean("importData", true);
 
-                newDomain = new GWTDomain();
-                newDomain.setName(templateDoc.getDataClassTemplate().getTable().getTableName());
-                newDomain.setDescription(templateDoc.getDataClassTemplate().getTable().getDescription());
+                DomainTemplateGroup templateGroup;
+                if (module != null)
+                    templateGroup = DomainTemplateGroup.get(ModuleLoader.getInstance().getModule(module), domainGroup);
+                else
+                    templateGroup = DomainTemplateGroup.get(getContainer(), domainGroup);
 
-                newDomain.setFields(DomainUtil.getPropertyDescriptors(templateDoc));
-                newDomain.setIndices(DomainUtil.getUniqueIndices(templateDoc));
-                options = DomainUtil.getDataClassOptions(templateDoc, getContainer());
+                if (templateGroup == null)
+                    throw new NotFoundException("Domain template group '" + domainGroup + "' not found");
+
+                if (domainTemplate != null)
+                {
+                    DomainTemplate template = templateGroup.getTemplate(domainTemplate);
+                    if (template == null)
+                        throw new NotFoundException("Domain template '" + domainTemplate + "' not found in template group '" + domainGroup + "'");
+
+                    domain = template.createAndImport(getContainer(), getUser(), domainName, createDomain, importData);
+                }
+                else
+                {
+                    domains = templateGroup.createAndImport(getContainer(), getUser(), /*TODO: allow specifying a domain name for each template?, */ createDomain, importData);
+                }
             }
-            else
+            else if (kindName != null)
             {
-                kindName = jsonObj.getString("kind");
-                if (kindName == null)
-                    throw new IllegalArgumentException("Domain kind required");
                 newDomain = convertJsonToDomain(jsonObj);
                 JSONObject jsOptions = jsonObj.optJSONObject("options");
                 if (jsOptions == null)
@@ -238,11 +254,35 @@ public class PropertyController extends SpringActionController
                     else
                         options.put(key, value);
                 }
+
+                domain = DomainUtil.createDomain(kindName, newDomain, options, getContainer(), getUser(), domainName);
+            }
+            else
+            {
+                throw new ApiUsageException("Domain template or domain design required");
             }
 
-            Domain domain = createDomain(kindName, newDomain, options, getContainer(), getUser());
 
-            ApiSimpleResponse resp = convertDomainToApiResponse(DomainUtil.getDomainDescriptor(getUser(), domain));
+            ApiSimpleResponse resp;
+            if (domain != null)
+            {
+                resp = convertDomainToApiResponse(DomainUtil.getDomainDescriptor(getUser(), domain));
+            }
+            else if (domains != null)
+            {
+                List<ApiSimpleResponse> resps = new ArrayList<>();
+                for (Domain d : domains)
+                {
+                    resps.add(convertDomainToApiResponse(DomainUtil.getDomainDescriptor(getUser(), d)));
+                }
+                resp = new ApiSimpleResponse();
+                resp.put("domains", resps);
+            }
+            else
+            {
+                throw new ApiUsageException("Domain template or domain design required");
+            }
+
             resp.put("success", true);
             return resp;
         }
@@ -531,21 +571,6 @@ public class PropertyController extends SpringActionController
         {
             this.tsvText = tsvText;
         }
-    }
-
-    private static Domain createDomain(String kindName, GWTDomain domain, Map<String, Object> arguments, Container container, User user)
-    {
-        DomainKind kind = PropertyService.get().getDomainKindByName(kindName);
-        if (kind == null)
-            throw new IllegalArgumentException("No domain kind matches name '" + kindName + "'");
-
-        if (!kind.canCreateDefinition(user, container))
-            throw new UnauthorizedException("You don't have permission to create a new domain");
-
-        Domain created = kind.createDomain(domain, arguments, container, user);
-        if (created == null)
-            throw new RuntimeException("Failed to created domain");
-        return created;
     }
 
     /** @return Errors encountered during the save attempt */

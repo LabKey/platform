@@ -909,7 +909,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return generateGuidLSID(container, type.getNamespacePrefix());
     }
 
-    public String generateLSID(Container container, Class<? extends ExpObject> clazz, String name)
+    public String generateLSID(Container container, Class<? extends ExpObject> clazz, @NotNull String name)
     {
         if (clazz == ExpSampleSet.class && name.equals(DEFAULT_MATERIAL_SOURCE_NAME) && ContainerManager.getSharedContainer().equals(container))
             return getDefaultSampleSetLsid();
@@ -932,7 +932,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return null;
     }
 
-    public ExpSampleSetImpl getSampleSet(Container container, String name)
+    public ExpSampleSetImpl getSampleSet(@NotNull Container container, @NotNull String name)
     {
         return getSampleSet(generateLSID(container, ExpSampleSet.class, name));
     }

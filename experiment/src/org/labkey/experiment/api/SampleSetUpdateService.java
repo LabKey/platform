@@ -25,6 +25,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.property.DomainProperty;
@@ -325,6 +326,12 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
         return result;
     }
 
+
+    @Override
+    public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext) throws SQLException
+    {
+        return importRows(user, container, rows, context.getErrors(), context.getConfigParameters(), extraScriptContext);
+    }
 
 
 

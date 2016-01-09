@@ -275,7 +275,7 @@ public class UploadSamplesHelper
                 {
                     if (!maps.get(0).containsKey(uri))
                     {
-                        throw new ExperimentException("Id Columns must match");
+                        throw new ExperimentException("Id Columns must match:  Missing uri " + uri + " in row 0");
                     }
                     int i = 0;
                     ListIterator<Map<String, Object>> iter = maps.listIterator();
