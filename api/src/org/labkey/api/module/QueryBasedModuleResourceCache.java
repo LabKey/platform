@@ -41,17 +41,14 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 /**
- * User: adam
- * Date: 12/26/13
- * Time: 7:17 AM
- */
-
-/**
  * Cache for module resources that are associated with specific queries (as opposed to ModuleResourceCache, which supports a
  * single, consistent directory per module and PathBasedModuleResourceCache, which loads resources from arbitrary paths). For
  * performance, this class proactively loads all resources in the resource root of each module when any resource is requested
  * from that module. This class caches the loaded resources, registers file system listeners for each resource directory, and
  * clears the cache of all resources for a module in response to file system changes in that module.
+ *
+ * User: adam
+ * Date: 12/26/13
  */
 public final class QueryBasedModuleResourceCache<T>
 {

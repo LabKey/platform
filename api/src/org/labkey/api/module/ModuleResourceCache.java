@@ -36,14 +36,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ * Standard cache for file-system resources where each module provides a single, flat directory containing all the resource
+ * files. This class loads individual resources as requested, caches the loaded resources, registers file system listeners
+ * for each resource directory, and clears elements and collections from the cache in response to file system changes.
+ *
  * User: adam
  * Date: 12/26/13
- * Time: 7:17 AM
  */
-
-// Standard cache for file-system resources where each module provides a single, flat directory containing all the resource
-// files. This class loads individual resources as requested, caches the loaded resources, registers file system listeners
-// for each resource directory, and clears elements and collections from the cache in response to file system changes.
 public final class ModuleResourceCache<T>
 {
     private static final Logger LOG = Logger.getLogger(ModuleResourceCache.class);

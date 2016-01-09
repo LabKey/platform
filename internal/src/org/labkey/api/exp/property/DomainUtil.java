@@ -21,8 +21,6 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.log4j.Logger;
-import org.apache.xmlbeans.XmlError;
-import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -41,21 +39,16 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.api.ExpSampleSet;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.gwt.client.model.GWTDomain;
-import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
-import org.labkey.api.module.Module;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.util.DateUtil;
@@ -63,21 +56,14 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.XmlBeansUtil;
-import org.labkey.api.util.XmlValidationException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.ConditionalFormatFilterType;
 import org.labkey.data.xml.ConditionalFormatType;
-import org.labkey.data.xml.domainTemplate.DataClassIndex;
-import org.labkey.data.xml.domainTemplate.DataClassOptions;
-import org.labkey.data.xml.domainTemplate.DataClassTemplateDocument;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -286,64 +272,7 @@ public class DomainUtil
         return gwtProp;
     }
 
-    public static List<GWTPropertyDescriptor> getPropertyDescriptors(DataClassTemplateDocument templateDoc)
-    {
-        List<GWTPropertyDescriptor> properties = new ArrayList<>();
-
-        DataClassTemplateDocument.DataClassTemplate template = templateDoc.getDataClassTemplate();
-        for (ColumnType columnType : template.getTable().getColumns().getColumnArray())
-            properties.add(DomainUtil.getPropertyDescriptor(columnType));
-
-        return properties;
-    }
-
-    public static Set<String> getPropertyNames(DataClassTemplateDocument templateDoc)
-    {
-        Set<String> propNames = new CaseInsensitiveHashSet();
-        for (GWTPropertyDescriptor pd : DomainUtil.getPropertyDescriptors(templateDoc))
-        {
-            propNames.add(pd.getName());
-        }
-        return propNames;
-    }
-
-    public static List<GWTIndex> getUniqueIndices(DataClassTemplateDocument templateDoc)
-    {
-        List<GWTIndex> indices = new ArrayList<>();
-
-        DataClassTemplateDocument.DataClassTemplate template = templateDoc.getDataClassTemplate();
-        for (DataClassIndex dataClassIndex : template.getIndexArray())
-        {
-            // Only unique is supported currently
-            if (TableInfo.IndexType.Unique.name().equalsIgnoreCase(dataClassIndex.getType()))
-                indices.add(new GWTIndex(Arrays.asList(dataClassIndex.getColumnArray()), true));
-        }
-
-        return indices;
-    }
-
-    public static Map<String, Object> getDataClassOptions(DataClassTemplateDocument templateDoc, Container container)
-    {
-        Map<String, Object> optionsMap = new HashMap<>();
-        optionsMap.put("sampleSetId", null);
-        optionsMap.put("nameExpression", null);
-
-        DataClassTemplateDocument.DataClassTemplate template = templateDoc.getDataClassTemplate();
-        if (template.isSetOptions())
-        {
-            DataClassOptions options = template.getOptions();
-            optionsMap.put("nameExpression", options.getNameExpression());
-            if (options.isSetSampleSet())
-            {
-                ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(container, options.getSampleSet(), false);
-                optionsMap.put("sampleSetId", sampleSet != null ? sampleSet.getRowId() : null);
-            }
-        }
-
-        return optionsMap;
-    }
-
-    private static GWTPropertyDescriptor getPropertyDescriptor(ColumnType columnXml)
+    public static GWTPropertyDescriptor getPropertyDescriptor(ColumnType columnXml)
     {
         GWTPropertyDescriptor gwtProp = new GWTPropertyDescriptor();
         gwtProp.setName(columnXml.getColumnName());
@@ -436,82 +365,33 @@ public class DomainUtil
         return gwtProp;
     }
 
-    public static Map<String, DataClassTemplateDocument> getModuleDomainTemplateDocs(Container container, Set<String> messages)
-    {
-        Map<String, DataClassTemplateDocument> templateDocs = new HashMap<>();
 
-        if (container != null)
+    public static Domain createDomain(DomainTemplate template, Container container, User user, @Nullable String domainName)
+    {
+        return createDomain(template.getDomainKind(), template.getDomain(), template.getOptions(), container, user, domainName);
+    }
+
+    public static Domain createDomain(String kindName, GWTDomain domain, Map<String, Object> arguments, Container container, User user, @Nullable String domainName)
+    {
+        if (domainName != null)
         {
-            for (Module module : container.getActiveModules())
-            {
-                Resource groupsDir = module.getModuleResource("domain-templates");
-                if (groupsDir != null && groupsDir.isCollection())
-                {
-                    for (Resource templatesDir : groupsDir.list())
-                    {
-                        for (DataClassTemplateDocument template : getDataClassTemplatesForGroup(templatesDir, messages))
-                        {
-                            String tableName = template.getDataClassTemplate().getTable().getTableName();
-                            templateDocs.put(templatesDir.getName() + ":" + tableName, template);
-                        }
-                    }
-                }
-            }
+            domain = new GWTDomain(domain);
+            domain.setName(domainName);
         }
 
-        return templateDocs;
+        DomainKind kind = PropertyService.get().getDomainKindByName(kindName);
+        if (kind == null)
+            throw new IllegalArgumentException("No domain kind matches name '" + kindName + "'");
+
+        if (!kind.canCreateDefinition(user, container))
+            throw new UnauthorizedException("You don't have permission to create a new domain");
+
+        Domain created = kind.createDomain(domain, arguments, container, user);
+        if (created == null)
+            throw new RuntimeException("Failed to created domain");
+        return created;
     }
 
-    private static List<DataClassTemplateDocument> getDataClassTemplatesForGroup(Resource templatesDir, Set<String> messages)
-    {
-        List<DataClassTemplateDocument> templates = new ArrayList<>();
-
-        if (templatesDir != null && templatesDir.isCollection())
-        {
-            for (Resource resource : templatesDir.list())
-            {
-                if (resource.getName().endsWith(".template.xml"))
-                {
-                    try (InputStream is = resource.getInputStream())
-                    {
-                        DataClassTemplateDocument template = DataClassTemplateDocument.Factory.parse(is);
-                        XmlBeansUtil.validateXmlDocument(template, resource.getName());
-                        templates.add(template);
-                    }
-                    catch (XmlException e)
-                    {
-                        logXmlParseError(messages, "Skipping '" + resource.getName() + "' template file: " + XmlBeansUtil.getErrorMessage(e));
-                    }
-                    catch (XmlValidationException e)
-                    {
-                        StringBuilder sb = new StringBuilder();
-                        sb.append("Skipping '").append(resource.getName()).append("' template file:\n");
-                        for (XmlError err : e.getErrorList())
-                            sb.append("  ").append(XmlBeansUtil.getErrorMessage(err)).append("\n");
-                        logXmlParseError(messages, sb.toString());
-                    }
-                    catch (IOException e)
-                    {
-                        logXmlParseError(messages, ("Skipping '" + resource.getName() + "' template file: " + e.getMessage()));
-                    }
-                }
-                else
-                {
-                    logXmlParseError(messages, ("Skipping '" + resource.getName() + "' template file: does not have the expected file suffix."));
-                }
-            }
-        }
-
-        return templates;
-    }
-
-    private static void logXmlParseError(Set<String> messages, String message)
-    {
-        if (messages != null)
-            messages.add(message);
-        else
-            Logger.getLogger(DomainUtil.class).warn(message);
-    }
 
     /** @return Errors encountered during the save attempt */
     @NotNull
@@ -674,6 +554,8 @@ public class DomainUtil
         {
             addProperty(d, pd, defaultValues, propertyUrisInUse, errors);
         }
+
+        // TODO: update indices -- drop and re-add?
 
         try
         {

@@ -36,19 +36,18 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 /**
+ * Cache for file-system resources where the associated files can appear in multiple directories within a module
+ * (as opposed to ModuleResourceCache, which supports a single, consistent directory per module). This class loads
+ * individual resources as requested, caches the loaded resources, registers file system listeners for each resource
+ * directory, and clears elements from the cache in response to file system changes.
+ *
+ * Unlike ModuleResourceCache, which proactively registers all file listeners on first reference, this class registers
+ * listeners on demand (any time a resource is loaded from a new directory). As a result, there's no way to query for
+ * a complete list of resources or resource names.
+ *
  * User: adam
  * Date: 12/26/13
- * Time: 7:17 AM
  */
-
-// Cache for file-system resources where the associated files can appear in multiple directories within a module
-// (as opposed to ModuleResourceCache, which supports a single, consistent directory per module). This class loads
-// individual resources as requested, caches the loaded resources, registers file system listeners for each resource
-// directory, and clears elements from the cache in response to file system changes.
-//
-// Unlike ModuleResourceCache, which proactively registers all file listeners on first reference, this class registers
-// listeners on demand (any time a resource is loaded from a new directory). As a result, there's no way to query for
-// a complete list of resources or resource names.
 public final class PathBasedModuleResourceCache<T>
 {
     private static final Logger LOG = Logger.getLogger(PathBasedModuleResourceCache.class);

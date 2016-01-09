@@ -6752,6 +6752,8 @@ internal/src/org/labkey/api/exp/property/AssayRunDomainKind.java -text
 internal/src/org/labkey/api/exp/property/DefaultAssayDomainKind.java -text
 internal/src/org/labkey/api/exp/property/DomainEditorServiceBase.java -text
 internal/src/org/labkey/api/exp/property/DomainImporterServiceBase.java -text
+internal/src/org/labkey/api/exp/property/DomainTemplate.java -text
+internal/src/org/labkey/api/exp/property/DomainTemplateGroup.java -text
 internal/src/org/labkey/api/exp/property/DomainUtil.java -text
 internal/src/org/labkey/api/exp/property/ExperimentProperty.java -text
 internal/src/org/labkey/api/exp/property/PlateBasedAssaySampleSetDomainKind.java -text
