@@ -46,7 +46,6 @@ import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ActionButton;
@@ -96,16 +95,16 @@ import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.form.DeleteForm;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainTemplate;
+import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.property.DomainUtil;
-import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.query.ExpInputTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
-import org.labkey.api.gwt.client.model.GWTIndex;
-import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineRootContainerTree;
@@ -143,6 +142,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ConceptURIProperties;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
@@ -179,8 +179,6 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.data.xml.TableType;
-import org.labkey.data.xml.domainTemplate.DataClassTemplateDocument;
 import org.labkey.experiment.ChooseExperimentTypeBean;
 import org.labkey.experiment.ConfirmDeleteView;
 import org.labkey.experiment.CustomPropertiesView;
@@ -204,7 +202,6 @@ import org.labkey.experiment.StandardAndCustomPropertiesView;
 import org.labkey.experiment.XarExportPipelineJob;
 import org.labkey.experiment.XarExportType;
 import org.labkey.experiment.XarExporter;
-import org.labkey.api.settings.ConceptURIProperties;
 import org.labkey.experiment.api.DataClass;
 import org.labkey.experiment.api.ExpDataClassImpl;
 import org.labkey.experiment.api.ExpDataImpl;
@@ -1050,7 +1047,7 @@ public class ExperimentController extends SpringActionController
     public class InsertDataClassAction extends FormViewAction<InsertDataClassForm>
     {
         private ActionURL _successUrl;
-        private Map<String, DataClassTemplateDocument> _moduleTemplates;
+        private Map<String, DomainTemplate> _domainTemplates;
 
         @Override
         public void validateCommand(InsertDataClassForm form, Errors errors)
@@ -1060,34 +1057,14 @@ public class ExperimentController extends SpringActionController
             if (form.isUseTemplate())
             {
                 Set<String> messages = new HashSet<>();
-                _moduleTemplates = DomainUtil.getModuleDomainTemplateDocs(getContainer(), messages);
+                _domainTemplates = DomainTemplateGroup.getAllTemplates(getContainer());
 
-                if (!_moduleTemplates.containsKey(form.getDomainTemplate()))
+                if (!_domainTemplates.containsKey(form.getDomainTemplate()))
                     errors.reject(ERROR_MSG, "Unknown template selected: " + form.getDomainTemplate());
                 else
                 {
-                    DataClassTemplateDocument template = _moduleTemplates.get(form.getDomainTemplate());
-                    TableType dataClassTable = template.getDataClassTemplate().getTable();
-                    name = dataClassTable.getTableName();
-
-                    // issue 25275: verify that there are no duplicate property names defined in the template
-                    Set<String> propNames = DomainUtil.getPropertyNames(template);
-                    if (propNames.size() != dataClassTable.getColumns().getColumnArray().length)
-                        errors.reject(ERROR_MSG, "Duplicate column name definition in selected template.");
-
-                    // issue 25273: verify that each index column name exists in the domain
-                    List<GWTIndex> indices = DomainUtil.getUniqueIndices(template);
-                    if (indices != null && !indices.isEmpty())
-                    {
-                        for (GWTIndex index : indices)
-                        {
-                            for (String indexColName : index.getColumnNames())
-                            {
-                                if (!propNames.contains(indexColName))
-                                    errors.reject(ERROR_MSG, "Index column name '" + indexColName + "' does not exist in selected template.");
-                            }
-                        }
-                    }
+                    DomainTemplate template = _domainTemplates.get(form.getDomainTemplate());
+                    name = template.getTemplateName();
                 }
             }
 
@@ -1102,8 +1079,8 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(InsertDataClassForm form, boolean reshow, BindException errors) throws Exception
         {
             Set<String> messages = new HashSet<>();
-            Map<String, DataClassTemplateDocument> domainTemplates = DomainUtil.getModuleDomainTemplateDocs(getContainer(), messages);
-            form.setAvailableDomainTemplateNames(domainTemplates.keySet());
+            Map<String, DomainTemplate> templates = DomainTemplateGroup.getAllTemplates(getContainer());
+            form.setAvailableDomainTemplateNames(templates.keySet());
             form.setXmlParseErrors(messages);
 
             return new JspView<>("/org/labkey/experiment/insertDataClass.jsp", form, errors);
@@ -1114,20 +1091,10 @@ public class ExperimentController extends SpringActionController
         {
             if (form.isUseTemplate())
             {
-                DataClassTemplateDocument templateDoc = _moduleTemplates.get(form.getDomainTemplate());
-                DataClassTemplateDocument.DataClassTemplate template = templateDoc.getDataClassTemplate();
-                TableType tableType = template.getTable();
+                DomainTemplate template = _domainTemplates.get(form.getDomainTemplate());
+                Domain domain = DomainUtil.createDomain(template, getContainer(), getUser(), form.getName());
 
-                List<GWTPropertyDescriptor> properties = DomainUtil.getPropertyDescriptors(templateDoc);
-                List<GWTIndex> indices = DomainUtil.getUniqueIndices(templateDoc);
-                Map<String, Object> options = DomainUtil.getDataClassOptions(templateDoc, getContainer());
-
-                ExpDataClass dataClass = ExperimentService.get().createDataClass(
-                    getContainer(), getUser(), tableType.getTableName(), tableType.getDescription(),
-                    properties, indices, (Integer)options.get("sampleSetId"), (String)options.get("nameExpression")
-                );
-
-                _successUrl = PageFlowUtil.urlProvider(ExperimentUrls.class).getShowDataClassURL(getContainer(), dataClass.getRowId());
+                _successUrl = domain.getDomainKind().urlShowData(domain, getViewContext());
             }
             else
             {
