@@ -39,7 +39,11 @@
     <%if (pageConfig.getFrameOption() == PageConfig.FrameOption.DENY) {%> <script type="text/javascript">if (top != self) top.location.replace(self.location.href);</script><%}%>
     <title><%=h(pageConfig.getTitle())%></title>
     <%= pageConfig.getMetaTags(getActionURL()) %>
+    <% if (me.isAppTemplate()) { %>
+    <%= PageFlowUtil.getAppIncludes(getViewContext(), pageConfig.getClientDependencies()) %>
+    <% } else { %>
     <%= PageFlowUtil.getStandardIncludes(getViewContext(), pageConfig.getClientDependencies()) %>
+    <% } %>
 </head>
 <body class="<%=themeFont.getClassName()%>">
     <% me.include(me.getBody(), out);%>

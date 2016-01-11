@@ -44,6 +44,10 @@ public class TemplateFactoryClassic implements ViewService.TemplateFactory
             {
                 return new BodyTemplate(body, page);
             }
+            case App:
+            {
+                return new BodyTemplate(body, page, true);
+            }
             case Home:
             default:
             {

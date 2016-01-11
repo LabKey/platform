@@ -52,7 +52,8 @@ public class PageConfig
         Dialog,
         Wizard,
         Body,
-        Custom  // must be handled by module
+        Custom,  // must be handled by module
+        App
     }
 
 	public enum TrueFalse

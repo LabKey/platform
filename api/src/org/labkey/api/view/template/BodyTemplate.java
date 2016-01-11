@@ -24,16 +24,29 @@ import org.springframework.web.servlet.ModelAndView;
  */
 public class BodyTemplate extends JspView<PageConfig>
 {
-    public BodyTemplate(ModelAndView body, PageConfig page)
+    private final boolean isAppTemplate;
+
+    public BodyTemplate(ModelAndView body, PageConfig page, boolean isAppTemplate)
     {
         super("/org/labkey/api/view/template/bodyTemplate.jsp", page);
 
         setBody(body);
         setFrame(FrameType.NONE);
+        this.isAppTemplate = isAppTemplate;
+    }
+    
+    public BodyTemplate(ModelAndView body, PageConfig page)
+    {
+        this(body, page, false);
     }
 
     public BodyTemplate(ModelAndView body)
     {
         this(body, new PageConfig());
+    }
+
+    public boolean isAppTemplate()
+    {
+        return isAppTemplate;
     }
 }

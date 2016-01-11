@@ -1530,14 +1530,20 @@ public class PageFlowUtil
     }
 
 
+    public static String getAppIncludes(ViewContext context, @Nullable  LinkedHashSet<ClientDependency> resources)
+    {
+        return getStandardIncludes(context, resources, false);
+    }
+
+
     public static String getStandardIncludes(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources)
     {
-        Container c = context.getContainer();
+        return getStandardIncludes(context, resources, true);
+    }
 
-        // Better handling for odd cases... bootstrap, background?
-        if (null == c)
-            c = ContainerManager.getRoot();
 
+    private static String getStandardIncludes(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources, boolean includeDefaultResources)
+    {
         if (resources == null)
             resources = new LinkedHashSet<>();
 
@@ -1553,7 +1559,7 @@ public class PageFlowUtil
             }
         }
 
-        StringBuilder sb = new StringBuilder(getIncludes(context, resources, true));
+        StringBuilder sb = new StringBuilder(getIncludes(context, resources, includeDefaultResources));
 
         if (currentId != -1)
         {
@@ -1566,6 +1572,7 @@ public class PageFlowUtil
 
         return sb.toString();
     }
+
 
     public static StringBuilder getFaviconIncludes(Container c)
     {
