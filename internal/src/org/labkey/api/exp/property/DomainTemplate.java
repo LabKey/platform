@@ -169,11 +169,14 @@ public class DomainTemplate
         else if (template instanceof DataClassTemplateType)
         {
             DataClassOptionsType options = ((DataClassTemplateType)template).getOptions();
-            optionsMap.put("nameExpression", options.getNameExpression());
-            if (options.isSetSampleSet())
+            if (options != null)
             {
-                ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(container, options.getSampleSet(), false);
-                optionsMap.put("sampleSetId", sampleSet != null ? sampleSet.getRowId() : null);
+                optionsMap.put("nameExpression", options.getNameExpression());
+                if (options.isSetSampleSet())
+                {
+                    ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(container, options.getSampleSet(), false);
+                    optionsMap.put("sampleSetId", sampleSet != null ? sampleSet.getRowId() : null);
+                }
             }
         }
         else if (template instanceof SampleSetTemplateType)
