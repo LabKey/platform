@@ -154,7 +154,7 @@ public class DomainTemplate
             for (IndexType index : template.getIndices().getIndexArray())
             {
                 // Only unique is supported currently
-                if (TableInfo.IndexType.Unique.name().equalsIgnoreCase(index.getType().toString()))
+                if (index.getType() != null && TableInfo.IndexType.Unique.name().equalsIgnoreCase(index.getType().toString()))
                 {
                     String[] colNames = index.getColumnArray();
                     for (String colName : colNames)
