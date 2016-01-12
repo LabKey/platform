@@ -2,7 +2,7 @@ package org.labkey.api.exp.property;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
@@ -133,7 +133,7 @@ public class DomainTemplate
 
     private static List<GWTPropertyDescriptor> getDomainTemplateProperties(String templateName, DomainTemplateType template)
     {
-        Map<String, GWTPropertyDescriptor> properties = new CaseInsensitiveHashMap<>(new LinkedHashMap<>());
+        Map<String, GWTPropertyDescriptor> properties = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
 
         for (ColumnType columnType : template.getTable().getColumns().getColumnArray())
         {
