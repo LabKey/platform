@@ -1079,8 +1079,16 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(InsertDataClassForm form, boolean reshow, BindException errors) throws Exception
         {
             Set<String> messages = new HashSet<>();
-            Map<String, DomainTemplate> templates = DomainTemplateGroup.getAllTemplates(getContainer());
-            form.setAvailableDomainTemplateNames(templates.keySet());
+            Set<String> templates = new TreeSet<>();
+            Map<String, DomainTemplateGroup> groups = DomainTemplateGroup.getAllGroups(getContainer());
+
+            for (DomainTemplateGroup g : groups.values())
+            {
+                messages.addAll(g.getErrors());
+                templates.addAll(g.getTemplates().keySet());
+            }
+
+            form.setAvailableDomainTemplateNames(templates);
             form.setXmlParseErrors(messages);
 
             return new JspView<>("/org/labkey/experiment/insertDataClass.jsp", form, errors);
