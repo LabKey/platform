@@ -9,7 +9,6 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
@@ -44,8 +43,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * User: kevink
@@ -56,15 +57,28 @@ public class DomainTemplate
     private final String _moduleName;
     private final String _templateGroup;
     private final String _templateName;
+    private final List<String> _errors;
 
     private final String _domainKind;
     private final GWTDomain _domain;
     private final Map<String, Object> _options;
     private final InitialDataSettings _initialData;
 
-    public static DomainTemplate create(String moduleName, String groupName, DomainTemplateType template)
+    public static DomainTemplate parse(String moduleName, String groupName, DomainTemplateType template)
     {
         String templateName = template.getTable().getTableName();
+        try
+        {
+            return _parse(templateName, moduleName, groupName, template);
+        }
+        catch (IllegalArgumentException ex)
+        {
+            return new DomainTemplate(Objects.toString(templateName, "<unknown>"), moduleName, groupName, Arrays.asList(ex.getMessage()));
+        }
+    }
+
+    private static DomainTemplate _parse(String templateName, String moduleName, String groupName, DomainTemplateType template)
+    {
         if (templateName == null)
             throw new IllegalArgumentException("template name required");
 
@@ -77,7 +91,7 @@ public class DomainTemplate
         List<GWTIndex> indices = getDomainTemplateUniqueIndices(templateName, template, properties);
         Map<String, Object> options = getDomainTemplateOptions(templateName, template, null, properties);
 
-        GWTDomain domain = new GWTDomain();
+        GWTDomain<GWTPropertyDescriptor> domain = new GWTDomain<>();
         domain.setName(templateName);
         domain.setDescription(template.getTable().getDescription());
         domain.setFields(properties);
@@ -119,7 +133,7 @@ public class DomainTemplate
 
     private static List<GWTPropertyDescriptor> getDomainTemplateProperties(String templateName, DomainTemplateType template)
     {
-        Map<String, GWTPropertyDescriptor> properties = new CaseInsensitiveHashMap<>();
+        Map<String, GWTPropertyDescriptor> properties = new CaseInsensitiveHashMap<>(new LinkedHashMap<>());
 
         for (ColumnType columnType : template.getTable().getColumns().getColumnArray())
         {
@@ -173,10 +187,7 @@ public class DomainTemplate
             {
                 optionsMap.put("nameExpression", options.getNameExpression());
                 if (options.isSetSampleSet())
-                {
-                    ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(container, options.getSampleSet(), false);
-                    optionsMap.put("sampleSetId", sampleSet != null ? sampleSet.getRowId() : null);
-                }
+                    optionsMap.put("sampleSet", options.getSampleSet());
             }
         }
         else if (template instanceof SampleSetTemplateType)
@@ -207,6 +218,7 @@ public class DomainTemplate
         throw new IllegalArgumentException("Failed to find keyCol '" + col + "' for template '" + templateName + "'");
     }
 
+    @Nullable
     private static InitialDataSettings getImportDataSettings(String templateName, DomainTemplateType template)
     {
         if (!template.isSetInitialData())
@@ -222,19 +234,51 @@ public class DomainTemplate
     }
 
     private DomainTemplate(@NotNull String name, @NotNull String groupName, @NotNull String moduleName,
-                           @NotNull String domainKind, @NotNull GWTDomain domain, @NotNull Map<String, Object> options, @NotNull InitialDataSettings initialData)
+                           @NotNull String domainKind, @NotNull GWTDomain domain, @NotNull Map<String, Object> options, @Nullable InitialDataSettings initialData)
     {
         _moduleName = moduleName;
         _templateGroup = groupName;
         _templateName = name;
         _domainKind = domainKind;
+        _errors = null;
         _domain = domain;
         _options = options;
         _initialData = initialData;
     }
 
+    private DomainTemplate(@NotNull String name, @NotNull String groupName, @NotNull String moduleName,
+                           @NotNull List<String> errors)
+    {
+        _moduleName = moduleName;
+        _templateGroup = groupName;
+        _templateName = name;
+        _errors = errors;
+        _domainKind = null;
+        _domain = null;
+        _options = null;
+        _initialData = null;
+    }
+
+    public boolean hasErrors()
+    {
+        return _errors != null && !_errors.isEmpty();
+    }
+
+    public List<String> getErrors()
+    {
+        return _errors != null ? _errors : Collections.emptyList();
+    }
+
+    public void throwErrors() throws BatchValidationException
+    {
+        if (_errors != null && !_errors.isEmpty())
+            throw new BatchValidationException(new ValidationException(_errors.get(0)));
+    }
+
     public Domain createAndImport(Container c, User u, @Nullable String domainName, boolean createDomain, boolean importData) throws BatchValidationException
     {
+        throwErrors();
+
         Domain d = null;
         if (createDomain)
         {
@@ -259,6 +303,8 @@ public class DomainTemplate
 
     public int importData(@Nullable String domainName, Container c, User u) throws BatchValidationException
     {
+        throwErrors();
+
         if (domainName == null)
             domainName = getDomain().getName();
 
