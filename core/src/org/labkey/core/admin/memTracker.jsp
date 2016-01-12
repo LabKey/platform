@@ -131,7 +131,7 @@
     </tr>
     <tr>
         <td class="labkey-wp-body">
-            <table class="labkey-data-region labkey-show-borders" name="leaks">
+            <table class="labkey-data-region labkey-show-borders" name="leaks" id="leaks">
                 <tr>
                     <th>&nbsp;</th>
                     <th align="left">Object Class</th>
@@ -150,16 +150,16 @@
             %>
                 <tr class="<%=getShadeRowClass(counter % 2 == 1)%>">
                     <td valign=top><img id="toggleImg<%=counter%>" src="<%=getWebappURL("_images/plus.gif")%>" alt="expand/collapse" onclick='toggle(<%=counter%>)'></td>
-                    <td valign=top><%=h(reference.getClassName())%></td>
-                    <td valign=top>
+                    <td class='objectClass' valign=top><%=h(reference.getClassName())%></td>
+                    <td class='objectToString' valign=top>
             <%
                         if (reference.hasShortSummary())
                         {
             %>
-                        <div id='summaryTogglePanel<%= counter %>' style='cursor:pointer'>
+                        <div name='summaryTogglePanel' id='summaryTogglePanel<%= counter %>' style='cursor:pointer'>
                             <%= h(reference.getObjectSummary()) %>
                         </div>
-                        <div id="descriptionPanel<%= counter %>" style="display:none;">
+                        <div name='descriptionPanel' id='descriptionPanel<%= counter %>' style="display:none;">
                             <%= h(reference.getObjectDescription()) %>
                         </div>
             <%
@@ -170,10 +170,10 @@
                         }
             %>
                     </td>
-                    <td valign=top><%=h(DateUtil.formatDuration(currentMillis - reference.getAllocationTime()))%></td>
-                    <td>
-                        <div id='stackTogglePanel<%= counter %>' style='cursor:pointer'><%= text(secondLine) %></div>
-                        <div id="stackContentPanel<%= counter %>" style="display:none;"><%= text(htmlStack) %></div>
+                    <td class='age' valign=top><%=h(DateUtil.formatDuration(currentMillis - reference.getAllocationTime()))%></td>
+                    <td class='allocationStack'>
+                        <div name='stackTogglePanel' id='stackTogglePanel<%= counter %>' style='cursor:pointer'><%= text(secondLine) %></div>
+                        <div name='stackContentPanel' id='stackContentPanel<%= counter %>' style="display:none;"><%= text(htmlStack) %></div>
                     </td>
                 </tr>
             <%
