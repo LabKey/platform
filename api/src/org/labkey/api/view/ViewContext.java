@@ -20,7 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.HasPermission;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
@@ -271,15 +270,6 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
     }
 
 
-    /**
-     * True if user has agreed to terms of use, or such agreement is not required.
-     * @return true if user has agreed to terms of use for this project
-     */
-    public boolean hasAgreedToTermsOfUse()
-    {
-        return !SecurityManager.isTermsOfUseRequired(this);
-    }
-
     public HttpServletResponse getResponse()
     {
         return _response;
@@ -393,10 +383,7 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
     static final ResourceBundleMessageSource _defaultMessageSource = new ResourceBundleMessageSource();
     static
     {
-        _defaultMessageSource.setBasenames(new String[] {
-        "messages.Validation",
-        "messages.Global"
-        });
+        _defaultMessageSource.setBasenames("messages.Validation", "messages.Global");
         _defaultMessageSource.setBundleClassLoader(ViewContext.class.getClassLoader());
     }
     List<String> _messageBundles = new ArrayList<>();

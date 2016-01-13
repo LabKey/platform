@@ -31,7 +31,6 @@ import org.labkey.api.view.ForbiddenProjectException;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.Portal;
-import org.labkey.api.view.TermsOfUseException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
 import org.springframework.validation.Errors;
@@ -174,8 +173,7 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
             }
         }
         
-        if (!getViewContext().hasAgreedToTermsOfUse())
-            throw new TermsOfUseException();
+        verifyTermsOfUse(getViewContext());
     }
 
     public NavTree appendNavTrail(NavTree root)

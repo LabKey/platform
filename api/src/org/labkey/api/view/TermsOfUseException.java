@@ -21,6 +21,7 @@ package org.labkey.api.view;
  * Date: Jun 30, 2006
  * Time: 5:41:25 PM
  */
+@Deprecated // TODO: Delete this once we've tested WikiTermsOfUseProvider changes
 public class TermsOfUseException extends UnauthorizedException
 {
     public TermsOfUseException()

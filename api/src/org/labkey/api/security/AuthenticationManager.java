@@ -152,7 +152,7 @@ public class AuthenticationManager
     {
         Map<String, Object> config = new HashMap<>();
         config.put("registrationEnabled", isRegistrationEnabled());
-        config.put("requiresTermsOfUse", SecurityManager.isTermsOfUseRequired(project));
+        config.put("requiresTermsOfUse", WikiTermsOfUseProvider.isTermsOfUseRequired(project));
         config.put("hasOtherLoginMechanisms", hasSSOAuthenticationProvider());
         return config;
     }

@@ -397,7 +397,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             }
             else
             {
-                BaseViewAction.checkPermissionsAndTermsOfUse(actionClass, context, null);
+                BaseViewAction.checkPermissionsAndTermsOfUse(actionClass, context, null, false);
             }
 
             // Actions can annotate themselves with an ActionType, which helps custom schemas that want to limit access from generic actions

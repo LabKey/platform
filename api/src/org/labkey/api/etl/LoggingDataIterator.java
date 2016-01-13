@@ -17,7 +17,6 @@ package org.labkey.api.etl;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.log4j.Priority;
 import org.json.JSONObject;
 import org.labkey.api.ScrollableDataIterator;
 import org.labkey.api.data.ColumnInfo;
@@ -46,7 +45,7 @@ public class LoggingDataIterator extends AbstractDataIterator implements Scrolla
     {
         if (in instanceof LoggingDataIterator)
             return in;
-        if (_staticLog.isEnabledFor(Priority.DEBUG))
+        if (_staticLog.isEnabledFor(Level.DEBUG))
             return new LoggingDataIterator(in, _staticLog);
         return in;
     }

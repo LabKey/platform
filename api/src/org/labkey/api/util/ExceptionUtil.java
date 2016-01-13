@@ -56,7 +56,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.MalformedURLException;
 import java.net.SocketException;
@@ -834,15 +833,10 @@ public class ExceptionUtil
         ExceptionResponse handleIt(final User user, Exception ex, @Nullable String message)
         {
             final MockServletResponse res = new MockServletResponse();
-            InvocationHandler h = new InvocationHandler()
-            {
-                @Override
-                public Object invoke(Object o, Method method, Object[] objects) throws Throwable
-                {
-                    // still calls in 'headers' for validation
-                    res.addHeader(method.getDeclaringClass().getSimpleName() + "." + method.getName(), objects.length==0 ? "" : objects.length==1 ? String.valueOf(objects[0]) : objects.toString());
-                    return null;
-                }
+            InvocationHandler h = (o, method, objects) -> {
+                // still calls in 'headers' for validation
+                res.addHeader(method.getDeclaringClass().getSimpleName() + "." + method.getName(), objects.length==0 ? "" : objects.length==1 ? String.valueOf(objects[0]) : objects.toString());
+                return null;
             };
             SearchService dummySearch = (SearchService) Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{SearchService.class}, h);
             Logger dummyLog = new Logger("mock logger")

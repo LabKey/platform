@@ -33,7 +33,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
-import org.labkey.api.data.Project;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -43,7 +42,6 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.AuthenticationProvider.ResetPasswordProvider;
 import org.labkey.api.audit.provider.GroupAuditProvider;
@@ -67,7 +65,6 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
@@ -84,9 +81,9 @@ import org.labkey.api.util.emailTemplate.UserOriginatedEmailTemplate;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
-import org.labkey.api.wiki.WikiService;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import javax.mail.Message;
@@ -124,7 +121,8 @@ public class SecurityManager
 {
     private static final Logger _log = Logger.getLogger(SecurityManager.class);
     private static final CoreSchema core = CoreSchema.getInstance();
-    private static final List<ViewFactory> _viewFactories = new CopyOnWriteArrayList<>();
+    private static final List<ViewFactory> VIEW_FACTORIES = new CopyOnWriteArrayList<>();
+    private static final List<TermsOfUseProvider> TERMS_OF_USE_PROVIDERS = new CopyOnWriteArrayList<>();
 
     static final String NULL_GROUP_ERROR_MESSAGE = "Null group not allowed";
     static final String NULL_PRINCIPAL_ERROR_MESSAGE = "Null principal not allowed";
@@ -136,13 +134,11 @@ public class SecurityManager
     static final String PROJECT_TO_SITE_ERROR_MESSAGE =  "Can't add a project group to a site group";
     static final String CIRCULAR_GROUP_ERROR_MESSAGE = "Can't add a group that results in a circular group relation";
 
-    public static final String TERMS_OF_USE_WIKI_NAME = "_termsOfUse";
+    public static final String TRANSFORM_SESSION_ID = "LabKeyTransformSessionId";  // issue 19748
 
     private static final String USER_ID_KEY = User.class.getName() + "$userId";
     private static final String IMPERSONATION_CONTEXT_FACTORY_KEY = User.class.getName() + "$ImpersonationContextFactoryKey";
-    public static final String AUTHENTICATION_METHOD = "SecurityManager.authenticationMethod";
-
-    public static final String TRANSFORM_SESSIONID = "LabKeyTransformSessionId";  // issue 19748
+    private static final String AUTHENTICATION_METHOD = "SecurityManager.authenticationMethod";
     private static final Map<String, Integer> TRANSFORM_SESSIONID_MAP = new HashMap<>();
 
     static
@@ -378,6 +374,12 @@ public class SecurityManager
     }
 
 
+    public static boolean isBasicAuthentication(HttpServletRequest request)
+    {
+        return "Basic".equals(request.getAttribute(AUTHENTICATION_METHOD));
+    }
+
+
     public static User getAuthenticatedUser(HttpServletRequest request)
     {
         User u = (User) request.getUserPrincipal();
@@ -435,7 +437,7 @@ public class SecurityManager
         if (null == u)
         {
             // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage
-            String transformSessionId = PageFlowUtil.getCookieValue(request.getCookies(), TRANSFORM_SESSIONID, null);
+            String transformSessionId = PageFlowUtil.getCookieValue(request.getCookies(), TRANSFORM_SESSION_ID, null);
             if (transformSessionId != null && TRANSFORM_SESSIONID_MAP.get(transformSessionId) != null)
             {
                 u = UserManager.getUser(TRANSFORM_SESSIONID_MAP.get(transformSessionId));
@@ -466,7 +468,7 @@ public class SecurityManager
 
     public static void setAuthenticatedUser(HttpServletRequest request, User user)
     {
-        SessionHelper.clearSession(request, PageFlowUtil.set(TERMS_APPROVED_KEY));      // Clear out preliminary auth state (guest / previous user session was cleared on login page)
+        SessionHelper.clearSession(request, PageFlowUtil.set(WikiTermsOfUseProvider.TERMS_APPROVED_KEY));      // Clear out preliminary auth state (guest / previous user session was cleared on login page)
         if (!user.isGuest() && request instanceof AuthenticatedRequest)
             ((AuthenticatedRequest)request).convertToLoggedInSession();
 
@@ -1990,154 +1992,7 @@ public class SecurityManager
     }
 
 
-    public static boolean isTermsOfUseRequired(@Nullable Project project)
-    {
-        //TODO: Should do this more efficiently, but no efficient public wiki api for this yet
-        TermsOfUse terms =  getTermsOfUse(project);
-        return terms.getType() != TermsOfUseType.NONE;
-    }
-
-
-    @NotNull
-    public static TermsOfUse getTermsOfUse(@Nullable Project project)
-    {
-        if (!ModuleLoader.getInstance().isStartupComplete())
-            return NO_TERMS;
-
-        WikiService service = ServiceRegistry.get().getService(WikiService.class);
-        //No wiki service. Must be in weird state. Don't do terms here...
-        if (null == service)
-            return NO_TERMS;
-
-        String termsString;
-        if (null != project) // find project-level terms of use, if any
-        {
-            termsString = service.getHtml(project.getContainer(), TERMS_OF_USE_WIKI_NAME);
-            if (null != termsString)
-            {
-                return new TermsOfUse(TermsOfUseType.PROJECT_LEVEL, termsString);
-            }
-        }
-
-        // now check if we have site-wide terms of use
-        termsString = service.getHtml(ContainerManager.getRoot(), TERMS_OF_USE_WIKI_NAME);
-        if (null != termsString)
-        {
-            return new TermsOfUse(TermsOfUseType.SITE_WIDE, termsString);
-        }
-        return NO_TERMS;
-    }
-
-
-    public static boolean isTermsOfUseRequired(ViewContext ctx)
-    {
-        if (ctx.getUser().isSearchUser())
-            return false;
-
-        Container c = ctx.getContainer();
-        if (null == c)
-            return false;
-
-        Container proj = c.getProject();
-
-        Project project = null;
-        if (null != proj)
-        {
-            project = new Project(proj);
-        }
-
-        // not required for Basic authentication or if we have already approved at the project level
-        if ("Basic".equals(ctx.getRequest().getAttribute(AUTHENTICATION_METHOD)) || isTermsOfUseApproved(ctx, project))
-            return false;
-
-        TermsOfUse termsOfUse = getTermsOfUse(project);
-        boolean required;
-        switch (termsOfUse.getType())
-        {
-            case SITE_WIDE:
-                // if we don't require project-level and have approved site-wide level, not required to ask again,
-                // but we don't cache for the project in case we set project-level terms later
-                required = !isTermsOfUseApproved(ctx, null);
-                break;
-            case PROJECT_LEVEL: // we already checked if the project-level terms were approved, so we know that they are required here
-                required = true;
-                break;
-            default:
-                required = false;
-        }
-
-        return required;
-    }
-
-
-    private static final String TERMS_APPROVED_KEY = "TERMS_APPROVED_KEY";
-
-    public static enum TermsOfUseType { NONE, PROJECT_LEVEL, SITE_WIDE };
-
-    public static class TermsOfUse
-    {
-        private final TermsOfUseType type;
-        private final String html;
-
-        public TermsOfUse(@NotNull TermsOfUseType type, @Nullable String html)
-        {
-            this.type = type;
-            this.html = html;
-        }
-
-        public String getHtml() { return this.html; }
-
-        public TermsOfUseType getType() { return this.type; }
-
-    }
-
-    private static TermsOfUse NO_TERMS = new TermsOfUse(TermsOfUseType.NONE, null);
-
-    public static boolean isTermsOfUseApproved(ViewContext ctx, @Nullable Project project)
-    {
-        HttpSession session = ctx.getRequest().getSession(false);
-        if (null == session)
-            return false;
-        @Nullable Set<Project> termsApproved = getApprovedTerms(session);
-        return null != termsApproved && termsApproved.contains(project);
-    }
-
-
-    public static @Nullable Set<Project> getApprovedTerms(@NotNull HttpSession session)
-    {
-        synchronized (SessionHelper.getSessionLock(session))
-        {
-            return (Set<Project>) session.getAttribute(TERMS_APPROVED_KEY);
-        }
-    }
-
-
-    public static void setTermsOfUseApproved(ViewContext ctx, @Nullable Project project, boolean approved)
-    {
-        HttpSession session = ctx.getRequest().getSession(false);
-        if (null == session && !approved)
-            return;
-        session = ctx.getRequest().getSession(true);
-
-        synchronized (SessionHelper.getSessionLock(session))
-        {
-            Set<Project> termsApproved = (Set<Project>) session.getAttribute(TERMS_APPROVED_KEY);
-            if (null == termsApproved)
-            {
-                termsApproved = new HashSet<>();
-                session.setAttribute(TERMS_APPROVED_KEY, termsApproved);
-            }
-            if (approved)
-            {
-                termsApproved.add(project);
-            }
-            else
-            {
-                termsApproved.remove(project);
-            }
-
-        }
-    }
+    ;
 
 
     // CONSIDER: Support multiple LDAP domains?
@@ -2148,22 +2003,43 @@ public class SecurityManager
     }
 
 
+    public interface ViewFactory
+    {
+        HttpView createView(ViewContext context) throws ServletException;
+    }
+
     // Modules register a factory to add module-specific ui to the permissions page
     public static void addViewFactory(ViewFactory vf)
     {
-        _viewFactories.add(vf);
+        VIEW_FACTORIES.add(vf);
     }
-
 
     public static List<ViewFactory> getViewFactories()
     {
-        return _viewFactories;
+        return VIEW_FACTORIES;
     }
 
 
-    public interface ViewFactory
+    public interface TermsOfUseProvider
     {
-        public HttpView createView(ViewContext context) throws ServletException;
+        /**
+         * If a provider's terms are active and the user hasn't yet agreed to them then
+         * the provider redirects to its terms action by throwing a RedirectException.
+         * @param context the current ViewContext
+         * @throws RedirectException
+         */
+        void verifyTermsOfUse(ViewContext context) throws RedirectException;
+    }
+
+    // Modules register a factory to add module-specific ui to the permissions page
+    public static void addTermsOfUseProvider(TermsOfUseProvider provider)
+    {
+        TERMS_OF_USE_PROVIDERS.add(provider);
+    }
+
+    public static List<TermsOfUseProvider> getTermsOfUseProviders()
+    {
+        return TERMS_OF_USE_PROVIDERS;
     }
 
 

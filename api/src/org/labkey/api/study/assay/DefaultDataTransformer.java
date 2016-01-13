@@ -36,8 +36,6 @@ import javax.script.Bindings;
 import javax.script.ScriptContext;
 import java.io.File;
 import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
@@ -203,7 +201,7 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
             return "JSESSIONID";
         }
         // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage
-        return SecurityManager.TRANSFORM_SESSIONID;
+        return SecurityManager.TRANSFORM_SESSION_ID;
     }
 
     protected File getScriptDir(ExpProtocol protocol, File scriptFile, boolean isDefault)

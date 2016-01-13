@@ -40,6 +40,8 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityLogger;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityManager.TermsOfUseProvider;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
@@ -53,8 +55,9 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ForbiddenProjectException;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.TermsOfUseException;
+import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.UnauthorizedException.Type;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.beans.AbstractPropertyAccessor;
@@ -112,7 +115,7 @@ public abstract class BaseViewAction<FORM> implements Controller, HasViewContext
     private boolean _robot = false;  // Is this request from GoogleBot or some other crawler?
     private boolean _debug = false;
 
-    protected UnauthorizedException.Type _unauthorizedType = UnauthorizedException.Type.redirectToLogin;
+    protected Type _unauthorizedType = Type.redirectToLogin;
     protected boolean _print = false;
     protected Class _commandClass;
     protected String _commandName = "form";
@@ -160,7 +163,7 @@ public abstract class BaseViewAction<FORM> implements Controller, HasViewContext
     }
 
 
-    protected void setUnauthorizedType(UnauthorizedException.Type unauthorizedType)
+    protected void setUnauthorizedType(Type unauthorizedType)
     {
         _unauthorizedType = unauthorizedType;
     }
@@ -663,24 +666,18 @@ public abstract class BaseViewAction<FORM> implements Controller, HasViewContext
         checkPermissions(_unauthorizedType);
     }
 
-    protected void checkPermissions(UnauthorizedException.Type unauthorizedType) throws UnauthorizedException
+    protected void checkPermissions(Type unauthorizedType) throws UnauthorizedException
     {
-        // ideally, we should pass the bound FORM to getContextualRoles so that
-        // actions can determine if the OwnerRole should apply, but this would require
-        // a large amount of rework that is too much to consider now.
+        // ideally, we should pass the bound FORM to getContextualRoles so that actions can determine if the OwnerRole
+        // should apply, but this would require a large amount of rework that is too much to consider now.
         //
-        // If the action needs Basic Authentication.  Do the standard
-        // permissions check, but ignore terms-of-use (non-web clients can't view/respond to terms of use page).  If user
-        // is guest and unauthorized, then send a Basic Authentication request.
+        // If the action needs Basic Authentication, then do the standard permissions check, but ignore terms-of-use
+        // (non-web clients can't view/respond to terms of use page). If user is guest and unauthorized, then send a
+        // Basic Authentication request.
         try
         {
-            checkPermissionsAndTermsOfUse(getClass(), getViewContext(), getContextualRoles());
-        }
-        catch (TermsOfUseException e)
-        {
-            if (unauthorizedType == UnauthorizedException.Type.sendBasicAuth || unauthorizedType == UnauthorizedException.Type.sendUnauthorized)
-                return;
-            throw e;
+            boolean skipTermsOfUse = (unauthorizedType == Type.sendBasicAuth || unauthorizedType == Type.sendUnauthorized);
+            checkPermissionsAndTermsOfUse(getClass(), getViewContext(), getContextualRoles(), skipTermsOfUse);
         }
         catch (UnauthorizedException e)
         {
@@ -830,21 +827,45 @@ public abstract class BaseViewAction<FORM> implements Controller, HasViewContext
             throw new ConfigurationException("@RequiresPermission, @RequiresSiteAdmin, @RequiresLogin, @RequiresNoPermission, or @AdminConsoleAction annotation is required on class " + actionClass.getName());
         }
 
-        // All permission checks have succeeded.  Now check for deprecated action.
+        // All permission checks have succeeded, now check for deprecated action.
         if (actionClass.isAnnotationPresent(DeprecatedAction.class))
             throw new DeprecatedActionException(actionClass);
     }
 
 
-    public static void checkPermissionsAndTermsOfUse(Class<? extends Controller> actionClass, ViewContext context, Set<Role> contextualRoles)
-            throws UnauthorizedException
+    public static void checkPermissionsAndTermsOfUse(Class<? extends Controller> actionClass, ViewContext context, Set<Role> contextualRoles, boolean skipTermsOfUse) throws UnauthorizedException
     {
         checkActionPermissions(actionClass, context, contextualRoles);
 
-        boolean requiresTermsOfUse = !actionClass.isAnnotationPresent(IgnoresTermsOfUse.class);
-        if (requiresTermsOfUse && !context.hasAgreedToTermsOfUse())
-            throw new TermsOfUseException();
+        skipTermsOfUse = skipTermsOfUse || actionClass.isAnnotationPresent(IgnoresTermsOfUse.class);
+
+        if (!skipTermsOfUse)
+            verifyTermsOfUse(context);
     }
+
+
+    /**
+     * Check if terms of use are ever required for this request. If so, enumerate all the terms-of-use providers and ask
+     * each to verify terms are set via its custom mechanism. If a provider's terms are active and the user hasn't yet
+     * agreed to them then the provider redirects to its terms action by throwing a RedirectException.
+     */
+    public static void verifyTermsOfUse(ViewContext context) throws RedirectException
+    {
+        if (context.getUser().isSearchUser())
+            return;
+
+        Container c = context.getContainer();
+        if (null == c)
+            return;
+
+        // Terms are not required for Basic authentication
+        if (SecurityManager.isBasicAuthentication(context.getRequest()))
+            return;
+
+        for (TermsOfUseProvider provider : SecurityManager.getTermsOfUseProviders())
+            provider.verifyTermsOfUse(context);
+    }
+
 
     /**
      * @return a map from form element name to uploaded files

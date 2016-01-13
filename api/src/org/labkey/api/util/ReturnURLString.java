@@ -15,10 +15,9 @@
  */
 package org.labkey.api.util;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.RedirectException;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * User: matthewb
@@ -97,12 +96,6 @@ public class ReturnURLString extends HString
         {
             return null;
         }
-    }
-
-
-    public void throwRedirect() throws RedirectException
-    {
-        throw new RedirectException(this);
     }
 
 
