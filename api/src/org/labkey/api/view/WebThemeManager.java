@@ -17,7 +17,7 @@ package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ScalabilityProblem;
@@ -48,11 +48,9 @@ public class WebThemeManager
     @ScalabilityProblem   // Should use a proper cache
     private static final Map<String, WebTheme> _webThemeMap = new TreeMap<>();
 
-    public final static WebTheme DEFAULT_THEME = WebTheme.DEFAULT;
-
     static
     {
-        PropertyManager.PropertyMap properties = AppProps.getWebThemeConfigProperties();
+        PropertyMap properties = AppProps.getWebThemeConfigProperties();
         String themeNames = properties.get(THEME_NAMES_KEY);
         String[] themeNamesArray = (null == themeNames ? "" : themeNames).split(";");
 
@@ -63,51 +61,46 @@ public class WebThemeManager
         addToMap(MADISON);
         addToMap(WebTheme.DEFAULT);
 
-        if (null != themeNamesArray)
+        // load the color settings from database
+        for (String themeName : themeNamesArray)
         {
-            // load the color settings from database
-            for (String themeName : themeNamesArray)
+            if (null == themeName || 0 == themeName.length())
+                continue;
+
+            // we read the colors separated by ';' in order
+            String key = THEME_COLORS_KEY + themeName;
+            String themeColors = properties.get(key);
+            String[] themeColorsArray = (null == themeColors ? "" : themeColors).split(";");
+            if (themeColorsArray.length > 0)
             {
-                if (null == themeName || 0 == themeName.length())
-                    continue;
-
-                // we read the colors separated by ';' in order
-                StringBuffer key = new StringBuffer();
-                key.append(THEME_COLORS_KEY);
-                key.append(themeName);
-                String themeColors = properties.get(key.toString());
-                String[] themeColorsArray = (null == themeColors ? "" : themeColors).split(";");
-                if (themeColorsArray.length > 0)
+                // Load default themes
+                if (_webThemeMap.containsKey(themeName))
                 {
-                    // Load default themes
-                    if (_webThemeMap.containsKey(themeName))
-                    {
-                        updateWebTheme(getTheme(themeName));
-                    }
+                    updateWebTheme(getTheme(themeName));
+                }
 
-                    // Load user defined themes
-                    else if (7 == themeColorsArray.length)
-                    {
-                        // Assumes correct order
-                        String textColor = themeColorsArray[0];
-                        String linkColor = themeColorsArray[1];
-                        String gridColor = themeColorsArray[2];
-                        String primaryBackgroundColor = themeColorsArray[3];
-                        String secondaryBackgroundColor = themeColorsArray[4];
-                        String borderTitleColor = themeColorsArray[5];
-                        String webPartColor = themeColorsArray[6];
+                // Load user defined themes
+                else if (7 == themeColorsArray.length)
+                {
+                    // Assumes correct order
+                    String textColor = themeColorsArray[0];
+                    String linkColor = themeColorsArray[1];
+                    String gridColor = themeColorsArray[2];
+                    String primaryBackgroundColor = themeColorsArray[3];
+                    String secondaryBackgroundColor = themeColorsArray[4];
+                    String borderTitleColor = themeColorsArray[5];
+                    String webPartColor = themeColorsArray[6];
 
-                        WebTheme webTheme = new WebTheme(
-                                themeName,
-                                textColor, linkColor,
-                                gridColor, primaryBackgroundColor,
-                                secondaryBackgroundColor, borderTitleColor, webPartColor, true);
-                        updateWebTheme(webTheme);
-                    }
+                    WebTheme webTheme = new WebTheme(
+                            themeName,
+                            textColor, linkColor,
+                            gridColor, primaryBackgroundColor,
+                            secondaryBackgroundColor, borderTitleColor, webPartColor, true);
+                    updateWebTheme(webTheme);
                 }
             }
         }
-   }
+    }
 
     public static WebTheme getTheme(Container c)
     {
@@ -206,7 +199,7 @@ public class WebThemeManager
     {
         synchronized(_webThemeMap)
         {
-            PropertyManager.PropertyMap properties = AppProps.getWebThemeConfigProperties();
+            PropertyMap properties = AppProps.getWebThemeConfigProperties();
 
             // save all the theme names
             properties.put(THEME_NAMES_KEY, StringUtils.join(_webThemeMap.values(), ';'));
@@ -214,18 +207,15 @@ public class WebThemeManager
             // save all the definitions
             for (WebTheme theme : _webThemeMap.values())
             {
-                StringBuilder key = new StringBuilder();
-                key.append(THEME_COLORS_KEY);
-                key.append(theme.getFriendlyName());
-                StringBuilder def = new StringBuilder();
-                def.append(theme.getTextColor());
-                def.append(";").append(theme.getLinkColor());
-                def.append(";").append(theme.getGridColor());
-                def.append(";").append(theme.getPrimaryBackgroundColor());
-                def.append(";").append(theme.getSecondaryBackgroundColor());
-                def.append(";").append(theme.getBorderTitleColor());
-                def.append(";").append(theme.getWebPartColor());
-                properties.put(key.toString(), def.toString());
+                String key = THEME_COLORS_KEY + theme.getFriendlyName();
+                String def = theme.getTextColor() +
+                        ";" + theme.getLinkColor() +
+                        ";" + theme.getGridColor() +
+                        ";" + theme.getPrimaryBackgroundColor() +
+                        ";" + theme.getSecondaryBackgroundColor() +
+                        ";" + theme.getBorderTitleColor() +
+                        ";" + theme.getWebPartColor();
+                properties.put(key, def);
             }
 
             properties.save();

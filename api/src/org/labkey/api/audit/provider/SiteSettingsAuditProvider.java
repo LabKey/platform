@@ -26,7 +26,6 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.settings.AbstractWriteableSettingsGroup;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,13 +40,14 @@ import java.util.Set;
  */
 public class SiteSettingsAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
-    public static final String COLUMN_NAME_CHANGES = "Changes";
-    public final static String AUDIT_EVENT_TYPE = "AppPropsEvent";
+    public static final  String AUDIT_EVENT_TYPE = "AppPropsEvent";
 
-    static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
+    private static final String COLUMN_NAME_CHANGES = "Changes";
+    private static final String AUDIT_PROP_DIFF = "AppPropsDiff";
+    private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
 
-    static {
-
+    static
+    {
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED_BY));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_IMPERSONATED_BY));
@@ -130,7 +130,7 @@ public class SiteSettingsAuditProvider extends AbstractAuditTypeProvider impleme
     public Map<FieldKey, String> legacyNameMap()
     {
         Map<FieldKey, String> legacyNames = super.legacyNameMap();
-        legacyNames.put(FieldKey.fromParts("Property", AbstractWriteableSettingsGroup.AUDIT_PROP_DIFF), COLUMN_NAME_CHANGES);
+        legacyNames.put(FieldKey.fromParts("Property", AUDIT_PROP_DIFF), COLUMN_NAME_CHANGES);
         return legacyNames;
     }
 

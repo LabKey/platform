@@ -48,7 +48,6 @@ import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
@@ -853,7 +852,7 @@ public abstract class BaseViewAction<FORM> implements Controller, HasViewContext
     protected Map<String, MultipartFile> getFileMap()
     {
         if (getViewContext().getRequest() instanceof MultipartHttpServletRequest)
-            return (Map<String, MultipartFile>)((MultipartHttpServletRequest)getViewContext().getRequest()).getFileMap();
+            return ((MultipartHttpServletRequest)getViewContext().getRequest()).getFileMap();
         return Collections.emptyMap();
     }
 

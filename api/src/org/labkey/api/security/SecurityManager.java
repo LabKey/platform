@@ -2052,7 +2052,8 @@ public class SecurityManager
 
         TermsOfUse termsOfUse = getTermsOfUse(project);
         boolean required;
-        switch (termsOfUse.getType()) {
+        switch (termsOfUse.getType())
+        {
             case SITE_WIDE:
                 // if we don't require project-level and have approved site-wide level, not required to ask again,
                 // but we don't cache for the project in case we set project-level terms later

@@ -17,7 +17,7 @@ package org.labkey.api.settings;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.audit.provider.SiteSettingsAuditProvider;
+import org.labkey.api.audit.provider.SiteSettingsAuditProvider.SiteSettingsAuditEvent;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
@@ -34,10 +34,8 @@ import java.util.Map;
  */
 public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGroup
 {
-    public final static String AUDIT_PROP_DIFF = "AppPropsDiff";
-
-    protected PropertyMap _properties = null;
-    protected PropertyMap _oldProps = null;
+    private PropertyMap _properties = null;
+    private PropertyMap _oldProps = null;
 
     protected abstract String getType();
 
@@ -47,7 +45,7 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
         _oldProps = getWriteableProperties(c);
     }
 
-    protected PropertyManager.PropertyMap getWriteableProperties(Container c)
+    protected PropertyMap getWriteableProperties(Container c)
     {
         return PropertyManager.getWritableProperties(SITE_CONFIG_USER, c, getGroupName(), true);
     }
@@ -99,7 +97,7 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
 
         if (null != diff)
         {
-            SiteSettingsAuditProvider.SiteSettingsAuditEvent event = new SiteSettingsAuditProvider.SiteSettingsAuditEvent(c.getId(), "The " + getType() + " were changed (see details).");
+            SiteSettingsAuditEvent event = new SiteSettingsAuditEvent(c.getId(), "The " + getType() + " were changed (see details).");
 
             if (c.getProject() != null)
                 event.setProjectId(c.getProject().getId());
@@ -109,7 +107,7 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
         }
     }
 
-    public String genDiffHtml(Map<String,String> oldProps)
+    private String genDiffHtml(Map<String,String> oldProps)
     {
         //since this is a fixed membership map, we just need to run
         //one of the map's keys and compare values, noting what has changed
@@ -151,11 +149,11 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
         return propsChanged ? html.toString() : null;
     }
 
-    protected static String obscureValue(String value)
+    private static String obscureValue(String value)
     {
         if(null == value || value.length() == 0)
             return "";
         else
-            return "*******"; //used fixed number to obscure num characters
+            return "*******"; //use fixed number to obscure num characters
     }
 }
