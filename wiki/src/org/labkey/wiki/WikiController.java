@@ -50,11 +50,11 @@ import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -142,7 +142,7 @@ public class WikiController extends SpringActionController
 
     public static void registerAdminConsoleLinks()
     {
-        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "site-wide terms of use", getEditWikiURL(ContainerManager.getRoot(), EditWikiAction.class, new HString(SecurityManager.TERMS_OF_USE_WIKI_NAME), true));
+        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "site-wide terms of use", getEditWikiURL(ContainerManager.getRoot(), EditWikiAction.class, new HString(WikiTermsOfUseProvider.TERMS_OF_USE_WIKI_NAME), true));
     }
 
     protected BaseWikiPermissions getPermissions()

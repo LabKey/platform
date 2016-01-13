@@ -89,6 +89,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ReaderRole;
@@ -188,7 +189,6 @@ import org.labkey.core.workbook.WorkbookFolderType;
 import org.labkey.core.workbook.WorkbookQueryView;
 import org.labkey.core.workbook.WorkbookSearchView;
 
-import javax.servlet.ServletContextEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -716,6 +716,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         PropertyService.get().registerDomainKind(new UsersDomainKind());
         UsersDomainKind.ensureDomain(moduleContext);
+
+        // Register the standard, wiki-based terms-of-use provider
+        SecurityManager.addTermsOfUseProvider(new WikiTermsOfUseProvider());
     }
 
     @Override

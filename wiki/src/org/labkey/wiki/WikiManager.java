@@ -42,8 +42,8 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchService.IndexTask;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -660,7 +660,7 @@ public class WikiManager implements WikiService
                 wikiName = rs.getString("name");
                 assert null != wikiName;
 
-                if (SecurityManager.TERMS_OF_USE_WIKI_NAME.equals(wikiName))
+                if (WikiTermsOfUseProvider.TERMS_OF_USE_WIKI_NAME.equals(wikiName))
                     continue;
 
                 String entityId = rs.getString("entityid");

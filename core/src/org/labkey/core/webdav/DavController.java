@@ -22,8 +22,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.log4j.Priority;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -55,6 +55,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -653,10 +654,10 @@ public class DavController extends SpringActionController
             clearLastError();
 
             long start=0;
-            if (_log.isEnabledFor(Priority.DEBUG))
+            if (_log.isEnabledFor(Level.DEBUG))
             {
                 long modified = getRequest().getDateHeader("If-Modified-Since");
-                boolean isBasicAuthentication = "Basic".equals(getRequest().getAttribute(org.labkey.api.security.SecurityManager.AUTHENTICATION_METHOD));
+                boolean isBasicAuthentication = SecurityManager.isBasicAuthentication(getRequest());
                 String username = getUser().getName();
                 String auth = username + (isBasicAuthentication ? ":basic" : !getUser().isGuest() ? ":session" : "");
                 _log.debug(">>>> " + request.getMethod() + " " + getResourcePath() + " (" + auth + ") " + (modified==-1? "" : "   (If-Modified-Since:" + DateUtil.toISO(modified) + ")"));
@@ -4245,7 +4246,7 @@ public class DavController extends SpringActionController
         // this helps many clients that won't prompt for credentials
         // if the initial OPTIONS request works.
         // AllowNoLogin header returns to normal behavior (simple permission check)
-        boolean isBasicAuthentication = "Basic".equals(getRequest().getAttribute(org.labkey.api.security.SecurityManager.AUTHENTICATION_METHOD));
+        boolean isBasicAuthentication = SecurityManager.isBasicAuthentication(getRequest());
         boolean isGuest = getUser().isGuest();
 
         // if user is authenticated or is trying to authenticate we're OK
