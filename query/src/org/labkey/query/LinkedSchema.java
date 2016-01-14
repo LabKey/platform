@@ -473,7 +473,7 @@ public class LinkedSchema extends ExternalSchema
         public Set<Role> getContextualRoles(SecurityPolicy policy)
         {
             // For the linked schema's source container, grant ReaderRole via the LimitedUser implementation
-            if (policy.getContainerId().equals(_sourceContainer.getId()))
+            if (policy.getContainerId().equals(_sourceContainer.getPolicy().getContainerId()))
             {
                 return super.getContextualRoles(policy);
             }
