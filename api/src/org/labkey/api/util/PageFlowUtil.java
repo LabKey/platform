@@ -1618,7 +1618,7 @@ public class PageFlowUtil
 
         StringBuilder sb = getFaviconIncludes(c);
         sb.append(getLabkeyJS(context, resources));
-        sb.append(getStylesheetIncludes(c, resources));
+        sb.append(getStylesheetIncludes(c, resources, includeDefaultResources));
         sb.append(getJavaScriptIncludes(c, resources));
 
         return sb.toString();
@@ -1628,12 +1628,12 @@ public class PageFlowUtil
     // need to output a <base> element prior to calling.
     public static String getStylesheetIncludes(Container c)
     {
-        return getStylesheetIncludes(c, null);
+        return getStylesheetIncludes(c, null, true);
     }
 
     // Outputs <link> elements for standard stylesheets, Ext stylesheets, and client dependency stylesheets, as required.
     // Note that hrefs are relative, so callers may need to output a <base> element prior to calling.
-    private static String getStylesheetIncludes(Container c, @Nullable LinkedHashSet<ClientDependency> resources)
+    private static String getStylesheetIncludes(Container c, @Nullable LinkedHashSet<ClientDependency> resources, boolean includeDefaultResources)
     {
         WebTheme theme = WebThemeManager.getTheme(c);
 
@@ -1680,50 +1680,53 @@ public class PageFlowUtil
             }
         }
 
-        String fontAwesomeCss = devMode ? "font-awesome.css" : "font-awesome.min.css";
-        F.format(link, PageFlowUtil.filter(new ResourceURL("/internal/font-awesome-4.4.0/css/" + fontAwesomeCss)));
-
-        F.format(link, PageFlowUtil.filter(new ResourceURL(theme.getStyleSheet(), ContainerManager.getRoot())));
-
-        ActionURL rootCustomStylesheetURL = coreUrls.getCustomStylesheetURL();
-
-        if (!c.isRoot())
+        if (includeDefaultResources)
         {
-            /* Add the themeStylesheet */
-            if (coreUrls.getThemeStylesheetURL(c) != null)
-                F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL(c)));
+            String fontAwesomeCss = devMode ? "font-awesome.css" : "font-awesome.min.css";
+            F.format(link, PageFlowUtil.filter(new ResourceURL("/internal/font-awesome-4.4.0/css/" + fontAwesomeCss)));
+
+            F.format(link, PageFlowUtil.filter(new ResourceURL(theme.getStyleSheet(), ContainerManager.getRoot())));
+
+            ActionURL rootCustomStylesheetURL = coreUrls.getCustomStylesheetURL();
+
+            if (!c.isRoot())
+            {
+                /* Add the themeStylesheet */
+                if (coreUrls.getThemeStylesheetURL(c) != null)
+                    F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL(c)));
+                else
+                {
+                /* In this case a themeStylesheet was not found in a subproject to default to the root */
+                    if (coreUrls.getThemeStylesheetURL() != null)
+                        F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));
+                }
+                ActionURL containerCustomStylesheetURL = coreUrls.getCustomStylesheetURL(c);
+
+                /* Add the customStylesheet */
+                if (null != containerCustomStylesheetURL)
+                    F.format(link, PageFlowUtil.filter(containerCustomStylesheetURL));
+                else
+                {
+                    if (null != rootCustomStylesheetURL)
+                        F.format(link, PageFlowUtil.filter(rootCustomStylesheetURL));
+                }
+            }
             else
             {
-                /* In this case a themeStylesheet was not found in a subproject to default to the root */
+                /* Add the root themeStylesheet */
                 if (coreUrls.getThemeStylesheetURL() != null)
                     F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));
-            }
-            ActionURL containerCustomStylesheetURL = coreUrls.getCustomStylesheetURL(c);
 
-            /* Add the customStylesheet */
-            if (null != containerCustomStylesheetURL)
-                F.format(link, PageFlowUtil.filter(containerCustomStylesheetURL));
-            else
-            {
+                /* Add the root customStylesheet */
                 if (null != rootCustomStylesheetURL)
                     F.format(link, PageFlowUtil.filter(rootCustomStylesheetURL));
             }
-        }
-        else
-        {
-            /* Add the root themeStylesheet */
-            if (coreUrls.getThemeStylesheetURL() != null)
-                F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));
 
-            /* Add the root customStylesheet */
-            if (null != rootCustomStylesheetURL)
-                F.format(link, PageFlowUtil.filter(rootCustomStylesheetURL));
+            ResourceURL printStyleURL = new ResourceURL("printStyle.css", ContainerManager.getRoot());
+            sb.append("    <link href=\"");
+            sb.append(filter(printStyleURL));
+            sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\">\n");
         }
-
-        ResourceURL printStyleURL = new ResourceURL("printStyle.css", ContainerManager.getRoot());
-        sb.append("    <link href=\"");
-        sb.append(filter(printStyleURL));
-        sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\">\n");
 
         if (resources != null)
             writeCss(c, sb, resources, preIncludedCss);
