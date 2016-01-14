@@ -1506,6 +1506,24 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return getExpSchema().getTable("AssayQCFlag");
     }
 
+    @Override
+    public TableInfo getTinfoAlias()
+    {
+        return getExpSchema().getTable("Alias");
+    }
+
+    @Override
+    public TableInfo getTinfoDataAliasMap()
+    {
+        return getExpSchema().getTable("DataAliasMap");
+    }
+
+    @Override
+    public TableInfo getTinfoMaterialAliasMap()
+    {
+        return getExpSchema().getTable("MaterialAliasMap");
+    }
+
     /**
      * return the object of any known experiment type that is identified with the LSID
      *
@@ -2055,6 +2073,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     deleteExperimentRunsByRowIds(run.getContainer(), user, run.getRowId());
                 }
 
+                SqlExecutor executor = new SqlExecutor(getExpSchema());
+                executor.execute("DELETE FROM " + getTinfoMaterialAliasMap() + " WHERE LSID = ?", material.getLSID());
+
                 OntologyManager.deleteOntologyObjects(container, material.getLSID());
             }
 
@@ -2100,6 +2121,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 {
                     throw new SQLException("Attempting to delete a Data from another container");
                 }
+
+                SqlExecutor executor = new SqlExecutor(getExpSchema());
+                executor.execute("DELETE FROM " + getTinfoDataAliasMap() + " WHERE LSID = ?", data.getLSID());
+
                 OntologyManager.deleteOntologyObjects(container, data.getLSID());
 
                 if (data.getClassId() != null)
@@ -2244,6 +2269,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             }
 
             OntologyManager.deleteAllObjects(c, user);
+            SimpleFilter containerFilter = SimpleFilter.createContainerFilter(c);
+            Table.delete(getTinfoDataAliasMap(), containerFilter);
+            Table.delete(getTinfoMaterialAliasMap(), containerFilter);
+            deleteUnusedAliases(c, user);
 
             // delete material sources
             // now call the specialized function to delete the Materials that belong to the Material Source,
@@ -2253,7 +2282,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 sampleSet.delete(user);
             }
 
-            SimpleFilter containerFilter = SimpleFilter.createContainerFilter(c);
             Table.delete(getTinfoActiveMaterialSource(), containerFilter);
 
             // Delete all the experiments/run groups/batches
@@ -2652,6 +2680,24 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         SchemaKey expDataSchema = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.NestedSchemas.data.toString());
         QueryService.get().fireQueryDeleted(user, c, null, expDataSchema, Collections.singleton(dataClass.getName()));
+    }
+
+    private void deleteUnusedAliases(Container c, User user)
+    {
+        try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
+        {
+            SQLFragment sql = new SQLFragment("DELETE FROM ").
+                    append(getTinfoAlias(), "").
+                    append(" WHERE RowId NOT IN (SELECT Alias FROM ").
+                    append(getTinfoDataAliasMap(), "").append(")").
+                    append(" AND RowId NOT IN (SELECT Alias FROM ").
+                    append(getTinfoMaterialAliasMap(), "").append(")");
+
+            SqlExecutor executor = new SqlExecutor(getExpSchema());
+            executor.execute(sql);
+
+            transaction.commit();
+        }
     }
 
     private void truncateDataClassAttachments(ExpDataClass dataClass)

@@ -1,6 +1,7 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -19,6 +20,7 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.LookupColumn;
+import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -26,6 +28,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableExtension;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
@@ -52,6 +55,7 @@ import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.InvalidKeyException;
+import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
@@ -183,7 +187,23 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                 ContainerForeignKey.initColumn(c, getUserSchema());
                 return c;
             }
-
+            case Alias:
+                ColumnInfo aliasCol = wrapColumn("Alias", getRealTable().getColumn("LSID"));
+                aliasCol.setDescription("Contains the list of aliases for this data object");
+                aliasCol.setFk(new MultiValuedForeignKey(new LookupForeignKey("LSID")
+                {
+                    @Override
+                    public TableInfo getLookupTableInfo()
+                    {
+                        return ExperimentService.get().getTinfoDataAliasMap();
+                    }
+                }, "Alias"));
+                aliasCol.setCalculated(true);
+                aliasCol.setRequired(false);
+                aliasCol.setShownInInsertView(false);
+                aliasCol.setShownInUpdateView(false);
+                aliasCol.setUserEditable(false);
+                return aliasCol;
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -225,6 +245,8 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
         addColumn(Column.DataClass);
         addColumn(Column.Folder);
         addColumn(Column.Description);
+        addColumn(Column.Alias).setHidden(true);
+
         //TODO: may need to expose ExpData.Run as well
 
         // Add the domain columns
@@ -397,7 +419,8 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
     @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
-        return new DataClassDataIteratorBuilder(data, context);
+        DataIteratorBuilder step0 = new DataClassDataIteratorBuilder(data, context);
+        return new DataClassAliasIteratorBuilder(step0, context);
     }
 
     @Override
@@ -428,6 +451,8 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
         // genId sequence state
         private int _count = 0;
         private Integer _sequenceNum;
+        private Object _aliasValue;
+        private String _lsidValue;
 
         DataClassDataIteratorBuilder(@NotNull DataIteratorBuilder in, DataIteratorContext context)
         {
@@ -444,17 +469,24 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                 return null;           // Can happen if context has errors
 
             final Container c = getContainer();
-
             final ExperimentService.Interface svc = ExperimentService.get();
 
             SimpleTranslator step0 = new SimpleTranslator(input, context);
-            step0.selectAll(Sets.newCaseInsensitiveHashSet("lsid", "dataClass", "genId"));
+            step0.selectAll(Sets.newCaseInsensitiveHashSet("lsid", "dataClass", "genId", "alias"));
+            final Map<String, Integer> colNameMap = DataIteratorUtil.createColumnNameMap(input);
 
             TableInfo expData = svc.getTinfoData();
             ColumnInfo lsidCol = expData.getColumn("lsid");
 
             // Generate LSID before inserting
-            step0.addColumn(lsidCol, (Supplier) () -> svc.generateGuidLSID(c, ExpData.class));
+            step0.addColumn(lsidCol, new Supplier(){
+                @Override
+                public Object get()
+                {
+                    _lsidValue = svc.generateGuidLSID(c, ExpData.class);
+                    return _lsidValue;
+                }
+            });
 
             // auto gen a sequence number for genId - reserve BATCH_SIZE numbers at a time so we don't select the next sequence value for every row
             ColumnInfo genIdCol = _dataClass.getTinfo().getColumn(FieldKey.fromParts("genId"));
@@ -511,7 +543,142 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             if (_rootTable.getColumn("parent") != null)
                 step4 = new DerivationDataIteratorBuilder(step3);
 
-            return LoggingDataIterator.wrap(step4.getDataIterator(context));
+            // Hack: add the alias and lsid values back into the input so we can process them in the chained data iterator
+            SimpleTranslator step5 = new SimpleTranslator(step4.getDataIterator(context), context);
+            if (colNameMap.containsKey("alias"))
+            {
+                ColumnInfo aliasCol = getColumn(FieldKey.fromParts("alias"));
+                step5.addColumn(aliasCol, new Supplier(){
+                    @Override
+                    public Object get()
+                    {
+                        _aliasValue = input.get(colNameMap.get("alias"));
+                        return _aliasValue;
+                    }
+                });
+            }
+            step5.addColumn(lsidCol, (Supplier) () -> _lsidValue);
+
+            return LoggingDataIterator.wrap(step5);
+        }
+    }
+
+    /**
+     * Data iterator to handle aliases
+     */
+    private class DataClassAliasIteratorBuilder implements DataIteratorBuilder
+    {
+        private DataIteratorContext _context;
+        private final DataIteratorBuilder _in;
+
+        DataClassAliasIteratorBuilder(@NotNull DataIteratorBuilder in, DataIteratorContext context)
+        {
+            _context = context;
+            _in = in;
+        }
+
+        @Override
+        public DataIterator getDataIterator(DataIteratorContext context)
+        {
+            _context = context;
+            DataIterator input = _in.getDataIterator(context);
+            if (null == input)
+                return null;           // Can happen if context has errors
+
+            final ExperimentService.Interface svc = ExperimentService.get();
+            SimpleTranslator step0 = new SimpleTranslator(input, context);
+            step0.selectAll(Sets.newCaseInsensitiveHashSet("lsid", "alias"));
+
+            ColumnInfo aliasCol = getColumn(FieldKey.fromParts("alias"));
+            final Map<String, Integer> colNameMap = DataIteratorUtil.createColumnNameMap(input);
+
+            if (colNameMap.containsKey("alias") && colNameMap.containsKey("lsid"))
+            {
+                step0.addColumn(aliasCol, new Supplier(){
+                    @Override
+                    public Object get()
+                    {
+                        Object value = input.get(colNameMap.get("alias"));
+                        Object lsidValue = input.get(colNameMap.get("lsid"));
+
+                        if (value instanceof List && lsidValue instanceof String)
+                        {
+                            List<Integer> params = new ArrayList<Integer>();
+
+                            ((List) value).stream().filter(item -> item instanceof String).forEach(item -> {
+
+                                // an input list of alias rowIds, validate that they exist in the alias table before
+                                // adding them to the dataAliasMap
+                                if (NumberUtils.isDigits((String)item))
+                                    params.add(NumberUtils.toInt((String)item));
+                            });
+
+                            SimpleFilter filter = new SimpleFilter();
+                            filter.addClause(new SimpleFilter.InClause(FieldKey.fromParts("rowid"), params));
+
+                            if (new TableSelector(svc.getTinfoAlias(), filter, null).getRowCount() == params.size())
+                            {
+                                // insert the new rows into the mapping table
+                                for (Integer aliasId : params)
+                                {
+                                    Table.insert(null, svc.getTinfoDataAliasMap(), new DataAliasMap((String)lsidValue, aliasId, getContainer()));
+                                }
+                            }
+                        }
+                        return null;
+                    }
+                });
+            }
+
+            return LoggingDataIterator.wrap(step0);
+        }
+    }
+
+    public static class DataAliasMap
+    {
+        int _alias;
+        String _lsid;
+        Container _container;
+
+        public DataAliasMap(String lsid, int alias, Container container)
+        {
+            _lsid = lsid;
+            _alias = alias;
+            _container = container;
+        }
+
+        public DataAliasMap()
+        {
+        }
+
+        public int getAlias()
+        {
+            return _alias;
+        }
+
+        public void setAlias(int alias)
+        {
+            _alias = alias;
+        }
+
+        public String getLsid()
+        {
+            return _lsid;
+        }
+
+        public void setLsid(String lsid)
+        {
+            _lsid = lsid;
+        }
+
+        public Container getContainer()
+        {
+            return _container;
+        }
+
+        public void setContainer(Container container)
+        {
+            _container = container;
         }
     }
 

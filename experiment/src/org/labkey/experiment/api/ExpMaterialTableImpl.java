@@ -25,6 +25,7 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -172,6 +173,18 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                 return wrapColumn(alias, _rootTable.getColumn("Modified"));
             case ModifiedBy:
                 return createUserColumn(alias, _rootTable.getColumn("ModifiedBy"));
+            case Alias:
+                ColumnInfo aliasCol = wrapColumn("Alias", _rootTable.getColumn("LSID"));
+                aliasCol.setDescription("Contains the list of aliases for this sample");
+                aliasCol.setFk(new MultiValuedForeignKey(new LookupForeignKey("LSID")
+                {
+                    @Override
+                    public TableInfo getLookupTableInfo()
+                    {
+                        return ExperimentService.get().getTinfoMaterialAliasMap();
+                    }
+                }, "Alias"));
+                return aliasCol;
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -285,6 +298,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             nameCol.setReadOnly(true);
             nameCol.setShownInInsertView(false);
         }
+        addColumn(Column.Alias).setHidden(true);
 
         ColumnInfo typeColumnInfo = addColumn(Column.SampleSet);
         typeColumnInfo.setFk(new LookupForeignKey("lsid")
