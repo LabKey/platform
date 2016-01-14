@@ -21,6 +21,6 @@ public interface ExpDataClassDataTable extends ExpTable<ExpDataClassDataTable.Co
         ModifiedBy,
         Folder,
         Flag,
+        Alias,
     }
-
 }
