@@ -37,7 +37,6 @@ import org.labkey.api.util.TestContext;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -121,7 +120,7 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
         // delete the category definition (plus any subcategories) and fire the deleted event
         SQLFragment sql = new SQLFragment("DELETE FROM ").append(getTableInfoCategories(), "").append(" WHERE RowId = ?");
         sql.append(" OR Parent = ?");
-        sql.addAll(new Object[]{category.getRowId(), category.getRowId()});
+        sql.addAll(category.getRowId(), category.getRowId());
 
         SqlExecutor executor = new SqlExecutor(CoreSchema.getInstance().getSchema().getScope());
         executor.execute(sql);
@@ -337,11 +336,11 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
     }
 
     /**
-     * Used to decode a view category from a serializable form and thenn used in either getCategory or ensureViewCategory.
+     * Used to decode a view category from a serializable form and then used in either getCategory or ensureViewCategory.
      *
      * Parent child hierarchy is encoded into the string.
      *
-     * @return String[] that represents the path heirarcy of the category.
+     * @return String[] that represents the path hierarchy of the category.
      */
     public String[] decode(String category)
     {
@@ -472,22 +471,19 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
         uncategorizedCategory.setRowId(UNCATEGORIZED_ROWID);
         viewCategoryTreeNodes.add(makeTreeNode(uncategorizedCategory, subscriptionSet));
 
-        for (ViewCategory category : categories)
-        {
-            if (null == category.getParentCategory())
+        // Make a modifiable copy, #21696
+        categories.stream().filter(category -> null == category.getParentCategory()).forEach(category -> {
+            ViewCategoryTreeNode treeNode = makeTreeNode(category, subscriptionSet);
+            // Make a modifiable copy, #21696
+            List<ViewCategory> subCategories = new ArrayList<>(category.getSubcategories());
+            sortViewCategories(subCategories);
+            for (ViewCategory subCategory : subCategories)
             {
-                ViewCategoryTreeNode treeNode = makeTreeNode(category, subscriptionSet);
-                // Make a modifiable copy, #21696
-                List<ViewCategory> subCategories = new ArrayList<>(category.getSubcategories());
-                sortViewCategories(subCategories);
-                for (ViewCategory subCategory : subCategories)
-                {
-                    ViewCategoryTreeNode subTreeNode = makeTreeNode(subCategory, subscriptionSet);
-                    treeNode.addChild(subTreeNode);
-                }
-                viewCategoryTreeNodes.add(treeNode);
+                ViewCategoryTreeNode subTreeNode = makeTreeNode(subCategory, subscriptionSet);
+                treeNode.addChild(subTreeNode);
             }
-        }
+            viewCategoryTreeNodes.add(treeNode);
+        });
 
         return viewCategoryTreeNodes;
     }
@@ -502,16 +498,11 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
 
     public static void sortViewCategories(List<ViewCategory> categories)
     {
-        Collections.sort(categories, new Comparator<ViewCategory>()
-        {
-            @Override
-            public int compare(ViewCategory o1, ViewCategory o2)
-            {
-                int ret = o1.getDisplayOrder() - o2.getDisplayOrder();
-                if (0 == ret)
-                    ret = o1.getLabel().compareToIgnoreCase(o2.getLabel());
-                return ret;
-            }
+        Collections.sort(categories, (o1, o2) -> {
+            int ret = o1.getDisplayOrder() - o2.getDisplayOrder();
+            if (0 == ret)
+                ret = o1.getLabel().compareToIgnoreCase(o2.getLabel());
+            return ret;
         });
     }
 
@@ -621,11 +612,10 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
 
             // get top-level categories
             Map<String, ViewCategory> categoryMap = new HashMap<>();
-            for (ViewCategory cat : mgr.getAllCategories(c))
-            {
-                if (null == cat.getParentCategory())
-                    categoryMap.put(cat.getLabel(), cat);
-            }
+            mgr.getAllCategories(c)
+                .stream()
+                .filter(cat -> null == cat.getParentCategory())
+                .forEach(cat -> categoryMap.put(cat.getLabel(), cat));
 
             assertEquals(labels.length, categoryMap.size());
             List<String> subCategoryNames = Arrays.asList(subLabels);
