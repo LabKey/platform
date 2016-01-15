@@ -126,7 +126,7 @@ public class ImageButton extends ButtonBase implements ClickListener
     public void refreshState()
     {
         setHTML("<a class='" + (isEnabled() ? "labkey-button" : "labkey-disabled-button")
-                + "' style='display: block'><span>" + _text + "</span></a>");
+                + "' style='display: inline-block'><span>" + _text + "</span></a>");
     }
 
     public void setText(String text)
