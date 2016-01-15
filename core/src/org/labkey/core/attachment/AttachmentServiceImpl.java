@@ -801,6 +801,8 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                 writer.setContentType(rs.getString("DocumentType"));
                 if (asAttachment)
                     writer.setContentDisposition("attachment; filename=\"" + name + "\"");
+                else
+                    writer.setContentDisposition("inline; filename=\"" + name + "\"");
 
                 int size = rs.getInt("DocumentSize");
                 if (size > 0)
