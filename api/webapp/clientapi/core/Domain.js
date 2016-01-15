@@ -74,6 +74,20 @@ LABKEY.Domain = new function()
         });
     }
 
+    function deleteDomain(success, failure, parameters, containerPath)
+    {
+        LABKEY.Ajax.request({
+            url : LABKEY.ActionURL.buildURL("property", "deleteDomain", containerPath),
+            method : 'POST',
+            success: LABKEY.Utils.getCallbackWrapper(success),
+            failure: LABKEY.Utils.getCallbackWrapper(failure, this, true),
+            jsonData : parameters,
+            headers : {
+                'Content-Type' : 'application/json'
+            }
+        });
+    }
+
     /** @scope LABKEY.Domain */
     return {
 
@@ -208,6 +222,27 @@ LABKEY.Domain = new function()
             }
 
             saveDomain(
+                config.success,
+                config.failure,
+                {domainDesign: config.domainDesign, schemaName: config.schemaName, queryName: config.queryName},
+                config.containerPath);
+        },
+
+        /**
+         * Delete a domain.
+         *
+         * @param config
+         * @param {Object} config An object which contains the following configuration properties.
+         * @param {Function} config.success.
+         * @param {Function} [config.failure]
+         * @param {String} config.schemaName Name of the schema
+         * @param {String} config.queryName Name of the query
+         * @param {String} [config.containerPath] The container path in which the requested Domain is defined.
+         *       If not supplied, the current container path will be used.
+         */
+        drop : function (config)
+        {
+            deleteDomain(
                 config.success,
                 config.failure,
                 {domainDesign: config.domainDesign, schemaName: config.schemaName, queryName: config.queryName},
