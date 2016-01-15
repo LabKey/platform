@@ -451,8 +451,6 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
         // genId sequence state
         private int _count = 0;
         private Integer _sequenceNum;
-        private Object _aliasValue;
-        private String _lsidValue;
 
         DataClassDataIteratorBuilder(@NotNull DataIteratorBuilder in, DataIteratorContext context)
         {
@@ -483,8 +481,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                 @Override
                 public Object get()
                 {
-                    _lsidValue = svc.generateGuidLSID(c, ExpData.class);
-                    return _lsidValue;
+                    return svc.generateGuidLSID(c, ExpData.class);
                 }
             });
 
@@ -544,22 +541,23 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                 step4 = new DerivationDataIteratorBuilder(step3);
 
             // Hack: add the alias and lsid values back into the input so we can process them in the chained data iterator
-            SimpleTranslator step5 = new SimpleTranslator(step4.getDataIterator(context), context);
+            DataIteratorBuilder step5 = step4;
             if (colNameMap.containsKey("alias"))
             {
+                SimpleTranslator st = new SimpleTranslator(step4.getDataIterator(context), context);
+                st.selectAll();
                 ColumnInfo aliasCol = getColumn(FieldKey.fromParts("alias"));
-                step5.addColumn(aliasCol, new Supplier(){
+                st.addColumn(aliasCol, new Supplier(){
                     @Override
                     public Object get()
                     {
-                        _aliasValue = input.get(colNameMap.get("alias"));
-                        return _aliasValue;
+                        return input.get(colNameMap.get("alias"));
                     }
                 });
+                step5 = DataIteratorBuilder.wrap(st);
             }
-            step5.addColumn(lsidCol, (Supplier) () -> _lsidValue);
 
-            return LoggingDataIterator.wrap(step5);
+            return LoggingDataIterator.wrap(step5.getDataIterator(context));
         }
     }
 
@@ -587,7 +585,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
             final ExperimentService.Interface svc = ExperimentService.get();
             SimpleTranslator step0 = new SimpleTranslator(input, context);
-            step0.selectAll(Sets.newCaseInsensitiveHashSet("lsid", "alias"));
+            step0.selectAll(Sets.newCaseInsensitiveHashSet("alias"));
 
             ColumnInfo aliasCol = getColumn(FieldKey.fromParts("alias"));
             final Map<String, Integer> colNameMap = DataIteratorUtil.createColumnNameMap(input);
