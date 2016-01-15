@@ -78,7 +78,7 @@ var starttime;
         var columnsHtml = [];
         var rowsHtml = [];
 
-        // render select for each hierachy
+        // render select for each hierarchy
         function renderHierarchyFilter(h)
         {
             var select = ['<select onchange="return run()" class="filter" data-hierarchy="' + h.uniqueName + '">'];

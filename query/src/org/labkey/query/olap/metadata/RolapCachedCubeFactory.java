@@ -92,7 +92,7 @@ public class RolapCachedCubeFactory
                     h.levels.add(l);
                 }
 
-                generateHierachyMembers(cube, hdef, h);
+                generateHierarchyMembers(cube, hdef, h);
                 h.levels.seal();
             }
             d.hierarchies.seal();
@@ -130,11 +130,11 @@ public class RolapCachedCubeFactory
     /**
      * Generate a result with all the data from the dimension table for this hierarchy
      * The results are sorted so we can save a lot of effort by looking for the first
-     * level in the hierachy with a "break" or change in data value, and pick up there
+     * level in the hierarchy with a "break" or change in data value, and pick up there
      * creating new members.  We remember the members before the break, and don't need
      * to look them up, or create them.
      */
-    void generateHierachyMembers(CachedCube cube, HierarchyDef hdef, CachedCube._Hierarchy h) throws SQLException
+    void generateHierarchyMembers(CachedCube cube, HierarchyDef hdef, CachedCube._Hierarchy h) throws SQLException
     {
         CachedCube._Level allLevel = (CachedCube._Level)h.getLevels().get(0);
         CachedCube._Member allMember = new CachedCube._Member(cube, allLevel, Member.Type.ALL);
