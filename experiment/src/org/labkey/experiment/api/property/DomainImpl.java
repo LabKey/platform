@@ -480,11 +480,10 @@ public class DomainImpl implements Domain
                 }
             }
 
-            if (propChanged)
-            {
-                if (getDomainKind() != null)
-                    getDomainKind().invalidate(this);
-            }
+            // Invalidate even if !propChanged, because ordering might have changed (#25296)
+            if (getDomainKind() != null)
+                getDomainKind().invalidate(this);
+
             transaction.commit();
         }
     }
