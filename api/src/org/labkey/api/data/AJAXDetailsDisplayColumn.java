@@ -22,11 +22,13 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -41,6 +43,8 @@ public class AJAXDetailsDisplayColumn extends DataColumn
     @NotNull private final Map<String, FieldKey> _urlParams;
     private final JSONObject _properties;
     @Nullable private DetailsURL _detailsURL;
+
+    private Set<FieldKey> _requiredValues = new HashSet<>();
 
     public AJAXDetailsDisplayColumn(@NotNull ColumnInfo col, @Nullable ActionURL detailsURL, @NotNull JSONObject properties)
     {
@@ -77,7 +81,18 @@ public class AJAXDetailsDisplayColumn extends DataColumn
         {
             evaluatedURL = _detailsURL.eval(ctx);
         }
-        if (evaluatedURL != null && getValue(ctx) != null)
+
+        boolean hasAllRequiredValues = true;
+        for (FieldKey requiredValue : _requiredValues)
+        {
+            if (ctx.get(requiredValue) == null)
+            {
+                hasAllRequiredValues = false;
+                break;
+            }
+        }
+
+        if (evaluatedURL != null && getValue(ctx) != null && hasAllRequiredValues)
         {
             String divId = GUID.makeGUID();
             JSONObject props = new JSONObject(_properties);
@@ -97,10 +112,23 @@ public class AJAXDetailsDisplayColumn extends DataColumn
                 "    }); \n" +
                 "    </script> ");
         }
+        else if (!hasAllRequiredValues)
+        {
+            StringExpression url = getURLExpression();
+            setURLExpression(null);
+            super.renderGridCellContents(ctx, out);
+            setURLExpression(url);
+        }
         else
         {
             super.renderGridCellContents(ctx, out);
         }
+    }
+
+    /** Require that a column have a non-null value in order to render the link and AJAX behavior for a given row */
+    protected void addRequiredValue(FieldKey fieldKey)
+    {
+        _requiredValues.add(fieldKey);
     }
 
     @Override
