@@ -1,6 +1,7 @@
 package org.labkey.api.settings;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.validator.routines.CustomTLDEnabler;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.labkey.api.util.URLHelper;
 
@@ -14,6 +15,11 @@ public class BaseServerProperties
     private final String _scheme;
     private final String _serverName;
     private final int _serverPort;
+
+    static
+    {
+        CustomTLDEnabler.initialize();
+    }
 
     // Validate and parse, returning properties
     public static BaseServerProperties parseAndValidate(String baseServerUrl) throws URISyntaxException

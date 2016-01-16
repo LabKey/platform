@@ -1,4 +1,5 @@
 * text=auto !eol
+api/src/org/apache/commons/validator/routines/CustomTLDEnabler.java -text
 api/src/org/apache/jasper/runtime/JspSourceImports.java -text
 api/src/org/json/CDL.java -text
 api/src/org/json/Cookie.java -text
