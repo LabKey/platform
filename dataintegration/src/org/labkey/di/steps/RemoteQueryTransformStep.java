@@ -137,6 +137,10 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
             DataIteratorContext context = new DataIteratorContext();
             try (DataIterator iter = b.getDataIterator(context))
             {
+                if(context.getErrors().hasErrors())
+                {
+                    throw context.getErrors();
+                }
                 int idxEntityId = -1;
                 int idxID = -1;
                 int idxName = -1;
