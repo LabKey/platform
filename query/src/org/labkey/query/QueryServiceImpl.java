@@ -876,7 +876,7 @@ public class QueryServiceImpl extends QueryService
     private Map<String, SessionQuery> getSessionQueryMap(@NotNull HttpSession session, Container container, String schemaName)
     {
         if (session == null)
-            throw new IllegalStateException();
+            throw new IllegalStateException("No HTTP session");
         Map<ContainerSchemaKey, Map<String, SessionQuery>> containerQueries = (Map<ContainerSchemaKey, Map<String, SessionQuery>>) session.getAttribute(PERSISTED_TEMP_QUERIES_KEY);
         if (containerQueries == null)
         {
@@ -1777,7 +1777,7 @@ public class QueryServiceImpl extends QueryService
     }
 
     @Override
-    public ResultSet select(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList, boolean cached) throws SQLException
+    public ResultSet select(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList, boolean cached)
 	{
 		Query q = new Query(schema);
         q.setStrictColumnList(strictColumnList);
@@ -1877,7 +1877,7 @@ public class QueryServiceImpl extends QueryService
 
 
     @Override
-    public Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Map<String, Object> parameters, boolean cache) throws SQLException
+    public Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Map<String, Object> parameters, boolean cache)
     {
         QueryLogging queryLogging = new QueryLogging();
         SQLFragment sql = getSelectSQL(table, columns, filter, sort, Table.ALL_ROWS, Table.NO_OFFSET, false, queryLogging);

@@ -1584,11 +1584,6 @@ public class Query
 				fail(x.getMessage() + "\n" + sql);
 				return null;
 			}
-			catch (SQLException x)
-			{
-				fail(x.getMessage() + "\n" + sql);
-				return null;
-			}
         }
 
 
