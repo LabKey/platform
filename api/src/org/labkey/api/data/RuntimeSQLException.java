@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import com.google.gwt.user.client.rpc.IsSerializable;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;
@@ -108,7 +109,7 @@ public class RuntimeSQLException extends RuntimeException implements Serializabl
         return isConstraintException(getSQLException());
     }
 
-    public static boolean isConstraintException(SQLException x)
+    public static boolean isConstraintException(@NotNull SQLException x)
     {
         String sqlState = x.getSQLState();
         return null != sqlState && (sqlState.equals("23000") || sqlState.equals("23505") || sqlState.equals("23503") ||
