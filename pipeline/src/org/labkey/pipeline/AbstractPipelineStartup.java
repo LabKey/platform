@@ -26,6 +26,7 @@ import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.util.BreakpointThread;
+import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.labkey.pipeline.mule.JMSStatusWriter;
 import org.labkey.pipeline.mule.LabKeySpringContainerContext;
@@ -136,10 +137,11 @@ public abstract class AbstractPipelineStartup
     {
         for (File moduleFile : moduleFiles)
         {
-            if (moduleFile.getName().startsWith("core"))
+            if (moduleFile.getName().toLowerCase().startsWith("core"))
             {
-                BreakpointThread thread = new BreakpointThread(moduleFile.getParentFile());
+                BreakpointThread thread = new BreakpointThread();
                 thread.start();
+                new DebugInfoDumper(moduleFile.getParentFile());
                 break;
             }
         }

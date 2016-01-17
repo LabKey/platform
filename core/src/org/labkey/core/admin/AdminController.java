@@ -1976,7 +1976,7 @@ public class AdminController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             // Log to labkey.log as well as showing through the browser
-            BreakpointThread.requestThreadDumpsToLogFile();
+            DebugInfoDumper.dumpThreads(3);
             return new JspView<>("/org/labkey/core/admin/threads.jsp", new ThreadsBean());
         }
 
@@ -1992,7 +1992,7 @@ public class AdminController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            File destination = BreakpointThread.dumpHeap();
+            File destination = DebugInfoDumper.dumpHeap();
             return new HtmlView(PageFlowUtil.filter("Heap dumped to " + destination.getAbsolutePath()));
         }
 
