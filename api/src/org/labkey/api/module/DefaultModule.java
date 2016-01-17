@@ -134,6 +134,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private String _url = null;
     private String _organization = null;
     private String _organizationUrl = null;
+    private String _buildType = null;
     private String _author = null;
     private String _maintainer = null;
     private String _license = null;
@@ -745,6 +746,18 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     @Nullable
     @Override
+    public String getBuildType()
+    {
+        return _buildType;
+    }
+
+    public void setBuildType(String buildType)
+    {
+        _buildType = buildType;
+    }
+
+    @Nullable
+    @Override
     public final String getOrganizationUrl()
     {
         return _organizationUrl;
@@ -961,6 +974,8 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             props.put("Organization", getOrganization());
         if (StringUtils.isNotBlank(getOrganizationUrl()))
             props.put("OrganizationURL", getOrganizationUrl());
+        if (StringUtils.isNotBlank(getBuildType()))
+            props.put("Build Type", getBuildType());
         if (StringUtils.isNotBlank(getLicense()))
             props.put("License", getLicense());
         if (StringUtils.isNotBlank(getLicenseUrl()))

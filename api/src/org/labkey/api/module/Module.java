@@ -120,6 +120,12 @@ public interface Module extends Comparable<Module>
 
     @Nullable String getOrganizationUrl();
 
+    /**
+     * The type of build that created this module - may be null if not explicitly set, but typically either Development
+     * (from running ant build) or Production (from running ant production)
+     */
+    @Nullable String getBuildType();
+
     /** License name: e.g. "Apache 2.0", "GPL-2.0", "MIT" */
     @Nullable String getLicense();
 

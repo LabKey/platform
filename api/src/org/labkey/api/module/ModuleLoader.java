@@ -137,6 +137,8 @@ public class ModuleLoader implements Filter
     private static final Object STARTUP_LOCK = new Object();
     public static final String MODULE_NAME_REGEX = "\\w+";
 
+    public static final String PRODUCTION_BUILD_TYPE = "Production";
+
     private static ModuleLoader _instance = null;
     private static Throwable _startupFailure = null;
     private static boolean _newInstall = false;
@@ -320,7 +322,7 @@ public class ModuleLoader implements Filter
         setProjectRoot(coreModule);
 
         // Do this after we've checked to see if we can find the core module. See issue 22797.
-        verifyProductionModeResources();
+        verifyProductionModeMatchesBuild();
 
         // Initialize data sources before initializing modules; modules will fail to initialize if the appropriate data sources aren't available
         initializeDataSources();
@@ -418,29 +420,26 @@ public class ModuleLoader implements Filter
     }
 
     // If in production mode then make sure this isn't a development build, #21567
-    private void verifyProductionModeResources()
+    private void verifyProductionModeMatchesBuild()
     {
-        if (!AppProps.getInstance().isDevMode() && !webappFilesExist(
-            "Ext4.lib.xml",
-            "clientapi.lib.xml",
-            "internal.lib.xml",
-            "stylesheet.css",
-            "clientapi_core.min.js"
-        ))
-            throw new ConfigurationException("This server does not appear to be compiled for production mode");
+        if (!AppProps.getInstance().isDevMode())
+        {
+            if (isProductionBuild(getCoreModule()))
+                throw new ConfigurationException("This server does not appear to be compiled for production mode");
+
+            for (Module module : getModules())
+            {
+                if (module.getBuildType() != null && isProductionBuild(module))
+                {
+                    addModuleFailure(module.getName(), new IllegalStateException("Module " + module + " was not compiled in production mode"));
+                }
+            }
+        }
     }
 
-    // Returns true if every specified file exists in the webapp directory
-    private boolean webappFilesExist(String... filepaths)
+    private boolean isProductionBuild(Module module)
     {
-        for (String filepath : filepaths)
-        {
-            String fullPath = _servletContext.getRealPath("/" + filepath);   // Tomcat 8 changed to require "/" prefix, http://stackoverflow.com/questions/25555541
-            if (null == fullPath || !new File(fullPath).isFile())
-                return false;
-        }
-
-        return true;
+        return !PRODUCTION_BUILD_TYPE.equalsIgnoreCase(module.getBuildType());
     }
 
     /** Goes through all the modules, initializes them, and removes the ones that fail to start up */
@@ -1580,7 +1579,10 @@ public class ModuleLoader implements Filter
             .collect(Collectors.toList());
     }
 
-    /** @return the modules, sorted in reverse dependency order. Typically used to resolve the most specific version of a resource */
+    /**
+     * @return the modules, sorted in reverse dependency order. Typically used to resolve the most specific version of
+     * a resource when one module "subclasses" another module.
+     */
     public Collection<Module> orderModules(Collection<Module> modules)
     {
         List<Module> result = new ArrayList<>(modules.size());

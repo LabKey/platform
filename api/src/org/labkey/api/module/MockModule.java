@@ -304,6 +304,13 @@ public class MockModule implements Module
         return null;
     }
 
+    @Nullable
+    @Override
+    public String getBuildType()
+    {
+        return ModuleLoader.PRODUCTION_BUILD_TYPE;
+    }
+
     @Override
     public String getSourcePath()
     {
