@@ -999,14 +999,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
         Set<Module> modules = new HashSet<>();
         // add all modules found in user preferences:
-        if (null != props)
+        for (String moduleName : props.keySet())
         {
-            for (String moduleName : props.keySet())
-            {
-                Module module = ModuleLoader.getInstance().getModule(moduleName);
-                if (module != null)
-                    modules.add(module);
-            }
+            Module module = ModuleLoader.getInstance().getModule(moduleName);
+            if (module != null)
+                modules.add(module);
         }
 
         // ensure all modules for folder type are added (may have been added after save)

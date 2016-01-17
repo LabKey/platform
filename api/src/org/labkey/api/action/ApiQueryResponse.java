@@ -15,6 +15,7 @@
  */
 package org.labkey.api.action;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -190,7 +191,14 @@ public class ApiQueryResponse implements ApiResponse
         // We're going to be writing JSON back, which is tolerant of extra spaces, so allow async so we
         // can monitor if the client has stopped listening
         _dataRegion.setAllowAsync(true);
-        return _dataRegion.getResultSet(_ctx);
+        try
+        {
+            return _dataRegion.getResultSet(_ctx);
+        }
+        catch (ConversionException e)
+        {
+            throw new ApiUsageException(e);
+        }
     }
 
     public List<FieldKey> getFieldKeys()

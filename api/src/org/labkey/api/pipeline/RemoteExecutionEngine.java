@@ -28,5 +28,6 @@ public interface RemoteExecutionEngine<ConfigType extends PipelineJobService.Rem
     /** Cancel a job, if possible, that is currently marked as being run/queued at a location managed by this engine */
     void cancelJob(@NotNull String jobId) throws PipelineJobException;
 
+    @NotNull
     ConfigType getConfig();
 }
