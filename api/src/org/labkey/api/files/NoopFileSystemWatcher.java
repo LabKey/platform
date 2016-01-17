@@ -27,7 +27,8 @@ import java.nio.file.WatchEvent.Kind;
 public class NoopFileSystemWatcher implements FileSystemWatcher
 {
     @Override
-    public final void addListener(Path directory, FileSystemDirectoryListener listener, Kind<Path>[] events) throws IOException
+    @SuppressWarnings("unchecked")
+    public final void addListener(Path directory, FileSystemDirectoryListener listener, Kind<Path>... events) throws IOException
     {
     }
 

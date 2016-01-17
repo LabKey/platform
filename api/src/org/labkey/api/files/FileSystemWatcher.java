@@ -26,6 +26,7 @@ import java.nio.file.WatchEvent.Kind;
  */
 public interface FileSystemWatcher
 {
-    public void addListener(Path directory, FileSystemDirectoryListener listener, Kind<Path>[] events) throws IOException;
-    public void removeListener(Path directory, FileSystemDirectoryListener listener);
+    @SuppressWarnings("unchecked")
+    void addListener(Path directory, FileSystemDirectoryListener listener, Kind<Path>... events) throws IOException;
+    void removeListener(Path directory, FileSystemDirectoryListener listener);
 }

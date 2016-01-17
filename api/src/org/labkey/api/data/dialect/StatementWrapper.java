@@ -25,8 +25,8 @@ import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
-import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.view.ViewServlet;
@@ -2716,7 +2716,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         // check for deadlock or transaction related error
         if (x != null && SqlDialect.isTransactionException(x))
         {
-            BreakpointThread.dumpThreads(_log);
+            DebugInfoDumper.dumpThreads(_log);
         }
     }
 

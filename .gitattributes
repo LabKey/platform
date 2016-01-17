@@ -1564,6 +1564,7 @@ api/src/org/labkey/api/util/ContainerContext.java -text
 api/src/org/labkey/api/util/ContainerUtil.java -text
 api/src/org/labkey/api/util/ContextListener.java -text
 api/src/org/labkey/api/util/DOMUtil.java -text
+api/src/org/labkey/api/util/DebugInfoDumper.java -text
 api/src/org/labkey/api/util/DefaultSystemMaintenanceTask.java -text
 api/src/org/labkey/api/util/DemoMode.java -text
 api/src/org/labkey/api/util/DotRunner.java -text

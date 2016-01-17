@@ -63,6 +63,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
@@ -326,9 +327,12 @@ public class ModuleLoader implements Filter
 
         // Start up a thread that lets us hit a breakpoint in the debugger, even if all the real working threads are hung.
         // This lets us invoke methods in the debugger, gain easier access to statics, etc.
+        new BreakpointThread().start();
+
+        // Start listening for requests for thread and heap dumps
         File coreModuleDir = coreModule.getExplodedPath();
         File modulesDir = coreModuleDir.getParentFile();
-        new BreakpointThread(modulesDir).start();
+        new DebugInfoDumper(modulesDir);
 
         if (getTableInfoModules().getTableType() == DatabaseTableType.NOT_IN_DB)
             _newInstall = true;

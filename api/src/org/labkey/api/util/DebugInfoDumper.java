@@ -1,0 +1,238 @@
+package org.labkey.api.util;
+
+import org.apache.log4j.Logger;
+import org.labkey.api.data.ConnectionWrapper;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.files.FileSystemDirectoryListener;
+import org.labkey.api.files.FileSystemWatchers;
+import org.labkey.api.module.ModuleLoader;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.lang.management.ManagementFactory;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.nio.file.Path;
+import java.nio.file.StandardWatchEventKinds;
+import java.util.Date;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * Monitors the timestamp of the heapDumpRequest and threadDumpRequest files to see if an admin has requested
+ * them via the file system.
+ *
+ * Writes thread dumps via Log4J, and heap dumps to a .hprof file.
+ *
+ * Created by: jeckels
+ * Date: 1/16/16
+ */
+public class DebugInfoDumper
+{
+    private static final Logger LOG = Logger.getLogger(DebugInfoDumper.class);
+
+    private final File _threadDumpFile;
+    private final File _heapDumpFile;
+
+    private long _threadDumpLastModified;
+    private long _heapDumpLastModified;
+
+    private static final int THREAD_DUMP_INTERVAL = 10000;
+
+    public DebugInfoDumper(File modulesDir)
+    {
+        // Ensure there's a thread dump request file
+        File labkeyRoot = modulesDir.getParentFile();
+        _threadDumpFile = new File(labkeyRoot, "threadDumpRequest");
+        if (!_threadDumpFile.exists())
+        {
+            try (PrintWriter writer = new PrintWriter(_threadDumpFile, StringUtilsLabKey.DEFAULT_CHARSET.name()))
+            {
+                writer.println("Touch this file while LabKey Server is running and within 10 seconds the server will");
+                writer.println("dump all of its threads to its standard log file, including database connection SPIDs");
+                writer.flush();
+            }
+            catch (IOException e)
+            {
+                LOG.error("Failed to create file " + _threadDumpFile.getAbsolutePath(), e);
+            }
+        }
+
+        // Ensure there's a heap dump request file
+        _heapDumpFile = new File(labkeyRoot, "heapDumpRequest");
+        if (!_heapDumpFile.exists())
+        {
+            try (PrintWriter writer = new PrintWriter(_heapDumpFile, StringUtilsLabKey.DEFAULT_CHARSET.name()))
+            {
+                writer.println("Touch this file while LabKey Server is running and within 10 seconds the server will");
+                writer.println("dump its heap to disk. The log file will contain information on where the dump was written,");
+                writer.println("but in most cases it will be this directory.");
+                writer.flush();
+            }
+            catch (IOException e)
+            {
+                LOG.error("Failed to create file " + _heapDumpFile.getAbsolutePath(), e);
+            }
+        }
+
+        _threadDumpLastModified = _threadDumpFile.lastModified();
+        _heapDumpLastModified = _heapDumpFile.lastModified();
+
+        try
+        {
+            //noinspection unchecked
+            FileSystemWatchers.get("Debug info dumper").addListener(labkeyRoot.toPath(), new FileSystemDirectoryListener()
+            {
+                @Override
+                public void entryCreated(Path directory, Path entry) {}
+
+                @Override
+                public void entryDeleted(Path directory, Path entry) {}
+
+                @Override
+                public void entryModified(Path directory, Path entry)
+                {
+                    checkForRequests();
+                }
+
+                @Override
+                public void overflow()
+                {
+                    checkForRequests();
+                }
+            }, StandardWatchEventKinds.ENTRY_MODIFY);
+        }
+        catch (IOException e)
+        {
+            ExceptionUtil.logExceptionToMothership(null, e);
+        }
+    }
+
+    private void checkForRequests()
+    {
+        long threadDumpModified = _threadDumpFile.lastModified();
+        boolean threadDumpRequested = threadDumpModified != _threadDumpLastModified;
+        if (threadDumpRequested)
+        {
+            dumpThreads(3);
+            _threadDumpLastModified = threadDumpModified;
+        }
+
+        long heapDumpModified = _heapDumpFile.lastModified();
+        boolean heapDumpRequested = heapDumpModified != _heapDumpLastModified;
+        if (heapDumpRequested)
+        {
+            try
+            {
+                File destination = dumpHeap();
+                LOG.info("Dumped server heap to " + destination);
+            }
+            catch (Exception e)
+            {
+                LOG.error("Failed to dump heap", e);
+            }
+            _heapDumpLastModified = heapDumpModified;
+        }
+    }
+
+    /**
+     * Writes the requested number of thread dumps, separated by 10 seconds, to the primary log file. All requests
+     * beyond the first are written asynchronously.
+     */
+    public static void dumpThreads(final int totalCount)
+    {
+        if (totalCount <= 0)
+        {
+            throw new IllegalArgumentException("Count must be greater than 0, but was " + totalCount);
+        }
+        dumpThreads(LOG);
+        if (totalCount > 1)
+        {
+            Thread t = new Thread(() -> {
+                try
+                {
+                    int remainingCount = totalCount - 1;
+                    while (remainingCount > 0)
+                    {
+                        Thread.sleep(THREAD_DUMP_INTERVAL);
+                        dumpThreads(LOG);
+                        remainingCount--;
+                    }
+                }
+                catch (InterruptedException ignored)
+                {
+                }
+            }, "Thread dump thread");
+            t.setDaemon(true);
+            t.start();
+        }
+    }
+
+    private static final String HOTSPOT_BEAN_NAME = "com.sun.management:type=HotSpotDiagnostic";
+
+    public static File dumpHeap() throws Exception
+    {
+        // Use reflection so that we don't have to build directly against the com.sun. class
+        Class<?> hotspotClass = Class.forName("com.sun.management.HotSpotDiagnosticMXBean");
+        Object bean = ManagementFactory.newPlatformMXBeanProxy(ManagementFactory.getPlatformMBeanServer(), HOTSPOT_BEAN_NAME, hotspotClass);
+        Method method = hotspotClass.getMethod("dumpHeap", String.class, boolean.class);
+        File destination = new File(ModuleLoader.getInstance().getWebappDir().getParentFile(), "HeapDump_" + DateUtil.formatDateTime(new Date(), "yyyy-MM-dd_HH-mm-ss-SSS") + ".hprof");
+        try
+        {
+            method.invoke(bean, destination.getAbsolutePath(), false);
+        }
+        catch (InvocationTargetException e)
+        {
+            if (e.getTargetException() instanceof IOException)
+            {
+                // Rethrow a with a more helpful error message
+                throw new IOException("Failed to write heap dump to " + destination + ", possibly due to a permissions issue", e.getTargetException());
+            }
+            throw e;
+        }
+        return destination;
+    }
+
+    /**
+     * Writes the current set of thread stacks once to the supplied logger.
+     */
+    public static void dumpThreads(Logger log)
+    {
+        log.debug("*********************************************");
+        log.debug("Starting thread dump");
+        log.debug("*********************************************");
+        Map<Thread,StackTraceElement[]> threads = Thread.getAllStackTraces();
+        for (Map.Entry<Thread, StackTraceElement[]> threadEntry : threads.entrySet())
+        {
+            log.debug("");
+            Thread thread = threadEntry.getKey();
+            StringBuilder threadInfo = new StringBuilder(thread.getName());
+            threadInfo.append(" (");
+            threadInfo.append(thread.getState());
+            threadInfo.append("), daemon: ");
+            threadInfo.append(thread.isDaemon());
+            Set<Integer> spids = ConnectionWrapper.getSPIDsForThread(thread);
+            if (!spids.isEmpty())
+            {
+                threadInfo.append(", Database Connection SPIDs = ");
+                threadInfo.append(spids);
+            }
+
+            log.debug(threadInfo);
+            for (StackTraceElement stackTraceElement : threadEntry.getValue())
+            {
+                log.debug("\t" + stackTraceElement.toString());
+            }
+        }
+
+        log.debug("*********************************************");
+        log.debug("Completed thread dump");
+        log.debug("*********************************************");
+
+        for (DbScope dbScope : DbScope.getDbScopes())
+        {
+            dbScope.logCurrentConnectionState();
+        }
+    }
+}

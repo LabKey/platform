@@ -75,7 +75,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         thread.start();
     }
 
-    public final void addListener(Path directory, FileSystemDirectoryListener listener, Kind<Path>[] events) throws IOException
+    public final void addListener(Path directory, FileSystemDirectoryListener listener, Kind<Path>... events) throws IOException
     {
         // Associate a new PathListenerManager with this directory, if one doesn't already exist
         PathListenerManager plm = new PathListenerManager();
