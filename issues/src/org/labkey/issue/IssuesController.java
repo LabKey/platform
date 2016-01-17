@@ -1780,9 +1780,9 @@ public class IssuesController extends SpringActionController
             {
                 KeywordManager.addKeyword(getContainer(), _type, form.getKeyword());
             }
-            catch (Exception e)
+            catch (RuntimeSQLException e)
             {
-                if (RuntimeSQLException.isConstraintException(null))
+                if (RuntimeSQLException.isConstraintException(e.getSQLException()))
                 {
                     errors.reject(ERROR_MSG, "\"" + form.getKeyword() + "\" already exists");
                     return false;
