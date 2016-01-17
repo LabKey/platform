@@ -173,12 +173,12 @@ public class QueryHelper
         return ContainerFilter.getContainerFilterByName(view.getContainerFilterName(), _user);
     }
 
-    public Results select(List<FieldKey> columns, @Nullable SimpleFilter filter) throws SQLException
+    public Results select(List<FieldKey> columns, @Nullable SimpleFilter filter)
     {
         return select(columns, filter, null);
     }
 
-    public Results select(List<FieldKey> columns, @Nullable SimpleFilter filter, @Nullable Sort sort) throws SQLException
+    public Results select(List<FieldKey> columns, @Nullable SimpleFilter filter, @Nullable Sort sort)
     {
         QueryService qs = QueryService.get();
         TableInfo ti = getTableInfo();
@@ -213,18 +213,18 @@ public class QueryHelper
         return new ResultsImpl(qs.select(ti, cols, filter, sort), map);
     }
 
-    public Results select(SimpleFilter filter) throws SQLException
+    public Results select(SimpleFilter filter)
     {
         CustomView view = getCustomView();
 
-        return select(view.getColumns(), filter);
+        return select(view == null ? getTableInfo().getDefaultVisibleColumns() : view.getColumns(), filter);
     }
 
-    public Results select() throws SQLException
+    public Results select()
     {
         CustomView view = getCustomView();
 
-        return select(view.getColumns(), null);
+        return select(view == null ? getTableInfo().getDefaultVisibleColumns() : view.getColumns(), null);
     }
 
     public ActionURL getQueryGridURL()

@@ -33,7 +33,6 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -144,10 +143,6 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
         catch (QueryParseException x)
         {
             context.getErrors().addRowError(new ValidationException("Error parsing query: ", x.getMessage()));
-        }
-        catch (SQLException x)
-        {
-            context.getErrors().addRowError(new ValidationException("Schema not found: " + _schema.toString()));
         }
         return null;
     }
