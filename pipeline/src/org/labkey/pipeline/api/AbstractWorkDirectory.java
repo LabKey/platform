@@ -550,7 +550,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
             }
             else if (!_dir.delete() && success)
             {
-                StringBuffer message = new StringBuffer();
+                StringBuilder message = new StringBuilder();
                 message.append("Failed to remove work directory ").append(_dir);
                 File[] files = _dir.listFiles();
                 if (files != null && files.length > 0)

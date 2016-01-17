@@ -27,25 +27,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.labkey.api.action.ApiAction;
-import org.labkey.api.action.ApiJsonWriter;
-import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ApiVersion;
-import org.labkey.api.action.ExportAction;
-import org.labkey.api.action.FormHandlerAction;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.FormattedError;
-import org.labkey.api.action.GWTServiceAction;
-import org.labkey.api.action.HasViewContext;
-import org.labkey.api.action.LabkeyError;
-import org.labkey.api.action.Marshal;
-import org.labkey.api.action.Marshaller;
-import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.QueryViewAction;
-import org.labkey.api.action.SimpleApiJsonForm;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.*;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
@@ -1704,34 +1686,18 @@ public class ExperimentController extends SpringActionController
     {
         protected ModelAndView getDataView(DataForm form, BindException errors) throws IOException
         {
-
-            String dataURL = _data.getDataFileUrl();
-            if (dataURL == null)
+            if (!_data.isFileOnDisk())
             {
-                throw new NotFoundException("Unable to find file for " + _data.getName());
-            }
-            URI dataURI;
-            try
-            {
-                dataURI = new URI(dataURL);
-            }
-            catch (URISyntaxException use)
-            {
-                throw new UnexpectedException(use);
-            }
-
-            File realContent = new File(dataURI);
-            if (!realContent.exists() || !realContent.isFile())
-            {
-                throw new NotFoundException("Data file, " + realContent + ", does not exist on disk");
+                throw new NotFoundException("Data file " + _data.getDataFileUrl() + " does not exist on disk");
             }
 
             try
             {
+                File realContent = _data.getFile();
                 boolean inline = _data.isInlineImage() || form.isInline() || "inlineImage".equalsIgnoreCase(form.getFormat());
-                if (_data.isInlineImage() && form.getMaxDimension() != null && _data.isFileOnDisk())
+                if (_data.isInlineImage() && form.getMaxDimension() != null)
                 {
-                    BufferedImage image = ImageIO.read(_data.getFile());
+                    BufferedImage image = ImageIO.read(realContent);
                     // If image, create a thumbnail, otherwise fall through as a regular download attempt
                     if (image != null)
                     {
@@ -1859,7 +1825,7 @@ public class ExperimentController extends SpringActionController
             DataLoaderFactory dlf = DataLoader.get().findFactory(realContent, null);
             if (null == dlf)
             {
-                throw new FileNotFoundException("Unable to parse file " + realContent);
+                throw new ApiUsageException("Unable to parse file " + realContent);
             }
             DataLoader tabLoader = dlf.createLoader(realContent, true);
             tabLoader.setScanAheadLineCount(5000);

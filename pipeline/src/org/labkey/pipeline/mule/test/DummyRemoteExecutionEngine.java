@@ -68,6 +68,7 @@ public class DummyRemoteExecutionEngine implements RemoteExecutionEngine
     }
 
     @Override
+    @NotNull
     public PipelineJobService.RemoteExecutionEngineConfig getConfig()
     {
         return new DummyConfig();
