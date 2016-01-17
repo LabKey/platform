@@ -1752,7 +1752,8 @@ Ext4.define('File.panel.Browser', {
             //
             // if there are no selections, treat as if all are selected
             //
-            if (selections.length == 0) {
+            var noSelection = selections.length == 0;
+            if (noSelection) {
                 var store = this.getGrid().getStore();
                 selections = store.getRange(0, store.getCount()-1);
             }
@@ -1770,6 +1771,8 @@ Ext4.define('File.panel.Browser', {
                 for (var i=0; i < selections.length; i++)
                 {
                     var files = action.getFiles();
+                    // Track if the selected file is a valid input
+                    var foundMatch = false;
                     for (var j = 0; j < files.length; j++)
                     {
                         if (files[j] == selections[i].data.name)
@@ -1778,8 +1781,14 @@ Ext4.define('File.panel.Browser', {
                             fileField.setAttribute("name", "file");
                             fileField.setAttribute("value", selections[i].data.name);
                             form.appendChild(fileField);
+                            foundMatch = true;
                             break;
                         }
+                    }
+                    if (!foundMatch && !noSelection)
+                    {
+                        Ext4.Msg.alert("Execute Action", "The file '" + selections[i].data.name + "' is not a valid input for " + action.data.groupLabel);
+                        return false;
                     }
                 }
                 var hiddenField = document.createElement("input");
@@ -1799,7 +1808,7 @@ Ext4.define('File.panel.Browser', {
     enableImportData : function(enabled) {
         var actions = this.getActions();
 
-        if (this.showToolbar && actions.importData) {
+        if (this.showToolbar && actions.importData && this.getToolbar()) {
             var el = this.getToolbar().getEl(),
                 cls = 'labkey-import-enabled';
 
