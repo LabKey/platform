@@ -19,12 +19,10 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 
 /**
+ * Base class for factories that produce webparts available in all folder types, regardless of which modules are enabled.
  * User: adam
  * Date: Oct 31, 2008
- * Time: 10:01:38 AM
  */
-
-// Base class for factories that produce webparts available in all folder types
 public abstract class AlwaysAvailableWebPartFactory extends BaseWebPartFactory
 {
     public AlwaysAvailableWebPartFactory(String name, boolean isEditable, boolean showCustomizeOnInsert, @NotNull String defaultLocation, String... additionaLocations)

@@ -21,7 +21,7 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-
+/** Renders a fixed set of HTML at the content of the view */
 public class HtmlView extends WebPartView
 {
     private String _contentType = null;

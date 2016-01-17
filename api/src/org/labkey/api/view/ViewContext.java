@@ -52,9 +52,10 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Holds many of the key pieces of context about an HTTP request, including the {@link HttpServletRequest} and
+ * {@link HttpServletResponse} objects, the {@link User} making the request, etc.
  * User: matthewb
  * Date: Mar 20, 2005
- * Time: 12:26:38 PM
  */
 public class ViewContext implements MessageSource, ContainerContext, ContainerUser, ApplicationContextAware, HasPermission
 {
@@ -79,13 +80,10 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
 
     /**
      * Copy constructor.
-     *
-     * @param copyFrom
      */
     public ViewContext(ViewContext copyFrom)
     {
         this();
-//        _parentContext = copyFrom._parentContext;
         _request = copyFrom._request;
         _response = copyFrom._response;
         _url = copyFrom._url;

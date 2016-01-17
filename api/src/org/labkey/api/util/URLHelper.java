@@ -47,7 +47,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-
+/**
+ * Represents a URL, typically within this instance of LabKey Server.
+ */
 public class URLHelper implements Cloneable, Serializable, Taintable
 {
     private static final Logger LOG = Logger.getLogger(URLHelper.class);

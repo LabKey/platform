@@ -17,9 +17,10 @@
 package org.labkey.api.view;
 
 /**
+ * Thrown to indicate that while the user has permission to view this data, they have not yet accepted
+ * the terms of use and need to be redirected to a page that will let them review and accept.
  * User: Mark Igra
  * Date: Jun 30, 2006
- * Time: 5:41:25 PM
  */
 @Deprecated // TODO: Delete this once we've tested WikiTermsOfUseProvider changes
 public class TermsOfUseException extends UnauthorizedException

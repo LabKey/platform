@@ -16,13 +16,11 @@
 package org.labkey.api.view;
 
 /**
+ * Thrown when admin is impersonating within a project and attempts to access a folder outside that project. Used to
+ * provide a more helpful error message compared with a vanilla {@link UnauthorizedException}.
  * User: adam
  * Date: Aug 27, 2008
- * Time: 3:00:45 PM
  */
-
-// Thrown when admin is impersonating within a project and attempts to access a folder outside that project.  Used to
-//  provide a more helpful error message.
 public class ForbiddenProjectException extends UnauthorizedException
 {
     public ForbiddenProjectException()

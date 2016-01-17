@@ -34,9 +34,9 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 
-
 /**
- * This class has to be kept in sync with ViewServlet
+ * Encapsulates URL generation and parsing based on controller/container/action conventions.
+ * This class has to be kept in sync with ViewServlet.
  */
 public class ActionURL extends URLHelper implements Cloneable
 {
@@ -66,10 +66,10 @@ public class ActionURL extends URLHelper implements Cloneable
      * Old pageflow constructor
      */
     @Deprecated
-    public ActionURL(String pageFlow, String actionName, Container container)
+    public ActionURL(String controller, String actionName, Container container)
     {
         this(true);
-        _controller = pageFlow;
+        _controller = controller;
         _action = actionName;
         setContainer(container);
     }
@@ -179,17 +179,18 @@ public class ActionURL extends URLHelper implements Cloneable
     }
 
 
-    private String toPathString(Path contextPath, String pageFlow, String action, Path extraPath, boolean encode)
+    private String toPathString(Path contextPath, String controller, String action, Path extraPath, boolean encode)
     {
         if (useContainerRelativeURL())
-            return toPathStringNew(contextPath, pageFlow, action, extraPath, encode);
+            return toPathStringNew(contextPath, controller, action, extraPath, encode);
         else
-            return toPathStringOld(contextPath, pageFlow, action, extraPath, encode);
+            return toPathStringOld(contextPath, controller, action, extraPath, encode);
     }
 
-    private static String toPathStringOld(Path contextPath, String pageFlow, String action, Path extraPath, boolean encode)
+    /** Generates in the format of /contextPath/controller/containerPath/action.view */
+    private static String toPathStringOld(Path contextPath, String controller, String action, Path extraPath, boolean encode)
     {
-        Path path = contextPath.append(pageFlow).append(extraPath);
+        Path path = contextPath.append(controller).append(extraPath);
         if (null != action)
         {
             if (-1 == action.indexOf('.'))
@@ -199,6 +200,7 @@ public class ActionURL extends URLHelper implements Cloneable
         return encode ? path.encode() : path.toString();
     }
 
+    /** Generates in the format of /contextPath/containerPath/controller-action.view */
     private static String toPathStringNew(Path contextPath, String pageFlow, String action, Path extraPath, boolean encode)
     {
         Path path = contextPath.append(extraPath);

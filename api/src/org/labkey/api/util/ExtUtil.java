@@ -15,10 +15,13 @@
  */
 package org.labkey.api.util;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 
 /**
+ * Utilities for dealing with ExtJS, largely around date and number format translation to/from Java.
  * User: matthew
  * Date: 1/15/12
  * Time: 5:44 PM
@@ -34,7 +37,8 @@ public class ExtUtil
     }
 
 
-    /* May return null, if no good translation is available */
+    /** May return null, if no good translation is available */
+    @Nullable
     public static String toExtDateFormat(String j)
     {
         StringBuilder x = new StringBuilder();
@@ -134,8 +138,6 @@ public class ExtUtil
      * Could do a lot better here
      *   ) handle  negative formats
      *   ) handle chars before/after the number format
-     * @param j
-     * @return
      */
     public static String toExtNumberFormatFn(String j)
     {
@@ -151,8 +153,6 @@ public class ExtUtil
                 j = "0";
         }
         String x = toExtNumberFormat(j);
-        if (null == x)
-            return null;
 
         if (isPercentage)
         {
@@ -165,11 +165,11 @@ public class ExtUtil
     }
 
 
-    /** best attempt Java number format -> Ext number format.  Does not handle negative see toExtNumberFormatFn()
-     *
+    /**
+     * best attempt Java number format -> Ext number format.  Does not handle negative see toExtNumberFormatFn()
      * Java has a lot more options...
      */
-
+    @NotNull
     public static String toExtNumberFormat(String j)
     {
         StringBuilder sb = new StringBuilder();

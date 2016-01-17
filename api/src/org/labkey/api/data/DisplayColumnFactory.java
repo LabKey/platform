@@ -25,6 +25,6 @@ package org.labkey.api.data;
  */
 public interface DisplayColumnFactory
 {
-    /** Create a DisplayColumn instance for the underlying ColumnInfo */
-    public DisplayColumn createRenderer(ColumnInfo colInfo);
+    /** Create a DisplayColumn instance bound to the underlying ColumnInfo */
+    DisplayColumn createRenderer(ColumnInfo colInfo);
 }

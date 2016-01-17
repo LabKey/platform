@@ -16,42 +16,21 @@
 
 package org.labkey.api.view;
 
+import com.google.gwt.core.client.EntryPoint;
+
 import java.util.*;
 
 /**
+ * Wrapper around a GWT module that knows how to render into the overall HTML of the page.
  * User: Mark Igra
  * Date: Jan 30, 2007
- * Time: 3:40:04 PM
  */
 public class GWTView extends JspView<GWTView.GWTViewBean>
 {
     public static final String PROPERTIES_OBJECT_NAME = "LABKEY.GWTProperties";
 
-    public static class CSSStyle
-    {
-        private String _name;
-        private Map<String, String> _properties;
-
-        public CSSStyle(String name, Map<String, String> properties)
-        {
-            _name = name;
-            _properties = properties;
-        }
-
-        public String getCSSSource()
-        {
-            StringBuilder builder = new StringBuilder();
-            builder.append(".").append(_name).append("\n{");
-            for (Map.Entry<String, String> prop : _properties.entrySet())
-                builder.append("\t").append(prop.getKey()).append(": ").append(prop.getValue()).append("\n");
-            builder.append("}");
-            return builder.toString();
-        }
-    }
-
     public static class GWTViewBean
     {
-        public static final String defaultLoadingStyle = "loading-indicator";
         private String _moduleName;
         private Map<String, String> _properties;
 
@@ -93,7 +72,7 @@ public class GWTView extends JspView<GWTView.GWTViewBean>
         }
     }
 
-    private static String convertClassToModuleName(Class c)
+    private static String convertClassToModuleName(Class<? extends EntryPoint> c)
     {
         String name = c.getName();
         int index = name.indexOf(".client.");
@@ -104,12 +83,12 @@ public class GWTView extends JspView<GWTView.GWTViewBean>
         return name;
     }
 
-    public GWTView(Class moduleClass)
+    public GWTView(Class<? extends EntryPoint> moduleClass)
     {
         this(convertClassToModuleName(moduleClass));
     }
 
-    public GWTView(Class moduleClass, String loading)
+    public GWTView(Class<? extends EntryPoint> moduleClass, String loading)
     {
         this(convertClassToModuleName(moduleClass), Collections.singletonMap("loading",loading));
     }
@@ -119,7 +98,7 @@ public class GWTView extends JspView<GWTView.GWTViewBean>
         this(moduleName, Collections.<String, String>emptyMap());
     }
 
-    public GWTView(Class moduleClass, Map<String, String> properties)
+    public GWTView(Class<? extends EntryPoint> moduleClass, Map<String, String> properties)
     {
         this(convertClassToModuleName(moduleClass), properties);
     }

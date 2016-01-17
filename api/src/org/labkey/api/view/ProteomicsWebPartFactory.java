@@ -21,11 +21,11 @@ import org.labkey.api.module.Module;
 import org.labkey.api.protein.ProteomicsModule;
 
 /**
+ * Base class for factories that produce webparts available in all proteomics folder types, identified by having
+ * at least one instance of {@link ProteomicsModule} enabled in the current container.
  * User: gktaylor
  * Date: 5 31, 2013
  */
-
-// Base class for factories that produce webparts available in all proteomics folder types
 public abstract class ProteomicsWebPartFactory extends BaseWebPartFactory
 {
     public ProteomicsWebPartFactory(String name, @NotNull String defaultLocation, String... additionalLocations)
@@ -38,8 +38,7 @@ public abstract class ProteomicsWebPartFactory extends BaseWebPartFactory
         super(name);
     }
 
-    // Available in all proteomics folder types, as long as current location is default location
-
+    /** Available in all proteomics folder types, as long as current location is default location */
     @Override
     public final boolean isAvailable(Container c, String location)
     {

@@ -28,9 +28,9 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
+ * Manages the available {@link WebTheme} instances. Includes both built-in options and admin-created themes.
  * User: adam
  * Date: Oct 21, 2008
- * Time: 2:40:31 PM
  */
 public class WebThemeManager
 {

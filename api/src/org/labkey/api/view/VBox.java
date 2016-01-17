@@ -24,17 +24,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-
+/**
+ * Stacks other {@link ModelAndView} instances vertically.
+ */
 public class VBox extends WebPartView
 {
-    protected List<ModelAndView> _views;
+    protected final List<ModelAndView> _views;
 
     public VBox(ModelAndView... views)
     {
         _views = new ArrayList<>(Arrays.asList(views));
         setFrame(FrameType.NONE);
     }
-
 
     public boolean isVisible()
     {

@@ -24,21 +24,22 @@ import java.io.IOException;
 import java.util.Set;
 
 /**
+ * An expression that knows how to evaluate itself in a given context to substitute values for tokens in the expression.
+ * Typical implementations include URL generation.
  * User: matthewb
  * Date: Sep 16, 2009
- * Time: 12:14:49 PM
  */
 public interface StringExpression extends Cloneable, Parameter.JdbcParameterValue
 {
-    public StringExpression clone();
+    StringExpression clone();
 
-    public String eval(Map ctx);
+    String eval(Map ctx);
 
-    public String getSource();
+    String getSource();
 
-    public void render(Writer out, Map ctx) throws IOException;
+    void render(Writer out, Map ctx) throws IOException;
 
-    public StringExpression copy(); // clone without the Exception
+    StringExpression copy(); // clone without the Exception
 
     /** @return whether the fieldKeys are sufficient to render this expression */
     boolean canRender(Set<FieldKey> fieldKeys);

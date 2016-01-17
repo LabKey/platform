@@ -17,6 +17,7 @@ package org.labkey.api.util;
 
 import java.util.Map;
 
+/** Simple wrapper around two other objects */
 public class Pair<Type1, Type2> implements Map.Entry<Type1, Type2>, java.io.Serializable
 {
     public Pair(Type1 first, Type2 second)

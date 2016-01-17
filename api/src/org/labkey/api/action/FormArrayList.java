@@ -19,11 +19,9 @@ package org.labkey.api.action;
 import java.util.ArrayList;
 
 /**
+ * Useful List implementation for form beans
  * User: matthewb
  * Date: May 29, 2007
- * Time: 5:14:01 PM
- *
- * Useful List implementation for form beans
  */
 public class FormArrayList<T> extends ArrayList<T>
 {
@@ -48,13 +46,9 @@ public class FormArrayList<T> extends ArrayList<T>
                 set(index, newInstance());
             return super.get(index);
         }
-        catch (InstantiationException x)
+        catch (InstantiationException | IllegalAccessException x)
         {
             throw new RuntimeException(x);
-        }
-        catch (IllegalAccessException e)
-        {
-            throw new RuntimeException(e);
         }
     }
 

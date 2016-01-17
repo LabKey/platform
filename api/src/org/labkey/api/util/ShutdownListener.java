@@ -17,9 +17,9 @@
 package org.labkey.api.util;
 
 /**
+ * Callback to be notified when the server is shutting down. Complement to {@link StartupListener}.
  * User: brittp
  * Date: Dec 3, 2005
- * Time: 5:15:42 PM
  */
 public interface ShutdownListener
 {

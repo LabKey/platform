@@ -22,7 +22,6 @@ import org.labkey.api.services.ServiceRegistry;
 /**
  * User: vsharma
  * Date: 8/26/2014
- * Time: 10:23 AM
  */
 public class ShortURLRecordConverter implements Converter
 {

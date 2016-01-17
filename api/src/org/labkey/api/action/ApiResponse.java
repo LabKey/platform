@@ -16,13 +16,12 @@
 package org.labkey.api.action;
 
 /**
- * Interface for API Responses.
+ * Interface for client API responses.
  *
  * User: Dave
  * Date: Feb 13, 2008
- * Time: 2:02:12 PM
  */
 public interface ApiResponse
 {
-    public void render(ApiResponseWriter writer) throws Exception;
+    void render(ApiResponseWriter writer) throws Exception;
 }

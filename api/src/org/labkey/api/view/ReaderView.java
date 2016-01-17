@@ -26,7 +26,7 @@ import java.io.PrintWriter;
 import java.io.Reader;
 
 /**
- * Streams content directly to the response without reading it all into memory.
+ * Streams content directly to the response without reading it all into memory. Backed by a {@link Reader}.
  * User: jeckels
  * Date: Nov 6, 2011
  */

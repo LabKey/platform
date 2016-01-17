@@ -41,9 +41,9 @@ import java.util.Collections;
 import java.util.Map;
 
 /**
+ * In-memory cache of the {@link WebPart}s configured for specific {@link Container}s.
  * User: adam
  * Date: 10/21/11
- * Time: 10:45 PM
  */
 public class WebPartCache
 {
@@ -75,7 +75,7 @@ public class WebPartCache
     static Collection<WebPart> getWebParts(@NotNull Container c, @NotNull String pageId)
     {
         Portal.PortalPage page = getPortalPage(c,pageId);
-        return null == page ? new ArrayList<WebPart>() : page.getWebParts().values();
+        return null == page ? new ArrayList<>() : page.getWebParts().values();
     }
 
 

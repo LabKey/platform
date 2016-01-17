@@ -22,7 +22,7 @@ import java.lang.annotation.Target;
 
 /**
  * Marker annotation to indicate that the objects created during the invocation of a given action should
- * not be recorded.
+ * not be recorded and tracked via {@link org.labkey.api.util.MemTracker}.
  * User: jeckels
  * Date: Jan 16, 2014
  */

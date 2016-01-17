@@ -17,16 +17,12 @@ package org.labkey.api.action;
 
 import java.io.IOException;
 
-/*
-* User: Dave
-* Date: Sep 3, 2008
-* Time: 10:59:49 AM
-*/
-
 /**
  * Base class for API Actions that will received data posted from an Ext form.
  * This class ensures that the validation errors are reported back to the form
  * in the way that Ext forms require.
+ * User: Dave
+ * Date: Sep 3, 2008
  */
 public abstract class ExtFormAction<FORM> extends ApiAction<FORM>
 {

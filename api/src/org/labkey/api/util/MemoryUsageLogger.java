@@ -22,9 +22,11 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryPoolMXBean;
 
 /**
-* User: jeckels
-* Date: 1/15/14
-*/
+ * Logs information about the various JVM memory pools to the primary server log file. Useful for tracking memory
+ * use trends without needing to have a separate monitoring solution in place.
+ * User: jeckels
+ * Date: 1/15/14
+ */
 public class MemoryUsageLogger implements Runnable
 {
     private static final Logger LOG = Logger.getLogger(MemTracker.class);

@@ -20,6 +20,10 @@ import org.labkey.api.util.HString;
 import org.labkey.api.util.SkipMothershipLogging;
 import org.labkey.api.util.URLHelper;
 
+/**
+ * When thrown in the context of an HTTP request, sends the client a redirect in the HTTP response. Not treated
+ * as a loggable error.
+ */
 public class RedirectException extends RuntimeException implements SkipMothershipLogging
 {
     String _url;

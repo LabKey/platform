@@ -62,6 +62,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
 /**
+ * Basic image manipulation, such as rescaling and conversion between image file formats.
  * User: jeckels
  * Date: Nov 7, 2008
  */

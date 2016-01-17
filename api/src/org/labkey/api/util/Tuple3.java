@@ -19,6 +19,7 @@ package org.labkey.api.util;
 import java.io.Serializable;
 
 /**
+ * Simple wrapper around three other objects.
  * User: kevink
  * Date: 6/9/11
  */

@@ -14,18 +14,14 @@
  * limitations under the License.
  */
 package org.labkey.api.query;
-/*
- * User: Dave
- * Date: Jun 9, 2008
- * Time: 4:53:33 PM
- */
-
 /**
  * Represents a particular validation error. Various validation error
  * classes will implement this interface for use in the
  * {@link ValidationException} class
+ * User: Dave
+ * Date: Jun 9, 2008
  */
 public interface ValidationError
 {
-    public String getMessage();
+    String getMessage();
 }

@@ -101,6 +101,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * View that generates the majority of standard data grids/tables in the LabKey Server UI.
+ * The backing query is lazily invoked when it comes times to render the QueryView.
  */
 public class QueryView extends WebPartView<Object>
 {

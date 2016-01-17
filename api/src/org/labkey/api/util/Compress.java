@@ -33,12 +33,10 @@ import java.util.zip.GZIPOutputStream;
 import java.util.zip.Inflater;
 
 /**
+ * Static methods for compressing and decompressing strings and byte arrays using different methods
  * User: adam
  * Date: 1/13/12
- * Time: 6:32 AM
  */
-
-// Static methods for compressing and decompressing strings and byte arrays using different methods
 public class Compress
 {
     private Compress()
@@ -46,16 +44,20 @@ public class Compress
     }
 
 
-    // Compress a string using the GZIP algorithm.  GZIP is less efficient than DEFLATE (GZIP uses DEFLATE internally
-    // but adds some overhead... which becomes negligible as the source grows in size) but is supported natively by most
-    // browsers.  GZIP should usually be used when sending compressed content externally (over the internet, etc.).
+    /**
+     * Compress a string using the GZIP algorithm.  GZIP is less efficient than DEFLATE (GZIP uses DEFLATE internally
+     * but adds some overhead... which becomes negligible as the source grows in size) but is supported natively by most
+     * browsers.  GZIP should usually be used when sending compressed content externally (over the internet, etc.).
+     */
     public static byte[] compressGzip(String source)
     {
         return compressGzip(getBytes(source));
     }
 
 
-    // Compress a byte[] using the GZIP algorithm (see above).
+    /**
+     * Compress a byte[] using the GZIP algorithm
+     */
     public static byte[] compressGzip(byte[] bytes)
     {
         // GZIPOutputStream must be closed before getting byte array, so nest the try-with-resources blocks
@@ -74,14 +76,14 @@ public class Compress
         }
     }
 
-    //create a compressed output from a file.  the name of the compressed file will the the input filename plus '.gz'
+    /** create a compressed output from a file.  the name of the compressed file will be the input filename plus '.gz' */
     public static File compressGzip(File input)
     {
         File output = new File(input.getPath() + ".gz");
         return compressGzip(input, output);
     }
 
-    //create a compressed output file from the input file
+    /** create a compressed output file from the input file */
     public static File compressGzip(File input, File output)
     {
         try (FileInputStream i = new FileInputStream(input); GZIPOutputStream o = new GZIPOutputStream(new FileOutputStream(output)))
@@ -96,7 +98,7 @@ public class Compress
         return output;
     }
 
-    // Decompress a byte array that was compressed using GZIP.
+    /** Decompress a byte array that was compressed using GZIP. */
     public static String decompressGzip(byte[] bytes)
     {
         try (GZIPInputStream is = new GZIPInputStream(new ByteArrayInputStream(bytes)); ByteArrayOutputStream buf = new ByteArrayOutputStream())
@@ -111,7 +113,7 @@ public class Compress
         }
     }
 
-    //create a compressed output file from the input file
+    /** create a compressed output file from the input file */
     public static File decompressGzip(File input, File output)
     {
         try (GZIPInputStream i = new GZIPInputStream(new FileInputStream(input)); FileOutputStream o = new FileOutputStream(output))
@@ -126,15 +128,16 @@ public class Compress
         return output;
     }
 
-    // Compress a string using the DEFLATE algorithm.  Using DEFLATE is more efficient than GZIP compression
-    // (less overhead) but many common browsers don't accept this format directly.  Best for internal use.
+    /**
+     * Compress a string using the DEFLATE algorithm.  Using DEFLATE is more efficient than GZIP compression
+     * (less overhead) but many common browsers don't accept this format directly.  Best for internal use.
+     */
     public static byte[] deflate(String source)
     {
         return deflate(getBytes(source));
     }
 
-
-    // Compress a byte array using the DEFLATE algorithm (see above).
+    /** Compress a byte array using the DEFLATE algorithm (see above). */
     public static byte[] deflate(byte[] bytes)
     {
         byte[] buffer = new byte[bytes.length];

@@ -23,6 +23,7 @@ import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
 
+/** Lays out child {@link ModelAndView} horizontally */
 public class HBox extends VBox
 {
     private Map<ModelAndView, String> _widths = new HashMap<>();

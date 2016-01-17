@@ -21,6 +21,10 @@ import org.labkey.api.util.SkipMothershipLogging;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 
+/**
+ * Indicates that the client made a bad HTTP request, resulting in a 400 HTTP response code and avoiding much
+ * of the standard exception logging code for server-side bugs.
+ */
 public class BadRequestException extends ServletException implements SkipMothershipLogging
 {
     final int status;

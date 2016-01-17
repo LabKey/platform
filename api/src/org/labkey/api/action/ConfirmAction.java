@@ -30,9 +30,9 @@ import org.springframework.web.servlet.ModelAndView;
 import org.labkey.api.util.URLHelper;
 
 /**
+ * Base class for actions that want to show a full-page confirmation step prior to performing the actual operation.
  * User: matthewb
  * Date: May 17, 2007
- * Time: 12:52:55 PM
  */
 public abstract class ConfirmAction<FORM> extends BaseViewAction
 {

@@ -33,8 +33,7 @@ import java.util.Map;
 
 /**
  * A mime type map that implements the java.net.FileNameMap interface.
- * <p/>
- * copied from Tomcat, modified to read from mime.types
+ * Copied from Tomcat, modified to read from mime.txt, loaded as a classloader resource.
  */
 public class MimeMap implements FileNameMap
 {

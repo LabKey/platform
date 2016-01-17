@@ -20,6 +20,7 @@ import org.labkey.api.settings.AppProps;
 import java.awt.*;
 
 /**
+ * A collection of colors to customize the look and feel of the web server.
  * User: jeckels
  * Date: Oct 11, 2005
  */

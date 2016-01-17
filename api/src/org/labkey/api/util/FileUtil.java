@@ -170,8 +170,6 @@ public class FileUtil
     /**
      * Returns the file name extension without the dot, null if there
      * isn't one.
-     * @param file
-     * @return
      */
     public static String getExtension(File file)
     {
@@ -181,8 +179,6 @@ public class FileUtil
     /**
      * Returns the file name extension without the dot, null if there
      * isn't one.
-     * @param name
-     * @return
      */
     public static String getExtension(String name)
     {
@@ -274,7 +270,7 @@ public class FileUtil
     {
         // start at the beginning of the lists
         // iterate while both lists are equal
-        StringBuffer path = new StringBuffer();
+        StringBuilder path = new StringBuilder();
         int i = home.size() - 1;
         int j = file.size() - 1;
 
@@ -652,10 +648,7 @@ quickScan:
         if (name.length() > 255)
             return false;
 
-        if (StringUtils.containsAny(name, illegalChars))
-            return false;
-
-        return true;
+        return !StringUtils.containsAny(name, illegalChars);
     }
 
     public static String makeLegalName(String name)

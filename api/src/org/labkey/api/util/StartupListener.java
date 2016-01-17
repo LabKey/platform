@@ -18,8 +18,9 @@ package org.labkey.api.util;
 import javax.servlet.ServletContext;
 
 /**
- * <code>StartupListener</code>
- *
+ * Callback for when the server is up and running, and all modules have completed their startup.
+ * Useful for launching background work that relies on all modules being ready, or for doing work
+ * that shouldn't block users from being able to log in and use the site. Complement to {@link ShutdownListener}.
  * @author brendanx
  */
 public interface StartupListener

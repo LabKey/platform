@@ -19,7 +19,10 @@ package org.labkey.api.util;
 import java.util.Set;
 import java.util.HashSet;
 
-// Uniquify filenames by inserting _n immediately before the extension
+/**
+ * Uniquify filenames by inserting _n immediately before the extension when another file of the same name is
+ * present in the parent
+ */
 public class FileNameUniquifier
 {
     private Set<String> _previous = new HashSet<>();

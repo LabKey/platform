@@ -21,7 +21,6 @@ api/src/org/labkey/api/ScrollableDataIterator.java -text
 api/src/org/labkey/api/action/AbstractFileUploadAction.java -text
 api/src/org/labkey/api/action/Action.java -text
 api/src/org/labkey/api/action/ActionType.java -text
-api/src/org/labkey/api/action/AjaxAction.java -text
 api/src/org/labkey/api/action/ApiAction.java -text
 api/src/org/labkey/api/action/ApiJsonWriter.java -text
 api/src/org/labkey/api/action/ApiQueryResponse.java -text
@@ -1663,8 +1662,6 @@ api/src/org/labkey/api/util/mime.txt -text
 api/src/org/labkey/api/view/AbstractView.java -text
 api/src/org/labkey/api/view/ActionWebPart.java -text
 api/src/org/labkey/api/view/AjaxCompletion.java -text
-api/src/org/labkey/api/view/AjaxResponse.java -text
-api/src/org/labkey/api/view/AjaxXmlResponse.java -text
 api/src/org/labkey/api/view/AlwaysAvailableWebPartFactory.java -text
 api/src/org/labkey/api/view/BadRequestException.java -text
 api/src/org/labkey/api/view/BaseWebPartFactory.java -text
@@ -1703,11 +1700,9 @@ api/src/org/labkey/api/view/SimpleWebPartFactory.java -text
 api/src/org/labkey/api/view/SimpleWebPartFactoryCacheHandler.java -text
 api/src/org/labkey/api/view/SpringErrorView.java -text
 api/src/org/labkey/api/view/Stats.java -text
-api/src/org/labkey/api/view/TabBoxView.java -text
 api/src/org/labkey/api/view/TabStripView.java -text
 api/src/org/labkey/api/view/TermsOfUseException.java -text
 api/src/org/labkey/api/view/ThemeFont.java -text
-api/src/org/labkey/api/view/TidyFilterView.java -text
 api/src/org/labkey/api/view/URLException.java -text
 api/src/org/labkey/api/view/ViewBackgroundInfo.java -text
 api/src/org/labkey/api/view/ViewContext.java -text
@@ -1724,15 +1719,12 @@ api/src/org/labkey/api/view/menu/ContainerMenu.java -text
 api/src/org/labkey/api/view/menu/FolderAdminMenu.java -text
 api/src/org/labkey/api/view/menu/FolderMenu.java -text
 api/src/org/labkey/api/view/menu/HeaderMenu.java -text
-api/src/org/labkey/api/view/menu/MenuView.java -text
 api/src/org/labkey/api/view/menu/NavTreeMenu.java -text
 api/src/org/labkey/api/view/menu/ProjectAdminMenu.java -text
 api/src/org/labkey/api/view/menu/ProjectsMenu.java -text
 api/src/org/labkey/api/view/menu/SiteAdminMenu.java -text
 api/src/org/labkey/api/view/menu/headerMenu.jsp -text
-api/src/org/labkey/api/view/menu/menuView.jsp -text
 api/src/org/labkey/api/view/springError.jsp -text
-api/src/org/labkey/api/view/tabbox.jsp -text
 api/src/org/labkey/api/view/tabstrip.jsp -text
 api/src/org/labkey/api/view/template/AppBar.java -text
 api/src/org/labkey/api/view/template/AppBarView.java -text

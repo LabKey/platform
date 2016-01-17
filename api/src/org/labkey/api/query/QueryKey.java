@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Base class of FieldKey and SchemaKey.
+ * Base class of {@link FieldKey} and {@link SchemaKey}.
  * The only difference between the two is the default divider.
  */
 /*package*/ abstract class QueryKey<T extends QueryKey<T>> implements Comparable<T>, Serializable

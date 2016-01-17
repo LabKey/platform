@@ -10,10 +10,10 @@ import java.io.File;
 import java.util.Collection;
 
 /**
+ * Runs each {@link MaintenanceTask} in order. If any fail, the others still run, but the job will eventually be set to ERROR
+ * status.
  * Created by adam on 12/2/2015.
  */
-
-// Runs each MaintenanceTask in order
 class MaintenancePipelineJob extends PipelineJob
 {
     private final Collection<MaintenanceTask> _tasks;

@@ -42,9 +42,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 /**
+ * Manages scheduling and queuing system maintenance tasks.
  * User: adam
  * Date: Sep 29, 2006
- * Time: 2:18:53 PM
  */
 public class SystemMaintenance
 {
@@ -224,16 +224,21 @@ public class SystemMaintenance
         }
     }
 
+    /**
+     * A specific piece of maintenance to be run as part of the overall {@link MaintenancePipelineJob}.
+     */
     public interface MaintenanceTask extends Runnable
     {
-        // Description used in logging and UI
+        /** Description used in logging and UI */
         String getDescription();
 
-        // Short name used in forms and to persist disabled settings
-        // Task name must be unique and cannot contain a comma
+        /**
+         * Short name used in forms and to persist disabled settings.
+         * Task name must be unique and cannot contain a comma
+         */
         String getName();
 
-        // Can this task be disabled?
+        /** Can this task be disabled? */
         boolean canDisable();
 
         /**
@@ -241,7 +246,7 @@ public class SystemMaintenance
          */
         boolean isEnabledByDefault();
 
-        // Hide this from the Admin page (because it will be controlled from elsewhere)
+        /** Hide this from the Admin page (because it will be controlled from elsewhere) */
         boolean hideFromAdminPage();
     }
 }

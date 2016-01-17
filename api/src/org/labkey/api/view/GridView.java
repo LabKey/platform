@@ -15,21 +15,19 @@
  */
 package org.labkey.api.view;
 
-import org.apache.log4j.Logger;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.Filter;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.springframework.validation.Errors;
 
 import java.io.IOException;
 import java.io.Writer;
 
+/** Renders a grid (table with separate columns for each field, and rows for each separate element */
 public class GridView extends DataView
 {
-    private static Logger _log = Logger.getLogger(GridView.class);
-
     public GridView(DataRegion dataRegion, Errors errors)
     {
         super(dataRegion, errors);
@@ -45,8 +43,7 @@ public class GridView extends DataView
         super(dataRegion, ctx);
     }
 
-    // TODO: This should take a Filter, not a SimpleFilter
-    public void setFilter(SimpleFilter filter)
+    public void setFilter(Filter filter)
     {
         getRenderContext().setBaseFilter(filter);
     }
@@ -58,12 +55,6 @@ public class GridView extends DataView
 
     protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException
     {
-        // UNDONE
-        //String err = PageFlowUtil.getStrutsError(ctx.getRequest(), "dataregion_" + getDataRegion().getName());
-        String err = null;
-        if (err != null && err.length() > 0)
-            out.write(err.replaceAll(System.getProperty("line.separator"), "<br>"));
-
         ctx.setMode(DataRegion.MODE_GRID);
         //Force through bottleneck
         getDataRegion().render(ctx, out);

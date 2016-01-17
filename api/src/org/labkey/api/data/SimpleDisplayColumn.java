@@ -26,6 +26,10 @@ import java.io.Writer;
 import java.util.Set;
 import java.util.HashSet;
 
+/**
+ * {@link DisplayColumn} implementation that typically doesn't render the value from a column in the query
+ * being executed. Examples include columns that show links with fixed text (details or update links, for example).
+ */
 public class SimpleDisplayColumn extends DisplayColumn
 {
     private StringExpression _displayHTML = null;

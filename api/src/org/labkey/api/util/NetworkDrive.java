@@ -15,13 +15,17 @@
  */
 package org.labkey.api.util;
 
-import java.io.File;
-import java.io.InputStreamReader;
-import java.io.IOException;
-
 import org.apache.log4j.Logger;
 import org.labkey.api.pipeline.PipelineJobService;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
+/**
+ * Utility to map Windows file shares as "drives" with their own letter. Shells out to do a NET USE to map it
+ * if not already mounted.
+ */
 public class NetworkDrive
 {
     protected String path;
@@ -108,6 +112,9 @@ public class NetworkDrive
 
     private static Logger _log = Logger.getLogger(NetworkDrive.class);
 
+    /**
+     * @return whether the file exists, mounting the drive if needed
+     */
     public static boolean exists(File f)
     {
         if (f == null)
@@ -118,6 +125,9 @@ public class NetworkDrive
         return f.exists();
     }
 
+    /**
+     * Force mounting of the drive if it's not already available.
+     */
     public static void ensureDrive(String path)
     {
         if (path.length() != 1)

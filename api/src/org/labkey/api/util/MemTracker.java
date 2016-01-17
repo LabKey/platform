@@ -40,9 +40,10 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
+ * Tracks objects that may be expensive, commonly allocated so that we know that they're not being held and creating
+ * a memory leak. Will not prevent the tracked objects from being garbage collected.
  * User: brittp
  * Date: Oct 27, 2005
- * Time: 10:33:00 AM
  */
 public class MemTracker
 {

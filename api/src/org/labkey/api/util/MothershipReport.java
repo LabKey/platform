@@ -43,6 +43,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * A submission of data to the mothership running on labkey.org. Separate from the Mothership module, which
+ * contains the code that receives the report.
  * User: jeckels
  * Date: Apr 20, 2006
  */

@@ -26,10 +26,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 /**
- * SafeFileAppender class
- * <p/>
+ * Custom Log4J appender that opens the log file and closes it for each logging operation, thus ensuring
+ * that the file does not stay locked.
  * Created: Oct 18, 2005
- *
  * @author bmaclean
  */
 public class SafeFileAppender extends AppenderSkeleton

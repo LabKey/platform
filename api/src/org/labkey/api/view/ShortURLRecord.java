@@ -26,16 +26,14 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 /**
+ * Bean class for short URLs, which are TinyURL-style redirects handled within the server.
  * User: jeckels
  * Date: 1/23/14
  */

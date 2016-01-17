@@ -79,8 +79,10 @@ public abstract class DisplayColumn extends RenderColumn
 
     public abstract void renderTitle(RenderContext ctx, Writer out) throws IOException;
 
+    /** @return whether the underlying column knows how to sort the query that was executed (via SQL ORDER BY) */
     public abstract boolean isSortable();
 
+    /** @return whether the underlying column knows how to filter the query that was executed (via SQL WHERE) */
     public abstract boolean isFilterable();
 
     public abstract boolean isEditable();

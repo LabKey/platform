@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.io.Writer;
 
 /**
+ * {@link org.labkey.api.data.DisplayColumn} that shows an ExtJS-based color picker component for insert/update forms
+ * and a small square of the color in grid views.
  * User: jeckels
  * Date: 12/23/2014
  */

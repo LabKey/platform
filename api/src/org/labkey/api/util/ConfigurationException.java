@@ -18,15 +18,14 @@ package org.labkey.api.util;
 
 import org.jetbrains.annotations.Nullable;
 
-/*
-* User: adam
-* Date: Aug 13, 2009
-* Time: 5:16:58 PM
-*/
+/**
+ * Use this to report major configuration issues with server, database, smtp, pipeline, etc.  These problems should
+ * represent configuration mistakes (NOT code problems) that prevent normal operation of the server, since the
+ * exceptions are not reported to mothership.  The message text encourages administrators to contact LabKey for assistance.
+ * User: adam
+ * Date: Aug 13, 2009
+ */
 
-// Use this to report major configuration issues with server, database, smtp, pipeline, etc.  These problems should
-// represent configuration mistakes (NOT code problems) that prevent normal operation of the server, since the
-// exceptions are not reported to mothership.  The message text encourages administrators to contact LabKey for assistance.
 public class ConfigurationException extends MinorConfigurationException implements ErrorRendererProperties
 {
     private final String _advice;
@@ -36,8 +35,10 @@ public class ConfigurationException extends MinorConfigurationException implemen
         this(message, (String)null);
     }
 
-    // Separating "message" from "advice" allows us to keep the message in the stack trace short, which allows the
-    // more detailed advice to word-wrap.  Also, we may want to format the message and advice differently.
+    /**
+     * Separating "message" from "advice" allows us to keep the message in the stack trace short, which allows the
+     * more detailed advice to word-wrap.  Also, we may want to format the message and advice differently.
+     */
     public ConfigurationException(String message, @Nullable String advice)
     {
         super(message);
