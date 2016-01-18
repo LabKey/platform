@@ -471,7 +471,14 @@ public class ExcelFactory
                                             // DecimalFormat doesn't understand Excel's scientific notation format syntax
                                             formatString = "0.00E00";
                                         }
-                                        formattedValue = new DecimalFormat(formatString).format(value);
+                                        try
+                                        {
+                                            formattedValue = new DecimalFormat(formatString).format(value);
+                                        }
+                                        catch (IllegalArgumentException e)
+                                        {
+                                            formattedValue = Double.toString(cell.getNumericCellValue());
+                                        }
 
                                         if (excelScientific && !formattedValue.contains("E-"))
                                         {
