@@ -24,7 +24,9 @@ import org.labkey.api.view.ViewContext;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -35,11 +37,12 @@ public abstract class AbstractParamReplacement implements ParamReplacement
 {
     protected String _id;
     protected String _name;
-    protected File _file;
     protected Report _report;
     protected boolean _headerVisible = true;
     protected Map<String, String> _properties = Collections.emptyMap();
     protected boolean _isRemote = false;
+    protected String _regex;
+    protected List<File> _files = new ArrayList<>();
 
     public AbstractParamReplacement(String id)
     {
@@ -59,16 +62,6 @@ public abstract class AbstractParamReplacement implements ParamReplacement
     public void setName(String name)
     {
         _name = name;
-    }
-
-    public File getFile()
-    {
-        return _file;
-    }
-
-    public void setFile(File file)
-    {
-        _file = file;
     }
 
     public Report getReport()
@@ -122,5 +115,28 @@ public abstract class AbstractParamReplacement implements ParamReplacement
         return null; // Subclasses that can should implement this
     }
 
-    public abstract ScriptOutput renderAsScriptOutput() throws Exception;
+    @Override
+    public List<File> getFiles()
+    {
+        return _files;
+    }
+
+    @Override
+    public void addFile(File file)
+    {
+        _files.add(file);
+    }
+
+    @Nullable
+    @Override
+    public String getRegex()
+    {
+        return _regex;
+    }
+
+    @Override
+    public void setRegex(String regex)
+    {
+        _regex = regex;
+    }
 }

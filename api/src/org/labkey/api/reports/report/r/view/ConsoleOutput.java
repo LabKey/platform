@@ -40,12 +40,14 @@ public class ConsoleOutput extends AbstractParamReplacement
 
     public File convertSubstitution(File directory) throws Exception
     {
+        File file;
         if (directory != null)
-            _file = File.createTempFile(RReport.FILE_PREFIX, "Result.txt", directory);
+            file = File.createTempFile(RReport.FILE_PREFIX, "Result.txt", directory);
         else
-            _file = File.createTempFile(RReport.FILE_PREFIX, "Result.txt");
+            file = File.createTempFile(RReport.FILE_PREFIX, "Result.txt");
 
-        return _file;
+        addFile(file);
+        return file;
     }
 
     public HttpView render(ViewContext context)
@@ -59,10 +61,10 @@ public class ConsoleOutput extends AbstractParamReplacement
     }
 
     @Override
-    public ScriptOutput renderAsScriptOutput() throws Exception
+    public ScriptOutput renderAsScriptOutput(File file) throws Exception
     {
         ROutputView view = new TextOutput.TextOutputView(this);
-        String console = view.renderInternalAsString();
+        String console = view.renderInternalAsString(file);
 
         if (null != console)
             return new ScriptOutput(ScriptOutput.ScriptOutputType.console, "console", console);

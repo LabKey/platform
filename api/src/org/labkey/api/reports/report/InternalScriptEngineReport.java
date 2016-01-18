@@ -132,7 +132,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
 
                     ParamReplacement param = ParamReplacementSvc.get().getHandlerInstance(ConsoleOutput.ID);
                     param.setName("console");
-                    param.setFile(console);
+                    param.addFile(console);
 
                     outputSubst.add(param);
                 }

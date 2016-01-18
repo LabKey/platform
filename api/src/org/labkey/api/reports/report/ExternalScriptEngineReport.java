@@ -19,6 +19,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryService.NamedParameterNotProvided;
@@ -57,8 +58,11 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -266,6 +270,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
             {
                 Object output = runScript(engine, context, outputSubst, inputDataTsv, inputParameters);
                 saveConsoleOutput(output, outputSubst, context);
+                saveAdditionalFileOutput(outputSubst, context);
                 return output != null ? output.toString() : "";
             }
             catch(Exception e)
@@ -290,8 +295,54 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
 
             ParamReplacement param = ParamReplacementSvc.get().getHandlerInstance(ConsoleOutput.ID);
             param.setName("console");
-            param.setFile(console);
+            param.addFile(console);
             outputSubst.add(param);
+        }
+    }
+
+    /**
+     * Searches for additional file artifacts
+     */
+    protected void saveAdditionalFileOutput(List<ParamReplacement> outputSubst, @NotNull ContainerUser context) throws IOException
+    {
+        File reportDir = getReportDir(context.getContainer().getId());
+        if (reportDir != null && reportDir.exists())
+        {
+            Set<String> boundFiles = new CaseInsensitiveHashSet();
+            for (ParamReplacement param : outputSubst)
+            {
+                for (File file : param.getFiles())
+                    boundFiles.add(file.getName());
+            }
+
+            File[] additionalFiles = reportDir.listFiles(new FilenameFilter()
+            {
+                @Override
+                public boolean accept(File dir, String name)
+                {
+                    if (boundFiles.contains(name))
+                        return false;
+                    else if ("input_data.tsv".equalsIgnoreCase(name))
+                        return false;
+                    else if ("script.r".equalsIgnoreCase(name))
+                        return false;
+                    else if ("script.rout".equalsIgnoreCase(name))
+                        return false;
+                    return true;
+                }
+            });
+
+            for (File file : additionalFiles)
+            {
+                for (ParamReplacement param : outputSubst)
+                {
+                    if (param.getRegex() != null)
+                    {
+                        if (Pattern.matches(param.getRegex(), file.getName()))
+                            param.addFile(file);
+                    }
+                }
+            }
         }
     }
 
@@ -375,24 +426,25 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
 
                     for (ParamReplacement param : replacements)
                     {
-                        File src = param.getFile();
-                        File dst = new File(cacheDir, src.getName());
-
-                        if (src.exists() && dst.createNewFile())
+                        for (File src : param.getFiles())
                         {
-                            FileUtil.copyFile(src, dst);
+                            File dst = new File(cacheDir, src.getName());
 
-                            if (param.getId().equals(ConsoleOutput.ID))
+                            if (src.exists() && dst.createNewFile())
                             {
-                                try (BufferedWriter bw = new BufferedWriter(new FileWriter(dst, true)))
+                                FileUtil.copyFile(src, dst);
+
+                                if (param.getId().equals(ConsoleOutput.ID))
                                 {
-                                    bw.write("\nLast cached update : " + DateUtil.formatDateTime(context.getContainer()) + "\n");
+                                    try (BufferedWriter bw = new BufferedWriter(new FileWriter(dst, true)))
+                                    {
+                                        bw.write("\nLast cached update : " + DateUtil.formatDateTime(context.getContainer()) + "\n");
+                                    }
                                 }
+                                param.addFile(dst);
                             }
-                            param.setFile(dst);
                         }
                     }
-
                     ParamReplacementSvc.get().toFile(replacements, mapFile);
                     _cachedReportURLMap.put(getDescriptor().getReportId(), getCacheURL(context.getActionURL()));
                 }

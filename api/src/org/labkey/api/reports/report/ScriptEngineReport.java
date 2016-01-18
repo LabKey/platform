@@ -82,6 +82,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -495,20 +496,22 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
                 param.setReport(report);
                 try
                 {
-                    //
-                    // Even if there is a script error we keep processing the output
-                    // parameters.  If the parameter files don't exist then don't create a
-                    // parameter object.
-                    //
-                    ScriptOutput output = param.renderAsScriptOutput();
-                    if (null != output)
+                    for (File file : param.getFiles())
                     {
-                        scriptOutputs.add(output);
-                        _log.debug("ExecuteScript:  Added output parameter for: " + param.getName());
-                    }
-                    else
-                    {
-                        _log.debug("ExecuteScript:  Could not add output parameter for: " + param.getName());
+                        // Even if there is a script error we keep processing the output
+                        // parameters.  If the parameter files don't exist then don't create a
+                        // parameter object.
+                        //
+                        ScriptOutput output = param.renderAsScriptOutput(file);
+                        if (null != output)
+                        {
+                            scriptOutputs.add(output);
+                            _log.debug("ExecuteScript:  Added output parameter for: " + param.getName());
+                        }
+                        else
+                        {
+                            _log.debug("ExecuteScript:  Could not add output parameter for: " + param.getName());
+                        }
                     }
                 }
                 catch(Exception e)
@@ -529,7 +532,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         });
     }
 
-    public static HttpView renderViews(ScriptEngineReport report, final VBox view, List<ParamReplacement> parameters, boolean deleteTempFiles) throws IOException
+    public static HttpView renderViews(ScriptEngineReport report, final VBox view, Collection<ParamReplacement> parameters, boolean deleteTempFiles) throws IOException
     {
         return handleParameters(report, parameters, new ParameterHandler<HttpView>()
         {
@@ -587,7 +590,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     }
 
 
-    private static <K> K handleParameters(ScriptEngineReport report, List<ParamReplacement> parameters, ParameterHandler<K> handler) throws IOException
+    private static <K> K handleParameters(ScriptEngineReport report, Collection<ParamReplacement> parameters, ParameterHandler<K> handler) throws IOException
     {
         String sections = (String)HttpView.currentContext().get(renderParam.showSection.name());
         List<String> sectionNames = Collections.emptyList();
@@ -621,15 +624,15 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
     protected static boolean isViewable(ParamReplacement param, List<String> sectionNames)
     {
-        File data = param.getFile();
-
-        if (data.exists())
+        for (File data : param.getFiles())
         {
-            if (!sectionNames.isEmpty())
-                return sectionNames.contains(param.getName());
-            return true;
+            if (data.exists())
+            {
+                if (!sectionNames.isEmpty())
+                    return sectionNames.contains(param.getName());
+                return true;
+            }
         }
-
         return false;
     }
 

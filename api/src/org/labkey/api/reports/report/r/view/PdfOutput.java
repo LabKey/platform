@@ -61,10 +61,11 @@ public class PdfOutput extends DownloadParamReplacement
             return new HtmlView(DownloadParamReplacement.UNABlE_TO_RENDER);
     }
 
-    public ScriptOutput renderAsScriptOutput() throws Exception
+    @Override
+    public ScriptOutput renderAsScriptOutput(File file) throws Exception
     {
         if (getReport() instanceof AttachmentParent)
-            return renderAsScriptOutput(new PdfReportView(this, getReport()),
+            return renderAsScriptOutput(file, new PdfReportView(this, getReport()),
                     ScriptOutput.ScriptOutputType.pdf);
         else
             return renderAsScriptOutputError();
@@ -86,9 +87,17 @@ public class PdfOutput extends DownloadParamReplacement
         if (null == svc)
             return null;
 
-        InputStream pdfStream = new FileInputStream(getFile());
-        BufferedImage image = svc.pdfToImage(pdfStream, 0);
+        for (File file : getFiles())
+        {
+            // just render the first file, in most cases this is appropriate
+            if (file.exists())
+            {
+                InputStream pdfStream = new FileInputStream(file);
+                BufferedImage image = svc.pdfToImage(pdfStream, 0);
 
-        return ImageUtil.renderThumbnail(image);
+                return ImageUtil.renderThumbnail(image);
+            }
+        }
+        return null;
     }
 }

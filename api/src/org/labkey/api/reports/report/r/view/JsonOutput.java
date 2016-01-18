@@ -43,12 +43,14 @@ public class JsonOutput extends AbstractParamReplacement
 
     public File convertSubstitution(File directory) throws Exception
     {
+        File file;
         if (directory != null)
-            _file = File.createTempFile(RReport.FILE_PREFIX, "Result.json", directory);
+            file = File.createTempFile(RReport.FILE_PREFIX, "Result.json", directory);
         else
-            _file = File.createTempFile(RReport.FILE_PREFIX, "Result.json");
+            file = File.createTempFile(RReport.FILE_PREFIX, "Result.json");
 
-        return _file;
+        addFile(file);
+        return file;
     }
 
     public HttpView render(ViewContext context)
@@ -56,10 +58,11 @@ public class JsonOutput extends AbstractParamReplacement
         return new JsonOutputView(this);
     }
 
-    public ScriptOutput renderAsScriptOutput() throws Exception
+    @Override
+    public ScriptOutput renderAsScriptOutput(File file) throws Exception
     {
         JsonOutputView view = new JsonOutputView(this);
-        String json = view.renderInternalAsString();
+        String json = view.renderInternalAsString(file);
 
         if (null != json)
             return new ScriptOutput(ScriptOutput.ScriptOutputType.json, getName(), json);
@@ -76,29 +79,32 @@ public class JsonOutput extends AbstractParamReplacement
         }
 
         @Override
-        protected String renderInternalAsString() throws Exception
+        protected String renderInternalAsString(File file) throws Exception
         {
-            if (exists())
-                return PageFlowUtil.getFileContentsAsString(getFile());
+            if (exists(file))
+                return PageFlowUtil.getFileContentsAsString(file);
 
             return null;
         }
 
         protected void renderInternal(Object model, PrintWriter out) throws Exception
         {
-            String rawValue = renderInternalAsString();
-
-            if (null != rawValue)
+            for (File file : getFiles())
             {
-                out.write("<table class=\"labkey-output\">");
-                renderTitle(model, out);
-                if (isCollapse())
-                    out.write("<tr style=\"display:none\"><td><pre>");
-                else
-                    out.write("<tr><td><pre>");
-                out.write(PageFlowUtil.filter(rawValue, false, true));
-                out.write("</pre></td></tr>");
-                out.write("</table>");
+                String rawValue = renderInternalAsString(file);
+
+                if (null != rawValue)
+                {
+                    out.write("<table class=\"labkey-output\">");
+                    renderTitle(model, out);
+                    if (isCollapse())
+                        out.write("<tr style=\"display:none\"><td><pre>");
+                    else
+                        out.write("<tr><td><pre>");
+                    out.write(PageFlowUtil.filter(rawValue, false, true));
+                    out.write("</pre></td></tr>");
+                    out.write("</table>");
+                }
             }
         }
     }

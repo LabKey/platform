@@ -47,12 +47,14 @@ public class HtmlOutput extends AbstractParamReplacement
 
     public File convertSubstitution(File directory) throws Exception
     {
+        File file;
         if (directory != null)
-            _file = File.createTempFile(RReport.FILE_PREFIX, "Result.html", directory);
+            file = File.createTempFile(RReport.FILE_PREFIX, "Result.html", directory);
         else
-            _file = File.createTempFile(RReport.FILE_PREFIX, "Result.html");
+            file = File.createTempFile(RReport.FILE_PREFIX, "Result.html");
 
-        return _file;
+        addFile(file);
+        return file;
     }
 
     protected String getLabel()
@@ -60,10 +62,11 @@ public class HtmlOutput extends AbstractParamReplacement
         return "HTML output";
     }
 
-    public ScriptOutput renderAsScriptOutput() throws Exception
+    @Override
+    public ScriptOutput renderAsScriptOutput(File file) throws Exception
     {
         HtmlOutputView view = new HtmlOutputView(this, getLabel());
-        String html = view.renderInternalAsString();
+        String html = view.renderInternalAsString(file);
 
         if (null != html)
             return new ScriptOutput(ScriptOutput.ScriptOutputType.html, getName(), html);
@@ -84,28 +87,31 @@ public class HtmlOutput extends AbstractParamReplacement
             setLabel(label);
         }
 
-        protected String renderInternalAsString() throws Exception
+        protected String renderInternalAsString(File file) throws Exception
         {
-            if (exists())
-                return PageFlowUtil.getFileContentsAsString(getFile());
+            if (exists(file))
+                return PageFlowUtil.getFileContentsAsString(file);
 
             return null;
         }
 
         protected void renderInternal(Object model, PrintWriter out) throws Exception
         {
-            String html = renderInternalAsString();
-            if (null != html)
+            for (File file : getFiles())
             {
-                out.write("<table class=\"labkey-output\">");
-                renderTitle(model, out);
-                if (isCollapse())
-                    out.write("<tr style=\"display:none\"><td>");
-                else
-                    out.write("<tr><td>");
-                out.write(html);
-                out.write("</td></tr>");
-                out.write("</table>");
+                String html = renderInternalAsString(file);
+                if (null != html)
+                {
+                    out.write("<table class=\"labkey-output\">");
+                    renderTitle(model, out);
+                    if (isCollapse())
+                        out.write("<tr style=\"display:none\"><td>");
+                    else
+                        out.write("<tr><td>");
+                    out.write(html);
+                    out.write("</td></tr>");
+                    out.write("</table>");
+                }
             }
         }
     }

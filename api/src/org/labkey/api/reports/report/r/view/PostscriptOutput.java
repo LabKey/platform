@@ -44,10 +44,11 @@ public class PostscriptOutput extends DownloadParamReplacement
         return convertSubstitution(directory, ".ps");
     }
 
-    public ScriptOutput renderAsScriptOutput() throws Exception
+    @Override
+    public ScriptOutput renderAsScriptOutput(File file) throws Exception
     {
         if (getReport() instanceof AttachmentParent)
-            return renderAsScriptOutput(new PostscriptReportView(this, getReport()),
+            return renderAsScriptOutput(file, new PostscriptReportView(this, getReport()),
                     ScriptOutput.ScriptOutputType.postscript);
         else
             return renderAsScriptOutputError();

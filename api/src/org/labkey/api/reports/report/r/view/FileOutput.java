@@ -44,10 +44,11 @@ public class FileOutput extends DownloadParamReplacement
         return convertSubstitution(directory, ".txt");
     }
 
-    public ScriptOutput renderAsScriptOutput() throws Exception
+    @Override
+    public ScriptOutput renderAsScriptOutput(File file) throws Exception
     {
         if (getReport() instanceof AttachmentParent)
-            return renderAsScriptOutput(new FileoutReportView(this, getReport()),
+            return renderAsScriptOutput(file, new FileoutReportView(this, getReport()),
                     ScriptOutput.ScriptOutputType.file);
 
         else

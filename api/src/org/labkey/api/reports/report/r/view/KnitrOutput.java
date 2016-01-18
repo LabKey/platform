@@ -26,6 +26,7 @@ import org.labkey.api.util.ImageUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URI;
@@ -47,10 +48,11 @@ public class KnitrOutput extends HtmlOutput
         super(ID);
     }
 
-    public ScriptOutput renderAsScriptOutput() throws Exception
+    @Override
+    public ScriptOutput renderAsScriptOutput(File file) throws Exception
     {
         KnitrOutputView view = new KnitrOutputView(this, getLabel());
-        String html = view.renderInternalAsString();
+        String html = view.renderInternalAsString(file);
 
         if (null != html)
             return new ScriptOutput(ScriptOutput.ScriptOutputType.html, getName(), html);
@@ -66,19 +68,23 @@ public class KnitrOutput extends HtmlOutput
     @Override
     public @Nullable Thumbnail renderThumbnail(ViewContext context) throws IOException
     {
-        KnitrOutputView view = new KnitrOutputView(this, getLabel());
-        Thumbnail thumb = null;
-
-        try
+        for (File file : getFiles())
         {
-            String html = view.renderInternalAsString();
-            URI baseURI = new URI(AppProps.getInstance().getBaseServerUrl());
-            if (html != null && baseURI != null)
-                thumb = ImageUtil.webThumbnail(context, html, baseURI);
-        }
-        catch(Exception ignore){}// if we can't get a thumbnail then that is okay; LabKey should use a default
+            KnitrOutputView view = new KnitrOutputView(this, getLabel());
+            Thumbnail thumb = null;
 
-        return thumb;
+            try
+            {
+                String html = view.renderInternalAsString(file);
+                URI baseURI = new URI(AppProps.getInstance().getBaseServerUrl());
+                if (html != null && baseURI != null)
+                    thumb = ImageUtil.webThumbnail(context, html, baseURI);
+            }
+            catch(Exception ignore){}// if we can't get a thumbnail then that is okay; LabKey should use a default
+
+            return thumb;
+        }
+        return null;
     }
 
     public static class KnitrOutputView extends HtmlOutputView
@@ -92,9 +98,9 @@ public class KnitrOutput extends HtmlOutput
         }
 
         @Override
-        protected String renderInternalAsString() throws Exception
+        protected String renderInternalAsString(File file) throws Exception
         {
-            String htmlIn = super.renderInternalAsString();
+            String htmlIn = super.renderInternalAsString(file);
 
             // do post processing on this html to fixup any hrefs
             if (null != htmlIn)
@@ -120,10 +126,17 @@ public class KnitrOutput extends HtmlOutput
         @Override
         protected void renderInternal(Object model, PrintWriter out) throws Exception
         {
-            String html = renderInternalAsString();
-            if (null != html)
+            String delim = "";
+            for (File file : getFiles())
             {
-                out.write(html);
+                String html = renderInternalAsString(file);
+                if (null != html)
+                {
+                    out.write(delim);
+                    out.write(html);
+
+                    delim = "<br>";
+                }
             }
         }
     }

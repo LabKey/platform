@@ -494,6 +494,7 @@ public class RReport extends ExternalScriptEngineReport
                     File knitrOutput = new File((String)bindings.get(RScriptEngine.KNITR_OUTPUT));
                     saveKnitrOutput(knitrOutput, outputSubst);
                 }
+                saveAdditionalFileOutput(outputSubst, context);
 
                 return output != null ? output.toString() : "";
             }
@@ -511,7 +512,7 @@ public class RReport extends ExternalScriptEngineReport
         KnitrOutput param = new KnitrOutput();
         param.setName("Knitr");
         param.setReport(this);
-        param.setFile(knitrOutput);
+        param.addFile(knitrOutput);
         outputSubst.add(param);
     }
 

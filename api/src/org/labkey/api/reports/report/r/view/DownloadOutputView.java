@@ -61,21 +61,21 @@ public abstract class DownloadOutputView extends ROutputView
     }
 
     @Override
-    protected String renderInternalAsString() throws Exception
+    protected String renderInternalAsString(File file) throws Exception
     {
         String downloadUrl = null;
 
-        if (getFile() != null && getFile().exists() && (getFile().length() > 0))
+        if (file != null && file.exists() && (file.length() > 0))
         {
             if (_parent.getEntityId() != null)
             {
-                AttachmentFile form = new FileAttachmentFile(getFile());
-                AttachmentService.get().deleteAttachment(_parent, getFile().getName(), null);
+                AttachmentFile form = new FileAttachmentFile(file);
+                AttachmentService.get().deleteAttachment(_parent, file.getName(), null);
                 AttachmentService.get().addAttachments(_parent, Collections.singletonList(form), getViewContext().getUser());
 
                 for (Attachment a : AttachmentService.get().getAttachments(_parent))
                 {
-                    if (getFile().getName().equals(a.getName()))
+                    if (file.getName().equals(a.getName()))
                     {
                         downloadUrl = PageFlowUtil.filter(a.getDownloadUrl(PageFlowUtil.urlProvider(ReportUrls.class).getDownloadClass()));
                         break;
@@ -84,7 +84,7 @@ public abstract class DownloadOutputView extends ROutputView
             }
             else
             {
-                File newFile = moveToTemp(getFile(), "RReportPdf");
+                File newFile = moveToTemp(file, "RReportPdf");
                 // file hasn't been saved yet
                 String key = "temp:" + GUID.makeGUID();
                 getViewContext().getRequest().getSession(true).setAttribute(key, newFile);
@@ -99,41 +99,44 @@ public abstract class DownloadOutputView extends ROutputView
     @Override
     protected void renderInternal(Object model, PrintWriter out) throws Exception
     {
-        String downloadUrl = null;
-        boolean errorWritten = false;
-
-        try
+        for (File file : getFiles())
         {
-            downloadUrl = renderInternalAsString();
+            String downloadUrl = null;
+            boolean errorWritten = false;
+
+            try
+            {
+                downloadUrl = renderInternalAsString(file);
+            }
+            catch (IOException e)
+            {
+                out.write(renderException(e));
+                errorWritten = true;
+            }
+
+            // if we "failed" because the file doesn't exist then no
+            // exception is thrown; just return immediately.
+            if (null == downloadUrl && !errorWritten)
+                return;
+
+            out.write("<table class=\"labkey-output\">");
+            renderTitle(model, out);
+            if (isCollapse())
+                out.write("<tr style=\"display:none\"><td>");
+            else
+                out.write("<tr><td>");
+
+            if (null != downloadUrl)
+            {
+                out.write("<a href=\"");
+                out.write(downloadUrl);
+                out.write("\">");
+                out.write(_fileType);
+                out.write(" output file (click to download)</a>");
+            }
+
+            out.write("</td></tr>");
+            out.write("</table>");
         }
-        catch (IOException e)
-        {
-            out.write(renderException(e));
-            errorWritten = true;
-        }
-
-        // if we "failed" because the file doesn't exist then no
-        // exception is thrown; just return immediately.
-        if (null == downloadUrl && !errorWritten)
-            return;
-
-        out.write("<table class=\"labkey-output\">");
-        renderTitle(model, out);
-        if (isCollapse())
-            out.write("<tr style=\"display:none\"><td>");
-        else
-            out.write("<tr><td>");
-
-        if (null != downloadUrl)
-        {
-            out.write("<a href=\"");
-            out.write(downloadUrl);
-            out.write("\">");
-            out.write(_fileType);
-            out.write(" output file (click to download)</a>");
-        }
-
-        out.write("</td></tr>");
-        out.write("</table>");
     }
 }

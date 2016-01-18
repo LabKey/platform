@@ -26,6 +26,7 @@ import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 
+import java.io.File;
 import java.io.IOException;
 
 /**
@@ -57,18 +58,20 @@ public class SvgOutput extends HtmlOutput
         {
             ThumbnailOutputStream os = new ThumbnailOutputStream();
 
-            try
+            for (File file : getFiles())
             {
-                svc.svgToPng(Readers.getXmlReader(getFile()), os, ImageType.Large.getHeight());
+                try
+                {
+                    svc.svgToPng(Readers.getXmlReader(file), os, ImageType.Large.getHeight());
 
-                return os.getThumbnail("image/png");
-            }
-            catch (TranscoderException e)
-            {
-                Logger.getLogger(SvgOutput.class).error("Couldn't generate thumbnail", e);
+                    return os.getThumbnail("image/png");
+                }
+                catch (TranscoderException e)
+                {
+                    Logger.getLogger(SvgOutput.class).error("Couldn't generate thumbnail", e);
+                }
             }
         }
-
         return null;
     }
 }

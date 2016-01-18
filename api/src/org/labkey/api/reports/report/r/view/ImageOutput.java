@@ -58,12 +58,14 @@ public class ImageOutput extends AbstractParamReplacement
 
     public File convertSubstitution(File directory) throws Exception
     {
+        File file;
         if (directory != null)
-            _file = File.createTempFile(RReport.FILE_PREFIX, "Result.jpg", directory);
+            file = File.createTempFile(RReport.FILE_PREFIX, "Result.jpg", directory);
         else
-            _file = File.createTempFile(RReport.FILE_PREFIX, "Result.jpg");
+            file = File.createTempFile(RReport.FILE_PREFIX, "Result.jpg");
 
-        return _file;
+        addFile(file);
+        return file;
     }
 
     public HttpView render(ViewContext context)
@@ -72,10 +74,10 @@ public class ImageOutput extends AbstractParamReplacement
     }
 
     @Override
-    public ScriptOutput renderAsScriptOutput() throws Exception
+    public ScriptOutput renderAsScriptOutput(File file) throws Exception
     {
         ImgReportView view = new ImgReportView(this, canDeleteFile());
-        String image = view.renderInternalAsString();
+        String image = view.renderInternalAsString(file);
 
         if (null != image)
             return new ScriptOutput(ScriptOutput.ScriptOutputType.image, getName(), image);
@@ -109,17 +111,17 @@ public class ImageOutput extends AbstractParamReplacement
         }
 
         @Override
-        protected String renderInternalAsString() throws Exception
+        protected String renderInternalAsString(File file) throws Exception
         {
             String imgUrl = null;
 
-            if (exists())
+            if (exists(file))
             {
                 File imgFile;
                 if (!_deleteFile)
-                    imgFile = getFile();
+                    imgFile = file;
                 else
-                    imgFile = moveToTemp(getFile(), "RReportImg");
+                    imgFile = moveToTemp(file, "RReportImg");
 
                 if (imgFile != null)
                 {
@@ -141,21 +143,24 @@ public class ImageOutput extends AbstractParamReplacement
         @Override
         protected void renderInternal(Object model, PrintWriter out) throws Exception
         {
-            String imgUrl = renderInternalAsString();
-
-            if (null != imgUrl)
+            for (File file : getFiles())
             {
-                out.write("<table class=\"labkey-output\">");
-                renderTitle(model, out);
-                if (isCollapse())
-                    out.write("<tr style=\"display:none\"><td>");
-                else
-                    out.write("<tr><td>");
-                out.write("<img name=\"resultImage\" id=\"" + getUniqueId("resultImage") + "\" src=\"");
-                out.write(PageFlowUtil.filter(imgUrl));
-                out.write("\">");
-                out.write("</td></tr>");
-                out.write("</table>");
+                String imgUrl = renderInternalAsString(file);
+
+                if (null != imgUrl)
+                {
+                    out.write("<table class=\"labkey-output\">");
+                    renderTitle(model, out);
+                    if (isCollapse())
+                        out.write("<tr style=\"display:none\"><td>");
+                    else
+                        out.write("<tr><td>");
+                    out.write("<img name=\"resultImage\" id=\"" + getUniqueId("resultImage") + "\" src=\"");
+                    out.write(PageFlowUtil.filter(imgUrl));
+                    out.write("\">");
+                    out.write("</td></tr>");
+                    out.write("</table>");
+                }
             }
         }
     }
@@ -163,6 +168,12 @@ public class ImageOutput extends AbstractParamReplacement
     @Override
     public Thumbnail renderThumbnail(ViewContext context) throws IOException
     {
-        return ImageUtil.renderThumbnail(ImageIO.read(getFile()));
+        for (File file : getFiles())
+        {
+            // just render the first file, in most cases this is appropriate
+            if (file.exists())
+                return ImageUtil.renderThumbnail(ImageIO.read(file));
+        }
+        return null;
     }
 }

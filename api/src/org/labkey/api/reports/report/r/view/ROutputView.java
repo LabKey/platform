@@ -32,6 +32,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -45,14 +47,14 @@ public class ROutputView extends HttpView
     private boolean _collapse;
     private boolean _showHeader = true;
     private boolean _isRemote = false;
-    private File _file;
+    private List<File> _files = new ArrayList<>();
     private Map<String, String> _properties;
     protected static Logger LOG = Logger.getLogger(ROutputView.class);
     private static boolean ALLOW_REMOTE_FILESIZE_BYPASS = false;
 
     public ROutputView(ParamReplacement param)
     {
-        _file = param.getFile();
+        _files = new ArrayList<>(param.getFiles());
         _name = param.getName();
         _showHeader = param.getHeaderVisible();
         _properties = param.getProperties();
@@ -94,14 +96,14 @@ public class ROutputView extends HttpView
         _showHeader = showHeader;
     }
 
-    public File getFile()
+    public List<File> getFiles()
     {
-        return _file;
+        return _files;
     }
 
-    public void setFile(File file)
+    public void addFile(File file)
     {
-        _file = file;
+        _files.add(file);
     }
 
     public Map<String, String> getProperties()
@@ -119,7 +121,7 @@ public class ROutputView extends HttpView
         return id.concat(String.valueOf(UniqueID.getServerSessionScopedUID()));
     }
 
-    protected String renderInternalAsString() throws Exception
+    protected String renderInternalAsString(File file) throws Exception
     {
         return null;
     }
@@ -158,11 +160,11 @@ public class ROutputView extends HttpView
         return null;
     }
 
-    protected boolean exists()
+    protected boolean exists(File file)
     {
         long size = 0;
 
-        if (_file != null && _file.exists())
+        if (file != null && file.exists())
         {
             // Files.size() or File.length() may report 0 incorrectly in certain network
             // configurations.  For example, in an Rserve scenario we were seeing
@@ -177,7 +179,7 @@ public class ROutputView extends HttpView
 
             try
             {
-                size = Files.size(Paths.get(_file.getAbsolutePath()));
+                size = Files.size(Paths.get(file.getAbsolutePath()));
             }
             catch(IOException ignore){}
         }

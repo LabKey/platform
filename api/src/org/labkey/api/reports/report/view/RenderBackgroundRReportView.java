@@ -27,6 +27,7 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.VBox;
 
 import java.io.*;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -61,7 +62,7 @@ public class RenderBackgroundRReportView extends HttpView
                     // if the job is complete, show the results of the job
                     if (substitutionMap.exists())
                     {
-                        List<ParamReplacement> outputSubst = ParamReplacementSvc.get().fromFile(substitutionMap);
+                        Collection<ParamReplacement> outputSubst = ParamReplacementSvc.get().fromFile(substitutionMap);
                         VBox innerView = new VBox();
                         view.addView(innerView);
                         RReport.renderViews(_report, view, outputSubst, false);

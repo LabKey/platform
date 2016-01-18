@@ -27,6 +27,7 @@ import org.labkey.api.writer.PrintWriters;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +46,8 @@ public class ParamReplacementSvc
 
     // the default param replacement pattern : ${}
     public static final String REPLACEMENT_PARAM = "\\$\\{(.*?)\\}";
+    public static final Pattern REGEX_PARAM_PATTERN = Pattern.compile("(regex\\()(.*)(\\))");
+
     // Enable ${} or equivalent escape sequences for {}.  Note that this
     // makes the match group 2 for the token name instead of 1
     public static final String REPLACEMENT_PARAM_ESC = "\\$(\\{|%7[bB])(.*?)(\\}|%7[dD])";
@@ -134,9 +137,18 @@ public class ParamReplacementSvc
             String name = value.substring(idx+1);
 
             ParamReplacement param = getHandlerInstance(id);
+            Matcher m = REGEX_PARAM_PATTERN.matcher(name);
             if (param != null)
             {
-                if (name.indexOf('?') != -1)
+                if (m.find())
+                {
+                    String regex = m.group(2);
+                    if (regex != null)
+                    {
+                        param.setRegex(regex);
+                    }
+                }
+                else if (name.indexOf('?') != -1)
                 {
                     String[] parts = name.split("\\?");
                     if (parts.length == 2)
@@ -223,25 +235,28 @@ public class ParamReplacementSvc
             if (param != null)
             {
                 File resultFile = param.convertSubstitution(parentDirectory);
-                String resultFileName;
+                String resultFileName = "";
 
-                if (!StringUtils.isEmpty(remoteParentDirectoryPath))
+                if (resultFile != null)
                 {
-                    //
-                    // now that we've created the resultFile locally, replace the parameter with the remote
-                    // machines view of it
-                    //
-                    String slash = remoteParentDirectoryPath.endsWith("/") ? "" : "/";
-                    resultFileName = remoteParentDirectoryPath + slash + resultFile.getName();
-                    param.setRemote(true);
-                }
-                else
-                {
-                    resultFileName = resultFile.getAbsolutePath().replaceAll("\\\\", "/");
+                    if (!StringUtils.isEmpty(remoteParentDirectoryPath))
+                    {
+                        //
+                        // now that we've created the resultFile locally, replace the parameter with the remote
+                        // machines view of it
+                        //
+                        String slash = remoteParentDirectoryPath.endsWith("/") ? "" : "/";
+                        resultFileName = remoteParentDirectoryPath + slash + resultFile.getName();
+                        param.setRemote(true);
+                    }
+                    else
+                    {
+                        resultFileName = resultFile.getAbsolutePath().replaceAll("\\\\", "/");
+                    }
+                    _log.debug("Found output parameter '" + param.getName() + "'.  Mapping local file '" + resultFile.getAbsolutePath() + "' to '" + resultFileName + "'");
                 }
                 outputReplacements.add(param);
                 m.appendReplacement(sb, resultFileName);
-                _log.debug("Found output parameter '" + param.getName() + "'.  Mapping local file '" + resultFile.getAbsolutePath() + "' to '" + resultFileName + "'");
             }
         }
         m.appendTail(sb);
@@ -268,12 +283,15 @@ public class ParamReplacementSvc
             ParamReplacement param = fromToken(m.group(captureGroup));
             if (param != null && HrefOutput.class.isInstance(param))
             {
-                HrefOutput href = (HrefOutput) param;
-                href.setReport(report);
-                href.setFile(new File(parentDirectory, href.getName()));
-                ScriptOutput o = href.renderAsScriptOutput();
-                if (null != o)
-                    m.appendReplacement(sb, o.getValue());
+                for (File file : param.getFiles())
+                {
+                    HrefOutput href = (HrefOutput) param;
+                    href.setReport(report);
+                    href.addFile(new File(parentDirectory, href.getName()));
+                    ScriptOutput o = href.renderAsScriptOutput(file);
+                    if (null != o)
+                        m.appendReplacement(sb, o.getValue());
+                }
             }
         }
         m.appendTail(sb);
@@ -283,6 +301,7 @@ public class ParamReplacementSvc
 
     public void toFile(List<ParamReplacement> outputSubst, File file) throws Exception
      {
+/*
          try (PrintWriter bw = PrintWriters.getPrintWriter(file))
          {
              outputSubst
@@ -290,12 +309,21 @@ public class ParamReplacementSvc
                  .filter(output -> output.getName() != null && output.getFile() != null)
                  .forEach(output -> bw.write(output.getId() + '\t' + output.getName() + '\t' + output.getFile().getAbsolutePath() + '\t' + PageFlowUtil.toQueryString(output.getProperties().entrySet()) + '\n'));
          }
+*/
+
+         try (PrintWriter bw = PrintWriters.getPrintWriter(file))
+         {
+             outputSubst
+                     .stream()
+                     .filter(output -> output.getName() != null)
+                     .forEach(output -> output.getFiles().stream().filter(outputFile -> outputFile != null)
+                             .forEach(outputFile -> bw.write(output.getId() + '\t' + output.getName() + '\t' + outputFile.getAbsolutePath() + '\t' + PageFlowUtil.toQueryString(output.getProperties().entrySet()) + '\n')));
+         }
      }
 
-     public List<ParamReplacement> fromFile(File file) throws Exception
+     public Collection<ParamReplacement> fromFile(File file) throws Exception
      {
-         List<ParamReplacement> outputSubst = new ArrayList<>();
-
+         Map<String, ParamReplacement> outputSubstMap = new HashMap<>();
          if (file.exists())
          {
              try (BufferedReader br = Readers.getReader(file))
@@ -306,21 +334,21 @@ public class ParamReplacementSvc
                      String[] parts = l.split("\\t");
                      if (parts.length == 4)
                      {
-                         ParamReplacement handler = getHandlerInstance(parts[0]);
+                         String id = parts[0];
+                         if (!outputSubstMap.containsKey(id))
+                             outputSubstMap.put(id, getHandlerInstance(id));
 
+                         ParamReplacement handler = outputSubstMap.get(id);
                          if (handler != null)
                          {
                              handler.setName(parts[1]);
-                             handler.setFile(new File(parts[2]));
+                             handler.addFile(new File(parts[2]));
                              handler.setProperties(PageFlowUtil.mapFromQueryString(parts[3]));
-
-                             outputSubst.add(handler);
                          }
                      }
                  }
              }
          }
-
-         return outputSubst;
+         return outputSubstMap.values();
      }
 }
