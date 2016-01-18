@@ -252,6 +252,7 @@ core/resources/schemas/dbscripts/sqlserver/obsolete/test-13.10-13.20.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/test-14.32-14.33.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-0.00-13.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-13.30-14.10.sql -text
+core/resources/schemas/dbscripts/sqlserver/prop-15.32-15.33.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-drop.sql -text
 core/resources/schemas/dbscripts/sqlserver/test-0.00-13.20.sql -text
