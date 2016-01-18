@@ -111,6 +111,7 @@ public abstract class DisplayColumn extends RenderColumn
     {
         _url = url;
         _urlExpression = null;
+        _urlCompiled = null;
     }
 
     public void setURLExpression(StringExpression se)
@@ -120,6 +121,7 @@ public abstract class DisplayColumn extends RenderColumn
         else
             _urlExpression = se;
         _url = null;
+        _urlCompiled = null;
     }
 
 
