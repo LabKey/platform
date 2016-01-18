@@ -528,7 +528,8 @@ public class DomainUtil
             DomainProperty p = d.getProperty(pd.getPropertyId());
             if(p == null)
             {
-                throw new RuntimeException("Column " + pd.getName() + " not found");
+                errors.add("Column " + pd.getName() + " not found (id: " + pd.getPropertyId() + "), it was probably deleted. Please reload the designer and attempt the edit again.");
+                return errors;
             }
 
             defaultValues.put(p, pd.getDefaultValue());
