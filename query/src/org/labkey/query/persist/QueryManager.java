@@ -46,6 +46,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.query.ExternalSchema;
 import org.labkey.query.ExternalSchemaDocumentProvider;
 
@@ -849,37 +850,45 @@ public class QueryManager
             throw new IllegalArgumentException("The query '" + queryName + "' was not found in the schema '" + schema.getSchemaName() + "'!");
 
         //validate views
-        List<CustomView> views = QueryService.get().getCustomViews(user, container, null, schema.getSchemaName(), queryName, true);
-        for (CustomView v : views)
+        try
         {
-            validateViewColumns(user, container, v, "columns", v.getColumns(), table, errors, warnings);
-
-            if (!StringUtils.isEmpty(v.getFilterAndSort()))
+            List<CustomView> views = QueryService.get().getCustomViews(user, container, null, schema.getSchemaName(), queryName, true);
+            for (CustomView v : views)
             {
-                try
-                {
-                    CustomViewInfo.FilterAndSort fs = CustomViewInfo.FilterAndSort.fromString(v.getFilterAndSort());
-                    List<FieldKey> filterCols = new ArrayList<>();
-                    for (FilterInfo f : fs.getFilter())
-                    {
-                        filterCols.add(f.getField());
-                    }
-                    validateViewColumns(user, container, v, "filter", filterCols, table, errors, warnings);
+                validateViewColumns(user, container, v, "columns", v.getColumns(), table, errors, warnings);
 
-                    List<FieldKey> sortCols = new ArrayList<>();
-                    for (Sort.SortField f : fs.getSort())
-                    {
-                        sortCols.add(f.getFieldKey());
-                    }
-                    validateViewColumns(user, container, v, "sort", sortCols, table, errors, warnings);
-
-                }
-                catch (URISyntaxException e)
+                if (!StringUtils.isEmpty(v.getFilterAndSort()))
                 {
-                    errors.add(new QueryParseException("unable to process the filter/sort section of view: " + v.getName(), null, 0, 0));
+                    try
+                    {
+                        CustomViewInfo.FilterAndSort fs = CustomViewInfo.FilterAndSort.fromString(v.getFilterAndSort());
+                        List<FieldKey> filterCols = new ArrayList<>();
+                        for (FilterInfo f : fs.getFilter())
+                        {
+                            filterCols.add(f.getField());
+                        }
+                        validateViewColumns(user, container, v, "filter", filterCols, table, errors, warnings);
+
+                        List<FieldKey> sortCols = new ArrayList<>();
+                        for (Sort.SortField f : fs.getSort())
+                        {
+                            sortCols.add(f.getFieldKey());
+                        }
+                        validateViewColumns(user, container, v, "sort", sortCols, table, errors, warnings);
+
+                    }
+                    catch (URISyntaxException e)
+                    {
+                        errors.add(new QueryParseException("unable to process the filter/sort section of view: " + v.getName(), null, 0, 0));
+                    }
                 }
             }
         }
+        catch (NotFoundException e)
+        {
+            errors.add(new QueryParseException("Cannot get views: ", e, 0, 0));
+        }
+
 
         return errors.isEmpty();
     }
