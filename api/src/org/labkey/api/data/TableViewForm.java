@@ -551,10 +551,13 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
             if (column.isMvEnabled())
             {
                 ColumnInfo mvColumn = getTable().getColumn(column.getMvColumnName());
-                if (hasTypedValue(mvColumn))
-                    values.put(mvColumn.getName(), getTypedValue(mvColumn));
-                else if (includeUntyped && contains(column))
-                    values.put(mvColumn.getName(), get(mvColumn));
+                if (null != mvColumn)
+                {
+                    if (hasTypedValue(mvColumn))
+                        values.put(mvColumn.getName(), getTypedValue(mvColumn));
+                    else if (includeUntyped && contains(column))
+                        values.put(mvColumn.getName(), get(mvColumn));
+                }
             }
         }
         return values;
