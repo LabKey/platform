@@ -1652,8 +1652,6 @@ api/src/org/labkey/api/util/WebPartErrorRenderer.java -text
 api/src/org/labkey/api/util/XMLFileType.java -text
 api/src/org/labkey/api/util/XmlBeansUtil.java -text
 api/src/org/labkey/api/util/XmlValidationException.java -text
-api/src/org/labkey/api/util/codec/Base32.java -text
-api/src/org/labkey/api/util/codec/BaseNCodec.java -text
 api/src/org/labkey/api/util/emailTemplate/EmailTemplate.java -text
 api/src/org/labkey/api/util/emailTemplate/EmailTemplateService.java -text
 api/src/org/labkey/api/util/emailTemplate/UserOriginatedEmailTemplate.java -text
