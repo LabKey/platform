@@ -56,10 +56,13 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
+        if (null == study)
+            throw new QueryUpdateServiceException("No study found.");
         StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, user, true);
         TableInfo queryTableInfo = querySchema.getTable("StudyProperties");
-        Map<String, Object> result = new TableSelector(queryTableInfo).getObject(container.getId(), Map.class);
-        return result;
+        if (null == queryTableInfo)
+            throw new QueryUpdateServiceException("StudyProperties table not found.");
+        return new TableSelector(queryTableInfo).getObject(container.getId(), Map.class);
     }
 
 
@@ -67,6 +70,8 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @Nullable Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
+        if (null == study)
+            throw new QueryUpdateServiceException("No study found.");
         StudyPropertiesTable table = (StudyPropertiesTable)getQueryTable();
 
         // NOTE using updateTabDelimited() or updateStatement() is tricky, because they will NULL out all unspecified columns

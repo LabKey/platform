@@ -358,11 +358,15 @@ public class ListWriter
             }
             else
             {
-                PropertyDescriptor propertyDescriptor =_properties.get(columnName).getPropertyDescriptor();
+                DomainProperty domainProperty = _properties.get(columnName);
+                if (null != domainProperty)             // #25367: it's possible properties are out of sync with actual columns
+                {
+                    PropertyDescriptor propertyDescriptor = domainProperty.getPropertyDescriptor();
 
-                // Write URL, if exists, from property descriptor
-                if (null != propertyDescriptor.getURL())
-                    columnXml.setUrl(propertyDescriptor.getURL().getSource());
+                    // Write URL, if exists, from property descriptor
+                    if (null != propertyDescriptor.getURL())
+                        columnXml.setUrl(propertyDescriptor.getURL().getSource());
+                }
             }
         }
 
