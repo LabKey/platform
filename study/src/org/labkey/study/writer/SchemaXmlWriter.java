@@ -120,7 +120,7 @@ public class SchemaXmlWriter implements Writer<List<DatasetDefinition>, ImportCo
 
         private DatasetTableInfoWriter(TableInfo ti, DatasetDefinition def, boolean removeProtected)
         {
-            super(def.getContainer(), ti, DatasetWriter.getColumnsToExport(ti, def, true, removeProtected));
+            super(def.getContainer(), ti, DatasetDataWriter.getColumnsToExport(ti, def, true, removeProtected));
             _def = def;
         }
 

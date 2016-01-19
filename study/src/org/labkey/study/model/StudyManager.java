@@ -150,6 +150,7 @@ import org.labkey.study.visitmanager.AbsoluteDateVisitManager;
 import org.labkey.study.visitmanager.RelativeDateVisitManager;
 import org.labkey.study.visitmanager.SequenceVisitManager;
 import org.labkey.study.visitmanager.VisitManager;
+import org.labkey.study.writer.DatasetDataWriter;
 import org.labkey.study.writer.DatasetWriter;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.BindException;
@@ -5615,8 +5616,8 @@ public class StudyManager
 
                 // test "exporting" the dataset data using the date shited values and alternate IDs
                 Collection<ColumnInfo> datasetCols = new LinkedHashSet<>(datasetTI.getColumns());
-                DatasetWriter.createDateShiftColumns(datasetTI, datasetCols, study.getContainer());
-                DatasetWriter.createAlternateIdColumns(datasetTI, datasetCols, study.getContainer());
+                DatasetDataWriter.createDateShiftColumns(datasetTI, datasetCols, study.getContainer());
+                DatasetDataWriter.createAlternateIdColumns(datasetTI, datasetCols, study.getContainer());
                 rs = QueryService.get().select(datasetTI, datasetCols, null, null);
 
                 // verify values from the transformed dataset

@@ -88,6 +88,7 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
             new ViewCategoryWriter(),
             new CohortWriter(),
             new DatasetWriter(),
+            new DatasetDataWriter(),
             new ParticipantCommentWriter(),
             new ParticipantGroupWriter(),
             new ProtocolDocumentWriter(),

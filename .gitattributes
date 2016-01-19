@@ -2430,6 +2430,7 @@ study/src/org/labkey/study/writer/AbstractSpecimenWriter.java -text
 study/src/org/labkey/study/writer/AssayDatasetWriter.java -text
 study/src/org/labkey/study/writer/AssayScheduleWriter.java -text
 study/src/org/labkey/study/writer/CohortWriter.java -text
+study/src/org/labkey/study/writer/DatasetDataWriter.java -text
 study/src/org/labkey/study/writer/DatasetWriter.java -text
 study/src/org/labkey/study/writer/DefaultStudyDesignWriter.java -text
 study/src/org/labkey/study/writer/InternalStudyWriter.java -text

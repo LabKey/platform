@@ -78,7 +78,7 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.StudySnapshot;
 import org.labkey.study.query.DatasetQuerySettings;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.writer.DatasetWriter;
+import org.labkey.study.writer.DatasetDataWriter;
 import org.springframework.validation.BindException;
 
 import java.sql.SQLException;
@@ -291,11 +291,11 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             snapshot = StudyManager.getInstance().getRefreshStudySnapshot(optionsId);
 
         boolean  removeProtected = (snapshot != null) && snapshot.getSnapshotSettings().isRemoveProtectedColumns();
-        Collection<ColumnInfo> columns = DatasetWriter.getColumnsToExport(tinfo, def, false, removeProtected);
+        Collection<ColumnInfo> columns = DatasetDataWriter.getColumnsToExport(tinfo, def, false, removeProtected);
 
         if (snapshot != null && snapshot.getSnapshotSettings().isShiftDates())
         {
-            DatasetWriter.createDateShiftColumns(tinfo, columns, view.getContainer());
+            DatasetDataWriter.createDateShiftColumns(tinfo, columns, view.getContainer());
         }
         if (snapshot != null && snapshot.getSnapshotSettings().isUseAlternateParticipantIds())
         {
@@ -303,7 +303,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             if (study != null)
             {
                 StudyManager.getInstance().generateNeededAlternateParticipantIds(study);
-                DatasetWriter.createAlternateIdColumns(tinfo, columns, view.getContainer());
+                DatasetDataWriter.createAlternateIdColumns(tinfo, columns, view.getContainer());
             }
         }
 
