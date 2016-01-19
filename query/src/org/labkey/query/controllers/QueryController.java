@@ -6164,7 +6164,19 @@ public class QueryController extends SpringActionController
             String pathInScript = StringUtils.isBlank(form.getPathInScript()) ? "" : form.getPathInScript();
             if (!pathInScript.endsWith("/"))
                 pathInScript += "/";
-            for (TableInfo table : TableSorter.sort(sourceSchema) )
+
+            List<TableInfo> tables;
+            try
+            {
+                tables = TableSorter.sort(sourceSchema);
+            }
+            catch (IllegalStateException e)
+            {
+                errors.reject(ERROR_MSG, "Problem with schema: " + e.getMessage());
+                return false;
+            }
+
+            for (TableInfo table : tables)
             {
                 if (DatabaseTableType.TABLE.equals(table.getTableType()))
                 {
