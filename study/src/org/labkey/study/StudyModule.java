@@ -171,7 +171,7 @@ import org.labkey.study.view.specimen.SpecimenRequestNotificationEmailTemplate;
 import org.labkey.study.view.studydesign.AssayScheduleWebpartFactory;
 import org.labkey.study.view.studydesign.ImmunizationScheduleWebpartFactory;
 import org.labkey.study.view.studydesign.VaccineDesignWebpartFactory;
-import org.labkey.study.writer.DatasetWriter;
+import org.labkey.study.writer.DatasetDataWriter;
 import org.labkey.study.writer.MissingValueWriterFactory;
 import org.labkey.study.writer.SpecimenWriter;
 import org.labkey.study.writer.StudySerializationRegistryImpl;
@@ -726,7 +726,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     {
         Set<Class> set = new HashSet<>();
         set.add(SampleMindedTransformTask.TestCase.class);
-        set.add(DatasetWriter.TestCase.class);
+        set.add(DatasetDataWriter.TestCase.class);
         set.add(SpecimenWriter.TestCase.class);
         set.add(TsvAssayProvider.TestCase.class);
         set.add(AssaySchemaImpl.TestCase.class);
