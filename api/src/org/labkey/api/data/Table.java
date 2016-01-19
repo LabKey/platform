@@ -265,30 +265,57 @@ public class Table
         }
     }
 
-    public static void batchExecute1Integer(DbSchema schema, String sql, Iterable<Integer> paramList) throws SQLException
+    public static void batchExecute1Integer(DbSchema schema, String sql1, String sql100, ArrayList<Integer> paramList) throws SQLException
     {
         Connection conn = schema.getScope().getConnection();
-        PreparedStatement stmt = null;
+        PreparedStatement stmt100 = null;
+        PreparedStatement stmt1 = null;
 
         try
         {
-            stmt = conn.prepareStatement(sql);
             int paramCounter = 0;
-            for (Integer I : paramList)
+            stmt100 = conn.prepareStatement(sql100);
+            stmt1   = conn.prepareStatement(sql1);
+
+            // insert by 100's
+            int outerIndex = 0;
+            for ( ; outerIndex < paramList.size()-100 ; outerIndex+=100)
             {
-                if (null == I)
-                    stmt.setNull(1, Types.INTEGER);
-                else
-                    stmt.setInt(1, I.intValue());
-                stmt.addBatch();
-                paramCounter++;
-                if (paramCounter > 2000)
+                for (int index=outerIndex ; index<outerIndex+100 ; index++)
                 {
+                    Integer I = paramList.get(index);
+                    if (null == I)
+                        stmt100.setNull(index % 100 + 1, Types.INTEGER);
+                    else
+                        stmt100.setInt(index % 100 + 1, I.intValue());
+                    paramCounter++;
+                }
+                stmt100.addBatch();
+                if (paramCounter > 10000)
+                {
+                    stmt100.executeBatch();
                     paramCounter = 0;
-                    stmt.executeBatch();
                 }
             }
-            stmt.executeBatch();
+            if (paramCounter > 0)
+            {
+                stmt100.executeBatch();
+                paramCounter = 0;
+            }
+
+            // insert by 1's
+            for (int index=outerIndex ; index<paramList.size() ; index++)
+            {
+                Integer I = paramList.get(index);
+                if (null == I)
+                    stmt1.setNull(1, Types.INTEGER);
+                else
+                    stmt1.setInt(1, I.intValue());
+                stmt1.addBatch();
+                paramCounter++;
+            }
+            if (paramCounter > 0)
+                stmt1.executeBatch();
         }
         catch (SQLException e)
         {
@@ -298,12 +325,13 @@ public class Table
                     e = e.getNextException();
             }
 
-            logException(new SQLFragment(sql), conn, e, Level.WARN);
+            logException(new SQLFragment(sql1), conn, e, Level.WARN);
             throw(e);
         }
         finally
         {
-            doClose(null, stmt, conn, schema.getScope());
+            doClose(null, stmt100, conn, schema.getScope());
+            doClose(null, stmt1, conn, schema.getScope());
         }
     }
 

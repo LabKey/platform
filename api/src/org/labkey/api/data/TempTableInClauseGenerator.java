@@ -85,12 +85,13 @@ public class TempTableInClauseGenerator implements InClauseGenerator
             tempTableInfo1.track();
 
             String sql1 = "INSERT INTO " + tableName + " (Id) VALUES (?)";
+            String sql100 = "INSERT INTO " + tableName + " (Id) VALUES (?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?)";
             try
             {
                 if (jdbcType == JdbcType.VARCHAR)
                     Table.batchExecute1String(DbSchema.getTemp(), sql1, (ArrayList<String>)argument);
                 else
-                    Table.batchExecute1Integer(DbSchema.getTemp(), sql1, (ArrayList<Integer>)argument);
+                    Table.batchExecute1Integer(DbSchema.getTemp(), sql1, sql100, (ArrayList<Integer>)argument);
             }
             catch (SQLException e)
             {
