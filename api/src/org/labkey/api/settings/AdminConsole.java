@@ -164,9 +164,9 @@ public class AdminConsole
         }
 
         @Override
-        public int compareTo(ExperimentalFeatureFlag o)
+        public int compareTo(@NotNull ExperimentalFeatureFlag o)
         {
-            return getFlag().compareTo(o.getFlag());
+            return getFlag().compareToIgnoreCase(o.getFlag());
         }
 
         public boolean isEnabled()
