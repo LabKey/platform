@@ -172,14 +172,17 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
 
     @Override
-    protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
+            throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         throw new IllegalStateException("Method not used by ListQueryUpdateService");
     }
 
 
     @Override
-    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws DuplicateKeyException, QueryUpdateServiceException, SQLException
+    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors,
+                                                @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
+            throws DuplicateKeyException, QueryUpdateServiceException, SQLException
     {
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.INSERT, configParameters);
         List<Map<String, Object>> result = super._insertRowsUsingETL(user, container, rows, context, extraScriptContext);
@@ -217,7 +220,8 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     /**
      * TODO: Make attachmentDirs work for other QueryUpdateServices. This is private to list for now.
      */
-    public int insertETL(DataLoader loader, User user, Container container, BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importLookupsByAlternateKey)
+    public int insertETL(DataLoader loader, User user, Container container, BatchValidationException errors, @Nullable VirtualFile attachmentDir,
+                         @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importLookupsByAlternateKey)
     {
         DataIteratorContext context = new DataIteratorContext(errors);
         context.setFailFast(false);
@@ -257,15 +261,16 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
 
     @Override
-    public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
-            throws SQLException
+    public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors,
+                         @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws SQLException
     {
         return _importRowsUsingETL(user, container, rows, null,  getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
     }
 
 
     @Override
-    public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<Enum,Object> configParameters, Map<String, Object> extraScriptContext) throws SQLException
+    public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors,
+                          Map<Enum,Object> configParameters, Map<String, Object> extraScriptContext) throws SQLException
     {
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.IMPORT, configParameters);
         int count = super._importRowsUsingETL(user, container, rows, null, context, extraScriptContext);
@@ -275,7 +280,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     }
 
     @Override
-    public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+    public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys,
+                                                @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
+            throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
         List<Map<String, Object>> result = super.updateRows(user, container, rows, oldKeys, configParameters, extraScriptContext);
         if (result.size() > 0)
@@ -284,7 +291,8 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow)
+            throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         // TODO: Check for equivalency so that attachments can be deleted etc.
 
@@ -357,7 +365,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         if (null == newRowKey && null != oldRowKey)
             rowCopy.put(_list.getKeyName(), oldRowKey);
 
-        Map<String, Object> result = super.updateRow(user, container, rowCopy, oldRow);
+        Map<String, Object> result = super.updateRow(user, container, rowCopy, oldRow, true);
 
         if (null != result)
         {
