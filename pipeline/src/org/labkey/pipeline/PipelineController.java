@@ -16,7 +16,7 @@
 package org.labkey.pipeline;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.xmlbeans.XmlException;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -37,6 +37,7 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.ImportOptions;
+import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.property.DomainUtil;
@@ -57,7 +58,6 @@ import org.labkey.api.pipeline.PipelineQueue;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
-import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.security.CSRF;
@@ -79,6 +79,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
@@ -87,6 +88,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.HBox;
@@ -101,6 +103,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ZipUtil;
+import org.labkey.folder.xml.FolderDocument;
 import org.labkey.pipeline.api.PipeRootImpl;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
 import org.labkey.pipeline.api.PipelineRoot;
@@ -111,16 +114,12 @@ import org.labkey.pipeline.status.StatusController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
-import org.xml.sax.SAXException;
 
-import javax.servlet.ServletException;
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.FileSystemAlreadyExistsException;
-import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -1220,7 +1219,11 @@ public class PipelineController extends SpringActionController
             Container c = getContainer();
             File folderFile = form.getValidatedSingleFile(c);
 
-            return new ActionURL(StartFolderImportAction.class, getContainer()).addParameter("folderFile", folderFile.getAbsolutePath());
+            ActionURL url = new ActionURL(StartFolderImportAction.class, getContainer());
+            url.addParameter("filePath", folderFile.getAbsolutePath());
+            url.addParameter("validateQueries", true);
+            url.addParameter("createSharedDatasets", true);
+            return url;
         }
 
         @Override
@@ -1238,30 +1241,102 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
     /**
-     * Landing page for ImportFolderFromPipelineAction
+     * Landing page for ImportFolderFromPipelineAction and  StudyController.ImportStudyFromPipelineAction
      */
+    @RequiresPermission(AdminPermission.class)
     public class StartFolderImportAction extends FormViewAction<StartFolderImportForm>
     {
+        private String _navTrail = "Import Folder";
+        private PipeRoot _pipelineRoot;
+        private File _archiveFile;
+
         @Override
-        public void validateCommand(StartFolderImportForm target, Errors errors)
+        public void validateCommand(StartFolderImportForm form, Errors errors)
         {
+            _pipelineRoot = PipelineService.get().findPipelineRoot(getContainer());
+            if (!PipelineService.get().hasValidPipelineRoot(getContainer()) || null == _pipelineRoot)
+            {
+                errors.reject(ERROR_MSG, "Pipeline root not found.");
+            }
+            else if (form.getFilePath() == null)
+            {
+                errors.reject(ERROR_MSG, "No filePath provided.");
+            }
+            else
+            {
+                _archiveFile = new File(form.getFilePath());
+                if (!_archiveFile.isAbsolute())
+                {
+                    // Resolve the relative path to an absolute path under the root
+                    _archiveFile = _pipelineRoot.resolvePath(form.getFilePath());
+                }
+
+                // Be sure that the referenced file is under the root
+                if (_archiveFile == null || !_archiveFile.exists())
+                {
+                    errors.reject(ERROR_MSG, "Could not fine file at path: " + form.getFilePath());
+                }
+                else if (!_pipelineRoot.isUnderRoot(_archiveFile))
+                {
+                    errors.reject(ERROR_MSG, "Cannot access file " + form.getFilePath());
+                }
+
+                if (form.isAdvancedImportOptions() && (form.getFolderDataTypes() == null || form.getFolderDataTypes().length == 0))
+                {
+                    errors.reject(ERROR_MSG, "At least one folder data type must be selected when using advanced import options.");
+                }
+                else if (!form.isAdvancedImportOptions() && form.getFolderDataTypes() != null)
+                {
+                    errors.reject(ERROR_MSG, "Folder data types provided when advanced import options not selected.");
+                }
+            }
         }
 
         @Override
         public ModelAndView getView(StartFolderImportForm form, boolean reshow, BindException errors) throws Exception
         {
-            return new JspView<>("/org/labkey/study/view/startPipelineImport.jsp", form, errors);
+            if (form.isAsStudy())
+                _navTrail = "Import Study";
+            _navTrail += form.isFromZip() ? " from Zip Archive" : " from Pipeline";
+
+            return new JspView<>("/org/labkey/pipeline/startPipelineImport.jsp", form, errors);
         }
 
         @Override
         public boolean handlePost(StartFolderImportForm form, BindException errors) throws Exception
         {
-            File folderFile = new File(form.getFolderFile());
+            Container c = getContainer();
+            User user = getUser();
+            ActionURL url = getViewContext().getActionURL();
+            StudyService.Service svc = StudyService.get();
 
-            if (folderFile.exists())
-                return importFolder(getViewContext(), errors, folderFile, folderFile.getName(), form);
+            ImportOptions options = new ImportOptions(getContainer().getId(), getUser().getUserId());
+            options.setSkipQueryValidation(!form.isValidateQueries());
+            options.setCreateSharedDatasets(form.isCreateSharedDatasets());
+            options.setAdvancedImportOptions(form.isAdvancedImportOptions());
+
+            if (_archiveFile.exists())
+            {
+                if (form.isAsStudy())
+                {
+                    File studyXml = getArchiveXmlFile(_archiveFile, "study.xml", errors);
+                    if (!errors.hasErrors() && svc != null)
+                    {
+                        svc.runStudyImportJob(c, user, url, studyXml, _archiveFile.getName(), errors, _pipelineRoot, options);
+                        return true;
+                    }
+                }
+                else
+                {
+                    File folderXml = getArchiveXmlFile(_archiveFile, "folder.xml", errors);
+                    if (!errors.hasErrors())
+                    {
+                        PipelineService.get().queueJob(new FolderImportJob(c, user, url, folderXml, _archiveFile.getName(), _pipelineRoot, options));
+                        return true;
+                    }
+                }
+            }
 
             return false;
         }
@@ -1275,23 +1350,79 @@ public class PipelineController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Import Folder from Pipeline");
+            return root.addChild(_navTrail);
+        }
+
+        private File getArchiveXmlFile(File archiveFile, String xmlFileName, BindException errors) throws InvalidFileException
+        {
+            File xmlFile = archiveFile;
+
+            if (archiveFile.getName().endsWith(".zip"))
+            {
+                try
+                {
+                    File importDir = _pipelineRoot.getImportDirectoryPathAndEnsureDeleted();
+                    ZipUtil.unzipToDirectory(archiveFile, importDir);
+
+                    // when importing a folder archive for a study, the study.xml file may not be at the root
+                    if ("study.xml".equals(xmlFileName) && archiveFile.getName().endsWith(".folder.zip"))
+                    {
+                        File folderXml = new File(importDir, "folder.xml");
+                        FolderDocument folderDoc;
+                        try
+                        {
+                            folderDoc = FolderDocument.Factory.parse(folderXml, XmlBeansUtil.getDefaultParseOptions());
+                            XmlBeansUtil.validateXmlDocument(folderDoc);
+                        }
+                        catch (Exception e)
+                        {
+                            throw new InvalidFileException(folderXml.getParentFile(), folderXml, e);
+                        }
+
+                        if (folderDoc.getFolder().isSetStudy())
+                        {
+                            importDir = new File(importDir, folderDoc.getFolder().getStudy().getDir());
+                        }
+                    }
+
+                    xmlFile = new File(importDir, xmlFileName);
+                }
+                catch (FileNotFoundException e)
+                {
+                    errors.reject(ERROR_MSG, "File not found.");
+                }
+                catch (FileSystemAlreadyExistsException | DirectoryNotDeletedException e)
+                {
+                    errors.reject(ERROR_MSG, e.getMessage());
+                }
+                catch (IOException e)
+                {
+                    errors.reject(ERROR_MSG, "This file does not appear to be a valid .zip file.");
+                }
+            }
+
+            return xmlFile;
         }
     }
 
     public static class StartFolderImportForm
     {
-        private String _folderFile;
+        private boolean _fromZip;
+        private boolean _asStudy;
+        private String _filePath;
         private boolean _validateQueries;
+        private boolean _createSharedDatasets;
+        private boolean _advancedImportOptions;
+        private String[] _folderDataTypes;
 
-        public String getFolderFile()
+        public String getFilePath()
         {
-            return _folderFile;
+            return _filePath;
         }
 
-        public void setFolderFile(String folderFile)
+        public void setFilePath(String filePath)
         {
-            _folderFile = folderFile;
+            _filePath = filePath;
         }
 
         public boolean isValidateQueries()
@@ -1303,66 +1434,56 @@ public class PipelineController extends SpringActionController
         {
             _validateQueries = validateQueries;
         }
-    }
 
-    public static boolean importFolder(ViewContext context, BindException errors, File folderFile, String originalFilename,
-                                       StartFolderImportForm form) throws ServletException, SQLException, IOException, ParserConfigurationException, SAXException, XmlException, PipelineValidationException
-    {
-        Container c = context.getContainer();
-        if (!PipelineService.get().hasValidPipelineRoot(c))
+        public boolean isCreateSharedDatasets()
         {
-            return false;
-        }
-        PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(c);
-        if (null == pipelineRoot)
-        {
-            errors.reject("importFolder", "Pipeline root not found.");
-            return false;
+            return _createSharedDatasets;
         }
 
-        File folderXml;
-
-        if (folderFile.getName().endsWith(".zip"))
+        public void setCreateSharedDatasets(boolean createSharedDatasets)
         {
-            try
-            {
-                File importDir = pipelineRoot.getImportDirectoryPathAndEnsureDeleted();
-
-                ZipUtil.unzipToDirectory(folderFile, importDir);
-                folderXml = new File(importDir, "folder.xml");
-            }
-            catch (FileNotFoundException e)
-            {
-                errors.reject("folderImport", "File not found.");
-                return false;
-            }
-            catch (FileSystemAlreadyExistsException | DirectoryNotDeletedException e)
-            {
-                errors.reject("folderImport", e.getMessage());
-                return false;
-            }
-            catch (IOException e)
-            {
-                errors.reject("folderImport", "This file does not appear to be a valid .zip file.");
-                return false;
-            }
-        }
-        else
-        {
-            folderXml = folderFile;
+            _createSharedDatasets = createSharedDatasets;
         }
 
-        User user = context.getUser();
-        ActionURL url = context.getActionURL();
+        public boolean isAdvancedImportOptions()
+        {
+            return _advancedImportOptions;
+        }
 
-        // this is called when a folder is imported through the pipeline, since there is no ui for controlling query validation
-        // (or any other import options), we just pass through a vanilla ImportOptions object.
-        ImportOptions options = new ImportOptions(c.getId(), user.getUserId());
-        options.setSkipQueryValidation(!form.isValidateQueries());
+        public void setAdvancedImportOptions(boolean advancedImportOptions)
+        {
+            _advancedImportOptions = advancedImportOptions;
+        }
 
-        PipelineService.get().queueJob(new FolderImportJob(c, user, url, folderXml, originalFilename, pipelineRoot, options));
+        public String[] getFolderDataTypes()
+        {
+            return _folderDataTypes;
+        }
 
-        return !errors.hasErrors();
+        public void setFolderDataTypes(String[] folderDataTypes)
+        {
+            _folderDataTypes = folderDataTypes;
+        }
+
+        public boolean isAsStudy()
+        {
+            return _asStudy;
+        }
+
+        public void setAsStudy(boolean asStudy)
+        {
+            _asStudy = asStudy;
+        }
+
+        public boolean isFromZip()
+        {
+            return _fromZip;
+        }
+
+        public void setFromZip(boolean fromZip)
+        {
+            _fromZip = fromZip;
+        }
     }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1412,6 +1533,34 @@ public class PipelineController extends SpringActionController
         public ActionURL urlActions(Container container)
         {
             return new ActionURL(ActionsAction.class, container);
+        }
+
+        public ActionURL urlStartFolderImport(Container container, @NotNull File folderFile, @Nullable ImportOptions options)
+        {
+            ActionURL url = new ActionURL(StartFolderImportAction.class, container);
+            return addStartImportParameters(url, folderFile, options);
+        }
+
+        public ActionURL urlStartStudyImport(Container container, @NotNull File studyFile, @Nullable ImportOptions options)
+        {
+            ActionURL url = new ActionURL(StartFolderImportAction.class, container);
+            url.addParameter("asStudy", true);
+            return addStartImportParameters(url, studyFile, options);
+        }
+
+        private ActionURL addStartImportParameters(ActionURL url, @NotNull File file, @Nullable ImportOptions options)
+        {
+            url.addParameter("filePath", file.getAbsolutePath());
+
+            url.addParameter("validateQueries", options == null || !options.isSkipQueryValidation());
+            url.addParameter("createSharedDatasets", options == null || options.isCreateSharedDatasets());
+            if (options != null)
+            {
+                url.addParameter("advancedImportOptions", options.isAdvancedImportOptions());
+                url.addParameter("fromZip", true);
+            }
+
+            return url;
         }
     }
 

@@ -21,6 +21,7 @@ import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
+import org.labkey.api.admin.FolderWriterNames;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
@@ -61,9 +62,14 @@ import java.util.Objects;
  */
 public class QueryImporter implements FolderImporter
 {
+    public String getSelectionText()
+    {
+        return FolderWriterNames.QUERIES;
+    }
+
     public String getDescription()
     {
-        return "queries";
+        return FolderWriterNames.QUERIES.toLowerCase();
     }
 
     public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws ServletException, XmlException, IOException, SQLException, ImportException

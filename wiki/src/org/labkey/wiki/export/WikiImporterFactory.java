@@ -18,6 +18,7 @@ package org.labkey.wiki.export;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
+import org.labkey.api.admin.FolderWriterNames;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.attachments.Attachment;
@@ -66,6 +67,12 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
 
     private class WikiImporter implements FolderImporter<FolderDocument.Folder>
     {
+        @Override
+        public String getSelectionText()
+        {
+            return FolderWriterNames.WIKIS_AND_THEIR_ATTACHMENTS;
+        }
+
         @Override
         public String getDescription()
         {

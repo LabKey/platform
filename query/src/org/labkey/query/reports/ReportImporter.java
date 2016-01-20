@@ -18,6 +18,7 @@ package org.labkey.query.reports;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
+import org.labkey.api.admin.FolderWriterNames;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
@@ -47,9 +48,15 @@ import java.util.List;
  */
 public class ReportImporter implements FolderImporter
 {
+    @Override
+    public String getSelectionText()
+    {
+        return FolderWriterNames.REPORTS;
+    }
+
     public String getDescription()
     {
-        return "reports";
+        return getSelectionText().toLowerCase();
     }
 
     public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws IOException, SQLException, ImportException

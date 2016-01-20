@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.admin.FolderWriter" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
@@ -23,12 +22,8 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="org.labkey.api.writer.Writer" %>
 <%@ page import="org.labkey.core.admin.FolderManagementAction" %>
-<%@ page import="org.labkey.core.admin.writer.FolderSerializationRegistryImpl" %>
-<%@ page import="java.util.Collection" %>
 <%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="java.util.LinkedList" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -63,53 +58,82 @@ String subjectNounLowercase = subjectNoun != null ? subjectNoun.toLowerCase() : 
 
 <script type="text/javascript">
 
-    Ext.onReady(function(){
+Ext.onReady(function(){
 
-        var formItemsCol1 = [], formItemsCol2 = [];
+    LABKEY.Ajax.request({
+        url: LABKEY.ActionURL.buildURL("core", "getRegisteredFolderWriters"),
+        method: 'POST',
+        jsonData: {
+            exportType: <%=q(form.getExportType().toString())%>
+        },
+        scope: this,
+        success: function (response)
+        {
+            var responseText = Ext.decode(response.responseText);
+            initExportForm(responseText['writers']);
+        }
+    });
+
+    var initExportForm = function(folderWriters)
+    {
+        var formItemsCol1 = [],
+            formItemsCol2 = [],
+            showStudyOptions = false;
 
         formItemsCol1.push({xtype: 'box', cls: 'labkey-announcement-title', html: '<span>Folder objects to export:</span>'});
         formItemsCol1.push({xtype: 'box', cls: 'labkey-title-area-line', html: ''});
-<%
-            Collection<FolderWriter> writers = new LinkedList<>(FolderSerializationRegistryImpl.get().getRegisteredFolderWriters());
-            boolean showStudyOptions = false;
-            for (FolderWriter writer : writers)
+
+        Ext.each(folderWriters, function(writer)
+        {
+            var parentName = writer['name'],
+                checked = writer['selectedByDefault'],
+                children = writer['children'];
+
+            formItemsCol1.push({
+                xtype: "checkbox",
+                hideLabel: true,
+                boxLabel: parentName,
+                name: "types",
+                itemId: parentName,
+                inputValue: parentName,
+                checked: checked,
+                objectType: "parent"
+            });
+
+            if (Ext.isArray(children))
             {
-                String parent = writer.getSelectionText();
-                if (null != parent && writer.show(c) && !(c.isDataspace() && "Study".equals(parent)))
+                Ext.each(children, function(childName)
                 {
-                    boolean checked = writer.selectedByDefault(form.getExportType());
-                    %>formItemsCol1.push({xtype: "checkbox", hideLabel: true, boxLabel: "<%=parent%>", name: "types", itemId: "<%=parent%>", inputValue: "<%=parent%>", checked: <%=checked%>, objectType: "parent"});<%
-
-                    Collection<Writer> children = writer.getChildren(true);
-                    if (null != children && children.size() > 0)
-                    {
-                        for (Writer child : children)
-                        {
-                            if (null != child.getSelectionText())
-                            {
-                                String text = child.getSelectionText();
-                                %>
-        formItemsCol1.push({xtype: "checkbox", style: {marginLeft: "20px"}, hideLabel: true, boxLabel: "<%=text%>", name: "types", itemId: "<%=text%>",
-                                   inputValue: "<%=text%>", checked: <%=checked%>, objectType: "child", parentId: "<%=parent%>"});
-                                <%
-                            }
-                        }
-                    }
-
-                    // if there is a study writer shown, set a boolean variable so we know whether or not the show the study related options
-                    if ("Study".equals(parent))
-                        showStudyOptions = true;
-                }
+                    formItemsCol1.push({
+                        xtype: "checkbox",
+                        style: {marginLeft: "20px"},
+                        hideLabel: true,
+                        boxLabel: childName,
+                        name: "types",
+                        itemId: childName,
+                        inputValue: childName,
+                        checked: checked,
+                        objectType: "child",
+                        parentId: parentName
+                    });
+                });
             }
-%>
+
+            // if there is a study writer shown, set a boolean variable so we know whether or not the show the study related options
+            if (parentName == "Study")
+            {
+                showStudyOptions = true;
+            }
+        });
+
         formItemsCol1.push({xtype: "spacer", height: 20});
         formItemsCol2.push({xtype: 'box', cls: 'labkey-announcement-title', html: '<span>Options:</span>'});
         formItemsCol2.push({xtype: 'box', cls: 'labkey-title-area-line', html: ''});
         formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!c.hasChildren()%>, boxLabel: 'Include Subfolders<%=PageFlowUtil.helpPopup("Include Subfolders", "Recursively export subfolders.")%>', name: 'includeSubfolders', objectType: 'otherOptions'});
         formItemsCol2.push({xtype: 'checkbox', hideLabel: true, boxLabel: 'Remove All Columns Tagged as Protected<%=PageFlowUtil.helpPopup("Remove Protected Columns", "Selecting this option will exclude all dataset, list, and specimen columns that have been tagged as protected columns.")%>', name: 'removeProtected', objectType: 'otherOptions'});
-        formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!showStudyOptions%>, boxLabel: 'Shift <%=h(subjectNoun)%> Dates<%=PageFlowUtil.helpPopup("Shift Date Columns", "Selecting this option will shift selected date values associated with a " + h(subjectNounLowercase) + " by a random, " + h(subjectNounLowercase) + " specific, offset (from 1 to 365 days).")%>', name: 'shiftDates', objectType: 'otherOptions'});
-        formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!showStudyOptions%>, boxLabel: 'Export Alternate <%=h(subjectNoun)%> IDs<%=PageFlowUtil.helpPopup("Export Alternate " + h(subjectNoun) + " IDs", "Selecting this option will replace each " + h(subjectNounLowercase) + " id by an alternate randomly generated id.")%>', name: 'alternateIds', objectType: 'otherOptions'});
-        formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!showStudyOptions%>, boxLabel: 'Mask Clinic Names<%=PageFlowUtil.helpPopup("Mask Clinic Names", "Selecting this option will change the labels for clinics in the exported list of locations to a generic label (i.e. Clinic).")%>', name: 'maskClinic', objectType: 'otherOptions'});
+        formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: !showStudyOptions, boxLabel: 'Shift <%=h(subjectNoun)%> Dates<%=PageFlowUtil.helpPopup("Shift Date Columns", "Selecting this option will shift selected date values associated with a " + h(subjectNounLowercase) + " by a random, " + h(subjectNounLowercase) + " specific, offset (from 1 to 365 days).")%>', name: 'shiftDates', objectType: 'otherOptions'});
+        formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: !showStudyOptions, boxLabel: 'Export Alternate <%=h(subjectNoun)%> IDs<%=PageFlowUtil.helpPopup("Export Alternate " + h(subjectNoun) + " IDs", "Selecting this option will replace each " + h(subjectNounLowercase) + " id by an alternate randomly generated id.")%>', name: 'alternateIds', objectType: 'otherOptions'});
+        formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: !showStudyOptions, boxLabel: 'Mask Clinic Names<%=PageFlowUtil.helpPopup("Mask Clinic Names", "Selecting this option will change the labels for clinics in the exported list of locations to a generic label (i.e. Clinic).")%>', name: 'maskClinic', objectType: 'otherOptions'});
         formItemsCol2.push({xtype: 'box', cls: 'labkey-announcement-title', html: '<span>Export to:</span>'});
         formItemsCol2.push({xtype: 'box', cls: 'labkey-title-area-line', html: ''});
         formItemsCol2.push({
@@ -165,7 +189,8 @@ String subjectNounLowercase = subjectNoun != null ? subjectNoun.toLowerCase() : 
                 });
             });
         });
-    });
+    }
+});
 
 </script>
 

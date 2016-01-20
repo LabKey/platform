@@ -41,19 +41,6 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
         return INSTANCE;
     }
 
-//    // These writers are defined and registered by other modules.  They have no knowledge of study internals, other
-//    // than being able to write elements into study.xml.
-//    public Collection<FolderWriter> getRegisteredStudyWriters()
-//    {
-//        // New up the writers every time since these classes can be stateful
-//        Collection<FolderWriter> writers = new LinkedList<FolderWriter>();
-//
-//        for (FolderWriterFactory factory : WRITER_FACTORIES)
-//            writers.add(factory.create());
-//
-//        return writers;
-//    }
-//
     // These importers are defined and registered by other modules.  They have no knowledge of study internals, other
     // than being able to read elements from study.xml.
     public Collection<FolderImporter> getRegisteredStudyImporters()

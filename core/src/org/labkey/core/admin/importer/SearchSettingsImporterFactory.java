@@ -18,6 +18,7 @@ package org.labkey.core.admin.importer;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
+import org.labkey.api.admin.FolderWriterNames;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -44,9 +45,15 @@ public class SearchSettingsImporterFactory extends AbstractFolderImportFactory
     public class SearchSettingsImporter implements  FolderImporter<FolderDocument.Folder>
     {
         @Override
+        public String getSelectionText()
+        {
+            return FolderWriterNames.FULL_TEXT_SEARCH_SETTINGS;
+        }
+
+        @Override
         public String getDescription()
         {
-            return "full-text search settings";
+            return getSelectionText().toLowerCase();
         }
 
         @Override

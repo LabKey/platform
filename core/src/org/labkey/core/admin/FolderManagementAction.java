@@ -551,9 +551,6 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         }
         else
         {
-            // Assuming success starting the import process, redirect to pipeline status
-            _successURL = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(container);
-
             Map<String, MultipartFile> map = getFileMap();
             if (map.isEmpty())
             {
@@ -621,11 +618,14 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                         }
 
                         folderXml = new File(importDir, "folder.xml");
-                        if(!folderXml.exists()){
+                        if (!folderXml.exists())
+                        {
                             folderXml = new File(importDir, "study.xml");
                             isStudy = true;
                         }
-                        if(!folderXml.exists()){
+
+                        if (!folderXml.exists())
+                        {
                             errors.reject("folderImport", "This file doesn't contain an appropriate xml.");
                         }
                     }
@@ -640,17 +640,32 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                     ActionURL url = context.getActionURL();
                     ImportOptions options = new ImportOptions(getContainer().getId(), user.getUserId());
                     options.setSkipQueryValidation(!form.isValidateQueries());
-                    options.setCreateSharedDatasets(form.createSharedDatasets);
+                    options.setCreateSharedDatasets(form.isCreateSharedDatasets());
+                    options.setAdvancedImportOptions(form.isAdvancedImportOptions());
 
-                    if (isStudy)
+                    if (form.isAdvancedImportOptions())
                     {
-                        StudyService.Service svc = StudyService.get();
-                        if (svc != null)
-                            svc.runStudyImportJob(c, user, url, folderXml, file.getOriginalFilename(), errors, pipelineRoot, options);
+                        if (isStudy)
+                            _successURL = PageFlowUtil.urlProvider(PipelineUrls.class).urlStartStudyImport(getContainer(), folderXml, options);
+                        else
+                            _successURL = PageFlowUtil.urlProvider(PipelineUrls.class).urlStartFolderImport(getContainer(), folderXml, options);
                     }
                     else
                     {
-                        PipelineService.get().runFolderImportJob(c, user, url, folderXml, file.getOriginalFilename(), errors, pipelineRoot, options);
+                        if (isStudy)
+                        {
+                            StudyService.Service svc = StudyService.get();
+                            if (svc != null)
+                                svc.runStudyImportJob(c, user, url, folderXml, file.getOriginalFilename(), errors, pipelineRoot, options);
+                            else
+                                errors.reject("folderImport", "StudyService not found.");
+                        }
+                        else
+                        {
+                            PipelineService.get().runFolderImportJob(c, user, url, folderXml, file.getOriginalFilename(), errors, pipelineRoot, options);
+                        }
+
+                        _successURL = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(container);
                     }
                 }
             }
@@ -718,6 +733,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         // folder import settings
         private boolean createSharedDatasets;
         private boolean validateQueries;
+        private boolean advancedImportOptions;
 
         // file management settings
         private String _folderRootPath;
@@ -1044,6 +1060,16 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         public void setValidateQueries(boolean validateQueries)
         {
             this.validateQueries = validateQueries;
+        }
+
+        public boolean isAdvancedImportOptions()
+        {
+            return advancedImportOptions;
+        }
+
+        public void setAdvancedImportOptions(boolean advancedImportOptions)
+        {
+            this.advancedImportOptions = advancedImportOptions;
         }
 
         public boolean isCreateSharedDatasets()

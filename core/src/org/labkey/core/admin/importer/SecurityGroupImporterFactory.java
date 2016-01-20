@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
+import org.labkey.api.admin.FolderWriterNames;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
@@ -51,6 +52,11 @@ public class SecurityGroupImporterFactory extends AbstractFolderImportFactory
 
     public class SecurityGroupImporter implements FolderImporter<FolderDocument.Folder>
     {
+        @Override
+        public String getSelectionText()
+        {
+            return FolderWriterNames.SECURITY_GROUPS;
+        }
 
         @Override
         public String getDescription()

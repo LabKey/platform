@@ -509,6 +509,7 @@
 
         var folderTemplateWriters = [];
         <%
+            // TODO: see exportFolder.jsp, this should be converted to use core/getRegisteredFolderWriters API
             Collection<FolderWriter> writers = new LinkedList<>(FolderSerializationRegistryImpl.get().getRegisteredFolderWriters());
             for (FolderWriter writer : writers)
             {

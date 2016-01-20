@@ -18,6 +18,7 @@ package org.labkey.core.admin.importer;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
+import org.labkey.api.admin.FolderWriterNames;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
@@ -49,9 +50,15 @@ public class ModulePropertiesImporterFactory extends AbstractFolderImportFactory
     public class ModulePropertiesImporter implements  FolderImporter<FolderDocument.Folder>
     {
         @Override
+        public String getSelectionText()
+        {
+            return FolderWriterNames.CONTAINER_SPECIFIC_MODULE_PROPERTIES;
+        }
+
+        @Override
         public String getDescription()
         {
-            return "container specific module properties";
+            return getSelectionText().toLowerCase();
         }
 
         @Override

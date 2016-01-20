@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
+import org.labkey.api.admin.FolderWriterNames;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentDefaultEmailPref;
@@ -48,9 +49,15 @@ public class NotificationSettingsImporterFactory extends AbstractFolderImportFac
     public class NotificationSettingsImporter implements  FolderImporter<FolderDocument.Folder>
     {
         @Override
+        public String getSelectionText()
+        {
+            return FolderWriterNames.NOTIFICATIONS_SETTINGS;
+        }
+
+        @Override
         public String getDescription()
         {
-            return "notification settings";
+            return getSelectionText().toLowerCase();
         }
 
         @Override

@@ -31,7 +31,9 @@ import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.CoreUrls;
+import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.attachments.Attachment;
@@ -132,6 +134,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -1658,10 +1661,10 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetRegisteredFolderWritersAction extends ApiAction<Object>
+    public class GetRegisteredFolderWritersAction extends ApiAction<FolderWriterForm>
     {
         @Override
-        public ApiResponse execute(Object form, BindException errors) throws Exception
+        public ApiResponse execute(FolderWriterForm form, BindException errors) throws Exception
         {
             FolderSerializationRegistry registry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
             if (null == registry)
@@ -1676,9 +1679,13 @@ public class CoreController extends SpringActionController
             {
                 Map<String, Object> writerMap = new HashMap<>();
                 String selectionText = writer.getSelectionText();
-                if (selectionText != null && writer.show(getContainer()))
+                boolean excludeForDataspace = getContainer().isDataspace() && "Study".equals(selectionText);
+
+                if (selectionText != null && writer.show(getContainer()) && !excludeForDataspace)
                 {
                     writerMap.put("name", selectionText);
+                    writerMap.put("selectedByDefault", writer.selectedByDefault(form.getExportType()));
+                    writerMap.put("supportsVirtualFile", writer.supportsVirtualFile());
 
                     Collection<Writer> childWriters = writer.getChildren(true);
                     if (childWriters != null && childWriters.size() > 0)
@@ -1702,6 +1709,80 @@ public class CoreController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("writers", writerChildrenMap);
             return response;
+        }
+    }
+
+    public static class FolderWriterForm
+    {
+        private String _exportType;
+
+        public AbstractFolderContext.ExportType getExportType()
+        {
+            if ("study".equalsIgnoreCase(_exportType))
+                return AbstractFolderContext.ExportType.STUDY;
+
+            return AbstractFolderContext.ExportType.ALL;
+        }
+
+        public void setExportType(String exportType)
+        {
+            _exportType = exportType;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class GetRegisteredFolderImportersAction extends ApiAction<FolderImporterForm>
+    {
+        @Override
+        public ApiResponse execute(FolderImporterForm form, BindException errors) throws Exception
+        {
+            FolderSerializationRegistry registry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
+            if (null == registry)
+                throw new RuntimeException();
+
+            List<FolderImporter> registeredImporters = new ArrayList<>(registry.getRegisteredFolderImporters());
+            if (form.isSortAlpha())
+                Collections.sort(registeredImporters, new ImporterAlphaComparator());
+
+            List<Map<String, Object>> selectableImporters = new ArrayList<>();
+            for (FolderImporter importer : registeredImporters)
+            {
+                if (importer.getSelectionText() != null)
+                {
+                    Map<String, Object> importerMap = new HashMap<>();
+                    importerMap.put("selectionText", importer.getSelectionText());
+                    importerMap.put("description", importer.getDescription());
+
+                    selectableImporters.add(importerMap);
+                }
+            }
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("importers", selectableImporters);
+            return response;
+        }
+    }
+
+    private class ImporterAlphaComparator implements Comparator<FolderImporter>
+    {
+        public int compare(FolderImporter o1, FolderImporter o2)
+        {
+            return o1.getSelectionText() == null ? -1 : o1.getSelectionText().compareTo(o2.getSelectionText());
+        }
+    }
+
+    public static class FolderImporterForm
+    {
+        private boolean _sortAlpha;
+
+        public boolean isSortAlpha()
+        {
+            return _sortAlpha;
+        }
+
+        public void setSortAlpha(boolean sortAlpha)
+        {
+            _sortAlpha = sortAlpha;
         }
     }
 }

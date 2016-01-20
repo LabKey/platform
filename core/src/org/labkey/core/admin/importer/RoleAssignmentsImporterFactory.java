@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
+import org.labkey.api.admin.FolderWriterNames;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
@@ -64,11 +65,16 @@ public class RoleAssignmentsImporterFactory extends AbstractFolderImportFactory
 
     public class RoleAssignmentsImporter implements FolderImporter<FolderDocument.Folder>
     {
+        @Override
+        public String getSelectionText()
+        {
+            return FolderWriterNames.ROLE_ASSIGNMENTS;
+        }
 
         @Override
         public String getDescription()
         {
-            return "role assignments for users and groups";
+            return getSelectionText().toLowerCase();
         }
 
         @Override

@@ -1189,6 +1189,7 @@ pipeline/src/org/labkey/pipeline/mule/transformers/PipelineJobToJMSMessage.java 
 pipeline/src/org/labkey/pipeline/permission.jsp -text
 pipeline/src/org/labkey/pipeline/pipelineStatus.jsp -text
 pipeline/src/org/labkey/pipeline/setup.jsp -text
+pipeline/src/org/labkey/pipeline/startPipelineImport.jsp -text
 pipeline/src/org/labkey/pipeline/status/DescriptionDisplayColumn.java -text
 pipeline/src/org/labkey/pipeline/status/FileDisplayColumn.java -text
 pipeline/src/org/labkey/pipeline/status/JobDisplayColumn.java -text
@@ -2390,7 +2391,6 @@ study/src/org/labkey/study/view/specimen/updateComments.jsp -text
 study/src/org/labkey/study/view/specimen/uploadSimpleSpecimens.jsp -text
 study/src/org/labkey/study/view/specimen/viewRequestsHeader.jsp -text
 study/src/org/labkey/study/view/specimen/webPart.jsp -text
-study/src/org/labkey/study/view/startPipelineImport.jsp -text
 study/src/org/labkey/study/view/studyList.jsp -text
 study/src/org/labkey/study/view/studyListWide.jsp -text
 study/src/org/labkey/study/view/studySchedule.jsp -text

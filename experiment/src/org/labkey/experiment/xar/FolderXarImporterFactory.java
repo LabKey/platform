@@ -18,6 +18,7 @@ package org.labkey.experiment.xar;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
+import org.labkey.api.admin.FolderWriterNames;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
@@ -54,6 +55,12 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
 
     public class FolderXarImporter implements  FolderImporter<FolderDocument.Folder>
     {
+        @Override
+        public String getSelectionText()
+        {
+            return FolderWriterNames.EXPERIMENTS_AND_RUNS;
+        }
+
         @Override
         public String getDescription()
         {

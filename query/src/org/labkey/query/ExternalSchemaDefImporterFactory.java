@@ -19,6 +19,7 @@ import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
+import org.labkey.api.admin.FolderWriterNames;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
@@ -59,9 +60,15 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
     public class ExternalSchemaDefImporter implements FolderImporter<FolderDocument.Folder>
     {
         @Override
+        public String getSelectionText()
+        {
+            return FolderWriterNames.EXTERNAL_SCHEMA_DEFINITIONS;
+        }
+
+        @Override
         public String getDescription()
         {
-            return "external schema definitions";
+            return getSelectionText().toLowerCase();
         }
 
         @Override

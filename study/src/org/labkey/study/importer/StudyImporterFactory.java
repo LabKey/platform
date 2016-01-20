@@ -60,9 +60,15 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
     public class StudyFolderImporter implements FolderImporter<FolderDocument.Folder>
     {
         @Override
+        public String getSelectionText()
+        {
+            return FolderWriterNames.STUDY;
+        }
+
+        @Override
         public String getDescription()                                    
         {
-            return "study";
+            return getSelectionText().toLowerCase();
         }
 
         @Override
