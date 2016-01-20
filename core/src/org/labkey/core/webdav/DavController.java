@@ -1310,8 +1310,7 @@ public class DavController extends SpringActionController
                 ReadAheadInputStream is = new ReadAheadInputStream(getInputStream());
                 try
                 {
-                    // dont attempt to parse input stream of GET or HEAD request which in https is 'available' but throws exception on read (fix for ISSUE: 25318)
-                    if (((!"GET".equals(getRequest().getMethod())) && (!"HEAD".equals(getRequest().getMethod()))) && is.available() > 0)
+                    if (is.available() > 0)
                     {
                         DocumentBuilder documentBuilder = getDocumentBuilder();
                         Document document = documentBuilder.parse(is);
@@ -5932,6 +5931,17 @@ public class DavController extends SpringActionController
             assert track(this.is);  // InputStream
             assert track(in);       // BufferedInputStream
             assert track(this);
+        }
+
+        @Override
+        public int available() throws IOException
+        {
+            String method = getRequest().getMethod();
+            // GET, HEAD, and MKCOL request have no inputstream and are correctly 'available=0' in http, but in https were showing 'available>0' (fix for ISSUE: 25318 and 25437)
+            if ( !"GET".equals(method) && !"HEAD".equals(method) && !"MKCOL".equals(method)) {
+                return super.available();
+            }
+            return 0;
         }
 
         @Override
