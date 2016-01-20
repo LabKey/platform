@@ -2839,7 +2839,10 @@ public class ExperimentController extends SpringActionController
                 source.delete(getUser());
             }
             String selectionKey = deleteForm.getDataRegionSelectionKey();
-            DataRegionSelection.clearAll(getViewContext(), selectionKey);
+            if (selectionKey != null)
+            {
+                DataRegionSelection.clearAll(getViewContext(), selectionKey);
+            }
         }
 
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors) throws Exception
@@ -4425,7 +4428,7 @@ public class ExperimentController extends SpringActionController
                 }
                 else
                 {
-                    throw new NotFoundException();
+                    throw new NotFoundException("No material with RowId " + rowId);
                 }
             }
             Collections.sort(result, new Comparator<ExpMaterial>()
