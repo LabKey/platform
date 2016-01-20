@@ -441,7 +441,7 @@ public class SparseBitSet implements Cloneable, Serializable
     public void and(int i, int j, SparseBitSet b) throws IndexOutOfBoundsException
     {
         if (sealed) throw new IllegalStateException();
-        setScanner(i, j, b, andStrategy);
+        setScanner(i, j, b, new AndStrategy());
     }
 
     /**
@@ -458,7 +458,7 @@ public class SparseBitSet implements Cloneable, Serializable
     {
         if (sealed) throw new IllegalStateException();
         nullify(Math.min(bits.length, b.bits.length)); // Optimisation
-        setScanner(0, Math.min(bitsLength, b.bitsLength), b, andStrategy);
+        setScanner(0, Math.min(bitsLength, b.bitsLength), b, new AndStrategy());
     }
 
     /**
@@ -521,7 +521,7 @@ public class SparseBitSet implements Cloneable, Serializable
             throws IndexOutOfBoundsException
     {
         if (sealed) throw new IllegalStateException();
-        setScanner(i, j, b, andNotStrategy);
+        setScanner(i, j, b, new AndNotStrategy());
     }
 
     /**
@@ -537,7 +537,7 @@ public class SparseBitSet implements Cloneable, Serializable
     public void andNot(SparseBitSet b)
     {
         if (sealed) throw new IllegalStateException();
-        setScanner(0, Math.min(bitsLength, b.bitsLength), b, andNotStrategy);
+        setScanner(0, Math.min(bitsLength, b.bitsLength), b, new AndNotStrategy());
     }
 
     /**
@@ -618,7 +618,7 @@ public class SparseBitSet implements Cloneable, Serializable
     public void clear(int i, int j) throws IndexOutOfBoundsException
     {
         if (sealed) throw new IllegalStateException();
-        setScanner(i, j, null, clearStrategy);
+        setScanner(i, j, null, new ClearStrategy());
     }
 
     /**
@@ -668,7 +668,7 @@ public class SparseBitSet implements Cloneable, Serializable
                 this link to their containing object, but they are reset here just
                 in case of  future changes). */
             result.constructorHelper(); //  also creates the copyStrategy
-            result.setScanner(0, bitsLength, this, result.copyStrategy);
+            result.setScanner(0, bitsLength, this, result._getCopyStrategy());
             return result;
         }
         catch (CloneNotSupportedException ex)
@@ -677,6 +677,11 @@ public class SparseBitSet implements Cloneable, Serializable
                 that is will work, but it likely never to be used. */
             throw new InternalError(ex.getMessage());
         }
+    }
+
+    private CopyStrategy _getCopyStrategy()
+    {
+        return new CopyStrategy();
     }
 
     /**
@@ -704,6 +709,7 @@ public class SparseBitSet implements Cloneable, Serializable
             return true; // Identity
 
         /*  Do the real work.  */
+        EqualsStrategy equalsStrategy = new EqualsStrategy();
         setScanner(0, Math.max(bitsLength, b.bitsLength), b, equalsStrategy);
         return equalsStrategy.result;
     }
@@ -752,7 +758,7 @@ public class SparseBitSet implements Cloneable, Serializable
     public void flip(int i, int j) throws IndexOutOfBoundsException
     {
         if (sealed) throw new IllegalStateException();
-        setScanner(i, j, null, flipStrategy);
+        setScanner(i, j, null, new FlipStrategy());
     }
 
     /**
@@ -796,7 +802,7 @@ public class SparseBitSet implements Cloneable, Serializable
     public SparseBitSet get(int i, int j) throws IndexOutOfBoundsException
     {
         final SparseBitSet result = new SparseBitSet(j, compactionCount);
-        result.setScanner(i, j, this, result.copyStrategy);
+        result.setScanner(i, j, this, result._getCopyStrategy());
         return result;
     }
 
@@ -854,7 +860,7 @@ public class SparseBitSet implements Cloneable, Serializable
     public boolean intersects(int i, int j, SparseBitSet b)
             throws IndexOutOfBoundsException
     {
-        if (sealed) throw new IllegalStateException();
+        IntersectsStrategy intersectsStrategy = new IntersectsStrategy();
         setScanner(i, j, b, intersectsStrategy);
         return intersectsStrategy.result;
     }
@@ -871,7 +877,7 @@ public class SparseBitSet implements Cloneable, Serializable
      */
     public boolean intersects(SparseBitSet b)
     {
-        if (sealed) throw new IllegalStateException();
+        IntersectsStrategy intersectsStrategy = new IntersectsStrategy();
         setScanner(0, Math.max(bitsLength, b.bitsLength), b, intersectsStrategy);
         return intersectsStrategy.result;
     }
@@ -1079,7 +1085,7 @@ public class SparseBitSet implements Cloneable, Serializable
     public void or(int i, int j, SparseBitSet b) throws IndexOutOfBoundsException
     {
         if (sealed) throw new IllegalStateException();
-        setScanner(i, j, b, orStrategy);
+        setScanner(i, j, b, new OrStrategy());
     }
 
     /**
@@ -1095,7 +1101,7 @@ public class SparseBitSet implements Cloneable, Serializable
     public void or(SparseBitSet b)
     {
         if (sealed) throw new IllegalStateException();
-        setScanner(0, b.bitsLength, b, orStrategy);
+        setScanner(0, b.bitsLength, b, new OrStrategy());
     }
 
     /**
@@ -1178,7 +1184,7 @@ public class SparseBitSet implements Cloneable, Serializable
     public void set(int i, int j) throws IndexOutOfBoundsException
     {
         if (sealed) throw new IllegalStateException();
-        setScanner(i, j, null, setStrategy);
+        setScanner(i, j, null, new SetStrategy());
     }
 
     /**
@@ -1473,7 +1479,7 @@ public class SparseBitSet implements Cloneable, Serializable
     public void xor(int i, int j, SparseBitSet b) throws IndexOutOfBoundsException
     {
         if (sealed) throw new IllegalStateException();
-        setScanner(i, j, b, xorStrategy);
+        setScanner(i, j, b, new XorStrategy());
     }
 
     /**
@@ -1494,7 +1500,7 @@ public class SparseBitSet implements Cloneable, Serializable
     public void xor(SparseBitSet b)
     {
         if (sealed) throw new IllegalStateException();
-        setScanner(0, b.bitsLength, b, xorStrategy);
+        setScanner(0, b.bitsLength, b, new XorStrategy());
     }
 
     /**
@@ -1557,18 +1563,9 @@ public class SparseBitSet implements Cloneable, Serializable
     {
         spare = new long[LENGTH3];
         cache = new Cache();
-        andStrategy = new AndStrategy();
-        andNotStrategy = new AndNotStrategy();
-        clearStrategy = new ClearStrategy();
-        equalsStrategy = new EqualsStrategy();
-        flipStrategy = new FlipStrategy();
-        copyStrategy = new CopyStrategy();
-        intersectsStrategy = new IntersectsStrategy();
-        orStrategy = new OrStrategy();
-        setStrategy = new SetStrategy();
-        updateStrategy = new UpdateStrategy();
-        xorStrategy = new XorStrategy();
     }
+
+
 
     /**
      *  Clear out a part of the set array with nulls, from the given start to the
@@ -1875,7 +1872,7 @@ public class SparseBitSet implements Cloneable, Serializable
     {
         if (cache.hash != 0)
             return;
-        setScanner(0, bitsLength, null, updateStrategy);
+        setScanner(0, bitsLength, null, new UpdateStrategy());
     }
 
     //==============================================================================
@@ -2872,7 +2869,7 @@ public class SparseBitSet implements Cloneable, Serializable
         {
             /*  Count the number of actual words being used. */
             ++count;
-            /*  Contine to accumulate the hash value of the set. */
+            /*  Continue to accumulate the hash value of the set. */
             hash ^= word * (long) (index + 1);
             /*  The first non-zero word contains the first actual bit of the
                 set. The location of this bit is used to compute the set size. */
@@ -2934,53 +2931,6 @@ public class SparseBitSet implements Cloneable, Serializable
 
         }
     }
-
-    //-----------------------------------------------------------------------------
-    /**
-     *  Word and block <b>and</b> strategy.
-     */
-    protected transient AndStrategy andStrategy;
-    /**
-     *  Word and block <b>andNot</b> strategy.
-     */
-    protected transient AndNotStrategy andNotStrategy;
-    /**
-     *  Word and block <b>clear</b> strategy.
-     */
-    protected transient ClearStrategy clearStrategy;
-    /**
-     *  Word and block <b>copy</b> strategy.
-     */
-    protected transient CopyStrategy copyStrategy;
-    /**
-     *  Word and block <b>equals</b> strategy.
-     */
-    protected transient EqualsStrategy equalsStrategy;
-    /**
-     *  Word and block <b>flip</b> strategy.
-     */
-    protected transient FlipStrategy flipStrategy;
-    /**
-     *  Word and block <b>intersects</b> strategy.
-     */
-    protected transient IntersectsStrategy intersectsStrategy;
-    /**
-     *  Word and block <b>or</b> strategy.
-     */
-    protected transient OrStrategy orStrategy;
-    /**
-     *  Word and block <b>set</b> strategy.
-     */
-    protected transient SetStrategy setStrategy;
-    /**
-     *  Word and block <b>update</b> strategy.
-     */
-    protected transient UpdateStrategy updateStrategy;
-    /**
-     *  Word and block <b>xor</b> strategy.
-     */
-    protected transient XorStrategy xorStrategy;
-
 
     /** estimate of physical memory used to store this bitset
      * - for instrumentation only
