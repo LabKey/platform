@@ -491,7 +491,33 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         ExpProtocol protocol = _dsd.getAssayProtocol();
         if (protocol != null)
         {
-            // First, see the if the assay table can resolve the column
+            // First, if it's Properties,
+            if ("Properties".equalsIgnoreCase(name))
+            {
+                // Hook up a column that joins back to this table so that the columns formerly under the Properties
+                // node when this was OntologyManager-backed can still be queried there
+                result = wrapColumn("Properties", getRealTable().getColumn("_key"));
+                result.setIsUnselectable(true);
+                LookupForeignKey fk = new LookupForeignKey("_key")
+                {
+                    @Override
+                    public TableInfo getLookupTableInfo()
+                    {
+                        return new DatasetTableImpl(getUserSchema(), _dsd);
+                    }
+
+                    @Override
+                    public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
+                    {
+                        return super.createLookupColumn(parent, displayField);
+                    }
+                };
+                fk.setPrefixColumnCaption(false);
+                result.setFk(fk);
+                return result;
+            }
+
+            // Second, see the if the assay table can resolve the column
             TableInfo assayTable = getAssayResultTable();
             if (null != assayTable)
             {
@@ -537,17 +563,13 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             }
             else
             {
-                // Check the name to prevent infinite recursion
-                if (!"Properties".equalsIgnoreCase(name))
+                // Try looking for it as a NAb specimen property
+                fieldKey = FieldKey.fromParts("SpecimenLsid", "Property", name);
+                Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(this, Collections.singleton(fieldKey));
+                result = columns.get(fieldKey);
+                if (result != null)
                 {
-                    // Try looking for it as a NAb specimen property
-                    fieldKey = FieldKey.fromParts("Properties", "SpecimenLsid", "Property", name);
-                    Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(this, Collections.singleton(fieldKey));
-                    result = columns.get(fieldKey);
-                    if (result != null)
-                    {
-                        return result;
-                    }
+                    return result;
                 }
             }
         }
