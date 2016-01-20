@@ -237,7 +237,7 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
                 }
                 else
                 {
-                    msg.setHtmlContent(part.getString(MsgContent.content.name()));
+                    msg.setEncodedHtmlContent(part.getString(MsgContent.content.name()));
                 }
             }
             catch (JSONException je)
