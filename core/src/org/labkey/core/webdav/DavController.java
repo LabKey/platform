@@ -1310,7 +1310,8 @@ public class DavController extends SpringActionController
                 ReadAheadInputStream is = new ReadAheadInputStream(getInputStream());
                 try
                 {
-                    if (is.available() > 0)
+                    // dont attempt to parse input stream of GET or HEAD request which in https is 'available' but throws exception on read (fix for ISSUE: 25318)
+                    if (((!"GET".equals(getRequest().getMethod())) && (!"HEAD".equals(getRequest().getMethod()))) && is.available() > 0)
                     {
                         DocumentBuilder documentBuilder = getDocumentBuilder();
                         Document document = documentBuilder.parse(is);
