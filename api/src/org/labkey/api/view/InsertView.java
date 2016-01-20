@@ -18,6 +18,7 @@ package org.labkey.api.view;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableViewForm;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.property.Domain;
@@ -88,19 +89,19 @@ public class InsertView extends DataView
 
     protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException
     {
-        TableViewForm form = ctx.getForm();
-        assert form != null || getTable() != null;
+        TableInfo tableInfo = getTable();
 
+        TableViewForm form = ctx.getForm();
         if (form == null)
         {
-            form = new TableViewForm(getTable());
+            form = new TableViewForm(tableInfo);
         }
 
         if (null == _initialValues)
         {
             Map<String, Object> initialValues = new HashMap<>();
 
-            Domain domain = getTable().getDomain();
+            Domain domain = tableInfo.getDomain();
 
             if (null != domain)
             {
@@ -108,14 +109,14 @@ public class InsertView extends DataView
                 ColumnInfo column;
                 for (Map.Entry<DomainProperty, Object> entry : domainDefaults.entrySet())
                 {
-                    column = getTable().getColumn(FieldKey.fromParts(entry.getKey().getName()));
+                    column = tableInfo.getColumn(FieldKey.fromParts(entry.getKey().getName()));
                     if (null != column)
                         initialValues.put(column.getName(), entry.getValue());
                 }
             }
             else
             {
-                for (ColumnInfo col : getTable().getColumns())
+                for (ColumnInfo col : tableInfo.getColumns())
                 {
                     Object defaultValue = col.getDefaultValue();
                     if (defaultValue != null)

@@ -98,7 +98,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
     /**
      * Creates a view form that wraps a table.
      */
-    public TableViewForm(TableInfo tinfo)
+    public TableViewForm(@NotNull TableInfo tinfo)
     {
         setTable(tinfo);
     }
@@ -123,7 +123,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
      * Sets the table. NOTE This will also overwrite any previously
      * set dynaClass with one derived from the table.
      */
-    protected void setTable(TableInfo tinfo)
+    protected void setTable(@NotNull TableInfo tinfo)
     {
         _tinfo = tinfo;
         _dynaClass = TableWrapperDynaClass.getDynaClassInstance(tinfo);

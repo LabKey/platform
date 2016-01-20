@@ -165,17 +165,35 @@ public abstract class DataView extends WebPartView<RenderContext>
     }
 
 
+    @NotNull
     public TableInfo getTable()
     {
-        TableInfo t = null;
+        TableInfo t;
         if (null != _dataRegion)
+        {
             t = _dataRegion.getTable();
+            if (t == null)
+            {
+                throw new IllegalStateException("Could not get TableInfo from DataRegion " + _dataRegion.getName() + " of type " + _dataRegion.getClass());
+            }
+        }
         else if (null != getRenderContext().getForm())
-            t = getRenderContext().getForm().getTable();
+        {
+            TableViewForm form = getRenderContext().getForm();
+            t = form.getTable();
+            if (t == null)
+            {
+                throw new IllegalStateException("Could not get TableInfo from form " + form);
+            }
+        }
+        else
+        {
+            throw new IllegalStateException("No DataRegion or form to supply TableInfo");
+        }
 
         // see https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=15584
-        if (null != t && null == t.getSchema())
-            throw new NullPointerException("getSchema() returned null: " + t.getName() + " " + t.getClass().getName() );
+        if (null == t.getSchema())
+            throw new NullPointerException("getSchema() returned null: " + t.getName() + " " + t.getClass().getName());
         return t;
     }
 

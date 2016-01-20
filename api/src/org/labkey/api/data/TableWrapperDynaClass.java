@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.beanutils.DynaBean;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 
 import java.util.List;
@@ -43,7 +44,7 @@ public class TableWrapperDynaClass extends StringWrapperDynaClass
         init(tinfo.getName(), propMap);
     }
 
-    public static TableWrapperDynaClass getDynaClassInstance(TableInfo tinfo)
+    public static TableWrapperDynaClass getDynaClassInstance(@NotNull TableInfo tinfo)
     {
         TableWrapperDynaClass tdc = _dynClasses.get(tinfo);
         if (null == tdc)
