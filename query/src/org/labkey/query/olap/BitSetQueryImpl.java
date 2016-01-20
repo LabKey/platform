@@ -910,7 +910,10 @@ public class BitSetQueryImpl
             }
             if (null != whereSet)
             {
-                sb.append("\n\teval      ").append(whereSet.toString());
+                if (whereSet.size() > 20)
+                    sb.append("\n\teval      ").append("{" + whereSet.size() + " members}");
+                else
+                    sb.append("\n\teval      ").append(whereSet.toString());
             }
             logDebug(sb.toString());
         }
@@ -1394,15 +1397,13 @@ public class BitSetQueryImpl
     void resultsCachePut(String query, MemberSet m)
     {
         String key = cachePrefix + query;
-        logDebug("cache put: " + key);
         _resultsCache.put(key, m.detach());
-        if (_log.isDebugEnabled())
+        if (_log.isTraceEnabled())
         {
             long size = m.getMemorySizeInBytes();
-            logDebug("cached object size: " + size);
+            logDebug("cache put: " + key + " (" + size + ")");
         }
     }
-
 
 
     OlapConnection getOlapConnection()
@@ -1948,7 +1949,7 @@ public class BitSetQueryImpl
             {
                 Collection<Member> c = r.getCollection();
                 if (c.size() != 1)
-                    throw new UnsupportedOperationException("Currently only filtering by one tuble is supported");
+                    throw new UnsupportedOperationException("Currently only filtering by one tuple is supported");
                 Iterator<Member> it = c.iterator();
                 it.hasNext();
                 Member m = it.next();
@@ -1998,6 +1999,31 @@ public class BitSetQueryImpl
             set = resultsCacheGet(query);
             if (null == set)
             {
+                // check for optimization when sub level is much larger than outer level
+                // (NOTE: that we are checking level size not result size, is that the best optimization?
+                if (null != outer.getLevel() && null != sub.getLevel())
+                {
+                    // TODO consider what the right optimization factor is...
+                    if (sub.getLevel().getCardinality() > 100*outer.getLevel().getCardinality())
+                    {
+                        // rather than looping over sub.getMembers(), loop over the sub members outer.getLevel().getMembers()
+                        Level subLevel = sub.getLevel();
+                        populateCache(subLevel, outer);
+                        MemberSet test = sub.members != null ? sub.members : new MemberSet(sub.getCollection());
+                        set = new MemberSet();
+                        for (Member m : outer.getCollection())
+                        {
+                            MemberSet inner = membersQuery(subLevel, m);
+                            assert MemberSet.intersect(test,inner).isEmpty() != test.containsAny(inner);
+                            if (test.containsAny(inner))
+                                set.add(m);
+                        }
+                        if (query.length() < 5000)
+                            resultsCachePut(query, set);
+                        return set;
+                    }
+                }
+
                 if (null != outer.level)
                 {
                     populateCache(outer.getLevel(), sub);
@@ -2007,7 +2033,7 @@ public class BitSetQueryImpl
                         MemberSet inner = membersQuery(outer.level, m);
                         set.addAll(inner);
                     }
-                    if (query.length() < 2000)
+                    if (query.length() < 5000)
                         resultsCachePut(query, set);
                 }
                 else
@@ -2192,7 +2218,8 @@ public class BitSetQueryImpl
             }
 
             logDebug("cache put: " + cacheKey);
-            _resultsCache.put(cacheKey, ret);
+            // CONSIDER: using short TTL since I don't _know_ that this query result is immutable
+            _resultsCache.put(cacheKey, ret, CacheManager.MINUTE);
             return ret;
         }
 

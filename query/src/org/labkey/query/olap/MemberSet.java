@@ -259,6 +259,7 @@ public class MemberSet extends AbstractSet<Member>
         return count;
     }
 
+
     public static MemberSet createRegularMembers(Level level) throws OlapException
     {
         MemberSet ret = new MemberSet();
@@ -268,6 +269,7 @@ public class MemberSet extends AbstractSet<Member>
         return ret;
     }
 
+
     public static MemberSet createRegularMembers(Member member) throws OlapException
     {
         MemberSet ret = new MemberSet();
@@ -276,6 +278,7 @@ public class MemberSet extends AbstractSet<Member>
                 ret.add(m);
         return ret;
     }
+
 
     /** return level if all members are from one level, else null */
     @Nullable
@@ -290,6 +293,7 @@ public class MemberSet extends AbstractSet<Member>
         else
             return null;
     }
+
 
     /** return hierarchy if all members are from one hierarchy, else null */
     @Nullable
@@ -466,6 +470,24 @@ public class MemberSet extends AbstractSet<Member>
         for (LevelMemberSet s : levelMap.values())
             s.clear();
     }
+
+
+    public boolean containsAny(MemberSet other)
+    {
+        for (Map.Entry<String,LevelMemberSet> entry : levelMap.entrySet())
+        {
+            String levelName = entry.getKey();
+            LevelMemberSet setMe = entry.getValue();
+            LevelMemberSet setOther = other.levelMap.get(levelName);
+            if (null != setOther)
+            {
+                if (setMe._set.intersects(setOther._set))
+                    return true;
+            }
+        }
+        return false;
+    }
+
 
 
     /** inner implmentation for a members of a single level, with natural ordering/ordinality */
