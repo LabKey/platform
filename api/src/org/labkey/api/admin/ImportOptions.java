@@ -30,6 +30,7 @@ public class ImportOptions
 {
     private boolean _skipQueryValidation;
     private boolean _createSharedDatasets;
+    private boolean _advancedImportOptions;
     private String _containerId;
     private Integer _userId = null;
     private Collection<String> _messages = new LinkedList<>();
@@ -68,6 +69,16 @@ public class ImportOptions
     public void setCreateSharedDatasets(boolean createSharedDatasets)
     {
         _createSharedDatasets = createSharedDatasets;
+    }
+
+    public boolean isAdvancedImportOptions()
+    {
+        return _advancedImportOptions;
+    }
+
+    public void setAdvancedImportOptions(boolean advancedImportOptions)
+    {
+        _advancedImportOptions = advancedImportOptions;
     }
 
     public @Nullable User getUser()

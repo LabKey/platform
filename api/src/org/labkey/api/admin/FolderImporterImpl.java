@@ -57,6 +57,12 @@ public class FolderImporterImpl implements FolderImporter<FolderDocument.Folder>
     }
 
     @Override
+    public String getSelectionText()
+    {
+        return null;
+    }
+
+    @Override
     public String getDescription()
     {
         return null;

@@ -15,11 +15,15 @@
  */
 package org.labkey.api.pipeline;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
+import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+
+import java.io.File;
 
 /**
  * <code>PipelineUrls</code> a UrlProvider for the pipeline UI.
@@ -35,4 +39,7 @@ public interface PipelineUrls extends UrlProvider
     ActionURL urlBegin(Container container);
 
     ActionURL urlActions(Container container);
+
+    ActionURL urlStartFolderImport(Container container, @NotNull File folderFile, @Nullable ImportOptions options);
+    ActionURL urlStartStudyImport(Container container, @NotNull File studyFile, @Nullable ImportOptions options);
 }

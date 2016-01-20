@@ -32,6 +32,7 @@ import java.util.Collection;
  */
 public interface FolderImporter<DocumentRoot extends XmlObject>
 {
+    String getSelectionText();
     /** Brief description of the types of objects this class imports */
     String getDescription();
     void process(@Nullable PipelineJob job, ImportContext<DocumentRoot> ctx, VirtualFile root) throws Exception;
