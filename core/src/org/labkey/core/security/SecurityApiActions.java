@@ -1007,10 +1007,20 @@ public class SecurityApiActions
             if (!container.isRoot() && !container.isProject())
                 throw new IllegalArgumentException("You may not create groups at the folder level. Call this API at the project or root level.");
 
+            if (_group == null && getContainer().isRoot() && !getUser().isSiteAdmin() )
+            {
+                throw new UnauthorizedException("You do not have permission to create site-wide groups.");
+            }
+
             if (_group == null && form.getCreateGroup())
             {
                 _group = SecurityManager.createGroup(getContainer().getProject(), form.getGroupName());
                 writeToAuditLog(_group, this.getViewContext());
+            }
+
+            if (_group.getContainer() == null && !getUser().isSiteAdmin())
+            {
+                throw new UnauthorizedException("You do not have permission to modify site-wide groups.");
             }
 
             Map<String, String> memberErrors = new HashMap<>();
