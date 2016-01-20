@@ -739,6 +739,7 @@ experiment/src/org/labkey/experiment/addXarFile.jsp -text
 experiment/src/org/labkey/experiment/api/AbstractProtocolOutputImpl.java -text
 experiment/src/org/labkey/experiment/api/AbstractRunInput.java -text
 experiment/src/org/labkey/experiment/api/Data.java -text
+experiment/src/org/labkey/experiment/api/DataAlias.java -text
 experiment/src/org/labkey/experiment/api/DataClass.java -text
 experiment/src/org/labkey/experiment/api/DataClassDomainKind.java -text
 experiment/src/org/labkey/experiment/api/DataInput.java -text

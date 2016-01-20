@@ -12,6 +12,7 @@ import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.etl.DataIteratorContext;
@@ -31,6 +32,7 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SchemaKey;
@@ -43,6 +45,7 @@ import org.labkey.api.util.TestContext;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -127,7 +130,8 @@ public class ExpDataClassDataTestCase
         testInsertIntoSubfolder(dataClass, table, sub, expectedSubName);
         testTruncateRows(dataClass, table, expectedName, expectedSubName);
         testBulkImport(dataClass, table, user);
-        testDeleteExpData(dataClass, user);
+        testInsertAliases(dataClass, table);
+        testDeleteExpData(dataClass, user, 3);
         testDeleteExpDataClass(dataClass, user, table, domain.getTypeURI());
     }
 
@@ -237,26 +241,29 @@ public class ExpDataClassDataTestCase
         Map<String, Object> row = new CaseInsensitiveHashMap<>();
         row.put("aa", 40);
         row.put("bb", "qq");
+        row.put("alias", "a");
         rows.add(row);
 
         row = new CaseInsensitiveHashMap<>();
         row.put("aa", 50);
         row.put("bb", "zz");
+        row.put("alias", "a,b,c");
         rows.add(row);
 
         MapLoader mapLoader = new MapLoader(rows);
         int count = table.getUpdateService().loadRows(user, c, mapLoader, new DataIteratorContext(), null);
         Assert.assertEquals(2, count);
         Assert.assertEquals(2, dataClass.getDatas().size());
+        verifyAliases(new ArrayList<>(Arrays.asList("a", "b", "c")));
     }
 
-    private void testDeleteExpData(ExpDataClassImpl dataClass, User user)
+    private void testDeleteExpData(ExpDataClassImpl dataClass, User user, int expectedCount)
     {
         List<? extends ExpData> datas = dataClass.getDatas();
-        Assert.assertEquals(2, datas.size());
+        Assert.assertEquals(expectedCount, datas.size());
 
         datas.get(0).delete(user);
-        Assert.assertEquals(1, dataClass.getDatas().size());
+        Assert.assertEquals(expectedCount-1, dataClass.getDatas().size());
     }
 
     private void testDeleteExpDataClass(ExpDataClassImpl dataClass, User user, TableInfo table, String typeURI)
@@ -281,6 +288,31 @@ public class ExpDataClassDataTestCase
         Assert.assertNull(dbTable);
     }
 
+    private void testInsertAliases(ExpDataClassImpl dataClass, TableInfo table) throws Exception
+    {
+        List<Map<String, Object>> rows = new ArrayList<>();
+        Map<String, Object> row = new CaseInsensitiveHashMap<>();
+        row.put("aa", 20);
+        row.put("bb", "bye");
+        row.put("alias", "aa");
+        rows.add(row);
+
+        try (DbScope.Transaction tx = table.getSchema().getScope().beginTransaction())
+        {
+            List<Map<String, Object>> ret = insertRows(c, rows, table.getName());
+            verifyAliases(new ArrayList<>(Arrays.asList("aa")));
+            tx.commit();
+        }
+    }
+
+    private void verifyAliases(Collection<String> aliasNames)
+    {
+        for (String name : aliasNames)
+        {
+            Assert.assertEquals(new TableSelector(ExperimentService.get().getTinfoAlias(),
+                    new SimpleFilter(FieldKey.fromParts("name"), name), null).getRowCount(), 1);
+        }
+    }
 
     @Test
     public void testDataClassFromTemplate() throws Exception
@@ -328,7 +360,7 @@ public class ExpDataClassDataTestCase
         testInsertIntoSubfolder(dataClass, table, sub, expectedSubName);
         testTruncateRows(dataClass, table, expectedName, expectedSubName);
         testBulkImport(dataClass, table, user);
-        testDeleteExpData(dataClass, user);
+        testDeleteExpData(dataClass, user, 2);
         testDeleteExpDataClass(dataClass, user, table, domain.getTypeURI());
     }
 

@@ -420,7 +420,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
         DataIteratorBuilder step0 = new DataClassDataIteratorBuilder(data, context);
-        return new DataClassAliasIteratorBuilder(step0, context);
+        return new DataClassAliasIteratorBuilder(step0, context, getUserSchema().getUser());
     }
 
     @Override
@@ -568,11 +568,13 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
     {
         private DataIteratorContext _context;
         private final DataIteratorBuilder _in;
+        private User _user;
 
-        DataClassAliasIteratorBuilder(@NotNull DataIteratorBuilder in, DataIteratorContext context)
+        DataClassAliasIteratorBuilder(@NotNull DataIteratorBuilder in, DataIteratorContext context, User user)
         {
             _context = context;
             _in = in;
+            _user = user;
         }
 
         @Override
@@ -601,7 +603,8 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
                         if (value instanceof List && lsidValue instanceof String)
                         {
-                            List<Integer> params = new ArrayList<Integer>();
+                            List<Integer> params = new ArrayList<>();
+                            List<String> aliasNames = new ArrayList<>();
 
                             ((List) value).stream().filter(item -> item instanceof String).forEach(item -> {
 
@@ -609,7 +612,42 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                                 // adding them to the dataAliasMap
                                 if (NumberUtils.isDigits((String)item))
                                     params.add(NumberUtils.toInt((String)item));
+                                else
+                                {
+                                    // parse out the comma separated names
+                                    if (((String)item).contains(","))
+                                    {
+                                        String[] parts = ((String)item).split(",");
+                                        aliasNames.addAll(Arrays.asList(parts));
+                                    }
+                                    else
+                                        aliasNames.add((String) item);
+                                }
                             });
+
+                            // make sure that an alias entry exist for each string value passed in, else create it
+                            for (String aliasName : aliasNames)
+                            {
+                                aliasName = aliasName.trim();
+                                TableSelector selector = new TableSelector(svc.getTinfoAlias(), Collections.singleton("rowid"), new SimpleFilter(FieldKey.fromParts("Name"), aliasName), null);
+                                assert selector.getRowCount() <= 1;
+
+                                if (selector.getRowCount() > 0)
+                                {
+                                    selector.forEach(rs -> params.add(rs.getInt("rowid")));
+                                }
+                                else
+                                {
+                                    // create a new alias
+                                    DataAlias alias = new DataAlias();
+                                    alias.setName(aliasName);
+
+                                    alias = Table.insert(_user, svc.getTinfoAlias(), alias);
+                                    assert alias.getRowId() != 0;
+
+                                    params.add(alias.getRowId());
+                                }
+                            }
 
                             SimpleFilter filter = new SimpleFilter();
                             filter.addClause(new SimpleFilter.InClause(FieldKey.fromParts("rowid"), params));
@@ -619,7 +657,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                                 // insert the new rows into the mapping table
                                 for (Integer aliasId : params)
                                 {
-                                    Table.insert(null, svc.getTinfoDataAliasMap(), new DataAliasMap((String)lsidValue, aliasId, getContainer()));
+                                    Table.insert(_user, svc.getTinfoDataAliasMap(), new DataAliasMap((String)lsidValue, aliasId, getContainer()));
                                 }
                             }
                         }
