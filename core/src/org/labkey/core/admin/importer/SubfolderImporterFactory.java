@@ -16,6 +16,7 @@
 package org.labkey.core.admin.importer;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
@@ -163,6 +164,13 @@ public class SubfolderImporterFactory extends AbstractFolderImportFactory
         public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
             return Collections.emptyList();
+        }
+
+        @Nullable
+        @Override
+        public Collection<String> getChildrenDataTypes()
+        {
+            return null;
         }
     }
 }

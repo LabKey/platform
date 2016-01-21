@@ -1283,11 +1283,11 @@ public class PipelineController extends SpringActionController
                     errors.reject(ERROR_MSG, "Cannot access file " + form.getFilePath());
                 }
 
-                if (form.isAdvancedImportOptions() && (form.getFolderDataTypes() == null || form.getFolderDataTypes().length == 0))
+                if (form.isAdvancedImportOptions() && (form.getDataTypes() == null || form.getDataTypes().size() == 0))
                 {
                     errors.reject(ERROR_MSG, "At least one folder data type must be selected when using advanced import options.");
                 }
-                else if (!form.isAdvancedImportOptions() && form.getFolderDataTypes() != null)
+                else if (!form.isAdvancedImportOptions() && form.getDataTypes() != null)
                 {
                     errors.reject(ERROR_MSG, "Folder data types provided when advanced import options not selected.");
                 }
@@ -1316,12 +1316,7 @@ public class PipelineController extends SpringActionController
             options.setSkipQueryValidation(!form.isValidateQueries());
             options.setCreateSharedDatasets(form.isCreateSharedDatasets());
             options.setAdvancedImportOptions(form.isAdvancedImportOptions());
-            if (form.getFolderDataTypes() != null)
-            {
-                Set<String> dataTypes = new HashSet<>();
-                Collections.addAll(dataTypes, form.getFolderDataTypes());
-                options.setDataTypes(dataTypes);
-            }
+            options.setDataTypes(form.getDataTypes());
 
             if (_archiveFile.exists())
             {
@@ -1420,7 +1415,7 @@ public class PipelineController extends SpringActionController
         private boolean _validateQueries;
         private boolean _createSharedDatasets;
         private boolean _advancedImportOptions;
-        private String[] _folderDataTypes;
+        private Set<String> _dataTypes;
 
         public String getFilePath()
         {
@@ -1462,14 +1457,14 @@ public class PipelineController extends SpringActionController
             _advancedImportOptions = advancedImportOptions;
         }
 
-        public String[] getFolderDataTypes()
+        public Set<String> getDataTypes()
         {
-            return _folderDataTypes;
+            return _dataTypes;
         }
 
-        public void setFolderDataTypes(String[] folderDataTypes)
+        public void setDataTypes(Set<String> dataTypes)
         {
-            _folderDataTypes = folderDataTypes;
+            _dataTypes = dataTypes;
         }
 
         public boolean isAsStudy()

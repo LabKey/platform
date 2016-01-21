@@ -11,6 +11,7 @@ public class StudyArchiveDataTypes
     public static final String CRF_DATASETS = "CRF Datasets";
     public static final String CUSTOM_PARTICIPANT_VIEWS = "Custom Participant View";
     public static final String DATASET_DATA = "Dataset Data";
+    public static final String DATASET_DEFINITIONS = "Dataset Definitions";
     public static final String DATASET_SCHEMA_DEFINITION = "Dataset Schema Description";
     public static final String PARTICIPANT_COMMENTS = "Participant Comment Settings";
     public static final String PARTICIPANT_GROUPS = "Participant Groups";

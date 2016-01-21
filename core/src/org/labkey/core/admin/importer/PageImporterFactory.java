@@ -18,6 +18,7 @@ package org.labkey.core.admin.importer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
@@ -204,6 +205,13 @@ public class PageImporterFactory extends AbstractFolderImportFactory
         public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
             return Collections.emptyList();
+        }
+
+        @Nullable
+        @Override
+        public Collection<String> getChildrenDataTypes()
+        {
+            return null;
         }
     }
 }

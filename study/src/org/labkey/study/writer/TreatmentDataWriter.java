@@ -40,7 +40,6 @@ import java.util.Set;
 public class TreatmentDataWriter extends DefaultStudyDesignWriter implements InternalStudyWriter
 {
     private static final String DEFAULT_DIRECTORY = "treatmentData";
-    public static final String SELECTION_TEXT = "Treatment Data";
     public static final String SCHEMA_FILENAME = "treatment_metadata.xml";
 
     @Nullable

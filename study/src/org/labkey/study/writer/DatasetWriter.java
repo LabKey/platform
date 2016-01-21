@@ -45,8 +45,6 @@ public class DatasetWriter implements InternalStudyWriter
     protected static final String DEFAULT_DIRECTORY = "datasets";
     protected static final String MANIFEST_FILENAME = "datasets_manifest.xml";
 
-    public static final String SELECTION_TEXT = "CRF Datasets";
-
     public String getDataType()
     {
         return StudyArchiveDataTypes.CRF_DATASETS;

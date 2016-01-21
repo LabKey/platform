@@ -20,16 +20,31 @@ import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.study.*;
+import org.labkey.study.importer.AssayScheduleImporter;
+import org.labkey.study.importer.CohortImporter;
+import org.labkey.study.importer.DatasetDefinitionImporter;
+import org.labkey.study.importer.InternalStudyImporter;
+import org.labkey.study.importer.ParticipantCommentImporter;
+import org.labkey.study.importer.ParticipantGroupImporter;
+import org.labkey.study.importer.ProtocolDocumentImporter;
+import org.labkey.study.importer.QcStatesImporter;
+import org.labkey.study.importer.SpecimenImporter;
+import org.labkey.study.importer.SpecimenSettingsImporter;
+import org.labkey.study.importer.StudyViewsImporter;
+import org.labkey.study.importer.TreatmentDataImporter;
+import org.labkey.study.importer.ViewCategoryImporter;
+import org.labkey.study.importer.VisitImporter;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class StudySerializationRegistryImpl implements StudySerializationRegistry
 {
     private static final StudySerializationRegistryImpl INSTANCE = new StudySerializationRegistryImpl();
-    private static final Collection<FolderWriterFactory> WRITER_FACTORIES = new CopyOnWriteArrayList<>();
     private static final Collection<FolderImporterFactory> IMPORTER_FACTORIES = new CopyOnWriteArrayList<>();
 
     private StudySerializationRegistryImpl()
@@ -52,12 +67,6 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
             importers.add(factory.create());
 
         return importers;
-    }
-
-    public void addFactories(FolderWriterFactory writerFactory, FolderImporterFactory importerFactory)
-    {
-        WRITER_FACTORIES.add(writerFactory);
-        IMPORTER_FACTORIES.add(importerFactory);
     }
 
     public void addImportFactory(FolderImporterFactory importerFactory)
@@ -86,6 +95,29 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
             new VisitMapWriter(),
             new StudyViewsWriter(),
             new StudyXmlWriter()  // Note: Must be the last study writer since it writes out the study.xml file (to which other writers contribute)
+        );
+    }
+
+    // These importers are internal to study and should match one-to-one with the InternalStudyWriters above
+    public Collection<InternalStudyImporter> getInternalStudyImporters()
+    {
+        return Arrays.asList(
+            new AssayScheduleImporter(),
+            new ViewCategoryImporter(),
+            new CohortImporter(),
+            new DatasetDefinitionImporter(),
+            // TODO Dataset Data
+            new ParticipantCommentImporter(),
+            new ParticipantGroupImporter(),
+            new ProtocolDocumentImporter(),
+            new QcStatesImporter(),
+            new SpecimenSettingsImporter(),
+            // TODO Specimens
+            new TreatmentDataImporter(),
+            new VisitImporter(),
+            new StudyViewsImporter()
+
+            // TODO what about VisitCohortAssigner, TreatmentVisitMapImporter, SpecimenSchemaImporter, DatasetCohortAssigner?
         );
     }
 }

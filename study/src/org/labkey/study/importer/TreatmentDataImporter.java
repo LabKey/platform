@@ -46,9 +46,6 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
     Map<Object, Object> _productAntigenIdMap = new HashMap<>();
     Map<Object, Object> _treatmentIdMap = new HashMap<>();
 
-    Map<String, CohortImpl> _cohortMap = new HashMap<>();
-    Map<Double, Visit> _visitMap = new HashMap<>();
-
     private SharedTableMapBuilder _productTableMapBuilder = new SharedTableMapBuilder(_productIdMap, "Label");
     private SharedTableMapBuilder _productAntigenTableMapBuilder = new SharedTableMapBuilder(_productAntigenIdMap, "GenBankId");
     private ProductAntigenTableTransform _productAntigenTableTransform = new ProductAntigenTableTransform();

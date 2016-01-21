@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
@@ -274,6 +275,13 @@ public class QueryImporter implements FolderImporter
 
         ctx.getLogger().info("Done post-processing " + getDescription());
         return warnings;
+    }
+
+    @Nullable
+    @Override
+    public Collection<String> getChildrenDataTypes()
+    {
+        return null;
     }
     
     public static class Factory extends AbstractFolderImportFactory

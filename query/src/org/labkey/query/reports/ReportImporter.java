@@ -16,6 +16,7 @@
 package org.labkey.query.reports;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
@@ -133,6 +134,13 @@ public class ReportImporter implements FolderImporter
         }
 
         return Collections.emptyList();
+    }
+
+    @Nullable
+    @Override
+    public Collection<String> getChildrenDataTypes()
+    {
+        return null;
     }
 
     public static class Factory extends AbstractFolderImportFactory

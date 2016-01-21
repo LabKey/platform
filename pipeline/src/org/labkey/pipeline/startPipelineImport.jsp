@@ -61,13 +61,11 @@
     <input type="hidden" name="filePath" value=<%=q(bean.getFilePath())%>>
     <div id="startPipelineImportForm"></div>
     <div id="advancedImportOptionsForm"></div>
-    <div class="main-form-spacer"></div>
-    <%=button("Start Import").submit(true)%>
 </labkey:form>
 
 <style>
-    .main-form-spacer {
-        padding-bottom: 30px;
+    .main-form-btn {
+        margin-top: 30px;
     }
 
     .main-form-cell {
@@ -84,6 +82,10 @@
 
     .import-option-header {
         padding-bottom: 5px;
+    }
+
+    .import-option-title {
+        font-weight: bold;
     }
 
     .import-option-input {
@@ -127,7 +129,8 @@ Ext4.define('LABKEY.import.OptionsPanel', {
     {
         this.items = [
             this.getMainFormView(),
-            this.getAdvancedImportForm()
+            this.getAdvancedImportForm(),
+            this.getSubmitButton()
         ];
 
         this.callParent();
@@ -211,7 +214,7 @@ Ext4.define('LABKEY.import.OptionsPanel', {
                         optionsForm.setVisible(checked);
 
                         // set all folder import type checkboxes to match this checked state
-                        Ext4.each(document.getElementsByName('folderDataTypes'), function(input)
+                        Ext4.each(document.getElementsByName('dataTypes'), function(input)
                         {
                             input.checked = checked;
                         });
@@ -227,35 +230,111 @@ Ext4.define('LABKEY.import.OptionsPanel', {
     {
         if (!this.advancedImportOptionsForm)
         {
-            var advancedImportItems = [{
-                xtype: 'box',
-                cls: 'import-option-header',
-                html: '<div class="import-option-header">Folder objects to import:</div>' +
-                        '<div class="labkey-title-area-line"></div>'
-            }];
+            var advancedImportItems = [this.getImportOptionsHeaderConfig('Folder')],
+                additionalImportItems = [];
 
             Ext4.each(this.importers, function(importer)
             {
-                var selectionText = importer['selectionText'];
+                var dataType = importer['dataType'],
+                    children = importer['children'];
 
-                advancedImportItems.push({
-                    xtype: 'box',
-                    cls: 'import-option-input',
-                    html: '<label><input type="checkbox" name="folderDataTypes" '
-                            + '<%=h(bean.isAdvancedImportOptions() ? "checked": "")%> value="'
-                            + selectionText + '">' + selectionText + '</label>'
-                });
-            });
+                if (!Ext4.isArray(children))
+                {
+                    advancedImportItems.push(this.getImportOptionInputConfig(dataType));
+                }
+                else
+                {
+                    additionalImportItems.push(this.getImportOptionsHeaderConfig(dataType));
+                    additionalImportItems.push(this.getImportOptionInputConfig(dataType, null, true));
+                    Ext4.each(children, function(child)
+                    {
+                        additionalImportItems.push(this.getImportOptionInputConfig(child, dataType));
+                    }, this);
+                }
+            }, this);
+
+            // change the form panel layout based on how many columns we have
+            var width = 310,
+                layout = 'anchor',
+                items = advancedImportItems;
+            if (additionalImportItems.length > 0)
+            {
+                width = width + 275;
+                layout = 'column';
+                items = [{
+                    border: false,
+                    bodyStyle: 'padding-right: 25px;',
+                    items: advancedImportItems
+                },{
+                    border: false,
+                    items: additionalImportItems
+                }];
+            }
 
             this.advancedImportOptionsForm = Ext4.create('Ext.form.Panel', {
                 renderTo: this.advancedImportOptionId,
                 hidden: <%=!bean.isAdvancedImportOptions()%>,
                 cls: 'import-option-panel',
-                items: advancedImportItems
+                width: width,
+                layout: layout,
+                items: items
             });
         }
 
         return this.advancedImportOptionsForm;
+    },
+
+    getImportOptionsHeaderConfig : function(header)
+    {
+        return {
+            xtype: 'box',
+            cls: 'import-option-header',
+            html: '<div class="import-option-title">' + header + ' objects to import:</div>'
+                    + '<div class="labkey-title-area-line"></div>'
+        };
+    },
+
+    getImportOptionInputConfig : function(dataType, parent, hide)
+    {
+        var labelStyle = hide === true ? 'style="display:none;"' : '',
+            checked = hide ? '' : <%=q(bean.isAdvancedImportOptions() ? " checked": "")%>,
+            parentAttr = parent ? 'parentDataType="' + parent + '"' : '';
+
+        return {
+            xtype: 'box',
+            cls: 'import-option-input',
+            html: '<label ' + labelStyle + '><input type="checkbox" name="dataTypes" '
+                + 'value="' + dataType + '" ' + parentAttr + checked + '>' + dataType + '</label>'
+        }
+    },
+
+    getSubmitButton : function()
+    {
+        if (!this.submitButton)
+        {
+            this.submitButton = Ext4.create('Ext.button.Button', {
+                text: 'Start Import',
+                cls: 'main-form-btn',
+                scope: this,
+                handler: function()
+                {
+                    // check any hidden parent dataType checkboxes that should be checked (i.e. has at least one child checked)
+                    var checkboxInputs = {};
+                    Ext4.each(document.getElementsByName('dataTypes'), function(input)
+                    {
+                        checkboxInputs[input.value] = input;
+
+                        var parentDataType = input.getAttribute('parentDataType');
+                        if (parentDataType && input.checked)
+                            checkboxInputs[parentDataType].checked = true;
+                    });
+
+                    document.getElementById('pipelineImportForm').submit();
+                }
+            })
+        }
+
+        return this.submitButton;
     }
 });
 

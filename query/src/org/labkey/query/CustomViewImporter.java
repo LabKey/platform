@@ -16,6 +16,7 @@
 package org.labkey.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
@@ -70,6 +71,13 @@ public class CustomViewImporter implements FolderImporter
     public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root) throws Exception
     {
         return Collections.emptyList();
+    }
+
+    @Nullable
+    @Override
+    public Collection<String> getChildrenDataTypes()
+    {
+        return null;
     }
 
     public static class Factory extends AbstractFolderImportFactory

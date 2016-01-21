@@ -16,6 +16,7 @@
 package org.labkey.wiki.export;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
@@ -234,6 +235,13 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
         public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
             return Collections.emptySet();
+        }
+
+        @Nullable
+        @Override
+        public Collection<String> getChildrenDataTypes()
+        {
+            return null;
         }
     }
 }

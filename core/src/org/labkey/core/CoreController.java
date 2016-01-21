@@ -1678,12 +1678,12 @@ public class CoreController extends SpringActionController
             for (FolderWriter writer : registeredWriters)
             {
                 Map<String, Object> writerMap = new HashMap<>();
-                String selectionText = writer.getDataType();
-                boolean excludeForDataspace = getContainer().isDataspace() && "Study".equals(selectionText);
+                String dataType = writer.getDataType();
+                boolean excludeForDataspace = getContainer().isDataspace() && "Study".equals(dataType);
 
-                if (selectionText != null && writer.show(getContainer()) && !excludeForDataspace)
+                if (dataType != null && writer.show(getContainer()) && !excludeForDataspace)
                 {
-                    writerMap.put("name", selectionText);
+                    writerMap.put("name", dataType);
                     writerMap.put("selectedByDefault", writer.selectedByDefault(form.getExportType()));
                     writerMap.put("supportsVirtualFile", writer.supportsVirtualFile());
 
@@ -1693,9 +1693,9 @@ public class CoreController extends SpringActionController
                         List<String> children = new ArrayList<>();
                         for (Writer child : childWriters)
                         {
-                            selectionText = child.getDataType();
-                            if (selectionText != null)
-                                children.add(selectionText);
+                            dataType = child.getDataType();
+                            if (dataType != null)
+                                children.add(dataType);
                         }
 
                         if (children.size() > 0)
@@ -1750,8 +1750,11 @@ public class CoreController extends SpringActionController
                 if (importer.getDataType() != null)
                 {
                     Map<String, Object> importerMap = new HashMap<>();
-                    importerMap.put("selectionText", importer.getDataType());
+                    importerMap.put("dataType", importer.getDataType());
                     importerMap.put("description", importer.getDescription());
+
+                    if (importer.getChildrenDataTypes() != null)
+                        importerMap.put("children", importer.getChildrenDataTypes());
 
                     selectableImporters.add(importerMap);
                 }

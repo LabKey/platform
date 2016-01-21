@@ -56,12 +56,12 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
         return "Dataset Definition Importer";
     }
 
-    public String getDataType() { return StudyArchiveDataTypes.CRF_DATASETS; }
+    public String getDataType() { return StudyArchiveDataTypes.DATASET_DEFINITIONS; }
 
     @RefactorIn15_1 // Remove SchemaTsvReader in 15.1
     public void process(StudyImportContext ctx, VirtualFile vf, BindException errors) throws IOException, SQLException, DatasetImportUtils.DatasetLockExistsException, XmlException, ImportException
     {
-        if (!ctx.isDataTypeSelected(getDataType()) && !ctx.isDataTypeSelected(StudyArchiveDataTypes.ASSAY_DATASETS))
+        if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
         StudyImpl study = ctx.getStudy();

@@ -17,6 +17,7 @@ package org.labkey.study.importer;
 
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.admin.*;
 import org.labkey.api.admin.ImportContext;
@@ -32,12 +33,15 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.pipeline.StudyImportDatasetTask;
 import org.labkey.study.pipeline.StudyImportSpecimenTask;
+import org.labkey.study.writer.StudySerializationRegistryImpl;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
 import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * User: cnathe
@@ -135,6 +139,17 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
         public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
             return Collections.emptyList();
+        }
+
+        @Nullable
+        @Override
+        public Collection<String> getChildrenDataTypes()
+        {
+            Set<String> dataTypes = new TreeSet<>();
+            for (InternalStudyImporter studyImporter : StudySerializationRegistryImpl.get().getInternalStudyImporters())
+                dataTypes.add(studyImporter.getDataType());
+
+            return dataTypes;
         }
     }
 }
