@@ -49,7 +49,7 @@ public class XmlVisitMapWriter implements Writer<StudyImpl, StudyExportContext>
 {
     public static final String FILENAME = "visit_map.xml";
 
-    public String getSelectionText()
+    public String getDataType()
     {
         return null;
     }

@@ -33,12 +33,11 @@ import java.util.List;
 public class ViewCategoryWriter implements InternalStudyWriter
 {
     public static final String FILE_NAME = "view_categories.xml";
-    public static final String DATA_TYPE = "Categories";
 
     @Override
-    public String getSelectionText()
+    public String getDataType()
     {
-        return DATA_TYPE;
+        return StudyArchiveDataTypes.VIEW_CATEGORIES;
     }
 
     @Override

@@ -100,8 +100,8 @@ public class StudyExportContext extends AbstractContext
 
     private void initializeDatasets(StudyImpl study)
     {
-        boolean includeCRF = getDataTypes().contains(DatasetWriter.SELECTION_TEXT);
-        boolean includeAssay = getDataTypes().contains(AssayDatasetWriter.SELECTION_TEXT);
+        boolean includeCRF = getDataTypes().contains(StudyArchiveDataTypes.CRF_DATASETS);
+        boolean includeAssay = getDataTypes().contains(StudyArchiveDataTypes.ASSAY_DATASETS);
 
         for (DatasetDefinition dataset : study.getDatasetsByType(Dataset.TYPE_STANDARD, Dataset.TYPE_PLACEHOLDER))
         {

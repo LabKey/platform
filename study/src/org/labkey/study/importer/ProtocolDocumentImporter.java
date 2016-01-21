@@ -20,6 +20,7 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.InputStreamAttachmentFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.xml.ExportDirType;
 import org.springframework.validation.BindException;
 
@@ -40,8 +41,14 @@ public class ProtocolDocumentImporter implements InternalStudyImporter
     }
 
     @Override
+    public String getDataType() { return StudyArchiveDataTypes.PROTOCOL_DOCUMENTS; }
+
+    @Override
     public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws Exception
     {
+        if (!ctx.isDataTypeSelected(getDataType()))
+            return;
+
         StudyImpl study = ctx.getStudy();
         ExportDirType protocolXml = ctx.getXml().getProtocolDocs();
 

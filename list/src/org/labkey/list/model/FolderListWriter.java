@@ -19,7 +19,7 @@ package org.labkey.list.model;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.FolderWriterNames;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.list.ListService;
@@ -35,9 +35,9 @@ public class FolderListWriter extends BaseFolderWriter
 {
     private static final String DEFAULT_DIRECTORY = "lists";
 
-    public String getSelectionText()
+    public String getDataType()
     {
-        return FolderWriterNames.LISTS;
+        return FolderArchiveDataTypes.LISTS;
     }
 
     @Override

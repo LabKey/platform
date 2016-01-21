@@ -21,7 +21,7 @@ import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
-import org.labkey.api.admin.FolderWriterNames;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
@@ -45,7 +45,6 @@ import org.labkey.data.xml.query.QueryType;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -62,21 +61,18 @@ import java.util.Objects;
  */
 public class QueryImporter implements FolderImporter
 {
-    public String getSelectionText()
+    public String getDataType()
     {
-        return FolderWriterNames.QUERIES;
+        return FolderArchiveDataTypes.QUERIES;
     }
 
     public String getDescription()
     {
-        return FolderWriterNames.QUERIES.toLowerCase();
+        return FolderArchiveDataTypes.QUERIES.toLowerCase();
     }
 
     public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws ServletException, XmlException, IOException, SQLException, ImportException
     {
-        if (!ctx.isDataTypeSelected(getSelectionText()))
-            return;
-
         VirtualFile queriesDir = ctx.getDir("queries");
 
         if (null != queriesDir)

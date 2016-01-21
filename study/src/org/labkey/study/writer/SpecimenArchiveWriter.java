@@ -47,12 +47,11 @@ import java.util.Map;
  */
 public class SpecimenArchiveWriter extends AbstractSpecimenWriter
 {
-    public static final String SELECTION_TEXT = "Specimens";
     public static final String SCHEMA_FILENAME = "specimens_metadata.xml";
 
-    public String getSelectionText()
+    public String getDataType()
     {
-        return SELECTION_TEXT;
+        return StudyArchiveDataTypes.SPECIMENS;
     }
 
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile root) throws Exception

@@ -22,6 +22,7 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.CustomParticipantView;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.xml.StudyDocument;
 import org.labkey.study.xml.studyViews.ViewsDocument;
 import org.springframework.validation.BindException;
@@ -41,8 +42,14 @@ public class StudyViewsImporter implements InternalStudyImporter
     }
 
     @Override
+    public String getDataType() { return StudyArchiveDataTypes.CUSTOM_PARTICIPANT_VIEWS; }
+
+    @Override
     public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws Exception
     {
+        if (!ctx.isDataTypeSelected(getDataType()))
+            return;
+
         StudyImpl study = ctx.getStudy();
         StudyDocument.Study.StudyViews viewsXml = ctx.getXml().getStudyViews();
 

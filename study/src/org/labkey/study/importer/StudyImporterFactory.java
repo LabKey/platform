@@ -60,21 +60,21 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
     public class StudyFolderImporter implements FolderImporter<FolderDocument.Folder>
     {
         @Override
-        public String getSelectionText()
+        public String getDataType()
         {
-            return FolderWriterNames.STUDY;
+            return FolderArchiveDataTypes.STUDY;
         }
 
         @Override
         public String getDescription()                                    
         {
-            return getSelectionText().toLowerCase();
+            return getDataType().toLowerCase();
         }
 
         @Override
         public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
-            if (!ctx.isDataTypeSelected(getSelectionText()))
+            if (!ctx.isDataTypeSelected(getDataType()))
                 return;
 
             VirtualFile studyDir = ctx.getDir("study");

@@ -26,6 +26,7 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.xml.ExportDirType;
 import org.springframework.validation.BindException;
 
@@ -52,8 +53,14 @@ public class TreatmentVisitMapImporter extends DefaultStudyDesignImporter implem
     }
 
     @Override
+    public String getDataType() { return StudyArchiveDataTypes.VISIT_MAP; }
+
+    @Override
     public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws Exception
     {
+        if (!ctx.isDataTypeSelected(getDataType()))
+            return;
+
         ExportDirType dirType = ctx.getXml().getTreatmentData();
 
         if (dirType != null)

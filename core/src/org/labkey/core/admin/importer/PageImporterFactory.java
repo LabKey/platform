@@ -20,7 +20,7 @@ import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
-import org.labkey.api.admin.FolderWriterNames;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
@@ -85,9 +85,9 @@ public class PageImporterFactory extends AbstractFolderImportFactory
     public class PageImporter implements FolderImporter<FolderDocument.Folder>
     {
         @Override
-        public String getSelectionText()
+        public String getDataType()
         {
-            return FolderWriterNames.WEBPART_PROPERTIES_AND_LAYOUT;
+            return FolderArchiveDataTypes.WEBPART_PROPERTIES_AND_LAYOUT;
         }
 
         @Override
@@ -99,9 +99,6 @@ public class PageImporterFactory extends AbstractFolderImportFactory
         @Override
         public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
-            if (!ctx.isDataTypeSelected(getSelectionText()))
-                return;
-
             FolderDocument.Folder.Pages pagesXml = ctx.getXml().getPages();
 
             if (null != pagesXml)

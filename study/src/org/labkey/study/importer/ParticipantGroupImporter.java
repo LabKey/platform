@@ -28,6 +28,7 @@ import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.writer.ParticipantGroupWriter;
+import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.xml.participantGroups.CategoryType;
 import org.labkey.study.xml.participantGroups.GroupType;
 import org.labkey.study.xml.participantGroups.ParticipantGroupsDocument;
@@ -52,8 +53,14 @@ public class ParticipantGroupImporter implements InternalStudyImporter
     }
 
     @Override
+    public String getDataType() { return StudyArchiveDataTypes.PARTICIPANT_GROUPS; }
+
+    @Override
     public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws Exception
     {
+        if (!ctx.isDataTypeSelected(getDataType()))
+            return;
+
         StudyImpl study = ctx.getStudy();
         try
         {

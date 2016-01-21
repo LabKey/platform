@@ -18,7 +18,7 @@ package org.labkey.experiment.xar;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
-import org.labkey.api.admin.FolderWriterNames;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
@@ -56,9 +56,9 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
     public class FolderXarImporter implements  FolderImporter<FolderDocument.Folder>
     {
         @Override
-        public String getSelectionText()
+        public String getDataType()
         {
-            return FolderWriterNames.EXPERIMENTS_AND_RUNS;
+            return FolderArchiveDataTypes.EXPERIMENTS_AND_RUNS;
         }
 
         @Override
@@ -70,9 +70,6 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
         @Override
         public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
-            if (!ctx.isDataTypeSelected(getSelectionText()))
-                return;
-
             VirtualFile xarDir = ctx.getDir(FolderXarWriterFactory.XAR_DIRECTORY);
 
             if (xarDir == null)

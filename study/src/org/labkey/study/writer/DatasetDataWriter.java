@@ -50,29 +50,19 @@ import java.util.Map;
 public class DatasetDataWriter implements InternalStudyWriter
 {
     private static final Logger LOG = LoggerFactory.getLogger(DatasetDataWriter.class);
-    static final String SELECTION_TEXT = "Dataset Data";
 
-    public String getSelectionText()
+    public String getDataType()
     {
-        return SELECTION_TEXT;
+        return StudyArchiveDataTypes.DATASET_DATA;
     }
 
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile root) throws Exception
     {
         StudyDocument.Study studyXml = ctx.getXml();
-        StudyDocument.Study.Datasets datasetsXml = studyXml.getDatasets();
 
         List<DatasetDefinition> datasets = ctx.getDatasets();
 
         VirtualFile vf = root.getDir(DatasetWriter.DEFAULT_DIRECTORY);
-
-//        // Write out the .dataset file and add reference to study.xml
-//        StudyDocument.Study.Datasets.Definition definitionXml = datasetsXml.addNewDefinition();
-//        String datasetFilename = vf.makeLegalName(study.getShortName() + ".dataset");
-//        definitionXml.setFile(datasetFilename);
-//        String datasetFilename = datasetsXml.getDefinition().getFile();
-
-
 
         StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
 

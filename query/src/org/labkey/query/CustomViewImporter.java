@@ -18,7 +18,7 @@ package org.labkey.query;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
-import org.labkey.api.admin.FolderWriterNames;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.pipeline.PipelineJob;
@@ -39,21 +39,18 @@ import java.util.Collections;
  */
 public class CustomViewImporter implements FolderImporter
 {
-    public String getSelectionText()
+    public String getDataType()
     {
-        return FolderWriterNames.CUSTOM_VIEWS;
+        return FolderArchiveDataTypes.CUSTOM_VIEWS;
     }
 
     public String getDescription()
     {
-        return getSelectionText().toLowerCase();
+        return getDataType().toLowerCase();
     }
 
     public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws IOException, SQLException, ImportException, XmlValidationException
     {
-        if (!ctx.isDataTypeSelected(getSelectionText()))
-            return;
-
         VirtualFile viewDir = ctx.getDir("views");
 
         if (null != viewDir)

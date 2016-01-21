@@ -19,7 +19,7 @@ import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.FolderWriterNames;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.Group;
@@ -48,9 +48,9 @@ public class SecurityGroupWriterFactory implements FolderWriterFactory
     public class SecurityGroupWriter extends BaseFolderWriter
     {
         @Override
-        public String getSelectionText()
+        public String getDataType()
         {
-            return FolderWriterNames.SECURITY_GROUPS;
+            return FolderArchiveDataTypes.SECURITY_GROUPS;
         }
 
         @Override

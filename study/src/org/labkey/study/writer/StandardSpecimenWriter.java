@@ -36,7 +36,7 @@ import java.util.List;
  */
 class StandardSpecimenWriter implements Writer<StandardSpecimenWriter.QueryInfo, ImportContext<StudyDocument.Study>>
 {
-    public String getSelectionText()
+    public String getDataType()
     {
         return null;
     }

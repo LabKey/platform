@@ -18,6 +18,7 @@ package org.labkey.study.importer;
 
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
@@ -29,11 +30,16 @@ public class ParticipantCommentImporter implements InternalStudyImporter
 {
     public String getDescription()
     {
-        return "Participant Comment Settings";
+        return StudyArchiveDataTypes.PARTICIPANT_COMMENTS;
     }
+
+    public String getDataType() { return StudyArchiveDataTypes.PARTICIPANT_COMMENTS; }
 
     public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws Exception
     {
+        if (!ctx.isDataTypeSelected(getDataType()))
+            return;
+
         StudyImpl study = ctx.getStudy();
         StudyDocument.Study.Comments commentsXml = ctx.getXml().getComments();
 

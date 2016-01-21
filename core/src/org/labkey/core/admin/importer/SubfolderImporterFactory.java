@@ -60,7 +60,7 @@ public class SubfolderImporterFactory extends AbstractFolderImportFactory
     public class SubfolderImporter implements FolderImporter<FolderDocument.Folder>
     {
         @Override
-        public String getSelectionText()
+        public String getDataType()
         {
             return null;
         }

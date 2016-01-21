@@ -19,7 +19,7 @@ import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.FolderWriterNames;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.Group;
@@ -55,9 +55,9 @@ public class RoleAssignmentsWriterFactory implements FolderWriterFactory
     public class RoleAssignmentsWriter extends BaseFolderWriter
     {
         @Override
-        public String getSelectionText()
+        public String getDataType()
         {
-            return FolderWriterNames.ROLE_ASSIGNMENTS;
+            return FolderArchiveDataTypes.ROLE_ASSIGNMENTS;
         }
 
         @Override

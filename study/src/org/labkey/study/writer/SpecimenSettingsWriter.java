@@ -56,9 +56,9 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
 
     @Nullable
     @Override
-    public String getSelectionText()
+    public String getDataType()
     {
-        return "Specimen Settings";
+        return StudyArchiveDataTypes.SPECIMEN_SETTINGS;
     }
 
     @Override

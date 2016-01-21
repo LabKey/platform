@@ -15,30 +15,20 @@
  */
 package org.labkey.study.writer;
 
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.Results;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableInfoWriter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.data.xml.TableType;
-import org.labkey.data.xml.TablesDocument;
-import org.labkey.data.xml.TablesType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.xml.ExportDirType;
 import org.labkey.study.xml.StudyDocument;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -55,9 +45,9 @@ public class TreatmentDataWriter extends DefaultStudyDesignWriter implements Int
 
     @Nullable
     @Override
-    public String getSelectionText()
+    public String getDataType()
     {
-        return SELECTION_TEXT;
+        return StudyArchiveDataTypes.TREATMENT_DATA;
     }
 
     @Override

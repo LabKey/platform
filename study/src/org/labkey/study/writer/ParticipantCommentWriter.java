@@ -26,9 +26,9 @@ import org.labkey.api.writer.VirtualFile;
  */
 public class ParticipantCommentWriter implements InternalStudyWriter
 {
-    public String getSelectionText()
+    public String getDataType()
     {
-        return "Participant Comment Settings";
+        return StudyArchiveDataTypes.PARTICIPANT_COMMENTS;
     }
 
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception

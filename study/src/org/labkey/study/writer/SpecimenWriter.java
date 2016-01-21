@@ -51,7 +51,7 @@ import java.util.List;
  */
 public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
 {
-    public String getSelectionText()
+    public String getDataType()
     {
         return null;
     }

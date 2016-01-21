@@ -25,6 +25,7 @@ import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.importer.StudyImportJob;
 import org.labkey.study.importer.StudyJobSupport;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.xml.StudyDocument;
 
 /*
@@ -43,7 +44,7 @@ public class StudyImportDatasetTask extends AbstractDatasetImportTask<StudyImpor
 
     public static String getType()
     {
-        return "Dataset Data";
+        return StudyArchiveDataTypes.DATASET_DATA;
     }
 
     @Override

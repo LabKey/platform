@@ -29,6 +29,7 @@ import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.VisitTag;
 import org.labkey.study.model.VisitTagMapEntry;
 import org.labkey.study.visitmanager.VisitManager;
+import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
@@ -53,6 +54,8 @@ public class VisitCohortAssigner implements InternalStudyImporter
     {
         return "visit map cohort assignments";
     }
+
+    public String getDataType() { return StudyArchiveDataTypes.COHORT_SETTINGS; }
 
     // Parses the whole visit map again to retrieve the cohort assignments; should cache info from the first parsing
     // somewhere in the StudyImportContext

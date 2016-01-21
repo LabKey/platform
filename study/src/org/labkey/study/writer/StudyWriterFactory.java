@@ -19,7 +19,7 @@ import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.FolderWriterNames;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.writer.VirtualFile;
@@ -42,7 +42,7 @@ import java.util.LinkedList;
 public class StudyWriterFactory implements FolderWriterFactory
 {
     private static final String DEFAULT_DIRECTORY = "study";
-    public static final String DATA_TYPE = FolderWriterNames.STUDY;
+    public static final String DATA_TYPE = FolderArchiveDataTypes.STUDY;
 
     @Override
     public FolderWriter create()
@@ -53,7 +53,7 @@ public class StudyWriterFactory implements FolderWriterFactory
     public class StudyFolderWriter extends BaseFolderWriter
     {
         @Override
-        public String getSelectionText()
+        public String getDataType()
         {
             return DATA_TYPE;
         }
@@ -132,8 +132,8 @@ public class StudyWriterFactory implements FolderWriterFactory
                     @Override
                     public int compare(Writer o1, Writer o2)
                     {
-                        String str1 = o1.getSelectionText();
-                        String str2 = o2.getSelectionText();
+                        String str1 = o1.getDataType();
+                        String str2 = o2.getDataType();
 
                         if (str1 == null && str2 == null) return 0;
                         if (str1 == null) return 1;

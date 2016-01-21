@@ -35,13 +35,11 @@ public class StudyViewsWriter implements InternalStudyWriter
     private static final String DEFAULT_SETTINGS_FILE = "settings.xml";
     private static final String DEFAULT_PARTICIPANT_VIEW_FILE = "participant.html";
 
-    public static final String SELECTION_TEXT = "Custom Participant View";
-
     @Nullable
     @Override
-    public String getSelectionText()
+    public String getDataType()
     {
-        return SELECTION_TEXT;
+        return StudyArchiveDataTypes.CUSTOM_PARTICIPANT_VIEWS;
     }
 
     @Override

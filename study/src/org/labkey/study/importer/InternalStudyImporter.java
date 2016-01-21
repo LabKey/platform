@@ -26,6 +26,7 @@ import org.springframework.validation.BindException;
 */
 public interface InternalStudyImporter
 {
-    public String getDescription();
-    public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws Exception;
+    String getDataType();
+    String getDescription();
+    void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws Exception;
 }

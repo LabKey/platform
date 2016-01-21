@@ -28,11 +28,10 @@ import org.labkey.study.model.StudyImpl;
 // to show up in the UI.  TODO: More flexible data-driven UI mechanism.
 class AssayDatasetWriter implements InternalStudyWriter
 {
-    static final String SELECTION_TEXT = "Assay Datasets";
 
-    public String getSelectionText()
+    public String getDataType()
     {
-        return SELECTION_TEXT;
+        return StudyArchiveDataTypes.ASSAY_DATASETS;
     }
 
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception

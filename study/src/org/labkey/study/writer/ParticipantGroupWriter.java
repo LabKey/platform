@@ -47,9 +47,9 @@ public class ParticipantGroupWriter implements InternalStudyWriter
     private List<ParticipantGroup> _groupsToCopy = Collections.emptyList();
 
     @Override
-    public String getSelectionText()
+    public String getDataType()
     {
-        return DATA_TYPE;
+        return StudyArchiveDataTypes.PARTICIPANT_GROUPS;
     }
 
     @Override

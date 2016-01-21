@@ -16,56 +16,23 @@
 package org.labkey.study.writer;
 
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Test;
 import org.labkey.api.admin.ImportException;
-import org.labkey.api.data.ColumnHeaderType;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.data.Results;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.TSVGridWriter;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.query.ExprColumn;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.study.Cohort;
-import org.labkey.api.study.Dataset;
-import org.labkey.api.study.StudyService;
-import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.reportProps.PropertyList;
-import org.labkey.study.StudySchema;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.query.DatasetTableImpl;
-import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.xml.DatasetsDocument;
 import org.labkey.study.xml.StudyDocument;
-import org.labkey.study.xml.StudyDocument.Study.Datasets;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 
 /**
  * User: adam
@@ -80,9 +47,9 @@ public class DatasetWriter implements InternalStudyWriter
 
     public static final String SELECTION_TEXT = "CRF Datasets";
 
-    public String getSelectionText()
+    public String getDataType()
     {
-        return SELECTION_TEXT;
+        return StudyArchiveDataTypes.CRF_DATASETS;
     }
 
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile root) throws SQLException, IOException, ServletException, ImportException

@@ -2443,6 +2443,7 @@ study/src/org/labkey/study/writer/SpecimenArchiveWriter.java -text
 study/src/org/labkey/study/writer/SpecimenSettingsWriter.java -text
 study/src/org/labkey/study/writer/SpecimenWriter.java -text
 study/src/org/labkey/study/writer/StandardSpecimenWriter.java -text
+study/src/org/labkey/study/writer/StudyArchiveDataTypes.java -text
 study/src/org/labkey/study/writer/StudyExportContext.java -text
 study/src/org/labkey/study/writer/StudyPropertiesWriter.java -text
 study/src/org/labkey/study/writer/StudySerializationRegistryImpl.java -text

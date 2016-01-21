@@ -20,7 +20,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
-import org.labkey.api.admin.FolderWriterNames;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
@@ -38,21 +38,18 @@ import java.util.List;
 */
 public class FolderListImporter implements FolderImporter
 {
-    public String getSelectionText()
+    public String getDataType()
     {
-        return FolderWriterNames.LISTS;
+        return FolderArchiveDataTypes.LISTS;
     }
 
     public String getDescription()
     {
-        return getSelectionText().toLowerCase();
+        return getDataType().toLowerCase();
     }
 
     public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws Exception
     {
-        if (!ctx.isDataTypeSelected(getSelectionText()))
-            return;
-
         VirtualFile listsDir = ctx.getDir("lists");
 
         if (null != listsDir)

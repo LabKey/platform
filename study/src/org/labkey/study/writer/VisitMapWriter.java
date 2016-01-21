@@ -30,11 +30,9 @@ import java.sql.SQLException;
  */
 public class VisitMapWriter implements InternalStudyWriter
 {
-    public static final String DATA_TYPE = "Visit Map";
-
-    public String getSelectionText()
+    public String getDataType()
     {
-        return DATA_TYPE;
+        return StudyArchiveDataTypes.VISIT_MAP;
     }
 
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws IOException, ImportException, SQLException

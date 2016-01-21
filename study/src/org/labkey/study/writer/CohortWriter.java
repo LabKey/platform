@@ -39,15 +39,17 @@ import java.util.List;
 public class CohortWriter implements InternalStudyWriter
 {
     private static final String COHORTS_FILENAME = "cohorts.xml";
-    public static final String DATA_TYPE = "Cohort Settings";
 
-    public String getSelectionText()
+    public String getDataType()
     {
-        return DATA_TYPE;
+        return StudyArchiveDataTypes.COHORT_SETTINGS;
     }
 
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
+        if (!ctx.isDataTypeSelected(getDataType()))
+            return;
+
         StudyDocument.Study studyXml = ctx.getXml();
         StudyDocument.Study.Cohorts cohortsXml = studyXml.addNewCohorts();
 

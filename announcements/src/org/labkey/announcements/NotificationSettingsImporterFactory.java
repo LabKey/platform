@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
-import org.labkey.api.admin.FolderWriterNames;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentDefaultEmailPref;
@@ -49,23 +49,20 @@ public class NotificationSettingsImporterFactory extends AbstractFolderImportFac
     public class NotificationSettingsImporter implements  FolderImporter<FolderDocument.Folder>
     {
         @Override
-        public String getSelectionText()
+        public String getDataType()
         {
-            return FolderWriterNames.NOTIFICATIONS_SETTINGS;
+            return FolderArchiveDataTypes.NOTIFICATIONS_SETTINGS;
         }
 
         @Override
         public String getDescription()
         {
-            return getSelectionText().toLowerCase();
+            return getDataType().toLowerCase();
         }
 
         @Override
         public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
-            if (!ctx.isDataTypeSelected(getSelectionText()))
-                return;
-
             Container c = ctx.getContainer();
             if (ctx.getXml().isSetNotifications())
             {

@@ -32,12 +32,11 @@ import java.util.List;
  */
 public class QcStateWriter implements InternalStudyWriter
 {
-    public static final String DATA_TYPE = "QC State Settings";
     private static final String DEFAULT_SETTINGS_FILE = "quality_control_states.xml";
 
-    public String getSelectionText()
+    public String getDataType()
     {
-        return DATA_TYPE;
+        return StudyArchiveDataTypes.QC_STATE_SETTINGS;
     }
 
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception

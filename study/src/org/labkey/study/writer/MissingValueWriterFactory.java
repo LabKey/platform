@@ -19,7 +19,7 @@ import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.FolderWriterNames;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.MvUtil;
@@ -44,9 +44,9 @@ public class MissingValueWriterFactory implements FolderWriterFactory
     public class MissingValueWriter extends BaseFolderWriter
     {
         @Override
-        public String getSelectionText()
+        public String getDataType()
         {
-            return FolderWriterNames.MISSING_VALUE_INDICATORS;
+            return FolderArchiveDataTypes.MISSING_VALUE_INDICATORS;
         }
 
         @Override

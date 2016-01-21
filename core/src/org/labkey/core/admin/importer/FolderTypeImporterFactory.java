@@ -18,7 +18,7 @@ package org.labkey.core.admin.importer;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
-import org.labkey.api.admin.FolderWriterNames;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.FolderType;
@@ -53,9 +53,9 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
     public class FolderTypeImporter implements  FolderImporter<FolderDocument.Folder>
     {
         @Override
-        public String getSelectionText()
+        public String getDataType()
         {
-            return FolderWriterNames.FOLDER_TYPE_AND_ACTIVE_MODULES;
+            return FolderArchiveDataTypes.FOLDER_TYPE_AND_ACTIVE_MODULES;
         }
 
         @Override
@@ -67,9 +67,6 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
         @Override
         public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
-            if (!ctx.isDataTypeSelected(getSelectionText()))
-                return;
-
             Container c = ctx.getContainer();
             FolderDocument.Folder folderXml = ctx.getXml();
 

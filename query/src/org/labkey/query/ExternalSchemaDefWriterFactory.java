@@ -19,7 +19,7 @@ import org.apache.xmlbeans.XmlException;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.FolderWriterNames;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.writer.VirtualFile;
@@ -56,9 +56,9 @@ public class ExternalSchemaDefWriterFactory implements FolderWriterFactory
     public class ExternalSchemaDefWriter extends BaseFolderWriter
     {
         @Override
-        public String getSelectionText()
+        public String getDataType()
         {
-            return FolderWriterNames.EXTERNAL_SCHEMA_DEFINITIONS;
+            return FolderArchiveDataTypes.EXTERNAL_SCHEMA_DEFINITIONS;
         }
 
         @Override

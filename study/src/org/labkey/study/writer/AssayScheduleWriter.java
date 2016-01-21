@@ -19,7 +19,6 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.Results;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -44,13 +43,11 @@ public class AssayScheduleWriter extends DefaultStudyDesignWriter implements Int
     private static final Logger LOG = Logger.getLogger(AssayScheduleWriter.class);
     private static final String DEFAULT_DIRECTORY = "assaySchedule";
 
-    public static final String SELECTION_TEXT = "Assay Schedule";
-
     @Nullable
     @Override
-    public String getSelectionText()
+    public String getDataType()
     {
-        return SELECTION_TEXT;
+        return StudyArchiveDataTypes.ASSAY_SCHEDULE;
     }
 
     @Override

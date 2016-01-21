@@ -513,7 +513,7 @@
             Collection<FolderWriter> writers = new LinkedList<>(FolderSerializationRegistryImpl.get().getRegisteredFolderWriters());
             for (FolderWriter writer : writers)
             {
-                String parent = writer.getSelectionText();
+                String parent = writer.getDataType();
                 if (null != parent && writer.supportsVirtualFile())
                 {
                     %>folderTemplateWriters.push({xtype: "checkbox", hideLabel: true, boxLabel: "<%=parent%>", name: "templateWriterTypes", itemId: "<%=parent%>", inputValue: "<%=parent%>", checked: true, objectType: "parent"});<%
@@ -523,9 +523,9 @@
                     {
                         for (Writer child : children)
                         {
-                            if (null != child.getSelectionText())
+                            if (null != child.getDataType())
                             {
-                                String text = child.getSelectionText();
+                                String text = child.getDataType();
                                 %>
                                 folderTemplateWriters.push({xtype: "checkbox", style: {marginLeft: "20px"}, hideLabel: true, boxLabel: "<%=text%>", name: "templateWriterTypes", itemId: "<%=text%>",
                                     inputValue: "<%=text%>", checked: true, objectType: "child", parentId: "<%=parent%>"});

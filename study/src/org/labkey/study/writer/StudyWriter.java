@@ -34,7 +34,7 @@ public class StudyWriter implements Writer<StudyImpl, StudyExportContext>
 {
     private static final Logger LOG = Logger.getLogger(StudyWriter.class);
 
-    public String getSelectionText()
+    public String getDataType()
     {
         return null;
     }
@@ -46,14 +46,14 @@ public class StudyWriter implements Writer<StudyImpl, StudyExportContext>
         Set<String> dataTypes = ctx.getDataTypes();
 
         // Hack for now to allow selection of CRF vs. Assay datasets.  TODO: More flexible export UI definition mechanism
-        boolean exportDatasets = dataTypes.contains(AssayDatasetWriter.SELECTION_TEXT) || dataTypes.contains(DatasetWriter.SELECTION_TEXT);
+        boolean exportDatasets = dataTypes.contains(StudyArchiveDataTypes.ASSAY_DATASETS) || dataTypes.contains(StudyArchiveDataTypes.CRF_DATASETS);
 
         // Call all the writers defined in the study module.
         for (Writer<StudyImpl, StudyExportContext> writer : StudySerializationRegistryImpl.get().getInternalStudyWriters())
         {
             try
             {
-                String text = writer.getSelectionText();
+                String text = writer.getDataType();
 
                 if (null == text || dataTypes.contains(text) || exportDatasets && text.endsWith("Datasets"))
                     writer.write(study, ctx, vf);

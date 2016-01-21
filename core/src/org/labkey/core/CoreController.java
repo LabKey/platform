@@ -1678,7 +1678,7 @@ public class CoreController extends SpringActionController
             for (FolderWriter writer : registeredWriters)
             {
                 Map<String, Object> writerMap = new HashMap<>();
-                String selectionText = writer.getSelectionText();
+                String selectionText = writer.getDataType();
                 boolean excludeForDataspace = getContainer().isDataspace() && "Study".equals(selectionText);
 
                 if (selectionText != null && writer.show(getContainer()) && !excludeForDataspace)
@@ -1693,7 +1693,7 @@ public class CoreController extends SpringActionController
                         List<String> children = new ArrayList<>();
                         for (Writer child : childWriters)
                         {
-                            selectionText = child.getSelectionText();
+                            selectionText = child.getDataType();
                             if (selectionText != null)
                                 children.add(selectionText);
                         }
@@ -1747,10 +1747,10 @@ public class CoreController extends SpringActionController
             List<Map<String, Object>> selectableImporters = new ArrayList<>();
             for (FolderImporter importer : registeredImporters)
             {
-                if (importer.getSelectionText() != null)
+                if (importer.getDataType() != null)
                 {
                     Map<String, Object> importerMap = new HashMap<>();
-                    importerMap.put("selectionText", importer.getSelectionText());
+                    importerMap.put("selectionText", importer.getDataType());
                     importerMap.put("description", importer.getDescription());
 
                     selectableImporters.add(importerMap);
@@ -1767,7 +1767,7 @@ public class CoreController extends SpringActionController
     {
         public int compare(FolderImporter o1, FolderImporter o2)
         {
-            return o1.getSelectionText() == null ? -1 : o1.getSelectionText().compareTo(o2.getSelectionText());
+            return o1.getDataType() == null ? -1 : o1.getDataType().compareTo(o2.getDataType());
         }
     }
 

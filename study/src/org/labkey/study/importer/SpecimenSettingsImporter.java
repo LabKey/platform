@@ -36,6 +36,7 @@ import org.labkey.study.specimen.settings.DisplaySettings;
 import org.labkey.study.specimen.settings.RepositorySettings;
 import org.labkey.study.specimen.settings.RequestNotificationSettings;
 import org.labkey.study.specimen.settings.StatusSettings;
+import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.xml.DefaultRequirementType;
 import org.labkey.study.xml.DefaultRequirementsType;
 import org.labkey.study.xml.LegacySpecimenSettingsType;
@@ -70,8 +71,14 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
     }
 
     @Override
+    public String getDataType() { return StudyArchiveDataTypes.SPECIMEN_SETTINGS; }
+
+    @Override
     public void process(StudyImportContext ctx, VirtualFile studyDir, BindException errors) throws SQLException, ImportException, IOException
     {
+        if (!ctx.isDataTypeSelected(getDataType()))
+            return;
+
         StudyDocument.Study.Specimens xmlSettings = ctx.getXml().getSpecimens();
         if (xmlSettings != null)
         {

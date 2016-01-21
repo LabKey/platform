@@ -41,7 +41,7 @@ class StudyXmlWriter implements InternalStudyWriter
 {
     private static final String PROPERTIES_DIRECTORY = "properties";
 
-    public String getSelectionText()
+    public String getDataType()
     {
         return null;
     }

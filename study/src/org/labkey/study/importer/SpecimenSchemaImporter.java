@@ -41,6 +41,7 @@ import org.labkey.data.xml.TablesType;
 import org.labkey.study.model.DefaultSpecimenTablesTemplate;
 import org.labkey.study.query.SpecimenTablesProvider;
 import org.labkey.study.writer.SpecimenArchiveWriter;
+import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
@@ -63,6 +64,9 @@ public class SpecimenSchemaImporter implements InternalStudyImporter
     {
         return "specimen schemas";
     }
+
+    @Override
+    public String getDataType() { return StudyArchiveDataTypes.SPECIMENS; }
 
     public static boolean containsSchemasToImport(StudyImportContext ctx) throws ImportException
     {

@@ -19,7 +19,7 @@ import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
-import org.labkey.api.admin.FolderWriterNames;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
@@ -60,23 +60,20 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
     public class ExternalSchemaDefImporter implements FolderImporter<FolderDocument.Folder>
     {
         @Override
-        public String getSelectionText()
+        public String getDataType()
         {
-            return FolderWriterNames.EXTERNAL_SCHEMA_DEFINITIONS;
+            return FolderArchiveDataTypes.EXTERNAL_SCHEMA_DEFINITIONS;
         }
 
         @Override
         public String getDescription()
         {
-            return getSelectionText().toLowerCase();
+            return getDataType().toLowerCase();
         }
 
         @Override
         public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
-            if (!ctx.isDataTypeSelected(getSelectionText()))
-                return;
-
             VirtualFile externalSchemaDir = ctx.getDir("externalSchemas");
 
             if (null != externalSchemaDir)

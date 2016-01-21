@@ -27,6 +27,7 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.CohortManager;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.xml.CohortMode;
 import org.labkey.study.xml.CohortType;
 import org.labkey.study.xml.CohortsDocument;
@@ -51,8 +52,13 @@ public class CohortImporter implements InternalStudyImporter
         return "cohort settings";
     }
 
+    public String getDataType() { return StudyArchiveDataTypes.COHORT_SETTINGS; }
+
     public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws IOException, SQLException, ServletException, ImportException
     {
+        if (!ctx.isDataTypeSelected(getDataType()))
+            return;
+
         StudyImpl study = ctx.getStudy();
         StudyDocument.Study.Cohorts cohortsXml = ctx.getXml().getCohorts();
 

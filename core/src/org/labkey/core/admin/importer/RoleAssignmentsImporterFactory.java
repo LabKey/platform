@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
-import org.labkey.api.admin.FolderWriterNames;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
@@ -66,23 +66,20 @@ public class RoleAssignmentsImporterFactory extends AbstractFolderImportFactory
     public class RoleAssignmentsImporter implements FolderImporter<FolderDocument.Folder>
     {
         @Override
-        public String getSelectionText()
+        public String getDataType()
         {
-            return FolderWriterNames.ROLE_ASSIGNMENTS;
+            return FolderArchiveDataTypes.ROLE_ASSIGNMENTS;
         }
 
         @Override
         public String getDescription()
         {
-            return getSelectionText().toLowerCase();
+            return getDataType().toLowerCase();
         }
 
         @Override
         public void process(@Nullable PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
-            if (!ctx.isDataTypeSelected(getSelectionText()))
-                return;
-
             RoleAssignmentsType assignments = ctx.getXml().getRoleAssignments();
 
             if (assignments == null) // nothing to import

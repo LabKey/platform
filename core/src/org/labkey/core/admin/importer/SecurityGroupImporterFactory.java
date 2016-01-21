@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
-import org.labkey.api.admin.FolderWriterNames;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
@@ -53,9 +53,9 @@ public class SecurityGroupImporterFactory extends AbstractFolderImportFactory
     public class SecurityGroupImporter implements FolderImporter<FolderDocument.Folder>
     {
         @Override
-        public String getSelectionText()
+        public String getDataType()
         {
-            return FolderWriterNames.SECURITY_GROUPS;
+            return FolderArchiveDataTypes.SECURITY_GROUPS;
         }
 
         @Override
@@ -68,9 +68,6 @@ public class SecurityGroupImporterFactory extends AbstractFolderImportFactory
         @Override
         public void process(@Nullable PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
-            if (!ctx.isDataTypeSelected(getSelectionText()))
-                return;
-
             if (!ctx.getContainer().isProject())
             {
                 ctx.getLogger().warn("Import of groups outside of project context not supported.");

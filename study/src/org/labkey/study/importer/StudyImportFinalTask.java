@@ -24,8 +24,6 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.pipeline.RecordedActionSet;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.security.User;
 import org.labkey.api.util.FileType;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.writer.StudySerializationRegistryImpl;
@@ -103,15 +101,19 @@ public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.
                 Collection<FolderImporter> externalStudyImporters = StudySerializationRegistryImpl.get().getRegisteredStudyImporters();
                 for (FolderImporter importer : externalStudyImporters)
                 {
-                    importer.process(job, ctx, vf);
+                    if (ctx.isDataTypeSelected(importer.getDataType()))
+                        importer.process(job, ctx, vf);
                 }
 
                 List<PipelineJobWarning> warnings = new ArrayList<>();
                 for (FolderImporter importer : externalStudyImporters)
                 {
-                    job.setStatus("POST-PROCESS " + importer.getDescription());
-                    Collection<PipelineJobWarning> importerWarnings = importer.postProcess(ctx, vf);
-                    warnings.addAll(importerWarnings);
+                    if (ctx.isDataTypeSelected(importer.getDataType()))
+                    {
+                        job.setStatus("POST-PROCESS " + importer.getDescription());
+                        Collection<PipelineJobWarning> importerWarnings = importer.postProcess(ctx, vf);
+                        warnings.addAll(importerWarnings);
+                    }
                 }
                 //TODO: capture warnings in the pipeline job and make a distinction between success & success with warnings
                 //for now, just fail the job if there were any warnings. The warnings will

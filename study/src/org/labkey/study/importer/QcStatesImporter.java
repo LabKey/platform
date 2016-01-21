@@ -43,7 +43,7 @@ public class QcStatesImporter implements InternalStudyImporter
         return "QC States Importer";
     }
 
-    public String getSelectionText()
+    public String getDataType()
     {
         return getDescription();
     }
@@ -51,7 +51,7 @@ public class QcStatesImporter implements InternalStudyImporter
     @Override
     public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws Exception
     {
-        if (!ctx.isDataTypeSelected(getSelectionText()))
+        if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
         StudyImpl study = ctx.getStudy();

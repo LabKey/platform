@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
-import org.labkey.api.admin.FolderWriterNames;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.pipeline.PipelineJob;
@@ -50,21 +50,21 @@ public class MissingValueImporterFactory extends AbstractFolderImportFactory
     public class MissingValueImporter implements FolderImporter
     {
         @Override
-        public String getSelectionText()
+        public String getDataType()
         {
-            return FolderWriterNames.MISSING_VALUE_INDICATORS;
+            return FolderArchiveDataTypes.MISSING_VALUE_INDICATORS;
         }
 
         @Override
         public String getDescription()
         {
-            return getSelectionText().toLowerCase();
+            return getDataType().toLowerCase();
         }
 
         @Override
         public void process(@Nullable PipelineJob job, ImportContext ctx, VirtualFile root) throws Exception
         {
-            if (!ctx.isDataTypeSelected(getSelectionText()))
+            if (!ctx.isDataTypeSelected(getDataType()))
                 return;
 
             MissingValueIndicatorsType mvXml = getMissingValueIndicatorsFromXml(ctx.getXml());

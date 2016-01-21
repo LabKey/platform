@@ -35,13 +35,12 @@ import java.util.List;
  */
 public class ProtocolDocumentWriter implements InternalStudyWriter
 {
-    public static final String DATA_TYPE = "Protocol Documents";
     public static final String DOCUMENT_FOLDER = "protocolDocs";
 
     @Override
-    public String getSelectionText()
+    public String getDataType()
     {
-        return DATA_TYPE;
+        return StudyArchiveDataTypes.PROTOCOL_DOCUMENTS;
     }
 
     @Override

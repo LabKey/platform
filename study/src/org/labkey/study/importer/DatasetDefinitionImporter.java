@@ -31,6 +31,7 @@ import org.labkey.data.xml.reportProps.PropertyList;
 import org.labkey.study.model.DatasetReorderer;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.xml.DatasetsDocument;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
@@ -55,9 +56,14 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
         return "Dataset Definition Importer";
     }
 
+    public String getDataType() { return StudyArchiveDataTypes.CRF_DATASETS; }
+
     @RefactorIn15_1 // Remove SchemaTsvReader in 15.1
     public void process(StudyImportContext ctx, VirtualFile vf, BindException errors) throws IOException, SQLException, DatasetImportUtils.DatasetLockExistsException, XmlException, ImportException
     {
+        if (!ctx.isDataTypeSelected(getDataType()) && !ctx.isDataTypeSelected(StudyArchiveDataTypes.ASSAY_DATASETS))
+            return;
+
         StudyImpl study = ctx.getStudy();
         StudyDocument.Study.Datasets datasetsXml = ctx.getXml().getDatasets();
 

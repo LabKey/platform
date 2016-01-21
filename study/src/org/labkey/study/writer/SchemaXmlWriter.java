@@ -62,9 +62,9 @@ public class SchemaXmlWriter implements Writer<List<DatasetDefinition>, ImportCo
             _candidatePropertyURIs.add(pd.getPropertyURI());
     }
 
-    public String getSelectionText()
+    public String getDataType()
     {
-        return "Dataset Schema Description";
+        return StudyArchiveDataTypes.DATASET_SCHEMA_DEFINITION;
     }
 
     public void write(List<DatasetDefinition> definitions, ImportContext<StudyDocument.Study> ctx, VirtualFile vf) throws IOException

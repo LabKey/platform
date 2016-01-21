@@ -20,7 +20,7 @@ import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.FolderWriterNames;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentDefaultEmailPref;
@@ -45,9 +45,9 @@ public class NotificationSettingsWriterFactory implements FolderWriterFactory
     public class NotificationSettingsWriter extends BaseFolderWriter
     {
         @Override
-        public String getSelectionText()
+        public String getDataType()
         {
-            return FolderWriterNames.NOTIFICATIONS_SETTINGS;
+            return FolderArchiveDataTypes.NOTIFICATIONS_SETTINGS;
         }
 
         @Override

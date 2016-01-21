@@ -18,7 +18,7 @@ package org.labkey.core.admin.writer;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.FolderWriterNames;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.writer.VirtualFile;
@@ -39,9 +39,9 @@ public class SearchSettingsWriterFactory implements FolderWriterFactory
     public class SearchSettingsWriter extends BaseFolderWriter
     {
         @Override
-        public String getSelectionText()
+        public String getDataType()
         {
-            return FolderWriterNames.FULL_TEXT_SEARCH_SETTINGS;
+            return FolderArchiveDataTypes.FULL_TEXT_SEARCH_SETTINGS;
         }
 
         @Override

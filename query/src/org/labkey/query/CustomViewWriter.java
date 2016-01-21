@@ -19,7 +19,7 @@ import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.FolderWriterNames;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
@@ -45,9 +45,9 @@ public class CustomViewWriter extends BaseFolderWriter
     private static final String DEFAULT_DIRECTORY = "views";  // TODO: qviews?
     private VirtualFile _viewDir = null;
 
-    public String getSelectionText()
+    public String getDataType()
     {
-        return FolderWriterNames.CUSTOM_VIEWS;
+        return FolderArchiveDataTypes.CUSTOM_VIEWS;
     }
 
     @Override

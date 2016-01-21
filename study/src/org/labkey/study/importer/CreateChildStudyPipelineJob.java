@@ -19,6 +19,7 @@ import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporterImpl;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.PipelineJobLoggerGetter;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -49,22 +50,16 @@ import org.labkey.study.model.ParticipantCategoryImpl;
 import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.ParticipantMapper;
-import org.labkey.study.model.Vial;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.StudySnapshot;
+import org.labkey.study.model.Vial;
 import org.labkey.study.pipeline.StudyImportDatasetTask;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.writer.AssayScheduleWriter;
-import org.labkey.study.writer.CohortWriter;
-import org.labkey.study.writer.DatasetWriter;
 import org.labkey.study.writer.ParticipantGroupWriter;
-import org.labkey.study.writer.QcStateWriter;
 import org.labkey.study.writer.StudyExportContext;
 import org.labkey.study.writer.StudyWriterFactory;
-import org.labkey.study.writer.TreatmentDataWriter;
-import org.labkey.study.writer.ViewCategoryWriter;
-import org.labkey.study.writer.VisitMapWriter;
+import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 import org.springframework.validation.ObjectError;
@@ -89,11 +84,6 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
 
     private transient Set<DatasetDefinition> _datasets = new HashSet<>();
     private transient List<ParticipantGroup> _participantGroups = new ArrayList<>();
-
-    private static final String REPORT_WRITER_TYPE = "Reports";
-    private static final String LIST_WRITER_TYPE = "Lists";
-    private static final String CUSTOM_VIEWS_TYPE = "Custom Views";
-    private static final String SPECIMEN_WRITER_TYPE = "Specimens"; // TODO: use SpecimenWriterArchive.SELECTION_TEXT
 
     public CreateChildStudyPipelineJob(ViewContext context, PipeRoot root, ChildStudyDefinition form, boolean destFolderCreated)
     {
@@ -324,17 +314,17 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         String[] studyProps = form.getStudyProps();
 
         dataTypes.add(StudyWriterFactory.DATA_TYPE);
-        dataTypes.add(QcStateWriter.DATA_TYPE);
-        dataTypes.add(VisitMapWriter.DATA_TYPE);
-        dataTypes.add(DatasetWriter.SELECTION_TEXT);
-        dataTypes.add(ViewCategoryWriter.DATA_TYPE);
-        dataTypes.add(ParticipantGroupWriter.DATA_TYPE);
+        dataTypes.add(StudyArchiveDataTypes.QC_STATE_SETTINGS);
+        dataTypes.add(StudyArchiveDataTypes.VISIT_MAP);
+        dataTypes.add(StudyArchiveDataTypes.CRF_DATASETS);
+        dataTypes.add(StudyArchiveDataTypes.VIEW_CATEGORIES);
+        dataTypes.add(StudyArchiveDataTypes.PARTICIPANT_GROUPS);
 
         if (StudySnapshotType.ancillary.equals(form.getMode()))
         {
-            dataTypes.add(CohortWriter.DATA_TYPE);
-            dataTypes.add(AssayScheduleWriter.SELECTION_TEXT);
-            dataTypes.add(TreatmentDataWriter.SELECTION_TEXT);
+            dataTypes.add(StudyArchiveDataTypes.COHORT_SETTINGS);
+            dataTypes.add(StudyArchiveDataTypes.ASSAY_SCHEDULE);
+            dataTypes.add(StudyArchiveDataTypes.TREATMENT_DATA);
         }
 
         if(folderProps != null)
@@ -354,22 +344,22 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
 
         if (form.getReports() != null)
         {
-            dataTypes.add(REPORT_WRITER_TYPE);
+            dataTypes.add(FolderArchiveDataTypes.REPORTS);
         }
 
         if (form.getViews() != null)
         {
-            dataTypes.add(CUSTOM_VIEWS_TYPE);
+            dataTypes.add(FolderArchiveDataTypes.CUSTOM_VIEWS);
         }
 
         if (form.getLists() != null)
         {
-            dataTypes.add(LIST_WRITER_TYPE);
+            dataTypes.add(FolderArchiveDataTypes.LISTS);
         }
 
         if (form.isIncludeSpecimens())
         {
-            dataTypes.add(SPECIMEN_WRITER_TYPE);
+            dataTypes.add(StudyArchiveDataTypes.SPECIMENS);
         }
 
         return dataTypes;

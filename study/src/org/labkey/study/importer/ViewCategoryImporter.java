@@ -25,7 +25,7 @@ import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.StudyManager;
+import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.writer.ViewCategoryWriter;
 import org.labkey.study.xml.viewCategory.CategoriesDocument;
 import org.labkey.study.xml.viewCategory.CategoryType;
@@ -45,8 +45,14 @@ public class ViewCategoryImporter implements InternalStudyImporter
     }
 
     @Override
+    public String getDataType() { return StudyArchiveDataTypes.VIEW_CATEGORIES; }
+
+    @Override
     public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws Exception
     {
+        if (!ctx.isDataTypeSelected(getDataType()))
+            return;
+
         StudyImpl study = ctx.getStudy();
         try
         {

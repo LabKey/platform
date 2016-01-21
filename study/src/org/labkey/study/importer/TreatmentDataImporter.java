@@ -24,6 +24,7 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.writer.TreatmentDataWriter;
 import org.labkey.study.xml.ExportDirType;
 import org.springframework.validation.BindException;
@@ -70,9 +71,14 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
         return "treatment data";
     }
 
+    public String getDataType() { return StudyArchiveDataTypes.TREATMENT_DATA; }
+
     @Override
     public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws Exception
     {
+        if (!ctx.isDataTypeSelected(getDataType()))
+            return;
+
         ExportDirType dirType = ctx.getXml().getTreatmentData();
 
         if (dirType != null)

@@ -20,6 +20,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
@@ -43,7 +44,9 @@ public class VisitImporter implements InternalStudyImporter
         return "Visit Importer";
     }
 
-    public String getType() { return this.getDescription(); }
+    @Override
+    public String getDataType() { return StudyArchiveDataTypes.VISIT_MAP; }
+
 
     public boolean isEnsureDatasets()
     {
@@ -58,7 +61,7 @@ public class VisitImporter implements InternalStudyImporter
     public void process(StudyImportContext ctx, VirtualFile vf, BindException errors) throws IOException, SQLException, ImportException, ValidationException
     {
 
-        if (!ctx.isDataTypeSelected(getType()))
+        if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
         StudyImpl study = ctx.getStudy();

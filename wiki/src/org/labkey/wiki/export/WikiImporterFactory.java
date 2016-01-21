@@ -18,7 +18,7 @@ package org.labkey.wiki.export;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
-import org.labkey.api.admin.FolderWriterNames;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.attachments.Attachment;
@@ -43,7 +43,6 @@ import org.labkey.wiki.model.WikiVersion;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -68,9 +67,9 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
     private class WikiImporter implements FolderImporter<FolderDocument.Folder>
     {
         @Override
-        public String getSelectionText()
+        public String getDataType()
         {
-            return FolderWriterNames.WIKIS_AND_THEIR_ATTACHMENTS;
+            return FolderArchiveDataTypes.WIKIS_AND_THEIR_ATTACHMENTS;
         }
 
         @Override
@@ -82,9 +81,6 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
         @Override
         public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
-            if (!ctx.isDataTypeSelected(getSelectionText()))
-                return;
-
             VirtualFile wikisDir = ctx.getDir("wikis");
             
             if (wikisDir != null)

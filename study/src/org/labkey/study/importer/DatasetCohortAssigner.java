@@ -25,6 +25,7 @@ import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.xml.DatasetsDocument;
 import org.springframework.validation.BindException;
 
@@ -45,10 +46,15 @@ public class DatasetCohortAssigner implements InternalStudyImporter
         return "dataset cohort assignments";
     }
 
-    // Parses the dataset manifest again to retrieve the cohort assigments; should cache info from the first parsing
+    public String getDataType() { return StudyArchiveDataTypes.COHORT_SETTINGS; }
+
+    // Parses the dataset manifest again to retrieve the cohort assignments; should cache info from the first parsing
     // somewhere in the StudyImportContext
     public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws SQLException, XmlException, IOException, ImportException
     {
+        if (!ctx.isDataTypeSelected(getDataType()))
+            return;
+
         StudyImpl study = ctx.getStudy();
         DatasetsDocument.Datasets datasets = DatasetDefinitionImporter.getDatasetsManifest(ctx, root, false);
 
