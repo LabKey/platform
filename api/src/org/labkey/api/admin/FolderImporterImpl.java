@@ -92,6 +92,13 @@ public class FolderImporterImpl implements FolderImporter<FolderDocument.Folder>
         return warnings;
     }
 
+    @Nullable
+    @Override
+    public Collection<String> getChildrenDataTypes()
+    {
+        return null;
+    }
+
     public void removeImporterByDescription(String removeDesc)
     {
         FolderImporter toRemove = null;

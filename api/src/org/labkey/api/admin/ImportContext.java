@@ -42,7 +42,7 @@ public interface ImportContext<XmlType extends XmlObject> extends ContainerUser
     Double getArchiveVersion();
     boolean isSkipQueryValidation();
     boolean isCreateSharedDatasets();
-    boolean isDataTypeSelected(String selectionText);
+    boolean isDataTypeSelected(String dataType);
 
     // These methods let writers add and get module-specific context information
     <K extends ImportContext> void addContext(Class<K> contextClass, K context);
