@@ -21,6 +21,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
 
+import java.util.Set;
+
 /**
  * User: cnathe
  * Date: Jan 18, 2012
@@ -33,9 +35,9 @@ public abstract class AbstractFolderContext extends AbstractImportContext<Folder
         STUDY
     }
 
-    protected AbstractFolderContext(User user, Container c, FolderDocument folderDoc, LoggerGetter logger, @Nullable VirtualFile root)
+    protected AbstractFolderContext(User user, Container c, FolderDocument folderDoc, Set<String> dataTypes, LoggerGetter logger, @Nullable VirtualFile root)
     {
-        super(user, c, folderDoc, logger, root);
+        super(user, c, folderDoc, dataTypes, logger, root);
     }
 
     // Folder node -- interesting to any top-level writer that needs to set info into folder.xml

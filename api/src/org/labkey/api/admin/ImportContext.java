@@ -28,22 +28,23 @@ import java.util.Set;
  */
 public interface ImportContext<XmlType extends XmlObject> extends ContainerUser
 {
-    public XmlType getXml() throws ImportException;
-    public VirtualFile getDir(String xmlNodeName) throws ImportException;
-    public Logger getLogger();
-    public LoggerGetter getLoggerGetter();
-    public Set<String> getDataTypes();
-    public String getFormat();
-    public boolean isIncludeSubfolders();
-    public boolean isRemoveProtected();
-    public boolean isShiftDates();
-    public boolean isAlternateIds();
-    public boolean isMaskClinic();
-    public Double getArchiveVersion();
-    public boolean isSkipQueryValidation();
-    public boolean isCreateSharedDatasets();
+    XmlType getXml() throws ImportException;
+    VirtualFile getDir(String xmlNodeName) throws ImportException;
+    Logger getLogger();
+    LoggerGetter getLoggerGetter();
+    Set<String> getDataTypes();
+    String getFormat();
+    boolean isIncludeSubfolders();
+    boolean isRemoveProtected();
+    boolean isShiftDates();
+    boolean isAlternateIds();
+    boolean isMaskClinic();
+    Double getArchiveVersion();
+    boolean isSkipQueryValidation();
+    boolean isCreateSharedDatasets();
+    boolean isDataTypeSelected(String selectionText);
 
     // These methods let writers add and get module-specific context information
-    public <K extends ImportContext> void addContext(Class<K> contextClass, K context);
-    public <K extends ImportContext> K getContext(Class<K> contextClass);
+    <K extends ImportContext> void addContext(Class<K> contextClass, K context);
+    <K extends ImportContext> K getContext(Class<K> contextClass);
 }

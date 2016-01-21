@@ -28,6 +28,7 @@ import org.labkey.folder.xml.FolderDocument;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Set;
 
 /**
  * User: cnathe
@@ -42,18 +43,18 @@ public class FolderImportContext extends AbstractFolderContext
     @SuppressWarnings({"UnusedDeclaration"})
     public FolderImportContext()
     {
-        super(null, null, null, null, null);
+        super(null, null, null, null, null, null);
     }
 
-    public FolderImportContext(User user, Container c, File folderXml, LoggerGetter logger, VirtualFile root)
+    public FolderImportContext(User user, Container c, File folderXml, Set<String> dataTypes, LoggerGetter logger, VirtualFile root)
     {
-        super(user, c, null, logger, root);
+        super(user, c, null, dataTypes, logger, root);
         _folderXml = folderXml;
     }
 
-    public FolderImportContext(User user, Container c, FolderDocument folderDoc, LoggerGetter logger, VirtualFile root)
+    public FolderImportContext(User user, Container c, FolderDocument folderDoc, Set<String> dataTypes, LoggerGetter logger, VirtualFile root)
     {
-        super(user, c, folderDoc, logger, root);
+        super(user, c, folderDoc, dataTypes, logger, root);
     }
 
     @Override

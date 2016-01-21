@@ -21,6 +21,7 @@ import org.labkey.api.security.UserManager;
 
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.Set;
 
 /**
  * User: klum
@@ -34,6 +35,7 @@ public class ImportOptions
     private String _containerId;
     private Integer _userId = null;
     private Collection<String> _messages = new LinkedList<>();
+    private Set<String> _dataTypes;
 
     public ImportOptions(String containerId, @Nullable Integer userId)
     {
@@ -99,5 +101,15 @@ public class ImportOptions
     public Collection<String> getMessages()
     {
         return _messages;
+    }
+
+    public Set<String> getDataTypes()
+    {
+        return _dataTypes;
+    }
+
+    public void setDataTypes(Set<String> dataTypes)
+    {
+        _dataTypes = dataTypes;
     }
 }

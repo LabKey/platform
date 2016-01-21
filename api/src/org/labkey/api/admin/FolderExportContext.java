@@ -29,7 +29,6 @@ import java.util.Set;
  */
 public class FolderExportContext extends AbstractFolderContext
 {
-    private final Set<String> _dataTypes;
     private String _format = "new";
     private boolean _includeSubfolders = false;
     private boolean _removeProtected = false;
@@ -47,22 +46,16 @@ public class FolderExportContext extends AbstractFolderContext
 
     public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, boolean includeSubfolders, boolean removeProtected, boolean shiftDates, boolean alternateIds, boolean maskClinic, LoggerGetter logger)
     {
-        super(user, c, getFolderDocument(), logger, null);
+        super(user, c, getFolderDocument(), dataTypes, logger, null);
 
         if (c.isDataspace() && dataTypes.contains("Study"))
             throw new IllegalStateException("Cannot export study from Dataspace folder.");
-        _dataTypes = dataTypes;
         _format = format;
         _includeSubfolders = includeSubfolders;
         _removeProtected = removeProtected;
         _shiftDates = shiftDates;
         _alternateIds = alternateIds;
         _maskClinic = maskClinic;
-    }
-
-    public Set<String> getDataTypes()
-    {
-        return _dataTypes;
     }
 
     public String getFormat()

@@ -36,6 +36,7 @@ import java.util.Set;
  */
 public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocument extends XmlObject> implements ImportContext<XmlRoot>
 {
+    private final Set<String> _dataTypes;
     private final User _user;
     private final Container _c;
     private final LoggerGetter _logger;
@@ -48,10 +49,11 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
 
     private boolean _locked = false;
 
-    protected AbstractImportContext(User user, Container c, XmlDocument document, LoggerGetter logger, @Nullable VirtualFile root)
+    protected AbstractImportContext(User user, Container c, XmlDocument document, Set<String> dataTypes, LoggerGetter logger, @Nullable VirtualFile root)
     {
         _user = user;
         _c = c;
+        _dataTypes = dataTypes;
         _logger = logger;
         _xmlDocument = document;
         _root = root;
@@ -133,7 +135,7 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
     @Override
     public Set<String> getDataTypes()
     {
-        return Collections.<String>emptySet();
+        return _dataTypes;
     }
 
     @Override
@@ -210,5 +212,11 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
     public void setCreateSharedDatasets(boolean createSharedDatasets)
     {
         _createSharedDatasets = createSharedDatasets;
+    }
+
+    @Override
+    public boolean isDataTypeSelected(String selectionText)
+    {
+        return _dataTypes == null || _dataTypes.contains(selectionText);
     }
 }
