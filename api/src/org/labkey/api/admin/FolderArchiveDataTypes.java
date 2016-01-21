@@ -20,9 +20,9 @@ package org.labkey.api.admin;
  * Date: 9/2/2014
  * Time: 1:07 PM
  */
-public class FolderWriterNames
+public class FolderArchiveDataTypes
 {
-    private FolderWriterNames() {}
+    private FolderArchiveDataTypes() {}
 
     public static final String FOLDER_TYPE_AND_ACTIVE_MODULES = "Folder type and active modules";
     public static final String FULL_TEXT_SEARCH_SETTINGS = "Full-text search settings";

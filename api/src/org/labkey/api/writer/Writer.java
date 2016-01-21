@@ -26,6 +26,6 @@ import org.jetbrains.annotations.Nullable;
 public interface Writer<T, CONTEXT extends ContainerUser>
 {
     @Nullable
-    public String getSelectionText();
+    public String getDataType();
     public void write(T object, CONTEXT ctx, VirtualFile vf) throws Exception;
 }

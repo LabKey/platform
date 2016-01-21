@@ -47,7 +47,7 @@ public class BaseFolderWriter implements FolderWriter
     }
 
     @Override
-    public String getSelectionText()
+    public String getDataType()
     {
         return null;
     }

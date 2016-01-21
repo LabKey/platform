@@ -49,7 +49,7 @@ public class FolderWriterImpl extends BaseFolderWriter
         _writers = registry.getRegisteredFolderWriters();
     }
 
-    public String getSelectionText()
+    public String getDataType()
     {
         return null;
     }
@@ -69,7 +69,7 @@ public class FolderWriterImpl extends BaseFolderWriter
         // Call all the writers next -- this ensures that folder.xml is the last writer called.
         for (FolderWriter writer : _writers)
         {
-            String text = writer.getSelectionText();
+            String text = writer.getDataType();
 
             if (null == text || dataTypes.contains(text))
                 writer.write(c, ctx, vf);

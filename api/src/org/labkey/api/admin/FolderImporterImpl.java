@@ -57,7 +57,7 @@ public class FolderImporterImpl implements FolderImporter<FolderDocument.Folder>
     }
 
     @Override
-    public String getSelectionText()
+    public String getDataType()
     {
         return null;
     }
@@ -72,7 +72,8 @@ public class FolderImporterImpl implements FolderImporter<FolderDocument.Folder>
     public void process(@Nullable PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
     {
         for (FolderImporter importer : _importers)
-            importer.process(job, ctx, vf);
+            if (ctx.isDataTypeSelected(importer.getDataType()))
+                importer.process(job, ctx, vf);
     }
 
     @NotNull
