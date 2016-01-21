@@ -32,6 +32,7 @@ import org.labkey.study.model.CohortManager;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.writer.StudyArchiveDataTypes;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -91,6 +92,12 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
     {
         if (!ctx.isDataTypeSelected(StudyImportDatasetTask.getType()))
             return;
+
+        if (!ctx.isDataTypeSelected(StudyArchiveDataTypes.CRF_DATASETS) && !ctx.isDataTypeSelected(StudyArchiveDataTypes.ASSAY_DATASETS))
+        {
+            ctx.getLogger().warn("Cannot import dataset data if datasets are not imported.");
+            return;
+        }
 
         if (null != datasetsDirectory && null != datasetsFileName)
         {

@@ -102,10 +102,11 @@ public class StudyExportContext extends AbstractContext
     {
         boolean includeCRF = getDataTypes().contains(StudyArchiveDataTypes.CRF_DATASETS);
         boolean includeAssay = getDataTypes().contains(StudyArchiveDataTypes.ASSAY_DATASETS);
+        boolean includeDatasetData = getDataTypes().contains(StudyArchiveDataTypes.DATASET_DATA);
 
         for (DatasetDefinition dataset : study.getDatasetsByType(Dataset.TYPE_STANDARD, Dataset.TYPE_PLACEHOLDER))
         {
-            if ((!dataset.isAssayData() && includeCRF) || (dataset.isAssayData() && includeAssay))
+            if (includeDatasetData || (!dataset.isAssayData() && includeCRF) || (dataset.isAssayData() && includeAssay))
             {
                 _datasets.add(dataset);
                 _datasetIds.add(dataset.getDatasetId());

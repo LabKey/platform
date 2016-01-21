@@ -58,8 +58,6 @@ public class DatasetDataWriter implements InternalStudyWriter
 
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile root) throws Exception
     {
-        StudyDocument.Study studyXml = ctx.getXml();
-
         List<DatasetDefinition> datasets = ctx.getDatasets();
 
         VirtualFile vf = root.getDir(DatasetWriter.DEFAULT_DIRECTORY);
