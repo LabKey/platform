@@ -44,4 +44,9 @@ public class StudyImportSpecimenTask extends AbstractSpecimenTask<StudyImportSpe
             return new StudyImportSpecimenTask(this, job);
         }
     }
+
+    public static String getType()
+    {
+        return "Specimens";
+    }
 }

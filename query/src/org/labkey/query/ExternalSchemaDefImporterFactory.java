@@ -74,6 +74,9 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
         @Override
         public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
+            if (!ctx.isDataTypeSelected(getSelectionText()))
+                return;
+
             VirtualFile externalSchemaDir = ctx.getDir("externalSchemas");
 
             if (null != externalSchemaDir)

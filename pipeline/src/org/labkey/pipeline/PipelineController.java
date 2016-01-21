@@ -124,6 +124,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1315,6 +1316,12 @@ public class PipelineController extends SpringActionController
             options.setSkipQueryValidation(!form.isValidateQueries());
             options.setCreateSharedDatasets(form.isCreateSharedDatasets());
             options.setAdvancedImportOptions(form.isAdvancedImportOptions());
+            if (form.getFolderDataTypes() != null)
+            {
+                Set<String> dataTypes = new HashSet<>();
+                Collections.addAll(dataTypes, form.getFolderDataTypes());
+                options.setDataTypes(dataTypes);
+            }
 
             if (_archiveFile.exists())
             {

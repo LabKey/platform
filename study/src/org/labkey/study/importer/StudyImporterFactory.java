@@ -74,6 +74,9 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
         @Override
         public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
+            if (!ctx.isDataTypeSelected(getSelectionText()))
+                return;
+
             VirtualFile studyDir = ctx.getDir("study");
 
             if (null != studyDir)
@@ -104,7 +107,7 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                     throw new InvalidFileException(studyDir.getRelativePath(studyFileName), e);
                 }
 
-                StudyImportContext studyImportContext = new StudyImportContext(user, c, studyDoc, ctx.getLoggerGetter(), studyDir);
+                StudyImportContext studyImportContext = new StudyImportContext(user, c, studyDoc, ctx.getDataTypes(), ctx.getLoggerGetter(), studyDir);
                 studyImportContext.setCreateSharedDatasets(ctx.isCreateSharedDatasets());
 
                 // the initial study import task handles things like base study properties, MVIs, qcStates, visits, specimen settings, datasets definitions.

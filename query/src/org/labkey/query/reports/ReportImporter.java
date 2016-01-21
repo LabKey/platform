@@ -61,6 +61,9 @@ public class ReportImporter implements FolderImporter
 
     public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws IOException, SQLException, ImportException
     {
+        if (!ctx.isDataTypeSelected(getSelectionText()))
+            return;
+
         VirtualFile reportsDir = ctx.getDir("reports");
 
         if (null != reportsDir)

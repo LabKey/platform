@@ -84,6 +84,10 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
         VirtualFile specimenDir;
         File unzipDir = null;
 
+        // do nothing if we've specified data types and specimen is not one of them
+        if (!ctx.isDataTypeSelected(StudyImportSpecimenTask.getType()))
+            return;
+
         try
         {
             // backwards compatibility, if we are given a specimen archive as a zip file, we need to extract it

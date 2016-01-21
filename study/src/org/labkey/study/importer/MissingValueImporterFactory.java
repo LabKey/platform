@@ -64,6 +64,9 @@ public class MissingValueImporterFactory extends AbstractFolderImportFactory
         @Override
         public void process(@Nullable PipelineJob job, ImportContext ctx, VirtualFile root) throws Exception
         {
+            if (!ctx.isDataTypeSelected(getSelectionText()))
+                return;
+
             MissingValueIndicatorsType mvXml = getMissingValueIndicatorsFromXml(ctx.getXml());
 
             if (null != mvXml)

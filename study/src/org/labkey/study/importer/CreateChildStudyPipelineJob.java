@@ -406,7 +406,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         getLogger().info("Importing data to destination study");
         if (studyDoc != null)
         {
-            importContext = new StudyImportContext(getUser(), newStudy.getContainer(), studyDoc, new PipelineJobLoggerGetter(this), studyDir);
+            importContext = new StudyImportContext(getUser(), newStudy.getContainer(), studyDoc, null, new PipelineJobLoggerGetter(this), studyDir);
 
             // missing values and qc states
             new MissingValueImporterFactory().create().process(null, importContext, studyDir);
@@ -473,7 +473,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         User user = getUser();
         FolderImporterImpl importer = new FolderImporterImpl();
         FolderDocument folderDoc = (FolderDocument)vf.getXmlBean("folder.xml");
-        FolderImportContext folderImportContext = new FolderImportContext(user, newStudy.getContainer(), folderDoc, new PipelineJobLoggerGetter(this), vf);
+        FolderImportContext folderImportContext = new FolderImportContext(user, newStudy.getContainer(), folderDoc, null, new PipelineJobLoggerGetter(this), vf);
 
         // remove the study folder importer since we are handling dataset, specimen, etc. importing separately
         importer.removeImporterByDescription("study");

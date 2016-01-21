@@ -51,6 +51,9 @@ public class CustomViewImporter implements FolderImporter
 
     public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws IOException, SQLException, ImportException, XmlValidationException
     {
+        if (!ctx.isDataTypeSelected(getSelectionText()))
+            return;
+
         VirtualFile viewDir = ctx.getDir("views");
 
         if (null != viewDir)

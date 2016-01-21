@@ -50,6 +50,9 @@ public class FolderListImporter implements FolderImporter
 
     public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws Exception
     {
+        if (!ctx.isDataTypeSelected(getSelectionText()))
+            return;
+
         VirtualFile listsDir = ctx.getDir("lists");
 
         if (null != listsDir)

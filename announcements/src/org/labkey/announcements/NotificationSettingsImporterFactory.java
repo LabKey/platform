@@ -63,6 +63,9 @@ public class NotificationSettingsImporterFactory extends AbstractFolderImportFac
         @Override
         public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
+            if (!ctx.isDataTypeSelected(getSelectionText()))
+                return;
+
             Container c = ctx.getContainer();
             if (ctx.getXml().isSetNotifications())
             {

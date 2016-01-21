@@ -33,12 +33,17 @@ import org.labkey.study.xml.StudyDocument;
 * Time: 3:17:44 PM
 */
 
-// This task is used to import datasets as part of study import/reload.  StudyImportJob is the associcated pipeline job.
+// This task is used to import datasets as part of study import/reload.  StudyImportJob is the associated pipeline job.
 public class StudyImportDatasetTask extends AbstractDatasetImportTask<StudyImportDatasetTask.Factory>
 {
     private StudyImportDatasetTask(Factory factory, PipelineJob job, StudyImportContext ctx)
     {
         super(factory, job, ctx);
+    }
+
+    public static String getType()
+    {
+        return "Dataset Data";
     }
 
     @Override
@@ -94,7 +99,7 @@ public class StudyImportDatasetTask extends AbstractDatasetImportTask<StudyImpor
             if (job instanceof StudyImportJob)
                 ctx = ((StudyImportJob)job).getImportContext();
             else
-                ctx = new StudyImportContext(job.getUser(), job.getContainer(), new PipelineJobLoggerGetter(job));
+                ctx = new StudyImportContext(job.getUser(), job.getContainer(), null, new PipelineJobLoggerGetter(job));
 
             return new StudyImportDatasetTask(this, job, ctx);
         }

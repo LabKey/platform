@@ -82,6 +82,9 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
         @Override
         public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
+            if (!ctx.isDataTypeSelected(getSelectionText()))
+                return;
+
             VirtualFile wikisDir = ctx.getDir("wikis");
             
             if (wikisDir != null)

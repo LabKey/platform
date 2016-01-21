@@ -70,6 +70,8 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
         @Override
         public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
+            if (!ctx.isDataTypeSelected(getSelectionText()))
+                return;
 
             VirtualFile xarDir = ctx.getDir(FolderXarWriterFactory.XAR_DIRECTORY);
 

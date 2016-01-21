@@ -464,7 +464,7 @@ public class StudyReload
                         File folderXml = root.resolvePath("folder.xml");
                         if (folderXml.exists())
                         {
-                            FolderImportContext folderCtx = new FolderImportContext(reloadUser, c, folderXml, new StaticLoggerGetter(LOG), null);
+                            FolderImportContext folderCtx = new FolderImportContext(reloadUser, c, folderXml, null, new StaticLoggerGetter(LOG), null);
                             FolderDocument folderDoc = folderCtx.getDocument();
                             if (folderDoc.getFolder().getStudy() != null && folderDoc.getFolder().getStudy().getDir() != null)
                             {

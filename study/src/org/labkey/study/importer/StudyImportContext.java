@@ -35,6 +35,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: adam
@@ -53,23 +54,23 @@ public class StudyImportContext extends AbstractContext
     private StudyImportContext()
     {
         //noinspection NullableProblems
-        super(null, null, null, null, null);
+        super(null, null, null, null, null, null);
     }
 
-    public StudyImportContext(User user, Container c, LoggerGetter logger)
+    public StudyImportContext(User user, Container c, Set<String> dataTypes, LoggerGetter logger)
     {
-        super(user, c, null, logger, null);
+        super(user, c, null, dataTypes, logger, null);
     }
 
-    public StudyImportContext(User user, Container c, File studyXml, LoggerGetter logger, VirtualFile root)
+    public StudyImportContext(User user, Container c, File studyXml, Set<String> dataTypes, LoggerGetter logger, VirtualFile root)
     {
-        super(user, c, null, logger, root);  // XStream can't seem to serialize the StudyDocument XMLBean, so we always read the file on demand
+        super(user, c, null, dataTypes, logger, root);  // XStream can't seem to serialize the StudyDocument XMLBean, so we always read the file on demand
         _studyXml = studyXml;
     }
 
-    public StudyImportContext(User user, Container c, StudyDocument studyDoc, LoggerGetter logger, VirtualFile root)
+    public StudyImportContext(User user, Container c, StudyDocument studyDoc, Set<String> dataTypes, LoggerGetter logger, VirtualFile root)
     {
-        super(user, c, studyDoc, logger, root); 
+        super(user, c, studyDoc, dataTypes, logger, root);
     }
 
     @Override
@@ -106,7 +107,7 @@ public class StudyImportContext extends AbstractContext
         return study;
     }
 
-    // TODO: this should go away once study import fully supports using VirtualFile
+    // TODO: this should go away once study import fully supports using VirtualFile -  HMMM.  Why doesn't it?
     @Deprecated
     private File getStudyFile(VirtualFile root, VirtualFile dir, String name) throws ImportException
     {

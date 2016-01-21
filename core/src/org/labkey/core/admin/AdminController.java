@@ -4586,7 +4586,7 @@ public class AdminController extends SpringActionController
                         if (folderXml instanceof FolderDocument)
                         {
                             FolderDocument folderDoc = (FolderDocument)folderXml;
-                            FolderImportContext importCtx = new FolderImportContext(getUser(), c, folderDoc, new StaticLoggerGetter(Logger.getLogger(FolderImporterImpl.class)), vf);
+                            FolderImportContext importCtx = new FolderImportContext(getUser(), c, folderDoc, null, new StaticLoggerGetter(Logger.getLogger(FolderImporterImpl.class)), vf);
 
                             FolderImporterImpl importer = new FolderImporterImpl();
                             importer.process(null, importCtx, vf);

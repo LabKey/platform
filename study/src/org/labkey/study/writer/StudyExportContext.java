@@ -37,7 +37,6 @@ import java.util.Set;
  */
 public class StudyExportContext extends AbstractContext
 {
-    private final Set<String> _dataTypes;
     private final List<DatasetDefinition> _datasets = new LinkedList<>();
     private final Set<Integer> _datasetIds = new HashSet<>();
     private final boolean _removeProtected;
@@ -60,8 +59,7 @@ public class StudyExportContext extends AbstractContext
 
     public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, boolean removeProtected, ParticipantMapper participantMapper, boolean maskClinic, LoggerGetter logger)
     {
-        super(user, c, StudyXmlWriter.getStudyDocument(), logger, null);
-        _dataTypes = dataTypes;
+        super(user, c, StudyXmlWriter.getStudyDocument(), dataTypes, logger, null);
         _removeProtected = removeProtected;
         _participantMapper = participantMapper;
         _maskClinic = maskClinic;
@@ -74,11 +72,6 @@ public class StudyExportContext extends AbstractContext
     {
         this(study, user, c, dataTypes, removeProtected, participantMapper, maskClinic, logger);
         setDatasets(initDatasets);
-    }
-
-    public Set<String> getDataTypes()
-    {
-        return _dataTypes;
     }
 
     @Override
@@ -107,8 +100,8 @@ public class StudyExportContext extends AbstractContext
 
     private void initializeDatasets(StudyImpl study)
     {
-        boolean includeCRF = _dataTypes.contains(DatasetWriter.SELECTION_TEXT);
-        boolean includeAssay = _dataTypes.contains(AssayDatasetWriter.SELECTION_TEXT);
+        boolean includeCRF = getDataTypes().contains(DatasetWriter.SELECTION_TEXT);
+        boolean includeAssay = getDataTypes().contains(AssayDatasetWriter.SELECTION_TEXT);
 
         for (DatasetDefinition dataset : study.getDatasetsByType(Dataset.TYPE_STANDARD, Dataset.TYPE_PLACEHOLDER))
         {

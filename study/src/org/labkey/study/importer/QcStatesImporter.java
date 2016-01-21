@@ -43,9 +43,17 @@ public class QcStatesImporter implements InternalStudyImporter
         return "QC States Importer";
     }
 
+    public String getSelectionText()
+    {
+        return getDescription();
+    }
+
     @Override
     public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws Exception
     {
+        if (!ctx.isDataTypeSelected(getSelectionText()))
+            return;
+
         StudyImpl study = ctx.getStudy();
         StudyDocument.Study.QcStates qcStates = ctx.getXml().getQcStates();
 

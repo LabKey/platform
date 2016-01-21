@@ -20,7 +20,6 @@ import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterImpl;
-import org.labkey.api.admin.FolderWriterNames;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.data.Container;
@@ -143,7 +142,7 @@ public class SubfolderImporterFactory extends AbstractFolderImportFactory
 
                         // import the subfolder with the folderDir as the root with a new import context
                         ctx.getLogger().info("Loading folder archive for " + subfolderName);
-                        FolderImportContext folderCtx = new FolderImportContext(ctx.getUser(), childContainer, folderXml, ctx.getLoggerGetter(), subfolderDir);
+                        FolderImportContext folderCtx = new FolderImportContext(ctx.getUser(), childContainer, folderXml, ctx.getDataTypes(), ctx.getLoggerGetter(), subfolderDir);
                         FolderImporterImpl importer = new FolderImporterImpl(job);
                         importer.process(job, folderCtx, subfolderDir);
                         ctx.getLogger().info("Done importing folder archive for " + subfolderName);

@@ -74,6 +74,9 @@ public class QueryImporter implements FolderImporter
 
     public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws ServletException, XmlException, IOException, SQLException, ImportException
     {
+        if (!ctx.isDataTypeSelected(getSelectionText()))
+            return;
+
         VirtualFile queriesDir = ctx.getDir("queries");
 
         if (null != queriesDir)

@@ -64,6 +64,9 @@ public class ModulePropertiesImporterFactory extends AbstractFolderImportFactory
         @Override
         public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
+            if (!ctx.isDataTypeSelected(getSelectionText()))
+                return;
+
             Container c = ctx.getContainer();
             FolderDocument.Folder folderXml = ctx.getXml();
 

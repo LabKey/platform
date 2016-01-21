@@ -15,7 +15,6 @@
  */
 package org.labkey.study.writer;
 
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractImportContext;
@@ -26,6 +25,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.xml.StudyDocument;
 
+import java.util.Set;
+
 /**
  * User: adam
  * Date: Apr 23, 2009
@@ -33,9 +34,9 @@ import org.labkey.study.xml.StudyDocument;
  */
 public abstract class AbstractContext extends AbstractImportContext<StudyDocument.Study, StudyDocument>
 {
-    protected AbstractContext(User user, Container c, StudyDocument studyDoc, LoggerGetter logger, @Nullable VirtualFile root)
+    protected AbstractContext(User user, Container c, StudyDocument studyDoc, Set<String> dataTypes, LoggerGetter logger, @Nullable VirtualFile root)
     {
-        super(user, c, studyDoc, logger, root);
+        super(user, c, studyDoc, dataTypes, logger, root);
     }
 
     // Study node -- interesting to any study writer that needs to set info into study.xml

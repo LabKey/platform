@@ -33,7 +33,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
-import org.springframework.validation.BindException;
 
 import java.io.File;
 
@@ -55,7 +54,7 @@ public class FolderImportJob extends PipelineJob implements FolderJobSupport
         _root = new FileSystemFile(folderXml.getParentFile());
         _originalFilename = originalFilename;
         setLogFile(FolderImportProvider.logForInputFile(new File(folderXml.getParentFile(), "folder_load"), getPipeRoot()));
-        _ctx = new FolderImportContext(user, c, folderXml, new PipelineJobLoggerGetter(this), _root);
+        _ctx = new FolderImportContext(user, c, folderXml, options.getDataTypes(), new PipelineJobLoggerGetter(this), _root);
         _ctx.setSkipQueryValidation(options.isSkipQueryValidation());
         _ctx.setCreateSharedDatasets(options.isCreateSharedDatasets());
 

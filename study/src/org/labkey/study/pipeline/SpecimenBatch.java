@@ -88,7 +88,7 @@ public class SpecimenBatch extends StudyBatch implements Serializable, StudyJobS
     @Override
     public StudyImportContext getImportContext()
     {
-        return new StudyImportContext(getUser(), getContainer(), new PipelineJobLoggerGetter(this));
+        return new StudyImportContext(getUser(), getContainer(), null, new PipelineJobLoggerGetter(this));
     }
 
     @Override

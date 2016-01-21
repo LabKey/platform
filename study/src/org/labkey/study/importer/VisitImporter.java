@@ -43,6 +43,8 @@ public class VisitImporter implements InternalStudyImporter
         return "Visit Importer";
     }
 
+    public String getType() { return this.getDescription(); }
+
     public boolean isEnsureDatasets()
     {
         return _ensureDatasets;
@@ -55,6 +57,10 @@ public class VisitImporter implements InternalStudyImporter
 
     public void process(StudyImportContext ctx, VirtualFile vf, BindException errors) throws IOException, SQLException, ImportException, ValidationException
     {
+
+        if (!ctx.isDataTypeSelected(getType()))
+            return;
+
         StudyImpl study = ctx.getStudy();
         // Visit map
         StudyDocument.Study.Visits visitsXml = ctx.getXml().getVisits();

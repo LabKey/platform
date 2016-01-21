@@ -99,6 +99,9 @@ public class PageImporterFactory extends AbstractFolderImportFactory
         @Override
         public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
+            if (!ctx.isDataTypeSelected(getSelectionText()))
+                return;
+
             FolderDocument.Folder.Pages pagesXml = ctx.getXml().getPages();
 
             if (null != pagesXml)
