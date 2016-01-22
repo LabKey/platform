@@ -25,10 +25,11 @@
 <%
     Container c = getViewContext().getContainerNoTab();
     Container project = c.getProject();
-    boolean canCreateSharedDatasets = false;
     String requestOrigin = (request.getParameter("origin") != null) ? request.getParameter("origin") : "here";
+    boolean isStudyRequest = requestOrigin.equals("Study") || requestOrigin.equals("Reload");
 
-    if (!c.isProject() && null != project && project != c)
+    boolean canCreateSharedDatasets = false;
+    if (isStudyRequest && !c.isProject() && null != project && project != c)
     {
         if (project.hasPermission(getViewContext().getUser(), AdminPermission.class))
         {

@@ -41,9 +41,9 @@
 
     Container c = getViewContext().getContainerNoTab();
     Container project = c.getProject();
-    boolean canCreateSharedDatasets = false;
 
-    if (!c.isProject() && null != project && project != c)
+    boolean canCreateSharedDatasets = false;
+    if (bean.isAsStudy() && !c.isProject() && null != project && project != c)
     {
         if (project.hasPermission(getViewContext().getUser(), AdminPermission.class))
         {
