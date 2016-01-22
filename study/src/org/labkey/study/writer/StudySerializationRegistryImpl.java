@@ -17,29 +17,28 @@ package org.labkey.study.writer;
 
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
-import org.labkey.api.admin.FolderWriter;
-import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.study.*;
 import org.labkey.study.importer.AssayScheduleImporter;
 import org.labkey.study.importer.CohortImporter;
+import org.labkey.study.importer.DatasetCohortAssigner;
 import org.labkey.study.importer.DatasetDefinitionImporter;
 import org.labkey.study.importer.InternalStudyImporter;
 import org.labkey.study.importer.ParticipantCommentImporter;
 import org.labkey.study.importer.ParticipantGroupImporter;
 import org.labkey.study.importer.ProtocolDocumentImporter;
 import org.labkey.study.importer.QcStatesImporter;
-import org.labkey.study.importer.SpecimenImporter;
+import org.labkey.study.importer.SpecimenSchemaImporter;
 import org.labkey.study.importer.SpecimenSettingsImporter;
 import org.labkey.study.importer.StudyViewsImporter;
 import org.labkey.study.importer.TreatmentDataImporter;
+import org.labkey.study.importer.TreatmentVisitMapImporter;
 import org.labkey.study.importer.ViewCategoryImporter;
+import org.labkey.study.importer.VisitCohortAssigner;
 import org.labkey.study.importer.VisitImporter;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class StudySerializationRegistryImpl implements StudySerializationRegistry
@@ -98,7 +97,6 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
         );
     }
 
-    // These importers are internal to study and should match one-to-one with the InternalStudyWriters above
     public Collection<InternalStudyImporter> getInternalStudyImporters()
     {
         return Arrays.asList(
@@ -106,18 +104,18 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
             new ViewCategoryImporter(),
             new CohortImporter(),
             new DatasetDefinitionImporter(),
-            // TODO Dataset Data
+            new DatasetCohortAssigner(),
             new ParticipantCommentImporter(),
             new ParticipantGroupImporter(),
             new ProtocolDocumentImporter(),
             new QcStatesImporter(),
             new SpecimenSettingsImporter(),
-            // TODO Specimens
+            new SpecimenSchemaImporter(),
             new TreatmentDataImporter(),
+            new TreatmentVisitMapImporter(),
             new VisitImporter(),
+            new VisitCohortAssigner(),
             new StudyViewsImporter()
-
-            // TODO what about VisitCohortAssigner, TreatmentVisitMapImporter, SpecimenSchemaImporter, DatasetCohortAssigner?
         );
     }
 }

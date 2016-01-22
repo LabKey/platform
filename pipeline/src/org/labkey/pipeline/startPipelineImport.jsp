@@ -91,6 +91,10 @@
     .import-option-input {
         padding-top: 5px;
     }
+
+    .import-option-hide {
+        display: none;
+    }
 </style>
 
 <script type="text/javascript">
@@ -296,14 +300,13 @@ Ext4.define('LABKEY.import.OptionsPanel', {
 
     getImportOptionInputConfig : function(dataType, parent, hide)
     {
-        var labelStyle = hide === true ? 'style="display:none;"' : '',
-            checked = hide ? '' : <%=q(bean.isAdvancedImportOptions() ? " checked": "")%>,
+        var checked = hide ? '' : <%=q(bean.isAdvancedImportOptions() ? " checked": "")%>,
             parentAttr = parent ? 'parentDataType="' + parent + '"' : '';
 
         return {
             xtype: 'box',
-            cls: 'import-option-input',
-            html: '<label ' + labelStyle + '><input type="checkbox" name="dataTypes" '
+            cls: hide ? 'import-option-hide' : 'import-option-input',
+            html: '<label><input type="checkbox" name="dataTypes" '
                 + 'value="' + dataType + '" ' + parentAttr + checked + '>' + dataType + '</label>'
         }
     },

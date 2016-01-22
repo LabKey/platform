@@ -55,12 +55,18 @@ public class VisitCohortAssigner implements InternalStudyImporter
         return "visit map cohort assignments";
     }
 
-    public String getDataType() { return StudyArchiveDataTypes.COHORT_SETTINGS; }
+    public String getDataType()
+    {
+        return StudyArchiveDataTypes.VISIT_MAP;
+    }
 
     // Parses the whole visit map again to retrieve the cohort assignments; should cache info from the first parsing
     // somewhere in the StudyImportContext
     public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws SQLException, ImportException
     {
+        if (!ctx.isDataTypeSelected(getDataType()))
+            return;
+
         StudyImpl study = ctx.getStudy();
         StudyDocument.Study.Visits visitsXml = ctx.getXml().getVisits();
 

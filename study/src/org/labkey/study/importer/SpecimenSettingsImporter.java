@@ -71,7 +71,10 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
     }
 
     @Override
-    public String getDataType() { return StudyArchiveDataTypes.SPECIMEN_SETTINGS; }
+    public String getDataType()
+    {
+        return StudyArchiveDataTypes.SPECIMEN_SETTINGS;
+    }
 
     @Override
     public void process(StudyImportContext ctx, VirtualFile studyDir, BindException errors) throws SQLException, ImportException, IOException

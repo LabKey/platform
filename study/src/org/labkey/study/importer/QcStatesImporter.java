@@ -23,6 +23,7 @@ import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.QCState;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.xml.StudyDocument;
 import org.labkey.study.xml.qcStates.StudyqcDocument;
 import org.springframework.validation.BindException;
@@ -45,7 +46,7 @@ public class QcStatesImporter implements InternalStudyImporter
 
     public String getDataType()
     {
-        return getDescription();
+        return StudyArchiveDataTypes.QC_STATE_SETTINGS;
     }
 
     @Override

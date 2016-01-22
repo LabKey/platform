@@ -60,7 +60,6 @@ public class VisitImporter implements InternalStudyImporter
 
     public void process(StudyImportContext ctx, VirtualFile vf, BindException errors) throws IOException, SQLException, ImportException, ValidationException
     {
-
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
 

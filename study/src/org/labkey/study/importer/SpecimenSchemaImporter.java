@@ -66,7 +66,10 @@ public class SpecimenSchemaImporter implements InternalStudyImporter
     }
 
     @Override
-    public String getDataType() { return StudyArchiveDataTypes.SPECIMENS; }
+    public String getDataType()
+    {
+        return StudyArchiveDataTypes.SPECIMENS;
+    }
 
     public static boolean containsSchemasToImport(StudyImportContext ctx) throws ImportException
     {
@@ -103,6 +106,9 @@ public class SpecimenSchemaImporter implements InternalStudyImporter
     @Override
     public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws Exception
     {
+        if (!ctx.isDataTypeSelected(getDataType()))
+            return;
+
         TablesDocument tablesDoc;
         try
         {

@@ -53,7 +53,10 @@ public class TreatmentVisitMapImporter extends DefaultStudyDesignImporter implem
     }
 
     @Override
-    public String getDataType() { return StudyArchiveDataTypes.VISIT_MAP; }
+    public String getDataType()
+    {
+        return StudyArchiveDataTypes.TREATMENT_DATA;
+    }
 
     @Override
     public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws Exception

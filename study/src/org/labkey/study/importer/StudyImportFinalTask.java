@@ -62,7 +62,6 @@ public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.
     {
         try
         {
-            // TODO: Pull these from the study serialization registry?
             Collection<InternalStudyImporter> internalImporters = new LinkedList<>();
 
             // Dataset and Specimen upload jobs delete "unused" participants, so we need to defer setting participant

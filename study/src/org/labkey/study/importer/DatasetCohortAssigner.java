@@ -46,7 +46,7 @@ public class DatasetCohortAssigner implements InternalStudyImporter
         return "dataset cohort assignments";
     }
 
-    public String getDataType() { return StudyArchiveDataTypes.COHORT_SETTINGS; }
+    public String getDataType() { return StudyArchiveDataTypes.DATASET_DEFINITIONS; }
 
     // Parses the dataset manifest again to retrieve the cohort assignments; should cache info from the first parsing
     // somewhere in the StudyImportContext
