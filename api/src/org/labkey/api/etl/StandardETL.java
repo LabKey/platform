@@ -162,7 +162,7 @@ public class StandardETL implements DataIteratorBuilder
             TranslateHelper p = new TranslateHelper(col,dp);
             String uri = col.getPropertyURI();
             if (null != uri)
-                 translateHelperMap.put(uri, p);
+                 translateHelperMap.put(getTranslateHelperKey(col), p);
             unusedCols.put(col.getFieldKey(), p);
         }
 
@@ -179,7 +179,7 @@ public class StandardETL implements DataIteratorBuilder
             ColumnInfo targetCol = matches.get(i);
             TranslateHelper to = null;
             if (null != targetCol)
-                to = translateHelperMap.get(targetCol.getPropertyURI());
+                to = translateHelperMap.get(getTranslateHelperKey(targetCol));
 
             if (null != to)
             {
@@ -243,6 +243,10 @@ public class StandardETL implements DataIteratorBuilder
         return LoggingDataIterator.wrap(ErrorIterator.wrap(last, context, false, setupError));
     }
 
+    private String getTranslateHelperKey(ColumnInfo col)
+    {
+        return col.getPropertyURI() + ":" + col.getName().toLowerCase();
+    }
 
     boolean isRequiredForInsert(@NotNull ColumnInfo col, @Nullable DomainProperty dp)
     {
