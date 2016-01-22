@@ -960,6 +960,13 @@ public class ListManager implements SearchService.DocumentProvider
                 ListDefinition list = ListDefinitionImpl.of(def);
                 Domain domain = list.getDomain();
                 DomainKind kind = domain.getDomainKind();
+                if (kind instanceof ListDomainType)
+                {
+                    String fullListPath = list.getContainer().getPath() + " " + list.getName();
+                    LOG.warn("Found list that was not migrated to a hard table: " + domain.getTypeURI() + " " + fullListPath);
+                    LOG.warn("This list has not been functional since the 13.2 upgrade. Please contact LabKey for assistance in deleting it.");
+                    continue;
+                }
 
                 try
                 {

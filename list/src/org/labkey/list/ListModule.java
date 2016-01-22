@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.AdminLinkManager;
@@ -41,6 +42,7 @@ import org.labkey.list.model.FolderListWriter;
 import org.labkey.list.model.IntegerListDomainKind;
 import org.labkey.list.model.ListAuditProvider;
 import org.labkey.list.model.ListDef;
+import org.labkey.list.model.ListDomainType;
 import org.labkey.list.model.ListManager;
 import org.labkey.list.model.ListManagerSchema;
 import org.labkey.list.model.ListQuerySchema;
@@ -91,6 +93,9 @@ public class ListModule extends DefaultModule
         ListService.setInstance(new ListServiceImpl());
         ListQuerySchema.register(this);
         ListManagerSchema.register(this);
+
+        // NOTE: This domain kind is only maintained for purposes of migrating lists to hard tables.
+        PropertyService.get().registerDomainKind(new ListDomainType());
 
         PropertyService.get().registerDomainKind(new IntegerListDomainKind());
         PropertyService.get().registerDomainKind(new VarcharListDomainKind());
@@ -168,6 +173,25 @@ public class ListModule extends DefaultModule
     public Collection<String> getProvisionedSchemaNames()
     {
         return PageFlowUtil.set(ListSchema.getInstance().getSchemaName());
+    }
+
+    @Override
+    public UpgradeCode getUpgradeCode()
+    {
+        return new ListUpgradeCode();
+    }
+
+    public static class ListUpgradeCode implements UpgradeCode
+    {
+        /** called at 13.30->14.10 */
+        @SuppressWarnings("unused")
+        public void addContainerColumns(final ModuleContext moduleContext)
+        {
+            if (moduleContext.isNewInstall())
+                return;
+
+            ListManager.get().addContainerColumns(moduleContext.getUpgradeUser());
+        }
     }
 
     @NotNull
