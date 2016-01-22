@@ -38,11 +38,15 @@ import org.labkey.api.etl.MapDataIterator;
 import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.etl.TableInsertDataIterator;
 import org.labkey.api.etl.WrapperDataIterator;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpProtocolOutput;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
@@ -71,7 +75,9 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.controllers.exp.ExperimentController;
+import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -419,7 +425,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
     @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
-        DataIteratorBuilder step0 = new DataClassDataIteratorBuilder(data, context);
+        DataIteratorBuilder step0 = new DataClassDataIteratorBuilder(data, context, getUserSchema().getUser());
         return new DataClassAliasIteratorBuilder(step0, context, getUserSchema().getUser());
     }
 
@@ -451,11 +457,13 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
         // genId sequence state
         private int _count = 0;
         private Integer _sequenceNum;
+        private User _user;
 
-        DataClassDataIteratorBuilder(@NotNull DataIteratorBuilder in, DataIteratorContext context)
+        DataClassDataIteratorBuilder(@NotNull DataIteratorBuilder in, DataIteratorContext context, User user)
         {
             _context = context;
             _in = in;
+            _user = user;
         }
 
         @Override
@@ -535,10 +543,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             DataIteratorBuilder step3 = TableInsertDataIterator.create(step2, ExpDataClassDataTableImpl.this._dataClass.getTinfo(), c, context);
 
             // Wire up derived parent/child data and materials
-            // TODO: Don't hard-code the parent column name
-            DataIteratorBuilder step4 = step3;
-            if (_rootTable.getColumn("parent") != null)
-                step4 = new DerivationDataIteratorBuilder(step3);
+            DataIteratorBuilder step4 = new DerivationDataIteratorBuilder(step3, _user);
 
             // Hack: add the alias and lsid values back into the input so we can process them in the chained data iterator
             DataIteratorBuilder step5 = step4;
@@ -587,7 +592,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
             final ExperimentService.Interface svc = ExperimentService.get();
             SimpleTranslator step0 = new SimpleTranslator(input, context);
-            step0.selectAll(Sets.newCaseInsensitiveHashSet("alias"));
+            step0.selectAll(Sets.newCaseInsensitiveHashSet("lsid", "alias"));
 
             ColumnInfo aliasCol = getColumn(FieldKey.fromParts("alias"));
             final Map<String, Integer> colNameMap = DataIteratorUtil.createColumnNameMap(input);
@@ -782,17 +787,19 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
     private class DerivationDataIteratorBuilder implements DataIteratorBuilder
     {
         final DataIteratorBuilder _pre;
+        final User _user;
 
-        DerivationDataIteratorBuilder(DataIteratorBuilder pre)
+        DerivationDataIteratorBuilder(DataIteratorBuilder pre, User user)
         {
             _pre = pre;
+            _user = user;
         }
 
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator pre = _pre.getDataIterator(context);
-            return LoggingDataIterator.wrap(new DerivationDataIterator(pre, context));
+            return LoggingDataIterator.wrap(new DerivationDataIterator(pre, context, _user));
         }
     }
 
@@ -800,20 +807,33 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
     {
         final DataIteratorContext _context;
         final Integer _lsidCol;
-        final Integer _parentCol;
+        Integer _parentCol;
+        String _parentColName;
         final Set<String> _allParentNames;
         final Map<String, Set<String>> _parentNames;
+        final User _user;
 
-        protected DerivationDataIterator(DataIterator di, DataIteratorContext context)
+        protected DerivationDataIterator(DataIterator di, DataIteratorContext context, User user)
         {
             super(di);
             _context = context;
 
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
             _lsidCol = map.get("lsid");
-            _parentCol = map.get("parent");
             _allParentNames = new HashSet<>();
             _parentNames = new LinkedHashMap<>();
+            _user = user;
+
+            for (Map.Entry<String, Integer> entry : map.entrySet())
+            {
+                if (entry.getKey().toLowerCase().startsWith(UploadSamplesHelper.DATA_INPUT_PARENT.toLowerCase()) ||
+                    entry.getKey().toLowerCase().startsWith(UploadSamplesHelper.MATERIAL_INPUT_PARENT.toLowerCase()))
+                {
+                    _parentCol = entry.getValue();
+                    _parentColName = entry.getKey();
+                    break;
+                }
+            }
         }
 
         @Override
@@ -822,24 +842,68 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             boolean hasNext = super.next();
 
             // For each iteration, collect the parent col values
-            String lsid = (String) get(_lsidCol);
-            String parent = (String) get(_parentCol);
-            if (parent != null)
+            if (_parentCol != null)
             {
-                Set<String> parts = Arrays.stream(parent.split(","))
-                        .map(String::trim)
-                        .filter(s -> !s.isEmpty())
-                        .collect(Collectors.toSet());
-                _allParentNames.addAll(parts);
-                _parentNames.put(lsid, parts);
+                String lsid = (String) get(_lsidCol);
+                String parent = (String) get(_parentCol);
+                if (parent != null)
+                {
+                    Set<String> parts = Arrays.stream(parent.split(","))
+                            .map(String::trim)
+                            .filter(s -> !s.isEmpty())
+                            .collect(Collectors.toSet());
+                    _allParentNames.addAll(parts);
+                    _parentNames.put(lsid, parts);
+                }
             }
 
             if (!hasNext)
             {
-                // TODO: On last iteration, perform all derivations
+                try
+                {
+                    List<SimpleRunRecord> runRecords = new ArrayList<>();
+                    for (Map.Entry<String, Set<String>> entry : _parentNames.entrySet())
+                    {
+                        Map<ExpProtocolOutput, String> parentMap = new HashMap<>();
+                        for (String name : entry.getValue())
+                        {
+                            UploadSamplesHelper.resolveParentInputs(_user, getContainer(), _parentColName, name, null, parentMap);
+                        }
+
+                        if (!parentMap.isEmpty())
+                        {
+                            // Need to create a new derivation run
+                            Map<ExpMaterial, String> parentMaterialMap = new HashMap<>();
+                            Map<ExpData, String> parentDataMap = new HashMap<>();
+
+                            for (Map.Entry<ExpProtocolOutput, String> mapEntry : parentMap.entrySet())
+                            {
+                                if (mapEntry.getKey() instanceof ExpMaterial)
+                                    parentMaterialMap.put((ExpMaterial)mapEntry.getKey(), mapEntry.getValue());
+                                else if (mapEntry.getKey() instanceof ExpData)
+                                    parentDataMap.put((ExpData)mapEntry.getKey(), mapEntry.getValue());
+                            }
+
+                            // get the output data
+                            ExpData outputData = ExperimentService.get().getExpData(entry.getKey());
+                            if (outputData != null)
+                            {
+                                runRecords.add(new UploadSamplesHelper.UploadSampleRunRecord(parentMaterialMap, Collections.emptyMap(),
+                                        parentDataMap, Collections.singletonMap(outputData, "Data")));
+                            }
+                        }
+                    }
+
+                    if (!runRecords.isEmpty())
+                    {
+                        ExperimentService.get().deriveSamplesBulk(runRecords, new ViewBackgroundInfo(getContainer(), _user, null), null);
+                    }
+                }
+                catch (ExperimentException e)
+                {
+                    throw new RuntimeException(e);
+                }
             }
-
-
             return hasNext;
         }
     }

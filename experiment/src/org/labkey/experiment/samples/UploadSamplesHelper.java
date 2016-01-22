@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
@@ -75,8 +76,8 @@ import java.util.Set;
 public class UploadSamplesHelper
 {
     private static final Logger _log = Logger.getLogger(UploadSamplesHelper.class);
-    private static final String MATERIAL_INPUT_PARENT = "MaterialInputs";
-    private static final String DATA_INPUT_PARENT = "DataInputs";
+    public static final String MATERIAL_INPUT_PARENT = "MaterialInputs";
+    public static final String DATA_INPUT_PARENT = "DataInputs";
 
     UploadMaterialSetForm _form;
     private MaterialSource _materialSource;
@@ -629,7 +630,7 @@ public class UploadSamplesHelper
         return helper._materials;
     }
 
-    private static class UploadSampleRunRecord implements SimpleRunRecord
+    public static class UploadSampleRunRecord implements SimpleRunRecord
     {
         Map<ExpMaterial, String> _inputMaterial;
         Map<ExpMaterial, String> _outputMaterial;
@@ -670,6 +671,50 @@ public class UploadSamplesHelper
         }
     }
 
+    /**
+     * support for mapping DataClass or SampleSet objects as a parent input using the column name format:
+     * DataInputs/<data class name> or MaterialInputs/<sample set name>. Either / or . works as a delimiter
+     *
+     * @param parentColName - the name of the parent column
+     * @param parentValue - value of the parent column, this would typically be the name of the data or sample
+     * @throws ExperimentException
+     */
+    public static void resolveParentInputs(User user, Container c, String parentColName, String parentValue, @Nullable MaterialSource source,
+                                           Map<ExpProtocolOutput, String> parentMap) throws ExperimentException
+    {
+        // support for mapping DataClass or SampleSet objects as a parent input using the column name format:
+        // DataInputs/<data class name> or MaterialInputs/<sample set name>. Either / or . works as a delimiter
+        //
+        String[] parts = parentColName.split("\\.|/");
+        if (parts.length == 2)
+        {
+            if (parts[0].equalsIgnoreCase(MATERIAL_INPUT_PARENT))
+            {
+                ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(c, parts[1]);
+                if (sampleSet != null)
+                {
+                    ExpMaterial sample = sampleSet.getSample(c, parentValue);
+                    if (sample != null)
+                        parentMap.put(sample, "Sample");
+                }
+            }
+            else if (parts[0].equalsIgnoreCase(DATA_INPUT_PARENT))
+            {
+                if (source != null)
+                    ensureTargetColumnLookup(user, c, source, parentColName, "exp.data", parts[1]);
+                ExpDataClass dataClass = ExperimentService.get().getDataClass(c, user, parts[1]);
+                if (dataClass != null)
+                {
+                    ExpData data = dataClass.getData(c, parentValue);
+                    if (data != null)
+                    {
+                        parentMap.put(data, data.getName());
+                    }
+                }
+            }
+        }
+    }
+
     Map<ExpProtocolOutput, String> resolveParentInputs(User user, Container c, MaterialSource source, PropertyDescriptor sourceDescriptor,
                                                        Map<String, Object> row,
                                                        Map<String, List<ExpMaterialImpl>> potentialParents,
@@ -686,33 +731,7 @@ public class UploadSamplesHelper
                 // support for mapping DataClass or SampleSet objects as a parent input using the column name format:
                 // DataInputs/<data class name> or MaterialInputs/<sample set name>. Either / or . works as a delimiter
                 //
-                String[] parts = parentColName.split("\\.|/");
-                if (parts.length == 2)
-                {
-                    if (parts[0].equalsIgnoreCase(MATERIAL_INPUT_PARENT))
-                    {
-                        ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(c, parts[1]);
-                        if (sampleSet != null)
-                        {
-                            ExpMaterial sample = sampleSet.getSample(c, newParent);
-                            if (sample != null)
-                                parentInputMap.put(sample, "Sample");
-                        }
-                    }
-                    else if (parts[0].equalsIgnoreCase(DATA_INPUT_PARENT))
-                    {
-                        ensureTargetColumnLookup(user, c, source, parentColName, "exp.data", parts[1]);
-                        ExpDataClass dataClass = ExperimentService.get().getDataClass(c, user, parts[1]);
-                        if (dataClass != null)
-                        {
-                            ExpData data = dataClass.getData(c, newParent);
-                            if (data != null)
-                            {
-                                parentInputMap.put(data, data.getName());
-                            }
-                        }
-                    }
-                }
+                resolveParentInputs(user, c, parentColName, newParent, source, parentInputMap);
             }
 
             // legacy magic column value method (only current way to map to multiple parents)
@@ -756,7 +775,7 @@ public class UploadSamplesHelper
         return parentInputMap;
     }
 
-    private void ensureTargetColumnLookup(User user, Container c, MaterialSource source, String propName, String schemaName, String queryName) throws ExperimentException
+    private static void ensureTargetColumnLookup(User user, Container c, MaterialSource source, String propName, String schemaName, String queryName) throws ExperimentException
     {
         Domain domain = PropertyService.get().getDomain(c, source.getLSID());
         if (domain != null)

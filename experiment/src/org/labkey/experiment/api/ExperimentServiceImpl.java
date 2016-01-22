@@ -3660,6 +3660,18 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                         ));
                     }
                 }
+                // wire the output materials to the protocol input for the last action
+                else if (rec._action.getSequence() == SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE)
+                {
+                    for (Map.Entry<ExpData, String> entry : rec._runRecord.getOutputDataMap().entrySet())
+                    {
+                        dataInputParams.add(Arrays.asList(
+                                entry.getValue(),
+                                entry.getKey().getRowId(),
+                                rec._protApp.getRowId()
+                        ));
+                    }
+                }
             }
         }
 
