@@ -17,6 +17,7 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
@@ -26,10 +27,12 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.util.Collections;
+import java.util.Map;
 
 /**
  * User: jeckels
@@ -107,8 +110,10 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
         addColumn(ExpSampleSetTable.Column.Active);
         addColumn(ExpSampleSetTable.Column.SampleCount);
 
-        setDetailsURL(new DetailsURL(new ActionURL(ExperimentController.ShowMaterialSourceAction.class, _userSchema.getContainer()),
-                Collections.singletonMap("rowId", "RowId")));
+        DetailsURL detailsURL = new DetailsURL(new ActionURL(ExperimentController.ShowMaterialSourceAction.class, _userSchema.getContainer()),
+                Collections.singletonMap("rowId", "RowId"));
+        detailsURL.setContainerContext(_userSchema.getContainer());
+        setDetailsURL(detailsURL);
     }
 
 }

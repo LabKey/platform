@@ -141,6 +141,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.*;
 import org.labkey.experiment.api.DataClass;
 import org.labkey.experiment.api.ExpDataClassImpl;
@@ -468,7 +469,11 @@ public class ExperimentController extends SpringActionController
                 throw new NotFoundException("No matching sample set found");
             }
 
-            ensureCorrectContainer(getContainer(), _source, getViewContext());
+            List<ExpSampleSetImpl> allScopedSampleSets = ExperimentServiceImpl.get().getSampleSets(getContainer(), getUser(), true);
+            if (!allScopedSampleSets.contains(_source))
+            {
+                ensureCorrectContainer(getContainer(), _source, getViewContext());
+            }
 
             SamplesSchema schema = new SamplesSchema(getUser(), getContainer());
             QuerySettings settings = schema.getSettings(getViewContext(), "Material", _source.getName());
@@ -552,13 +557,26 @@ public class ExperimentController extends SpringActionController
                 detailsView.getDataRegion().addDisplayColumn(parentCol);
             }
 
+            if (!getContainer().equals(_source.getContainer()))
+            {
+                ActionURL definitionURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getShowSampleSetURL(_source);
+                SimpleDisplayColumn definedInCol = new SimpleDisplayColumn("<a href=\"" +
+                        PageFlowUtil.filter(definitionURL) +
+                        "\">" +
+                        PageFlowUtil.filter(_source.getContainer().getPath()) +
+                        "</a>");
+                definedInCol.setCaption("Defined In");
+                detailsView.getDataRegion().addDisplayColumn(definedInCol);
+            }
+
             // Not all sample sets can be edited
             DomainKind domainKind = _source.getType().getDomainKind();
             if (!ExperimentService.get().ensureDefaultSampleSet().equals(_source) && domainKind != null && domainKind.canEditDefinition(getUser(), _source.getType()))
             {
-                ActionURL editURL = domainKind.urlEditDefinition(_source.getType(), getViewContext());
+                ActionURL editURL = domainKind.urlEditDefinition(_source.getType(), new ViewBackgroundInfo(_source.getContainer(), getUser(), getViewContext().getActionURL()));
                 if (editURL != null)
                 {
+                    editURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
                     ActionButton editTypeButton = new ActionButton(editURL, "Edit Fields", DataRegion.MODE_DETAILS);
                     editTypeButton.setDisplayPermission(UpdatePermission.class);
                     detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(editTypeButton);
@@ -566,13 +584,16 @@ public class ExperimentController extends SpringActionController
 
                 if (domainKind instanceof SampleSetDomainKind)
                 {
-                    ActionButton updateButton = new ActionButton(ShowUpdateMaterialSourceAction.class, "Edit Set", DataRegion.MODE_DETAILS, ActionButton.Action.GET);
+                    ActionURL updateURL = new ActionURL(ShowUpdateMaterialSourceAction.class, _source.getContainer());
+                    updateURL.addParameter("RowId", _source.getRowId());
+                    updateURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+                    ActionButton updateButton = new ActionButton(updateURL, "Edit Set", DataRegion.MODE_DETAILS, ActionButton.Action.LINK);
                     updateButton.setDisplayPermission(UpdatePermission.class);
                     detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(updateButton);
 
                     ActionButton deleteButton = new ActionButton(ExperimentController.DeleteMaterialSourceAction.class, "Delete Set", DataRegion.MODE_DETAILS, ActionButton.Action.POST);
                     deleteButton.setDisplayPermission(DeletePermission.class);
-                    ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, getContainer());
+                    ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, _source.getContainer());
                     deleteURL.addParameter("singleObjectRowId", _source.getRowId());
                     deleteURL.addParameter(ActionURL.Param.returnUrl, ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()).toString());
 
@@ -587,6 +608,7 @@ public class ExperimentController extends SpringActionController
                 ActionURL urlUploadSamples = new ActionURL(ShowUploadMaterialsAction.class, getContainer());
                 urlUploadSamples.addParameter("name", _source.getName());
                 urlUploadSamples.addParameter("importMoreSamples", "true");
+                urlUploadSamples.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
                 ActionButton uploadButton = new ActionButton(urlUploadSamples, "Import More Samples", DataRegion.MODE_ALL, ActionButton.Action.LINK);
                 uploadButton.setDisplayPermission(UpdatePermission.class);
                 detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(uploadButton);
@@ -2918,7 +2940,12 @@ public class ExperimentController extends SpringActionController
                 throw new UnauthorizedException("Cannot edit default sample set");
             }
 
-            return new UpdateView(getMaterialSourceRegion(getViewContext(), false), form, errors);
+            UpdateView updateView = new UpdateView(getMaterialSourceRegion(getViewContext(), false), form, errors);
+            if (form.getReturnUrl() != null)
+            {
+                updateView.getDataRegion().addHiddenFormField(ActionURL.Param.returnUrl, form.getReturnUrl().toString());
+            }
+            return updateView;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -3029,10 +3056,10 @@ public class ExperimentController extends SpringActionController
             return true;
         }
 
-        public ActionURL getSuccessURL(MaterialSourceForm materialSourceForm)
+        public ActionURL getSuccessURL(MaterialSourceForm form)
         {
             setHelpTopic("sampleSets");
-            return ExperimentUrlsImpl.get().getShowSampleSetURL(ExperimentService.get().getSampleSet(_source.getRowId()));
+            return form.getReturnActionURL(ExperimentUrlsImpl.get().getShowSampleSetURL(ExperimentService.get().getSampleSet(_source.getRowId())));
         }
     }
 
@@ -3047,8 +3074,8 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(UpdatePermission.class)
     public class ShowUploadMaterialsAction extends FormViewAction<UploadMaterialSetForm>
     {
-        ExpSampleSet _ss;
-        ExpSampleSet _newss;
+        ExpSampleSetImpl _ss;
+        ExpSampleSetImpl _newss;
 
         @Override
         public void validateCommand(UploadMaterialSetForm form, Errors errors)
@@ -3073,8 +3100,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public boolean handlePost(UploadMaterialSetForm form, BindException errors) throws Exception
         {
-            String materialSourceLsid = ExperimentService.get().getSampleSetLsid(form.getName(), getContainer()).toString();
-            _ss = ExperimentService.get().getSampleSet(materialSourceLsid);
+            _ss = form.getSampleSet();
 
             // TODO: how to get this FormattedError into the validate command?
             if (!form.isImportMoreSamples() && null != _ss)
@@ -3087,12 +3113,12 @@ public class ExperimentController extends SpringActionController
             {
                 try
                 {
-                    UploadSamplesHelper helper = new UploadSamplesHelper(form);
+                    UploadSamplesHelper helper = new UploadSamplesHelper(form, _ss == null ? null : _ss.getDataObject());
                     Pair<MaterialSource, List<ExpMaterial>> pair = helper.uploadMaterials();
                     MaterialSource newSource = pair.first;
 
-                    ExpSampleSet activeSampleSet = ExperimentService.get().lookupActiveSampleSet(getContainer());
-                    ExpSampleSet newSampleSet = ExperimentService.get().getSampleSet(newSource.getRowId());
+                    ExpSampleSetImpl activeSampleSet = ExperimentServiceImpl.get().lookupActiveSampleSet(getContainer());
+                    ExpSampleSetImpl newSampleSet = ExperimentServiceImpl.get().getSampleSet(newSource.getRowId());
 
                     if (activeSampleSet == null)
                     {
@@ -3100,15 +3126,7 @@ public class ExperimentController extends SpringActionController
                     }
                     _newss = newSampleSet;
                 }
-                catch (ExperimentException e)
-                {
-                    errors.reject(ERROR_MSG, e.getMessage());
-                }
-                catch (ValidationException e)
-                {
-                    errors.reject(ERROR_MSG, e.getMessage());
-                }
-                catch (IOException e)
+                catch (ExperimentException | IOException | ValidationException e)
                 {
                     errors.reject(ERROR_MSG, e.getMessage());
                 }
@@ -3118,12 +3136,9 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public URLHelper getSuccessURL(UploadMaterialSetForm uploadMaterialSetForm)
+        public URLHelper getSuccessURL(UploadMaterialSetForm form)
         {
-            if (_newss != null)
-                return ExperimentUrlsImpl.get().getShowSampleSetURL(_newss);
-            // NOTE: raise an error here (because if you did get here you should already have hit an error)?
-            return null;
+            return form.getReturnActionURL(_newss != null ? ExperimentUrlsImpl.get().getShowSampleSetURL(_newss) : getContainer().getStartURL(getUser()));
         }
 
         public NavTree appendNavTrail(NavTree root)

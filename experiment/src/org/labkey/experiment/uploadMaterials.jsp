@@ -121,6 +121,7 @@
     <a href="<%= urlProvider(PipelineUrls.class).urlBrowse(getContainer(), getActionURL()) %>">Data Pipeline</a>.
 </p>
 <labkey:form id="sampleSetUploadForm" action="<%=h(buildURL(ExperimentController.ShowUploadMaterialsAction.class))%>" method="POST">
+    <input type="hidden" name="<%= h(ActionURL.Param.returnUrl)%>" value="<%=h(form.getReturnUrl())%>" />
 <table>
     <tr>
         <td class="labkey-form-label" width="100">Name</td>

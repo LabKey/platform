@@ -273,10 +273,6 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             {
                 setDescription("Contains one row per sample in the " + ss.getName() + " sample set");
             }
-            if (!ss.getContainer().equals(getContainer()))
-            {
-                setContainerFilter(new ContainerFilter.CurrentPlusExtras(_userSchema.getUser(), ss.getContainer()));
-            }
         }
 
         addColumn(ExpMaterialTable.Column.RowId);
@@ -305,7 +301,13 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         {
             public TableInfo getLookupTableInfo()
             {
-                return new ExpSchema(_userSchema.getUser(), _userSchema.getContainer()).getTable(ExpSchema.TableType.SampleSets);
+                ExpSchema expSchema = new ExpSchema(_userSchema.getUser(), _userSchema.getContainer());
+                if (ss != null)
+                {
+                    // Be sure that we can resolve the sample set if it's defined in a separate container
+                    expSchema.setContainerFilter(new ContainerFilter.CurrentPlusExtras(_userSchema.getUser(), ss.getContainer()));
+                }
+                return expSchema.getTable(ExpSchema.TableType.SampleSets);
             }
 
             @Override
