@@ -479,12 +479,6 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             return result;
         }
 
-        if ("Folder".equalsIgnoreCase(name))
-            return getColumn("Container");
-
-        if ("Container".equalsIgnoreCase(name))
-            return null;        // Don't look for Container in Properties
-
         // Resolve 'ParticipantSequenceKey' to 'ParticipantSequenceNum' for compatibility with versions <12.2.
         if ("ParticipantSequenceKey".equalsIgnoreCase(name))
             return getColumn("ParticipantSequenceNum");
