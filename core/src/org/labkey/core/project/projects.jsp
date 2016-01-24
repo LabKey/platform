@@ -170,7 +170,7 @@ Ext4.onReady(function() {
         frame: false,
         header : false,
         buttonAlign: 'left',
-        emptyText: 'No folder to display',
+        emptyText: 'No ' + config.noun.toLowerCase() + 's to display',
         deferEmptyText: false,
         store: store
     };
