@@ -152,6 +152,7 @@ Ext4.define('LABKEY.ext.IconPanel', {
                     '<tpl if="xindex % columns === 0"></tr><tr></tpl>',
                 '</tpl>',
                 '</td></tr></table>',
+                '<tpl if="values.length === 0"><div>' + (this.emptyText || 'No matching data to show') + '</div></tpl>',
                 '<div class="x-clear"></div>'
             ],
             imageSizeMap: {
