@@ -613,20 +613,26 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
                             ((List) value).stream().filter(item -> item instanceof String).forEach(item -> {
 
+                                String itemEntry = (String)item;
+                                if (itemEntry.startsWith("[") && itemEntry.endsWith("]"))
+                                {
+                                    itemEntry = itemEntry.substring(1, itemEntry.length() - 1);
+                                }
+
                                 // an input list of alias rowIds, validate that they exist in the alias table before
                                 // adding them to the dataAliasMap
-                                if (NumberUtils.isDigits((String)item))
-                                    params.add(NumberUtils.toInt((String)item));
+                                if (NumberUtils.isDigits(itemEntry))
+                                    params.add(NumberUtils.toInt(itemEntry));
                                 else
                                 {
                                     // parse out the comma separated names
-                                    if (((String)item).contains(","))
+                                    if (itemEntry.contains(","))
                                     {
-                                        String[] parts = ((String)item).split(",");
+                                        String[] parts = itemEntry.split(",");
                                         aliasNames.addAll(Arrays.asList(parts));
                                     }
                                     else
-                                        aliasNames.add((String) item);
+                                        aliasNames.add(itemEntry);
                                 }
                             });
 
