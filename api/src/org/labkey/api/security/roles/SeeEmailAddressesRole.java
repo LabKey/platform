@@ -27,7 +27,7 @@ import org.labkey.api.security.permissions.SeeUserEmailAddressesPermission;
 * Date: Jan 22, 2010
 * Time: 1:22:04 PM
 */
-public class SeeEmailAddressesRole extends AbstractRole
+public class SeeEmailAddressesRole extends AbstractRootContainerRole
 {
     public SeeEmailAddressesRole()
     {
@@ -35,11 +35,5 @@ public class SeeEmailAddressesRole extends AbstractRole
                 SeeUserEmailAddressesPermission.class);
 
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
-    }
-
-    @Override
-    public boolean isApplicable(SecurityPolicy policy, SecurableResource resource)
-    {
-        return resource instanceof Container && ((Container)resource).isRoot();
     }
 }

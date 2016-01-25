@@ -1306,7 +1306,9 @@ api/src/org/labkey/api/security/permissions/ReadSomePermission.java -text
 api/src/org/labkey/api/security/permissions/SeeUserEmailAddressesPermission.java -text
 api/src/org/labkey/api/security/permissions/UpdatePermission.java -text
 api/src/org/labkey/api/security/roles/AbstractContextualRole.java -text
+api/src/org/labkey/api/security/roles/AbstractModuleScopedRole.java -text
 api/src/org/labkey/api/security/roles/AbstractRole.java -text
+api/src/org/labkey/api/security/roles/AbstractRootContainerRole.java -text
 api/src/org/labkey/api/security/roles/AuthorRole.java -text
 api/src/org/labkey/api/security/roles/CanSeeAuditLogRole.java -text
 api/src/org/labkey/api/security/roles/ContextualRole.java -text

@@ -22,7 +22,7 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 
-public class CanSeeAuditLogRole extends AbstractRole
+public class CanSeeAuditLogRole extends AbstractRootContainerRole
 {
     public CanSeeAuditLogRole()
     {
@@ -30,11 +30,5 @@ public class CanSeeAuditLogRole extends AbstractRole
                 CanSeeAuditLogPermission.class);
 
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
-    }
-
-    @Override
-    public boolean isApplicable(SecurityPolicy policy, SecurableResource resource)
-    {
-        return resource instanceof Container && ((Container)resource).isRoot();
     }
 }

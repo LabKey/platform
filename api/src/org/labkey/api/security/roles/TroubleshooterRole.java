@@ -15,11 +15,8 @@
  */
 package org.labkey.api.security.roles;
 
-import org.labkey.api.data.Container;
 import org.labkey.api.security.Group;
-import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.AdminReadPermission;
 
 /*
@@ -27,7 +24,7 @@ import org.labkey.api.security.permissions.AdminReadPermission;
 * Date: Jan 22, 2010
 * Time: 1:22:04 PM
 */
-public class TroubleshooterRole extends AbstractRole
+public class TroubleshooterRole extends AbstractRootContainerRole
 {
     public TroubleshooterRole()
     {
@@ -36,11 +33,5 @@ public class TroubleshooterRole extends AbstractRole
 
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupUsers));
-    }
-
-    @Override
-    public boolean isApplicable(SecurityPolicy policy, SecurableResource resource)
-    {
-        return resource instanceof Container && ((Container)resource).isRoot();
     }
 }
