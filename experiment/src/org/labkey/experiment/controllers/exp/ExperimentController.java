@@ -17,6 +17,7 @@
 package org.labkey.experiment.controllers.exp;
 
 import au.com.bytecode.opencsv.CSVWriter;
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections15.iterators.ArrayIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -2933,11 +2934,29 @@ public class ExperimentController extends SpringActionController
 
         public ModelAndView getView(MaterialSourceForm form, BindException errors) throws Exception
         {
-            _sampleSet = ExperimentService.get().getSampleSet(form.getBean().getRowId());
+            try
+            {
+                _sampleSet = ExperimentService.get().getSampleSet(form.getBean().getRowId());
+            }
+            catch (ConversionException e)
+            {
+                throw new NotFoundException("No matching sample set");
+            }
+            if (_sampleSet == null)
+            {
+                throw new NotFoundException("No matching sample set with RowId " + form.getBean().getRowId());
+            }
 
             if (_sampleSet.equals(ExperimentService.get().ensureDefaultSampleSet()))
             {
                 throw new UnauthorizedException("Cannot edit default sample set");
+            }
+
+            if (!_sampleSet.getContainer().equals(getContainer()))
+            {
+                ActionURL url = getViewContext().getActionURL().clone();
+                url.setContainer(_sampleSet.getContainer());
+                throw new RedirectException(url);
             }
 
             UpdateView updateView = new UpdateView(getMaterialSourceRegion(getViewContext(), false), form, errors);

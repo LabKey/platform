@@ -629,6 +629,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     private static final MaterialSource MISS_MARKER = new MaterialSource();
 
+    @Nullable
     public ExpSampleSetImpl getSampleSet(int rowId)
     {
         MaterialSource ms = getMaterialSourceCache().get(String.valueOf(rowId));
@@ -649,6 +650,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new ExpSampleSetImpl(ms);
     }
 
+    @Nullable
     public ExpSampleSetImpl getSampleSet(String lsid)
     {
         MaterialSource ms = getMaterialSource(lsid);
@@ -3930,11 +3932,13 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return ExpProtocolApplicationImpl.fromProtocolApplications(new TableSelector(getTinfoProtocolApplication(), filter, sort).getArrayList(ProtocolApplication.class));
     }
 
+    @NotNull
     public ExpSampleSetImpl createSampleSet()
     {
         return new ExpSampleSetImpl(new MaterialSource());
     }
 
+    @NotNull
     public ExpSampleSetImpl createSampleSet(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol)
             throws ExperimentException
     {
