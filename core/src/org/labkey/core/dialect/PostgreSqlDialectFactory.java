@@ -97,7 +97,10 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
             if (94 == version)
                 return new PostgreSql94Dialect();
 
-            if (version > 94)
+            if (95 == version)
+                return new PostgreSql95Dialect();
+
+            if (version > 95)
             {
                 if (logWarnings)
                     _log.warn("LabKey Server has not been tested against " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
