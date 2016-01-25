@@ -188,11 +188,15 @@ public class ExperimentService
          * Create a new SampleSet with the provided properties.  If a 'Name' property exists in the list, it will be used
          * as the 'id' property of the SampleSet.  Either a 'Name' property must exist or at least one idCol index must be provided.
          */
+        @NotNull
         ExpSampleSet createSampleSet(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol)
             throws ExperimentException, SQLException;
 
+        @NotNull
         ExpSampleSet createSampleSet();
-        ExpSampleSet getSampleSet(int rowid);
+        @Nullable
+        ExpSampleSet getSampleSet(int rowId);
+        @Nullable
         ExpSampleSet getSampleSet(String lsid);
 
         /**
