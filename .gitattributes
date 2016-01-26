@@ -812,6 +812,7 @@ api/src/org/labkey/api/ldk/notification/NotificationSection.java -text
 api/src/org/labkey/api/ldk/notification/NotificationService.java -text
 api/src/org/labkey/api/ldk/table/AbstractTableCustomizer.java -text
 api/src/org/labkey/api/ldk/table/ButtonConfigFactory.java -text
+api/src/org/labkey/api/ldk/table/QueryCache.java -text
 api/src/org/labkey/api/ldk/table/SimpleButtonConfigFactory.java -text
 api/src/org/labkey/api/lists/permissions/DesignListPermission.java -text
 api/src/org/labkey/api/mbean/CacheMXBean.java -text

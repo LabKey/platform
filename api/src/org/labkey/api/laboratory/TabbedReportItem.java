@@ -23,7 +23,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 
@@ -126,7 +125,7 @@ public class TabbedReportItem extends AbstractNavItem
             FieldKey overlapKey = FieldKey.fromString("overlappingProjectsPivot");
             FieldKey allKey = FieldKey.fromString("allProjectsPivot");
 
-            Map<FieldKey, ColumnInfo> colMap = QueryService.get().getColumns(ti, PageFlowUtil.set(overlapKey, allKey));
+            Map<FieldKey, ColumnInfo> colMap = _queryCache.getColumns(ti, PageFlowUtil.set(overlapKey, allKey));
             if (_overlappingProjectsFieldKey == null && colMap.containsKey(overlapKey))
                 _overlappingProjectsFieldKey = colMap.get(overlapKey).getFieldKey();
 

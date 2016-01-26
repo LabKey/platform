@@ -22,6 +22,7 @@ import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.ldk.table.QueryCache;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 
@@ -35,6 +36,7 @@ import java.util.Map;
 abstract public class AbstractNavItem implements NavItem
 {
     protected static final Logger _log = Logger.getLogger(AbstractNavItem.class);
+    protected QueryCache _queryCache = new QueryCache();
 
     private String _ownerKey = null;
     private Container _targetContainer = null;
@@ -165,5 +167,15 @@ abstract public class AbstractNavItem implements NavItem
     public void setOwnerKey(String ownerKey)
     {
         _ownerKey = ownerKey;
+    }
+
+    public QueryCache getQueryCache()
+    {
+        return _queryCache;
+    }
+
+    public void setQueryCache(QueryCache queryCache)
+    {
+        _queryCache = queryCache;
     }
 }
