@@ -93,7 +93,7 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
         if (!ctx.isDataTypeSelected(StudyImportDatasetTask.getType()))
             return;
 
-        if (!ctx.isDataTypeSelected(StudyArchiveDataTypes.CRF_DATASETS) && !ctx.isDataTypeSelected(StudyArchiveDataTypes.ASSAY_DATASETS))
+        if (!ctx.isDataTypeSelected(StudyArchiveDataTypes.DATASET_DEFINITIONS))
         {
             ctx.getLogger().warn("Cannot import dataset data if datasets are not imported.");
             return;
