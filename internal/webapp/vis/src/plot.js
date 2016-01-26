@@ -610,8 +610,9 @@ boxPlot.render();
         // With log scale, log transformation is applied before the mapping (fitting) to result range
         // Javascript has binary floating points calculation issues. Use a small error constant to compensate.
         var scaleRoundingEpsilon = 0.0001 * 0.5; // divide by half so that <= 0 value can be distinguashed from > 0 value
+
         if (minPositiveValue) {
-            scaleRoundingEpsilon = minPositiveValue * 0.5;
+            scaleRoundingEpsilon = minPositiveValue * getLogDomainLowerBoundRatio(domain, range, minPositiveValue);
         }
 
         // domain must not include or cross zero
@@ -670,6 +671,30 @@ boxPlot.render();
         };
 
         return scaleWrapper;
+    };
+
+    // The lower domain bound need to adjusted to so that enough space is reserved for log gutter.
+    // The calculation takes into account the available plot size (range), max and min values (domain) in the plot.
+    var getLogDomainLowerBoundRatio = function(domain, range, minPositiveValue) {
+        // use 0.5 as a base ratio, so that plot distributions on edge grids are not skewed
+        var ratio = 0.5, logGutterSize = 30;
+        var gridNum = Math.ceil(Math.log(domain[1] / minPositiveValue)); // the number of axis ticks, equals order of magnitude diff of positive domain range
+        var rangeOrder = Math.floor(Math.abs(range[1] - range[0]) / logGutterSize) + 1; // calculate max allowed grid number, assuming each grid is at least log gutter size
+
+        if (gridNum > rangeOrder) {
+            for (var i = 0; i < gridNum - rangeOrder; i++) {
+                ratio *= 0.5;
+            }
+        }
+        else{
+            var gridSize = Math.abs(range[1] - range[0]) / gridNum; // the actual grid size of each grid
+
+            // adjust ratio so that positive data won't fall into log gutter area
+            if (gridSize/2 < logGutterSize){
+                ratio = 1 - logGutterSize/gridSize;
+            }
+        }
+        return ratio;
     };
 
     var instantiateScales = function(plot, margins) {
