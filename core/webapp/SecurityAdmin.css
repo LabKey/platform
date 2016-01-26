@@ -1,8 +1,7 @@
-.pSite button,
-li.pSite, div.pSite {font-weight:bold;}
-.pGroup button,
-li.pGroup, div.pGroup {font-weight:bold;}
+.pSite button, li.pSite, div.pSite {font-weight:bold;}
+.pGroup button, li.pGroup {font-weight:bold;}
 .pUser button, div.pUser {}
+.pUnassignable {font-style:italic;}
 
 span.closeicon {
     background-position: 0 0 !important;

@@ -50,12 +50,15 @@ Ext4.define('Security.panel.GroupPicker', {
 
     extraClass : function(values)
     {
-        var c = 'pGroup';
-        if (values.Type == 'u')
-            c = 'pUser';
-        else if (values.Type == 's')
-            c = 'pSite';
-        return c;
+        if (values.UserId == -2 ||
+                values.UserId == -3)
+            return 'pUnassignable pSite';
+
+        var isSystemGroup = values.UserId < 0;
+        if (isSystemGroup)
+            return 'pSite';
+        else
+            return 'pGroup';
     },
 
     hasGrid : function() {
@@ -80,7 +83,9 @@ Ext4.define('Security.panel.GroupPicker', {
                 header: 'Group',
                 width: 220,
                 dataIndex: 'name',
-                tpl:'<div class="{extraClass}" style="cursor:pointer;">{name}</div>'
+                renderer: function(value, metaData, record) {
+                    return Ext4.String.format('<div class="{0}" groupId="{1}" style="cursor:pointer;">{2}</div>', record.data.extraClass, record.data.id, value);
+                }
             },{
                 header: '<span ext:qtip="Direct group memberships for the group">Member Groups</span>',
                 width: 120,
