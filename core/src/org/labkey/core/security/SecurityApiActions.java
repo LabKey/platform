@@ -15,11 +15,13 @@
  */
 package org.labkey.core.security;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ApiVersion;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.FormApiAction;
 import org.labkey.api.action.Marshal;
@@ -187,12 +189,15 @@ public class SecurityApiActions
                     for (int parentGroupId : parentGroupIds)
                     {
                         Group parentGroup = SecurityManager.getGroup(parentGroupId);
-                        Map<String, Object> groupInfo = new HashMap<>();
-                        groupInfo.put("id", parentGroup.getUserId());
-                        groupInfo.put("name", SecurityManager.getDisambiguatedGroupName(parentGroup));
-                        groupInfo.put("isProjectGroup", parentGroup.isProjectGroup());
-                        groupInfo.put("isSystemGroup", parentGroup.isSystemGroup());
-                        parentGroupInfos.add(groupInfo);
+                        if (parentGroup != null && parentGroup.getUserId() != group.getUserId())
+                        {
+                            Map<String, Object> groupInfo = new HashMap<>();
+                            groupInfo.put("id", parentGroup.getUserId());
+                            groupInfo.put("name", SecurityManager.getDisambiguatedGroupName(parentGroup));
+                            groupInfo.put("isProjectGroup", parentGroup.isProjectGroup());
+                            groupInfo.put("isSystemGroup", parentGroup.isSystemGroup());
+                            parentGroupInfos.add(groupInfo);
+                        }
                     }
                     groupPerms.put("groups", parentGroupInfos);
                 }
@@ -814,7 +819,7 @@ public class SecurityApiActions
             if (null == principal)
                 return;
 
-            StringBuilder sb = new StringBuilder("The user/group ");
+            StringBuilder sb = new StringBuilder("The " + principal.getPrincipalType().getDescription().toLowerCase() + " ");
             sb.append(principal.getName());
             if (RoleModification.Added == mod)
                 sb.append(" was assigned to the security role ");
@@ -877,6 +882,177 @@ public class SecurityApiActions
                 event.setProjectId(resource.getResourceContainer().getProject().getId());
 
             AuditLogService.get().addEvent(getUser(), event);
+        }
+    }
+
+    private static abstract class BaseUpdateAssignmentAction extends MutatingApiAction<RoleAssignmentForm>
+    {
+        @Override
+        public void validateForm(RoleAssignmentForm form, Errors errors)
+        {
+            if (form == null)
+            {
+                errors.reject("invalidFormat", "Invalid format for request.  Please check your JSON syntax.");
+            }
+            else
+            {
+                validateAssignee(form, errors);
+                validateRoleClass(form, errors);
+            }
+        }
+
+        protected void validateAssignee(RoleAssignmentForm form, Errors errors)
+        {
+            if (null != form.getPrincipalId())
+            {
+                if (SecurityManager.getPrincipal(form.getPrincipalId()) == null)
+                {
+                    errors.reject("principalId", "No such user or group: " + form.getPrincipalId());
+                }
+            }
+            else if (null != form.getEmail() && !form.getEmail().isEmpty())
+            {
+                try
+                {
+                    ValidEmail validEmail = new ValidEmail(form.getEmail());
+                    if (UserManager.getUser(validEmail) == null)
+                        errors.reject("email", "No such user: " + form.getEmail());
+                }
+                catch (ValidEmail.InvalidEmailException e)
+                {
+                    errors.reject("email", "Invalid email: " + form.getEmail());
+                }
+            }
+            else
+                errors.reject("principal", "Must specify an email or user/group ID");
+        }
+
+        protected void validateRoleClass(RoleAssignmentForm form, Errors errors)
+        {
+            if (null == form.getRoleClassName())
+                errors.reject("roleClassName", "Must specify a role to assign");
+            else if (RoleManager.getRole(form.getRoleClassName()) == null)
+                errors.reject("roleClassName", "No such role: " + form.getRoleClassName());
+        }
+
+        public ApiResponse execute(RoleAssignmentForm form, BindException errors) throws Exception
+        {
+            Container container = getContainer();
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(container));
+            UserPrincipal principal = getUser(form);
+            Role role = RoleManager.getRole(form.getRoleClassName());
+            updateRoleAssignment(policy, principal, role);
+
+            SavePolicyForm policyForm = new SavePolicyForm();
+            policyForm.bindProperties(policy.toMap());
+            SavePolicyAction savePolicyAction = new SavePolicyAction();
+            savePolicyAction.setViewContext(getViewContext());
+            return savePolicyAction.execute(policyForm, errors);
+        }
+
+        private UserPrincipal getUser(RoleAssignmentForm form) throws ValidEmail.InvalidEmailException
+        {
+            if (null != form.getPrincipalId())
+                return SecurityManager.getPrincipal(form.getPrincipalId());
+            else
+                return UserManager.getUser(new ValidEmail(form.getEmail()));
+        }
+
+        protected abstract void updateRoleAssignment(MutableSecurityPolicy policy, UserPrincipal principal, Role role);
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    @ApiVersion(16.1)
+    @CSRF
+    public static class AddAssignmentAction extends BaseUpdateAssignmentAction
+    {
+        public ApiResponse execute(RoleAssignmentForm form, BindException errors) throws Exception
+        {
+            return super.execute(form, errors);
+        }
+
+        @Override
+        protected void updateRoleAssignment(MutableSecurityPolicy policy, UserPrincipal principal, Role role)
+        {
+            policy.addRoleAssignment(principal, role);
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    @ApiVersion(16.1)
+    @CSRF
+    public static class RemoveAssignmentAction extends BaseUpdateAssignmentAction
+    {
+        public ApiResponse execute(RoleAssignmentForm form, BindException errors) throws Exception
+        {
+            return super.execute(form, errors);
+        }
+
+        @Override
+        protected void updateRoleAssignment(MutableSecurityPolicy policy, UserPrincipal principal, Role role)
+        {
+            policy.removeRoleAssignment(principal, role);
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    @ApiVersion(16.1)
+    @CSRF
+    public static class ClearAssignedRolesAction extends BaseUpdateAssignmentAction
+    {
+        @Override
+        public void validateForm(RoleAssignmentForm form, Errors errors)
+        {
+            form.setRoleClassName("org.labkey.api.security.roles.NoPermissionsRole");
+            super.validateForm(form, errors);
+        }
+
+        public ApiResponse execute(RoleAssignmentForm form, BindException errors) throws Exception
+        {
+            return super.execute(form, errors);
+        }
+
+        @Override
+        protected void updateRoleAssignment(MutableSecurityPolicy policy, UserPrincipal principal, Role role)
+        {
+            policy.clearAssignedRoles(principal);
+        }
+    }
+
+    public static class RoleAssignmentForm
+    {
+        private Integer principalId;
+        private String email;
+        private String roleClassName;
+
+        public Integer getPrincipalId()
+        {
+            return principalId;
+        }
+
+        public void setPrincipalId(Integer principalId)
+        {
+            this.principalId = principalId;
+        }
+
+        public String getEmail()
+        {
+            return email;
+        }
+
+        public void setEmail(String email)
+        {
+            this.email = email;
+        }
+
+        public String getRoleClassName()
+        {
+            return roleClassName;
+        }
+
+        public void setRoleClassName(String roleClassName)
+        {
+            this.roleClassName = roleClassName;
         }
     }
 
@@ -944,6 +1120,7 @@ public class SecurityApiActions
 
     @RequiresPermission(AdminPermission.class)
     @CSRF
+    @ApiVersion(16.1)
     @Marshal(Marshaller.Jackson)
     public static class BulkUpdateGroupAction extends MutatingApiAction<GroupForm>
     {
@@ -1141,26 +1318,24 @@ public class SecurityApiActions
 
                     if (principal == null && member.getEmail() != null) // create the user
                     {
-                        User updatedUser = new User();
-                        updatedUser.setEmail(member.getEmail());
-                        updatedUser.setFirstName(member.getFirstName());
-                        updatedUser.setLastName(member.getLastName());
-                        updatedUser.setDisplayName(member.getDisplayName());
-                        updatedUser.setPhone(member.getPhone());
-                        updatedUser.setMobile(member.getMobile());
-                        updatedUser.setPager(member.getPager());
-                        updatedUser.setIM(member.getIm());
-                        updatedUser.setDescription(member.getDescription());
-                        updatedUser.setPrincipalType(PrincipalType.USER);
-
-                        SecurityManager.NewUserStatus status = null;
                         try
                         {
-                            status = SecurityManager.addUser(new ValidEmail(member.getEmail()), getUser());
+                            SecurityManager.NewUserStatus status = SecurityManager.addUser(new ValidEmail(member.getEmail()), getUser());
+
+                            User newUser = status.getUser();
+                            newUser.setFirstName(member.getFirstName());
+                            newUser.setLastName(member.getLastName());
+                            if (member.getDisplayName() != null)
+                                newUser.setDisplayName(member.getDisplayName());
+                            newUser.setPhone(member.getPhone());
+                            newUser.setMobile(member.getMobile());
+                            newUser.setPager(member.getPager());
+                            newUser.setIM(member.getIm());
+                            newUser.setDescription(member.getDescription());
+
                             newUsers.add(status.getUser());
-                            updatedUser.setUserId(status.getUser().getUserId());
-                            UserManager.updateUser(status.getUser(), updatedUser);
-                            principal = status.getUser();
+                            UserManager.updateUser(status.getUser(), newUser);
+                            principal = newUser;
                         }
                         catch (SecurityManager.UserManagementException | SQLException | ValidEmail.InvalidEmailException  e)
                         {
@@ -1377,6 +1552,7 @@ public class SecurityApiActions
         }
     }
 
+    @JsonIgnoreProperties("apiVersion")
     public static class GroupForm
     {
         private Integer _groupId;        // Nullable; used first as identifier for group;

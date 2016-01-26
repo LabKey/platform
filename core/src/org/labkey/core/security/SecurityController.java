@@ -133,6 +133,9 @@ public class SecurityController extends SpringActionController
         SecurityApiActions.AddGroupMemberAction.class,
         SecurityApiActions.RemoveGroupMemberAction.class,
         SecurityApiActions.CreateNewUserAction.class,
+        SecurityApiActions.AddAssignmentAction.class,
+        SecurityApiActions.RemoveAssignmentAction.class,
+        SecurityApiActions.ClearAssignedRolesAction.class,
         SecurityApiActions.RenameGroupAction.class);
 
     public SecurityController()
@@ -1408,10 +1411,10 @@ public class SecurityController extends SpringActionController
             for (ValidEmail email : emails)
             {
                 String result = SecurityManager.addUser(getViewContext(), email, form.getSendMail(), null, extraParams.<Pair<String, String>>toArray(new Pair[extraParams.size()]), form.getProvider(), true);
+                User user = UserManager.getUser(email);
 
                 if (result == null)
                 {
-                    User user = UserManager.getUser(email);
                     ActionURL url = PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(getContainer(), user.getUserId(), returnURL);
                     result = email + " was already a registered system user.  Click <a href=\"" + url.getEncodedLocalURIString() + "\">here</a> to see this user's profile and history.";
                 }
@@ -1419,7 +1422,7 @@ public class SecurityController extends SpringActionController
                 {
                     clonePermissions(userToClone, email);
                 }
-                form.addMessage(result);
+                form.addMessage(String.format("%s<meta userId='%d' email='%s'/>", result, user.getUserId(), user.getEmail()));
             }
 
             return false;
