@@ -82,7 +82,7 @@ class StudyXmlWriter implements InternalStudyWriter
         descriptionXml.setRendererType(study.getDescriptionRendererType());
         descriptionXml.setDescription(study.getDescription());
 
-        if (null != study.getAssayPlan())
+        if (ctx.isDataTypeSelected(StudyArchiveDataTypes.ASSAY_SCHEDULE) && null != study.getAssayPlan())
         {
             studyXml.setAssayPlan(study.getAssayPlan());
         }

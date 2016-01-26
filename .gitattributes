@@ -1210,6 +1210,7 @@ pipeline/src/org/labkey/pipeline/xstream/FileXStreamConverter.java -text
 pipeline/src/org/labkey/pipeline/xstream/TaskIdXStreamConverter.java -text
 pipeline/src/org/labkey/pipeline/xstream/URIXStreamConverter.java -text
 pipeline/webapp/WEB-INF/pipeline/pipelineContext.xml -text
+pipeline/webapp/pipeline/ImportAdvancedOptions.js -text
 pipeline/webapp/pipeline/StatusUpdate.js -text
 pipeline/webapp/pipeline/images/file.gif -text
 pipeline/webapp/pipeline/images/folder.gif -text

@@ -1276,7 +1276,7 @@ public class PipelineController extends SpringActionController
                 // Be sure that the referenced file is under the root
                 if (_archiveFile == null || !_archiveFile.exists())
                 {
-                    errors.reject(ERROR_MSG, "Could not fine file at path: " + form.getFilePath());
+                    errors.reject(ERROR_MSG, "Could not find file at path: " + form.getFilePath());
                 }
                 else if (!_pipelineRoot.isUnderRoot(_archiveFile))
                 {

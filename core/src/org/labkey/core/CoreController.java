@@ -1770,7 +1770,12 @@ public class CoreController extends SpringActionController
     {
         public int compare(FolderImporter o1, FolderImporter o2)
         {
-            return o1.getDataType() == null ? -1 : o1.getDataType().compareTo(o2.getDataType());
+            if (o1.getDataType() == null && o2.getDataType() == null)
+                return 0;
+            else if (o1.getDataType() == null)
+                return -1;
+            else
+                return o1.getDataType().compareTo(o2.getDataType());
         }
     }
 

@@ -33,6 +33,7 @@ import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 import org.springframework.validation.ObjectError;
@@ -147,7 +148,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             ctx.getLogger().info("Loading top-level study properties");
 
             study = study.createMutable();
-            study = configureStudyFromXml(study, studyXml);
+            study = configureStudyFromXml(study, ctx, studyXml);
             StudyManager.getInstance().updateStudy(ctx.getUser(), study);
 
             runImporters(ctx, job, errors);
@@ -183,7 +184,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
     }
 
 
-    private static StudyImpl configureStudyFromXml(StudyImpl study, StudyDocument.Study studyXml)
+    private static StudyImpl configureStudyFromXml(StudyImpl study, StudyImportContext ctx, StudyDocument.Study studyXml)
     {
         // TODO: This set of study property imports should be moved to its own importer process method so that it can be reused (see CreateChildStudyAction.createNewStudy)
         // TODO: Change these props and save only if values have changed
@@ -222,7 +223,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             if (studyXml.isSetSpecies())
                 study.setSpecies(studyXml.getSpecies());
 
-            if (studyXml.isSetAssayPlan())
+            if (ctx.isDataTypeSelected(StudyArchiveDataTypes.ASSAY_SCHEDULE) && studyXml.isSetAssayPlan())
                 study.setAssayPlan(studyXml.getAssayPlan());
 
             if (studyXml.isSetDescription())

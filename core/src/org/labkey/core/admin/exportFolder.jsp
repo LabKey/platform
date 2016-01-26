@@ -85,7 +85,7 @@ Ext.onReady(function(){
 
         Ext.each(folderWriters, function(writer)
         {
-            var parentName = writer['name'],
+            var parentName = Ext.util.Format.htmlEncode(writer['name']),
                 checked = writer['selectedByDefault'],
                 children = writer['children'];
 
@@ -104,6 +104,8 @@ Ext.onReady(function(){
             {
                 Ext.each(children, function(childName)
                 {
+                    childName = Ext.util.Format.htmlEncode(childName);
+
                     formItemsCol1.push({
                         xtype: "checkbox",
                         style: {marginLeft: "20px"},
