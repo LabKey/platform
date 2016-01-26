@@ -574,7 +574,7 @@ Ext4.define('Security.util.SecurityCache', {
     _applyPrincipalsSortOrder : function(item)
     {
         var data = item.data;
-        var major = data.Type == 'u' ? '3' : data.Container ? '2' : '1';
+        var major = data.Type == 'u' ? '4' : data.Container ? '3' : data.UserId > 0 ? '2' : '1'; // Put system groups at the top
         var minor = (data.Name||'').toLowerCase();
         data.sortOrder = major + "." + minor;
     },
