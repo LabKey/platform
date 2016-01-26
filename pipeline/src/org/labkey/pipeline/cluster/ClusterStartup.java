@@ -76,8 +76,16 @@ public class ClusterStartup extends AbstractPipelineStartup
             System.out.println("Starting to run task for job " + job);
             //this is debugging to verify jms.
             job.setStatus("RUNNING ON CLUSTER");
-            job.runActiveTask();
-            System.out.println("Finished running task for job " + job);
+            try
+            {
+                job.runActiveTask();
+                System.out.println("Finished running task for job " + job);
+            }
+            catch (Exception e)
+            {
+                System.out.println("Error running job");
+                job.error(e.getMessage(), e);
+            }
 
             job.writeToFile(file);
 
