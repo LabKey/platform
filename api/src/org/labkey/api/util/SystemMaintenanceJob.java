@@ -40,11 +40,19 @@ public class SystemMaintenanceJob implements org.quartz.Job, Callable<String>
     @Override
     public void execute(JobExecutionContext jobExecutionContext)
     {
-        call();
+        // Log all exceptions
+        try
+        {
+            call();
+        }
+        catch (Throwable t)
+        {
+            ExceptionUtil.logExceptionToMothership(null, t);
+        }
     }
 
     @Override
-    // Determine the tasks to run and queue them up in the pipeline
+    // Determine the tasks to run and queue them up in the pipeline. This method may throw exceptions.
     public String call()
     {
         final String jobGuid;
