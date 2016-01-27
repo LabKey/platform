@@ -20,7 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.annotations.JavaRuntimeVersion;
-import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.view.NavTree;
 
@@ -34,33 +33,18 @@ import java.util.Map;
  */
 public class HelpTopic
 {
-    public static String TARGET_NAME = "labkeyHelp"; // LabKey help should always appear in the same tab/window
-    private static String HELP_VERSION = null;
+    private static String TARGET_NAME = "labkeyHelp"; // LabKey help should always appear in the same tab/window
+    private static String HELP_VERSION = Formats.f1.format(ModuleLoader.getInstance().getPreviousReleaseVersion());
 
     @JavaRuntimeVersion // Update this link whenever we require a new major Java version so we always point at the current docs
     private static final String JDK_JAVADOC_BASE_URL = "http://docs.oracle.com/javase/8/docs/api/";
 
     private String _topic;
 
-    public static String getHelpVersion()
-    {
-        if (HELP_VERSION == null)
-        {
-            // Get core module version number, truncate to one decimal place, and use as help version
-            Module core = ModuleLoader.getInstance().getCoreModule();
-            double coreVersion = core.getVersion();
-            HELP_VERSION = Formats.f1.format(Math.floor(coreVersion * 10) / 10);
-        }
-        return HELP_VERSION;
-    }
-
     public static final HelpTopic DEFAULT_HELP_TOPIC = new HelpTopic("default");
 
     public HelpTopic(@NotNull String topic)
     {
-        if (topic == null)
-            throw new IllegalArgumentException("Topic cannot be null");
-        
         _topic = topic;
     }
 
@@ -72,7 +56,7 @@ public class HelpTopic
 
     public String getHelpTopicHref()
     {
-        return "http://www.labkey.org/wiki/home/documentation/" + getHelpVersion() + "/page.view?name=" + _topic;
+        return "http://www.labkey.org/wiki/home/documentation/" + HELP_VERSION + "/page.view?name=" + _topic;
     }
 
     // Create a simple link (just an <a> tag with plain mixed case text, no graphics) that links to the help topic, displays
@@ -93,7 +77,7 @@ public class HelpTopic
 
     private static final Map<String, String> TARGET_MAP = PageFlowUtil.map("target", TARGET_NAME);
 
-    // TODO: Use this in place where it makes sense (search results page, etc.)
+    // TODO: Use this in places where it makes sense (search results page, etc.)
     // Create a standard LabKey style link (all caps + arrow right) to the help topic, displaying the provided text, using the standard target, etc.
     public String getLinkHtml(String displayText)
     {

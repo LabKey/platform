@@ -38,7 +38,6 @@ import org.labkey.api.writer.PrintWriters;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -48,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * User: adam
@@ -87,8 +87,11 @@ public class FileSqlScriptProvider implements SqlScriptProvider
             }
         }
 
-        for (String schemaName : _module.getProvisionedSchemaNames())
-            schemas.add(DbSchema.get(schemaName, DbSchemaType.Provisioned));
+        schemas.addAll(_module.getProvisionedSchemaNames()
+            .stream()
+            .map(schemaName -> DbSchema.get(schemaName, DbSchemaType.Provisioned))
+            .collect(Collectors.toList())
+        );
 
         return schemas;
     }

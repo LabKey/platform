@@ -1562,6 +1562,15 @@ public class ModuleLoader implements Filter
         return getModule(DefaultModule.CORE_MODULE_NAME);
     }
 
+    public double getPreviousReleaseVersion()
+    {
+        // Get core module version number and truncate to one decimal place
+        Module core = ModuleLoader.getInstance().getCoreModule();
+        double coreVersion = core.getVersion();
+
+        return Math.floor(coreVersion * 10) / 10;
+    }
+
     /** @return all known modules, sorted in dependency order */
     public List<Module> getModules()
     {
