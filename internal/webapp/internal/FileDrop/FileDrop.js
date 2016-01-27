@@ -220,6 +220,10 @@ LABKEY.internal.FileDrop = new function () {
 
         registerEvents();
 
+        //Show dropzone after registration
+        if (config.show)
+            showDropzones();
+
         return dropzone;
     }
 
@@ -234,6 +238,16 @@ LABKEY.internal.FileDrop = new function () {
             if (this.isSupported()) {
                 return _registerDropzone(config);
             }
+        },
+
+        showDropzones: function(){
+            shouldShowDropzones = true;
+            showDropzones();
+        },
+
+        hideDropzones: function() {
+            shouldShowDropzones = false;
+            hideDropzones();
         }
     }
 };
