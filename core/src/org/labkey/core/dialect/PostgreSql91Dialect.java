@@ -758,32 +758,27 @@ public class PostgreSql91Dialect extends SqlDialect
     private void initializeUserDefinedTypes(DbScope scope)
     {
         Selector selector = new SqlSelector(scope, "SELECT * FROM information_schema.domains");
-        selector.forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
+        selector.forEach(rs -> {
+            String schemaName = rs.getString("domain_schema");
+            String domainName = rs.getString("domain_name");
+            String dataType = rs.getString("data_type");
+            int scale;
+
+            if (dataType.startsWith("character"))
             {
-                String schemaName = rs.getString("domain_schema");
-                String domainName = rs.getString("domain_name");
-                String dataType = rs.getString("data_type");
-                int scale;
+                String maxLength = rs.getString("character_maximum_length");
 
-                if (dataType.startsWith("character"))
-                {
-                    String maxLength = rs.getString("character_maximum_length");
-
-                    // VARCHAR with no specific size has null maxLength... but character_octet_length seems okay
-                    scale = Integer.valueOf(null != maxLength ? maxLength : rs.getString("character_octet_length"));
-                }
-                else
-                {
-                    // Assume everything else is an integer for now. We should support more types for better external schema handling.
-                    scale = 4;
-                }
-
-                String key = getDomainKey(schemaName, domainName);
-                _domainScaleMap.put(key, scale);
+                // VARCHAR with no specific size has null maxLength... but character_octet_length seems okay
+                scale = Integer.valueOf(null != maxLength ? maxLength : rs.getString("character_octet_length"));
             }
+            else
+            {
+                // Assume everything else is an integer for now. We should support more types for better external schema handling.
+                scale = 4;
+            }
+
+            String key = getDomainKey(schemaName, domainName);
+            _domainScaleMap.put(key, scale);
         });
     }
 

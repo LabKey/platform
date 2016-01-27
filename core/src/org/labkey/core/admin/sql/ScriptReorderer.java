@@ -139,7 +139,7 @@ public class ScriptReorderer
 
         while (0 < _contents.length())
         {
-            // Parse all the comments first.  If we match a table statement next, we'll include the comments.
+            // Parse all the comments first. If we match a table statement next, we'll include the comments.
             StringBuilder comments = new StringBuilder();
 
             Matcher m = commentPattern.matcher(_contents);
