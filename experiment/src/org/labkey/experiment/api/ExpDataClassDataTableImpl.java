@@ -592,7 +592,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
             final ExperimentService.Interface svc = ExperimentService.get();
             SimpleTranslator step0 = new SimpleTranslator(input, context);
-            step0.selectAll(Sets.newCaseInsensitiveHashSet("lsid", "alias"));
+            step0.selectAll(Sets.newCaseInsensitiveHashSet("alias"));
 
             ColumnInfo aliasCol = getColumn(FieldKey.fromParts("alias"));
             final Map<String, Integer> colNameMap = DataIteratorUtil.createColumnNameMap(input);
