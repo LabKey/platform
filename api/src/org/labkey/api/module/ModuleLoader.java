@@ -402,21 +402,21 @@ public class ModuleLoader implements Filter
         if (!additionalSchemasRequiringUpgrade.isEmpty())
             _log.info((modulesRequiringUpgrade.isEmpty() ? "Schemas" : "Additional schemas") + " requiring upgrade: " + additionalSchemasRequiringUpgrade.toString());
 
-        boolean terminateAfterStartup = Boolean.valueOf(System.getProperty("terminateAfterStartup"));
+        if (!modulesRequiringUpgrade.isEmpty() || !additionalSchemasRequiringUpgrade.isEmpty())
+            setUpgradeState(UpgradeState.UpgradeRequired);
+
+        // terminateAfterStartup flag allows "headless upgrade". This is currently allowed only for upgrade, not new install, because
+        // module startup registers audit providers which requires a default LSID authority which requires the initial user to be set
+        // which requires a request which requires server startup to complete. See AppPropsImpl.getDefaultLsidAuthority().
+        boolean terminateAfterStartup = Boolean.valueOf(System.getProperty("terminateAfterStartup")) && !isNewInstall();
         Execution execution = terminateAfterStartup ? Execution.Synchronous : Execution.Asynchronous;
 
-        upgradeAndStartupModules(coreRequiredUpgrade, execution);
+        startNonCoreUpgradeAndStartup(User.getSearchUser(), execution, coreRequiredUpgrade);  // TODO: Change search user to system user
 
         _log.info("LabKey Server startup is complete; " + (Execution.Synchronous == execution ? "all modules have been upgraded and initialized" : "modules are being upgraded and initialized in the background"));
 
         if (terminateAfterStartup)
             System.exit(0);
-    }
-
-    private void upgradeAndStartupModules(boolean coreRequiredUpgrade, Execution execution) throws Exception
-    {
-        setUpgradeState(UpgradeState.UpgradeRequired);
-        startNonCoreUpgrade(User.getSearchUser(), execution);  // TODO: Change to system user
     }
 
     // If in production mode then make sure this isn't a development build, #21567
@@ -427,13 +427,12 @@ public class ModuleLoader implements Filter
             if (isProductionBuild(getCoreModule()))
                 throw new ConfigurationException("This server does not appear to be compiled for production mode");
 
-            for (Module module : getModules())
-            {
-                if (module.getBuildType() != null && isProductionBuild(module))
-                {
+            getModules()
+                .stream()
+                .filter(module -> module.getBuildType() != null && isProductionBuild(module))
+                .forEach(module -> {
                     addModuleFailure(module.getName(), new IllegalStateException("Module " + module + " was not compiled in production mode"));
-                }
-            }
+                });
         }
     }
 
@@ -1260,35 +1259,28 @@ public class ModuleLoader implements Filter
     /**
      * Initiate the module startup process.
      *
-     * @param execution Determines if startup is synchronous (method does not return until the startup process is complete)
-     *                  or asynchronous (method returns immediately and startup occurs in the background).
      */
-    private void initiateModuleStartup(Execution execution)
+    private void initiateModuleStartup()
     {
-        synchronized (STARTUP_LOCK)
+        if (isStartupInProgress() || isStartupComplete())
+            return;
+
+        if (isUpgradeRequired())
+            throw new IllegalStateException("Can't start modules before upgrade is complete");
+
+        setStartupState(StartupState.StartupInProgress);
+        setStartingUpMessage("Starting up modules");
+
+        // Run module startup
+        try
         {
-            if (_startupState == StartupState.StartupInProgress || _startupState == StartupState.StartupComplete)
-                return;
-
-            if (isUpgradeRequired())
-                throw new IllegalStateException("Can't start modules before upgrade is complete");
-
-            _startupState = StartupState.StartupInProgress;
-            setStartingUpMessage("Starting up modules");
-
-            // Run module startup
-            execution.run(() -> {
-                try
-                {
-                    completeStartup();
-                    attemptStartBackgroundThreads();
-                }
-                catch (Throwable t)
-                {
-                    ModuleLoader.getInstance().setStartupFailure(t);
-                    _log.error("Failure during module startup", t);
-                }
-            });
+            completeStartup();
+            attemptStartBackgroundThreads();
+        }
+        catch (Throwable t)
+        {
+            ModuleLoader.getInstance().setStartupFailure(t);
+            _log.error("Failure during module startup", t);
         }
     }
 
@@ -1416,7 +1408,7 @@ public class ModuleLoader implements Filter
     }
 
 
-    public void startNonCoreUpgrade(User user, Execution execution) throws Exception
+    public void startNonCoreUpgradeAndStartup(User user, Execution execution, boolean coreRequiredUpgrade) throws Exception
     {
         synchronized(UPGRADE_LOCK)
         {
@@ -1429,8 +1421,12 @@ public class ModuleLoader implements Filter
 
                 ModuleUpgrader upgrader = new ModuleUpgrader(modules);
                 upgrader.upgrade(() -> {
-                    afterUpgrade(true, execution);
+                    afterUpgrade(true);
                 }, execution);
+            }
+            else
+            {
+                execution.run(() -> afterUpgrade(coreRequiredUpgrade));
             }
         }
     }
@@ -1438,7 +1434,7 @@ public class ModuleLoader implements Filter
 
     // Final step in upgrade process: set the upgrade state to complete, perform post-upgrade tasks, and start up the modules.
     // performedUpgrade is true if any module required upgrading
-    private void afterUpgrade(boolean performedUpgrade, Execution execution)
+    private void afterUpgrade(boolean performedUpgrade)
     {
         setUpgradeState(UpgradeState.UpgradeComplete);
 
@@ -1448,7 +1444,7 @@ public class ModuleLoader implements Filter
             updateModuleProperties();
         }
 
-        initiateModuleStartup(execution);
+        initiateModuleStartup();
     }
 
 

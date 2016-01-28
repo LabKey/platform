@@ -16,6 +16,7 @@
 package org.labkey.api.settings;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
@@ -218,8 +219,10 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     {
         String result = lookupStringValue(DEFAULT_LSID_AUTHORITY_PROP, "NOT_SET");
 
-        if ("NOT_SET".equals(result))
+        if ("NOT_SET".equals(result) && UserManager.hasNoUsers())
         {
+            Logger.getLogger(this.getClass()).info("Server is waiting for first HTTP request and initial user setting");
+
             while (UserManager.hasNoUsers())
             {
                 try
