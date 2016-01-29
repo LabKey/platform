@@ -179,7 +179,7 @@ Ext4.define('LABKEY.import.OptionsPanel', {
 
     getImportOptionInputConfig : function(dataType, parent, hide)
     {
-        var checked = true || hide || !this.isAdvancedImportOptions ? '' : ' checked',
+        var checked = hide || !this.isAdvancedImportOptions ? '' : ' checked',
             parentAttr = parent ? 'parentDataType="' + parent + '"' : '';
 
         return {
