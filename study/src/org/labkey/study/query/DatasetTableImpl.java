@@ -304,13 +304,13 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                             }
                         });
                     }
-                }
+                    }
                 if (isVisibleByDefault(col))
                     defaultVisibleCols.add(FieldKey.fromParts(col.getName()));
 
                 // Add a magic lookup to an "GlobalUniqueId" columns that targets the SpecimenDetails query based on the
-                // GlobalUniqueId value instead of the real PK, which is RowId
-                if (AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equalsIgnoreCase(col.getName()) && col.getJdbcType() == JdbcType.VARCHAR && col.getFk() == null)
+                // GlobalUniqueId value instead of the real PK, which is RowId (even if FK was already set (#25489))
+                if (AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equalsIgnoreCase(col.getName()) && col.getJdbcType() == JdbcType.VARCHAR)
                 {
                     col.setFk(new LookupForeignKey(SpecimenDetailTable.GLOBAL_UNIQUE_ID_COLUMN_NAME)
                     {
