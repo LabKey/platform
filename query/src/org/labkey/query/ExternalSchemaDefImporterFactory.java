@@ -40,6 +40,7 @@ import org.labkey.query.controllers.AbstractExternalSchemaForm;
 import org.labkey.query.controllers.ExternalSchemaForm;
 import org.labkey.query.controllers.LinkedSchemaForm;
 import org.labkey.query.persist.ExternalSchemaDef;
+import org.labkey.query.persist.ExternalSchemaDefCache;
 import org.labkey.query.persist.LinkedSchemaDef;
 import org.labkey.query.persist.QueryManager;
 
@@ -93,6 +94,8 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
 
                 ctx.getLogger().info(schemaXmlFileNames.length + " external schema definition" + (schemaXmlFileNames.length > 1 ? "s" : "") + " imported");
                 ctx.getLogger().info("Done importing " + getDescription());
+
+                ExternalSchemaDefCache.uncache(ctx.getContainer()); // issue 25498
             }
         }
 
