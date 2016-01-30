@@ -60,6 +60,8 @@ public class DatasetCohortAssigner implements InternalStudyImporter
 
         if (null != datasets)
         {
+            ctx.getLogger().info("Loading " + getDescription());
+
             Container c = ctx.getContainer();
             User user = ctx.getUser();
 
@@ -89,6 +91,8 @@ public class DatasetCohortAssigner implements InternalStudyImporter
                     }
                 }
             }
+
+            ctx.getLogger().info("Done importing " + getDescription());
         }
     }
 }

@@ -73,6 +73,8 @@ public class ViewCategoryImporter implements InternalStudyImporter
     {
         if (xmlObject instanceof CategoriesDocument)
         {
+            ctx.getLogger().info("Loading " + getDescription());
+
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
             try (DbScope.Transaction transaction = scope.ensureTransaction())
@@ -100,6 +102,8 @@ public class ViewCategoryImporter implements InternalStudyImporter
                 }
                 transaction.commit();
             }
+
+            ctx.getLogger().info("Done importing " + getDescription());
         }
     }
 }

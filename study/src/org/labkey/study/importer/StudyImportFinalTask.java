@@ -89,9 +89,8 @@ public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.
             {
                 if (job != null)
                     job.setStatus("IMPORT " + importer.getDescription());
-                ctx.getLogger().info("Importing " + importer.getDescription());
+
                 importer.process(ctx, vf, errors);
-                ctx.getLogger().info("Done importing " + importer.getDescription());
             }
 
             // the registered study importers only need to be called in the Import Study case (not for Import Folder)

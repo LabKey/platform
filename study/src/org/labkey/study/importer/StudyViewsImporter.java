@@ -55,6 +55,8 @@ public class StudyViewsImporter implements InternalStudyImporter
 
         if (viewsXml != null)
         {
+            ctx.getLogger().info("Loading " + getDescription());
+
             VirtualFile folder = root.getDir(viewsXml.getDir());
             String settingsFileName = viewsXml.getSettings();
 
@@ -97,6 +99,8 @@ public class StudyViewsImporter implements InternalStudyImporter
                 else
                     ctx.getLogger().fatal("Unable to load the study views setting file : " + settingsFileName);
             }
+
+            ctx.getLogger().info("Done importing " + getDescription());
         }
     }
 }

@@ -68,6 +68,8 @@ public class TreatmentVisitMapImporter extends DefaultStudyDesignImporter implem
 
         if (dirType != null)
         {
+            ctx.getLogger().info("Loading " + getDescription());
+
             VirtualFile vf = root.getDir(dirType.getDir());
             if (vf != null)
             {
@@ -86,6 +88,8 @@ public class TreatmentVisitMapImporter extends DefaultStudyDesignImporter implem
             }
             else
                 throw new ImportException("Unable to open the folder at : " + dirType.getDir());
+
+            ctx.getLogger().info("Done importing " + getDescription());
         }
     }
 

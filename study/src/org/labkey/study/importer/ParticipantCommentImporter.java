@@ -45,6 +45,8 @@ public class ParticipantCommentImporter implements InternalStudyImporter
 
         if (commentsXml != null)
         {
+            ctx.getLogger().info("Loading " + getDescription());
+
             if (commentsXml.isSetParticipantCommentDatasetId())
             {
                 study.setParticipantCommentDatasetId(commentsXml.getParticipantCommentDatasetId());
@@ -56,6 +58,8 @@ public class ParticipantCommentImporter implements InternalStudyImporter
                 study.setParticipantVisitCommentDatasetId(commentsXml.getParticipantVisitCommentDatasetId());
                 study.setParticipantVisitCommentProperty(commentsXml.getParticipantVisitCommentDatasetProperty());
             }
+
+            ctx.getLogger().info("Done importing " + getDescription());
         }
     }
 }

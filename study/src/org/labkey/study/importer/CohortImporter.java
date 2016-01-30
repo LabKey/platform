@@ -64,6 +64,8 @@ public class CohortImporter implements InternalStudyImporter
 
         if (null != cohortsXml)
         {
+            ctx.getLogger().info("Loading " + getDescription());
+
             CohortType.Enum cohortType = cohortsXml.getType();
             CohortMode.Enum cohortMode = cohortsXml.getMode();
             String cohortFileName = cohortsXml.getFile();
@@ -97,6 +99,8 @@ public class CohortImporter implements InternalStudyImporter
                 assert (p2c != null);
                 CohortManager.getInstance().setManualCohortAssignment(study, ctx.getUser(), p2c);
             }
+
+            ctx.getLogger().info("Done importing " + getDescription());
         }
     }
 
@@ -122,7 +126,7 @@ public class CohortImporter implements InternalStudyImporter
         // ITN12.2 branch and newer releases will always export a separate cohorts.xml table to
         // round-trip the 'enrolled' bit.
         //
-        ctx.getLogger().info("Loading cohort settings from " + root.getRelativePath(cohortFileName));
+        ctx.getLogger().info("Importing cohort settings from " + root.getRelativePath(cohortFileName));
         CohortsDocument cohortAssignmentXml;
 
         try

@@ -85,7 +85,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         StudyDocument.Study.Specimens xmlSettings = ctx.getXml().getSpecimens();
         if (xmlSettings != null)
         {
-            ctx.getLogger().info("Loading specimen settings");
+            ctx.getLogger().info("Loading " + getDescription());
 
             StudyImpl study = ctx.getStudy().createMutable();
 
@@ -108,6 +108,8 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
             }
 
             StudyManager.getInstance().updateStudy(ctx.getUser(), study);
+
+            ctx.getLogger().info("Done importing " + getDescription());
         }
     }
 

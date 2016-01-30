@@ -67,6 +67,8 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
             VirtualFile vf = root.getDir(dirType.getDir());
             if (vf != null)
             {
+                ctx.getLogger().info("Loading assay schedule tables");
+
                 DbScope scope = StudySchema.getInstance().getSchema().getScope();
                 try (DbScope.Transaction transaction = scope.ensureTransaction())
                 {
@@ -74,7 +76,6 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
                     StudyQuerySchema schema = StudyQuerySchema.createSchema(ctx.getStudy(), ctx.getUser(), true);
 
                     // study design tables
-                    ctx.getLogger().info("Importing study design data tables");
                     List<String> studyDesignTableNames = new ArrayList<>();
                     studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_ASSAYS_TABLE_NAME);
                     studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_LABS_TABLE_NAME);
@@ -89,7 +90,6 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
                     }
 
                     // assay specimen table
-                    ctx.getLogger().info("Importing assay schedule tables");
                     StudyQuerySchema.TablePackage assaySpecimenTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.ASSAY_SPECIMEN_TABLE_NAME);
                     importTableData(ctx, vf, assaySpecimenTablePackage, _assaySpecimenTransform, null);
 
@@ -102,6 +102,8 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
 
                     transaction.commit();
                 }
+
+                ctx.getLogger().info("Done importing assay schedule tables");
             }
             else
                 throw new ImportException("Unable to open the folder at : " + dirType.getDir());

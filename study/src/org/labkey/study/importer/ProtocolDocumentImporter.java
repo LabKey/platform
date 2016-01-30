@@ -54,6 +54,8 @@ public class ProtocolDocumentImporter implements InternalStudyImporter
 
         if (null != protocolXml)
         {
+            ctx.getLogger().info("Loading " + getDescription());
+
             VirtualFile folder = root.getDir(protocolXml.getDir());
             List<AttachmentFile> attachments = new ArrayList<>();
             List<String> existing = new ArrayList<>();
@@ -72,7 +74,8 @@ public class ProtocolDocumentImporter implements InternalStudyImporter
             }
 
             study.attachProtocolDocument(attachments, ctx.getUser());
-            ctx.getLogger().info("finished importing protocol documents");
+
+            ctx.getLogger().info("Done importing " + getDescription());
         }
     }
 }

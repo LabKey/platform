@@ -71,6 +71,10 @@ public class ModulePropertiesImporterFactory extends AbstractFolderImportFactory
             ModulePropertiesType modulePropsType = folderXml.getModuleProperties();
             if(modulePropsType != null)
             {
+                if (null != job)
+                    job.setStatus("IMPORT " + getDescription());
+                ctx.getLogger().info("Loading " + getDescription());
+
                 for(ModulePropertyType modulePropType: modulePropsType.getModulePropertyArray())
                 {
                     Module module = ModuleLoader.getInstance().getModule(modulePropType.getModuleName());

@@ -77,7 +77,9 @@ public class VisitCohortAssigner implements InternalStudyImporter
                 ctx.getLogger().warn("Can't import visits for an continuous date based study.");
                 return;
             }
-            
+
+            ctx.getLogger().info("Loading " + getDescription());
+
             StudyManager studyManager = StudyManager.getInstance();
             VisitManager visitManager = studyManager.getVisitManager(study);
             Container c = ctx.getContainer();
@@ -161,6 +163,8 @@ public class VisitCohortAssigner implements InternalStudyImporter
                     }
                 }
             }
+
+            ctx.getLogger().info("Done importing " + getDescription());
         }
     }
 

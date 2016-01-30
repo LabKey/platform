@@ -81,6 +81,8 @@ public class ParticipantGroupImporter implements InternalStudyImporter
     {
         if (xmlObject instanceof ParticipantGroupsDocument)
         {
+            ctx.getLogger().info("Loading " + getDescription());
+
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
             ParticipantGroupsDocument doc = (ParticipantGroupsDocument)xmlObject;
@@ -149,6 +151,8 @@ public class ParticipantGroupImporter implements InternalStudyImporter
                 transaction.commit();
                 ParticipantGroupManager.getInstance().clearCache(ctx.getContainer());
             }
+
+            ctx.getLogger().info("Done importing " + getDescription());
         }
     }
 }

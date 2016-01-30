@@ -86,6 +86,8 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
             VirtualFile vf = root.getDir(dirType.getDir());
             if (vf != null)
             {
+                ctx.getLogger().info("Loading treatment data tables");
+
                 DbScope scope = StudySchema.getInstance().getSchema().getScope();
                 try (DbScope.Transaction transaction = scope.ensureTransaction())
                 {
@@ -97,7 +99,6 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
                     StudyQuerySchema projectSchema = ctx.isDataspaceProject() ? new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser(), true) : schema;
 
                     // study design tables
-                    ctx.getLogger().info("Importing study design data tables");
                     List<String> studyDesignTableNames = new ArrayList<>();
 
                     studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_GENES_TABLE_NAME);
@@ -112,7 +113,6 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
                     }
 
                     // add the treatment specific tables
-                    ctx.getLogger().info("Importing treatment data tables");
                     StudyQuerySchema.TablePackage productTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PRODUCT_TABLE_NAME);
                     importTableData(ctx, vf, productTablePackage, _productTableMapBuilder,
                            new PreserveExistingProjectData(ctx.getUser(), productTablePackage.getTableInfo(), "Label", "RowId", _productIdMap));
@@ -140,6 +140,8 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
 
                     transaction.commit();
                 }
+
+                ctx.getLogger().info("Done importing treatment data tables");
             }
             else
                 throw new ImportException("Unable to open the folder at : " + dirType.getDir());

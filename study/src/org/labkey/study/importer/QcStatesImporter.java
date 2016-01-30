@@ -133,6 +133,8 @@ public class QcStatesImporter implements InternalStudyImporter
                 qcForm.setBlankQCStatePublic(study.isBlankQCStatePublic());
                 StudyController.updateQcState(study, ctx.getUser(), qcForm);
             }
+
+            ctx.getLogger().info("Done importing QC states");
         }
     }
 

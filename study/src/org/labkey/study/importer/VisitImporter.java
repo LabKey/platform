@@ -87,6 +87,8 @@ public class VisitImporter implements InternalStudyImporter
                 for (String error : errorMsg)
                     errors.reject("uploadVisitMap", error);
             }
+
+            ctx.getLogger().info("Done importing visit map");
         }
     }
 }
