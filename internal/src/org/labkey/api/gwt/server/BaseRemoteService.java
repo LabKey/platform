@@ -75,7 +75,6 @@ public abstract class BaseRemoteService extends RemoteServiceServlet
     {
         return new ServletConfig()
         {
-
             public String getInitParameter(String string)
             {
                 return null;

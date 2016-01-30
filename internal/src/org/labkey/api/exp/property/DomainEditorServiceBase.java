@@ -87,12 +87,6 @@ public class DomainEditorServiceBase extends BaseRemoteService
     }
 
 
-    @Deprecated
-    public List<String> getSchemas(String containerId)
-    {
-        return Collections.emptyList();
-    }
-
     public List<String> getSchemas(String containerId, String defaultLookupSchemaName)
     {
         try

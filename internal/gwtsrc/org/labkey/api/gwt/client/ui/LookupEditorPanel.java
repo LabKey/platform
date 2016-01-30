@@ -49,6 +49,7 @@ import java.util.TreeSet;
 public class LookupEditorPanel extends LayoutContainer
 {
     private final LookupServiceAsync _service;
+    private final String _currentFolderText = "[current " + (PropertyUtil.isProject() ? "project" : "folder") + "]"; // Fix confusion from #19961
 
     private PropertyType _currentType = null;
     private _ComboBox _comboContainer;
@@ -90,7 +91,7 @@ public class LookupEditorPanel extends LayoutContainer
             _comboContainer = new _ComboBox();
             _comboContainer.setAutoSizeList(true);
             _comboContainer.setName("lookupContainer");
-            _comboContainer.setEmptyText("Folder");
+            _comboContainer.setEmptyText(_currentFolderText);
             _comboContainer.setStore(store);
             _comboContainer.getElement().setId("lookupFolder");
 
@@ -197,7 +198,7 @@ public class LookupEditorPanel extends LayoutContainer
         {
             public void onSuccess(List<String> l)
             {
-                ret.add(new ComboModelData("", PropertiesEditor.currentFolder));
+                ret.add(new ComboModelData("", _currentFolderText));
                 for (String folder : l)
                     ret.add(new ComboModelData(folder));
             }
@@ -329,7 +330,7 @@ public class LookupEditorPanel extends LayoutContainer
         String c = _comboContainer.getStringValue();
         if (".".equals(c))
             c = null;
-        if (PropertiesEditor.currentFolder.equals(c))
+        if (_currentFolderText.equals(c))
             c = null;
         return c;
     }

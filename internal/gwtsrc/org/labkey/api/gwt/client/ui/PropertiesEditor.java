@@ -64,7 +64,6 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         }
     }
 
-    public static final String currentFolder = "[current folder]";
     protected VerticalPanel _contentPanel;
     private com.extjs.gxt.ui.client.widget.TabPanel _extraPropertiesTabPanel = new com.extjs.gxt.ui.client.widget.TabPanel();
     private Image _spacerImage;

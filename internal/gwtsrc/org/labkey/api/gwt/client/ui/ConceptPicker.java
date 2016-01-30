@@ -70,7 +70,7 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
         }
     }
     
-    protected ConceptPicker(LookupServiceAsync lookupService, String name)
+    public ConceptPicker(LookupServiceAsync lookupService, String name, GWTPropertyDescriptor initial)
     {
         super();
         sinkEvents(Event.ONCHANGE);
@@ -81,12 +81,7 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
         // adjustSize==true causes getComputesStyle(), SLOW ON FIREFOX
         this.adjustSize = false;
         setHeight(22);
-    }
 
-
-    public ConceptPicker(LookupServiceAsync lookupService, String name, GWTPropertyDescriptor initial)
-    {
-        this(lookupService, name);
         ConceptType type = fromPropertyDescriptor(initial);
         setValue(type);
     }

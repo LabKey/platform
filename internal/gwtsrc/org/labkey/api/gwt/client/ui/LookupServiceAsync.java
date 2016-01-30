@@ -27,7 +27,7 @@ import java.util.List;
  */
 public interface LookupServiceAsync
 {
-    public void getContainers(AsyncCallback<List<String>> async);
-    public void getSchemas(String containerId, String defaultLookupSchemaName, AsyncCallback<List<String>> async);
-    public void getTablesForLookup(String containerId, String schemaName, AsyncCallback<List<LookupService.LookupTable>> async);
+    void getContainers(AsyncCallback<List<String>> async);
+    void getSchemas(String containerId, String defaultLookupSchemaName, AsyncCallback<List<String>> async);
+    void getTablesForLookup(String containerId, String schemaName, AsyncCallback<List<LookupService.LookupTable>> async);
 }

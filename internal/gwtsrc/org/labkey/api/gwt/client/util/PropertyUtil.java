@@ -49,6 +49,14 @@ public class PropertyUtil
         return getServerProperty("container");
     }
 
+    // Is the current container a project?
+    public static boolean isProject()
+    {
+        String path = getContainerPath();
+        // Currently in a project if container path is not the root and has no slashes after the first character
+        return !"/".equals(path) && (-1 == getContainerPath().indexOf('/', 1));
+    }
+
     public static String getController()
     {
         return getServerProperty("controller");
@@ -105,7 +113,7 @@ public class PropertyUtil
                 encodedPath += part + "/";
             }
         }
-        if (-1 == action.indexOf("."))
+        if (!action.contains("."))
             action = action + ".view";
         return getContextPath() + "/" + pageFlow + encodedPath + action;
     }
