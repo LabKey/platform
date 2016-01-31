@@ -125,7 +125,6 @@ public class DbScope
     private final SchemaTableInfoCache _tableCache;
     private final Map<Thread, List<TransactionImpl>> _transaction = new WeakHashMap<>();
     private final DataSourceProperties _props;
-    private final boolean _logQueries;
 
     private SqlDialect _dialect;
 
@@ -205,7 +204,6 @@ public class DbScope
         _schemaCache = null;
         _tableCache = null;
         _props = null;
-        _logQueries = false;
     }
 
 
@@ -249,7 +247,7 @@ public class DbScope
 
     // Standard DbScope constructor. Attempt a (non-pooled) connection to the datasource to gather meta data properties.
     // We don't use DbSchema or normal pooled connections here because failed connections seem to get added into the pool.
-    protected DbScope(String dsName, DataSource dataSource, DataSourceProperties props) throws ServletException, SQLException
+    public DbScope(String dsName, DataSource dataSource, DataSourceProperties props) throws ServletException, SQLException
     {
         try (Connection conn = dataSource.getConnection())
         {
@@ -285,7 +283,6 @@ public class DbScope
             _props = props;
             _schemaCache = new DbSchemaCache(this);
             _tableCache = new SchemaTableInfoCache(this);
-            _logQueries = props.isLogQueries();
         }
     }
 
@@ -352,11 +349,6 @@ public class DbScope
     public DataSourceProperties getProps()
     {
         return _props;
-    }
-
-    public boolean isLogQueries()
-    {
-        return _logQueries;
     }
 
     /**
