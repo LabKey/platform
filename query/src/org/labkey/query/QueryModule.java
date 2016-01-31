@@ -24,7 +24,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.message.digest.DailyMessageDigest;
@@ -38,6 +37,7 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.JavaExportScriptFactory;
 import org.labkey.api.query.JavaScriptExportScriptFactory;
 import org.labkey.api.query.PerlExportScriptFactory;
+import org.labkey.api.query.PythonExportScriptFactory;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
@@ -45,7 +45,6 @@ import org.labkey.api.query.RExportScriptFactory;
 import org.labkey.api.query.SimpleTableDomainKind;
 import org.labkey.api.query.URLExportScriptFactory;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
-import org.labkey.api.query.PythonExportScriptFactory;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.chart.ChartRendererFactory;
 import org.labkey.api.reports.report.ChartQueryReport;
@@ -73,10 +72,8 @@ import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartFactory;
-import org.labkey.api.data.QueryLoggingAuditTypeProvider;
 import org.labkey.query.audit.QueryAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
-import org.labkey.api.data.ScopeQueryLoggingProfilerListener;
 import org.labkey.query.controllers.OlapController;
 import org.labkey.query.controllers.QueryController;
 import org.labkey.query.controllers.SqlController;
@@ -266,9 +263,6 @@ public class QueryModule extends DefaultModule
         AuditLogService.registerAuditType(new QueryAuditProvider());
         AuditLogService.registerAuditType(new QueryUpdateAuditProvider());
 
-        AuditLogService.registerAuditType(new QueryLoggingAuditTypeProvider());
-        QueryProfiler.getInstance().addListener(new ScopeQueryLoggingProfilerListener());
-
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new ReportNotificationInfoProvider());
         DailyMessageDigest.getInstance().addProvider(ReportAndDatasetChangeDigestProvider.get());
         // Note: DailyMessageDigest timer is initialized by the AnnouncementModule
@@ -301,8 +295,7 @@ public class QueryModule extends DefaultModule
                 Query.QueryTestCase.class,
                 QueryServiceImpl.TestCase.class,
                 RolapReader.RolapTest.class,
-                RolapTestCase.class,
-                ScopeQueryLoggingProfilerListener.TestCase.class
+                RolapTestCase.class
         ));
     }
 
