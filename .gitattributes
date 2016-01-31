@@ -351,8 +351,6 @@ api/src/org/labkey/api/data/PropertySchema.java -text
 api/src/org/labkey/api/data/PropertyStorageSpec.java -text
 api/src/org/labkey/api/data/PropertyStore.java -text
 api/src/org/labkey/api/data/QueryLogging.java -text
-api/src/org/labkey/api/data/QueryLoggingAuditTypeEvent.java -text
-api/src/org/labkey/api/data/QueryLoggingAuditTypeProvider.java -text
 api/src/org/labkey/api/data/RemappingDisplayColumnFactory.java -text
 api/src/org/labkey/api/data/RenderColumn.java -text
 api/src/org/labkey/api/data/RenderContextDecorator.java -text
@@ -375,7 +373,6 @@ api/src/org/labkey/api/data/SchemaNameCache.java -text
 api/src/org/labkey/api/data/SchemaTableInfoCache.java -text
 api/src/org/labkey/api/data/SchemaTableInfoFactory.java -text
 api/src/org/labkey/api/data/SchemaXmlCacheHandler.java -text
-api/src/org/labkey/api/data/ScopeQueryLoggingProfilerListener.java -text
 api/src/org/labkey/api/data/SelectQueryAuditEvent.java -text
 api/src/org/labkey/api/data/SelectQueryAuditProvider.java -text
 api/src/org/labkey/api/data/Selector.java -text
