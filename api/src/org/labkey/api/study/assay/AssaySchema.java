@@ -72,5 +72,4 @@ public abstract class AssaySchema extends UserSchema
     {
         return true;
     }
-
 }
