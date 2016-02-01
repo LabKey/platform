@@ -5,7 +5,6 @@
       <configuration>
         <setting name="compilerMaxHeapSize" value="128" />
         <setting name="gwtScriptOutputStyle" value="DETAILED" />
-        <setting name="gwtSdkUrl" value="" />
       </configuration>
     </facet>
   </component>
@@ -28,4 +27,3 @@
     </orderEntry>
   </component>
 </module>
-
