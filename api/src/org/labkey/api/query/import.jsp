@@ -77,7 +77,7 @@
 </div>
 <table class="labkey-bordered labkey-wp" style="background-color:#ffffff;max-width: 760px;">
 <tr class="labkey-wp-header" style="min-width:600px;">
-    <th class="labkey-wp-title-left" style="padding:5px;"><span class="labkey-wp-title-text">Upload file (.xls, .csv, .txt)</span></th>
+    <th class="labkey-wp-title-left" style="padding:5px;"><span class="labkey-wp-title-text">Upload file (.xlsx, .xls, .csv, .txt)</span></th>
     <th class="labkey-wp-title-right"><%= PageFlowUtil.button("+").href("#").attributes("id='" + uploadFileDivId + "Expando'") %></tr>
 <tr><td colspan=2><div id="<%=text(uploadFileDivId)%>"></div></td></tr>
 </table>

@@ -229,12 +229,6 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
     }
 
     @Override
-    public String getDescription()
-    {
-        return super.getDescription();
-    }
-
-    @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         // Allow read, but not insert, update, or delete.
