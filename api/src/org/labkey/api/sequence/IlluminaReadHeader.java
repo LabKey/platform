@@ -35,9 +35,26 @@ public class IlluminaReadHeader
 
     public IlluminaReadHeader(String header) throws IllegalArgumentException
     {
-        String[] h = header.split(":| ");
-        if(h.length < 11)
+        String[] h;
+        int minLength;
+
+        //alternate format: HWI-ST881:298:C15RNACXX:6:2209:15829:47176/1
+        if (header.endsWith("/1") || header.endsWith("/2"))
+        {
+            header = header.replaceAll("/1$", ":1");
+            header = header.replaceAll("/2$", ":2");
+            minLength = 8;
+        }
+        else
+        {
+            minLength = 11;
+        }
+
+        h = header.split(":| ");
+        if (h.length < minLength)
+        {
             throw new IllegalArgumentException("Improperly formatted header: " + header);
+        }
 
         try
         {
@@ -49,22 +66,30 @@ public class IlluminaReadHeader
             _xCoord = Integer.parseInt(h[5]);
             _yCoord = Integer.parseInt(h[6]);
             _pairNumber = Integer.parseInt(h[7]);
-            setFailedFilter(h[8]);
-            _controlBits = Integer.parseInt(h[9]);
+
+            if (h.length > 8)
+            {
+                setFailedFilter(h[8]);
+                _controlBits = Integer.parseInt(h[9]);
+            }
+
+            _sampleNum = -1;
+            if (h.length > 10)
+            {
+                //Note: if this read was not demultiplexed by illumina, the index sequence may appear in this position
+                try
+                {
+                    _sampleNum = Integer.parseInt(h[10]);
+                }
+                catch (NumberFormatException e)
+                {
+                    //ignore
+                }
+            }
         }
         catch (NumberFormatException e)
         {
             throw new IllegalArgumentException(e.getMessage());
-        }
-
-        //Note: if this read was not demultiplexed by illumina, the index sequence may appear in this position
-        try
-        {
-            _sampleNum = Integer.parseInt(h[10]);
-        }
-        catch (NumberFormatException e)
-        {
-            _sampleNum = -1;
         }
     }
 

@@ -118,13 +118,18 @@ public class SimpleTableDomainKind extends AbstractDomainKind
     {
         try
         {
-            XarContext xc = getXarContext(schemaName, tableName, c, u);
+            XarContext xc = getXarContext(schemaName, tableName, getDomainContainer(c), u);
             return LsidUtils.resolveLsidFromTemplate(SimpleModule.DOMAIN_LSID_TEMPLATE, xc, SimpleModule.DOMAIN_NAMESPACE_PREFIX_TEMPLATE);
         }
         catch (XarFormatException xfe)
         {
             return null;
         }
+    }
+
+    private static Container getDomainContainer(Container c)
+    {
+        return c.isWorkbook() ? c.getParent() : c;
     }
 
     public static String createPropertyURI(String schemaName, String tableName, Container c, User u)
@@ -188,13 +193,22 @@ public class SimpleTableDomainKind extends AbstractDomainKind
     @Override
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
+        if (containerUser.getContainer().isWorkbook())
+            return null;
+
         return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain.getTypeURI(), true, true, true);
+    }
+
+    @Override
+    public ActionURL urlCreateDefinition(String schemaName, String queryName, Container container, User user)
+    {
+        return super.urlCreateDefinition(schemaName, queryName, getDomainContainer(container), user);
     }
 
     @Override
     public boolean canCreateDefinition(User user, Container container)
     {
-        return container.hasPermission(user, AdminPermission.class);
+        return container.hasPermission(user, AdminPermission.class) && !container.isWorkbook();
     }
 
     @Override

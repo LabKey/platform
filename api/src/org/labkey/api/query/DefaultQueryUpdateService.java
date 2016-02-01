@@ -381,7 +381,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
             // Note: copy lsid into newValues map so it will be found by the ImportHelper.beforeImportObject()
             newValues.put(objectUriCol.getName(), lsid);
-            List<String> lsids = OntologyManager.insertTabDelimited(getDomainContainer(c), user, null, new ImportHelper(), pds, Collections.singletonList(newValues), true);
+            List<String> lsids = OntologyManager.insertTabDelimited(c, user, null, new ImportHelper(), pds, Collections.singletonList(newValues), true);
 
             // Update the lsid in the row: the lsid may have not existed in the row before the update.
             lsid = lsids.get(0);
