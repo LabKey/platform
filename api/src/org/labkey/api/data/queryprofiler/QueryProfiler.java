@@ -42,7 +42,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewServlet;
-import org.labkey.api.view.WebPartView;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -245,7 +244,7 @@ public class QueryProfiler
         }
     }
 
-    private class ReportView extends WebPartView
+    private class ReportView extends HttpView
     {
         private final String _statName;
         private final String _buttonHTML;
@@ -261,7 +260,7 @@ public class QueryProfiler
         }
 
         @Override
-        protected void renderView(Object model, PrintWriter out)
+        protected void renderInternal(Object model, PrintWriter out)
         {
             for (QueryTrackerSet set : getTrackerSets())
             {
@@ -344,10 +343,10 @@ public class QueryProfiler
 
     public HttpView getStackTraceView(final int hashCode, final ActionURLFactory executeFactory)
     {
-        return new WebPartView()
+        return new HttpView()
         {
             @Override
-            protected void renderView(Object model, PrintWriter out) throws Exception
+            protected void renderInternal(Object model, PrintWriter out)
             {
                 // Don't update anything while we're rendering the report or vice versa
                 synchronized (_lock)
@@ -470,9 +469,10 @@ public class QueryProfiler
             // Don't update anything while we're rendering the report or vice versa
             synchronized (getInstance()._lock)
             {
-                for (QueryTrackerSet set : getInstance().getTrackerSets())
-                    if (set.shouldDisplay())
-                        export.addAll(set);
+                getInstance().getTrackerSets()
+                    .stream()
+                    .filter(QueryTrackerSet::shouldDisplay)
+                    .forEach(export::addAll);
 
                 long upTime = 0;
                 RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
