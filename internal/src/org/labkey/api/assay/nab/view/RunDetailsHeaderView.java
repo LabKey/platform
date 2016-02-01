@@ -25,6 +25,7 @@ import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.nab.NabUrls;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.actions.AssayHeaderView;
@@ -51,14 +52,16 @@ public class RunDetailsHeaderView extends AssayHeaderView
     private final boolean _showGraphLayoutOptions;
     private List<DilutionAssayRun.SampleResult> _samples;
     private Map<String, PropertyDescriptor> _propertyDescriptorMap = new CaseInsensitiveHashMap<>();
+    private User _user;
 
-    public RunDetailsHeaderView(Container container, ExpProtocol protocol, AssayProvider provider, int runId, List<DilutionAssayRun.SampleResult> samples)
+    public RunDetailsHeaderView(Container container, ExpProtocol protocol, AssayProvider provider, int runId, List<DilutionAssayRun.SampleResult> samples, User user)
     {
         super(protocol, provider, true, true, null);
         _container = container;
         _runId = runId;
         _samples = samples;
         _showGraphLayoutOptions = (samples.size() > 10);
+        _user = user;
 
         for (DilutionAssayRun.SampleResult sample : samples)
         {
@@ -81,11 +84,11 @@ public class RunDetailsHeaderView extends AssayHeaderView
         links.add(new NavTree("View Runs", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getViewContext().getContainer(), _protocol, _containerFilter), AssayProtocolSchema.getLastFilterScope(_protocol))));
         links.add(new NavTree("View Results", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(getViewContext().getContainer(), _protocol, _containerFilter, _runId), AssayProtocolSchema.getLastFilterScope(_protocol))));
 
-        if (getViewContext().hasPermission(InsertPermission.class))
+        if (getViewContext().getContainer().hasPermission(_user, InsertPermission.class))
         {
             links.add(new NavTree(AbstractAssayProvider.IMPORT_DATA_LINK_NAME, _provider.getImportURL(_container, _protocol)));
 
-            if (getViewContext().hasPermission(DeletePermission.class))
+            if (getViewContext().getContainer().hasPermission(_user, DeletePermission.class))
             {
                 ActionURL rerunURL = getProvider().getImportURL(_container, getProtocol());
                 if (rerunURL != null)

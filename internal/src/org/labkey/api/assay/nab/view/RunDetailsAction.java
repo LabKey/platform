@@ -29,7 +29,9 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -94,6 +96,13 @@ public abstract class RunDetailsAction<FormType extends RenderAssayBean> extends
             contextualRoles.add(RoleManager.getRole(ReaderRole.class));
             elevatedUser = new LimitedUser(currentUser, currentUser.getGroups(), contextualRoles, false);
         }
+        else if (run.getCreatedBy().equals(getUser()) && !getContainer().hasPermission(getUser(), DeletePermission.class))
+        {
+            User currentUser = getUser();
+            Set<Role> contextualRoles = new HashSet<>(currentUser.getStandardContextualRoles());
+            contextualRoles.add(RoleManager.getRole(EditorRole.class));
+            elevatedUser = new LimitedUser(currentUser, currentUser.getGroups(), contextualRoles, false);
+        }
 
         try
         {
@@ -104,7 +113,7 @@ public abstract class RunDetailsAction<FormType extends RenderAssayBean> extends
             form.setContext(getViewContext());
             form.setAssay(assay);
 
-            RunDetailsHeaderView headerView = new RunDetailsHeaderView(getContainer(), _protocol, provider, _runRowId, assay.getSampleResults());
+            RunDetailsHeaderView headerView = new RunDetailsHeaderView(getContainer(), _protocol, provider, _runRowId, assay.getSampleResults(), elevatedUser);
             if (headerView.isShowGraphLayoutOptions())
                 assay.updateRenderAssayBean(form);
             HttpView view = new JspView<RenderAssayBean>("/org/labkey/api/assay/nab/view/runDetails.jsp", form);
