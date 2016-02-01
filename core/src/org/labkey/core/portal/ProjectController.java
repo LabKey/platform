@@ -1002,7 +1002,7 @@ public class ProjectController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class CustomizeWebPartAction extends FormViewAction<CustomizePortletForm>
     {
-        Portal.WebPart _webPart;
+        private Portal.WebPart _webPart;
 
         public void validateCommand(CustomizePortletForm target, Errors errors)
         {

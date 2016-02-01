@@ -17,13 +17,14 @@
 package org.labkey.query.view;
 
 import org.labkey.api.jsp.JspLoader;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.WebPartView;
 
 import java.io.PrintWriter;
 
-public class EditQueryView extends WebPartView
+public class EditQueryView extends HttpView
 {
     private final Portal.WebPart _part;
 
@@ -33,7 +34,7 @@ public class EditQueryView extends WebPartView
     }
 
     @Override
-    protected void renderView(Object model, PrintWriter out) throws Exception
+    protected void renderInternal(Object model, PrintWriter out) throws Exception
     {
         EditQueryPage page = (EditQueryPage) JspLoader.createPage(EditQueryView.class, "editQueryWebPart.jsp");
         page.setWebPart(_part);

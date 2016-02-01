@@ -2232,18 +2232,8 @@ public class AdminController extends SpringActionController
         {
             String buttonHTML = PageFlowUtil.button("Reset All Statistics").href(getResetQueryStatisticsURL()) + "&nbsp;" + PageFlowUtil.button("Export").href(getExportQueriesURL());
 
-            return QueryProfiler.getInstance().getReportView(form.getStat(), buttonHTML, new QueryProfiler.ActionURLFactory() {
-                public ActionURL getActionURL(String name)
-                {
-                    return getQueriesURL(name);
-                }
-            },
-            new QueryProfiler.ActionURLFactory() {
-                public ActionURL getActionURL(String sql)
-                {
-                    return getQueryStackTracesURL(sql.hashCode());
-                }
-            });
+            return QueryProfiler.getInstance().getReportView(form.getStat(), buttonHTML, AdminController::getQueriesURL,
+                    sql -> getQueryStackTracesURL(sql.hashCode()));
         }
 
         public NavTree appendNavTrail(NavTree root)
