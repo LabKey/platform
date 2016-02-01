@@ -150,7 +150,7 @@ public class QueryServiceImpl extends QueryService
     @Deprecated /** Use SchemaKey form instead. */
     public QueryDefinition createQueryDef(User user, Container container, String schema, String name)
     {
-        return new CustomQueryDefinitionImpl(user, container, schema, name);
+        return new CustomQueryDefinitionImpl(user, container, SchemaKey.fromString(schema), name);
     }
 
     public QueryDefinition createQueryDef(User user, Container container, SchemaKey schema, String name)

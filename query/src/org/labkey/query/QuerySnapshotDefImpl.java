@@ -70,7 +70,7 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
         }
         else
         {
-            QueryDefinitionImpl qd = new CustomQueryDefinitionImpl(queryDef.getUser(), queryDef.getContainer(), queryDef.getSchemaName(), queryDef.getName() + "_" + name);
+            QueryDefinitionImpl qd = new CustomQueryDefinitionImpl(queryDef.getUser(), queryDef.getContainer(), queryDef.getSchemaPath(), queryDef.getName() + "_" + name);
 
             qd.setMetadataXml(queryDef.getMetadataXml());
             qd.setSql(queryDef.getSql());
