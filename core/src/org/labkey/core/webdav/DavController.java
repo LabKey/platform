@@ -4843,6 +4843,7 @@ public class DavController extends SpringActionController
     }
 
 
+    @NotNull
     String getUrlResourcePathStr()
     {
         if (_urlResourcePathStr == null)
@@ -4856,7 +4857,7 @@ public class DavController extends SpringActionController
             _urlResourcePathStr = path;
         }
         if (!_urlResourcePathStr.startsWith("/"))
-            return null;
+            return "/" + _urlResourcePathStr;
         return _urlResourcePathStr;
     }
 
