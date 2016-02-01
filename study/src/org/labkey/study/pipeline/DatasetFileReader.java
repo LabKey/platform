@@ -64,6 +64,7 @@ public class DatasetFileReader
 
     private String _datasetsFileName;
     private VirtualFile _datasetsDirectory;
+    private Set<String> _datasetsNotFound = new HashSet<>();
 
     private ArrayList<DatasetImportRunnable> _runnables = null;
 
@@ -90,6 +91,8 @@ public class DatasetFileReader
     {
         return _job;
     }
+
+    public Set<String> getDatasetsNotFound() { return _datasetsNotFound; }
 
     public List<DatasetImportRunnable> getRunnables()
     {
@@ -270,7 +273,10 @@ public class DatasetFileReader
             dsKey = normalizeIntegerString(dsKey);
             DatasetDefinition ds = dsMap.get(dsKey.toLowerCase());
             if (null == ds)
+            {
+                _datasetsNotFound.add(name);
                 continue;
+            }
             DatasetImportRunnable runnable = jobMap.get(ds);
             if (null == runnable)
             {

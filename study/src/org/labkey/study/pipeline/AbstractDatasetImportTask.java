@@ -16,6 +16,7 @@
 
 package org.labkey.study.pipeline;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.pipeline.CancelledException;
@@ -32,12 +33,12 @@ import org.labkey.study.model.CohortManager;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.writer.StudyArchiveDataTypes;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 
 /**
@@ -93,12 +94,6 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
         if (!ctx.isDataTypeSelected(StudyImportDatasetTask.getType()))
             return;
 
-        if (!ctx.isDataTypeSelected(StudyArchiveDataTypes.DATASET_DEFINITIONS))
-        {
-            ctx.getLogger().warn("Cannot import dataset data if datasets are not imported.");
-            return;
-        }
-
         if (null != datasetsDirectory && null != datasetsFileName)
         {
             // If a directory and dataset file have been specified then make sure the file exists, #17208
@@ -120,6 +115,12 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
 
                     for (String error : errors)
                         ctx.getLogger().error(error);
+
+                    Set<String> notFound = reader.getDatasetsNotFound();
+                    if (!notFound.isEmpty())
+                    {
+                        ctx.getLogger().warn("Could not find definitions for " + notFound.size() + " dataset data files: " + StringUtils.join(notFound, ", "));
+                    }
                 }
                 catch (Exception x)
                 {
