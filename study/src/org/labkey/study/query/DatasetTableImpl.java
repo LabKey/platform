@@ -18,7 +18,6 @@ package org.labkey.study.query;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;
@@ -117,7 +116,8 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         String nameLabel = dsd.getName();
         if (!dsd.getLabel().equalsIgnoreCase(dsd.getName()))
             nameLabel += " (" + dsd.getLabel() + ")";
-        setDescription("Contains up to one row of " + nameLabel + " data for each " + dsd.getKeyTypeDescription() + " combination.");
+        String keyDescription = dsd.getKeyTypeDescription();
+        setDescription("Contains up to one row of " + nameLabel + " data for each " + keyDescription + (keyDescription.contains("/") ? " combination." : "."));
         _dsd = dsd;
         _title = dsd.getLabel();
 
@@ -336,7 +336,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         getColumn("SourceLSID").setHidden(true);
 
         ColumnInfo autoJoinColumn = new AliasedColumn(this, "DataSets", _rootTable.getColumn("ParticipantId"));
-        autoJoinColumn.setDescription("Contains lookups to each DataSet that can be joined by the " + _dsd.getLabel() + " DataSet's '" + _dsd.getKeyTypeDescription() + "' combination.");
+        autoJoinColumn.setDescription("Contains lookups to each Dataset that can be joined by the " + _dsd.getLabel() + " Dataset's '" + _dsd.getKeyTypeDescription() + "' combination.");
         autoJoinColumn.setKeyField(false);
         autoJoinColumn.setIsUnselectable(true);
         autoJoinColumn.setUserEditable(false);

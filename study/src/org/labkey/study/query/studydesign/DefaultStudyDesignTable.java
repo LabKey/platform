@@ -22,14 +22,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -85,13 +81,10 @@ public class DefaultStudyDesignTable extends FilteredTable<UserSchema>
 
                         if (pd.getPropertyType() == PropertyType.MULTI_LINE)
                         {
-                            col.setDisplayColumnFactory(new DisplayColumnFactory() {
-                                public DisplayColumn createRenderer(ColumnInfo colInfo)
-                                {
-                                    DataColumn dc = new DataColumn(colInfo);
-                                    dc.setPreserveNewlines(true);
-                                    return dc;
-                                }
+                            col.setDisplayColumnFactory(colInfo -> {
+                                DataColumn dc = new DataColumn(colInfo);
+                                dc.setPreserveNewlines(true);
+                                return dc;
                             });
                         }
                         col.setName(pd.getName());
@@ -171,12 +164,6 @@ public class DefaultStudyDesignTable extends FilteredTable<UserSchema>
     public QueryUpdateService getUpdateService()
     {
         return new DefaultQueryUpdateService(this, this.getRealTable());
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return super.getDescription();
     }
 
     @Override

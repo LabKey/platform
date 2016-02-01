@@ -98,16 +98,17 @@ function orderModule(down)
                         desc.append(": ").append(h(def.getLabel()));
                     if (def.getViewCategory() != null)
                         desc.append(" (").append(h(def.getViewCategory().getLabel())).append(")");
+                    StringBuilder padding = new StringBuilder();
                     if (first)
                     {
                         // we'll pad the first entry to give our select box reasonable width
                         int padSize = 30 - desc.length();
                         while (padSize-- > 0)
-                            desc.append("&nbsp;");
+                            padding.append("&nbsp;");
                         first = false;
                     }
                     %>
-                    <option value="<%= def.getDatasetId() %>"><%=h(desc.toString())%></option>
+                    <option value="<%= def.getDatasetId() %>"><%=h(desc.toString()) + text(padding.toString())%></option>
                     <%
                 }
                 %>
