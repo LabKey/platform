@@ -4603,7 +4603,7 @@ public class AdminController extends SpringActionController
                             }
                         }
 
-                        c = ContainerManager.createContainer(parent, folderName, null, null, Container.TYPE.normal, getUser());
+                        c = ContainerManager.createContainer(parent, folderName, (folderName.equals(form.getTitle()) ? null : form.getTitle()), null, Container.TYPE.normal, getUser());
                         c.setFolderType(type, getUser());
 
                         if (null == StringUtils.trimToNull(folderType) || FolderType.NONE.getName().equals(folderType))

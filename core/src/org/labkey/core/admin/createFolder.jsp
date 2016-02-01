@@ -47,6 +47,7 @@
     boolean isContainerRoot = getContainer().isRoot();
 
     String name = form.getName();
+    String title = form.getTitle();
     String folderTypeName = form.getFolderType() != null ? form.getFolderType() : "Collaboration"; //default to Collaboration
 
     JSONArray modulesOut = new JSONArray();
@@ -218,6 +219,39 @@
                             }
                         }
                     }
+                },{
+                    xtype: 'checkbox',
+                    boxLabel: 'Use name as title',
+                    checked: <%=title == null%>,
+                    listeners: {
+                        change: function(cb){
+                            cb.up('panel').down('[name=titleHeader]').setVisible(!cb.checked);
+                            var tf = cb.up('panel').down('textfield[name="title"]');
+                            if (cb.checked){
+                                tf.setValue(null);
+                            }
+                            else {
+                                tf.setValue(cb.up('panel').down('textfield[name="name"]').getValue());
+                            }
+
+                            tf.setVisible(!cb.checked);
+                        }
+                    }
+                },{
+                    html: 'Title:',
+                    name: 'titleHeader',
+                    cls: 'labkey-wizard-header',
+                    style: 'padding-bottom: 5px;',
+                    hidden: <%=title == null%>
+                },{
+                    xtype: 'textfield',
+                    name: 'title',
+                    hidden: <%=title == null%>,
+                    width: 400,
+                    style: 'padding-left: 5px;',
+                    value: '<%=h(title)%>',
+                    maxLength: 255,
+                    validateOnBlur: false
                 },{
                     tag: 'span',
                     style: 'padding-bottom: 20px;'
