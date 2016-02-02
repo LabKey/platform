@@ -17,6 +17,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.LookupColumn;
@@ -206,9 +207,6 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                 }, "Alias"));
                 aliasCol.setCalculated(true);
                 aliasCol.setRequired(false);
-                aliasCol.setShownInInsertView(false);
-                aliasCol.setShownInUpdateView(false);
-                aliasCol.setUserEditable(false);
                 return aliasCol;
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
@@ -251,7 +249,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
         addColumn(Column.DataClass);
         addColumn(Column.Folder);
         addColumn(Column.Description);
-        addColumn(Column.Alias).setHidden(true);
+        addColumn(Column.Alias);
 
         //TODO: may need to expose ExpData.Run as well
 
@@ -585,33 +583,59 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
+            DataIterator pre = _in.getDataIterator(context);
+            return LoggingDataIterator.wrap(new AliasDataIterator(pre, context, _user));
+        }
+    }
+
+    private class AliasDataIterator extends WrapperDataIterator
+    {
+        final DataIteratorContext _context;
+        final Integer _lsidCol;
+        final Integer _aliasCol;
+        final User _user;
+        Map<String, List> _lsidAliasMap = new HashMap<>();
+
+        protected AliasDataIterator(DataIterator di, DataIteratorContext context, User user)
+        {
+            super(di);
             _context = context;
-            DataIterator input = _in.getDataIterator(context);
-            if (null == input)
-                return null;           // Can happen if context has errors
 
-            final ExperimentService.Interface svc = ExperimentService.get();
-            SimpleTranslator step0 = new SimpleTranslator(input, context);
-            step0.selectAll(Sets.newCaseInsensitiveHashSet("alias"));
+            Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
+            _lsidCol = map.get("lsid");
+            _aliasCol = map.get("alias");
 
-            ColumnInfo aliasCol = getColumn(FieldKey.fromParts("alias"));
-            final Map<String, Integer> colNameMap = DataIteratorUtil.createColumnNameMap(input);
+            _user = user;
+        }
 
-            if (colNameMap.containsKey("alias") && colNameMap.containsKey("lsid"))
+        @Override
+        public boolean next() throws BatchValidationException
+        {
+            boolean hasNext = super.next();
+
+            // For each iteration, collect the lsid and alias col values
+            if (_lsidCol != null && _aliasCol != null)
             {
-                step0.addColumn(aliasCol, new Supplier(){
-                    @Override
-                    public Object get()
-                    {
-                        Object value = input.get(colNameMap.get("alias"));
-                        Object lsidValue = input.get(colNameMap.get("lsid"));
+                Object lsidValue = get(_lsidCol);
+                Object aliasValue = get(_aliasCol);
 
-                        if (value instanceof List && lsidValue instanceof String)
+                if (aliasValue instanceof List && lsidValue instanceof String)
+                {
+                    _lsidAliasMap.put((String)lsidValue, (List)aliasValue);
+                }
+
+                if (!hasNext)
+                {
+                    final ExperimentService.Interface svc = ExperimentService.get();
+
+                    try (DbScope.Transaction transaction = svc.getTinfoDataClass().getSchema().getScope().ensureTransaction())
+                    {
+                        for (Map.Entry<String, List> entry : _lsidAliasMap.entrySet())
                         {
                             List<Integer> params = new ArrayList<>();
                             List<String> aliasNames = new ArrayList<>();
 
-                            ((List) value).stream().filter(item -> item instanceof String).forEach(item -> {
+                            entry.getValue().stream().filter(item -> item instanceof String).forEach(item -> {
 
                                 String itemEntry = (String)item;
                                 if (itemEntry.startsWith("[") && itemEntry.endsWith("]"))
@@ -668,16 +692,15 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                                 // insert the new rows into the mapping table
                                 for (Integer aliasId : params)
                                 {
-                                    Table.insert(_user, svc.getTinfoDataAliasMap(), new DataAliasMap((String)lsidValue, aliasId, getContainer()));
+                                    Table.insert(_user, svc.getTinfoDataAliasMap(), new DataAliasMap(entry.getKey(), aliasId, getContainer()));
                                 }
                             }
                         }
-                        return null;
+                        transaction.commit();
                     }
-                });
+                }
             }
-
-            return LoggingDataIterator.wrap(step0);
+            return hasNext;
         }
     }
 
