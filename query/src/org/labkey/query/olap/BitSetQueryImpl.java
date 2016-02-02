@@ -158,7 +158,7 @@ public class BitSetQueryImpl
 
     public BitSetQueryImpl setContainerFilter(Collection<String> containerFilter) throws OlapException
     {
-        // inspect the masure hierarchy to see if it has a container level
+        // inspect the measure hierarchy to see if it has a container level
         Hierarchy h = qq.countDistinctLevel.getHierarchy();
         Level lContainer = null;
         for (int i=1 ; i<qq.countDistinctLevel.getDepth() ; i++)
