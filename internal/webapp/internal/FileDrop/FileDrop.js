@@ -41,7 +41,7 @@ LABKEY.internal.FileDrop = new function () {
             dropzone.element.style.height = (r.bottom - r.top) + "px";
             dropzone.element.style.width = (r.right - r.left) + "px";
 
-            // Use table-cell to vertically align the innter content
+            // Use table-cell to vertically align the inner content
             dropzone.element.style.display = 'table';
         }
     }
@@ -238,16 +238,6 @@ LABKEY.internal.FileDrop = new function () {
             if (this.isSupported()) {
                 return _registerDropzone(config);
             }
-        },
-
-        showDropzones: function(){
-            shouldShowDropzones = true;
-            showDropzones();
-        },
-
-        hideDropzones: function() {
-            shouldShowDropzones = false;
-            hideDropzones();
         }
     }
 };
