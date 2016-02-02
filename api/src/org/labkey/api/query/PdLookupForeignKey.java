@@ -151,8 +151,11 @@ public class PdLookupForeignKey extends AbstractForeignKey
         {
             ContainerFilterable newTable = (ContainerFilterable)table;
 
+            // if the lookup is to the core.containers table, don't filter the container to the current container
+            if ("core".equalsIgnoreCase(newTable.getSchema().getName()) && "Containers".equalsIgnoreCase(newTable.getName()))
+                newTable.setContainerFilter(new ContainerFilter.AllFolders(_user));
             // Only override if the new table doesn't already have some special filter
-            if (newTable.hasDefaultContainerFilter())
+            else if (newTable.hasDefaultContainerFilter())
                 newTable.setContainerFilter(new DelegatingContainerFilter(parent.getParentTable()));
         }
 
@@ -191,6 +194,17 @@ public class PdLookupForeignKey extends AbstractForeignKey
     @Override
     public NamedObjectList getSelectList(RenderContext ctx)
     {
+        // if the lookup table is core.containers, list all of the containers the user has access to
+        if ("core".equalsIgnoreCase(_pd.getLookupSchema()) && "Containers".equalsIgnoreCase(_pd.getLookupQuery()))
+        {
+            TableInfo lookupTable = getLookupTableInfo();
+            if (lookupTable == null)
+                return new NamedObjectList();
+            ((ContainerTable) lookupTable).setContainerFilter(new ContainerFilter.AllFolders(_user));
+
+            return lookupTable.getSelectList(getLookupColumnName());
+        }
+
         return super.getSelectList(ctx);
     }
 
