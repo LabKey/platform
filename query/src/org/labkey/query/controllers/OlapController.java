@@ -860,6 +860,13 @@ public class OlapController extends SpringActionController
                 schema.checkCanReadSchemaOlap();
                 cf = schema.getOlapContainerFilter();
             }
+            String containerFilterName = getAnnotation(cube,"ContainerFilter");
+            if (null != containerFilterName)
+            {
+                cf = ContainerFilter.getContainerFilterByName(containerFilterName, getUser());
+                if (null == cf)
+                    throw new ConfigurationException("Container filter from olap configuration file not found : " + containerFilterName);
+            }
 
             CellSet cs = null;
             StringWriter sw = new StringWriter();
