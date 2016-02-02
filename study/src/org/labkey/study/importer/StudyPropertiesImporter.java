@@ -27,6 +27,7 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.writer.StudyPropertiesWriter;
 import org.labkey.study.xml.ExportDirType;
 import org.springframework.validation.BindException;
@@ -46,11 +47,19 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
     private SharedTableMapBuilder _personnelTableMapBuilder = new SharedTableMapBuilder(_personnelIdMap, "Label");
     private SharedTableMapBuilder _objectiveTableMapBuilder = new SharedTableMapBuilder(_objectiveIdMap, "Label");
 
+    private String getDataType()
+    {
+        return StudyArchiveDataTypes.TOP_LEVEL_STUDY_PROPERTIES;
+    }
+
     /**
      * Imports additional study related properties into the properties sub folder
      */
     public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws Exception
     {
+        if (!ctx.isDataTypeSelected(getDataType()))
+            return;
+
         ExportDirType dirType = ctx.getXml().getProperties();
 
         if (dirType != null)

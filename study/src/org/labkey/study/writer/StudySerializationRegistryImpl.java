@@ -30,6 +30,7 @@ import org.labkey.study.importer.QcStatesImporter;
 import org.labkey.study.importer.SpecimenSchemaImporter;
 import org.labkey.study.importer.SpecimenSettingsImporter;
 import org.labkey.study.importer.StudyViewsImporter;
+import org.labkey.study.importer.TopLevelStudyPropertiesImporter;
 import org.labkey.study.importer.TreatmentDataImporter;
 import org.labkey.study.importer.TreatmentVisitMapImporter;
 import org.labkey.study.importer.ViewCategoryImporter;
@@ -115,7 +116,8 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
             new TreatmentVisitMapImporter(),
             new VisitImporter(),
             new VisitCohortAssigner(),
-            new StudyViewsImporter()
+            new StudyViewsImporter(),
+            new TopLevelStudyPropertiesImporter()
         );
     }
 }

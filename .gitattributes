@@ -1967,6 +1967,7 @@ study/src/org/labkey/study/importer/StudyJobSupport.java -text
 study/src/org/labkey/study/importer/StudyPropertiesImporter.java -text
 study/src/org/labkey/study/importer/StudyReload.java -text
 study/src/org/labkey/study/importer/StudyViewsImporter.java -text
+study/src/org/labkey/study/importer/TopLevelStudyPropertiesImporter.java -text
 study/src/org/labkey/study/importer/TreatmentDataImporter.java -text
 study/src/org/labkey/study/importer/TreatmentVisitMapImporter.java -text
 study/src/org/labkey/study/importer/ViewCategoryImporter.java -text

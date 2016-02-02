@@ -38,11 +38,14 @@ public class StudyViewsImporter implements InternalStudyImporter
     @Override
     public String getDescription()
     {
-        return "custom participant view";
+        return getDataType().toLowerCase();
     }
 
     @Override
-    public String getDataType() { return StudyArchiveDataTypes.CUSTOM_PARTICIPANT_VIEWS; }
+    public String getDataType()
+    {
+        return StudyArchiveDataTypes.CUSTOM_PARTICIPANT_VIEWS;
+    }
 
     @Override
     public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws Exception

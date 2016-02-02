@@ -33,7 +33,6 @@ import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 import org.springframework.validation.ObjectError;
@@ -107,9 +106,8 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
                 previousTablesTemplate = StudySchema.getInstance().setSpecimenTablesTemplates(new SpecimenSchemaImporter.ImportTemplate());
             }
 
-            StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
-
             // Create the study if it doesn't exist... otherwise, modify the existing properties
+            StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
             if (null == study)
             {
                 ctx.getLogger().info("Loading study from " + originalFileName);
@@ -129,7 +127,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
                 if (studyXml.isSetSecurityType())
                     studyForm.setSecurityType(SecurityType.valueOf(studyXml.getSecurityType().toString()));
 
-                study = StudyController.createStudy(null, ctx.getContainer(), ctx.getUser(), studyForm);
+                StudyController.createStudy(null, ctx.getContainer(), ctx.getUser(), studyForm);
             }
             else
             {
@@ -144,12 +142,6 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
                 if (study.getTimepointType() != timepointType)
                     throw new PipelineJobException("Can't change timepoint style from '" + study.getTimepointType() + "' to '" + timepointType + "' when reloading an existing study.");
             }
-
-            ctx.getLogger().info("Loading top-level study properties");
-
-            study = study.createMutable();
-            study = configureStudyFromXml(study, ctx, studyXml);
-            StudyManager.getInstance().updateStudy(ctx.getUser(), study);
 
             runImporters(ctx, job, errors);
 
@@ -184,82 +176,11 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
     }
 
 
-    private static StudyImpl configureStudyFromXml(StudyImpl study, StudyImportContext ctx, StudyDocument.Study studyXml)
-    {
-        // TODO: This set of study property imports should be moved to its own importer process method so that it can be reused (see CreateChildStudyAction.createNewStudy)
-        // TODO: Change these props and save only if values have changed
-        if (study.isMutable())
-        {
-            if (studyXml.isSetLabel())
-                study.setLabel(studyXml.getLabel());
-
-            if (studyXml.isSetSecurityType())
-                study.setSecurityType(SecurityType.valueOf(studyXml.getSecurityType().toString()));
-
-            if (studyXml.isSetDefaultTimepointDuration())
-                study.setDefaultTimepointDuration(studyXml.getDefaultTimepointDuration());
-
-            if (studyXml.isSetStartDate())
-                study.setStartDate(studyXml.getStartDate().getTime());
-
-            if (studyXml.isSetEndDate())
-                study.setEndDate(studyXml.getEndDate().getTime());
-
-            if (studyXml.getSubjectColumnName() != null)
-                study.setSubjectColumnName(studyXml.getSubjectColumnName());
-
-            if (studyXml.getSubjectNounSingular() != null)
-                study.setSubjectNounSingular(studyXml.getSubjectNounSingular());
-
-            if (studyXml.getSubjectNounPlural() != null)
-                study.setSubjectNounPlural(studyXml.getSubjectNounPlural());
-
-            if (studyXml.isSetInvestigator())
-                study.setInvestigator(studyXml.getInvestigator());
-
-            if (studyXml.isSetGrant())
-                study.setGrant(studyXml.getGrant());
-
-            if (studyXml.isSetSpecies())
-                study.setSpecies(studyXml.getSpecies());
-
-            if (ctx.isDataTypeSelected(StudyArchiveDataTypes.ASSAY_SCHEDULE) && studyXml.isSetAssayPlan())
-                study.setAssayPlan(studyXml.getAssayPlan());
-
-            if (studyXml.isSetDescription())
-                study.setDescription(studyXml.getDescription());
-                // Issue 15789: Carriage returns in protocol description are not round-tripped
-            else if (studyXml.isSetStudyDescription() && studyXml.getStudyDescription().isSetDescription())
-                study.setDescription(studyXml.getStudyDescription().getDescription());
-
-            if (studyXml.isSetParticipantAliasDataset())
-            {
-                StudyDocument.Study.ParticipantAliasDataset participantAliasDataset = studyXml.getParticipantAliasDataset();
-                study.setParticipantAliasDatasetId(participantAliasDataset.getDatasetId());
-                study.setParticipantAliasProperty(participantAliasDataset.getAliasProperty());
-                study.setParticipantAliasSourceProperty(participantAliasDataset.getSourceProperty());
-            }
-
-            if (studyXml.isSetDescriptionRendererType())
-                study.setDescriptionRendererType(studyXml.getDescriptionRendererType());
-                // Issue 15789: Carriage returns in protocol description are not round-tripped
-            else if (studyXml.isSetStudyDescription() && studyXml.getStudyDescription().isSetRendererType())
-                study.setDescriptionRendererType(studyXml.getStudyDescription().getRendererType());
-
-            if (studyXml.getAlternateIdPrefix() != null)
-                study.setAlternateIdPrefix(studyXml.getAlternateIdPrefix());
-
-            if (studyXml.isSetAlternateIdDigits())
-                study.setAlternateIdDigits(studyXml.getAlternateIdDigits());
-        }
-
-        return study;
-    }
-
-
     private static void runImporters(StudyImportContext ctx, PipelineJob job, BindException errors) throws Exception
     {
         VirtualFile vf = ctx.getRoot();
+
+        new TopLevelStudyPropertiesImporter().process(ctx, vf, errors);
 
         // study.objective, study.personnel, and study.studyproperties tables
         new StudyPropertiesImporter().process(ctx, vf, errors);
