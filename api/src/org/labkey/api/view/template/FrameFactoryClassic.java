@@ -188,8 +188,7 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
 
             if (null != config._closeURL)
             {
-                Object o = config._closeURL;
-                Object closeUrl = o instanceof ActionURL ? ((ActionURL) o).getLocalURIString() : String.valueOf(o);
+                String closeUrl = config._closeURL.getLocalURIString();
                 out.print("<th valign=\"top\" align=\"right\">");
                 out.print("<a href=\"" + PageFlowUtil.filter(closeUrl) + "\">");
                 out.print("<img src=\"" + contextPath + "/_images/partdelete.gif\"></a>");

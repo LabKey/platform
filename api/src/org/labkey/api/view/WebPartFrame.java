@@ -15,6 +15,7 @@
  */
 package org.labkey.api.view;
 
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.WebPartView.FrameType;
 
 import java.io.PrintWriter;
@@ -37,7 +38,7 @@ public interface WebPartFrame
         public String _title=null;
         public String _titleHref=null;
         public String _className = null;
-        public Object _closeURL = null;
+        public URLHelper _closeURL = null;
         public boolean _isEmbedded = false;
         public boolean _showTitle  = true;
         public boolean _isWebpart  = true;
