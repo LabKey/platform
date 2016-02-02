@@ -51,8 +51,8 @@ public class ProtocolWebPart extends WebPartView
 
     public ProtocolWebPart(boolean narrow, ViewContext viewContext)
     {
+        super("Protocols");
         _narrow = narrow;
-        setTitle("Protocols");
         setTitleHref(new ActionURL(ExperimentController.ShowProtocolGridAction.class, viewContext.getContainer()));
     }
 

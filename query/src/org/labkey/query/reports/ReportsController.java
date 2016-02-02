@@ -2549,9 +2549,10 @@ public class ReportsController extends SpringActionController
     protected static class PlotView extends WebPartView
     {
         private Report _report;
+
         public PlotView(Report report)
         {
-            setFrame(FrameType.NONE);
+            super(FrameType.NONE);
             _report = report;
         }
 

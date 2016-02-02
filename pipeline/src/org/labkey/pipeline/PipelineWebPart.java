@@ -36,7 +36,7 @@ public class PipelineWebPart extends WebPartView
 
     public PipelineWebPart(ViewContext viewContext)
     {
-        setTitle(getPartName());
+        super(getPartName());
         setTitleHref(StatusController.urlShowList(viewContext.getContainer(), false));
         addClientDependency(ClientDependency.fromPath("clientapi/ext3"));
     }

@@ -930,6 +930,7 @@ public class ListController extends SpringActionController
 
         public ItemDetails(String comment, String oldRecord, String newRecord, boolean isEncoded, String returnUrl)
         {
+            super(FrameType.DIV);
             _comment = comment;
             _oldRecord = oldRecord;
             _newRecord = newRecord;

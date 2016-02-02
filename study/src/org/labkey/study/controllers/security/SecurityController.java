@@ -731,6 +731,7 @@ public class SecurityController extends SpringActionController
 
         Overview(StudyImpl study, ActionURL redirect)
         {
+            super(FrameType.DIV);
             JspView<StudyImpl> studySecurityView = new JspView<>("/org/labkey/study/security/studySecurity.jsp", study);
             JspView<StudyImpl> studyView = new JspView<>("/org/labkey/study/security/study.jsp", study);
             studyView.setTitle("Study Security");
@@ -788,7 +789,7 @@ public class SecurityController extends SpringActionController
     {
         private StudySecurityPermissionsView()
         {
-            setTitle("Study Security");
+            super("Study Security");
         }
 
         @Override

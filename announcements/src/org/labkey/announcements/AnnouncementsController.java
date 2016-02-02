@@ -2360,6 +2360,7 @@ public class AnnouncementsController extends SpringActionController
 
         private AnnouncementListWebPart(ViewContext ctx, boolean displayAll, boolean asWebPart)
         {
+            super(FrameType.PORTAL);
             Container c = ctx.getContainer();
             User user = ctx.getUser();
             ActionURL url = ctx.getActionURL();

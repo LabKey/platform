@@ -60,6 +60,7 @@ public class PermissionsDetailsView extends WebPartView
     // TODO: view is always "container" -- hard-code or remove?
     PermissionsDetailsView(Container c, String view)
     {
+        super(FrameType.PORTAL);
         _c = c;
         _view = view;
 

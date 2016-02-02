@@ -45,13 +45,13 @@ public class ContainersView extends WebPartView
 
     public ContainersView(Container c)
     {
-        setTitle("Folders in project " + c.getName());
+        super("Folders in project " + c.getName());
         _c = c;
     }
 
     public ContainersView(Container c, String id, String className)
     {
-        setTitle("Folders in project " + c.getName());
+        super("Folders in project " + c.getName());
         _id = id;
         _className = className;
         _c = c;

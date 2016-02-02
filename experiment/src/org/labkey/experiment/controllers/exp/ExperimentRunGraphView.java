@@ -45,6 +45,7 @@ public class ExperimentRunGraphView extends WebPartView
 
     public ExperimentRunGraphView(ExpRunImpl run, boolean detail)
     {
+        super(FrameType.DIV);
         _run = run;
         _detail = detail;
     }

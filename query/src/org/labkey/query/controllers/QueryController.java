@@ -1311,10 +1311,10 @@ public class QueryController extends SpringActionController
 
         private ScopeView(String title, DbScope scope, String schemaName, ActionURL url)
         {
+            super(title);
             _scope = scope;
             _schemaName = schemaName;
             _url = url;
-            setTitle(title);
         }
 
         @Override
@@ -1348,10 +1348,10 @@ public class QueryController extends SpringActionController
 
         private ResultSetView(ResultSet rs, String title, int linkColumn, String link) throws SQLException
         {
+            super(title);
             _rs = rs;
             _linkColumn = linkColumn;
             _link = link;
-            setTitle(title);
         }
 
         @Override

@@ -49,7 +49,7 @@ public class ReportsWebPart extends WebPartView
 
     public ReportsWebPart(ViewContext context, Portal.WebPart part)
     {
-        setFrame(FrameType.PORTAL);
+        super(FrameType.PORTAL);
 
         _webPart = part;
         Map<String, String> properties = part.getPropertyMap();

@@ -305,7 +305,7 @@ public class FileContentController extends SpringActionController
                     case INCLUDE:
                     case INLINE:
                     {
-                        WebPartView webPart = new WebPartView()
+                        WebPartView webPart = new WebPartView(WebPartView.FrameType.DIV)
                         {
                             @Override
                             protected void renderView(Object model, PrintWriter out) throws Exception
@@ -325,12 +325,11 @@ public class FileContentController extends SpringActionController
                             }
                         };
                         webPart.setTitle(_resource.getName());
-                        webPart.setFrame(WebPartView.FrameType.DIV);
                         return webPart;
                     }
                     case TEXT:
                     {
-                        WebPartView webPart = new WebPartView()
+                        WebPartView webPart = new WebPartView(_resource.getName())
                         {
                             @Override
                             protected void renderView(Object model, PrintWriter out) throws Exception
@@ -338,7 +337,6 @@ public class FileContentController extends SpringActionController
                                 renderResourceContents(out, _resource);
                             }
                         };
-                        webPart.setTitle(_resource.getName());
 
                         NavTree navMenu = new NavTree();
                         navMenu.addChild(new NavTree("download " + _resource.getName(), form.getDownloadURL(getContainer())));
@@ -514,8 +512,8 @@ public class FileContentController extends SpringActionController
        private Container c;
        public FileSetsWebPart(Container c)
        {
+           super("File Sets");
            this.c = c;
-           setTitle("File Sets");
        }
 
 

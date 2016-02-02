@@ -839,8 +839,7 @@ public class AdminController extends SpringActionController
 
         CreditsView(String creditsFilename, String wikiSource, Collection<String> filenames, String fileType, String foundWhere, String component, String wikiSourceSearchPattern) throws IOException
         {
-            super();
-            setTitle(fileType + " Files Distributed with " + (null == component ? "LabKey Core" : component));
+            super(fileType + " Files Distributed with " + (null == component ? "LabKey Core" : component));
 
             if (null != filenames)
                 wikiSource = wikiSource + getErrors(wikiSource, creditsFilename, filenames, fileType, foundWhere, wikiSourceSearchPattern);
@@ -5686,6 +5685,7 @@ public class AdminController extends SpringActionController
 
             private ModulesView(Collection<ModuleContext> contexts, String type, String descriptionHtml, String noModulesDescriptionHtml, Set<Double> ignoreVersions)
             {
+                super(FrameType.PORTAL);
                 List<ModuleContext> sorted = new ArrayList<>(contexts);
                 Collections.sort(sorted, new Comparator<ModuleContext>(){
                     @Override

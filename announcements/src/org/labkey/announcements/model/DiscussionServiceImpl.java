@@ -36,6 +36,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartFrame;
 import org.labkey.api.view.WebPartView;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -324,7 +325,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
 
         ThreadWrapper(URLHelper currentURL, String caption, HttpView... views)
         {
-            setFrame(FrameType.DIV);
+            super(FrameType.NONE);
             _vbox = new VBox();
             for (HttpView v : views)
             {
@@ -351,7 +352,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
 
         public ThreadWrapper()
         {
-            super();
+            super(FrameType.NONE);
         }
 
         String getId()
@@ -359,19 +360,29 @@ public class DiscussionServiceImpl implements DiscussionService.Service
             return _id;
         }
 
-        public void doStartTag(Map context, PrintWriter out)
-        {
-            out.write("<div id=\"" + _id + "\" class=\"" + _class + "\"><table><tr><th valign=top width=50px><img src='" + getViewContext().getContextPath() + "/_.gif' width=50 height=1></th><td>");
-        }
-
         protected void renderView(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
         {
             _vbox.render(request, response);
         }
 
-        public void doEndTag(Map context, PrintWriter out)
+
+        @Override
+        public WebPartFrame getWebPartFrame()
         {
-            out.write("</td></tr></table></div>");
+            return new WebPartFrame()
+            {
+                @Override
+                public void doStartTag(PrintWriter out)
+                {
+                    out.write("<div id=\"" + _id + "\" class=\"" + _class + "\"><table><tr><th valign=top width=50px><img src='" + getViewContext().getContextPath() + "/_.gif' width=50 height=1></th><td>");
+                }
+
+                @Override
+                public void doEndTag(PrintWriter out)
+                {
+                    out.write("</td></tr></table></div>");
+                }
+            };
         }
     }
 
