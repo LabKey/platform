@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
@@ -56,7 +57,7 @@ public class ClientDependency
 {
     private static Logger _log = Logger.getLogger(ClientDependency.class);
 
-    public static enum TYPE {
+    public enum TYPE {
         js(".js"),
         css(".css"),
         sass(".sass"),
@@ -64,7 +65,7 @@ public class ClientDependency
         context(".context"),
         lib(".lib.xml");
 
-        private TYPE(String extension)
+        TYPE(String extension)
         {
             _extension = extension;
             _fileType = new FileType(extension);
@@ -411,6 +412,7 @@ public class ClientDependency
         }
     }
 
+    @Nullable
     public TYPE getPrimaryType()
     {
         return _primaryType;
@@ -435,7 +437,7 @@ public class ClientDependency
     private LinkedHashSet<String> getProductionScripts(Container c, TYPE type)
     {
         LinkedHashSet<String> scripts = new LinkedHashSet<>();
-        if (_primaryType.equals(type) && _prodModePath != null)
+        if (_primaryType != null && _primaryType.equals(type) && _prodModePath != null)
             scripts.add(_prodModePath);
 
         LinkedHashSet<ClientDependency> cd = getUniqueDependencySet(c);
@@ -448,7 +450,7 @@ public class ClientDependency
     private LinkedHashSet<String> getDevModeScripts(Container c, TYPE type)
     {
         LinkedHashSet<String> scripts = new LinkedHashSet<>();
-        if (_primaryType.equals(type) && _devModePath != null)
+        if (_primaryType != null && _primaryType.equals(type) && _devModePath != null)
             scripts.add(_devModePath);
 
         LinkedHashSet<ClientDependency> cd = getUniqueDependencySet(c);
