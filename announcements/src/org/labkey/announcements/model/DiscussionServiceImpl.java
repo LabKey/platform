@@ -320,7 +320,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
     public static class ThreadWrapper extends WebPartView
     {
         String _id;
-        String _class = "x-hidden";
+        String _class = "labkey-hidden";
         VBox _vbox;
 
         ThreadWrapper(URLHelper currentURL, String caption, HttpView... views)
@@ -339,7 +339,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
             _vbox.setTitle(caption);
             _vbox.setFrame(WebPartView.FrameType.DIALOG);
             URLHelper closeURL = getCloseURL(currentURL);
-            _vbox.addObject("closeURL", closeURL);
+            _vbox.setCloseURL(closeURL);
 
             _id = "discussionBox" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 

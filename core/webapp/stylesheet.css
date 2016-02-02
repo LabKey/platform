@@ -3926,3 +3926,9 @@ a div.x4-menu-item-icon.fa-users
     border-color: #ddd transparent #ddd #ddd;
     *border-right-color: #ffffff;
 }
+
+.labkey-hidden
+{
+    display: none;
+}
+

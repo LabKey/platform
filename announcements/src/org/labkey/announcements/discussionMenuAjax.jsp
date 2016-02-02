@@ -84,7 +84,7 @@
         if (!e)
             return true;
         e.load({url:menu.hrefAjax, text:"Loading..."});
-        e.removeClass("x-hidden");
+        e.removeClass("labkey-hidden");
         if (menu.hashBang)
             window.location = "#!" + menu.hashBang;
         return false;
