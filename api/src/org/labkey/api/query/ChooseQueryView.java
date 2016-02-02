@@ -31,10 +31,10 @@ public class ChooseQueryView extends WebPartView
 
     public ChooseQueryView(UserSchema schema, ActionURL urlExecuteQuery, String dataRegionName)
     {
+        super(FrameType.NONE);
         _schema = schema;
         _urlExecuteQuery = urlExecuteQuery;
         _dataRegionName = dataRegionName;
-        setFrame(FrameType.NONE);
     }
 
     protected void renderView(Object model, PrintWriter out) throws Exception

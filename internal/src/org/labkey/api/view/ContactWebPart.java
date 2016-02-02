@@ -32,7 +32,7 @@ public class ContactWebPart extends WebPartView
 {
     public ContactWebPart()
     {
-        setTitle("Project Contacts");
+        super("Project Contacts");
     }
 
 

@@ -68,9 +68,9 @@ public abstract class DataView extends WebPartView<RenderContext>
 
     public DataView(DataRegion dataRegion, Errors errors)
     {
+        super(FrameType.DIV);
         _model = new RenderContext(getViewContext(), errors);
         _dataRegion = dataRegion;
-        setFrame(FrameType.DIV);
     }
 
     @NotNull

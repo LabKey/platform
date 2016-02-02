@@ -33,8 +33,8 @@ public class VBox extends WebPartView
 
     public VBox(ModelAndView... views)
     {
+        super(FrameType.NONE);
         _views = new ArrayList<>(Arrays.asList(views));
-        setFrame(FrameType.NONE);
     }
 
     public boolean isVisible()

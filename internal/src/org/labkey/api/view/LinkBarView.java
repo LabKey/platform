@@ -33,6 +33,7 @@ public class LinkBarView extends WebPartView
 
     public LinkBarView(Pair<String, String>... links)
     {
+        super(FrameType.DIV);
         _links = links;
     }
 

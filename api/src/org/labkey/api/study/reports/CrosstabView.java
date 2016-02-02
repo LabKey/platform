@@ -164,10 +164,9 @@ public class CrosstabView extends WebPartView
 
     public CrosstabView(Crosstab crosstab, ActionURL exportAction)
     {
+        super(crosstab.getDescription());
         _crosstab = crosstab;
         _exportAction = exportAction;
-
-        setTitle(_crosstab.getDescription());
     }
 
     private String str(Object val)

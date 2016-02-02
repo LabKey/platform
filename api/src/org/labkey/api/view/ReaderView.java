@@ -45,6 +45,7 @@ public class ReaderView extends WebPartView
      */
     public ReaderView(Reader reader, boolean htmlEncodeContent, @Nullable String prefix, @Nullable String suffix)
     {
+        super(FrameType.DIV);
         _htmlEncode = htmlEncodeContent;
         _prefix = prefix;
         _suffix = suffix;

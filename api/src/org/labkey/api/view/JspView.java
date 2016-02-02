@@ -51,8 +51,8 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
 
     public JspView(@NotNull HttpJspPage page)
     {
+        super(FrameType.DIV);
         _page = page;
-        setFrame(FrameType.DIV);
         MemTracker.getInstance().put(this);
     }
 

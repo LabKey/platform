@@ -34,6 +34,7 @@ public class ActionWebPart extends WebPartView
 
     public ActionWebPart(ActionURL url)
     {
+        super(FrameType.DIV);
         _url = url;
         _url.setContextPath(Path.rootPath);
     }

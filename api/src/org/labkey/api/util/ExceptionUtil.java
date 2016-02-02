@@ -407,7 +407,7 @@ public class ExceptionUtil
 
         WebPartErrorView(ErrorRenderer renderer)
         {
-            super();
+            super(FrameType.DIV);
             _renderer = renderer;
         }
 

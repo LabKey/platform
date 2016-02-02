@@ -216,8 +216,8 @@ public class QueryView extends WebPartView<Object>
      */
     public QueryView(UserSchema schema)
     {
+        super(FrameType.DIV);
         setSchema(schema);
-        setFrame(FrameType.DIV);
     }
 
     @Override

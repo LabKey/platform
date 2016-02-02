@@ -141,15 +141,25 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
     }
 
 
-    public WebPartView()
+    // use WebPartView(FrameType) or use WebPartView(title) which implies FrameType.PORTAL
+    @Deprecated
+    protected WebPartView()
     {
         super();
         setFrame(FrameType.PORTAL);
     }
 
+    public WebPartView(FrameType ft)
+    {
+        setFrame(ft);
+    }
+
     public WebPartView(String title)
     {
-        this();
+        if (StringUtils.isEmpty(title))
+            setFrame(FrameType.DIV);
+        else
+            setFrame(FrameType.PORTAL);
         setTitle(title);
     }
 

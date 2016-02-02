@@ -218,12 +218,12 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
         public void doStartTag(PrintWriter out)
         {
             String title = config._title;
+
             if (StringUtils.isEmpty(title) && config._showTitle)
             {
                 if (_devMode)
-                    title = "Call WebPartView.setTitle() or WebPartView.setFrame(FrameType.DIV) or WebPartView.setShowTitle(false)";
-                else
-                    title = " ";
+                    throw new IllegalStateException("Call WebPartView.setTitle() or WebPartView.setFrame(FrameType.DIV) or WebPartView.setShowTitle(false)");
+                title = " ";
             }
 
             out.print("<!--FrameType.PORTAL-->");

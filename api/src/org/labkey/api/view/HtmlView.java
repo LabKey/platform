@@ -30,8 +30,8 @@ public class HtmlView extends WebPartView
 
     public HtmlView(String html)
     {
+        super(FrameType.DIV);
         setHtml(html);
-        setFrame(FrameType.DIV);
     }
 
     public HtmlView(String title, String html)
