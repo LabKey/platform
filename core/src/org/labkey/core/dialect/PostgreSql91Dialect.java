@@ -1466,11 +1466,13 @@ public class PostgreSql91Dialect extends SqlDialect
         if (assignResult)
             sb.append("? = ");
         sb.append("CALL " + procSchema + "." + procName +"(");
+        String comma = "";
         for (int i = 0; i < paramCount; i++)
         {
-            sb.append("?,");
+            sb.append(comma);
+            sb.append("?");
+            comma = ",";
         }
-        sb.setLength(sb.length() - 1); // Postgres chokes on the trailing comma
         sb.append(")}");
         return sb.toString();
     }
