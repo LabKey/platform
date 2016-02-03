@@ -43,6 +43,11 @@ public class NotificationService
         Notification addNotification(Container container, User user, @NotNull Notification notification) throws ValidationException;
 
         /*
+         * Returns a list of notifications for a specific user.
+         */
+        List<Notification> getNotificationsByUser(Container container, int notifyUserId, boolean unreadOnly);
+
+        /*
          * Returns a list of notifications for a specific user based on the specified type.
          */
         List<Notification> getNotificationsByType(Container container, @NotNull String type, int notifyUserId, boolean unreadOnly);
@@ -70,6 +75,13 @@ public class NotificationService
          * Return a count of the number of notification records removed.
          */
         int removeNotifications(Container container, @Nullable String objectId, @NotNull List<String> types, int notifyUserId);
+
+        /*
+         * Remove all notifications for the specific objectId and types
+         * or if no objectId provided, removes all notifications for a specific types.
+         * Return a count of the number of notification records removed.
+         */
+        int removeNotificationsByType(Container container, @Nullable String objectId, @NotNull List<String> types);
     }
 
     public static void register(Service serviceImpl)

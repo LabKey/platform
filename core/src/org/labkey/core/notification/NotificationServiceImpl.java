@@ -82,11 +82,23 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
     }
 
     @Override
+    public List<Notification> getNotificationsByUser(Container container, int notifyUserId, boolean unreadOnly)
+    {
+        return getNotificationsByUserOrType(container, null, notifyUserId, unreadOnly);
+    }
+
+    @Override
     public List<Notification> getNotificationsByType(Container container, @NotNull String type, int notifyUserId, boolean unreadOnly)
     {
+        return getNotificationsByUserOrType(container, type, notifyUserId, unreadOnly);
+    }
+
+    private List<Notification> getNotificationsByUserOrType(Container container, String type, int notifyUserId, boolean unreadOnly)
+    {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addCondition(FieldKey.fromParts("Type"), type);
         filter.addCondition(FieldKey.fromParts("UserID"), notifyUserId);
+        if (type != null)
+            filter.addCondition(FieldKey.fromParts("Type"), type);
         if (unreadOnly)
             filter.addCondition(FieldKey.fromParts("ReadOn"), null, CompareType.ISBLANK);
 
@@ -143,11 +155,19 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
         return Table.delete(getTable(), filter);
     }
 
-    private SimpleFilter getNotificationUpdateFilter(Container container, @Nullable String objectId, @NotNull List<String> types, int notifyUserId)
+    @Override
+    public int removeNotificationsByType(Container container, @Nullable String objectId, @NotNull List<String> types)
+    {
+        SimpleFilter filter = getNotificationUpdateFilter(container, objectId, types, null);
+        return Table.delete(getTable(), filter);
+    }
+
+    private SimpleFilter getNotificationUpdateFilter(Container container, @Nullable String objectId, @NotNull List<String> types, @Nullable Integer notifyUserId)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addCondition(FieldKey.fromParts("UserID"), notifyUserId);
         filter.addInClause(FieldKey.fromParts("Type"), types);
+        if (notifyUserId != null)
+            filter.addCondition(FieldKey.fromParts("UserID"), notifyUserId);
         if (objectId != null)
             filter.addCondition(FieldKey.fromParts("ObjectId"), objectId);
         return filter;
