@@ -209,6 +209,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         try
         {
             initializeIndex();
+            clearLastIndexedIfEmpty();
             resetExternalIndex();
         }
         catch (Exception e)
@@ -217,6 +218,39 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
 
         super.start();
+    }
+
+
+    private void clearLastIndexedIfEmpty()
+    {
+        try
+        {
+            if (getNumDocs() == 0)
+                clearLastIndexed();
+        }
+        catch (IOException x)
+        {
+        }
+    }
+
+
+    /**
+     * Get the number of documents in the index
+     * @return The number of documents
+     */
+    private int getNumDocs() throws IOException
+    {
+        IndexSearcher is = _indexManager.getSearcher();
+
+        try
+        {
+            // Apparently we're not supposed to close the IndexReader
+            return is.getIndexReader().numDocs();
+        }
+        finally
+        {
+            _indexManager.releaseSearcher(is);
+        }
     }
 
 
@@ -1398,20 +1432,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
         try
         {
-            IndexSearcher is = _indexManager.getSearcher();
-
-            try
-            {
-                map.put("Indexed Documents", is.getIndexReader().numDocs());
-            }
-            finally
-            {
-                _indexManager.releaseSearcher(is);
-            }
+            map.put("Indexed Documents", getNumDocs());
         }
         catch (IOException x)
         {
-
         }
 
         map.putAll(super.getIndexerStats());
