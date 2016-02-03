@@ -8,6 +8,7 @@ Ext4.define('File.panel.Preview',
 {
     extend : "Ext.tip.ToolTip",
 
+    baseCls : 'labkey-panel',
     minWidth: 40,
     maxWidth: 800,
     frame: true,

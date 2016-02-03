@@ -3931,4 +3931,10 @@ a div.x4-menu-item-icon.fa-users
 {
     display: none;
 }
-
+.labkey-panel
+{
+    border: 4px solid #89A1B4;
+    background-color: #FFFFFF;
+    opacity: 1;
+    filter:alpha(opacity=100);
+}
