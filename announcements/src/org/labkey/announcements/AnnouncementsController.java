@@ -2415,7 +2415,6 @@ public class AnnouncementsController extends SpringActionController
             rgn.addColumn(tinfo.getColumn("ResponseCreated"));
 
             GridView gridView = new GridView(rgn, (BindException)null);
-            gridView.setFrame(FrameType.PORTAL);  // Prevent double title
             gridView.setContainer(c);
             gridView.setSort(settings.getSort());
             addClientDependencies(gridView.getClientDependencies());
