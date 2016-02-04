@@ -57,6 +57,8 @@ import java.util.Set;
 @TestWhen(TestWhen.When.BVT)
 public class ContainerDisplayColumn extends DataColumn
 {
+    public static final DisplayColumnFactory FACTORY = colInfo -> new ContainerDisplayColumn(colInfo, false, true);
+
     private final boolean _showPath;
     private final boolean _boundColHasEntityId;
 

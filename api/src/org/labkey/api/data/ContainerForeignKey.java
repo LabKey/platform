@@ -42,13 +42,7 @@ public class ContainerForeignKey extends QueryForeignKey
         column.setShownInInsertView(false);
         column.setShownInUpdateView(false);
         column.setReadOnly(true);
-        column.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new ContainerDisplayColumn(colInfo, false, true);
-            }
-        });
+        column.setDisplayColumnFactory(ContainerDisplayColumn.FACTORY);
         if (url != null)
             column.setURL(new DetailsURL(url));
         return column;
