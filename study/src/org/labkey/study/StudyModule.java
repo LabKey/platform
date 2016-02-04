@@ -16,7 +16,6 @@
 
 package org.labkey.study;
 
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.admin.FolderSerializationRegistry;
@@ -427,14 +426,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         ServiceRegistry.get(FileContentService.class).addFileListener(new TableUpdaterFileListener(StudySchema.getInstance().getTableInfoUploadLog(), "FilePath", TableUpdaterFileListener.Type.filePath, "RowId"));
 
-        try
-        {
-            DatasetDefinition.cleanupOrphanedDatasetDomains();
-        }
-        catch (SQLException sql)
-        {
-            Logger.getLogger(StudyModule.class).error("Error cleanup orphaned domains", sql);
-        }
+        DatasetDefinition.cleanupOrphanedDatasetDomains();
 
         AdminConsole.addExperimentalFeatureFlag(CreateChildStudyAction.CREATE_SPECIMEN_STUDY, "Create Specimen Study",
             "Adds a button to the specimen request details page that creates a new child study containing the selected specimens, associated participants, and selected datasets.", false);
