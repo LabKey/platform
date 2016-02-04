@@ -78,7 +78,6 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.controllers.exp.ExperimentMembershipDisplayColumnFactory;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
@@ -531,6 +530,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         return sql;
                     }
                 };
+                t.setContainerFilter(new DelegatingContainerFilter(ExpRunTableImpl.this));
 
                 ColumnInfo runCol = new ColumnInfo("RunId", t);
                 runCol.setJdbcType(JdbcType.INTEGER);
