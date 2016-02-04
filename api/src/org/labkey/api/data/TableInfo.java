@@ -294,6 +294,7 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
 
     public boolean needsContainerClauseAdded();
 
+    @Nullable
     public ContainerFilter getContainerFilter();
 
     /**

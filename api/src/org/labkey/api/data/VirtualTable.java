@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.query.AbstractContainerFilterable;
 import org.labkey.api.query.UserSchema;
 
 /**
@@ -25,7 +26,7 @@ import org.labkey.api.query.UserSchema;
  * but instead knows how to generate its own SQL, like a dynamically generated SQL VIEW.
  */
 
-public class VirtualTable<SchemaType extends UserSchema> extends AbstractTableInfo
+public class VirtualTable<SchemaType extends UserSchema> extends AbstractContainerFilterable
 {
     protected final SchemaType _userSchema;
 
@@ -57,5 +58,11 @@ public class VirtualTable<SchemaType extends UserSchema> extends AbstractTableIn
     public SchemaType getUserSchema()
     {
         return _userSchema;
+    }
+
+    @Override
+    protected void _setContainerFilter(ContainerFilter filter)
+    {
+        _containerFilter = filter;
     }
 }

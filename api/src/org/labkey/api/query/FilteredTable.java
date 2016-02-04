@@ -48,15 +48,12 @@ import java.util.Set;
  * A table that filters down to a particular set of rows from an underlying, wrapped table/subquery. A typical example
  * would be filtering to only show rows that are part of a particular container.
  */
-public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableInfo implements ContainerFilterable
+public class FilteredTable<SchemaType extends UserSchema> extends AbstractContainerFilterable implements ContainerFilterable
 {
     final private SimpleFilter _filter;
     @NotNull protected final TableInfo _rootTable;
     AliasManager _aliasManager = null;
     protected String _publicSchemaName = null;
-
-    @Nullable // if null, means default
-    private ContainerFilter _containerFilter;
 
     private boolean _public = true;
 
@@ -461,24 +458,6 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
         return _filter;
     }
 
-    @Override
-    public boolean supportsContainerFilter()
-    {
-        return true;
-    }
-
-    public void setContainerFilter(@NotNull ContainerFilter filter)
-    {
-        checkLocked();
-        //noinspection ConstantConditions
-        if (filter == null) // this really can happen, if other callers ignore warnings
-            throw new IllegalArgumentException("filter cannot be null");
-        if (!supportsContainerFilter())
-            throw new IllegalArgumentException("container filter is not supported by " + this.getClass().getSimpleName());
-        _setContainerFilter(filter);
-    }
-
-
     /**
      * ignores supportsContainerFilter(), allows subclasses to set container filter w/o suppporting
      * external, "public" setting of filter.
@@ -494,13 +473,6 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
             ((ContainerFilterable)getRealTable()).setContainerFilter(filter);
         }
     }
-
-
-    protected String getContainerFilterColumn()
-    {
-        return "Container";
-    }
-
 
     protected void applyContainerFilter(ContainerFilter filter)
     {
@@ -519,27 +491,6 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
     protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
     {
         return filter.createFilterClause(getSchema(), fieldKey, getContainer());
-    }
-
-    @NotNull
-    public ContainerFilter getContainerFilter()
-    {
-        if (_containerFilter == null)
-            return getDefaultContainerFilter();
-        return _containerFilter;
-    }
-
-    protected ContainerFilter getDefaultContainerFilter()
-    {
-        return ContainerFilter.CURRENT;
-    }
-
-    /**
-     * Returns true if the container filter has never been set on this table
-     */
-    public boolean hasDefaultContainerFilter()
-    {
-        return _containerFilter == null;
     }
 
     public Container getContainer()

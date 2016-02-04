@@ -1130,6 +1130,7 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         return true;
     }
 
+    @Nullable
     public ContainerFilter getContainerFilter()
     {
         return null;
