@@ -131,7 +131,6 @@ public class UploadSamplesHelper
         DataLoader loader = _form.getLoader();
         // Look at more rows than normal when inferring types for sample set columns
         // This isn't a big perf hit because the full TSV is already in memory
-        loader.setScanAheadLineCount(1000);
         String materialSourceLsid;
         if (_materialSource == null)
         {

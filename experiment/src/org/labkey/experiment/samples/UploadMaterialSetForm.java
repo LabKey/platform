@@ -154,7 +154,6 @@ public class UploadMaterialSetForm extends ViewForm
                 else if (tsvData != null)
                     tabLoader = new TabLoader(tsvData, true);
                 tabLoader.setThrowOnErrors(true);
-                tabLoader.setScanAheadLineCount(200);
             }
             catch (IOException ioe)
             {
