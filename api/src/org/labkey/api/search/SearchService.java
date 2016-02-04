@@ -30,6 +30,7 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.HttpView;
@@ -224,6 +225,8 @@ public interface SearchService
 
     String getIndexFormatDescription();
 
+    List<Pair<String, String>> getDirectoryTypes();
+
     DbSchema getSchema();
 
     WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart);
@@ -243,6 +246,7 @@ public interface SearchService
 
     void purgeQueues();
     void start();
+    void resetPrimaryIndex();
     void startCrawler();
     void pauseCrawler();
     void updatePrimaryIndex();
