@@ -46,8 +46,10 @@ import org.labkey.api.etl.Pump;
 import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.etl.StandardETL;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
+import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.MvColumn;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.RawValueColumn;
@@ -3283,32 +3285,29 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         }
     }
 
-    public static void cleanupOrphanedDatasetDomains() throws SQLException
+    public static void cleanupOrphanedDatasetDomains()
     {
         DbSchema s = StudySchema.getInstance().getSchema();
         if (null == s)
             return;
 
-        try (DbScope.Transaction transaction = s.getScope().ensureTransaction())
+        List<Integer> ids = new SqlSelector(s, "SELECT domainid FROM exp.domaindescriptor WHERE domainuri like '%:StudyDataset%Folder-%' and domainuri not in (SELECT typeuri from study.dataset)").getArrayList(Integer.class);
+        for (Integer id : ids)
         {
-            new SqlSelector(s, "SELECT domainid FROM exp.domaindescriptor WHERE domainuri like '%:StudyDataset%Folder-%' and domainuri not in (SELECT typeuri from study.dataset)").forEach(new Selector.ForEachBlock<ResultSet>()
+            Domain domain = PropertyService.get().getDomain(id.intValue());
+            try
             {
-                @Override
-                public void exec(ResultSet rs) throws SQLException
+                domain.delete(null);
+            }
+            catch (DomainNotFoundException x)
+            {
+                DomainDescriptor domainDescriptor = OntologyManager.getDomainDescriptor(domain.getTypeId());
+                if (domainDescriptor != null)
                 {
-                    int domainid = rs.getInt(1);
-                    Domain domain = PropertyService.get().getDomain(domainid);
-                    try
-                    {
-                        domain.delete(null);
-                    }
-                    catch (DomainNotFoundException x)
-                    {
-                        //
-                    }
+                    _log.error("Likely domain project/container mismatch for " + domain + ". Container: " + domainDescriptor.getContainer().getPath() + ", marked as project: " + domainDescriptor.getProject().getPath());
                 }
-            });
-            transaction.commit();
+                _log.error("Failed to delete orphaned dataset domain " + domain + " in container " + domain.getContainer().getPath(), x);
+            }
         }
     }
 
