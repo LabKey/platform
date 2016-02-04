@@ -30,7 +30,7 @@ import java.util.Map;
 public interface StepProvider
 {
     /**
-     * The prefered type name. Used in the transform type attribute
+     * The preferred type name. Used in the transform type attribute
      * @return The name
      */
     public String getName();
