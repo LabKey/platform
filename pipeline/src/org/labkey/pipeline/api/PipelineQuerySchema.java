@@ -17,6 +17,7 @@ package org.labkey.pipeline.api;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerDisplayColumn;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
@@ -99,6 +100,7 @@ public class PipelineQuerySchema extends UserSchema
             table.setName(JOB_TABLE_NAME);
             ColumnInfo folderColumn = table.wrapColumn("Folder", table.getRealTable().getColumn("Container"));
             folderColumn.setFk(new ContainerForeignKey(this));
+            folderColumn.setDisplayColumnFactory(ContainerDisplayColumn.FACTORY);
             table.addColumn(folderColumn);
             String urlExp = "/pipeline-status/details.view?rowId=${rowId}";
             table.setDetailsURL(DetailsURL.fromString(urlExp));
@@ -147,8 +149,8 @@ public class PipelineQuerySchema extends UserSchema
                     };
                 }
             });
-            table.getColumn("CreatedBy").setFk(new UserIdQueryForeignKey(getUser(), getContainer(), true));
-            table.getColumn("ModifiedBy").setFk(new UserIdQueryForeignKey(getUser(), getContainer(), true));
+            UserIdQueryForeignKey.initColumn(getUser(), getContainer(), table.getColumn("CreatedBy"), true);
+            UserIdQueryForeignKey.initColumn(getUser(), getContainer(), table.getColumn("ModifiedBy"), true);
             table.getColumn("JobParent").setFk(new LookupForeignKey("Job", "Description")
             {
                 public TableInfo getLookupTableInfo()
