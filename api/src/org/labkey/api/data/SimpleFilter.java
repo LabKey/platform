@@ -575,7 +575,7 @@ public class SimpleFilter implements Filter
         public MultiValuedFilterClause(@NotNull FieldKey fieldKey, Collection<?> params)
         {
             super(fieldKey);
-            params = new ArrayList<Object>(params); // possibly immutable
+            params = new ArrayList<>(params); // possibly immutable
             if (params.contains(null)) //params.size() == 0 ||
             {
                 _includeNull = true;
