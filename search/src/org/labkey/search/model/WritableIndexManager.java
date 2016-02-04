@@ -19,6 +19,7 @@ package org.labkey.search.model;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.store.Directory;
 
 import java.io.IOException;
 
@@ -46,6 +47,8 @@ public interface WritableIndexManager
     void close() throws IOException, InterruptedException;
 
     String getIndexFormatDescription();
+
+    Directory getCurrentDirectory();
 
     /**
      * Is this a real index manager?

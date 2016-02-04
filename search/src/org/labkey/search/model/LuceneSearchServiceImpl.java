@@ -81,6 +81,7 @@ import org.labkey.api.util.MinorConfigurationException;
 import org.labkey.api.util.MultiPhaseCPUTimer;
 import org.labkey.api.util.MultiPhaseCPUTimer.InvocationTimer;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.ActionResource;
@@ -183,6 +184,37 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
     @Override
+    public List<Pair<String, String>> getDirectoryTypes()
+    {
+        LuceneDirectoryType configured = getDirectoryType();
+        // Display the current directory class name, but only if we're currently set to Default (otherwise, we don't know what the default implementation is)
+        String defaultDescription = "Default" + (LuceneDirectoryType.Default == configured ? " (" + _indexManager.getCurrentDirectory().getClass().getSimpleName() + ")" : "");
+
+        List<Pair<String, String>> list = new LinkedList<>();
+
+        for (LuceneDirectoryType directory : LuceneDirectoryType.values())
+        {
+            String description = (directory == LuceneDirectoryType.Default ? defaultDescription : directory.name());
+            list.add(new Pair<>(directory.name(), description));
+        }
+
+        return list;
+    }
+
+    static LuceneDirectoryType getDirectoryType()
+    {
+        String configured = SearchPropertyManager.getDirectoryType();
+
+        for (LuceneDirectoryType directory : LuceneDirectoryType.values())
+        {
+            if (configured.equals(directory.name()))
+                return directory;
+        }
+
+        return LuceneDirectoryType.Default;
+    }
+
+    @Override
     public void updatePrimaryIndex()
     {
         super.updatePrimaryIndex();
@@ -221,6 +253,14 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
+    @Override
+    public void resetPrimaryIndex()
+    {
+        closeIndex();
+        initializeIndex();
+    }
+
+    // Clear lastIndexed columns if we have no documents in the index. See #25530
     private void clearLastIndexedIfEmpty()
     {
         try

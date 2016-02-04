@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.store.Directory;
 import org.labkey.api.search.SearchMisconfiguredException;
 
 import java.io.IOException;
@@ -91,6 +92,12 @@ public class NoopWritableIndex implements WritableIndexManager
     public String getIndexFormatDescription()
     {
         return "No-op index";
+    }
+
+    @Override
+    public Directory getCurrentDirectory()
+    {
+        throw new SearchMisconfiguredException();
     }
 
     @Override

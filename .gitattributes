@@ -1631,6 +1631,7 @@ search/src/org/labkey/search/model/ExternalIndexProperties.java -text
 search/src/org/labkey/search/model/IndexInspector.java -text
 search/src/org/labkey/search/model/IndexManager.java -text
 search/src/org/labkey/search/model/IndexManagerClosedException.java -text
+search/src/org/labkey/search/model/LuceneDirectoryType.java -text
 search/src/org/labkey/search/model/LuceneSearchServiceImpl.java -text
 search/src/org/labkey/search/model/NoopWritableIndex.java -text
 search/src/org/labkey/search/model/SavePaths.java -text

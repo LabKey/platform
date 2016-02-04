@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.search.SearchScope;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavResource;
 
@@ -61,6 +62,17 @@ public class SolrSearchServiceImpl extends AbstractSearchService
 
     @Override
     public SearchResult searchExternal(String queryString, int offset, int limit) throws IOException
+    {
+        return null;
+    }
+
+    @Override
+    public void resetPrimaryIndex()
+    {
+    }
+
+    @Override
+    public List<Pair<String, String>> getDirectoryTypes()
     {
         return null;
     }

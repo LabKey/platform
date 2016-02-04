@@ -25,6 +25,7 @@ import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.HttpView;
@@ -146,6 +147,17 @@ public class NoopSearchService implements SearchService
         }
     };
 
+
+    @Override
+    public List<Pair<String, String>> getDirectoryTypes()
+    {
+        return null;
+    }
+
+    @Override
+    public void resetPrimaryIndex()
+    {
+    }
 
     @Override
     public String getIndexFormatDescription()

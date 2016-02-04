@@ -130,7 +130,7 @@ public class SearchController extends SpringActionController
 
     public static class AdminForm implements ExternalIndexProperties
     {
-        public String[] _messages = {"", "Primary index deleted", "Primary index path changed"};
+        public String[] _messages = {"", "Primary index deleted", "Primary index path changed", "Directory type changed"};
         private int msg = 0;
         private boolean pause;
         private boolean start;
@@ -141,6 +141,9 @@ public class SearchController extends SpringActionController
         private String externalIndexDescription = null;
         private String externalIndexAnalyzer = null;
         private boolean _path;
+
+        private boolean _directory;
+        private String _directoryType;
 
         public String getMessage()
         {
@@ -236,6 +239,26 @@ public class SearchController extends SpringActionController
         {
             _path = path;
         }
+
+        public boolean isDirectory()
+        {
+            return _directory;
+        }
+
+        public void setDirectory(boolean directory)
+        {
+            _directory = directory;
+        }
+
+        public String getDirectoryType()
+        {
+            return _directoryType;
+        }
+
+        public void setDirectoryType(String directoryType)
+        {
+            _directoryType = directoryType;
+        }
     }
     
 
@@ -276,10 +299,10 @@ public class SearchController extends SpringActionController
             {
                 String html = "<span class=\"labkey-error\">Your search index is misconfigured. Search is disabled and documents are not being indexed, pending resolution of this issue. See below for details about the cause of the problem.</span></br></br>";
                 html += ExceptionUtil.renderException(t);
-                WebPartView configuErrorView = new HtmlView(html);
-                configuErrorView.setTitle("Search Configuration Error");
-                configuErrorView.setFrame(WebPartView.FrameType.PORTAL);
-                vbox.addView(configuErrorView);
+                WebPartView configErrorView = new HtmlView(html);
+                configErrorView.setTitle("Search Configuration Error");
+                configErrorView.setFrame(WebPartView.FrameType.PORTAL);
+                vbox.addView(configErrorView);
             }
 
             // Spring errors get displayed in the "Primary Index Configuration" pane
@@ -339,6 +362,13 @@ public class SearchController extends SpringActionController
                 ss.updatePrimaryIndex();
                 _msgid = 2;
                 audit(getUser(), null, "(admin action)", "Index Path Set");
+            }
+            else if (form.isDirectory())
+            {
+                SearchPropertyManager.setDirectoryType(form.getDirectoryType());
+                ss.resetPrimaryIndex();
+                _msgid = 3;
+                audit(getUser(), null, "(admin action)", "Directory type set to " + form.getDirectoryType());
             }
 
             return true;

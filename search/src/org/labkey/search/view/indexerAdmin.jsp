@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.search.SearchService" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
+<%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.search.SearchController" %>
@@ -50,10 +51,14 @@ else
             <tr>
                 <td>Path to primary full-text search index:</td>
                 <td><input name="primaryIndexPath" size="80" value="<%=h(SearchPropertyManager.getPrimaryIndexDirectory().getPath())%>"></td>
-            </tr>
-            <tr><td colspan="2">Note: Changing the primary index path requires re-indexing all data, which can be very expensive.</td></tr>
+            </tr><%
+        if (user.isSiteAdmin())
+        {
+            %><tr><td colspan="2">Note: Changing the primary index path requires re-indexing all data, which can be very expensive.</td></tr>
             <tr><td><input type="hidden" name="path" value="1"></td></tr>
-            <tr><td colspan="2" width="500"><%= button("Set Path").submit(true) %></td></tr>
+            <tr><td colspan="2" width="500"><%= button("Set Path").submit(true) %></td></tr><%
+        }
+            %>
         </table>
     </labkey:form></p>
 
@@ -94,7 +99,33 @@ else
             <tr><td><input type="hidden" name="delete" value="1"></td></tr>
             <tr><td><%= button("Delete Index").submit(true) %></td></tr>
         </table>
-    </labkey:form></p><%
+    </labkey:form></p>
+    <%
     }
+    %>
+    <p><labkey:form method="POST" action="<%=h(buildURL(SearchController.AdminAction.class))%>">
+    <table>
+        <tr><td width="800">You can change the search indexing directory type below, but this is generally not recommended. Contact
+            LabKey for assistance if full-text indexing or searching seems to have difficulty with the default setting.<br><br></td></tr>
+        <tr><td>Directory Type:
+            <select name="directoryType"><%
+                String currentDirectoryType = SearchPropertyManager.getDirectoryType();
+
+                for (Pair<String, String> pair : ss.getDirectoryTypes())
+                { %>
+                <option value="<%=h(pair.first)%>"<%=selected(pair.first.equals(currentDirectoryType))%>><%=h(pair.second)%></option><%
+                }
+                %>
+            </select>
+        </td></tr><%
+        if (user.isSiteAdmin())
+        {
+        %>
+        <tr><td><input type="hidden" name="directory" value="1"></td></tr>
+        <tr><td><%= button("Set").submit(true) %></td></tr><%
+        }
+        %>
+    </table>
+    </labkey:form><%
 }
 %>

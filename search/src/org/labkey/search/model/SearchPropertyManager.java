@@ -36,10 +36,11 @@ public class SearchPropertyManager
     private static final String EXTERNAL_DESCRIPTION = "externalDescription";
     private static final String CRAWLER_RUNNING_STATE = "runningState";
     private static final String PRIMARY_INDEX_PATH = "primaryIndexPath";
+    private static final String DIRECTORY_TYPE = "directoryType";
 
     public static ExternalIndexProperties getExternalIndexProperties()
     {
-        Map<String, String> map = PropertyManager.getProperties(CATEGORY);
+        final Map<String, String> map = PropertyManager.getProperties(CATEGORY);
         final String externalIndexPath = map.get(EXTERNAL_PATH);
         final String externalIndexAnalyzer = map.get(EXTERNAL_ANALYZER);
         final String externalIndexDescription = map.get(EXTERNAL_DESCRIPTION);
@@ -115,6 +116,17 @@ public class SearchPropertyManager
     public static void setPrimaryIndexPath(String path)
     {
         setProperty(PRIMARY_INDEX_PATH, path);
+    }
+
+    public static String getDirectoryType()
+    {
+        String type = getProperty(DIRECTORY_TYPE);
+        return null == type ? "Default" : type;
+    }
+
+    public static void setDirectoryType(String directoryType)
+    {
+        setProperty(DIRECTORY_TYPE, directoryType);
     }
 
     private static String getProperty(String key)

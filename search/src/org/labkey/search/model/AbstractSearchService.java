@@ -851,59 +851,55 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    Runnable runRunnable = new Runnable()
-    {
-        public void run()
+    Runnable runRunnable = () -> {
+        while (!_shuttingDown)
         {
-            while (!_shuttingDown)
-            {
-                Item i = null;
-                boolean success = false;
+            Item i = null;
+            boolean success = false;
 
-                try
-                {
+            try
+            {
 // UNDONE: only pause the crawler for now, don't want to worry about the queue growing unchecked
 //                    if (!waitForRunning())
 //                        continue;
 
-                    i = _runQueue.poll(30, TimeUnit.SECONDS);
+                i = _runQueue.poll(30, TimeUnit.SECONDS);
 
-                    if (null != i)
-                    {
-                        while (!_shuttingDown && _itemQueue.size() > 1000)
-                        {
-                            try {Thread.sleep(100);}catch(InterruptedException x){}
-                        }
-                        i._run.run();
-                    }
-                }
-                catch (InterruptedException x)
+                if (null != i)
                 {
+                    while (!_shuttingDown && _itemQueue.size() > 1000)
+                    {
+                        try {Thread.sleep(100);}catch(InterruptedException x){}
+                    }
+                    i._run.run();
                 }
-                catch (Throwable x)
+            }
+            catch (InterruptedException x)
+            {
+            }
+            catch (Throwable x)
+            {
+                try
+                {
+                    ExceptionUtil.logExceptionToMothership(null, x);
+                }
+                catch (Throwable t)
+                {
+                    /* */
+                }
+                _log.error("Error running " + (null != i ? i._id : ""), x);
+            }
+            finally
+            {
+                if (null != i)
                 {
                     try
                     {
-                        ExceptionUtil.logExceptionToMothership(null, x);
+                        i.complete(success);
                     }
                     catch (Throwable t)
                     {
-                        /* */
-                    }
-                    _log.error("Error running " + (null != i ? i._id : ""), x);
-                }
-                finally
-                {
-                    if (null != i)
-                    {
-                        try
-                        {
-                            i.complete(success);
-                        }
-                        catch (Throwable t)
-                        {
-                            _log.error("Unexpected error", t);
-                        }
+                        _log.error("Unexpected error", t);
                     }
                 }
             }
