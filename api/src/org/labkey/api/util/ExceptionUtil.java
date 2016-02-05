@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
@@ -540,6 +541,17 @@ public class ExceptionUtil
                 // Do nothing
             }
             return null;
+        }
+        else if (ex instanceof ApiUsageException)
+        {
+            responseStatus = HttpServletResponse.SC_BAD_REQUEST;
+            if (ex.getMessage() != null)
+            {
+                message = ex.getMessage();
+                responseStatusMessage = message;
+            }
+            else
+                message = responseStatus + ": API usage error - bad request";
         }
         else if (ex instanceof NotFoundException)
         {
