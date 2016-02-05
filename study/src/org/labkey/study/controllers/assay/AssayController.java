@@ -24,6 +24,7 @@ import org.labkey.api.action.AbstractFileUploadAction;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.LabkeyError;
@@ -805,7 +806,7 @@ public class AssayController extends SpringActionController
 
             AssayProvider ap = form.getProvider();
             if (!(ap instanceof ModuleAssayProvider))
-                throw new RuntimeException("Assay must be a ModuleAssayProvider");
+                throw new NotFoundException("Assay must be a ModuleAssayProvider, but assay design " + _protocol.getName() + " was of type '" + ap.getName() + "', implemented by " + ap.getClass().getName());
             ModuleAssayProvider provider = (ModuleAssayProvider) ap;
             return provider.createUploadView(form);
         }
