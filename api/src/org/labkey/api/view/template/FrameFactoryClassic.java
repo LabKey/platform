@@ -216,14 +216,7 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
         @Override
         public void doStartTag(PrintWriter out)
         {
-            String title = config._title;
-
-            if (StringUtils.isEmpty(title) && config._showTitle)
-            {
-                if (_devMode)
-                    throw new IllegalStateException("Call WebPartView.setTitle() or WebPartView.setFrame(FrameType.DIV) or WebPartView.setShowTitle(false)");
-                title = " ";
-            }
+            String title = StringUtils.trimToEmpty(config._title);
 
             out.print("<!--FrameType.PORTAL-->");
             out.println("<table name=\"webpart\" id=\"webpart_" + config._webPartRowId + "\" class=\"labkey-wp\">");
