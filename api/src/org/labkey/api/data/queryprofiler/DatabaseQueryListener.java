@@ -40,7 +40,7 @@ public interface DatabaseQueryListener<T>
     /**
      * @return whether this listener cares about the query based on QueryLogging properties
      */
-    default boolean matches(QueryLogging queryLogging)
+    default boolean matches(@Nullable QueryLogging queryLogging)
     {
         return true;
     }
@@ -56,7 +56,7 @@ public interface DatabaseQueryListener<T>
     /**
      * @return whether this listener cares about the query based on dbscope properties, sql string, and queryLogging properties
      */
-    default boolean matches(@Nullable DbScope scope, String sql, QueryLogging queryLogging)
+    default boolean matches(@Nullable DbScope scope, String sql, @Nullable QueryLogging queryLogging)
     {
         return matches(scope) && matches(sql) && matches(queryLogging);
     }
