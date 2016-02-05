@@ -201,6 +201,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         return list;
     }
 
+    /**
+     * Determine the currently configured Lucene Directory type (an explicit concrete implementation such as MMapDirectory,
+     * SimpleFSDirectory, or NIOFSDirectory, or Default which lets Lucene choose).
+     *
+     * @return The LuceneDirectoryType representing the current setting
+     */
     static LuceneDirectoryType getDirectoryType()
     {
         String configured = SearchPropertyManager.getDirectoryType();
