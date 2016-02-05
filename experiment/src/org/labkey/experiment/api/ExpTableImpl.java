@@ -37,7 +37,7 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.PropertyForeignKey;
-import org.labkey.api.query.UserIdForeignKey;
+import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -144,7 +144,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
     public ColumnInfo createUserColumn(String name, ColumnInfo userIdColumn)
     {
         ColumnInfo ret = wrapColumn(name, userIdColumn);
-        ret.setFk(new UserIdForeignKey(getUserSchema()));
+        UserIdQueryForeignKey.initColumn(getUserSchema().getUser(), getContainer(), ret, true);
         ret.setShownInInsertView(false);
         ret.setShownInUpdateView(false);
         ret.setUserEditable(false);
