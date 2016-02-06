@@ -460,7 +460,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
         return null;
     }
 
-    private class DataClassDataIteratorBuilder implements DataIteratorBuilder
+    private class PreTriggerDataIteratorBuilder implements DataIteratorBuilder
     {
         private static final int BATCH_SIZE = 100;
 
@@ -470,13 +470,11 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
         // genId sequence state
         private int _count = 0;
         private Integer _sequenceNum;
-        private User _user;
 
-        DataClassDataIteratorBuilder(@NotNull DataIteratorBuilder in, DataIteratorContext context, User user)
+        public PreTriggerDataIteratorBuilder(@NotNull DataIteratorBuilder in, DataIteratorContext context)
         {
             _context = context;
             _in = in;
-            _user = user;
         }
 
         @Override
@@ -491,20 +489,13 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             final ExperimentService.Interface svc = ExperimentService.get();
 
             SimpleTranslator step0 = new SimpleTranslator(input, context);
-            step0.selectAll(Sets.newCaseInsensitiveHashSet("lsid", "dataClass", "genId", "alias"));
-            final Map<String, Integer> colNameMap = DataIteratorUtil.createColumnNameMap(input);
+            step0.selectAll(Sets.newCaseInsensitiveHashSet("lsid", "dataClass", "genId"));
 
             TableInfo expData = svc.getTinfoData();
             ColumnInfo lsidCol = expData.getColumn("lsid");
 
             // Generate LSID before inserting
-            step0.addColumn(lsidCol, new Supplier(){
-                @Override
-                public Object get()
-                {
-                    return svc.generateGuidLSID(c, ExpData.class);
-                }
-            });
+            step0.addColumn(lsidCol, (Supplier) () -> svc.generateGuidLSID(c, ExpData.class));
 
             // auto gen a sequence number for genId - reserve BATCH_SIZE numbers at a time so we don't select the next sequence value for every row
             ColumnInfo genIdCol = _dataClass.getTinfo().getColumn(FieldKey.fromParts("genId"));
@@ -545,14 +536,43 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             if (_dataClass.getNameExpression() != null)
             {
                 StringExpression expr = StringExpressionFactory.create(_dataClass.getNameExpression());
-                // TODO: name expression will fail if ${RowId} or ${DataId} auto-inc columns are used.
-                // TODO: Change RowId to a plain integer column (not auto-inc) and maintain
-                // TODO: a server-side AtomicInteger for each DataClass and use it for ${RowId}.
                 step1 = new NameExpressionDataIteratorBuilder(step1, expr);
             }
 
+            return LoggingDataIterator.wrap(step1.getDataIterator(context));
+        }
+    }
+
+    private class DataClassDataIteratorBuilder implements DataIteratorBuilder
+    {
+        private DataIteratorContext _context;
+        private final DataIteratorBuilder _in;
+
+        private User _user;
+
+        DataClassDataIteratorBuilder(@NotNull DataIteratorBuilder in, DataIteratorContext context, User user)
+        {
+            _context = context;
+            _in = in;
+            _user = user;
+        }
+
+        @Override
+        public DataIterator getDataIterator(DataIteratorContext context)
+        {
+            _context = context;
+            DataIterator input = _in.getDataIterator(context);
+            if (null == input)
+                return null;           // Can happen if context has errors
+
+            final Container c = getContainer();
+            final Map<String, Integer> colNameMap = DataIteratorUtil.createColumnNameMap(input);
+
+            SimpleTranslator step0 = new SimpleTranslator(input, context);
+            step0.selectAll(Sets.newCaseInsensitiveHashSet("alias"));
+
             // Insert into exp.data then the provisioned table
-            DataIteratorBuilder step2 = TableInsertDataIterator.create(step1, ExperimentService.get().getTinfoData(), c, context);
+            DataIteratorBuilder step2 = TableInsertDataIterator.create(DataIteratorBuilder.wrap(step0), ExperimentService.get().getTinfoData(), c, context);
             DataIteratorBuilder step3 = TableInsertDataIterator.create(step2, ExpDataClassDataTableImpl.this._dataClass.getTinfo(), c, context);
 
             // Wire up derived parent/child data and materials
@@ -964,6 +984,12 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
         public DataClassDataUpdateService(ExpDataClassDataTableImpl table)
         {
             super(table, table.getRealTable());
+        }
+
+        @Override
+        protected DataIteratorBuilder preTriggerDataIterator(DataIteratorBuilder in, DataIteratorContext context)
+        {
+            return new PreTriggerDataIteratorBuilder(in, context);
         }
 
         @Override
