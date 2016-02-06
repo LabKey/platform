@@ -189,6 +189,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         context.getErrors().setExtraContext(extraScriptContext);
 
+        in = preTriggerDataIterator(in, context);
+
         boolean hasTableScript = hasTableScript(container);
         TriggerDataBuilderHelper helper = new TriggerDataBuilderHelper(getQueryTable(), container, extraScriptContext, context.getInsertOption().useImportAliases);
         if (hasTableScript)
@@ -198,6 +200,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (hasTableScript)
             out = helper.after(importETL);
 
+        out = postTriggerDataIterator(out, context);
+
         if (hasTableScript)
         {
             context.setFailFast(false);
@@ -205,6 +209,16 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
         int count = _pump(out, outputRows, context);
         return context.getErrors().hasErrors() ? 0 : count;
+    }
+
+    protected DataIteratorBuilder preTriggerDataIterator(DataIteratorBuilder in, DataIteratorContext context)
+    {
+        return in;
+    }
+
+    protected DataIteratorBuilder postTriggerDataIterator(DataIteratorBuilder out, DataIteratorContext context)
+    {
+        return out;
     }
 
 
