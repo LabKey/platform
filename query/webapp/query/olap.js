@@ -590,6 +590,7 @@
                 {
                     name: this.name,
                     configId: this.configId,
+                    containerPath: this.containerPath,
                     schemaName: this.schemaName,
                     contextName: this.contextName,
                     memberExclusionFields: this.memberExclusionFields,
@@ -998,6 +999,8 @@
                 configId : config.configId || this._cube.configId,
                 schemaName : config.schemaName || this._cube.schemaName,
                 cubeName : config.cubeName || this._cube.name,
+                container: config.container,
+                containerPath : config.containerPath,
                 query :
                 {
                     // TODO: Move this declaration to a place where it can be more appropriately documented. Its own object?
