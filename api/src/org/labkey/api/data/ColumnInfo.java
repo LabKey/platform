@@ -1519,7 +1519,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         LinkedHashMap<String, ColumnInfo> colMap = new LinkedHashMap<>();
         SqlDialect dialect = parentTable.getSqlDialect();
         DbScope scope = parentTable.getSchema().getScope();
-        List<ImportedKey> importedKeys = new ArrayList<>();
+        Map<String, ImportedKey> importedKeys = new HashMap<>();    // Use map to handle multiple FKs with multiple fields from same table referencing same PK
 
         try (JdbcMetaDataLocator locator = dialect.getJdbcMetaDataLocator(scope, schemaName, parentTable.getMetaDataName()))
         {
@@ -1615,13 +1615,12 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                     if (keySequence == 1)
                     {
                         ImportedKey key = locator.getImportedKey(fkName, pkSchemaName, pkTableName, pkColumnName, colName);
-                        importedKeys.add(key);
+                        importedKeys.put(fkName, key);
                     }
                     else
                     {
                         assert importedKeys.size() > 0;
-                        ImportedKey key = importedKeys.get(importedKeys.size() - 1);
-                        assert key.fkName.equals(fkName);
+                        ImportedKey key = importedKeys.get(fkName);
                         key.pkColumnNames.add(pkColumnName);
                         key.fkColumnNames.add(colName);
                     }
@@ -1629,7 +1628,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             }
         }
 
-        for (ImportedKey key : importedKeys)
+        for (ImportedKey key : importedKeys.values())
         {
             int i = -1;
             boolean joinWithContainer = false;
