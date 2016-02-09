@@ -19,6 +19,7 @@ package org.labkey.api.study;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.ValidationException;
@@ -91,6 +92,17 @@ public class SpecimenService
         PipelineJob createSpecimenReloadJob(Container container, User user, SpecimenTransform transform, @Nullable ActionURL url) throws SQLException, IOException, ValidationException;
 
         void registerSpecimenChangeListener(SpecimenChangeListener listener);
+
+        @Nullable
+        TableInfo getTableInfoVial(Container container);
+
+        @Nullable
+        TableInfo getTableInfoSpecimen(Container container);
+
+        @Nullable
+        TableInfo getTableInfoSpecimenEvent(Container container);
+
+        SpecimenTablesTemplate getSpecimenTablesTemplate();
     }
 
     public static void register(Service serviceImpl)
