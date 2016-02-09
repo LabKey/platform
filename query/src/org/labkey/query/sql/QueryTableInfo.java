@@ -26,6 +26,9 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.MemTracker;
 
 import java.util.Collection;
@@ -160,6 +163,13 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     public UserSchema getUserSchema()
     {
         return _relation.getSchema() instanceof UserSchema ? (UserSchema)_relation.getSchema() : null;
+    }
+
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    {
+        UserSchema schema = getUserSchema();
+        return schema != null && perm.equals(ReadPermission.class) && schema.getContainer().hasPermission(user, perm);
     }
 
     @Override
