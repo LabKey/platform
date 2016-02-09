@@ -124,7 +124,6 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -311,7 +310,8 @@ public class PipelineController extends SpringActionController
             }
 
             Container c = getContainer();
-            VBox view = new VBox();
+            VBox left = new VBox();
+            HBox result = new HBox(left);
 
             if (!c.isRoot())
             {
@@ -334,19 +334,18 @@ public class PipelineController extends SpringActionController
                     }
                 }
 
-                HBox main = new HBox();
-                VBox leftBox = new VBox(PipelineService.get().getSetupView(bean));
-
-                main.addView(leftBox);
+                VBox main = new VBox(PipelineService.get().getSetupView(bean));
 
                 if (pipeRoot != null && !errors.hasErrors())
                 {
-                    main.addView(new PermissionView(SecurityPolicyManager.getPolicy(pipeRoot)));
+                    PermissionView permissionView = new PermissionView(SecurityPolicyManager.getPolicy(pipeRoot));
+                    permissionView.setTitle("File Permissions");
+                    permissionView.setFrame(WebPartView.FrameType.PORTAL);
+                    result.addView(permissionView);
                 }
+
                 main.setTitle("Data Processing Pipeline Setup");
                 main.setFrame(WebPartView.FrameType.PORTAL);
-
-                view.addView(main);
 
                 if (!errors.hasErrors())
                 {
@@ -357,16 +356,19 @@ public class PipelineController extends SpringActionController
                         {
                             HttpView part = provider.getSetupWebPart(c);
                             if (part != null)
-                                leftBox.addView(part);
+                                main.addView(part);
                         }
                     }
                 }
+
+                left.addView(main);
             }
+
             JspView<FORM> emailView = new JspView<>("/org/labkey/pipeline/emailNotificationSetup.jsp", form);
             emailView.setFrame(WebPartView.FrameType.PORTAL);
             emailView.setTitle("Email Notification");
-            view.addView(emailView);
-            return view;
+            left.addView(emailView);
+            return result;
         }
 
         public NavTree appendNavTrail(NavTree root)

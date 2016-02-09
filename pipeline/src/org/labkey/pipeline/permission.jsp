@@ -42,7 +42,6 @@
 
     boolean enableFTP = !policy.isEmpty();
 %>
-<b>Pipeline&nbsp;Files&nbsp;Permissions</b><br>
 These permissions control whether pipeline files can be downloaded and updated via the web server.
 <p />
 <labkey:form id="permissionsForm" action="<%= h(buildURL(PipelineController.UpdateRootPermissionsAction.class))%>" method="POST">
