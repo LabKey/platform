@@ -37,6 +37,7 @@ import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.SpecimenChangeListener;
 import org.labkey.api.study.SpecimenImportStrategyFactory;
 import org.labkey.api.study.SpecimenService;
+import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
@@ -44,6 +45,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.controllers.specimen.AutoCompleteAction;
 import org.labkey.study.importer.SimpleSpecimenImporter;
+import org.labkey.study.model.DefaultSpecimenTablesTemplate;
 import org.labkey.study.model.Vial;
 import org.labkey.study.pipeline.SpecimenReloadJob;
 
@@ -339,5 +341,34 @@ public class SpecimenServiceImpl implements SpecimenService.Service
     {
         for (SpecimenChangeListener l : _changeListeners)
             l.specimensChanged(c, user, logger);
+    }
+
+    private static SpecimenTablesTemplate _specimenTablesTemplate = new DefaultSpecimenTablesTemplate();
+
+    @Nullable
+    @Override
+    public TableInfo getTableInfoVial(Container container)
+    {
+        return StudySchema.getInstance().getTableInfoVialIfExists(container);
+    }
+
+    @Nullable
+    @Override
+    public TableInfo getTableInfoSpecimen(Container container)
+    {
+        return StudySchema.getInstance().getTableInfoSpecimenIfExists(container);
+    }
+
+    @Nullable
+    @Override
+    public TableInfo getTableInfoSpecimenEvent(Container container)
+    {
+        return StudySchema.getInstance().getTableInfoSpecimenEventIfExists(container);
+    }
+
+    @Override
+    public SpecimenTablesTemplate getSpecimenTablesTemplate()
+    {
+        return _specimenTablesTemplate;
     }
 }
