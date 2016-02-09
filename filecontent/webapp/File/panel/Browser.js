@@ -1827,7 +1827,7 @@ Ext4.define('File.panel.Browser', {
 
         this.enableImportData(false);
 
-        if (this.pipelineActions.length > 0) {
+        if (this.pipelineActions && this.pipelineActions.length > 0) {
 
             var selections = selectedRecords,
                 emptySelection = false,
@@ -1843,6 +1843,11 @@ Ext4.define('File.panel.Browser', {
             if (!selections.length && count > 0) {
                 emptySelection = true;
                 selections = store.getRange(0, count-1); // get all the available records
+            }
+
+            // Issue 25493: Intermittent JS error from FileBrowser.
+            if (!selections) {
+                return;
             }
 
             for (var i=0; i < selections.length; i++) {

@@ -46,18 +46,15 @@ public class ClusterStartup extends AbstractPipelineStartup
     {
         Map<String, BeanFactory> factories = initContext("org/labkey/pipeline/mule/config/cluster.log4j.properties", moduleFiles, moduleConfigFiles, customConfigFiles, webappDir, PipelineJobService.LocationType.RemoteExecutionEngine);
 
+        // First arg should be URI to XML file, based on the web server's file system
+        // Passing no args could be used to explode the modules and exit, preparing for future jobs
         if (args.length < 1)
-        {
-            throw new IllegalArgumentException("First arg should be URI to XML file, based on the web server's file system");
-        }
-
-        String localFile = PipelineJobService.get().getPathMapper().remoteToLocal(args[0]);
-        if (StringUtils.trimToNull(localFile) == null)
         {
             System.out.println("No job file provided, exiting");
             return;
         }
 
+        String localFile = PipelineJobService.get().getPathMapper().remoteToLocal(args[0]);
         File file = new File(new URI(localFile));
         if (!file.isFile())
         {
