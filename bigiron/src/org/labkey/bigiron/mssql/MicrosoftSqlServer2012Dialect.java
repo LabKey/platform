@@ -24,7 +24,7 @@ import org.labkey.api.data.dialect.TableResolver;
  * Date: 2/9/12
  * Time: 8:34 AM
  */
-public class MicrosoftSqlServer2012Dialect extends MicrosoftSqlServer2008R2Dialect
+public class MicrosoftSqlServer2012Dialect extends BaseMicrosoftSqlServerDialect
 {
     public MicrosoftSqlServer2012Dialect(TableResolver tableResolver)
     {
