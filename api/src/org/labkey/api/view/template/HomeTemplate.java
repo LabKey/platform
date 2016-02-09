@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2015 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2016 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package org.labkey.api.view.template;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -35,9 +36,12 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Set;
 
 
 public class HomeTemplate extends PrintTemplate
@@ -142,21 +146,43 @@ public class HomeTemplate extends PrintTemplate
         if (FooterProperties.isShowFooter())
         {
             Module coreModule = ModuleLoader.getInstance().getCoreModule();
+            view = SimpleAction.getModuleHtmlView(coreModule, "_footer", null);
             List<Module> modules = new ArrayList<>(ModuleLoader.getInstance().getModules());
+
+            Set<String> activeModuleNames = new HashSet<>(modules.size());
+            Set<Container> containers = ContainerManager.getAllChildren(ContainerManager.getRoot());
+            for(Container c : containers)
+            {
+                Set<Module> containerActiveModules = c.getActiveModules();
+
+                if (containerActiveModules != null)
+                {
+                    for (Module activeModule : containerActiveModules)
+                    {
+                        activeModuleNames.add(activeModule.getName());
+                    }
+                }
+            }
+            List<Module> filteredModules = new ArrayList<>(modules.size());
+            for(Module module : modules)
+            {
+                if(activeModuleNames.contains(module.getName()) == true)
+                {
+                    filteredModules.add(module);
+                }
+            }
+
             if (null != ModuleLoader.getInstance().getModule(FooterProperties.getFooterModule()))
             {
-                modules.add(ModuleLoader.getInstance().getModule(FooterProperties.getFooterModule()));
+                filteredModules.add(ModuleLoader.getInstance().getModule(FooterProperties.getFooterModule()));
+                // NOTE: this may be a duplicate
             }
-            ListIterator<Module> i = modules.listIterator(modules.size());
+            ListIterator<Module> i = filteredModules.listIterator(filteredModules.size());
             while (i.hasPrevious())
             {
                 view = SimpleAction.getModuleHtmlView(i.previous(), "_footer", null);
                 if (null != view)
                     break;
-            }
-            if (null == view)
-            {
-                view = SimpleAction.getModuleHtmlView(coreModule, "_footer", null);
             }
             view.setFrame(FrameType.NONE);
         }
