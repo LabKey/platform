@@ -375,7 +375,7 @@ abstract public class PipelineProvider
     }
 
     /** Calculate the available set of actions */
-    protected List<PipelineActionConfig> getDefaultActionConfig()
+    protected List<PipelineActionConfig> getDefaultActionConfigSkipModuleEnabledCheck(Container container)
     {
         return Collections.emptyList();
     }
@@ -385,7 +385,7 @@ abstract public class PipelineProvider
     {
         if (_showActionsIfModuleInactive || container.getActiveModules().contains(getOwningModule()))
         {
-            return getDefaultActionConfig();
+            return getDefaultActionConfigSkipModuleEnabledCheck(container);
         }
         return Collections.emptyList();
     }

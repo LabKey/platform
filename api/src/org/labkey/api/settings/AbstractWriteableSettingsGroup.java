@@ -107,6 +107,11 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
         }
     }
 
+    protected boolean isPasswordProperty(String propName)
+    {
+        return false;
+    }
+
     private String genDiffHtml(Map<String,String> oldProps)
     {
         //since this is a fixed membership map, we just need to run
@@ -128,7 +133,7 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
                 newValue = _properties.get(key);
 
                 //obscure password properties
-                if(AppPropsImpl.MASCOT_USERPASSWORD_PROP.equals(key) || AppPropsImpl.NETWORK_DRIVE_PASSWORD.equals(key))
+                if(isPasswordProperty(key))
                 {
                     oldValue = obscureValue(oldValue);
                     newValue = obscureValue(newValue);

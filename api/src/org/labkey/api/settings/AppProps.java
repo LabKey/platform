@@ -49,8 +49,6 @@ public class AppProps
 
     public interface Interface
     {
-        String getMascotUserPassword();
-        String getMascotHTTPProxy();
         String getNetworkDriveLetter();
         String getNetworkDrivePath();
         String getNetworkDriveUser();
@@ -97,9 +95,6 @@ public class AppProps
         boolean isSelfReportExceptions();
         String getServerGUID();
         String getBLASTServerBaseURL();
-        boolean hasMascotServer();
-        String getMascotServer();
-        String getMascotUserAccount();
         String getWebappConfigurationFilename();
         String getAdministratorContactEmail();
         boolean getUseContainerRelativeURL();

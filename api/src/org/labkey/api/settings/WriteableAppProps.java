@@ -92,26 +92,6 @@ public class WriteableAppProps extends AppPropsImpl
         storeStringValue(BLAST_SERVER_BASE_URL_PROP, blastServerBaseURL);
     }
 
-    public void setMascotServer(String mascotServer)
-    {
-        storeStringValue(MASCOT_SERVER_PROP, mascotServer);
-    }
-
-    public void setMascotUserAccount(String mascotUserAccount)
-    {
-        storeStringValue(MASCOT_USERACCOUNT_PROP, mascotUserAccount);
-    }
-
-    public void setMascotUserPassword(String mascotUserPassword)
-    {
-        storeStringValue(MASCOT_USERPASSWORD_PROP, mascotUserPassword);
-    }
-
-    public void setMascotHTTPProxy(String mascotHTTPProxy)
-    {
-        storeStringValue(MASCOT_HTTPPROXY_PROP, mascotHTTPProxy);
-    }
-
     public void setExceptionReportingLevel(ExceptionReportingLevel level)
     {
         storeStringValue(EXCEPTION_REPORTING_LEVEL, level.toString());
