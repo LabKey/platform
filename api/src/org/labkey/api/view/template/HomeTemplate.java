@@ -184,7 +184,10 @@ public class HomeTemplate extends PrintTemplate
                 if (null != view)
                     break;
             }
-            view.setFrame(FrameType.NONE);
+            if (null != view)
+            {
+                view.setFrame(FrameType.NONE);
+            }
         }
         return view;
     }
