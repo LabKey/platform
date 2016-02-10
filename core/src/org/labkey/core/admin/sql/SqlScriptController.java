@@ -375,6 +375,9 @@ public class SqlScriptController extends SpringActionController
 
         for (Module module : modules)
         {
+            if (!module.shouldConsolidateScripts())
+                continue;
+
             FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
             Collection<DbSchema> schemas = provider.getSchemas();
 
@@ -456,7 +459,6 @@ public class SqlScriptController extends SpringActionController
                 html.append("No schemas require consolidation in this range");
             else
                 html.append(PageFlowUtil.textLink("Create batch file from current settings", getConsolidateBatchActionURL(form), null, null, Collections.singletonMap("target", "batchFile")));
-
 
             html.insert(0, formHtml);
 
@@ -644,9 +646,17 @@ public class SqlScriptController extends SpringActionController
     {
         private String _module;
         private String _schema;
-        private double _fromVersion = Math.floor(ModuleLoader.getInstance().getCoreModule().getVersion() * 10.0) / 10.0;
-        private double _toVersion = (_fromVersion * 10.0 + 1.0) / 10.0;
+        private double _fromVersion = ModuleLoader.getInstance().getPreviousReleaseVersion();
+        private double _toVersion = getToVersion(_fromVersion);
         private boolean _includeSingleScripts = false;
+
+        private static double getToVersion(double fromVersion)
+        {
+            int from = (int)Math.round(fromVersion * 10.0); // 153 or 161 or 172
+            int fractional = from % 10;  // [1, 2, 3]
+
+            return (from + (3 == fractional ? 8 : 1))/10.0;
+        }
 
         public String getModule()
         {
