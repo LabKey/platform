@@ -101,6 +101,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /**
  * User: migra
@@ -167,7 +168,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     public int compareTo(@NotNull Module m)
     {
         //sort by name--core module will override to ensure first in sort
-        return getName().compareTo(m.getName());
+        return getName().compareToIgnoreCase(m.getName());
     }
 
     final public void initialize()
@@ -1436,14 +1437,29 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         if (!AppProps.getInstance().isDevMode())
             return null;
 
-        File lib = new File(AppProps.getInstance().getProjectRoot(), "server/modules/" + getName() + "/lib");
+        File lib = new File(getExplodedPath(), "lib");
+        File external = new File(getExplodedPath(), "external");
 
-        if (!lib.exists())
+        if (!lib.exists() && !external.exists())
             return null;
 
         Set<String> filenames = new CaseInsensitiveTreeSet();
 
-        filenames.addAll(Arrays.asList(lib.list(getJarFilenameFilter())));
+        Set<String> internalJars = new CaseInsensitiveHashSet(getInternalJarFilenames());
+
+        if (lib.exists())
+        {
+            filenames.addAll(Arrays.asList(lib.list(getJarFilenameFilter()))
+                    .stream()
+                    .filter(jarFilename -> !internalJars.contains(jarFilename))
+                    .collect(Collectors.toList()));
+        }
+        if (external.exists())
+        {
+            filenames.addAll(Arrays.asList(external.list(getJarFilenameFilter()))
+                    .stream()
+                    .collect(Collectors.toList()));
+        }
 
         return filenames;
     }
@@ -1456,6 +1472,20 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     public static boolean isRuntimeJar(String name)
     {
         return name.endsWith(".jar") && !name.endsWith("javadoc.jar") && !name.endsWith("sources.jar");
+    }
+
+    /**
+     * List of .jar files that might be produced from module's own source.
+     * This default set is not meant to be definitive for every module; not all of these jars
+     * exist for all modules, but they are the most common.
+     * Some modules may have additional known internal jar artifacts; override and add to the list
+     * as needed.
+     *
+     */
+    @NotNull
+    protected Collection<String> getInternalJarFilenames()
+    {
+        return Arrays.asList(_name + ".jar", _name + "_api.jar", _name + "_jsp.jar", "schemas.jar");
     }
 
     protected ApplicationContext _applicationContext = null;

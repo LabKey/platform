@@ -334,8 +334,7 @@ public interface Module extends Comparable<Module>
     List<File> getStaticFileDirectories();
 
     /**
-     * Used in dev mode to verify that the module credits pages is complete.  Called only if jars.txt is present in
-     * <module>/META-INF/<module> directory.
+     * Used in dev mode to verify that the module credits pages is complete.
      * @return Jar filenames used by this module
      */
     @Nullable Collection<String> getJarFilenames();
