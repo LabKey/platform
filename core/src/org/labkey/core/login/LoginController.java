@@ -1206,7 +1206,7 @@ public class LoginController extends SpringActionController
         return vBox;
     }
 
-    private WebPartView getCustomLoginViewIfAvailable(BindException errors, LoginForm form, boolean remember) {
+    private WebPartView getCustomLoginViewIfAvailable(BindException errors, LoginForm form, boolean remember) throws Exception {
         // replace normal jsp login page with the page specified by controller-action in the Look and Feel Settings
         // This is placed in showLogin() instead of the getLoginURL() to ensure that the logic above
         // regarding 'server upgrade' and 'server startup' is executed regardless of the custom login action the user specified.
@@ -1246,6 +1246,11 @@ public class LoginController extends SpringActionController
         if (null != view)
         {
             view.setFrame(WebPartView.FrameType.NONE);
+        }
+        else
+        {
+            // Neither the default login page at core/resources/views/login.html or the custom login described in admin console  were found
+            throw new NotFoundException("Neither the custom login page specified via Look and Feel Settings as: " + customLogin + " or the default login page were found.");
         }
         return view;
     }
