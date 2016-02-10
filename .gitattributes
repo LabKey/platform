@@ -1011,6 +1011,7 @@ api/src/org/labkey/api/query/OlapSchemaInfo.java -text
 api/src/org/labkey/api/query/PdLookupForeignKey.java -text
 api/src/org/labkey/api/query/PerlExportScriptFactory.java -text
 api/src/org/labkey/api/query/PerlExportScriptModel.java -text
+api/src/org/labkey/api/query/PrincipalIdForeignKey.java -text
 api/src/org/labkey/api/query/PropertyColumnDecorator.java -text
 api/src/org/labkey/api/query/PropertyForeignKey.java -text
 api/src/org/labkey/api/query/PropertyValidationError.java -text
