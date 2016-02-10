@@ -26,7 +26,8 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
     resizable: false,
 
-    width: 410,
+    // 24846
+    width: Ext.isGecko ? 425 : 410,
 
     allowFacet : undefined,
 
@@ -35,7 +36,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     initComponent : function() {
 
         if (!this['dataRegionName']) {
-            console.error('dataRegionName is requied for a LABKEY.FilterDialog');
+            console.error('dataRegionName is required for a LABKEY.FilterDialog');
             return;
         }
 
