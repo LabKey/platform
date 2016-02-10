@@ -156,6 +156,7 @@ cbcassay/src/org/labkey/cbcassay/data/CBCDataDisplayColumn.java -text
 cbcassay/src/org/labkey/cbcassay/data/CBCDataProperty.java -text
 cbcassay/src/org/labkey/cbcassay/view/showDetails.jsp -text
 core/Core-API.iml -text
+core/api-src/org/labkey/api/admin/PortalBackgroundImageCache.java -text
 core/api-src/org/labkey/api/admin/TableXmlUtils.java -text
 core/api-src/org/labkey/api/admin/notification/Notification.java -text
 core/api-src/org/labkey/api/admin/notification/NotificationService.java -text
