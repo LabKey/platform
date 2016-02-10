@@ -558,15 +558,16 @@ public class MothershipController extends SpringActionController
         public ModelAndView getView(ServerInstallationForm form, BindException errors) throws Exception
         {
             ServerInstallation installation = form.getBean();
-            if (installation == null)
+            if (installation == null || null == form.getPkVal())
             {
                 throw new NotFoundException();
             }
-            ServerInstallationUpdateView updateView = new ServerInstallationUpdateView(form, getViewContext().getActionURL(), errors);
+
+            ServerInstallationUpdateView updateView = new ServerInstallationUpdateView(form, errors);
 
             MothershipSchema schema = new MothershipSchema(MothershipController.this.getUser(), MothershipController.this.getContainer());
             QuerySettings settings = schema.getSettings(getViewContext(), "ServerSessions", "ServerSessions");
-            settings.getBaseSort().insertSortColumn("-ServerSessionId");
+            settings.getBaseSort().insertSortColumn(FieldKey.fromParts("ServerSessionId"), Sort.SortDirection.DESC);
             settings.getBaseFilter().addCondition(FieldKey.fromParts("ServerInstallationId"), installation.getServerInstallationId());
 
             QueryView sessionGridView = schema.createView(getViewContext(), settings, errors);
@@ -1526,7 +1527,7 @@ public class MothershipController extends SpringActionController
 
     public static class ServerInstallationUpdateView extends UpdateView
     {
-        public ServerInstallationUpdateView(ServerInstallationForm form, ActionURL url, BindException errors)
+        public ServerInstallationUpdateView(ServerInstallationForm form, BindException errors)
         {
             super(new DataRegion(), form, errors);
 
