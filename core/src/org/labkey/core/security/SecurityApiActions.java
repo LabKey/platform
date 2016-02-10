@@ -832,7 +832,10 @@ public class SecurityApiActions
 
             GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(c.getId(), sb.toString());
             event.setProjectId(c.getProject() != null ? c.getProject().getId() : null);
-            event.setUser(principal.getUserId());
+            if (principal.getPrincipalType() == PrincipalType.USER)
+                event.setUser(principal.getUserId());
+            else
+                event.setGroup(principal.getUserId());
             event.setResourceEntityId(resource.getResourceId());
 
             AuditLogService.get().addEvent(getUser(), event);
