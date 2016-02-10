@@ -32,6 +32,7 @@ public interface CoreUrls extends UrlProvider
     ActionURL getCustomStylesheetURL();
     ActionURL getCustomStylesheetURL(Container c);
     ActionURL getAttachmentIconURL(Container c, String filename);
+    ActionURL getBackgroundImageBaseURL(Container c);
     ActionURL getProjectsURL(Container c);
 
     /** Still needs objectURI parameter and value tacked on */
