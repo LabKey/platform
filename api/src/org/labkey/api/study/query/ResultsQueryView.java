@@ -132,30 +132,28 @@ public class ResultsQueryView extends AssayBaseQueryView
                 publishButton.setRequiresSelection(true);
 
                 bar.add(publishButton);
+            }
 
-                bar.addAll(AssayService.get().getImportButtons(_protocol, getUser(), getContainer(), false));
+            bar.addAll(AssayService.get().getImportButtons(_protocol, getUser(), getContainer(), false));
+            FieldKey runFK = _provider.getTableMetadata(_protocol).getRunRowIdFieldKeyFromResults();
+            String runId = getViewContext().getRequest().getParameter(view.getDataRegion().getName() + "." + runFK + "~eq");
 
-                FieldKey runFK = _provider.getTableMetadata(_protocol).getRunRowIdFieldKeyFromResults();
-
-                String runId = getViewContext().getRequest().getParameter(view.getDataRegion().getName() + "." + runFK + "~eq");
-
-                if (runId != null && getViewContext().hasPermission(InsertPermission.class) &&
-                        getViewContext().hasPermission(DeletePermission.class) &&
-                        _provider.getReRunSupport() != AssayProvider.ReRunSupport.None)
+            if (runId != null && getViewContext().hasPermission(InsertPermission.class) &&
+                    getViewContext().hasPermission(DeletePermission.class) &&
+                    _provider.getReRunSupport() != AssayProvider.ReRunSupport.None)
+            {
+                try
                 {
-                    try
+                    // Don't give the user to re-import if the run has already been replaced
+                    ExpRun run = ExperimentService.get().getExpRun(Integer.parseInt(runId));
+                    if (run != null && run.getReplacedByRun() == null)
                     {
-                        // Don't give the user to re-import if the run has already been replaced
-                        ExpRun run = ExperimentService.get().getExpRun(Integer.parseInt(runId));
-                        if (run != null && run.getReplacedByRun() == null)
-                        {
-                            ActionURL reRunURL = _provider.getImportURL(getContainer(), _protocol);
-                            reRunURL.addParameter("reRunId", runId);
-                            bar.add(new ActionButton("Re-import run", reRunURL));
-                        }
+                        ActionURL reRunURL = _provider.getImportURL(getContainer(), _protocol);
+                        reRunURL.addParameter("reRunId", runId);
+                        bar.add(new ActionButton("Re-import run", reRunURL));
                     }
-                    catch (NumberFormatException ignored) {}
                 }
+                catch (NumberFormatException ignored) {}
             }
 
             if (_provider != null && _provider.getReRunSupport() == AssayProvider.ReRunSupport.ReRunAndReplace)
