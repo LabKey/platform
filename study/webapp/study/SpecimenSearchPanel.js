@@ -96,10 +96,11 @@ Ext4.define('LABKEY.ext.SampleSearchPanel', {
             }],
             buttonAlign: 'left',
             dockedItems: [{
-                xtype: 'toolbar',
-                dock: 'bottom',
-                style: 'background-color: transparent;padding-top: 5px;',
-                ui: 'footer',
+                xtype   : 'toolbar',
+                dock    : 'bottom',
+                formBind: true,
+                style   : 'background-color: transparent;padding-top: 5px;',
+                ui      : 'footer',
                 items: [{
                     text: 'Search',
                     handler: this.onSubmit
