@@ -347,6 +347,10 @@ public class ExceptionUtil
             return;
         }
 
+        // In dev mode, don't report to labkey.org if the Mothership module is installed.
+        if (!local && AppProps.getInstance().isDevMode() && MothershipReport.isShowSelfReportExceptions())
+            return;
+
         try
         {
             MothershipReport report = new MothershipReport(MothershipReport.Type.ReportException, local);
