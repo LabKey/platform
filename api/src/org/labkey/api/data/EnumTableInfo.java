@@ -31,63 +31,93 @@ import java.util.EnumSet;
 public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable<UserSchema>
 {
     private final Class<EnumType> _enum;
-    private final EnumValueGetter<EnumType> _getter;
+    private final EnumValueGetter<EnumType> _valueGetter;
+    private final EnumRowIdGetter<EnumType> _rowIdGetter;
     @Nullable private String _schemaName;
     @Nullable private String _queryName;
-    private final boolean _ordinalPK;
 
     /**
      * Turns an enum value into a string to expose in the virtual table
      */
     public interface EnumValueGetter<EnumType>
     {
-        public String getValue(EnumType e);
+        String getValue(EnumType e);
     }
 
-    /**
-     * Exposes an enum as a one-column virtual table, using its toString() as the value
-     * @param e class of the enum
-     * @param schema parent DBSchema
-     * @param description a description of this table and its uses for display in the schema browser
-     */
-    public EnumTableInfo(Class<EnumType> e, UserSchema schema, String description, boolean ordinalPK)
+    public interface EnumRowIdGetter<EnumType>
     {
-        this(e, schema, new EnumValueGetter<EnumType>()
-        {
-            public String getValue(EnumType e)
-            {
-                return e.toString();
-            }
-        }, ordinalPK, description);
+        int getRowId(EnumType e);
     }
 
     /**
-     * Exposes an enum as a one-column virtual table, using the getter to determine its value
+     * Exposes an enum as a three column virtual table, using its toString() as the value, ordinal() as rowId, and ordinal() as ordinal
+     * @param e class of the enum
+     * @param schema parent DBSchema*
+     * @param description a description of this table and its uses for display in the schema browser
+     * @param rowIdPK use the rowId as the key field, otherwise use value field
+     */
+    public EnumTableInfo(Class<EnumType> e, UserSchema schema, String description, boolean rowIdPK)
+    {
+        this(e, schema, EnumType::toString, EnumType::ordinal, rowIdPK, description);
+    }
+
+    /**
+     * Exposes an enum as a three column virtual table, using valueGetter to determine its value, ordinal() as rowId, and ordinal() as ordinal
      * @param e class of the enum
      * @param schema parent DBSchema
-     * @param getter callback to determine the String value of each item in the enum
+     * @param valueGetter callback to determine the String value of each item in the enum
+     * @param rowIdPK use the rowId as the key field, otherwise use value field
      * @param description a description of this table and its uses for display in the schema browser
      */
-    public EnumTableInfo(Class<EnumType> e, UserSchema schema, EnumValueGetter<EnumType> getter, boolean ordinalPK, String description)
+    public EnumTableInfo(Class<EnumType> e, UserSchema schema, EnumValueGetter<EnumType> valueGetter, boolean rowIdPK, String description)
+    {
+        this(e, schema, valueGetter, EnumType::ordinal, rowIdPK, description);
+    }
+
+    /**
+     * Exposes an enum as a three column virtual table, using using its toString() as the value, rowIdGetter to determine rowId, and ordinal() as ordinal
+     * @param e class of the enum
+     * @param schema parent DBSchema
+     * @param rowIdGetter callback to determine the int rowId of each item in the enum
+     * @param rowIdPK use the rowId as the key field, otherwise use value field
+     * @param description a description of this table and its uses for display in the schema browser
+     */
+    public EnumTableInfo(Class<EnumType> e, UserSchema schema, EnumRowIdGetter<EnumType> rowIdGetter, boolean rowIdPK, String description)
+    {
+        this(e, schema, EnumType::toString, rowIdGetter, rowIdPK, description);
+    }
+
+    /**
+     * Exposes an enum as a three column virtual table, using valueGetter to determine its value, rowIdGetter to determine rowId, and ordinal() as ordinal
+     * @param e class of the enum
+     * @param schema parent DBSchema
+     * @param valueGetter callback to determine the String value of each item in the enum
+     * @param rowIdGetter callback to determine the int rowId of each item in the enum
+     * @param rowIdPK use the rowId as the key field, otherwise use value field
+     * @param description a description of this table and its uses for display in the schema browser
+     */
+    public EnumTableInfo(Class<EnumType> e, UserSchema schema, EnumValueGetter<EnumType> valueGetter, EnumRowIdGetter<EnumType> rowIdGetter, boolean rowIdPK, String description)
     {
         super(schema.getDbSchema(), e.getSimpleName(), schema);
         setDescription(description);
         _enum = e;
-        _getter = getter;
-        _ordinalPK = ordinalPK;
+        _valueGetter = valueGetter;
+        _rowIdGetter = rowIdGetter;
 
         ExprColumn column = new ExprColumn(this, "Value", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".Value"), JdbcType.VARCHAR);
-        column.setKeyField(!ordinalPK);
+        column.setKeyField(!rowIdPK);
         setTitleColumn(column.getName());
         addColumn(column);
 
         ExprColumn rowIdColumn = new ExprColumn(this, "RowId", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".RowId"), JdbcType.INTEGER);
-        rowIdColumn.setKeyField(ordinalPK);
+        rowIdColumn.setKeyField(rowIdPK);
         rowIdColumn.setHidden(true);
         addColumn(rowIdColumn);
+
+        ExprColumn ordinalColumn = new ExprColumn(this, "Ordinal", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".Ordinal"), JdbcType.INTEGER);
+        ordinalColumn.setHidden(true);
+        addColumn(ordinalColumn);
     }
-
-
 
     @Override @NotNull
     public SQLFragment getFromSQL()
@@ -99,8 +129,9 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
         {
             sql.append(separator);
             separator = " UNION ";
-            sql.append("SELECT ? AS VALUE, ? AS RowId");
-            sql.add(_getter.getValue(e));
+            sql.append("SELECT ? AS VALUE, ? AS RowId, ? As Ordinal");
+            sql.add(_valueGetter.getValue(e));
+            sql.add(_rowIdGetter.getRowId(e));
             sql.add(e.ordinal());
         }
         return sql;

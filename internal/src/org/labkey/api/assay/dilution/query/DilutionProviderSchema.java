@@ -95,13 +95,7 @@ public class DilutionProviderSchema extends AssayProviderSchema
         }
         if (CURVE_FIT_METHOD_TABLE_NAME.equalsIgnoreCase(name))
         {
-            EnumTableInfo<StatsService.CurveFitType> result = new EnumTableInfo<>(StatsService.CurveFitType.class, this, new EnumTableInfo.EnumValueGetter<StatsService.CurveFitType>()
-            {
-                public String getValue(StatsService.CurveFitType e)
-                {
-                    return e.getLabel();
-                }
-            }, false, "List of possible curve fitting methods for the " + getProvider().getResourceName() + " assay.");
+            EnumTableInfo<StatsService.CurveFitType> result = new EnumTableInfo<>(StatsService.CurveFitType.class, this, StatsService.CurveFitType::getLabel, false, "List of possible curve fitting methods for the " + getProvider().getResourceName() + " assay.");
             result.setPublicSchemaName(_schemaName);
             result.setPublicName(CURVE_FIT_METHOD_TABLE_NAME);
             return result;
