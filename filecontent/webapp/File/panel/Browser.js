@@ -998,7 +998,9 @@ Ext4.define('File.panel.Browser', {
     },
 
     onColumnChange : function(allTheColumns) {
-        this.getGrid().reconfigure(this.getGrid().getStore(), allTheColumns); // REMEMBER: Check if passing in the store fires reload
+        if (this.getGrid()) {
+            this.getGrid().reconfigure(this.getGrid().getStore(), allTheColumns); // REMEMBER: Check if passing in the store fires reload
+        }
     },
 
     getItems : function() {
