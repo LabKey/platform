@@ -756,17 +756,19 @@ public class AdminController extends SpringActionController
             HttpView jars = new CreditsView("/core/resources/credits/jars.txt", getCreditsFile(core, "jars.txt"), getWebInfJars(true), "JAR", "webapp", null, jarRegEx);
             VBox views = new VBox(jars);
 
-            List<Module> modules = ModuleLoader.getInstance().getModules();
+            List<Module> modules = new ArrayList<>(ModuleLoader.getInstance().getModules());
+            Collections.sort(modules);
 
             for (Module module : modules)
             {
                 if (!module.equals(core))
                 {
                     String wikiSource = getCreditsFile(module, "jars.txt");
+                    Collection<String> jarFilenames = module.getJarFilenames();
 
-                    if (null != wikiSource)
+                    if (null != wikiSource || (null != jarFilenames && !jarFilenames.isEmpty()))
                     {
-                        HttpView moduleJars = new CreditsView("jars.txt", wikiSource, module.getJarFilenames(), "JAR", "webapp", "the " + module.getName() + " Module", jarRegEx);
+                        HttpView moduleJars = new CreditsView("jars.txt", wikiSource, jarFilenames, "JAR", "webapp", "the " + module.getName() + " Module", jarRegEx);
                         views.addView(moduleJars);
                     }
                 }
@@ -838,21 +840,26 @@ public class AdminController extends SpringActionController
         private final String WIKI_LINE_SEP = "\r\n\r\n";
         private String _html;
 
-        CreditsView(String creditsFilename, String wikiSource, Collection<String> filenames, String fileType, String foundWhere, String component, String wikiSourceSearchPattern) throws IOException
+        CreditsView(String creditsFilename, @Nullable String wikiSource, @Nullable Collection<String> filenames, String fileType, String foundWhere, String component, String wikiSourceSearchPattern) throws IOException
         {
             super(fileType + " Files Distributed with " + (null == component ? "LabKey Core" : component));
 
+            // If both wikiSource and filenames are null there can't be a problem.
+            // trims/empty check allow for problem reporting if one is null but not the other.
             if (null != filenames)
-                wikiSource = wikiSource + getErrors(wikiSource, creditsFilename, filenames, fileType, foundWhere, wikiSourceSearchPattern);
+                wikiSource = StringUtils.trimToEmpty(wikiSource) + getErrors(wikiSource, creditsFilename, filenames, fileType, foundWhere, wikiSourceSearchPattern);
 
-            WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
-            if (null != wikiService)
+            if (StringUtils.isNotEmpty(wikiSource))
             {
-                String html = wikiService.getFormattedHtml(WikiRendererType.RADEOX, wikiSource);
-                _html = "<style type=\"text/css\">\ntr.table-odd td { background-color: #EEEEEE; }</style>\n" + html;
+                WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
+                if (null != wikiService)
+                {
+                    String html = wikiService.getFormattedHtml(WikiRendererType.RADEOX, wikiSource);
+                    _html = "<style type=\"text/css\">\ntr.table-odd td { background-color: #EEEEEE; }</style>\n" + html;
+                }
+                else
+                    _html = "<p class='labkey-error'>NO WIKI SERVICE AVAILABLE!</p>";
             }
-            else
-                _html = "<p class='labkey-error'>NO WIKI SERVICE AVAILABLE!</p>";
         }
 
 
@@ -861,13 +868,16 @@ public class AdminController extends SpringActionController
             Set<String> documentedFilenames = new CaseInsensitiveTreeSet();
             Set<String> documentedFilenamesCopy = new HashSet<>();
 
-            Pattern p = Pattern.compile(wikiSourceSearchPattern, Pattern.MULTILINE);
-            Matcher m = p.matcher(wikiSource);
-
-            while(m.find())
+            if (null != wikiSource)
             {
-                String found = m.group(1);
-                documentedFilenames.add(found);
+                Pattern p = Pattern.compile(wikiSourceSearchPattern, Pattern.MULTILINE);
+                Matcher m = p.matcher(wikiSource);
+
+                while(m.find())
+                {
+                    String found = m.group(1);
+                    documentedFilenames.add(found);
+                }
             }
 
             documentedFilenamesCopy.addAll(documentedFilenames);
