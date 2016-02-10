@@ -269,6 +269,8 @@ public interface Module extends Comparable<Module>
     Map<String, String> getProperties();
     Set<String> getModuleDependenciesAsSet();
     Set<Module> getResolvedModuleDependencies();
+    boolean shouldConsolidateScripts();
+    boolean shouldManageVersion();
 
     /**
      * Returns the exploded path for the module.

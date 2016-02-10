@@ -152,6 +152,9 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     protected String _resourcePath = null;
     private boolean _requireSitePermission = false;
 
+    private Boolean _consolidateScripts = null;
+    private Boolean _manageVersion = null;
+
     // for displaying development status of module
     private boolean _sourcePathMatched = false;
     private boolean _sourceEnlistmentIdMatched = false;
@@ -960,6 +963,50 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _enlistmentId = enlistmentId;
     }
 
+    @SuppressWarnings("unused")
+    public Boolean getConsolidateScripts()
+    {
+        return _consolidateScripts;
+    }
+
+    @SuppressWarnings("unused")
+    public void setConsolidateScripts(Boolean consolidate)
+    {
+        _consolidateScripts = consolidate;
+    }
+
+    @Override
+    public boolean shouldConsolidateScripts()
+    {
+        // Default value depends on location -- we don't consolidate external modules
+        if (null == _consolidateScripts)
+            return !getSourcePath().contains("externalModules");
+
+        return _consolidateScripts;
+    }
+
+    @SuppressWarnings("unused")
+    public Boolean getManageVersion()
+    {
+        return _manageVersion;
+    }
+
+    @SuppressWarnings("unused")
+    public void setManageVersion(Boolean manageVersion)
+    {
+        _manageVersion = manageVersion;
+    }
+
+    @Override
+    public boolean shouldManageVersion()
+    {
+        // Default value depends on location -- we don't manage module versions in external modules
+        if (null == _manageVersion)
+            return !getSourcePath().contains("externalModules");
+
+        return _manageVersion;
+    }
+
     public final Map<String, String> getProperties()
     {
         Map<String, String> props = new LinkedHashMap<>();
@@ -1403,12 +1450,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     protected FilenameFilter getJarFilenameFilter()
     {
-        return new FilenameFilter() {
-            public boolean accept(File dir, String name)
-            {
-                return isRuntimeJar(name);
-            }
-        };
+        return (dir, name) -> isRuntimeJar(name);
     }
 
     public static boolean isRuntimeJar(String name)

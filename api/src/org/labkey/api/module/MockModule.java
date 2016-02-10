@@ -336,6 +336,18 @@ public class MockModule implements Module
     }
 
     @Override
+    public boolean shouldConsolidateScripts()
+    {
+        return false;
+    }
+
+    @Override
+    public boolean shouldManageVersion()
+    {
+        return false;
+    }
+
+    @Override
     public Map<String, String> getProperties()
     {
         return null;
