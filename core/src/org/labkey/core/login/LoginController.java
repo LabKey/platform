@@ -1243,7 +1243,10 @@ public class LoginController extends SpringActionController
             // the login.html is in the core/resources/views
             view = SimpleAction.getModuleHtmlView(ModuleLoader.getInstance().getModule("core"), loginAction, null);
         }
-        view.setFrame(WebPartView.FrameType.NONE);
+        if (null != view)
+        {
+            view.setFrame(WebPartView.FrameType.NONE);
+        }
         return view;
     }
 
