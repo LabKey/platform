@@ -17,6 +17,7 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.collections15.multimap.MultiHashMap;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -26,7 +27,9 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
+import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
@@ -111,6 +114,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayTableMetadata;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
@@ -134,6 +138,8 @@ import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -162,6 +168,7 @@ import java.util.stream.Collectors;
 public class ExperimentServiceImpl implements ExperimentService.Interface
 {
     private DatabaseCache<MaterialSource> materialSourceCache;
+    private StringKeyCache<Protocol> protocolCache;
 
     public static final String DEFAULT_MATERIAL_SOURCE_NAME = "Unspecified";
 
@@ -179,9 +186,18 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     {
         if (materialSourceCache == null)
         {
-            materialSourceCache = new DatabaseCache<>(getExpSchema().getScope(), 300, "Material source");
+            materialSourceCache = new DatabaseCache<>(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Material source");
         }
         return materialSourceCache;
+    }
+
+    synchronized StringKeyCache<Protocol> getProtocolCache()
+    {
+        if (protocolCache == null)
+        {
+            protocolCache = new DatabaseCache<>(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Protocol");
+        }
+        return protocolCache;
     }
 
     public ExpRunImpl getExpRun(int rowid)
@@ -293,8 +309,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public List<ExpRunImpl> getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol)
     {
         SQLFragment sql = new SQLFragment(" SELECT ER.* "
-                    + " FROM exp.ExperimentRun ER "
-                    + " WHERE ER.Container = ? ");
+                + " FROM exp.ExperimentRun ER "
+                + " WHERE ER.Container = ? ");
         sql.add(container.getId());
         if (parentProtocol != null)
         {
@@ -304,8 +320,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         if (childProtocol != null)
         {
             sql.append("\nAND ER.RowId IN (SELECT PA.RunId "
-                + " FROM exp.ProtocolApplication PA "
-                + " WHERE PA.ProtocolLSID = ? ) ");
+                    + " FROM exp.ProtocolApplication PA "
+                    + " WHERE PA.ProtocolLSID = ? ) ");
             sql.add(childProtocol.getLSID());
         }
         return ExpRunImpl.fromRuns(new SqlSelector(getSchema(), sql).getArrayList(ExperimentRun.class));
@@ -605,7 +621,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         result.setLSID(lsid);
         result.setName(name);
         if (!name.equals(new Lsid(lsid).getObjectId()))
-            throw new IllegalArgumentException("name=" + name + " lsid="+lsid);
+            throw new IllegalArgumentException("name=" + name + " lsid=" + lsid);
         return result;
     }
 
@@ -632,16 +648,18 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     @Nullable
     public ExpSampleSetImpl getSampleSet(int rowId)
     {
-        MaterialSource ms = getMaterialSourceCache().get(String.valueOf(rowId));
+        MaterialSource ms = getMaterialSourceCache().get("ROWID/" + rowId);
 
         if (null == ms)
         {
             ms = new TableSelector(getTinfoMaterialSource()).getObject(rowId, MaterialSource.class);
 
             if (null == ms)
-                ms = MISS_MARKER;
-
-            getMaterialSourceCache().put(String.valueOf(rowId), ms);
+            {
+                getMaterialSourceCache().put("ROWID/" + rowId, MISS_MARKER);
+                return null;
+            }
+            cacheMaterialSource(ms);
         }
 
         if (MISS_MARKER == ms)
@@ -653,11 +671,34 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     @Nullable
     public ExpSampleSetImpl getSampleSet(String lsid)
     {
-        MaterialSource ms = getMaterialSource(lsid);
-        if (ms == null)
+        MaterialSource ms = getMaterialSourceCache().get(getCacheKey(lsid));
+
+        if (null == ms)
+        {
+            ms = getMaterialSource(lsid);
+
+            if (null == ms)
+            {
+                getMaterialSourceCache().put(getCacheKey(lsid), MISS_MARKER);
+                return null;
+            }
+            cacheMaterialSource(ms);
+        }
+
+        if (MISS_MARKER == ms)
             return null;
+
         return new ExpSampleSetImpl(ms);
     }
+
+
+    void cacheMaterialSource(MaterialSource ms)
+    {
+        DatabaseCache<MaterialSource> c = getMaterialSourceCache();
+        c.put("ROWID/" + ms.getRowId(), ms);
+        c.put(getCacheKey(ms.getLSID()), ms);
+    }
+
 
     public Map<String, ExpSampleSet> getSampleSetsForRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType type)
     {
@@ -700,10 +741,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         for (Map<String, Object> queryResult : queryResults)
         {
             ExpSampleSet sampleSet = null;
-            Number sampleSetCount = (Number)queryResult.get("SampleSetCount");
+            Number sampleSetCount = (Number) queryResult.get("SampleSetCount");
             if (sampleSetCount.intValue() == 1)
             {
-                String sampleSetLSID = (String)queryResult.get("SampleSetLSID");
+                String sampleSetLSID = (String) queryResult.get("SampleSetLSID");
                 if (!lsidToSampleSet.containsKey(sampleSetLSID))
                 {
                     sampleSet = getSampleSet(sampleSetLSID);
@@ -718,7 +759,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             {
                 sampleSet = defaultSampleSet;
             }
-            result.put((String)queryResult.get("Role"), sampleSet);
+            result.put((String) queryResult.get("Role"), sampleSet);
         }
         return result;
     }
@@ -763,22 +804,82 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return experiment == null ? null : new ExpExperimentImpl(experiment);
     }
 
+
     public ExpProtocolImpl getExpProtocol(int rowid)
     {
-        Protocol p = new TableSelector(getTinfoProtocol(), new SimpleFilter(FieldKey.fromParts("RowId"), rowid), null).getObject(Protocol.class);
-        return p == null ? null : new ExpProtocolImpl(p);
+        return getExpProtocol(rowid, true);
     }
+
+    public ExpProtocolImpl getExpProtocol(int rowid, boolean useCache)
+    {
+        Protocol result;
+
+        if (useCache)
+        {
+            result = getProtocolCache().get("ROWID/" + rowid);
+            if (null != result)
+                return new ExpProtocolImpl(result);
+        }
+
+        result = new TableSelector(getTinfoProtocol(), new SimpleFilter(FieldKey.fromParts("RowId"), rowid), null).getObject(Protocol.class);
+
+        if (null != result && useCache)
+        {
+            cacheProtocol(result);
+        }
+
+        return result == null ? null : new ExpProtocolImpl(result);
+    }
+
 
     public ExpProtocolImpl getExpProtocol(String lsid)
     {
-        Protocol result = new TableSelector(getTinfoProtocol(), new SimpleFilter(FieldKey.fromParts("LSID"), lsid), null).getObject(Protocol.class);
+        return getExpProtocol(lsid, true);
+    }
+
+    public ExpProtocolImpl getExpProtocol(String lsid, boolean useCache)
+    {
+        Protocol result;
+
+        if (useCache)
+        {
+            result = getProtocolCache().get(getCacheKey(lsid));
+            if (null != result)
+                return new ExpProtocolImpl(result);
+        }
+
+        result = new TableSelector(getTinfoProtocol(), new SimpleFilter(FieldKey.fromParts("LSID"), lsid), null).getObject(Protocol.class);
+
+        if (null != result && useCache)
+        {
+            cacheProtocol(result);
+        }
+
         return result == null ? null : new ExpProtocolImpl(result);
     }
+
+    private void cacheProtocol(Protocol p)
+    {
+        StringKeyCache<Protocol> c = getProtocolCache();
+        c.put(getCacheKey(p.getLSID()), p);
+        c.put("ROWID/" + p.getRowId(), p);
+    }
+
+    private void uncacheProtocol(Protocol p)
+    {
+        StringKeyCache<Protocol> c = getProtocolCache();
+        c.remove(getCacheKey(p.getLSID()));
+        c.remove("ROWID/" + p.getRowId());
+        //TODO I don't think we're using a DbCache for protocols...
+        DbCache.remove(getTinfoProtocol(), getCacheKey(p.getLSID()));
+    }
+
 
     public ExpProtocolImpl getExpProtocol(Container container, String name)
     {
         return getExpProtocol(generateLSID(container, ExpProtocol.class, name));
     }
+
 
     public ExpProtocolImpl createExpProtocol(Container container, ExpProtocol.ApplicationType type, String name)
     {
@@ -1253,6 +1354,22 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     @Override
     public Pair<Set<ExpData>, Set<ExpMaterial>> getParents(ExpProtocolOutput start)
     {
+        Pair<Set<ExpData>, Set<ExpMaterial>> newHotness   = getParentsNewHotness(start);
+
+        Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted = null;
+        assert null != (oldAndBusted = getParentsOldAndBusted(start));
+        assert oldAndBusted.first.equals(newHotness.first);
+        assert oldAndBusted.second.equals(newHotness.second);
+
+        return newHotness;
+    }
+
+
+    /**
+     * walk experiment graph in memory, with tons queries, mostly repetitive queries over and over again
+     **/
+    private Pair<Set<ExpData>, Set<ExpMaterial>> getParentsOldAndBusted(ExpProtocolOutput start)
+    {
         if (isUnknownMaterial(start))
             return Pair.of(Collections.emptySet(), Collections.emptySet());
 
@@ -1288,11 +1405,24 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             }
         }
         return Pair.of(parentData, parentMaterials);
-
     }
+
 
     @Override
     public Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(ExpProtocolOutput start)
+    {
+        Pair<Set<ExpData>, Set<ExpMaterial>> newHotness   = getChildrenNewHotness(start);
+
+        Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted = null;
+        assert null != (oldAndBusted = getChildrenOldAndBusted(start));
+        assert oldAndBusted.first.equals(newHotness.first);
+        assert oldAndBusted.second.equals(newHotness.second);
+
+        return newHotness;
+    }
+
+
+    private Pair<Set<ExpData>, Set<ExpMaterial>> getChildrenOldAndBusted(ExpProtocolOutput start)
     {
         if (isUnknownMaterial(start))
             return Pair.of(Collections.emptySet(), Collections.emptySet());
@@ -1333,6 +1463,159 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         return Pair.of(childDatas, childMaterials);
     }
+
+
+    /**
+     * walk experiment graph with one tricky recursive query
+     * <p>
+     * <p>
+     * TWO BIG PROBLEMS
+     * <p>
+     * A) Can't mutually recurse between CTE (urg)
+     * 2) Can only reference the recursive CTE exactly once (urg)
+     * <p>
+     * NOTE: when recursing UP:      INNER M.rowid=MI.materialid AND INNER MI.targetapplicationid=PA.rowid\
+     * NOTE: when recursing DOWN:    INNER PA.rowid=D.sourceapplicationid AND OUTER M.rowid=MI.materialid
+     * <p>
+     * NOTE: it is very unfortunately that experiment objects do not have globally unique objectids
+     * NOTE: this requires that we join internally on rowid, but globally on lsid...
+     * <p>
+     * each row in the result represents one 'edge' or 'leaf/root' in the experiment graph, that is to say
+     * nodes (material,data,protocolapplication) may appear more than once, but edges shouldn't
+     **/
+    private Pair<Set<ExpData>, Set<ExpMaterial>> getParentsNewHotness(ExpProtocolOutput start)
+    {
+        return getExperimentDataAndMaterials(start, true, false);
+    }
+
+
+    /**
+     * walk experiment graph with one tricky recursive query
+     **/
+    public Pair<Set<ExpData>, Set<ExpMaterial>> getChildrenNewHotness(ExpProtocolOutput start)
+    {
+        return getExperimentDataAndMaterials(start, false, true);
+    }
+
+
+    static final String exp_graph_pgsql;
+    static final String exp_graph_mssql;
+
+    static
+    {
+        try
+        {
+            String exp_graph_sql = IOUtils.toString(ExperimentServiceImpl.class.getResourceAsStream("ExperimentRunGraph.sql"), "UTF-8");
+            exp_graph_pgsql = StringUtils.replace(exp_graph_sql, "/*RECURSIVE*/", "RECURSIVE");
+            exp_graph_mssql = StringUtils.replace(exp_graph_sql, " VARCHAR(", " NVARCHAR(");
+        }
+        catch (IOException x)
+        {
+            throw new ConfigurationException("Cannot read file ExperimentRunGraph.sql");
+        }
+    }
+
+
+    private Pair<Set<ExpData>, Set<ExpMaterial>> getExperimentDataAndMaterials(ExpProtocolOutput start, boolean up, boolean down)
+    {
+        if (isUnknownMaterial(start))
+            return Pair.of(Collections.emptySet(), Collections.emptySet());
+
+        List<ExpRun> runsToInvestigate = new ArrayList<>();
+        if (up)
+        {
+            ExpRun parentRun = start.getRun();
+            if (parentRun != null)
+                runsToInvestigate.add(parentRun);
+        }
+        if (down)
+        {
+            if (start instanceof ExpData)
+                runsToInvestigate.addAll(ExperimentServiceImpl.get().getRunsUsingDataIds(Arrays.asList(start.getRowId())));
+            else if (start instanceof ExpMaterial)
+                runsToInvestigate.addAll(ExperimentServiceImpl.get().getRunsUsingMaterials(start.getRowId()));
+            runsToInvestigate.remove(start.getRun());
+        }
+
+        if (runsToInvestigate.isEmpty())
+            return Pair.of(Collections.emptySet(), Collections.emptySet());
+
+        SQLFragment sqlf = generateExperimentTreeSQL(runsToInvestigate, up, down);
+        Set<Integer> dataids = new HashSet<>();
+        Set<Integer> materialids = new HashSet<>();
+        new SqlSelector(getExpSchema(), sqlf).forEachMap((m)->
+        {
+            String exptype = (String)m.get("child_exptype");
+            Integer rowid = (Integer)m.get("child_rowid");
+            if ("Data".equals(exptype))
+                dataids.add(rowid);
+            else if ("Material".equals(exptype))
+                materialids.add(rowid);
+            exptype = (String)m.get("parent_exptype");
+            rowid = (Integer)m.get("parent_rowid");
+            if ("Data".equals(exptype))
+                dataids.add(rowid);
+            else if ("Material".equals(exptype))
+                materialids.add(rowid);
+        });
+
+        Set<ExpData> datas = new HashSet<>();
+        List<ExpDataImpl> expdatas = ExperimentServiceImpl.get().getExpDatas(dataids);
+        if (null != expdatas)
+            datas.addAll(expdatas);
+
+        Set<ExpMaterial> materials = new HashSet<>();
+        List<ExpMaterialImpl> expmaterials = ExperimentServiceImpl.get().getExpMaterials(materialids);
+        if (null != expmaterials)
+            materials.addAll(expmaterials);
+
+        if (start instanceof ExpData)
+            datas.remove(start);
+        else if (start instanceof ExpMaterial)
+            materials.remove(start);
+
+        return Pair.of(datas,materials);
+    }
+
+
+    private SQLFragment generateExperimentTreeSQL(List<ExpRun> runs, boolean up, boolean down)
+    {
+        List<String> lsids = runs.stream().map((r)->r.getLSID()).collect(Collectors.toList());
+        String comma="";
+        SQLFragment sqlf = new SQLFragment();
+        for (String lsid : lsids)
+        {
+            sqlf.append(comma).append("?").add(lsid);
+            comma = ",";
+        }
+        return generateExperimentTreeSQL(up, down, sqlf);
+    }
+
+
+    private SQLFragment generateExperimentTreeSQL(boolean up, boolean down, SQLFragment lsidsFrag)
+    {
+        String sourcesql = getExpSchema().getSqlDialect().isPostgreSQL() ? exp_graph_pgsql : exp_graph_mssql;
+        SQLFragment sqlf = new SQLFragment(sourcesql.replace("${LSIDS}", lsidsFrag.getRawSQL()), lsidsFrag.getParams());
+        if (up && down)
+        {
+            sqlf.append("\nSELECT * FROM _GraphParents UNION SELECT * FROM _GraphChildren");
+        }
+        else if (up)
+        {
+            sqlf.append("\nSELECT * FROM _GraphParents");
+        }
+        else if (down)
+        {
+            sqlf.append("\nSELECT * FROM _GraphChildren");
+        }
+        else
+        {
+            sqlf.append("\nSELECT * FROM _Seed");
+        }
+        return sqlf;
+    }
+
+
 
     private boolean isUnknownMaterial(ExpProtocolOutput output)
     {
@@ -1623,6 +1906,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public void clearCaches()
     {
         getMaterialSourceCache().clear();
+        getProtocolCache().clear();
     }
 
     public ExpProtocolApplication getExpProtocolApplication(String lsid)
@@ -2015,7 +2299,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 {
                     throw new IllegalArgumentException("Attempting to delete a Protocol from another container");
                 }
-                DbCache.remove(getTinfoProtocol(), getCacheKey(protocol.getLSID()));
+                uncacheProtocol(protocol);
                 OntologyManager.deleteOntologyObjects(c, protocol.getLSID());
             }
 
@@ -3064,6 +3348,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             else
             {
                 result = Table.update(user, getTinfoProtocol(), protocol, protocol.getRowId());
+                uncacheProtocol(protocol);
             }
 
             Collection<ProtocolParameter> protocolParams = protocol.retrieveProtocolParameters().values();
