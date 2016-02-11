@@ -1558,6 +1558,7 @@ query/webapp/query/query.png -text
 query/webapp/query/queryDesigner.js -text
 query/webapp/query/schemaBrowser.css -text
 query/webapp/query/sql.gif -text
+query/webapp/query/testquery.js -text
 query/webapp/query/validateQueries.js -text
 query/webapp/reports/ScriptReportPanel.css -text
 query/webapp/reports/ScriptReportPanel.js -text

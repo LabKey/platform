@@ -90,6 +90,7 @@ import org.labkey.api.view.UpdateView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.data.xml.TableType;
@@ -6254,6 +6255,26 @@ public class QueryController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("schemas", sourcesAndSchemas);
             return response;
+        }
+    }
+
+
+    // could make this requires(ReadPermission), but it could be pretty easy to abuse, or maybe RequiresLogin && ReadPermission
+    @RequiresSiteAdmin
+    public class TestSQLAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            getPageConfig().addClientDependency(ClientDependency.fromPath("internal/jQuery"));
+            getPageConfig().addClientDependency(ClientDependency.fromPath("clientapi"));
+            return new HtmlView("<script src='" + AppProps.getInstance().getContextPath() + "/query/testquery.js'></script><div id=testQueryDiv style='min-height:600px;min-width:800px;'></div>");
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
         }
     }
 }
