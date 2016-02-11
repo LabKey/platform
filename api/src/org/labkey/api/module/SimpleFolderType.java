@@ -189,12 +189,6 @@ public class SimpleFolderType extends MultiPortalFolderType
         FolderTab tab = new FolderTab(Portal.DEFAULT_PORTAL_PAGE_ID, caption)
         {
             @Override
-            public boolean isSelectedPage(ViewContext viewContext)
-            {
-                return true;
-            }
-
-            @Override
             public ActionURL getURL(Container container, User user)
             {
                 return PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(container);
