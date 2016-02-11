@@ -145,46 +145,56 @@
     reportConfig.put("cached", bean.isCached());
 
     reportConfig.put("helpHtml", helpHtml);
-
 %>
-<labkey:scriptDependency/>
-<div id="<%= h(renderId)%>" class="script-report-editor"></div>
+
 <script type="text/javascript">
-    Ext4.onReady(function(){
 
-        var panel = Ext4.create('LABKEY.ext4.ScriptReportPanel', {
-            renderTo        : <%=q(renderId)%>,
-            readOnly        : <%=readOnly%>,
-            minHeight       : 500,
-            minWidth        : 500,
-            initialURL      : <%=q(initialViewURL.getLocalURIString())%>,
-            saveURL         : <%=q(saveURL.getLocalURIString())%>,
-            baseURL         : <%=q(baseViewURL.getLocalURIString())%>,
-            preferSourceTab : <%=mode.preferSourceTab()%>,
+    /**
+     * Callback to run the script report panel after all dependent scripts are loaded. Issue : 25130
+     */
+    function createScriptReportPanel() {
 
-            redirectUrl     : <%=q(bean.getRedirectUrl())%>,
+        Ext4.onReady(function(){
 
-            sharedScripts   : <%=text(jsonMapper.writeValueAsString(sharedScripts))%>,
-            reportConfig    : <%=text(jsonMapper.writeValueAsString(reportConfig))%>,
-            script          : <%=q(StringUtils.trimToEmpty(bean.getScript()))%>
-        });
+            var panel = Ext4.create('LABKEY.ext4.ScriptReportPanel', {
+                renderTo        : <%=q(renderId)%>,
+                readOnly        : <%=readOnly%>,
+                minHeight       : 500,
+                minWidth        : 500,
+                initialURL      : <%=q(initialViewURL.getLocalURIString())%>,
+                saveURL         : <%=q(saveURL.getLocalURIString())%>,
+                baseURL         : <%=q(baseViewURL.getLocalURIString())%>,
+                preferSourceTab : <%=mode.preferSourceTab()%>,
 
-        var _LOCK = false; // prevents recursive panel adjustments
-        panel.on('afterlayout', function(p) {
-            if (!_LOCK) {
-                _LOCK = true;
-                var elWidth = Ext4.Element.getViewWidth();
-                if (p.getWidth() > elWidth) {
-                    p.setWidth(elWidth - 50);
+                redirectUrl     : <%=q(bean.getRedirectUrl())%>,
+
+                sharedScripts   : <%=text(jsonMapper.writeValueAsString(sharedScripts))%>,
+                reportConfig    : <%=text(jsonMapper.writeValueAsString(reportConfig))%>,
+                script          : <%=q(StringUtils.trimToEmpty(bean.getScript()))%>
+            });
+
+            var _LOCK = false; // prevents recursive panel adjustments
+            panel.on('afterlayout', function(p) {
+                if (!_LOCK) {
+                    _LOCK = true;
+                    var elWidth = Ext4.Element.getViewWidth();
+                    if (p.getWidth() > elWidth) {
+                        p.setWidth(elWidth - 50);
+                    }
+                    _LOCK = false;
                 }
-                _LOCK = false;
-            }
+            });
+
+            var _resize = function(w,h) {
+                LABKEY.ext4.Util.resizeToViewport(panel, w, -1); // don't fit to height
+            };
+
+            Ext4.EventManager.onWindowResize(_resize);
         });
-
-        var _resize = function(w,h) {
-            LABKEY.ext4.Util.resizeToViewport(panel, w, -1); // don't fit to height
-        };
-
-        Ext4.EventManager.onWindowResize(_resize);
-    });
+    };
 </script>
+
+<labkey:scriptDependency callback="createScriptReportPanel" scope="this"/>
+<div id="<%= h(renderId)%>" class="script-report-editor"></div>
+
+

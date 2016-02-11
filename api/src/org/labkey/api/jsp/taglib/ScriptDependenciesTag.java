@@ -34,6 +34,8 @@ import java.util.LinkedHashSet;
 public class ScriptDependenciesTag extends SimpleTagBase
 {
     private boolean _ajaxOnly;
+    private String _callback;
+    private String _scope;
 
     @Override
     public void doTag() throws JspException, IOException
@@ -68,12 +70,29 @@ public class ScriptDependenciesTag extends SimpleTagBase
                     if (!includes.isEmpty() || !cssScripts.isEmpty())
                     {
                         StringBuilder sb = new StringBuilder();
-
                         sb.append("<script type=\"text/javascript\">");
 
-                        for (String script : includes)
+                        if (_callback != null && _scope != null)
                         {
-                            sb.append("\tLABKEY.requiresScript('").append(script).append("');\n");
+                            StringBuilder files = new StringBuilder("[");
+                            String delim = "";
+                            for (String script : includes)
+                            {
+                                files.append(delim);
+                                files.append("'").append(script).append("'");
+
+                                delim = ",";
+                            }
+                            files.append(']');
+                            sb.append("\tLABKEY.requiresScript(").append(files).append(",").append(_callback).append(",").
+                                    append(_scope).append(", true);\n");
+                        }
+                        else
+                        {
+                            for (String script : includes)
+                            {
+                                sb.append("\tLABKEY.requiresScript('").append(script).append("');\n");
+                            }
                         }
 
                         for (String script : cssScripts)
@@ -98,5 +117,25 @@ public class ScriptDependenciesTag extends SimpleTagBase
     public void setAjaxOnly(boolean ajaxOnly)
     {
         _ajaxOnly = ajaxOnly;
+    }
+
+    public String getCallback()
+    {
+        return _callback;
+    }
+
+    public void setCallback(String callback)
+    {
+        _callback = callback;
+    }
+
+    public String getScope()
+    {
+        return _scope;
+    }
+
+    public void setScope(String scope)
+    {
+        _scope = scope;
     }
 }

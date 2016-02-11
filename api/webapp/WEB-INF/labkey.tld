@@ -287,7 +287,14 @@
         <attribute>
             <name>ajaxOnly</name>
             <required>false</required>
-            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>callback</name>
+            <required>false</required>
+        </attribute>
+        <attribute>
+            <name>scope</name>
+            <required>false</required>
         </attribute>
     </tag>
 </taglib>
