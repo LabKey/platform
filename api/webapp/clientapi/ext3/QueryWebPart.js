@@ -319,8 +319,8 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         
         if (config.removeableFilters)
         {
-            // Translate the set of filters that are removeable to be included as the initial set of URL parameters
-            LABKEY.Filter.appendFilterParams(this.userFilters, config.removeableFilters, this.dataRegionName);
+            // Translate the set of filters that are removable to be included as the initial set of URL parameters
+            LABKEY.Filter.appendFilterParams(this._getUserFilters(), config.removeableFilters, this.dataRegionName);
         }
 
         if (config.removeableSort)
@@ -386,27 +386,27 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         // 12187: Copy user's current URL filters/sort and add them to qsParamsToIgnore so they aren't added when building the DataRegion's URL.
         var params = LABKEY.ActionURL.getParameters();
         this.qsParamsToIgnore = {};
-        this.userFilters = {};
+        this._clearUserFilters();
         this.userSort = "";
         this.userContainerFilter = "";
         for (var key in params)
         {
-            if (!params.hasOwnProperty(key))
-                continue;
-            if (key.indexOf(this.dataRegionName + ".") == 0 && key.indexOf("~") > -1)
-            {
-                this.userFilters[key] = params[key];
-                this.qsParamsToIgnore[key] = true;
-            }
-            else if (key == this.dataRegionName + ".sort")
-            {
-                this.userSort = params[key];
-                this.qsParamsToIgnore[key] = true;
-            }
-            else if (key == this.dataRegionName + ".containerFilterName")
-            {
-                this.userContainerFilter = params[key];
-                this.qsParamsToIgnore[key] = true;
+            if (params.hasOwnProperty(key)) {
+                if (key.indexOf(this.dataRegionName + ".") == 0 && key.indexOf("~") > -1)
+                {
+                    this._addUserFilter(key, params[key]);
+                    this.qsParamsToIgnore[key] = true;
+                }
+                else if (key == this.dataRegionName + ".sort")
+                {
+                    this.userSort = params[key];
+                    this.qsParamsToIgnore[key] = true;
+                }
+                else if (key == this.dataRegionName + ".containerFilterName")
+                {
+                    this.userContainerFilter = params[key];
+                    this.qsParamsToIgnore[key] = true;
+                }
             }
         }
     },
@@ -414,6 +414,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
     createParams : function () {
         //setup the params
         var params = {};
+        var regionName = this.dataRegionName;
         var name;
         params["webpart.name"] = "Query";
         LABKEY.Utils.applyTranslated(params, this, this._paramTranslationMap, true, false);
@@ -421,78 +422,59 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         // 10197: Add queryName and viewName parameters both with and without dataRegionName prefix.
         // Unprefixed queryName and viewName parameters are required to bind when 'allowChooseQuery' or 'allowChooseView' are false.
         // Prefixed queryName and viewName parameters are required when generating export urls -- any non-prefixed parameters will be stripped in QueryView.urlFor().
-        params[this.dataRegionName + ".queryName"] = this.queryName;
+        params[regionName + ".queryName"] = this.queryName;
         if (this.viewName)
-            params[this.dataRegionName + ".viewName"] = this.viewName;
+            params[regionName + ".viewName"] = this.viewName;
         if (this.reportId)
-            params[this.dataRegionName + ".reportId"] = this.reportId;
+            params[regionName + ".reportId"] = this.reportId;
         if (this.containerFilter)
-            params[this.dataRegionName + ".containerFilterName"] = this.containerFilter;
+            params[regionName + ".containerFilterName"] = this.containerFilter;
         if (this.showRows)
-            params[this.dataRegionName + ".showRows"] = this.showRows;
+            params[regionName + ".showRows"] = this.showRows;
         if (this.maxRows >= -1)
-            params[this.dataRegionName + ".maxRows"] = this.maxRows;
+            params[regionName + ".maxRows"] = this.maxRows;
         if (this.offset)
-            params[this.dataRegionName + ".offset"] = this.offset;
+            params[regionName + ".offset"] = this.offset;
         if (this.quickChartDisabled)
-            params[this.dataRegionName + ".quickChartDisabled"] = this.quickChartDisabled;
+            params[regionName + ".quickChartDisabled"] = this.quickChartDisabled;
 
         // Sorts configured by the user when interacting with the grid. We need to pass these as URL parameters.
         if (this.userSort && this.userSort.length > 0)
-            params[this.dataRegionName + ".sort"] = this.userSort;
+        {
+            params[regionName + ".sort"] = this.userSort;
+        }
 
         //add user filters (already in encoded form)
-        if (this.userFilters)
+        Ext.iterate(this._getUserFilters(), function(key, values)
         {
-            for (name in this.userFilters)
-            {
-                if (this.userFilters.hasOwnProperty(name))
-                    params[name] = this.userFilters[name];
-            }
-        }
+            params[key] = values;
+        });
 
         if (this.userContainerFilter)
         {
-            params[this.dataRegionName + ".containerFilterName"] = this.userContainerFilter;
+            params[regionName + ".containerFilterName"] = this.userContainerFilter;
         }
 
-        if (this.parameters)
+        Ext.iterate(this.parameters, function(name, param)
         {
-            for (name in this.parameters)
+            var key = name;
+            if (key.indexOf(regionName + ".param.") !== 0)
             {
-                if (this.parameters.hasOwnProperty(name))
-                {
-                    var key = name;
-                    if (key.indexOf(this.dataRegionName + ".param.") !== 0)
-                        key = this.dataRegionName + ".param." + name;
-
-                    params[key] = this.parameters[name];
-                }
+                key = regionName + ".param." + name;
             }
-        }
-
-        // XXX: Uncomment when UI supports adding/removing aggregates as URL parameters just like filters/sorts
-        //if (this.userAggregates)
-        //{
-        //    for (var name in this.userAggregates)
-        //    {
-        //        if (this.userAggregates.hasOwnProperty(name))
-        //            params[name] = this.userAggregates[name];
-        //    }
-        //}
+            params[key] = param;
+        });
 
         //forward query string parameters for this data region
         //except those we should specifically ignore
         var qsParams = LABKEY.ActionURL.getParameters();
 
-        for (var param in qsParams)
+        Ext.iterate(qsParams, function(param, value) 
         {
-            if (qsParams.hasOwnProperty(param)) {
-                if (-1 != param.indexOf(this.dataRegionName + ".") && !this.qsParamsToIgnore[param]) {
-                    params[param] = qsParams[param];
-                }
+            if (-1 != param.indexOf(regionName + ".") && !this.qsParamsToIgnore[param]) {
+                params[param] = value;
             }
-        }
+        }, this);
 
         //Ext uses a param called _dc to defeat caching, and it may be
         //on the URL if the Query web part has done a sort or filter
@@ -539,7 +521,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         var params = this.createParams(), json = {};
 
         // ensure SQL is not on the URL -- we allow any property to be pulled through when creating parameters.
-        if (params['sql'])
+        if (params.sql)
         {
             json.sql = params.sql;
             delete params.sql;
@@ -554,7 +536,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         if (this.filters)
             LABKEY.Filter.appendFilterParams(json.filters, this.filters, this.dataRegionName);
 
-        // Non-removeable sorts. We need to pass these as JSON, not on the URL.
+        // Non-removable sorts. We need to pass these as JSON, not on the URL.
         if (this.sort)
             json.filters[this.dataRegionName + ".sort"] = this.sort;
 
@@ -687,6 +669,29 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         dr.on("beforerefresh", this.beforeRefresh, this);
     },
 
+    _addUserFilter : function(key, value) {
+        if (!this.userFilters[key]) {
+            this.userFilters[key] = [];
+        }
+
+        this.userFilters[key].push(value);
+    },
+
+    _clearUserFilters : function() {
+        this.userFilters = {};
+    },
+
+    _deleteUserFilter : function(key) {
+        if (this.userFilters.hasOwnProperty(key)) {
+            delete this.userFilters[key];
+        }
+    },
+
+    _getUserFilters : function() {
+        // return a clone
+        return Ext.apply({}, this.userFilters);
+    },
+
     mask : function(message) {
         if (this.masking === false) return;            
         var el = Ext.get(this.maskEl || this.renderTo);
@@ -788,10 +793,10 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         this.offset = 0;
 
         // reset the user filters
-        this.userFilters = {};
+        this._clearUserFilters();
         for (var i = 0; i < filterPairs.length; i++)
         {
-            this.userFilters[filterPairs[i][0]] = filterPairs[i][1];
+            this._addUserFilter(filterPairs[i][0], filterPairs[i][1]);
         }
         this.render();
 
@@ -802,14 +807,15 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
     beforeClearFilter : function(dataRegion, columnName) {
         this.offset = 0;
         var namePrefix = this.dataRegionName + "." + columnName + "~";
-        if (this.userFilters)
+
+        Ext.iterate(this._getUserFilters(), function(key)
         {
-            for (var name in this.userFilters)
+            if (key.indexOf(namePrefix) >= 0)
             {
-                if (this.userFilters.hasOwnProperty(name) && name.indexOf(namePrefix) >= 0)
-                    delete this.userFilters[name];
+                this._deleteUserFilter(key);
             }
-        }
+        }, this);
+
         this.render();
         return false;
     },
@@ -817,7 +823,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
     beforeClearAllFilters : function(dataRegion) {
         this.fireEvent('beforeclearallfilters', dataRegion);
         this.offset = 0;
-        this.userFilters = null;
+        this._clearUserFilters();
         this.render();
         return false;
     },
@@ -860,13 +866,13 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
 
         if (urlParameters)
         {
-            this.userFilters = {};
+            this._clearUserFilters();
             if (urlParameters.filter && urlParameters.filter.length > 0)
             {
                 for (var i = 0; i < urlParameters.filter.length; i++)
                 {
                     var filter = urlParameters.filter[i];
-                    this.userFilters[this.dataRegionName + "." + filter.fieldKey + "~" + filter.op] = filter.value;
+                    this._addUserFilter(this.dataRegionName + "." + filter.fieldKey + "~" + filter.op, filter.value);
                 }
             }
 

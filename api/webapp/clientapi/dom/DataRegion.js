@@ -265,7 +265,7 @@ if (!LABKEY.DataRegions) {
 
                 userContainerFilter: undefined, // TODO: Incorporate this with the standard containerFilter
 
-                userFilters: {},
+                userFilters: {}, // TODO: Consider implement fix for 25337
 
                 /**
                  * Name of the custom view to which this DataRegion is bound, may be blank. Read-only.
