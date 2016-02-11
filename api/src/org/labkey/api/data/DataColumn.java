@@ -110,7 +110,7 @@ public class DataColumn extends DisplayColumn
 
     protected ColumnInfo getDisplayField(ColumnInfo col, boolean withLookups)
     {
-        if (!withLookups)
+        if (!withLookups || col == null)
             return col;
         ColumnInfo display = col.getDisplayField();
         return null==display ? col : display;
