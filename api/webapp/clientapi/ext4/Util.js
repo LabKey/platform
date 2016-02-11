@@ -622,18 +622,18 @@
          * The resulting config object is tailored for usage in a form, as opposed to a grid. Unlike getEditorConfig, if the metadata
          * contains a gridEditorConfig property, this config object will be applied to the resulting field.  See getDefaultEditorConfig for config options.
          * @param {Object} meta as returned by {@link LABKEY.Query.selectRows}. See {@link LABKEY.Query.SelectRowsResults}.
-         * @param {Object} config as returned by {@link LABKEY.Query.selectRows}. See {@link LABKEY.Query.SelectRowsResults}.
-         * @returns {Object} An Ext config object
+         * @param {Object} [config] as returned by {@link LABKEY.Query.selectRows}. See {@link LABKEY.Query.SelectRowsResults}.
+         * @returns {Object} An Ext 4.x config object
          */
         getFormEditorConfig: function(meta, config) {
             var editor = Util.getDefaultEditorConfig(meta);
 
-            // now we allow overrides of default behavior, in order of precendence
-            if(meta.editorConfig)
+            // now we allow overrides of default behavior, in order of precedence
+            if (meta.editorConfig)
                 Ext4.Object.merge(editor, meta.editorConfig);
-            if(meta.formEditorConfig)
+            if (meta.formEditorConfig)
                 Ext4.Object.merge(editor, meta.formEditorConfig);
-            if(config)
+            if (config)
                 Ext4.Object.merge(editor, config);
 
             return editor;
