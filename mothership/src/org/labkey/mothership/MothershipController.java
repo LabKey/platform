@@ -57,6 +57,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
@@ -70,6 +71,7 @@ import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.GridView;
 import org.labkey.api.view.HtmlView;
@@ -773,6 +775,11 @@ public class MothershipController extends SpringActionController
                     MothershipManager.get().insertException(stackTrace, report);
                 }
                 setSuccessHeader();
+            }
+            catch (RuntimeValidationException e)
+            {
+                // MothershipReport was malformed and couldn't be persisted
+                throw new BadRequestException(null, null);
             }
             catch (Exception e)
             {
