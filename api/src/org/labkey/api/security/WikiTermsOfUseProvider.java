@@ -45,9 +45,10 @@ public class WikiTermsOfUseProvider implements TermsOfUseProvider
     private static TermsOfUse NO_TERMS = new TermsOfUse(TermsOfUseType.NONE, null);
 
     @Override
-    public void verifyTermsOfUse(ViewContext context) throws RedirectException
+    public void verifyTermsOfUse(ViewContext context, boolean isBasicAuth) throws RedirectException
     {
-        if (isTermsOfUseRequired(context))
+        // Skip terms of use on basic authentication requests
+        if (!isBasicAuth && isTermsOfUseRequired(context))
         {
             ActionURL termsURL = PageFlowUtil.urlProvider(LoginUrls.class).getAgreeToTermsURL(context.getContainer(), context.getActionURL());
             throw new RedirectException(termsURL);

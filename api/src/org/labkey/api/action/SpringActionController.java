@@ -397,6 +397,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             }
             else
             {
+                // TODO: Remove this? What scenario causes this to be called?
                 BaseViewAction.checkPermissionsAndTermsOfUse(actionClass, context, null, false);
             }
 

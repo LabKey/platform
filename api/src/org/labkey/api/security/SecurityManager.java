@@ -2026,9 +2026,10 @@ public class SecurityManager
          * If a provider's terms are active and the user hasn't yet agreed to them then
          * the provider redirects to its terms action by throwing a RedirectException.
          * @param context the current ViewContext
+         * @param isBasicAuth is this a Basic authentication scenario?
          * @throws RedirectException
          */
-        void verifyTermsOfUse(ViewContext context) throws RedirectException;
+        void verifyTermsOfUse(ViewContext context, boolean isBasicAuth) throws RedirectException;
     }
 
     // Modules register a factory to add module-specific ui to the permissions page

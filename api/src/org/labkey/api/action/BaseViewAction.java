@@ -106,7 +106,7 @@ import java.util.Set;
  * Date: May 16, 2007
  * Time: 1:48:01 PM
  */
-public abstract class BaseViewAction<FORM> implements Controller, HasViewContext, Validator,  HasPageConfig, PermissionCheckable
+public abstract class BaseViewAction<FORM> implements Controller, HasViewContext, Validator, HasPageConfig, PermissionCheckable
 {
     protected static final Logger logger = Logger.getLogger(BaseViewAction.class);
     private ViewContext _context = null;
@@ -648,14 +648,14 @@ public abstract class BaseViewAction<FORM> implements Controller, HasViewContext
             return this.autoGrowCollectionLimit;
         }
 
-        public Object convertIfNecessary(Object value, Class requiredType) throws TypeMismatchException
+        public <T> T convertIfNecessary(Object value, Class<T> requiredType) throws TypeMismatchException
         {
             if (value == null)
                 return null;
-            return ConvertUtils.convert(String.valueOf(value), requiredType);
+            return (T)ConvertUtils.convert(String.valueOf(value), requiredType);
         }
 
-        public Object convertIfNecessary(Object value, Class requiredType, MethodParameter methodParam) throws TypeMismatchException
+        public <T> T convertIfNecessary(Object value, Class<T> requiredType, MethodParameter methodParam) throws TypeMismatchException
         {
             return convertIfNecessary(value, requiredType);
         }
@@ -676,8 +676,8 @@ public abstract class BaseViewAction<FORM> implements Controller, HasViewContext
         // Basic Authentication request.
         try
         {
-            boolean skipTermsOfUse = (unauthorizedType == Type.sendBasicAuth || unauthorizedType == Type.sendUnauthorized);
-            checkPermissionsAndTermsOfUse(getClass(), getViewContext(), getContextualRoles(), skipTermsOfUse);
+            boolean isSendBasic = (unauthorizedType == Type.sendBasicAuth || unauthorizedType == Type.sendUnauthorized);
+            checkPermissionsAndTermsOfUse(getClass(), getViewContext(), getContextualRoles(), isSendBasic);
         }
         catch (UnauthorizedException e)
         {
@@ -833,14 +833,12 @@ public abstract class BaseViewAction<FORM> implements Controller, HasViewContext
     }
 
 
-    public static void checkPermissionsAndTermsOfUse(Class<? extends Controller> actionClass, ViewContext context, Set<Role> contextualRoles, boolean skipTermsOfUse) throws UnauthorizedException
+    public static void checkPermissionsAndTermsOfUse(Class<? extends Controller> actionClass, ViewContext context, Set<Role> contextualRoles, boolean isSendBasic) throws UnauthorizedException
     {
         checkActionPermissions(actionClass, context, contextualRoles);
 
-        skipTermsOfUse = skipTermsOfUse || actionClass.isAnnotationPresent(IgnoresTermsOfUse.class);
-
-        if (!skipTermsOfUse)
-            verifyTermsOfUse(context);
+        if (!actionClass.isAnnotationPresent(IgnoresTermsOfUse.class))
+            verifyTermsOfUse(context, isSendBasic);
     }
 
 
@@ -849,7 +847,7 @@ public abstract class BaseViewAction<FORM> implements Controller, HasViewContext
      * each to verify terms are set via its custom mechanism. If a provider's terms are active and the user hasn't yet
      * agreed to them then the provider redirects to its terms action by throwing a RedirectException.
      */
-    public static void verifyTermsOfUse(ViewContext context) throws RedirectException
+    public static void verifyTermsOfUse(ViewContext context, boolean isSendBasic) throws RedirectException
     {
         if (context.getUser().isSearchUser())
             return;
@@ -858,12 +856,10 @@ public abstract class BaseViewAction<FORM> implements Controller, HasViewContext
         if (null == c)
             return;
 
-        // Terms are not required for Basic authentication
-        if (SecurityManager.isBasicAuthentication(context.getRequest()))
-            return;
+        boolean isBasicAuth = isSendBasic || SecurityManager.isBasicAuthentication(context.getRequest());
 
         for (TermsOfUseProvider provider : SecurityManager.getTermsOfUseProviders())
-            provider.verifyTermsOfUse(context);
+            provider.verifyTermsOfUse(context, isBasicAuth);
     }
 
 

@@ -24,5 +24,5 @@ import org.labkey.api.view.UnauthorizedException;
  */
 public interface PermissionCheckable
 {
-    public void checkPermissions() throws UnauthorizedException;
+    void checkPermissions() throws UnauthorizedException;
 }

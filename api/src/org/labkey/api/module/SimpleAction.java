@@ -173,7 +173,7 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
             }
         }
         
-        verifyTermsOfUse(getViewContext());
+        verifyTermsOfUse(getViewContext(), false);
     }
 
     public NavTree appendNavTrail(NavTree root)
