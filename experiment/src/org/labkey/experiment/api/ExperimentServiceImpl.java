@@ -1672,7 +1672,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         new SqlExecutor(getExpSchema()).execute(sql);
 
-        auditRunEvent(user, run.getProtocol(), run, null, "Run deleted");
+        ExpProtocolImpl protocol = run.getProtocol();
+        if (protocol == null)
+        {
+            throw new IllegalStateException("Could not resolve protocol for run LSID " + run.getLSID() + " with protocol LSID " + run.getDataObject().getProtocolLSID() );
+        }
+        auditRunEvent(user, protocol, run, null, "Run deleted");
     }
 
 
