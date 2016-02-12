@@ -126,16 +126,20 @@ public class ConditionalFormat extends GWTConditionalFormat
             ConditionalFormat format = new ConditionalFormat();
             ConditionalFormatFiltersType filters = xmlFormat.getFilters();
             SimpleFilter simpleFilter = new SimpleFilter();
-            for (ConditionalFormatFilterType filter : filters.getFilterArray())
+            ConditionalFormatFilterType[] filterArray = filters.getFilterArray();
+            if (filterArray != null)
             {
-                CompareType compareType = CompareType.getByURLKey(filter.getOperator().toString());
-                if (compareType != null)
+                for (ConditionalFormatFilterType filter : filterArray)
                 {
-                    simpleFilter.addClause(compareType.createFilterClause(FieldKey.fromParts(COLUMN_NAME), filter.getValue()));
-                }
-                else
-                {
-                    LOG.warn("Could not find CompareType for " + filter.getOperator() + ", ignoring");
+                    CompareType compareType = CompareType.getByURLKey(filter.getOperator().toString());
+                    if (compareType != null)
+                    {
+                        simpleFilter.addClause(compareType.createFilterClause(FieldKey.fromParts(COLUMN_NAME), filter.getValue()));
+                    }
+                    else
+                    {
+                        LOG.warn("Could not find CompareType for " + filter.getOperator() + ", ignoring");
+                    }
                 }
             }
             try
