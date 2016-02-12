@@ -30,6 +30,8 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.menu.HeaderMenu" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
+<%@ page import="org.labkey.core.notification.NotificationMenuView" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -86,6 +88,14 @@
     %>
     <a class="labkey-nomenu-text-link" href="<%=h(urlProvider(LoginUrls.class).getLoginURL())%>">Sign&nbsp;In</a>
     <%
+        }
+
+        boolean showNotifications = AppProps.getInstance().isExperimentalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATIONMENU);
+        if (showNotifications)
+        {
+            HttpView notificationMenu = NotificationMenuView.createView(currentContext);
+            if (null != notificationMenu)
+                include(notificationMenu,out);
         }
     %>
 </div>

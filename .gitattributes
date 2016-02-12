@@ -1793,6 +1793,7 @@ api/src/org/labkey/api/writer/Writer.java -text
 api/src/org/labkey/api/writer/WriterFactory.java -text
 api/src/org/labkey/api/writer/ZipFile.java -text
 api/src/org/labkey/api/writer/ZipUtil.java -text
+api/src/org/labkey/core/notification/NotificationMenuView.java -text
 api/src/org/systemsbiology/jrap/DataProcessingInfo.java -text
 api/src/org/systemsbiology/jrap/MSInstrumentInfo.java -text
 api/src/org/systemsbiology/jrap/MSOperator.java -text
