@@ -144,7 +144,7 @@ public class QueryHelper
         }
     }
 
-    private CustomView getCustomView()
+    protected CustomView getCustomView()
     {
         return QueryService.get().getCustomView(_user, _c, _user, _schemaName, _queryName, _viewName);
     }
@@ -236,5 +236,15 @@ public class QueryHelper
     public String toString()
     {
         return _schemaName + '.' + _queryName + '.' + (null == _viewName ? "" : _viewName);
+    }
+
+    protected Container getContainer()
+    {
+        return _c;
+    }
+
+    protected User getUser()
+    {
+        return _user;
     }
 }
