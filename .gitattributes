@@ -158,8 +158,6 @@ cbcassay/src/org/labkey/cbcassay/view/showDetails.jsp -text
 core/Core-API.iml -text
 core/api-src/org/labkey/api/admin/PortalBackgroundImageCache.java -text
 core/api-src/org/labkey/api/admin/TableXmlUtils.java -text
-core/api-src/org/labkey/api/admin/notification/Notification.java -text
-core/api-src/org/labkey/api/admin/notification/NotificationService.java -text
 core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationProvider.java -text
 core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationProviderImpl.java -text
 core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationResult.java -text
