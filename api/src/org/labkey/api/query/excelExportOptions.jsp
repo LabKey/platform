@@ -147,11 +147,21 @@
                 <%-- We need to build up all of the form elements ourselves because Ext.Ajax will concatentate multiple parameter values --%>
                 <%-- into a single string when the 'isUpload: true' config option is used --%>
                 function addInput(form, property, value){
-                    var newElement = document.createElement('input');
-                    newElement.setAttribute('name', property);
-                    newElement.setAttribute('type', 'hidden');
-                    newElement.setAttribute('value', value);
-                    form.appendChild(newElement);
+                    // Issue 25592. Browsers are required to canonicalize newlines to \r\n in form inputs, per the HTTP
+                    // spec (https://www.w3.org/TR/html401/interact/forms.html#h-17.13.4). This mangles the desired filter,
+                    // so put those values on the GET URL instead.
+                    if (value && (value.indexOf('\n') != -1 || value.indexOf('\r') != -1))
+                    {
+                        exportUrl = exportUrl + (exportUrl.indexOf('?') == -1 ? '?' : '&') + encodeURIComponent(property) + '=' + encodeURIComponent(value);
+                    }
+                    else
+                    {
+                        var newElement = document.createElement('input');
+                        newElement.setAttribute('name', property);
+                        newElement.setAttribute('type', 'hidden');
+                        newElement.setAttribute('value', value);
+                        form.appendChild(newElement);
+                    }
                 }
 
                 $.each(exportParams, function(prop, val) {
