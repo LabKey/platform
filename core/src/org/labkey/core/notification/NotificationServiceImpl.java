@@ -95,7 +95,9 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
 
     private List<Notification> getNotificationsByUserOrType(Container container, String type, int notifyUserId, boolean unreadOnly)
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        SimpleFilter filter = new SimpleFilter();
+        if (null != container)
+            filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("UserID"), notifyUserId);
         if (type != null)
             filter.addCondition(FieldKey.fromParts("Type"), type);
