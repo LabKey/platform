@@ -680,6 +680,8 @@ api/src/org/labkey/api/exp/api/ExpData.java -text
 api/src/org/labkey/api/exp/api/ExpDataClass.java -text
 api/src/org/labkey/api/exp/api/ExpDataRunInput.java -text
 api/src/org/labkey/api/exp/api/ExpExperiment.java -text
+api/src/org/labkey/api/exp/api/ExpLineage.java -text
+api/src/org/labkey/api/exp/api/ExpLineageOptions.java -text
 api/src/org/labkey/api/exp/api/ExpMaterial.java -text
 api/src/org/labkey/api/exp/api/ExpMaterialRunInput.java -text
 api/src/org/labkey/api/exp/api/ExpObject.java -text

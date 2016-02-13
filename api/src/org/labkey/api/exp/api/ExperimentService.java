@@ -237,6 +237,7 @@ public class ExperimentService
         Pair<Set<ExpData>, Set<ExpMaterial>> getParents(ExpProtocolOutput start);
         Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(ExpProtocolOutput start);
 
+        ExpLineage getLineage(ExpProtocolOutput start, ExpLineageOptions options);
 
         /**
          * The following methods return TableInfo's suitable for using in queries.
