@@ -202,9 +202,22 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpRunImpl getExpRun(int rowid)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowid);
+        SimpleFilter filter = new SimpleFilter().addCondition(FieldKey.fromParts(ExpRunTable.Column.RowId.name()), rowid);
         ExperimentRun run = new TableSelector(getTinfoExperimentRun(), filter, null).getObject(ExperimentRun.class);
         return run == null ? null : new ExpRunImpl(run);
+    }
+
+    private List<ExpRunImpl> getExpRuns(Collection<Integer> rowids)
+    {
+        SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpRunTable.Column.RowId.name()), rowids);
+        TableSelector selector = new TableSelector(getTinfoExperimentRun(), filter, null);
+
+        final List<ExpRunImpl> runs = new ArrayList<>(rowids.size());
+        selector.forEach(run -> {
+            runs.add(new ExpRunImpl(run));
+        }, ExperimentRun.class);
+
+        return runs;
     }
 
     public ReentrantLock getProtocolImportLock()
@@ -1555,8 +1568,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         SQLFragment sqlf = generateExperimentTreeSQL(runsToInvestigate, options);
         Set<Integer> dataids = new HashSet<>();
         Set<Integer> materialids = new HashSet<>();
-        Set<String> lsids = new HashSet<>();
-        Set<Pair<String, String>> edges = new HashSet<>();
+        Set<Integer> runids = new HashSet<>();
+        Set<ExpLineage.Edge> edges = new HashSet<>();
         new SqlSelector(getExpSchema(), sqlf).forEachMap((m)->
         {
             String parentLSID = (String)m.get("parent_lsid");
@@ -1568,22 +1581,23 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             Integer parentRowId = (Integer)m.get("parent_rowid");
             Integer childRowId = (Integer)m.get("child_rowid");
 
-            lsids.add(parentLSID);
-            lsids.add(childLSID);
-
-            edges.add(Pair.of(parentLSID, childLSID));
+            edges.add(new ExpLineage.Edge(parentLSID, childLSID, (String)m.get("role")));
 
             // process parents
             if ("Data".equals(parentExpType))
                 dataids.add(parentRowId);
             else if ("Material".equals(parentExpType))
                 materialids.add(parentRowId);
+            else if ("ExperimentRun".equals(parentExpType))
+                runids.add(parentRowId);
 
             // process children
             if ("Data".equals(childExpType))
                 dataids.add(childRowId);
             else if ("Material".equals(childExpType))
                 materialids.add(childRowId);
+            else if ("ExperimentRun".equals(childExpType))
+                runids.add(childRowId);
         });
 
         Set<ExpData> datas = new HashSet<>();
@@ -1596,12 +1610,19 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         if (null != expMaterials)
             materials.addAll(expMaterials);
 
+        Set<ExpRun> runs = new HashSet<>();
+        List<ExpRunImpl> expRuns = getExpRuns(runids);
+        if (null != expRuns)
+            runs.addAll(expRuns);
+
         if (start instanceof ExpData)
             datas.remove(start);
         else if (start instanceof ExpMaterial)
             materials.remove(start);
+        else if (start instanceof ExpRun)
+            runs.remove(start);
 
-        return new ExpLineage(start, datas, materials, edges);
+        return new ExpLineage(start, datas, materials, runs, edges);
     }
 
 
