@@ -1277,6 +1277,7 @@ public class ProjectController extends SpringActionController
     }
 
     @RequiresNoPermission
+    @IgnoresTermsOfUse
     public class GetNavigationPartAction extends ApiAction<GetWebPartForm>
     {
         String _webPartName;
