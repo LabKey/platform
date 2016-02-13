@@ -58,6 +58,8 @@ import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.ExpLineage;
+import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -138,8 +140,6 @@ import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -1485,7 +1485,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
      **/
     private Pair<Set<ExpData>, Set<ExpMaterial>> getParentsNewHotness(ExpProtocolOutput start)
     {
-        return getExperimentDataAndMaterials(start, true, false);
+        ExpLineageOptions options = new ExpLineageOptions();
+        options.setChildren(false);
+
+        ExpLineage lineage = getLineage(start, options);
+        return Pair.of(lineage.getDatas(), lineage.getMaterials());
     }
 
 
@@ -1494,7 +1498,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
      **/
     public Pair<Set<ExpData>, Set<ExpMaterial>> getChildrenNewHotness(ExpProtocolOutput start)
     {
-        return getExperimentDataAndMaterials(start, false, true);
+        ExpLineageOptions options = new ExpLineageOptions();
+        options.setParents(false);
+
+        ExpLineage lineage = getLineage(start, options);
+        return Pair.of(lineage.getDatas(), lineage.getMaterials());
     }
 
 
@@ -1516,12 +1524,16 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     }
 
 
-    private Pair<Set<ExpData>, Set<ExpMaterial>> getExperimentDataAndMaterials(ExpProtocolOutput start, boolean up, boolean down)
+    @Override
+    public ExpLineage getLineage(ExpProtocolOutput start, ExpLineageOptions options)
     {
         if (isUnknownMaterial(start))
-            return Pair.of(Collections.emptySet(), Collections.emptySet());
+            return new ExpLineage(start);
 
         List<ExpRun> runsToInvestigate = new ArrayList<>();
+        boolean up = options.isParents();
+        boolean down = options.isChildren();
+
         if (up)
         {
             ExpRun parentRun = start.getRun();
@@ -1538,47 +1550,62 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
 
         if (runsToInvestigate.isEmpty())
-            return Pair.of(Collections.emptySet(), Collections.emptySet());
+            return new ExpLineage(start);
 
-        SQLFragment sqlf = generateExperimentTreeSQL(runsToInvestigate, up, down);
+        SQLFragment sqlf = generateExperimentTreeSQL(runsToInvestigate, options);
         Set<Integer> dataids = new HashSet<>();
         Set<Integer> materialids = new HashSet<>();
+        Set<String> lsids = new HashSet<>();
+        Set<Pair<String, String>> edges = new HashSet<>();
         new SqlSelector(getExpSchema(), sqlf).forEachMap((m)->
         {
-            String exptype = (String)m.get("child_exptype");
-            Integer rowid = (Integer)m.get("child_rowid");
-            if ("Data".equals(exptype))
-                dataids.add(rowid);
-            else if ("Material".equals(exptype))
-                materialids.add(rowid);
-            exptype = (String)m.get("parent_exptype");
-            rowid = (Integer)m.get("parent_rowid");
-            if ("Data".equals(exptype))
-                dataids.add(rowid);
-            else if ("Material".equals(exptype))
-                materialids.add(rowid);
+            String parentLSID = (String)m.get("parent_lsid");
+            String childLSID = (String)m.get("child_lsid");
+
+            String parentExpType = (String)m.get("parent_exptype");
+            String childExpType = (String)m.get("child_exptype");
+
+            Integer parentRowId = (Integer)m.get("parent_rowid");
+            Integer childRowId = (Integer)m.get("child_rowid");
+
+            lsids.add(parentLSID);
+            lsids.add(childLSID);
+
+            edges.add(Pair.of(parentLSID, childLSID));
+
+            // process parents
+            if ("Data".equals(parentExpType))
+                dataids.add(parentRowId);
+            else if ("Material".equals(parentExpType))
+                materialids.add(parentRowId);
+
+            // process children
+            if ("Data".equals(childExpType))
+                dataids.add(childRowId);
+            else if ("Material".equals(childExpType))
+                materialids.add(childRowId);
         });
 
         Set<ExpData> datas = new HashSet<>();
-        List<ExpDataImpl> expdatas = ExperimentServiceImpl.get().getExpDatas(dataids);
-        if (null != expdatas)
-            datas.addAll(expdatas);
+        List<ExpDataImpl> expDatas = getExpDatas(dataids);
+        if (null != expDatas)
+            datas.addAll(expDatas);
 
         Set<ExpMaterial> materials = new HashSet<>();
-        List<ExpMaterialImpl> expmaterials = ExperimentServiceImpl.get().getExpMaterials(materialids);
-        if (null != expmaterials)
-            materials.addAll(expmaterials);
+        List<ExpMaterialImpl> expMaterials = getExpMaterials(materialids);
+        if (null != expMaterials)
+            materials.addAll(expMaterials);
 
         if (start instanceof ExpData)
             datas.remove(start);
         else if (start instanceof ExpMaterial)
             materials.remove(start);
 
-        return Pair.of(datas,materials);
+        return new ExpLineage(start, datas, materials, edges);
     }
 
 
-    private SQLFragment generateExperimentTreeSQL(List<ExpRun> runs, boolean up, boolean down)
+    private SQLFragment generateExperimentTreeSQL(List<ExpRun> runs, ExpLineageOptions options)
     {
         List<String> lsids = runs.stream().map((r)->r.getLSID()).collect(Collectors.toList());
         String comma="";
@@ -1588,30 +1615,49 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             sqlf.append(comma).append("?").add(lsid);
             comma = ",";
         }
-        return generateExperimentTreeSQL(up, down, sqlf);
+        return generateExperimentTreeSQL(sqlf, options);
     }
 
 
-    private SQLFragment generateExperimentTreeSQL(boolean up, boolean down, SQLFragment lsidsFrag)
+    private SQLFragment generateExperimentTreeSQL(SQLFragment lsidsFrag, ExpLineageOptions options)
     {
-        String sourcesql = getExpSchema().getSqlDialect().isPostgreSQL() ? exp_graph_pgsql : exp_graph_mssql;
-        SQLFragment sqlf = new SQLFragment(sourcesql.replace("${LSIDS}", lsidsFrag.getRawSQL()), lsidsFrag.getParams());
-        if (up && down)
+        String sourceSQL = getExpSchema().getSqlDialect().isPostgreSQL() ? exp_graph_pgsql : exp_graph_mssql;
+        SQLFragment sqlf = new SQLFragment(sourceSQL.replace("${LSIDS}", lsidsFrag.getRawSQL()), lsidsFrag.getParams());
+        boolean up = options.isParents();
+        boolean down = options.isChildren();
+
+        if (up || down)
         {
-            sqlf.append("\nSELECT * FROM _GraphParents UNION SELECT * FROM _GraphChildren");
-        }
-        else if (up)
-        {
-            sqlf.append("\nSELECT * FROM _GraphParents");
-        }
-        else if (down)
-        {
-            sqlf.append("\nSELECT * FROM _GraphChildren");
+            if (up)
+            {
+                sqlf.append("\nSELECT * FROM _GraphParents");
+
+                if (options.getDepth() > 0)
+                {
+                    sqlf.append("\nWHERE depth >= ").append(0 - options.getDepth());
+                }
+            }
+
+            if (up && down)
+            {
+                sqlf.append("\nUNION");
+            }
+
+            if (down)
+            {
+                sqlf.append("\nSELECT * FROM _GraphChildren");
+
+                if (options.getDepth() > 0)
+                {
+                    sqlf.append("\nWHERE depth <= ").append(options.getDepth());
+                }
+            }
         }
         else
         {
             sqlf.append("\nSELECT * FROM _Seed");
         }
+
         return sqlf;
     }
 

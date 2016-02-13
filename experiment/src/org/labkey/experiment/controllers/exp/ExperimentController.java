@@ -48,6 +48,8 @@ import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.ExpLineage;
+import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -122,7 +124,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.TidyUtil;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.DataView;
@@ -142,7 +143,6 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.*;
 import org.labkey.experiment.api.DataClass;
 import org.labkey.experiment.api.ExpDataClassImpl;
@@ -183,7 +183,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Writer;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -5528,6 +5527,50 @@ public class ExperimentController extends SpringActionController
         protected BaseRemoteService createService()
         {
             return new SampleSetServiceImpl(getViewContext());
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class LineageAction extends ApiAction<ExpLineageOptions>
+    {
+        private ExpProtocolOutput _output;
+
+        @Override
+        public void validateForm(ExpLineageOptions options, Errors errors)
+        {
+            // TODO: Type and RowId -- OR -- LSID are the only valid way of resolving an _output
+            ExperimentService.Interface service = ExperimentService.get();
+
+            if (options.getRowId() > 0)
+            {
+                _output = service.getExpMaterial(options.getRowId());
+
+                if (null == _output)
+                {
+                    _output = service.getExpData(options.getRowId());
+                }
+            }
+            else if (null != options.getLSID())
+            {
+                _output = service.getExpMaterial(options.getLSID());
+
+                if (null == _output)
+                {
+                    _output = service.getExpData(options.getLSID());
+                }
+            }
+
+            if (null == _output)
+            {
+                throw new NotFoundException("Unable to resolve Experiment Protocol output");
+            }
+        }
+
+        @Override
+        public Object execute(ExpLineageOptions options, BindException errors) throws Exception
+        {
+            ExpLineage lineage = ExperimentService.get().getLineage(_output, options);
+            return new ApiSimpleResponse(lineage.toJSON());
         }
     }
 }
