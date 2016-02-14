@@ -159,10 +159,10 @@ public class SecurityManager
         SUBMITTER("Submitter", ACL.PERM_INSERT),
         NO_PERMISSIONS("No Permissions", 0);
 
-        private int _permissions;
-        private String _label;
+        private final int _permissions;
+        private final String _label;
 
-        private PermissionSet(String label, int permissions)
+        PermissionSet(String label, int permissions)
         {
             // the following must be true for normalization to work:
             assert ACL.PERM_READOWN == ACL.PERM_READ << 4;
@@ -209,10 +209,10 @@ public class SecurityManager
         DELETE("DELETE", DeletePermission.class),
         ADMIN("ADMIN", AdminPermission.class);
 
-        private Class<? extends Permission> _permission;
-        private String _label;
+        private final Class<? extends Permission> _permission;
+        private final String _label;
 
-        private PermissionTypes(String label, Class<? extends Permission> permission)
+        PermissionTypes(String label, Class<? extends Permission> permission)
         {
             _label = label;
             _permission = permission;

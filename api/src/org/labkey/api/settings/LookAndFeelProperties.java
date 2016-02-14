@@ -72,7 +72,7 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
             return new WriteableFolderLookAndFeelProperties(c);
     }
 
-    protected LookAndFeelProperties(Container c)
+    private LookAndFeelProperties(Container c)
     {
         super(c);
         _settingsContainer = getSettingsContainer(c);
