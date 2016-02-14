@@ -404,6 +404,9 @@ public class SqlScriptController extends SpringActionController
             }
         }
 
+        // Order by schema name
+        consolidators.sort((sc1, sc2) -> sc1.getSchemaName().compareTo(sc2.getSchemaName()));
+
         return consolidators;
     }
 

@@ -5666,9 +5666,8 @@ public class AdminController extends SpringActionController
             Set<Double> ignoreSet = form.getIgnoreSet();
             String link = "";
 
-            // Option to filter out all modules whose version shouldn't be managed, or whose version matches the previous
-            // release version or 0.00. This can be helpful during the end-of-release consolidation process. Show the link
-            // only in dev mode.
+            // Option to filter out all modules whose version shouldn't be managed, or whose version matches the previous release
+            // version or 0.00. This can be helpful during the end-of-release consolidation process. Show the link only in dev mode.
             if (AppProps.getInstance().isDevMode())
             {
                 if (ignoreSet.isEmpty())
@@ -5686,7 +5685,9 @@ public class AdminController extends SpringActionController
                         .map(ModuleContext::formatVersion)
                         .collect(Collectors.toCollection(LinkedList::new));
 
-                    link = "(Currently ignoring " + ignore.toString() + ")";
+                    String unmanaged = form.isManagedOnly() ? " and unmanaged" : "";
+
+                    link = "(Currently ignoring " + ignore.toString() + unmanaged + ")";
                 }
             }
 
