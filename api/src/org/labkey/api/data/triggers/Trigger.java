@@ -95,37 +95,37 @@ public interface Trigger
 
     default void beforeInsert(TableInfo table, Container c,
                               @Nullable Map<String, Object> newRow,
-                              ValidationException errors, Map<String, Object> extraContext)
+                              ValidationException errors, Map<String, Object> extraContext) throws ValidationException
     {
     }
 
     default void beforeUpdate(TableInfo table, Container c,
                               @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow,
-                              ValidationException errors, Map<String, Object> extraContext)
+                              ValidationException errors, Map<String, Object> extraContext) throws ValidationException
     {
     }
 
     default void beforeDelete(TableInfo table, Container c,
                               @Nullable Map<String, Object> oldRow,
-                              ValidationException errors, Map<String, Object> extraContext)
+                              ValidationException errors, Map<String, Object> extraContext) throws ValidationException
     {
     }
 
     default void afterInsert(TableInfo table, Container c,
                              @Nullable Map<String, Object> newRow,
-                             ValidationException errors, Map<String, Object> extraContext)
+                             ValidationException errors, Map<String, Object> extraContext) throws ValidationException
     {
     }
 
     default void afterUpdate(TableInfo table, Container c,
                              @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow,
-                             ValidationException errors, Map<String, Object> extraContext)
+                             ValidationException errors, Map<String, Object> extraContext) throws ValidationException
     {
     }
 
     default void afterDelete(TableInfo table, Container c,
                              @Nullable Map<String, Object> oldRow,
-                             ValidationException errors, Map<String, Object> extraContext)
+                             ValidationException errors, Map<String, Object> extraContext) throws ValidationException
     {
     }
 

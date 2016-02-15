@@ -170,7 +170,7 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         _schema = schema;
         _columnMap = constructColumnMap();
         setName(name);
-        addTriggerScriptFactory(new ScriptTriggerFactory());
+        addTriggerFactory(new ScriptTriggerFactory());
         MemTracker.getInstance().put(this);
     }
 
@@ -1247,12 +1247,12 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         return null;
     }
 
-    Map<Class<? extends TriggerFactory>, TriggerFactory> triggerScriptFactories = new LinkedHashMap<>();
+    private final Map<Class<? extends TriggerFactory>, TriggerFactory> _triggerFactories = new LinkedHashMap<>();
 
-    public void addTriggerScriptFactory(TriggerFactory factory)
+    public void addTriggerFactory(TriggerFactory factory)
     {
         checkLocked();
-        triggerScriptFactories.put(factory.getClass(), factory);
+        _triggerFactories.put(factory.getClass(), factory);
     }
 
     public boolean hasTriggers(Container c)
@@ -1272,17 +1272,14 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
     }
 
 
-    boolean triggersLoaded = false;
-    Collection<Trigger> _triggers = Collections.emptyList();
+    private Collection<Trigger> _triggers = null;
 
     @NotNull
     protected Collection<Trigger> getTriggers(Container c)
     {
-        if (!triggersLoaded)
+        if (_triggers == null)
         {
-            Collection<Trigger> triggers = loadTriggers(c);
-            _triggers = triggers;
-            triggersLoaded = true;
+            _triggers = loadTriggers(c);
         }
         return _triggers;
     }
@@ -1291,11 +1288,11 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
     @NotNull
     private Collection<Trigger> loadTriggers(Container c)
     {
-        if (triggerScriptFactories == null || triggerScriptFactories.isEmpty())
+        if (_triggerFactories == null || _triggerFactories.isEmpty())
             return Collections.emptyList();
 
-        List<Trigger> scripts = new ArrayList<>(triggerScriptFactories.size());
-        for (TriggerFactory factory : triggerScriptFactories.values())
+        List<Trigger> scripts = new ArrayList<>(_triggerFactories.size());
+        for (TriggerFactory factory : _triggerFactories.values())
         {
             scripts.addAll(factory.createTrigger(c, this, null));
         }
@@ -1312,8 +1309,7 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
     @Override
     public void resetTriggers(Container c)
     {
-        triggersLoaded = false;
-        _triggers = Collections.emptyList();
+        _triggers = null;
     }
 
     @Override
