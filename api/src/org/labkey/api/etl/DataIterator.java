@@ -28,35 +28,33 @@ import java.util.stream.Stream;
 /**
  * User: matthewb
  * Date: May 16, 2011
- * Time: 1:51:48 PM
  *
  *  Sticking with the jdbc style 1-based indexing
  *
  *  Column 0 is the row number, used for error reporting
  */
-
 public interface DataIterator extends Closeable
 {
     String getDebugName();
 
-    /* count of colums, columns are indexed 1-_columnCount */
+    /** count of columns, columns are indexed 1-_columnCount */
     int getColumnCount();
 
-    /* description of column i */
+    /** description of column i */
     ColumnInfo getColumnInfo(int i);
 
-    /* to enable optimizations, could consider adding to ColumnInfo  */
+    /** to enable optimizations, could consider adding to ColumnInfo  */
     boolean isConstant(int i);
     Object getConstantValue(int i);
 
-    /*
+    /**
      * Iterators should usually just add errors to a shared ValidationException,
      * however, they may throw to force processing to stop.
      * @return True if there are more items.
      */
     boolean next() throws BatchValidationException;
 
-    /*
+    /**
      * get the value for column i, the returned object may be one of
      *
      * a) null
