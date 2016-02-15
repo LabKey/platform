@@ -25,7 +25,6 @@ announcements/src/org/labkey/announcements/AnnouncementListener.java -text
 announcements/src/org/labkey/announcements/AnnouncementModule.java -text
 announcements/src/org/labkey/announcements/AnnouncementUpgradeCode.java -text
 announcements/src/org/labkey/announcements/DailyDigestPage.java -text
-announcements/src/org/labkey/announcements/EmailNotificationPage.java -text
 announcements/src/org/labkey/announcements/EmailPreferencesPage.java -text
 announcements/src/org/labkey/announcements/EmailServiceImpl.java -text
 announcements/src/org/labkey/announcements/NotificationSettingsImporterFactory.java -text
@@ -55,9 +54,7 @@ announcements/src/org/labkey/announcements/dailyDigest.txt -text
 announcements/src/org/labkey/announcements/dailyDigestPlain.jsp -text
 announcements/src/org/labkey/announcements/discussionMenu.jsp -text
 announcements/src/org/labkey/announcements/discussionMenuAjax.jsp -text
-announcements/src/org/labkey/announcements/emailNotification.jsp -text
 announcements/src/org/labkey/announcements/emailNotification.txt -text
-announcements/src/org/labkey/announcements/emailNotificationPlain.jsp -text
 announcements/src/org/labkey/announcements/emailPreferences.jsp -text
 announcements/src/org/labkey/announcements/insert.jsp -text
 announcements/src/org/labkey/announcements/model/AnnouncementDigestProvider.java -text
