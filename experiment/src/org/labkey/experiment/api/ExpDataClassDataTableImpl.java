@@ -643,20 +643,26 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             _user = user;
         }
 
+        private BatchValidationException getErrors()
+        {
+            return _context.getErrors();
+        }
+
         @Override
         public boolean next() throws BatchValidationException
         {
             boolean hasNext = super.next();
 
-            // For each iteration, collect the lsid and alias col values
-            if (_lsidCol != null && _aliasCol != null)
+            // For each iteration, collect the lsid and alias col values.
+            // Skip all processing if there are errors upstream
+            if (!getErrors().hasErrors() && _lsidCol != null && _aliasCol != null)
             {
                 Object lsidValue = get(_lsidCol);
                 Object aliasValue = get(_aliasCol);
 
                 if (aliasValue instanceof List && lsidValue instanceof String)
                 {
-                    _lsidAliasMap.put((String)lsidValue, (List)aliasValue);
+                    _lsidAliasMap.put((String) lsidValue, (List) aliasValue);
                 }
 
                 if (!hasNext)
