@@ -15,6 +15,7 @@
  */
 package org.labkey.core.admin;
 
+import com.google.common.base.Joiner;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -5670,7 +5671,7 @@ public class AdminController extends SpringActionController
             // version or 0.00. This can be helpful during the end-of-release consolidation process. Show the link only in dev mode.
             if (AppProps.getInstance().isDevMode())
             {
-                if (ignoreSet.isEmpty())
+                if (ignoreSet.isEmpty() && !form.isManagedOnly())
                 {
                     String previousRelease = ModuleContext.formatVersion(ModuleLoader.getInstance().getPreviousReleaseVersion());
                     ActionURL url = new ActionURL(AdminController.ModulesAction.class, ContainerManager.getRoot());
@@ -5685,9 +5686,10 @@ public class AdminController extends SpringActionController
                         .map(ModuleContext::formatVersion)
                         .collect(Collectors.toCollection(LinkedList::new));
 
-                    String unmanaged = form.isManagedOnly() ? " and unmanaged" : "";
+                    String ignoreString = ignore.isEmpty() ? null : ignore.toString();
+                    String unmanaged = form.isManagedOnly() ? "unmanaged" : null;
 
-                    link = "(Currently ignoring " + ignore.toString() + unmanaged + ")";
+                    link = "(Currently ignoring " + Joiner.on(" and ").skipNulls().join(new String[]{ignoreString, unmanaged}) + ")";
                 }
             }
 

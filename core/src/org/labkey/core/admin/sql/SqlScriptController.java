@@ -75,6 +75,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class SqlScriptController extends SpringActionController
 {
@@ -206,11 +207,10 @@ public class SqlScriptController extends SpringActionController
                     allRun.addAll(SqlScriptManager.get(provider, schema).getPreviouslyRunScripts());
             }
 
-            ArrayList<SqlScript> incrementalRun = new ArrayList<>();
-
-            for (SqlScript script : allRun)
-                if (script.isIncremental())
-                    incrementalRun.add(script);
+            ArrayList<SqlScript> incrementalRun = allRun
+                .stream()
+                .filter(SqlScript::isIncremental)
+                .collect(Collectors.toCollection(ArrayList::new));
 
             appendScripts(html, allRun);
             appendScripts(html, incrementalRun);
@@ -227,15 +227,20 @@ public class SqlScriptController extends SpringActionController
                 {
                     List<SqlScript> scripts = provider.getScripts(schema);
 
-                    for (SqlScript script : scripts)
-                        if (!allRun.contains(script))
-                            allNotRun.add(script);
+                    allNotRun.addAll(
+                        scripts
+                            .stream()
+                            .filter(script -> !allRun.contains(script))
+                            .collect(Collectors.toList())
+                    );
                 }
             }
 
-            for (SqlScript script : allNotRun)
-                if (script.isIncremental())
-                    incrementalNotRun.add(script);
+            incrementalNotRun.addAll(allNotRun
+                .stream()
+                .filter(SqlScript::isIncremental)
+                .collect(Collectors.toList())
+            );
 
             appendScripts(html, allNotRun);
             appendScripts(html, incrementalNotRun);
