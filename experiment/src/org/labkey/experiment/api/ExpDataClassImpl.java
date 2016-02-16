@@ -178,9 +178,6 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     protected TableInfo getTinfo()
     {
         Domain d = getDomain();
-        if (d.getStorageTableName() == null)
-            throw new IllegalStateException("Not provisioned");
-
         return StorageProvisioner.createTableInfo(d);
     }
 
