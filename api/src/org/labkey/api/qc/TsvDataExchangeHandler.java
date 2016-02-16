@@ -51,7 +51,6 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUploadXarContext;
 import org.labkey.api.study.assay.DefaultAssayRunCreator;
 import org.labkey.api.study.assay.TsvDataHandler;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -439,8 +438,6 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
     public void processWarningsOutput(DefaultTransformResult result, Map<String, String> transformedProps, RunInfo info, String errorFile, List<File> files) throws ValidationException
     {
-        List<ValidationError> errors = new ArrayList<>();
-
         String maxSeverity = null;
 
         if(null != transformedProps)
@@ -485,14 +482,20 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 result.setFiles(files);
         }
         // if error file exists
-        else if(null != warning)
-            throw new ValidationException(warning);
-            // if error indicated in transformPropertiesFile
-        else if(null != maxSeverity && maxSeverity.equals(errLevel.ERROR.name()))
-            throw new ValidationException("Transform script has thrown errors.");
+        else if(null != warning || (null != maxSeverity && maxSeverity.equals(errLevel.ERROR.name())))
+        {
+            //Erase files from working directory
+            FileUtils.deleteQuietly(result.getUploadedFile());
+            for(File file : files) {
+                FileUtils.deleteQuietly(file);
+            }
+            if(null != warning)
+                throw new ValidationException(warning);
+                // if error indicated in transformPropertiesFile
+            else if(null != maxSeverity && maxSeverity.equals(errLevel.ERROR.name()))
+                throw new ValidationException("Transform script has thrown errors.");
+        }
 
-        if (!errors.isEmpty())
-            throw new ValidationException(errors);
     }
 
     public void processValidationOutput(RunInfo info, @Nullable Logger log) throws ValidationException
