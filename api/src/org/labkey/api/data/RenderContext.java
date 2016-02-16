@@ -366,7 +366,7 @@ public class RenderContext implements Map<String, Object>, Serializable
     {
         List<String> selectorColumns = getRecordSelectorValueColumns();
 
-        if (selectorColumns == null)
+        if (selectorColumns == null || selectorColumns.isEmpty())
         {
             selectorColumns = tinfo.getPkColumnNames();
         }
