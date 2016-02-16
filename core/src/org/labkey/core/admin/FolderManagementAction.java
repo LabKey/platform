@@ -1187,10 +1187,10 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             }
             tabs.add(new TabInfo("Missing Values", "mvIndicators", url));
 
-            //only show module properties tab if a module w/ properties to set is present
+            //only show module properties tab if a module w/ properties to set is present for current folder
             Set<Module> activeModules = getViewContext().getContainer().getActiveModules();
-            boolean showProps = _container.isRoot();
-            if (!showProps)
+            boolean showProps = false;
+            if (!_container.isRoot())
             {
                 for (Module m : activeModules)
                 {
