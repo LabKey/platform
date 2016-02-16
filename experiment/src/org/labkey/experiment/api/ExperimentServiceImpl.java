@@ -2970,6 +2970,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             deleteDomainObjects(source.getContainer(), source.getLSID());
 
             SqlExecutor executor = new SqlExecutor(getExpSchema());
+            executor.execute("UPDATE " + getTinfoDataClass() + " SET materialSourceId = NULL WHERE materialSourceId = ?", source.getRowId());
             executor.execute("DELETE FROM " + getTinfoActiveMaterialSource() + " WHERE MaterialSourceLSID = ?", source.getLSID());
             executor.execute("DELETE FROM " + getTinfoMaterialSource() + " WHERE RowId = ?", rowId);
 
