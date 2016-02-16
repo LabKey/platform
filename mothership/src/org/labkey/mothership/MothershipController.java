@@ -559,7 +559,15 @@ public class MothershipController extends SpringActionController
     {
         public ModelAndView getView(ServerInstallationForm form, BindException errors) throws Exception
         {
-            ServerInstallation installation = form.getBean();
+            ServerInstallation installation;
+            try
+            {
+                installation = form.getBean();
+            }
+            catch (Exception e)
+            {
+                throw new NotFoundException();
+            }
             if (installation == null || null == form.getPkVal())
             {
                 throw new NotFoundException();
