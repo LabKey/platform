@@ -153,12 +153,16 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
 
             Integer batchId = _object.getBatchProtocolId() != null ? getRowId() : null;
 
-            String sql = "INSERT INTO " + ExperimentServiceImpl.get().getTinfoRunList() + " ( ExperimentId, ExperimentRunId, Created, CreatedBy )  VALUES ( ? , ?, ? , ? )";
+            String sql = "INSERT INTO " + ExperimentServiceImpl.get().getTinfoRunList() + " ( ExperimentId, ExperimentRunId, Created" + (user == null ? " " : ", CreatedBy ") + ") VALUES ( ?, ?, ?" + (user == null ? " " : ", ? ") + ")";
             for (ExpRun run : newRuns)
             {
                 if (!existingRunIds.contains(run.getRowId()))
                 {
-                    SQLFragment fragment = new SQLFragment(sql, getRowId(), run.getRowId(), new Date(), user == null ? null : user.getUserId());
+                    SQLFragment fragment = new SQLFragment(sql, getRowId(), run.getRowId(), new Date());
+                    if (user != null)
+                    {
+                        fragment.add(user.getUserId());
+                    }
                     new SqlExecutor(ExperimentServiceImpl.get().getExpSchema()).execute(fragment);
 
                     // Set the experimentrun.batchId column to this ExpExperiment if it is a batch.
