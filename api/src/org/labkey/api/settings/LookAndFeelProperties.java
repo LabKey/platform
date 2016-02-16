@@ -15,6 +15,7 @@
  */
 package org.labkey.api.settings;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.FolderDisplayMode;
@@ -138,7 +139,11 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
     public String getSystemEmailAddress()
     {
         //initial login will be used as the default value. During setup user will be prompted to change.
-        return lookupStringValue(SYSTEM_EMAIL_ADDRESS_PROP, "");
+        String systemEmailAddress = lookupStringValue(SYSTEM_EMAIL_ADDRESS_PROP, "");
+        if (systemEmailAddress.isEmpty())
+            Logger.getLogger(this.getClass()).error(String.format("System Email Address became unset somehow. Visit '%s/admin-projectSettings.view' to fix it",
+                    _settingsContainer.getTitle().isEmpty() ? "" : _settingsContainer.getPath()));
+        return systemEmailAddress;
     }
 
     public String getUnsubstitutedReportAProblemPath()

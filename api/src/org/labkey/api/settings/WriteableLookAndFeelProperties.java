@@ -31,9 +31,20 @@ import static org.labkey.api.settings.LookAndFeelProperties.*;
 // Handles all the properties that can be set at the project or site level
 public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelProperties
 {
+    boolean isRoot;
     WriteableLookAndFeelProperties(Container c)
     {
         super(c);
+        isRoot = c.isRoot();
+    }
+
+    @Override
+    public void clear()
+    {
+        String systemEmailAddress = getProperties().get(SYSTEM_EMAIL_ADDRESS_PROP);
+        getProperties().clear();
+        if (isRoot)
+            getProperties().put(SYSTEM_EMAIL_ADDRESS_PROP, systemEmailAddress);
     }
 
     public void setFolderDisplayMode(FolderDisplayMode folderDisplayMode)
