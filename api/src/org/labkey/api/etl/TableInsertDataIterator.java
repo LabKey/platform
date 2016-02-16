@@ -232,9 +232,10 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
 
     private void setAutoIncrement(INSERT bound)
     {
-        if (_context.supportsAutoIncrementKey() && null != _scope && null != _conn && _scope.getSqlDialect().isSqlServer() && _table.getSelectName() != null)
+        TableInfo t = ((UpdateableTableInfo)_table).getSchemaTableInfo();
+        if (_context.supportsAutoIncrementKey() && null != _scope && null != _conn && _scope.getSqlDialect().isSqlServer() && t.getSelectName() != null)
         {
-            SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(_table.getSelectName()).append(" ").append(bound.toString());
+            SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(t.getSelectName()).append(" ").append(bound.toString());
             new SqlExecutor(_scope, _conn).execute(check);
         }
     }
