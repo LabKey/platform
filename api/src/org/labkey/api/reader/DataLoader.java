@@ -530,7 +530,12 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             // find a converter for each column type
             for (ColumnDescriptor column : _activeColumns)
                 if (column.converter == null)
-                    column.converter = ConvertUtils.lookup(column.clazz);
+                {
+                    if (column.clazz == String.class)
+                        column.converter = noopConverter;
+                    else
+                        column.converter = ConvertUtils.lookup(column.clazz);
+                }
         }
 
         public int lineNum()

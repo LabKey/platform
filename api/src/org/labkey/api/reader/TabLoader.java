@@ -39,8 +39,6 @@ import org.labkey.api.writer.PrintWriters;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -659,13 +657,6 @@ public class TabLoader extends DataLoader
 
             // make sure _columns is initialized
             ColumnDescriptor[] cols = getColumns();
-
-            // all input starts as String,  we don't need to use a String converter
-            for (ColumnDescriptor col : cols)
-            {
-                if (col.clazz == String.class)
-                    col.converter = noopConverter;
-            }
         }
 
         public void close() throws IOException
