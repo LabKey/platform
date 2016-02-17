@@ -16,6 +16,7 @@
 package org.labkey.api.admin;
 
 import org.labkey.api.action.UrlProvider;
+import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
@@ -32,7 +33,7 @@ public interface CoreUrls extends UrlProvider
     ActionURL getCustomStylesheetURL();
     ActionURL getCustomStylesheetURL(Container c);
     ActionURL getAttachmentIconURL(Container c, String filename);
-    ActionURL getBackgroundImageBaseURL(Container c);
+    ActionURL getBackgroundImageBaseURL(AttachmentParent parent);
     ActionURL getProjectsURL(Container c);
 
     /** Still needs objectURI parameter and value tacked on */
