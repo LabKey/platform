@@ -27,16 +27,15 @@ LABKEY.discuss.validate = function(form)
         // Look for double-backslashes at the end of a line, double stars (bold) or tildes (italics) around anything,
         isWiki = new RegExp(['\\\\\\\\[\\n\\r]', '\\*\\*.*\\*\\*', '\\~\\~.*\\~\\~'].join('|'));
 
-    var currentTypeDescription = renderTypeEl.options[renderTypeEl.selectedIndex].text;
     var msg = null;
     // Not all message board configurations include the rendererType option
     if (renderTypeEl && renderTypeEl.value != 'HTML' && isHTML.test(text))
     {
-        msg = 'The content of your message may contain HTML. Are you sure that you want to submit it as ' + currentTypeDescription + '?';
+        msg = 'The content of your message may contain HTML. Are you sure that you want to submit it as ' + renderTypeEl.options[renderTypeEl.selectedIndex].text + '?';
     }
     else if (renderTypeEl && renderTypeEl.value != 'Wiki' && isWiki.test(text))
     {
-        msg = 'The content of your message may contain Wiki markup. Are you sure that you want to submit it as ' + currentTypeDescription + '?';
+        msg = 'The content of your message may contain Wiki markup. Are you sure that you want to submit it as ' + renderTypeEl.options[renderTypeEl.selectedIndex].text + '?';
     }
 
     if (msg)
