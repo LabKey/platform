@@ -657,6 +657,14 @@ public class TabLoader extends DataLoader
 
             // make sure _columns is initialized
             ColumnDescriptor[] cols = getColumns();
+
+            // all input starts as String, we don't need to use a String converter
+            // unless a column has configured a custom converter (e.g ViabilityTsvDataHandler)
+            for (ColumnDescriptor col : cols)
+            {
+                if (col.converter == StringConverter && col.clazz == String.class)
+                    col.converter = noopConverter;
+            }
         }
 
         public void close() throws IOException

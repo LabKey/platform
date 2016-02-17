@@ -298,7 +298,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             int inferStartLine = _skipLines == -1 ? 1 : _skipLines;
             for (int f = 0; f < nCols; f++)
             {
-                List<Class> classesToTest = new ArrayList<Class>(Arrays.asList(CONVERT_CLASSES));
+                List<Class> classesToTest = new ArrayList<>(Arrays.asList(CONVERT_CLASSES));
 
                 int classIndex = -1;
                 //NOTE: this means we have a header row
@@ -484,7 +484,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     public abstract void close();
 
 
-    public static Converter noopConverter = new Converter()
+    public static final Converter noopConverter = new Converter()
     {
         @Override
         public Object convert(Class type, Object value)
@@ -492,6 +492,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             return value;
         }
     };
+    public static final Converter StringConverter = ConvertUtils.lookup(String.class);
 
     protected abstract class DataLoaderIterator implements CloseableIterator<Map<String, Object>>
     {
@@ -530,12 +531,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             // find a converter for each column type
             for (ColumnDescriptor column : _activeColumns)
                 if (column.converter == null)
-                {
-                    if (column.clazz == String.class)
-                        column.converter = noopConverter;
-                    else
-                        column.converter = ConvertUtils.lookup(column.clazz);
-                }
+                    column.converter = ConvertUtils.lookup(column.clazz);
         }
 
         public int lineNum()
