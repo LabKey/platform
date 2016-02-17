@@ -146,7 +146,10 @@ public class ListWriter
                     List<DisplayColumn> displayColumns = new LinkedList<>();
 
                     for (ColumnInfo col : columns)
-                        displayColumns.add(new ListExportDataColumn(col));
+                    {
+                        if (col != null)
+                            displayColumns.add(new ListExportDataColumn(col));
+                    }
 
                     // Sort the data rows by PK, #11261
                     Sort sort = ti.getPkColumnNames().size() != 1 ? null : new Sort(ti.getPkColumnNames().get(0));
