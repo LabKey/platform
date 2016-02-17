@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.attachments.AttachmentParentFactory;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -44,6 +45,7 @@ import org.labkey.api.etl.Pump;
 import org.labkey.api.etl.StandardETL;
 import org.labkey.api.etl.TriggerDataBuilderHelper;
 import org.labkey.api.etl.WrapperDataIterator;
+import org.labkey.api.etl.AttachmentDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -57,6 +59,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.writer.VirtualFile;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -67,15 +70,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: jeckels
- * Date: Apr 23, 2010
- */
 public abstract class AbstractQueryUpdateService implements QueryUpdateService
 {
     private TableInfo _queryTable = null;
     private boolean _bulkLoad = false;
     private CaseInsensitiveHashMap<ColumnInfo> _columnImportMap = null;
+    private VirtualFile _att = null;
+    private AttachmentParentFactory _attachmentParentFactory;
 
     protected AbstractQueryUpdateService(TableInfo queryTable)
     {
@@ -132,7 +133,11 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     public DataIteratorBuilder createImportETL(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
         StandardETL etl = StandardETL.forInsert(getQueryTable(), data, container, user, context);
-        return ((UpdateableTableInfo)getQueryTable()).persistRows(etl, context);
+
+        DataIteratorBuilder dib = ((UpdateableTableInfo)getQueryTable()).persistRows(etl, context);
+        dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption() == InsertOption.IMPORT ? getAttachmentDirectory(): null, container, getAttachmentParentFactory());
+
+        return dib;
     }
 
 
@@ -719,5 +724,21 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         return file;
     }
+
+    protected void setAttachmentDirectory(VirtualFile att)
+    {
+        _att = att;
+    }
+    protected VirtualFile getAttachmentDirectory()
+    {
+        return _att;
+    }
+
+    protected void setAttachmentParentFactory(AttachmentParentFactory ap)
+    {
+        _attachmentParentFactory = ap;
+    }
+    protected AttachmentParentFactory getAttachmentParentFactory() { return _attachmentParentFactory; }
+
 
 }

@@ -19,6 +19,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.BatchValidationException;
 
 import java.util.Map;
@@ -55,10 +56,13 @@ public class CoerceDataIterator extends SimpleTranslator
             ColumnInfo from = di.getColumnInfo(i);
             ColumnInfo to = targetMap.get(from.getName());
 
-            if (null != to)
+            if (null != to )
             {
                 seen.add(to.getName());
-                addConvertColumn(to.getName(), i, to.getJdbcType(), false);
+                if(to.getPropertyType() == PropertyType.ATTACHMENT)
+                    addColumn(to,i);
+                else
+                    addConvertColumn(to.getName(), i, to.getJdbcType(), false);
             }
             else
             {
