@@ -518,6 +518,11 @@
             return function(data)
             {
                 getTemplateFolders(data);
+                templateFolders = templateFolders.sort(function(a,b){
+                    return (a[1].toUpperCase() > b[1].toUpperCase()) ? 1
+                            : (a[1].toUpperCase() < b[1].toUpperCase()) ? -1
+                            : 0
+                });
                 combo.setLoading(false);
             }
         };
