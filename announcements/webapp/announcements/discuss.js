@@ -23,13 +23,24 @@ LABKEY.discuss.validate = function(form)
 
     var text = document.getElementById('body').value.toLowerCase(),
         renderTypeEl = document.getElementById('rendererType'),
-        isHTML = new RegExp(['<a', '<table', '<div', '<span'].join('|'));
+        isHTML = new RegExp(['<a', '<table', '<div', '<span'].join('|')),
+        // Look for double-backslashes at the end of a line, double stars (bold) or tildes (italics) around anything,
+        isWiki = new RegExp(['\\\\\\\\[\\n\\r]', '\\*\\*.*\\*\\*', '\\~\\~.*\\~\\~'].join('|'));
 
+    var currentTypeDescription = renderTypeEl.options[renderTypeEl.selectedIndex].text;
+    var msg = null;
     // Not all message board configurations include the rendererType option
     if (renderTypeEl && renderTypeEl.value != 'HTML' && isHTML.test(text))
     {
-        var currentTypeDescription = renderTypeEl.options[renderTypeEl.selectedIndex].text;
-        var msg = 'The content of your message may contain HTML. Are you sure that you want to submit it as ' + currentTypeDescription + '?';
+        msg = 'The content of your message may contain HTML. Are you sure that you want to submit it as ' + currentTypeDescription + '?';
+    }
+    else if (renderTypeEl && renderTypeEl.value != 'Wiki' && isWiki.test(text))
+    {
+        msg = 'The content of your message may contain Wiki markup. Are you sure that you want to submit it as ' + currentTypeDescription + '?';
+    }
+
+    if (msg)
+    {
         Ext4.Msg.confirm('Confirm message formatting', msg,
                 function (btn) {
                     if (btn == 'yes') {
