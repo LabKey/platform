@@ -12,6 +12,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryUpdateService;
@@ -155,6 +156,9 @@ public class AttachmentDataIterator extends WrapperDataIterator
             public DataIterator getDataIterator(DataIteratorContext context)
             {
                 DataIterator it = builder.getDataIterator(context);
+                Domain domain = ti.getDomain();
+                if(domain == null)
+                    return it;
 
                 // find attachment columns
                 int entityIdIndex = 0;
@@ -169,10 +173,9 @@ public class AttachmentDataIterator extends WrapperDataIterator
                         if (StringUtils.equalsIgnoreCase("entityId", col.getName()))
                             entityIdIndex = c;
 
-
                         // TODO: Issue 22505: Don't seem to have attachment information in the ColumnInfo, so we need to lookup the DomainProperty
                         // UNDONE: PropertyURI is not propagated, need to use name
-                        DomainProperty domainProperty = ti.getDomain().getPropertyByName(col.getName());
+                        DomainProperty domainProperty = domain.getPropertyByName(col.getName());
                         if (null == domainProperty || domainProperty.getPropertyDescriptor().getPropertyType() != PropertyType.ATTACHMENT)
                             continue;
 
@@ -192,7 +195,7 @@ public class AttachmentDataIterator extends WrapperDataIterator
         };
     }
 
-    protected AttachmentParent getAttachmentParent(String entityId, Container c) { return parentFactory.GenerateAttachmentParent(entityId, c); }
+    protected AttachmentParent getAttachmentParent(String entityId, Container c) { return parentFactory != null ? parentFactory.GenerateAttachmentParent(entityId, c): null; }
 
 
     private static class _AttachmentUploadHelper
