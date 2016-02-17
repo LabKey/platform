@@ -320,7 +320,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
         for (AttachmentFile file : files)
         {
-            if (exists(parent, file.getFilename()))
+            if (parent != null && exists(parent, file.getFilename()))
             {
                 filesToSkip.add(file.getFilename());
                 continue;
