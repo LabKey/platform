@@ -235,9 +235,21 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public ActionURL getBackgroundImageBaseURL(Container c)
+        public ActionURL getBackgroundImageBaseURL(AttachmentParent parent)
         {
-            return new ActionURL(BackgroundImageAction.class, c);
+            for (Attachment attachment : AttachmentService.get().getAttachments(parent))
+            {
+
+                Container c = ContainerManager.getForId(parent.getContainerId());
+                ActionURL url = new ActionURL(BackgroundImageAction.class, c);
+                // we add the container and entity id for the portal selection scenario in which
+                // each attachment may belong to a different container
+                url.addParameter("containerId", parent.getContainerId());
+                url.addParameter("entityId", parent.getEntityId());
+                url.addParameter("imageName", attachment.getName());
+                return url; // should only be a single attachment
+            }
+            return null;
         }
 
         @Override
