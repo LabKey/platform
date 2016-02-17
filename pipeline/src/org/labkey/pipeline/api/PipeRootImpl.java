@@ -327,8 +327,8 @@ public class PipeRootImpl implements PipeRoot
 
     public boolean mayInheritPolicy()
     {
-        //pipeline roots should not inherit policies from the container!
-        return false;
+        // configured pipeline roots should not inherit policies from the container, but default pipeline root does
+        return isDefault();
     }
 
     public boolean isSearchable()

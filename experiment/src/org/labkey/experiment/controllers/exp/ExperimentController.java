@@ -1908,7 +1908,7 @@ public class ExperimentController extends SpringActionController
             DataLoaderFactory dlf = DataLoader.get().findFactory(realContent, null);
             if (null == dlf)
             {
-                throw new ApiUsageException("Unable to parse file " + realContent);
+                throw new ApiUsageException("Unable to parse file " + realContent + ", it is likely of an unsupported file type");
             }
             DataLoader tabLoader = dlf.createLoader(realContent, true);
             tabLoader.setScanAheadLineCount(5000);
