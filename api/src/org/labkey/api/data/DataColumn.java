@@ -108,9 +108,9 @@ public class DataColumn extends DisplayColumn
     }
 
 
-    protected ColumnInfo getDisplayField(ColumnInfo col, boolean withLookups)
+    protected ColumnInfo getDisplayField(@NotNull ColumnInfo col, boolean withLookups)
     {
-        if (!withLookups || col == null)
+        if (!withLookups)
             return col;
         ColumnInfo display = col.getDisplayField();
         return null==display ? col : display;
