@@ -2410,7 +2410,7 @@ LABKEY.DataRegion.plugins.HeaderLock = (function ()
             dr.firstRow = Ext.query("tr[class=labkey-alternate-row]:first td", dr.table.id);
 
             // performance degradation
-            var tooManyColumns = dr.rowContent.length > 80 || ((dr.rowContent.length > 40) && !Ext.isWebKit && !Ext.isIE10p);
+            var tooManyColumns = dr.rowContent.length > 100 || ((dr.rowContent.length > 40) && !Ext.isWebKit && !Ext.isIE10p);
             var tooManyRows = (dr.rowCount && dr.rowCount > 1000);
 
             if (tooManyColumns || tooManyRows)

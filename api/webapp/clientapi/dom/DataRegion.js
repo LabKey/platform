@@ -2996,7 +2996,7 @@ if (!LABKEY.DataRegions) {
         this.firstRow = this.table.find('tr.labkey-alternate-row').first().children('td');
 
         // performance degradation
-        var tooManyColumns = this.rowContent.length > 80; //|| ((this.rowContent.length > 40) && !Ext.isWebKit && !Ext.isIE10p);
+        var tooManyColumns = this.rowContent.length > 100;
         var tooManyRows = (region.rowCount && region.rowCount > 1000);
 
         if (tooManyColumns || tooManyRows) {
