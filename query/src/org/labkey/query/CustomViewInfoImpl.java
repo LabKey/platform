@@ -43,6 +43,7 @@ public class CustomViewInfoImpl implements CustomViewInfo
     protected final QueryManager _mgr = QueryManager.get();
     protected CstmView _cstmView;
     protected boolean _inSession;
+    private boolean _overridesModuleView = false;
 
     public CustomViewInfoImpl(CstmView view)
     {
@@ -182,9 +183,32 @@ public class CustomViewInfoImpl implements CustomViewInfo
         return true;
     }
 
+    @Override
+    public boolean isDeletable()
+    {
+        return !_overridesModuleView;
+    }
+
+    @Override
+    public boolean isRevertable()
+    {
+        return isSession() || _overridesModuleView;
+    }
+
+    @Override
     public boolean isOverridable()
     {
         return true;
+    }
+
+    public boolean isOverridesModuleView()
+    {
+        return _overridesModuleView;
+    }
+
+    public void setOverridesModuleView(boolean overridesModuleView)
+    {
+        _overridesModuleView = overridesModuleView;
     }
 
     public boolean isSession()

@@ -420,7 +420,11 @@ public class QueryServiceImpl extends QueryService
                 views.put(cstmView.getName(), new CustomViewImpl(qd, cstmView));
             //if the module-based view has set overridable=true, we allow the DB view to override it
             else if (views.get(cstmView.getName()) instanceof ModuleCustomView && views.get(cstmView.getName()).isOverridable())
-                views.put(cstmView.getName(), new CustomViewImpl(qd, cstmView));
+            {
+                CustomViewImpl view = new CustomViewImpl(qd, cstmView);
+                view.setOverridesModuleView(true);
+                views.put(cstmView.getName(), view);
+            }
         }
 
         return views;
@@ -717,6 +721,8 @@ public class QueryServiceImpl extends QueryService
         ret.put("inherit", view.canInherit());
         ret.put("session", view.isSession());
         ret.put("editable", view.isEditable());
+        ret.put("deletable", view.isDeletable());
+        ret.put("revertable", view.isRevertable());
         ret.put("hidden", view.isHidden());
         // XXX: This is a query property and not a custom view property!
         ret.put("savable", !view.getQueryDefinition().isTemporary());

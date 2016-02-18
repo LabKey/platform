@@ -159,6 +159,18 @@ public class ModuleCustomViewInfo implements CustomViewInfo
     }
 
     @Override
+    public boolean isDeletable()
+    {
+        return false;
+    }
+
+    @Override
+    public boolean isRevertable()
+    {
+        return false;
+    }
+
+    @Override
     public boolean isSession()
     {
         // module custom views are never in session
