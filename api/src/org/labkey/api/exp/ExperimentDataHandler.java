@@ -52,6 +52,8 @@ public interface ExperimentDataHandler extends Handler<ExpData>
      */
     void exportFile(ExpData data, File dataFile, OutputStream out) throws ExperimentException;
 
+    /** @return URL to the imported version of the data, like a grid view over a database table or a custom details page */
+    @Nullable
     ActionURL getContentURL(ExpData data);
 
     /**
