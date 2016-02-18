@@ -195,7 +195,7 @@ public class SimpleUserSchema extends UserSchema
         }
 
         /**
-         * Sublcasses may override this to perform initialization after the constructor has been called.
+         * Subclasses may override this to perform initialization after the constructor has been called.
          * The default implementation will wrap all columns from the base table and set a generic default details URL.
          * Schemas are responsible for calling .init() immediately after constructing a new SimpleTable instance.
          */
