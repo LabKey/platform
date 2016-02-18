@@ -105,7 +105,7 @@ public class DocumentConversionServiceImpl implements DocumentConversionService
 
                 List<PDPage> pages = document.getDocumentCatalog().getAllPages();
 
-                if (pages.size() >= page)
+                if (pages.size() > page)
                 {
                     PDPage pdPage = pages.get(page);
                     return pdPage.convertToImage(bufferedImageType, resolution);
