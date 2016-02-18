@@ -386,6 +386,7 @@ LABKEY.Query = new function()
         *       or the column will be omitted in the response.
         * @param {String} [config.selectionKey] Unique string used by selection APIs as a key when storing or retrieving the selected items for a grid.
         *         Not used unless <code>config.showRows</code> is 'selected' or 'unselected'.
+        * @param {Boolean} [config.ignoreFilter] If true, the command will ignore any filter that may be part of the chosen view.
         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
         *       generating a timeout error (defaults to 30000).
         * @param {Double} [config.requiredVersion] If not set, or set to "8.3", the success handler will be passed a {@link LABKEY.Query.SelectRowsResults}
@@ -486,6 +487,9 @@ LABKEY.Query = new function()
 
             if (config.selectionKey)
                 dataObject[config.dataRegionName + '.selectionKey'] = config.selectionKey;
+
+            if (config.ignoreFilter)
+                dataObject[config.dataRegionName + '.ignoreFilter'] = 1;
 
             if (config.parameters)
             {

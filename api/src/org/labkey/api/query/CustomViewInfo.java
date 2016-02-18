@@ -199,6 +199,12 @@ public interface CustomViewInfo
     /** Returns true if this custom view is editable. */
     boolean isEditable();
 
+    /** Returns true if this custom view is deletable. */
+    boolean isDeletable();
+
+    /** Returns true if this custom view is revertable. */
+    boolean isRevertable();
+
     /** Returns true if this custom view can be overridden through the UI. This is normally true to database views and only true for file-based views that opt-in. */
     boolean isOverridable();
 
