@@ -16,13 +16,18 @@
      */
 %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ page import="org.labkey.api.exp.api.ExpSampleSet" %>
+<%@ page import="org.labkey.api.exp.api.ExperimentService" %>
+<%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
-<%@ page import="org.labkey.api.util.URLHelper" %>
-<%@ page import="java.util.List" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Collections" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.LinkedHashMap" %>
+<%@ page import="java.util.TreeMap" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<ExperimentController.InsertDataClassForm> me = (JspView<ExperimentController.InsertDataClassForm>) HttpView.currentView();
@@ -30,6 +35,12 @@
     String returnUrl = getViewContext().getActionURL().getParameter("returnUrl");
 
     List<String> templateNames = new ArrayList<>(bean.getAvailableDomainTemplateNames());
+
+    List<? extends ExpSampleSet> sets = ExperimentService.get().getSampleSets(getContainer(), getUser(), true);
+    Map<Integer, String> sampleSets = new LinkedHashMap<>();
+    sampleSets.put(null, "");
+    for (ExpSampleSet ss : sets)
+        sampleSets.put(ss.getRowId(), ss.getName());
 %>
 
 <style type="text/css">
@@ -66,19 +77,21 @@
     <div id="scratch-div">
         <div class="form-item">
             <div class="form-label"><label for="name">Name:</label></div>
-            <input type="text" id="name" name="name">
+            <input type="text" id="name" name="name" value="<%=bean.getName() == null ? "" : bean.getName()%>">
         </div>
         <div class="form-item">
             <div class="form-label"><label for="description">Description:</label></div>
-            <input type="text" id="description" name="description" class="form-longinput">
+            <input type="text" id="description" name="description" class="form-longinput" value="<%=bean.getDescription() == null ? "" : bean.getDescription()%>">
         </div>
         <div class="form-item">
             <div class="form-label"><label for="nameExpression">Name Expression:</label></div>
-            <input type="text" id="nameExpression" name="nameExpression" class="form-longinput">
+            <input type="text" id="nameExpression" name="nameExpression" class="form-longinput" value="<%=bean.getNameExpression() == null ? "" : bean.getNameExpression()%>">
         </div>
         <div class="form-item">
             <div class="form-label"><label for="materialSourceId">Material Source ID:</label></div>
-            <input type="text" id="materialSourceId" name="materialSourceId">
+            <select id="materialSourceId" name="materialSourceId">
+                <labkey:options value="<%=bean.getMaterialSourceId()%>" map="<%=sampleSets%>"/>
+            </select>
         </div>
     </div>
 
