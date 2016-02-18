@@ -22,15 +22,14 @@ import org.junit.runners.Parameterized;
 import org.labkey.api.admin.TableXmlUtils;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.test.TestTimeout;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-/**
- * Migrated from DbSchema; no changes made for the migration
- */
 @RunWith(Parameterized.class)
+@TestTimeout(120)
 public class SchemaXMLTestCase extends Assert
 {
     @Parameterized.Parameters(name = "{1}")
