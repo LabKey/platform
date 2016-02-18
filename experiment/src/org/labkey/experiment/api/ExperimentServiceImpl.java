@@ -887,6 +887,13 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         DbCache.remove(getTinfoProtocol(), getCacheKey(p.getLSID()));
     }
 
+    protected void uncacheMaterialSource(MaterialSource ms)
+    {
+        StringKeyCache<MaterialSource> c = getMaterialSourceCache();
+        c.remove(getCacheKey(ms.getLSID()));
+        c.remove("ROWID/" + ms.getRowId());
+    }
+
 
     public ExpProtocolImpl getExpProtocol(Container container, String name)
     {
@@ -2371,7 +2378,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 {
                     throw new IllegalArgumentException("Attempting to delete a Protocol from another container");
                 }
-                uncacheProtocol(protocol);
                 OntologyManager.deleteOntologyObjects(c, protocol.getLSID());
             }
 
@@ -2386,6 +2392,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 // Be sure that we clear the cache after we commit the overall transaction, in case it
                 // gets repopulated by another thread before then
                 AssayService.get().clearProtocolCache();
+                for (Protocol protocol : protocols)
+                {
+                    uncacheProtocol(protocol);
+                }
             }, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.IMMEDIATE);
 
             transaction.commit();
@@ -2957,7 +2967,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public void deleteSampleSet(int rowId, Container c, User user) throws ExperimentException
     {
-        ExpSampleSet source = getSampleSet(rowId);
+        ExpSampleSetImpl source = getSampleSet(rowId);
         if (null == source)
             throw new IllegalArgumentException("Can't find SampleSet with rowId " + rowId);
         if (!source.getContainer().equals(c))
@@ -2974,6 +2984,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             executor.execute("DELETE FROM " + getTinfoActiveMaterialSource() + " WHERE MaterialSourceLSID = ?", source.getLSID());
             executor.execute("DELETE FROM " + getTinfoMaterialSource() + " WHERE RowId = ?", rowId);
 
+            transaction.addCommitTask(() -> uncacheMaterialSource(source.getDataObject()), DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT);
             transaction.commit();
         }
         SchemaKey samplesSchema = SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME);
@@ -2981,7 +2992,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         SchemaKey expMaterialsSchema = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.NestedSchemas.materials.toString());
         QueryService.get().fireQueryDeleted(user, c, null, expMaterialsSchema, Collections.singleton(source.getName()));
-
     }
 
     /**

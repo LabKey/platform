@@ -309,7 +309,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
             }
         }
 
-        ExperimentServiceImpl.get().getMaterialSourceCache().put(String.valueOf(getRowId()), _object);
+        ExperimentServiceImpl.get().cacheMaterialSource(_object);
     }
 
     public void delete(User user)
