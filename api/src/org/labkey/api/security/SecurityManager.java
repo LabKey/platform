@@ -28,6 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
+import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -44,7 +45,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.AuthenticationProvider.ResetPasswordProvider;
-import org.labkey.api.audit.provider.GroupAuditProvider;
+import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.impersonation.DisallowGlobalRolesContext;
 import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
 import org.labkey.api.security.impersonation.ImpersonationContextFactory;
@@ -203,18 +204,16 @@ public class SecurityManager
 
     public enum PermissionTypes
     {
-        READ("READ", ReadPermission.class),
-        INSERT("INSERT", InsertPermission.class),
-        UPDATE("UPDATE", UpdatePermission.class),
-        DELETE("DELETE", DeletePermission.class),
-        ADMIN("ADMIN", AdminPermission.class);
+        READ(ReadPermission.class),
+        INSERT(InsertPermission.class),
+        UPDATE(UpdatePermission.class),
+        DELETE(DeletePermission.class),
+        ADMIN(AdminPermission.class);
 
         private final Class<? extends Permission> _permission;
-        private final String _label;
 
-        PermissionTypes(String label, Class<? extends Permission> permission)
+        PermissionTypes(Class<? extends Permission> permission)
         {
-            _label = label;
             _permission = permission;
         }
 
@@ -1409,7 +1408,7 @@ public class SecurityManager
             {
                 return UserManager.getUser(new ValidEmail(name));
             }
-            catch(ValidEmail.InvalidEmailException e)
+            catch(InvalidEmailException e)
             {
                 return null;
             }
@@ -2306,7 +2305,7 @@ public class SecurityManager
                 email = new ValidEmail(rawEmail);
                 assertTrue(rawEmail, valid);
             }
-            catch(ValidEmail.InvalidEmailException e)
+            catch(InvalidEmailException e)
             {
                 assertFalse(rawEmail, valid);
             }
@@ -2346,7 +2345,7 @@ public class SecurityManager
             {
                 emails.add(new ValidEmail(rawEmail));
             }
-            catch(ValidEmail.InvalidEmailException e)
+            catch(InvalidEmailException e)
             {
                 invalidEmails.add(rawEmail);
             }
