@@ -1329,7 +1329,7 @@ abstract public class PipelineJob extends Job implements Serializable
             _isSettingStatus = true;
             try
             {
-                _job.setStatus(TaskStatus.error, message.toString());
+                _job.setStatus(TaskStatus.error, message == null ? "ERROR" : message.toString());
             }
             finally
             {

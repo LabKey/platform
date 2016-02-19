@@ -21,6 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.security.User;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 
@@ -74,4 +75,9 @@ public interface ExperimentDataHandler extends Handler<ExpData>
     void runMoved(ExpData newData, Container container, Container targetContainer, String oldRunLSID, String newRunLSID, User user, int oldDataRowID) throws ExperimentException;
 
     void beforeMove(ExpData oldData, Container container, User user) throws ExperimentException;
+
+    default @Nullable URLHelper getShowFileURL(ExpData data)
+    {
+        return null;
+    }
 }
