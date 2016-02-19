@@ -81,20 +81,22 @@ public class ClusterStartup extends AbstractPipelineStartup
             catch (Exception e)
             {
                 System.out.println("Error running job");
-                job.error(e.getMessage(), e);
+                job.error(String.valueOf(e.getMessage()), e);
             }
-
-            job.writeToFile(file);
-
-            if (job.getActiveTaskStatus() == PipelineJob.TaskStatus.error)
+            finally
             {
-                job.error("Task failed");
-                System.exit(1);
-            }
-            else if (job.getActiveTaskStatus() != PipelineJob.TaskStatus.complete)
-            {
-                job.error("Task finished running but was not marked as complete - it was in state " + job.getActiveTaskStatus());
-                System.exit(1);
+                job.writeToFile(file);
+
+                if (job.getActiveTaskStatus() == PipelineJob.TaskStatus.error)
+                {
+                    job.error("Task failed");
+                    System.exit(1);
+                }
+                else if (job.getActiveTaskStatus() != PipelineJob.TaskStatus.complete)
+                {
+                    job.error("Task finished running but was not marked as complete - it was in state " + job.getActiveTaskStatus());
+                    System.exit(1);
+                }
             }
         }
         finally
