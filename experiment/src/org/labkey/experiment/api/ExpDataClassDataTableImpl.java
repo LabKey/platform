@@ -205,8 +205,9 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             case Folder:
             {
                 ColumnInfo c = wrapColumn("Container", getRealTable().getColumn("Container"));
-                c.setLabel("Folder");
                 ContainerForeignKey.initColumn(c, getUserSchema());
+                c.setLabel("Folder");
+                c.setShownInDetailsView(false);
                 return c;
             }
             case Alias:
