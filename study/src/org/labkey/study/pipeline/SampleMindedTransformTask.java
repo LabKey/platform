@@ -234,7 +234,7 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
                 writeLabs(_labIds, zOut);
                 writePrimaries(_primaryIds, zOut);
                 writeDerivatives(_derivativeIds, zOut);
-                writeAdditives(zOut);
+                writeAdditives(Collections.emptyMap(), zOut);
             }
         }
         catch (IOException e)
