@@ -103,14 +103,35 @@ public abstract class AbstractSpecimenTransformTask
     }
 
     /** Write out an empty additives.tsv, since we aren't using them */
-    protected void writeAdditives(ZipOutputStream file) throws IOException
+    protected void writeAdditives(Map<String, Integer> additiveIds, ZipOutputStream file) throws IOException
     {
-        file.putNextEntry(new ZipEntry("additives.tsv"));
-
-        try (PrintWriter writer = new PrintWriter(file))
+        if (additiveIds.isEmpty())
         {
-            writer.write("# additives\n");
-            writer.write("additive_id\tldms_additive_code\tlabware_additive_code\tadditive\n");
+            file.putNextEntry(new ZipEntry("additives.tsv"));
+
+            try (PrintWriter writer = new PrintWriter(file))
+            {
+                writer.write("# additives\n");
+                writer.write("additive_id\tldms_additive_code\tlabware_additive_code\tadditive\n");
+            }
+        }
+        else
+        {
+            List<Map<String, Object>> rows = new ArrayList<>();
+            for (Map.Entry<String, Integer> entry : additiveIds.entrySet())
+            {
+                Map<String, Object> row = new HashMap<>();
+
+                // We know the id and the type name
+                row.put("additive_id", entry.getValue());
+                row.put("additive", entry.getKey());
+                // All the other columns are blank
+                row.put("ldms_additive_code", null);
+                row.put("labware_additive_code", null);
+
+                rows.add(row);
+            }
+            writeTSV(file, rows, "additives");
         }
     }
 
