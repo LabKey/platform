@@ -191,7 +191,14 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         CustomView result = getCustomViews(owner, request, true, false).get(name);
         if (result == null && name != null)
         {
-            log.info("Could not find the requested custom view named '" + name + "'" + " in " + getSchemaPath() + "." + getQueryDef().getName() + " in the container " + _container.getPath() + " for user " + owner);
+            String extra = "";
+
+            if (null != request)
+            {
+                String referrer = request.getHeader("Referer");
+                extra = " [url=" + request.getRequestURI() + (null != referrer ? ", referrer=" + referrer : "") + "]";
+            }
+            log.info("Could not find the requested custom view named '" + name + "'" + " in " + getSchemaPath() + "." + getQueryDef().getName() + " in the container " + _container.getPath() + " for user " + owner + extra);
         }
         return result;
     }
