@@ -257,9 +257,6 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
     public boolean isFileRootDisabled(Container c)
     {
-        if (c == null || c.isRoot())
-            _log.error("isFileRootDisabled : The file root of either a null project or the root project cannot be disabled.");
-
         Container effective = getEffectiveContainer(c);
         if (null == effective)
             return false;
