@@ -52,6 +52,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -239,9 +240,9 @@ public class QueryView extends WebPartView<Object>
     public QueryView(UserSchema schema, QuerySettings settings, @Nullable Errors errors)
     {
         this(schema);
+        _errors = errors;
         if (null != settings)
             setSettings(settings);
-        _errors = errors;
     }
 
     public QuerySettings getSettings()
@@ -2383,7 +2384,7 @@ public class QueryView extends WebPartView<Object>
             tsvWriter.setDelimiterCharacter(TSVWriter.DELIM.TAB);
             tsvWriter.setQuoteCharacter(TSVWriter.QUOTE.DOUBLE);
             tsvWriter.write(tsvBuilder);
-            ByteArrayAttachmentFile byteArrayAttachmentFile = new ByteArrayAttachmentFile(tsvWriter.getFilenamePrefix() + ".tsv", tsvBuilder.toString().getBytes(), "text/tsv");
+            ByteArrayAttachmentFile byteArrayAttachmentFile = new ByteArrayAttachmentFile(tsvWriter.getFilenamePrefix() + ".tsv", tsvBuilder.toString().getBytes(StringUtilsLabKey.DEFAULT_CHARSET), "text/tsv");
 
             logAuditEvent("Exported to TSV file", tsvWriter.getDataRowCount());
             return byteArrayAttachmentFile;
