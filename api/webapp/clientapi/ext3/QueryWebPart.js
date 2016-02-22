@@ -320,7 +320,8 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         if (config.removeableFilters)
         {
             // Translate the set of filters that are removable to be included as the initial set of URL parameters
-            LABKEY.Filter.appendFilterParams(this._getUserFilters(), config.removeableFilters, this.dataRegionName);
+            var filterParams = LABKEY.Filter.appendFilterParams(this._getUserFilters(), config.removeableFilters, this.dataRegionName);
+            Ext.iterate(filterParams, this._addUserFilter, this);
         }
 
         if (config.removeableSort)
