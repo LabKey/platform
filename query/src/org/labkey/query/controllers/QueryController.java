@@ -782,7 +782,7 @@ public class QueryController extends SpringActionController
             }
             getPageConfig().setFocusId("ff_newQueryName");
             _form = form;
-            setHelpTopic(new HelpTopic("customSQL"));
+            setHelpTopic(new HelpTopic("sqlTutorial"));
             return new JspView<>("/org/labkey/query/view/newQuery.jsp", form, errors);
         }
 
@@ -942,7 +942,7 @@ public class QueryController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            setHelpTopic(new HelpTopic("customSQL"));
+            setHelpTopic(new HelpTopic("useSqlEditor"));
 
             _appendSchemaActionNavTrail(root, _form.getSchemaKey(), _form.getQueryName());
 
@@ -2056,7 +2056,7 @@ public class QueryController extends SpringActionController
             _form.setDescription(queryDef.getDescription());
             _form.setInheritable(queryDef.canInherit());
             _form.setHidden(queryDef.isHidden());
-            setHelpTopic(new HelpTopic("customSQL"));
+            setHelpTopic(new HelpTopic("editQueryProperties"));
             _queryName = form.getQueryName();
 
             return new JspView<>("/org/labkey/query/view/propertiesQuery.jsp", form, errors);

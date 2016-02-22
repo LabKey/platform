@@ -256,8 +256,8 @@
 </tr>
 
 <%
-    String customLoginHelp = "The custom login page is specified as a string composed of the controller name and an action name in" +
-            " the format: <controller>-<action>.  For example the string 'myModule-customLogin' can be entered to enable a custom login provided as" +
+    String customLoginHelp = "The custom login page is specified as a string composed of the module name and a page name in" +
+            " the format: <module>-<name>.  For example the string 'myModule-customLogin' can be entered to enable a custom login provided as" +
             " an HTML page called customLogin.html located in the /resources/views directory of myModule.";
 %>
 <tr>
@@ -265,7 +265,7 @@
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
-    <td class="labkey-form-label">Alternative login action<%=PageFlowUtil.helpPopup("Custom Login Page", customLoginHelp, false)%></td>
+    <td class="labkey-form-label">Alternative login page<%=PageFlowUtil.helpPopup("Custom Login Page", customLoginHelp, false)%></td>
     <td><input type="text" name="customLogin" size="50" value="<%= h(laf.getCustomLogin()) %>"></td>
 </tr>
 <tr>

@@ -127,7 +127,7 @@
             <enumeration value="file">
                 <annotation>
                     <documentation>The target will be a file of basename and extension specified by fileBaseName and fileExtension.
-                         By default the field and row separators will be for a tsv file, but this can be overridden with optional columnDelimiter and rowDelimiter attributes.
+                         By default the field and row separators will be for a tsv file, but this can be overridden with the optional columnDelimiter and rowDelimiter attributes.
                         For ETLs that use the target file as input to a pipeline command tasks, it is possible to skip running the command task for a 0 row file. Use the "etlOutputHadRows"
                         parameter in the pipeline configuration. See nlpContext.xml for an example of this.
                     </documentation>
@@ -160,7 +160,7 @@
                 of this parameter is equal to the noWorkValue, there is no work for the job to do.
                 This can either be an actual value ("4"), or there is a substitution syntax to indicate comparison should be against the
                 input value of a certain parameter. E.g., a parameter name="batchId" noWorkValue="${batchId}" will indicate there
-                    is no work for the job if the ouput batchId is the same as the one saved from the previous run.
+                    is no work for the job if the output batchId is the same as the one saved from the previous run.
                 </documentation>
             </annotation>
         </attribute>
@@ -168,7 +168,9 @@
 
     <simpleType name="ProcedureParameterScopeType">
         <annotation>
-            <documentation>These match two of the scopes defined in the Variable Map persisted in the TransformConfiguration.TransformState field. (We don't support the notion of a 'parent' scope here.) Globally scoped parameters allow sharing/passing of context across multiple stored procedure steps.</documentation>
+            <documentation>These match two of the scopes defined in the Variable Map persisted in the TransformConfiguration.TransformState field.
+              (We don't support the notion of a 'parent' scope here.) Globally scoped parameters allow sharing/passing of context across multiple stored procedure steps.
+            </documentation>
         </annotation>
         <restriction base="string">
             <enumeration value="local"/>
@@ -192,10 +194,31 @@
         <element name="taskref" type="etl:TaskRefType" maxOccurs="1" minOccurs="0"/>
       </all>
       <attribute name="id" type="string" use="required"/>
-        <attribute name="type" type="string" default="SimpleQueryTransformStep"/>
-        <attribute name="file" type="string"/>
+        <attribute name="type" type="string" default="SimpleQueryTransformStep">
+          <annotation>
+            <documentation>
+                Use 'StoredProcedure' when handling the transform task wtih a stored procedure.
+                Use 'ExternalPipelineTask' (in conjunction with externalTaskId) when handling the transform task with an XML-defined pipeline task.
+                Use 'TaskrefTransformStep' (in conjunction with a taskRef element) to queue another ETL to run.
+            </documentation>
+          </annotation>
+        </attribute>
+        <attribute name="file" type="string">
+            <annotation>
+                <documentation>
+                    Todo...
+                </documentation>
+            </annotation>
+        </attribute>
         <attribute name="streaming" type="boolean" default="true"/>
-        <attribute name="externalTaskId" type="string"/>
+        <attribute name="externalTaskId" type="string">
+          <annotation>
+            <documentation>
+                The command task (wrapped as a pipeline task) that handles the transform.
+                E.g., 'org.labkey.api.pipeline.cmd.CommandTask:myEngineCommand'
+            </documentation>
+          </annotation>
+        </attribute>
         <attribute name="saveState" type="boolean" default="false">
             <annotation>
                 <documentation>
@@ -304,6 +327,16 @@
     </complexType>
 
     <complexType name="ParameterType">
+        <annotation>
+            <documentation>
+                Intended for use when the ETL's source query is a parameterized SQL query.
+                Parameter values placed here are passed into the SQL query.
+                For details see
+                https://www.labkey.org/wiki/home/Documentation/page.view?name=paramsql
+                and
+                https://www.labkey.org/wiki/home/Documentation/page.view?name=etlSamples#param
+            </documentation>
+        </annotation>
         <attribute name="name" type="string" use="required" />
         <attribute name="value" type="string" use="optional" />
         <attribute name="type" type="string" use="required" />
