@@ -19,9 +19,7 @@ package org.labkey.wiki.renderer;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.Container;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
@@ -83,6 +81,7 @@ public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHand
             part.getPropertyMap().putAll(params);
 
             StringWriter sw = new StringWriter();
+            LinkedHashSet<ClientDependency> dependencies = new LinkedHashSet<>();
 
             try
             {
@@ -109,42 +108,7 @@ public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHand
                 view.addAllObjects(params);
 
                 //Issue 15609: we need to include client dependencies for embedded webparts
-                LinkedHashSet<ClientDependency> dependencies = view.getClientDependencies();
-
-                if (!dependencies.isEmpty())
-                {
-                    Container c = ctx.getContainer();
-
-                    LinkedHashSet<String> includes = new LinkedHashSet<>();
-                    PageFlowUtil.getJavaScriptFiles(c, dependencies, includes, new LinkedHashSet<String>());
-
-                    LinkedHashSet<String> cssScripts = new LinkedHashSet<>();
-
-                    for (ClientDependency d : dependencies)
-                    {
-                        cssScripts.addAll(d.getCssPaths(c));
-                    }
-
-                    if (!includes.isEmpty() || !cssScripts.isEmpty())
-                    {
-                        StringBuilder sb = new StringBuilder();
-
-                        sb.append("<script type=\"text/javascript\">");
-
-                        for (String script : includes)
-                        {
-                            sb.append("\tLABKEY.requiresScript('").append(script).append("');\n");
-                        }
-
-                        for (String script : cssScripts)
-                        {
-                            sb.append("\tLABKEY.requiresCss('").append(script).append("');\n");
-                        }
-                        sb.append("</script>\n");
-
-                        sw.write(sb.toString());
-                    }
-                }
+                dependencies.addAll(view.getClientDependencies());
 
                 view.include(view, sw);
             }
@@ -158,7 +122,7 @@ public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHand
                 return new FormattedHtml("<br><font class='error' color='red'>Error substituting " + partName + ": " + e.getMessage() + "</font>");
             }
 
-            return new FormattedHtml(sw.toString(), true);  // All webparts are considered volatile... CONSIDER: Be more selective (e.g., query & messages, but not search) 
+            return new FormattedHtml(sw.toString(), true, dependencies);  // All webparts are considered volatile... CONSIDER: Be more selective (e.g., query & messages, but not search)
         }
         finally
         {
