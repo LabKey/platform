@@ -6620,6 +6620,7 @@ internal/gwtsrc/org/labkey/api/gwt/client/ui/PropertyType.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/SaveButtonBar.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/Saveable.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/StringListBox.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/TestUtil.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/TextBoxDialogBox.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/Tooltip.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/TypePicker.java -text

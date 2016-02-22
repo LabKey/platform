@@ -24,6 +24,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.PropertiesEditor;
 import org.labkey.api.gwt.client.ui.SaveButtonBar;
+import org.labkey.api.gwt.client.ui.TestUtil;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 
 import java.util.ArrayList;
@@ -65,6 +66,8 @@ public abstract class AbstractDesignerMainPanel extends VerticalPanel
             _statusLabel.setHTML("<br/>");
 
         setAllowSave(dirty);
+
+        TestUtil.signalWebDriver("designerDirty", dirty);
 
         _dirty = dirty;
     }
