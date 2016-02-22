@@ -34,7 +34,7 @@ import org.labkey.test.categories.Study;
 import org.labkey.test.components.ParticipantListWebPart;
 import org.labkey.test.pages.DatasetInsertPage;
 import org.labkey.test.util.DataRegionTable;
-import org.labkey.test.util.DatasetDomainEditor;
+import org.labkey.test.util.DatasetDesignerPage;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.Maps;
 
@@ -110,9 +110,9 @@ public class SharedStudyTest extends BaseWebDriverTest
         clickButton("Create Study");
         _containerHelper.setFolderType("Dataspace");
 
-        DatasetDomainEditor datasetDomainEditor = _studyHelper.defineDataset(SHARED_DEMOGRAPHICS, getProjectName());
+        DatasetDesignerPage datasetDomainEditor = _studyHelper.defineDataset(SHARED_DEMOGRAPHICS, getProjectName());
         datasetDomainEditor.checkDemographicData();
-        datasetDomainEditor.shareDemographics(DatasetDomainEditor.ShareDemographicsBy.PTID);
+        datasetDomainEditor.shareDemographics(DatasetDesignerPage.ShareDemographicsBy.PTID);
         datasetDomainEditor.inferFieldsFromFile(new File(STUDY_DIR, "study/datasets/dataset5001.tsv"));
         datasetDomainEditor.save();
 
