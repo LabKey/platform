@@ -104,12 +104,15 @@ public class DomainEditorServiceBase extends BaseRemoteService
             for (SchemaKey schemaPath : schemaPaths)
             {
                 QuerySchema qs = DefaultSchema.get(getUser(), c, schemaPath);
-                DbScope scope = qs.getDbSchema().getScope();
+                if (null != qs)
+                {
+                    DbScope scope = qs.getDbSchema().getScope();
 
-                // Return only schemas in the lookup scope, #18179
-                if (!defaultLookupScope.equals(scope))
-                    continue;
-                names.add(schemaPath.toString());
+                    // Return only schemas in the lookup scope, #18179
+                    if (!defaultLookupScope.equals(scope))
+                        continue;
+                    names.add(schemaPath.toString());
+                }
             }
 
             return names;
