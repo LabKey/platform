@@ -20,6 +20,8 @@ import org.labkey.api.admin.FolderImporterImpl;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.util.FileType;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
 
@@ -53,7 +55,18 @@ public class FolderImportTask extends PipelineJob.Task<FolderImportTask.Factory>
                 throw new PipelineJobException("Can't import folder archive. The archive version " + folderXml.getArchiveVersion() + " is newer than the server version " + currVersion + ".");
 
             FolderImporterImpl importer = new FolderImporterImpl(job);
-            importer.process(job, support.getImportContext(), vf);
+
+            if(HttpView.hasCurrentView())
+            {
+                importer.process(job, support.getImportContext(), vf);
+            }
+            else {
+                //Build a fake ViewContext so we can run trigger scripts
+                try (ViewContext.StackResetter resetter = ViewContext.pushMockViewContext(job.getUser(),job.getContainer(),job.getActionURL()))
+                {
+                    importer.process(job, support.getImportContext(), vf);
+                }
+            }
 
             Collection<PipelineJobWarning> warnings = importer.postProcess(support.getImportContext(), vf);
             //TODO: capture warnings in the pipeline job and make a distinction between success & success with warnings

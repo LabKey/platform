@@ -203,9 +203,6 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         return result;
     }
 
-    /**
-     * TODO: Make attachmentDirs work for other QueryUpdateServices. This is private to list for now.
-     */
     public int insertETL(DataLoader loader, User user, Container container, BatchValidationException errors, @Nullable VirtualFile attachmentDir,
                          @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importLookupsByAlternateKey)
     {
@@ -222,7 +219,13 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             try (DbScope.Transaction transaction = ti.getSchema().getScope().ensureTransaction())
             {
                 int inserted = _importRowsUsingETL(user, container, loader, null, context, new HashMap<>());
-                transaction.commit();
+
+                if(!errors.hasErrors())
+                    transaction.commit();
+
+                if (inserted > 0)
+                    ListManager.get().addAuditEvent(_list, user, "Bulk inserted " + inserted + " rows to list.");
+                ListManager.get().indexList(_list);
 
                 return inserted;
             }
