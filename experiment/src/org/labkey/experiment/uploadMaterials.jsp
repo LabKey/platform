@@ -619,7 +619,13 @@ function runner() {
 
                     if (v && v.length > 0 && v.indexOf('\\') >= 0) {
                         var path = v.split('\\');
-                        fb.button.setText(path[path.length-1]);
+                        var filename = path[path.length-1];
+                        if(filename.length > 16)
+                        {
+                            // truncate name if it is too long
+                            filename = filename.substring(0, 16).concat("...");
+                        }
+                        fb.button.setText(filename);
                     }
 
                     // Update submit button
