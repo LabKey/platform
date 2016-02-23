@@ -19,6 +19,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -40,20 +41,20 @@ public class MimeMap implements FileNameMap
     private static final Hashtable<String, MimeType> mimeTypeMap = new Hashtable<>(101);
     private static final Map<String, MimeType> extensionMap = new HashMap<>();
     
-    private static class MimeType
+    public static class MimeType
     {
-        private String _contentType;
-        private boolean _inlineImage;
+        private final String _contentType;
+        private final boolean _inline;
 
         public MimeType(String contentType)
         {
             this(contentType, false);
         }
 
-        public MimeType(String contentType, boolean inlineImage)
+        public MimeType(String contentType, boolean inline)
         {
             _contentType = contentType;
-            _inlineImage = inlineImage;
+            _inline = inline;
         }
 
         public String getContentType()
@@ -61,15 +62,47 @@ public class MimeMap implements FileNameMap
             return _contentType;
         }
 
+        // e.g. is displayable by all browsers
+        public boolean canInline()
+        {
+            return _inline;
+        }
+
+        public boolean isImage()
+        {
+            return _contentType.startsWith("image/");
+        }
+
         public boolean isInlineImage()
         {
-            return _inlineImage;
+            return canInline() && isImage();
         }
 
         @Override
         public String toString()
         {
             return _contentType;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            MimeType mimeType = (MimeType) o;
+
+            if (_inline != mimeType._inline) return false;
+            return _contentType != null ? _contentType.equals(mimeType._contentType) : mimeType._contentType == null;
+
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result = _contentType != null ? _contentType.hashCode() : 0;
+            result = 31 * result + (_inline ? 1 : 0);
+            return result;
         }
     }
 
@@ -124,7 +157,8 @@ public class MimeMap implements FileNameMap
         return map.keys();
     }
 
-    private MimeType getMimeType(String extn)
+
+    public MimeType getMimeType(String extn)
     {
         extn = extn.toLowerCase();
         MimeType type = map.get(extn);
@@ -132,6 +166,17 @@ public class MimeMap implements FileNameMap
             type = extensionMap.get(extn);
         return type;
     }
+
+
+    @Nullable
+    public MimeType getMimeTypeFor(String fileName)
+    {
+        String extn = getExtension(fileName);
+        if (null == extn)
+            return null;
+        return getMimeType(extn);
+    }
+
 
     public String getContentType(String extn)
     {
@@ -272,13 +317,29 @@ public class MimeMap implements FileNameMap
         public void testMimeMap()
         {
             MimeMap m = new MimeMap();
+
+            MimeType h = new MimeType("text/html");
+            assertEquals(h,m.getMimeType("html"));
+            assertEquals(h.hashCode(), m.getMimeType("html").hashCode());
+
             assertEquals("image/jpeg", m.getContentTypeFor("photo.jpg"));
             assertEquals("image/jpeg", m.getContentTypeFor("photo.jpeg"));
             assertEquals("text/html", m.getContentTypeFor("file.htm"));
             assertEquals("text/html", m.getContentTypeFor("file.html"));
+
             assertTrue(m.isInlineImageFor("photo.jpg"));
             assertTrue(m.isInlineImageFor("photo.svg"));
             assertFalse(m.isInlineImageFor("file.html"));
+            MimeType pdf = m.getMimeType("pdf");
+            assertTrue(pdf.canInline());
+            assertFalse(pdf.isInlineImage());
+
+            assertTrue(m.isOfficeDocument("doc"));
+            assertTrue(m.isOfficeDocument("docx"));
+            assertTrue(m.isOfficeDocument("xls"));
+            assertTrue(m.isOfficeDocument("xlsx"));
+            assertTrue(m.isOfficeDocument("ppt"));
+            assertTrue(m.isOfficeDocument("pptx"));
         }
     }
 }
