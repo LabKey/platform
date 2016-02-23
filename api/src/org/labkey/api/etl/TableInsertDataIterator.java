@@ -106,14 +106,18 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         {
             Integer index = map.get(col.getName());
 
-            if (null == index && null != col.getJdbcDefaultValue() && !context.supportsAutoIncrementKey())
+            //Dont add null values if col has a Default from DB
+            if (null == index && null != col.getJdbcDefaultValue())
                 _skipColumnNames.add(col.getName());
 
+            //record autoincrement key column so we can add if need to reselect
             if (col.isAutoIncrement() && !context.supportsAutoIncrementKey())
             {
                 indexAutoIncrement = index;
                 colAutoIncrement = col;
             }
+
+            //Map missing-value columns
             FieldKey mvColumnName = col.getMvColumnName();
             if (null == index || null == mvColumnName)
                 continue;
@@ -132,7 +136,8 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
             _selectIds = forInsert || hasTriggers;
         }
 
-        if (_selectIds)
+        //Add autoincrement column if we need to reselect
+        if (_selectIds && colAutoIncrement != null)
         {
             TableInfo t = ((UpdateableTableInfo)table).getSchemaTableInfo();
             // check that there is actually an autoincrement column in schema table (List has fake auto increment)
