@@ -1318,6 +1318,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     {
         for (ChangeHandler listener : _listeners)
             listener.onChange(null);
+        TestUtil.signalWebDriver("propertiesEditorChange");
     }
 
     private interface WarningValidator extends Validator
