@@ -178,8 +178,8 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             throw new NotFoundException();
         }
 
-        boolean isInlineImage = _mimeMap.isInlineImageFor(filename);
-        boolean asAttachment = !isInlineImage;
+        MimeMap.MimeType mime = _mimeMap.getMimeTypeFor(filename);
+        boolean asAttachment = null==mime || !mime.canInline();
 
         response.reset();
         writeDocument(new ResponseWriter(response), parent, filename, asAttachment);
@@ -196,7 +196,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         }
 
         // Change in behavior added in 11.1:  no longer audit download events for the guest user
-        if (null != user && !user.isGuest() && !isInlineImage)
+        if (null != user && !user.isGuest() && asAttachment)
         {
             addAuditEvent(user, parent, filename, "The attachment " + filename + " was downloaded");
         }
