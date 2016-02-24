@@ -45,7 +45,8 @@ public class HtmlOutput extends AbstractParamReplacement
         super(id);
     }
 
-    public File convertSubstitution(File directory) throws Exception
+    @Override
+    protected File getSubstitution(File directory) throws Exception
     {
         File file;
         if (directory != null)

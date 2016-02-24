@@ -40,7 +40,8 @@ public class TextOutput extends AbstractParamReplacement
         super(ID);
     }
 
-    public File convertSubstitution(File directory) throws Exception
+    @Override
+    protected File getSubstitution(File directory) throws Exception
     {
         File file;
         if (directory != null)

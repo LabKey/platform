@@ -36,7 +36,7 @@ public abstract class DownloadParamReplacement extends AbstractParamReplacement
         super(id);
     }
 
-    protected final File convertSubstitution(File directory, String extension)
+    protected final File getSubstitution(File directory, String extension)
     {
         String fileName;
         String tokenName = getName();

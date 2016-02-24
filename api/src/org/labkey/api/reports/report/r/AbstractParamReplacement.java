@@ -139,4 +139,17 @@ public abstract class AbstractParamReplacement implements ParamReplacement
     {
         _regex = regex;
     }
+
+    @Nullable
+    @Override
+    public final File convertSubstitution(File directory) throws Exception
+    {
+        // if there isn't a token specified, the substitution may be using a regex substitution,
+        // regardless we can't explicitly map a file without a valid token identifier
+        String token = getName();
+        return (token != null) ? getSubstitution(directory) : null;
+    }
+
+    @Nullable
+    protected abstract File getSubstitution(File directory) throws Exception;
 }

@@ -39,9 +39,10 @@ public class PostscriptOutput extends DownloadParamReplacement
         super(ID);
     }
 
-    public File convertSubstitution(File directory) throws Exception
+    @Override
+    protected File getSubstitution(File directory) throws Exception
     {
-        return convertSubstitution(directory, ".ps");
+        return getSubstitution(directory, ".ps");
     }
 
     @Override

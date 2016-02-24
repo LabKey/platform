@@ -47,10 +47,11 @@ public class PdfOutput extends DownloadParamReplacement
     {
         super(ID);
     }
-    
-    public File convertSubstitution(File directory) throws Exception
+
+    @Override
+    protected File getSubstitution(File directory) throws Exception
     {
-        return convertSubstitution(directory, ".pdf");
+        return getSubstitution(directory, ".pdf");
     }
 
     public HttpView render(ViewContext context)

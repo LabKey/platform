@@ -38,7 +38,7 @@ public class HrefOutput extends ImageOutput
     }
 
     @Override
-    public File convertSubstitution(File directory) throws Exception
+    protected File getSubstitution(File directory) throws Exception
     {
         return null;
     }
