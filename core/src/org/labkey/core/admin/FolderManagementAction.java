@@ -626,7 +626,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
                         if (!folderXml.exists())
                         {
-                            errors.reject("folderImport", "This file doesn't contain an appropriate xml.");
+                            errors.reject("folderImport", "This archive doesn't contain a folder.xml or study.xml file.");
                         }
                     }
                     else
