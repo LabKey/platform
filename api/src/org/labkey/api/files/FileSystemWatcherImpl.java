@@ -102,11 +102,9 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
     // Not a daemon thread because listeners could be performing I/O and other tasks that are dangerous to interrupt.
     private class FileSystemWatcherThread extends Thread implements ShutdownListener
     {
-        private volatile boolean _continue = true;
-
         private FileSystemWatcherThread()
         {
-            ContextListener.addShutdownListener(this);
+            super("FileSystemWatcherThread");
         }
 
         @Override
@@ -114,7 +112,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         {
             try
             {
-                while (_continue)
+                while (!isInterrupted())
                 {
                     WatchKey watchKey = _watcher.take();
                     Path watchedPath = null;
@@ -151,15 +149,15 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
             finally
             {
                 LOG.info(getClass().getSimpleName() + " is terminating");
-                close();   // Make sure we're closed... shutdown case will close twice, but that's a no-op
+                close();
             }
         }
 
+        /* NOTE: this method is being called by the shutdown thread but interrupts the file watcher thread */
         @Override
         public void shutdownPre()
         {
-            _continue = false;
-            close();
+            this.interrupt();
         }
 
         @Override

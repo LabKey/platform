@@ -150,7 +150,7 @@ public abstract class MessageDigest
         @Override
         public String getName()
         {
-            return "Message digest timer task";
+            return "Message digest timer task (" + _digest.getClass().getSimpleName() + ")";
         }
 
         public void shutdownPre()
