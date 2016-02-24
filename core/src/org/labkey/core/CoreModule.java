@@ -513,9 +513,16 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         if (moduleContext.isNewInstall())
         {
             bootstrap();
+        }
+        else
+        {
             WriteableAppProps app = AppProps.getWriteableInstance();
-            app.setUseContainerRelativeURL(true);
-            app.save();
+            Map<String, String> props = app.getProperties(ContainerManager.getRoot());
+            if (null == props || null == props.get("USE_CONTAINER_RELATIVE_URL"))
+            {
+                app.setUseContainerRelativeURL(false);
+                app.save();
+            }
         }
 
         // Increment on every core module upgrade to defeat browser caching of static resources.
