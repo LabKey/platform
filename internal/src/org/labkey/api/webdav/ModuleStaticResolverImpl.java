@@ -16,6 +16,7 @@
 package org.labkey.api.webdav;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -30,6 +31,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HeartBeat;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ViewContext;
 
@@ -40,6 +42,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -210,6 +213,86 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         }
     }
 
+
+    // Parent -> map(name->shortcut,index)
+    Map<Path,Map<String,Pair<Path,String>>> shortcuts = new HashMap<>();
+
+
+    @NotNull
+    public Map<String,Pair<Path,String>> getShortcuts(Path collection)
+    {
+        synchronized (shortcuts)
+        {
+            HashMap<String,Pair<Path,String>> ret = new HashMap<>();
+            Map<String,Pair<Path,String>> map = shortcuts.get(collection);
+            if (null != map)
+                ret.putAll(map);
+            return ret;
+        }
+    }
+
+
+    /**
+     * Only for static web content, alias a collection path to another location.
+     *
+     * For simplicity and speed this is very limited.
+     * 1) from must not exist
+     * 2) from.getParent() must exist
+     * 3) only links within the static webdav tree are supported
+     *
+     * @param from
+     * @param target
+     */
+    public void addLink(@NotNull Path from, @NotNull Path target, String indexPage)
+    {
+        if (null == target || from.equals(target))
+        {
+            removeLink(from);
+            return;
+        }
+        if (from.equals(Path.rootPath) || from.startsWith(target))
+            throw new IllegalArgumentException(from.toString() + " --> " + target.toString());
+
+        WebdavResource rParent = lookup(from.getParent());
+        if (!rParent.isCollection())
+            throw new IllegalArgumentException(from.toString());
+        if (!(rParent instanceof AbstractWebdavResource))
+            throw new IllegalArgumentException(from.toString());
+
+        synchronized (shortcuts)
+        {
+            Map<String,Pair<Path,String>> map = shortcuts.get(rParent.getPath());
+            if (null == map)
+            {
+                map = new HashMap<>();
+                shortcuts.put(rParent.getPath(), map);
+            }
+            map.put(from.getName(), new Pair<>(target,indexPage));
+        }
+
+        ((AbstractWebdavResource)rParent).createLink(from.getName(), target, indexPage);
+    }
+
+
+    public void removeLink(Path from)
+    {
+        WebdavResource rParent = lookup(from.getParent());
+        if (null == rParent || !rParent.isCollection())
+            throw new IllegalArgumentException(from.toString());
+        if (!(rParent instanceof AbstractWebdavResource))
+            throw new IllegalArgumentException(from.toString());
+
+        synchronized (shortcuts)
+        {
+            Map<String,Pair<Path,String>> map = shortcuts.get(rParent.getPath());
+            if (null != map)
+                map.remove(from.getName());
+        }
+
+        ((AbstractWebdavResource)rParent).removeLink(from.getName());
+    }
+
+
     @Override
     public String toString()
     {
@@ -346,8 +429,20 @@ public class ModuleStaticResolverImpl implements WebdavResolver
                         Path path = getPath().append(e.getKey());
                         children.put(e.getKey(), new StaticResource(this, path, e.getValue()));
                     }
+
                     for (WebdavResource r : _additional)
                         children.put(r.getName(),r);
+
+                    Map<String,Pair<Path,String>> shortcuts = getShortcuts(getPath());
+                    for (Map.Entry<String,Pair<Path,String>> e : shortcuts.entrySet())
+                    {
+                        String name = e.getKey();
+                        Path target = e.getValue().getKey();
+                        String indexPage = e.getValue().getValue();
+
+                        if (!children.containsKey(name))
+                            children.put(name, new SymbolicLink(getPath().append(name), target, true, indexPage));
+                    }
 
                     CHILDREN_CACHE.put(getPath(), children);
                 }
@@ -356,41 +451,20 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         }
 
 
+        // just clear cache and let getChildren() create new children list with new shortcut
         public void createLink(String name, Path target, String indexPage)
         {
-            synchronized (_lock)
-            {
-                Map<String, WebdavResource> originalChildren = getChildren();
-                if (null != originalChildren.get(name))
-                    throw new IllegalArgumentException(name + " already exists");
-                // _children is not synchronized so don't add put, create a new map
-                Map<String,WebdavResource> children = new CaseInsensitiveTreeMap<>();
-                children.putAll(originalChildren);
-                children.put(name, new SymbolicLink(getPath().append(name), target, true, indexPage));
-                CHILDREN_CACHE.put(getPath(), children);
-            }
+            CHILDREN_CACHE.remove(getPath());
         }
 
 
         @Override
         public void removeLink(String name)
         {
-            synchronized (_lock)
-            {
-                Map<String, WebdavResource> originalChildren = getChildren();
-                WebdavResource link = originalChildren.get(name);
-                if (null == link)
-                    return; // silent?
-                if (!(link instanceof SymbolicLink))
-                    throw new IllegalArgumentException(name + " is not a link");
-                // _children is not synchronized so don't add put, create a new map
-                Map<String,WebdavResource> children = new CaseInsensitiveTreeMap<>();
-                children.putAll(originalChildren);
-                children.remove(name);
-                CHILDREN_CACHE.put(getPath(), children);
-            }
+            CHILDREN_CACHE.remove(getPath());
             ModuleStaticResolverImpl.this._allStaticFiles.clear();
         }
+
 
         @Override
         public File getFile()
@@ -482,9 +556,6 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             return _etag;
         }
     }
-
-
-
 
 
     public class SymbolicLink extends AbstractWebdavResourceCollection implements WebdavResolver
@@ -589,6 +660,9 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             return super.toString();
         }
     }
+
+
+
 
 
 

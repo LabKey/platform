@@ -111,47 +111,18 @@ public class WebdavService
         return lookup(p);
     }
 
-    /**
-     * Only for static web content, alias a collection path to another location.
-     *
-     * For simplicity and speed this is very limited.
-     * 1) from must not exist
-     * 2) from.getParent() must exist
-     * 3) only links within the static webdav tree are supported
-     *
-     * @param from
-     * @param target
-     */
     public void addLink(@NotNull Path from, @NotNull Path target, String indexPage)
     {
-        if (null == target || from.equals(target))
-        {
-            removeLink(from);
-            return;
-        }
-        if (from.equals(Path.rootPath) || from.startsWith(target))
-            throw new IllegalArgumentException(from.toString() + " --> " + target.toString());
-        WebdavResource r  = _resolver.lookup(from);
-        WebdavResource rParent = _resolver.lookup(from.getParent());
-        if (null != r && !r.isCollection() || !rParent.exists())
-            throw new IllegalArgumentException(from.toString());
-        if (!(rParent instanceof AbstractWebdavResource))
-            throw new IllegalArgumentException(from.toString());
-        ((AbstractWebdavResource)rParent).createLink(from.getName(), target, indexPage);
+        _resolver.addLink(from, target, indexPage);
     }
 
 
     public void removeLink(Path from)
     {
-        WebdavResource rParent = _resolver.lookup(from.getParent());
-        if (null == rParent || !rParent.isCollection())
-            throw new IllegalArgumentException(from.toString());
-        if (!(rParent instanceof AbstractWebdavResource))
-            throw new IllegalArgumentException(from.toString());
-        ((AbstractWebdavResource)rParent).removeLink(from.getName());
+        _resolver.removeLink(from);
     }
 
-    
+
     /*
      * interface for resources that are accessible through http:
      */

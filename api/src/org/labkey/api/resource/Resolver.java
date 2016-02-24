@@ -15,6 +15,7 @@
  */
 package org.labkey.api.resource;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.Path;
 
@@ -32,4 +33,16 @@ public interface Resolver
      * @return
      */
     @Nullable Resource lookup(Path path);
+
+
+    default void addLink(@NotNull Path from, @NotNull Path target, String indexPage)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+
+    default void removeLink(Path from)
+    {
+        throw new UnsupportedOperationException();
+    }
 }
