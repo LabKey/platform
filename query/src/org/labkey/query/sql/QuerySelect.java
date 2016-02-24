@@ -70,7 +70,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
 {
     private static final Logger _log = Logger.getLogger(QuerySelect.class);
 
-    private String _queryText = null;
+    String _queryText = null;
     private Map<FieldKey, SelectColumn> _columns;
 
     // these three fields are accessed by QueryPivot
