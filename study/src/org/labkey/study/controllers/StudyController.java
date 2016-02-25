@@ -370,7 +370,7 @@ public class StudyController extends BaseStudyController
 		@Override
 		protected void renderInternal(Object model, PrintWriter out) throws Exception
 		{
-			out.print("<table width=100%><tr><td align=left valign=top class=labkey-body-panel><img height=1 width=400 src=\"" + getViewContext().getContextPath() + "\"/_.gif\"><br>");
+			out.print("<table width=100%><tr><td align=left valign=top class=labkey-body-panel><img height=1 width=400 src=\"" + getViewContext().getContextPath() + "/_.gif\"><br>");
 			include(getBody());
 			out.print("</td><td align=left valign=top class=labkey-side-panel><img height=1 width=240 src=\"" + getViewContext().getContextPath() + "/_.gif\"><br>");
 			include(getView(WebPartFactory.LOCATION_RIGHT));
