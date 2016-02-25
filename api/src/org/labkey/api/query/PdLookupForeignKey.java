@@ -202,7 +202,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
                 return new NamedObjectList();
             ((ContainerTable) lookupTable).setContainerFilter(new ContainerFilter.AllFolders(_user));
 
-            return lookupTable.getSelectList(getLookupColumnName());
+            return ((ContainerTable) lookupTable).getPathSelectList();
         }
 
         return super.getSelectList(ctx);

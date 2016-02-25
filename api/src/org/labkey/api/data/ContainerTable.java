@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
 import org.labkey.api.portal.ProjectUrls;
@@ -28,9 +29,16 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.view.ActionURL;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * User: jeckels
@@ -242,4 +250,31 @@ public class ContainerTable extends FilteredTable<UserSchema>
             return sb.toString();
         }
     }
+
+    public NamedObjectList getPathSelectList()
+    {
+        final NamedObjectList ret = new NamedObjectList();
+
+        Map<String, String> pathToEntityMap = new TreeMap<>();
+        List<ColumnInfo> cols = Arrays.asList(getColumn("EntityId"));
+
+        new TableSelector(this, cols, null, null).forEach(new Selector.ForEachBlock<ResultSet>()
+        {
+            @Override
+            public void exec(ResultSet rs) throws SQLException
+            {
+                Container container = ContainerManager.getForId(rs.getString(1));
+                pathToEntityMap.put(container.getPath(), rs.getString(1));
+            }
+        });
+
+        for (String path : pathToEntityMap.keySet())
+        {
+            ret.put(new SimpleNamedObject(pathToEntityMap.get(path), path));
+        }
+
+        return ret;
+
+    }
+
 }
