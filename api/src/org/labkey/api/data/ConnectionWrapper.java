@@ -265,7 +265,7 @@ public class ConnectionWrapper implements java.sql.Connection
     public void setAutoCommit(boolean autoCommit) throws SQLException
     {
         checkForSuspiciousClose();
-        _log.debug("setAutoCommit(" + (autoCommit?"TRUE)":"FALSE)"));
+        _log.debug("SPID=" + getSPID() + " setAutoCommit(" + (autoCommit?"TRUE)":"FALSE)"));
         try
         {
             _connection.setAutoCommit(autoCommit);
@@ -292,7 +292,7 @@ public class ConnectionWrapper implements java.sql.Connection
     public void commit() throws SQLException
     {
         checkForSuspiciousClose();
-        _log.debug("commit()");
+        _log.debug("SPID=" + getSPID() + " commit()");
         try
         {
             _connection.commit();
@@ -447,6 +447,7 @@ public class ConnectionWrapper implements java.sql.Connection
         checkForSuspiciousClose();
         try
         {
+            _log.debug("SPID=" + getSPID() + " setTransactionIsolation(" + level + ")");
             _connection.setTransactionIsolation(level);
         }
         catch (SQLException e)
