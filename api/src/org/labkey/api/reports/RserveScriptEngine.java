@@ -29,8 +29,10 @@ import org.rosuda.REngine.Rserve.RserveException;
 import javax.script.ScriptContext;
 import javax.script.ScriptException;
 import java.io.File;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
 import java.util.List;
 import java.util.Map;
 
@@ -275,11 +277,14 @@ public class RserveScriptEngine extends RScriptEngine
                 LOG.debug("Mapped path '" + localURI + "' ==> '" + remoteURI + "'");
 
                 if (remoteURI.startsWith("file:"))
+                {
+                    remoteURI = URLDecoder.decode(remoteURI, "UTF-8");
                     return remoteURI.substring(5);
+                }
 
                 return remoteURI;
             }
-            catch (URISyntaxException e)
+            catch (URISyntaxException | UnsupportedEncodingException e)
             {
                 LOG.warn("Error mapping localURI '" + localURI + "' to remote RServe path: " + e.getMessage());
             }
