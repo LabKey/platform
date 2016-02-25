@@ -309,7 +309,9 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
             }
         }
 
-        ExperimentServiceImpl.get().cacheMaterialSource(_object);
+        // NOTE cacheMaterialSource() of course calls transactioncache.put(), which does not alter the shared cache! (BUG?)
+        // Just call uncache(), and let normal cache loading do its thing
+        ExperimentServiceImpl.get().uncacheMaterialSource(_object);
     }
 
     public void delete(User user)
