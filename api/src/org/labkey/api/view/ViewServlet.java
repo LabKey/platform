@@ -563,6 +563,7 @@ public class ViewServlet extends HttpServlet
             }
         };
 
+        final Object state =  QueryService.get().cloneEnvironment();
         try (RequestInfo r = MemTracker.get().startProfiler(request, url.getController() + "/" + url.getAction()))
         {
             Module module = ModuleLoader.getInstance().getModuleForController(url.getController());
@@ -585,7 +586,7 @@ public class ViewServlet extends HttpServlet
         }
         finally
         {
-            QueryService.get().clearEnvironment();
+            QueryService.get().copyEnvironment(state);
         }
     }
 
