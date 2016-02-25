@@ -1439,7 +1439,16 @@ public class Query
         private String hash = GUID.makeHash();
         private QuerySchema lists;
 
-		Container getSubfolder()
+        @Before
+        public void setUp() throws Exception
+        {
+            // if this fails, it probably means a previous test cleared them, which is unexpected
+            assertNotNull(QueryService.get().getEnvironment(QueryService.Environment.USER));
+            assertNotNull(QueryService.get().getEnvironment(QueryService.Environment.CONTAINER));
+        }
+
+
+        Container getSubfolder()
 		{
             return ContainerManager.ensureContainer(JunitUtil.getTestContainer().getPath() + "/qtest");
 		}
@@ -1473,12 +1482,6 @@ public class Query
                 default: fail();
             }
             return PropertyType.STRING;
-        }
-
-        @Before
-        public void setUp() throws Exception
-        {
-//            _setUp();
         }
 
 

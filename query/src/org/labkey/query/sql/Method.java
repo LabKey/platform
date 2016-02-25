@@ -1065,7 +1065,11 @@ public abstract class Method
             if (arguments.length == 1)
             {
                 //Current UserID gets put in QueryService.getEnvironment() by AuthFilter
+                // NOTE: ideally this should be calculated at RUN time not compile time. (see UserIdInfo)
+                // However, we are generating an IN () clause here, and it's easier to do this way
                 User user =  (User)QueryServiceImpl.get().getEnvironment(QueryService.Environment.USER);
+                if (null == user)
+                    throw new IllegalStateException("Query environment has not been set");
                 Object[] groupIds = ArrayUtils.toObject(user.getGroups());
                 SQLFragment ret = new SQLFragment();
                 ret.append("(").append(groupArg).append(") IN (").append(StringUtils.join(groupIds, ",")).append(")");
