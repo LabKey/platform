@@ -45,17 +45,17 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class PipelineQueueImpl extends AbstractPipelineQueue
 {
-    private static Logger LOG = Logger.getLogger(PipelineQueueImpl.class);
-    private int MAX_RUNNING_JOBS = 10;
+    private static final Logger LOG = Logger.getLogger(PipelineQueueImpl.class);
+    private static final int MAX_RUNNING_JOBS = 10;
 
-    List<PipelineJob> _pending = new ArrayList<>();
-    List<PipelineJob> _running = new ArrayList<>();
+    private final List<PipelineJob> _pending = new ArrayList<>();
+    private final List<PipelineJob> _running = new ArrayList<>();
 
     // This is the list of jobs that have been submitted to JobRunner-- they
     // may be either running or pending.
-    HashSet<PipelineJob> _submitted = new HashSet<>();
+    private final HashSet<PipelineJob> _submitted = new HashSet<>();
 
-    JobRunner _runner = new JobRunner(MAX_RUNNING_JOBS);
+    private final JobRunner _runner = new JobRunner("Pipeline", MAX_RUNNING_JOBS);
 
     protected synchronized void enqueue(PipelineJob job)
     {

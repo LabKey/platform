@@ -31,7 +31,7 @@ import java.io.File;
  */
 public abstract class AbstractPipelineQueue implements PipelineQueue
 {
-    private static Logger LOG = Logger.getLogger(AbstractPipelineQueue.class);
+    private static final Logger LOG = Logger.getLogger(AbstractPipelineQueue.class);
 
     @Override
     public void addJob(final PipelineJob job) throws PipelineValidationException
