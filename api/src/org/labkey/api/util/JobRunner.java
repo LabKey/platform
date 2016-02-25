@@ -40,26 +40,21 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class JobRunner implements Executor
 {
-    static Logger _log = Logger.getLogger(JobRunner.class);
-    static JobRunner _defaultJobRunner = new JobRunner(1);
+    static final Logger _log = Logger.getLogger(JobRunner.class);
 
-    private ScheduledThreadPoolExecutor _executor = null;
+    private static final JobRunner _defaultJobRunner = new JobRunner("Default", 1);
+
+    private final ScheduledThreadPoolExecutor _executor;
     private final HashMap<Future, Job> _jobs = new HashMap<>();
 
 
-    public JobRunner()
+    public JobRunner(String name, int max)
     {
-        this(1);
+        this(name, max, Thread.MIN_PRIORITY);
     }
 
 
-    public JobRunner(int max)
-    {
-        this(max, Thread.MIN_PRIORITY);
-    }
-
-
-    public JobRunner(int max, int priority)
+    private JobRunner(String name, int max, int priority)
     {
         _executor = new JobThreadPoolExecutor(max);
         _executor.setThreadFactory(new JobThreadFactory(priority));
@@ -68,7 +63,7 @@ public class JobRunner implements Executor
             @Override
             public String getName()
             {
-                return "Job Runner";
+                return "Job Runner (" + name + ")";
             }
 
             public void shutdownPre()

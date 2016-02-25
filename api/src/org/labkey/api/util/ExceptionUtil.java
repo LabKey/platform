@@ -76,7 +76,7 @@ import java.util.WeakHashMap;
  */
 public class ExceptionUtil
 {
-    private static final JobRunner _jobRunner = new JobRunner(1);
+    private static final JobRunner _jobRunner = new JobRunner("Mothership Reporting", 1);
     private static final Logger _logStatic = Logger.getLogger(ExceptionUtil.class);
 
 
