@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.RowMap;
+import org.springframework.jdbc.BadSqlGrammarException;
 
 import java.lang.reflect.Array;
 import java.sql.Connection;
@@ -250,6 +251,11 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
             return ret;
         }
         catch(RuntimeSQLException e)
+        {
+            factory.handleSqlException(e.getSQLException(), conn);
+            throw new IllegalStateException(factory.getClass().getSimpleName() + ".handleSqlException() should have thrown an exception");
+        }
+        catch(BadSqlGrammarException e)
         {
             factory.handleSqlException(e.getSQLException(), conn);
             throw new IllegalStateException(factory.getClass().getSimpleName() + ".handleSqlException() should have thrown an exception");
