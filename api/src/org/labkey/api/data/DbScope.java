@@ -34,12 +34,15 @@ import org.labkey.api.module.ModuleResourceResolver;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.TestContext;
 import org.labkey.data.xml.TablesDocument;
+import org.springframework.dao.DeadlockLoserDataAccessException;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -73,8 +76,11 @@ import java.util.Random;
 import java.util.RandomAccess;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 /**
  * Class that wraps a data source and is shared amongst that data source's DbSchemas.
@@ -140,6 +146,56 @@ public class DbScope
          */
         boolean isReleaseLocksOnFinalCommit();
     }
+
+
+    /* marker interface */
+    public interface ServerLock extends Lock
+    {
+        @Override
+        void lock();
+
+        @Override
+        default void lockInterruptibly() throws InterruptedException
+        {
+            lock();
+        }
+
+        @Override
+        default boolean tryLock()
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        default boolean tryLock(long time, TimeUnit unit) throws InterruptedException
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        default void unlock()
+        {
+            /* noop, release with commit/rollback */
+        }
+
+        @NotNull
+        @Override
+        default Condition newCondition()
+        {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+
+    public static class ServerNoopLock implements ServerLock
+    {
+        @Override
+        public void lock()
+        {
+            /* do nothing */
+        }
+    }
+
 
     public static final TransactionKind NORMAL_TRANSACTION_KIND = new TransactionKind()
     {
@@ -408,7 +464,7 @@ public class DbScope
             assert null != transaction;
             if (transactionKind.getKind().equals(transaction.getTransactionKind().getKind()))
             {
-                transaction.increment(transactionKind.isReleaseLocksOnFinalCommit(), locks);
+                transaction.increment(transactionKind.isReleaseLocksOnFinalCommit(), Arrays.asList(locks));
                 return transaction;
             }
         }
@@ -482,7 +538,18 @@ public class DbScope
             {
                 // Acquire the requested locks BEFORE entering the synchronized block for mapping the transaction
                 // to the current thread
-                result = new TransactionImpl(conn, transactionKind, locks);
+                List<Lock> serverLocks = Arrays.asList(locks).stream()
+                        .filter((l) -> l instanceof ServerLock)
+                        .collect(Collectors.toList());
+                List<Lock> memoryLocks;
+                if (serverLocks.isEmpty())
+                    memoryLocks = Arrays.asList(locks);
+                else
+                    memoryLocks = Arrays.asList(locks).stream()
+                        .filter((l) -> !(l instanceof ServerLock))
+                        .collect(Collectors.toList());
+
+                result = new TransactionImpl(conn, transactionKind, memoryLocks);
                 int stackDepth;
                 synchronized (_transaction)
                 {
@@ -495,6 +562,7 @@ public class DbScope
                     transactions.add(result);
                     stackDepth = transactions.size();
                 }
+                serverLocks.stream().forEach(Lock::lock);
                 if (stackDepth > 2)
                     LOG.info("Transaction stack for thread '" + getEffectiveThread().getName() + "' is " + stackDepth);
             }
@@ -1456,7 +1524,12 @@ public class DbScope
         private Throwable _creation = new Throwable();
         private final TransactionKind _transactionKind;
 
-        TransactionImpl(ConnectionWrapper conn, TransactionKind transactionKind, Lock... extraLocks)
+        TransactionImpl(ConnectionWrapper conn, TransactionKind transactionKind)
+        {
+            this(conn, transactionKind, Collections.emptyList());
+        }
+
+        TransactionImpl(ConnectionWrapper conn, TransactionKind transactionKind, List<Lock> extraLocks)
         {
             _conn = conn;
             _transactionKind = transactionKind;
@@ -1673,7 +1746,7 @@ public class DbScope
             clearCommitTasks();
         }
 
-        public void increment(boolean releaseOnFinalCommit, Lock... extraLocks)
+        public void increment(boolean releaseOnFinalCommit, List<Lock> extraLocks)
         {
             for (Lock extraLock : extraLocks)
             {
@@ -1684,13 +1757,13 @@ public class DbScope
             if (!_locks.isEmpty() && releaseOnFinalCommit)
             {
                 // Add the new locks to the outermost set of locks
-                _locks.get(0).addAll(Arrays.asList(extraLocks));
+                _locks.get(0).addAll(extraLocks);
                 // Add an empty list to this layer of the transaction
-                _locks.add(new ArrayList<Lock>());
+                _locks.add(new ArrayList<>());
             }
             else
             {
-                _locks.add(new ArrayList<>(Arrays.asList(extraLocks)));
+                _locks.add(new ArrayList<>(extraLocks));
             }
         }
 
@@ -1699,6 +1772,7 @@ public class DbScope
             return _transactionKind;
         }
     }
+
 
     /**
      * Represents options for retrieving schemas from the cache
@@ -2114,6 +2188,77 @@ public class DbScope
                 assertFalse(getLabKeyScope().isTransactionActive());
             }
             assertFalse(getLabKeyScope().isTransactionActive());
+        }
+
+        @Test
+        public void testServerRowLock()
+        {
+            final User user  = TestContext.get().getUser();
+            final Throwable[] bkgException = new Throwable[] {null};
+            Throwable fgException = null;
+
+            final Object notifier = new Object();
+
+            Lock lockUser = new ServerPrimaryKeyLock(true, CoreSchema.getInstance().getTableInfoUsers(), user.getUserId());
+            Lock lockHome = new ServerPrimaryKeyLock(true, CoreSchema.getInstance().getTableInfoContainers(), ContainerManager.getHomeContainer().getId());
+
+            // let's try to intentionally cause a deadlock
+            Thread bkg = new Thread()
+            {
+                @Override
+                public void run()
+                {
+                    // lockHome should succeed fg has not locked this yet
+                    try (Transaction txBg = CoreSchema.getInstance().getScope().ensureTransaction(lockHome))
+                    {
+                        synchronized (notifier)
+                        {
+                            notifier.notify();
+                        }
+                        // should block on fg thread, but but we're not deadlocked yet
+                        lockUser.lock();
+                        txBg.commit();
+                    }
+                    catch (Throwable x)
+                    {
+                        bkgException[0] = x;
+                    }
+                }
+            };
+
+
+            // lockUser should succeed (bg has not even started yet)
+            try (Transaction txFg = CoreSchema.getInstance().getScope().ensureTransaction(lockUser))
+            {
+                // wait for background to acquire 'home' lock
+                synchronized (notifier)
+                {
+                    bkg.start();
+                    // wait for bkg to acquire lockHome
+                    notifier.wait(60*1000);
+                }
+                // try to acquire my second lock
+                // this should cause a deadlock
+                lockHome.lock();
+                txFg.commit();
+            }
+            catch (Throwable x)
+            {
+                fgException = x;
+            }
+            finally
+            {
+                bkg.interrupt();
+                try
+                {
+                    bkg.join();
+                }
+                catch (InterruptedException x)
+                {
+                }
+            }
+
+            assert bkgException[0] instanceof DeadlockLoserDataAccessException || fgException instanceof DeadlockLoserDataAccessException;
         }
     }
 }

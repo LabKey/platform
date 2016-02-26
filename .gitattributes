@@ -379,6 +379,7 @@ api/src/org/labkey/api/data/SchemaXmlCacheHandler.java -text
 api/src/org/labkey/api/data/SelectQueryAuditEvent.java -text
 api/src/org/labkey/api/data/SelectQueryAuditProvider.java -text
 api/src/org/labkey/api/data/Selector.java -text
+api/src/org/labkey/api/data/ServerPrimaryKeyLock.java -text
 api/src/org/labkey/api/data/ShowRows.java -text
 api/src/org/labkey/api/data/ShowRowsConverter.java -text
 api/src/org/labkey/api/data/SimpleFilter.java -text
