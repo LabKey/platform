@@ -221,7 +221,6 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                 {
                     if (null != _list && !isEmpty(_list.getName()))
                     {
-                        _log("Create List clicked");
                         setDirty(false);
 
                         //Issue 13457: dont actually create the list until later for excel import
@@ -234,7 +233,6 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                             _service.createList(_list, new ErrorDialogAsyncCallback<GWTList>(){
                                 public void onSuccess(GWTList result)
                                 {
-                                    _log("Create List onSuccess");
                                     setReadOnly(false);
                                     setList(result);
                                 }
@@ -366,7 +364,6 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
     public void setList(GWTList ds)
     {
-        _log("setList");
         _listId = ds.getListId();
         _list = ds;
         Element el = DOM.getElementById("labkey-nav-trail-current-page");
@@ -378,7 +375,6 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
     public void setDomain(GWTDomain d)
     {
-        _log("setDomain");
         if (null == _root)
             return;
 
@@ -396,8 +392,6 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
     {
         if (0 == _listId)
         {
-            _log("showNewListUI");
-
             clearLoading(_root);
             _root.add(_buttons);
 
@@ -412,8 +406,6 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
     private void showDesignerUI()
     {
-        _log("showDesignerUI");
-
         if (null != _domain && null != _list)
         {
             clearLoading(_root);
@@ -429,7 +421,6 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
             _root.add(new WebPartPanel("List Fields", _schemaPanel));
 
             refreshButtons();
-            _log("showDesignerUI ok");
         }
     }
 
@@ -447,8 +438,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         String baseColNamesString = PropertyUtil.getServerProperty("baseColumnNames");
         if (baseColNamesString == null)
             baseColNamesString = "";
-        String[] baseColArray = baseColNamesString.split(",");
-        for (String s : baseColArray)
+        for (String s : baseColNamesString.split(","))
             baseColumnNames.add(s);
 
         DomainImporter domainImporter = new _DomainImporter(getImporterService(), columnsToMap, baseColumnNames);
@@ -851,7 +841,6 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                         new _ListNameTextBox("Name", "ff_name", _list.name, dirtySetter);
                 HorizontalPanel panel = new HorizontalPanel();
                 panel.add(new Label("Name"));
-                //panel.add(new HelpPopup("Name", "Name of this List"));
                 table.setWidget(row, 0, panel);
                 cellFormatter.setStyleName(row, 0, labelStyleName);
                 table.setWidget(row, 1, listNameTextBox);
@@ -865,7 +854,6 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                         new BoundTextAreaBox("Description", "ff_description", _list.description, dirtySetter);
                 HorizontalPanel panel = new HorizontalPanel();
                 panel.add(new Label("Description"));
-                //panel.add(new HelpPopup("Name", "Name of this List"));
                 table.setWidget(row, 0, panel);
                 cellFormatter.setStyleName(row, 0, labelStyleName);
                 table.setWidget(row, 1, descriptionTextBox);
@@ -882,7 +870,6 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                         new ListBox(false);
                 HorizontalPanel panel = new HorizontalPanel();
                 panel.add(new Label("Title Field"));
-                //panel.add(new HelpPopup("Name", "Name of this List"));
                 table.setWidget(row, 0, panel);
                 cellFormatter.setStyleName(row, 0, labelStyleName);
                 table.setWidget(row, 1, titleListBox);
@@ -1339,7 +1326,6 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                         @Override
                         public void onSuccess(Void v)
                         {
-                            _log("Partial List Deleted");
                             _list._listId(0);
                         }
                     });
@@ -1364,8 +1350,6 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                 _service.createList(_list, new ErrorDialogAsyncCallback<GWTList>(){
                     public void onSuccess(GWTList result)
                     {
-                        _log("Create List onSuccess");
-
                         //NOTE: setList() will reload the definition, so we do not call it
                         _listId = result.getListId();
                         _list = result;
