@@ -53,6 +53,7 @@ import org.labkey.api.study.assay.DefaultAssayRunCreator;
 import org.labkey.api.study.assay.TsvDataHandler;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
@@ -74,7 +75,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.Set;
 
 /*
@@ -459,9 +459,10 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             File errFile = new File(errorFile);
             if (errFile.exists())
             {
-                try (Scanner sc = new Scanner(new File(errorFile)))
+                File errors = new File(errorFile);
+                try
                 {
-                    warning = sc.useDelimiter("\\A").next();
+                    warning = FileUtils.readFileToString(errors, StringUtilsLabKey.DEFAULT_CHARSET);
                 }
                 catch (Exception e)
                 {
