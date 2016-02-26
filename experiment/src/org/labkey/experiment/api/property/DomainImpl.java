@@ -26,10 +26,10 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ImportAliasable;
-import org.labkey.api.data.LockManager;
 import org.labkey.api.data.MVDisplayColumnFactory;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.ServerPrimaryKeyLock;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -69,6 +69,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 
 public class DomainImpl implements Domain
@@ -287,7 +289,7 @@ public class DomainImpl implements Domain
     public void delete(@Nullable User user) throws DomainNotFoundException
     {
         ExperimentService.Interface exp = ExperimentService.get();
-        Lock domainLock = _domainSaveLockManager.getLock(_dd.getDomainURI().toLowerCase());
+        Lock domainLock =  getLock(_dd);
         try (DbScope.Transaction transaction = exp.getSchema().getScope().ensureTransaction(domainLock))
         {
             DefaultValueService.get().clearDefaultValues(getContainer(), this);
@@ -309,7 +311,19 @@ public class DomainImpl implements Domain
     }
 
 
-    private static final LockManager<String> _domainSaveLockManager = new LockManager<>();
+    static Lock getLock(DomainDescriptor dd)
+    {
+        // TODO lock by dd.getDomainURI instead, need alternate ServerPrimaryKeyLock constructor
+        if (dd.getDomainId() == 0)
+        {
+            return new DbScope.ServerNoopLock();
+        }
+        else
+        {
+            DbSchema s = ExperimentService.get().getSchema();
+            return new ServerPrimaryKeyLock(false, s.getTable("domaindescriptor"), dd.getDomainId());
+        }
+    }
 
 
     public void save(User user, boolean allowAddBaseProperty) throws ChangePropertyDescriptorException
@@ -317,7 +331,7 @@ public class DomainImpl implements Domain
         ExperimentService.Interface exp = ExperimentService.get();
 
         // NOTE: the synchronization here does not remove the need to add better synchronization in StorageProvisioner, but it helps
-        Lock domainLock = _domainSaveLockManager.getLock(_dd.getDomainURI().toLowerCase());
+        Lock domainLock = getLock(_dd);
 
         try (DbScope.Transaction transaction = exp.getSchema().getScope().ensureTransaction(domainLock))
         {
