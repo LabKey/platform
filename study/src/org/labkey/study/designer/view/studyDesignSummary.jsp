@@ -45,7 +45,7 @@
         return;
     }
 
-    StudyDesignInfo info = StudyDesignManager.get().getDesignForStudy(user, study, c.hasPermission(user, AdminPermission.class));
+    StudyDesignInfo info = StudyDesignManager.get().getDesignForStudy(user, study, false);
     if (null == info)
     {%>
         No protocol has been registered for this study.<%
