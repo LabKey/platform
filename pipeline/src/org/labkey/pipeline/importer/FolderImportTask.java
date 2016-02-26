@@ -60,7 +60,8 @@ public class FolderImportTask extends PipelineJob.Task<FolderImportTask.Factory>
             {
                 importer.process(job, support.getImportContext(), vf);
             }
-            else {
+            else
+            {
                 //Build a fake ViewContext so we can run trigger scripts
                 try (ViewContext.StackResetter resetter = ViewContext.pushMockViewContext(job.getUser(),job.getContainer(),job.getActionURL()))
                 {

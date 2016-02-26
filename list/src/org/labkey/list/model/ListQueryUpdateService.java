@@ -220,9 +220,11 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             {
                 int inserted = _importRowsUsingETL(user, container, loader, null, context, new HashMap<>());
 
+                //If no errors commit transaction
                 if(!errors.hasErrors())
                     transaction.commit();
 
+                //Make entry to audit log if anything was inserted
                 if (inserted > 0)
                     ListManager.get().addAuditEvent(_list, user, "Bulk inserted " + inserted + " rows to list.");
                 ListManager.get().indexList(_list);
@@ -572,7 +574,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     public class ListItemAttachmentParentFactory implements AttachmentParentFactory
     {
         @Override
-        public AttachmentParent GenerateAttachmentParent(String entityId, Container c)
+        public AttachmentParent generateAttachmentParent(String entityId, Container c)
         {
             return new ListItemAttachmentParent(entityId, c);
         }
