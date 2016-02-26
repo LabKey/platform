@@ -45,7 +45,7 @@ public class AttachmentDataIterator extends WrapperDataIterator
 
     AttachmentDataIterator(DataIterator insertIt, BatchValidationException errors,
                            User user,
-                           VirtualFile attachmentDir,
+                           @Nullable VirtualFile attachmentDir,
                            int entityIdIndex,
                            ArrayList<_AttachmentUploadHelper> attachmentColumns,
                            QueryUpdateService.InsertOption insertOption,
@@ -195,7 +195,7 @@ public class AttachmentDataIterator extends WrapperDataIterator
         };
     }
 
-    protected AttachmentParent getAttachmentParent(String entityId, Container c) { return parentFactory != null ? parentFactory.GenerateAttachmentParent(entityId, c): null; }
+    protected AttachmentParent getAttachmentParent(String entityId, Container c) { return parentFactory != null ? parentFactory.generateAttachmentParent(entityId, c): null; }
 
 
     private static class _AttachmentUploadHelper

@@ -7,5 +7,5 @@ import org.labkey.api.data.Container;
  */
 public interface AttachmentParentFactory
 {
-    AttachmentParent GenerateAttachmentParent(String entityId, Container c);
+    AttachmentParent generateAttachmentParent(String entityId, Container c);
 }
