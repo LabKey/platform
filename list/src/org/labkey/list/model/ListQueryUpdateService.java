@@ -80,10 +80,10 @@ import java.util.Map;
  */
 public class ListQueryUpdateService extends DefaultQueryUpdateService
 {
-    ListDefinitionImpl _list = null;
-    private static String ID = "entityId";
+    private final ListDefinitionImpl _list;
+    private static final String ID = "entityId";
 
-    public ListQueryUpdateService(ListTable queryTable, TableInfo dbTable, ListDefinition list)
+    public ListQueryUpdateService(ListTable queryTable, TableInfo dbTable, @NotNull ListDefinition list)
     {
         super(queryTable, dbTable, createMVMapping(queryTable.getList()));
         _list = (ListDefinitionImpl) list;
@@ -324,20 +324,16 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             if (null != column)
             {
                 DomainProperty dp = _list.getDomain().getPropertyByURI(column.getPropertyURI());
-                if (null != dp)
+                if (null != dp && isAttachmentProperty(dp))
                 {
-                    PropertyDescriptor pd = dp.getPropertyDescriptor();
-                    if (pd.getPropertyType().equals(PropertyType.ATTACHMENT))
-                    {
-                        modifiedAttachmentColumns.add(column);
+                    modifiedAttachmentColumns.add(column);
 
-                        // setup any new attachments
-                        if (r.getValue() instanceof AttachmentFile)
-                        {
-                            AttachmentFile file = (AttachmentFile) r.getValue();
-                            if (null != file.getFilename())
-                                attachmentFiles.add(file);
-                        }
+                    // setup any new attachments
+                    if (r.getValue() instanceof AttachmentFile)
+                    {
+                        AttachmentFile file = (AttachmentFile) r.getValue();
+                        if (null != file.getFilename())
+                            attachmentFiles.add(file);
                     }
                 }
             }
@@ -456,7 +452,8 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                 DiscussionService.get().deleteDiscussions(container, user, entityId);
 
                 // Remove attachments
-                AttachmentService.get().deleteAttachments(new ListItemAttachmentParent(entityId, container));
+                if (hasAttachmentProperties())
+                    AttachmentService.get().deleteAttachments(new ListItemAttachmentParent(entityId, container));
 
                 // Clean up Search indexer
                 if (result.size() > 0)
@@ -498,16 +495,18 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         // Build up set of entityIds and AttachmentParents
         List<AttachmentParent> attachmentParents = new ArrayList<>();
 
-        for (String entityId : entityIds)
-        {
-            attachmentParents.add(new ListItemAttachmentParent(entityId, container));
-        }
-
         // Delete Discussions
         DiscussionService.get().deleteDiscussions(container, user, entityIds);
 
         // Delete Attachments
-        AttachmentService.get().deleteAttachments(attachmentParents);
+        if (hasAttachmentProperties())
+        {
+            for (String entityId : entityIds)
+            {
+                attachmentParents.add(new ListItemAttachmentParent(entityId, container));
+            }
+            AttachmentService.get().deleteAttachments(attachmentParents);
+        }
     }
 
     @Override
@@ -567,6 +566,22 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         return value;
     }
 
+    private boolean hasAttachmentProperties()
+    {
+        if (null != _list.getDomain())
+        {
+            for (DomainProperty dp : _list.getDomain().getProperties())
+                if (null != dp && isAttachmentProperty(dp))
+                    return true;
+        }
+        return false;
+    }
+
+    private boolean isAttachmentProperty(@NotNull DomainProperty dp)
+    {
+        PropertyDescriptor pd = dp.getPropertyDescriptor();
+        return (pd.getPropertyType().equals(PropertyType.ATTACHMENT));
+    }
 
     /**
      * Delegate class to generate an AttachmentParent
