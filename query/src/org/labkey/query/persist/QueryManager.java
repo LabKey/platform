@@ -49,6 +49,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.query.ExternalSchema;
 import org.labkey.query.ExternalSchemaDocumentProvider;
+import org.springframework.jdbc.BadSqlGrammarException;
 
 import java.net.URISyntaxException;
 import java.sql.ResultSet;
@@ -621,6 +622,10 @@ public class QueryManager
         catch (SQLException e)
         {
             errors.add(new QueryParseException(e.getMessage(), e, 0, 0));
+        }
+        catch (BadSqlGrammarException e)
+        {
+            errors.add(new QueryParseException(e.getSQLException().getMessage(), e, 0, 0));
         }
 
         UserSchema schema = table.getUserSchema();
