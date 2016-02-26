@@ -249,10 +249,6 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         {
             public void onChange(Widget sender)
             {
-                if (_selectedPD != null)
-                {
-//                    refreshRow(_selectedPD);
-                }
                 fireChangeEvent();
             }
         };
@@ -512,23 +508,6 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
         select(_selectedPD, true);
     }
-
-
-//    void saveRow(int index)
-//    {
-//        int tableRow = index+1;
-//        if (tableRow >= _table.getRowCount())
-//            return;
-//        for (int col=0 ; col<_table.getCellCount(tableRow) ; col++)
-//        {
-//            Widget w = _table.getWidget(tableRow,col);
-//            if (w instanceof BoundWidget)
-//            {
-//                ((BoundWidget)w).validate();
-//                ((BoundWidget)w).pushValue();
-//            }
-//        }
-//    }
     
 
     protected void refreshButtons(HorizontalPanel buttonPanel)
@@ -1531,7 +1510,6 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             this(width, maxLength, id, name);
             _pd = pd;
             _prop = prop;
-            _log("init " + getName() + " = " + _prop.get());
             pullValue();
         }
 
@@ -1540,7 +1518,6 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         @Override
         public boolean validateValue(String text)
         {
-            _log("validate(" + text + ")");
             String error = updateErrorFormat(text, false);
             return true;
         }

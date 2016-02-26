@@ -106,6 +106,9 @@ public class ValidatorItem<DomainType extends GWTDomain<FieldType>, FieldType ex
         _addRegexButton.setEnabled(isEnabled());
         _addRangeButton.setEnabled(isEnabled());
         _addLookupButton.setEnabled(isEnabled());
+
+        // 24683: Capability to edit validators not always showing up in edit mode
+        refreshValidators();
     }
 
     @Override
