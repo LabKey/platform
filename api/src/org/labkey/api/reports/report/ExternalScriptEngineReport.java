@@ -35,10 +35,7 @@ import org.labkey.api.reports.report.r.view.ConsoleOutput;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RunReportView;
 import org.labkey.api.thumbnail.Thumbnail;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -411,25 +408,22 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
     protected void cacheResults(ViewContext context, List<ParamReplacement> replacements)
     {
         if (getDescriptor().getReportId() != null &&
-            BooleanUtils.toBoolean(getDescriptor().getProperty(ReportDescriptor.Prop.cached)))
-        {
-            synchronized(_cachedReportURLMap)
-            {
+            BooleanUtils.toBoolean(getDescriptor().getProperty(ReportDescriptor.Prop.cached))) {
+            synchronized (_cachedReportURLMap) {
                 File cacheDir = getCacheDir(context.getContainer().getId());
 
                 if (null == cacheDir)
                     return;
 
-                try
-                {
+                try {
                     File mapFile = new File(cacheDir, SUBSTITUTION_MAP);
 
                     for (ParamReplacement param : replacements)
                     {
+                        List<Pair<File, File>> changes = new ArrayList<>();
                         for (File src : param.getFiles())
                         {
                             File dst = new File(cacheDir, src.getName());
-
                             if (src.exists() && dst.createNewFile())
                             {
                                 FileUtil.copyFile(src, dst);
@@ -441,15 +435,19 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
                                         bw.write("\nLast cached update : " + DateUtil.formatDateTime(context.getContainer()) + "\n");
                                     }
                                 }
-                                param.addFile(dst);
+                                changes.add(new Pair<>(src, dst));
                             }
+                        }
+
+                        for (Pair<File, File> change : changes)
+                        {
+                            param.getFiles().remove(change.getKey());
+                            param.addFile(change.getValue());
                         }
                     }
                     ParamReplacementSvc.get().toFile(replacements, mapFile);
                     _cachedReportURLMap.put(getDescriptor().getReportId(), getCacheURL(context.getActionURL()));
-                }
-                catch (Exception e)
-                {
+                } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             }
