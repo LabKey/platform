@@ -283,11 +283,12 @@ public class ParamReplacementSvc
             ParamReplacement param = fromToken(m.group(captureGroup));
             if (param != null && HrefOutput.class.isInstance(param))
             {
-                for (File file : param.getFiles())
+                HrefOutput href = (HrefOutput) param;
+                href.setReport(report);
+                File file = new File(parentDirectory, href.getName());
+                if (file.exists())
                 {
-                    HrefOutput href = (HrefOutput) param;
-                    href.setReport(report);
-                    href.addFile(new File(parentDirectory, href.getName()));
+                    href.addFile(file);
                     ScriptOutput o = href.renderAsScriptOutput(file);
                     if (null != o)
                         m.appendReplacement(sb, o.getValue());
