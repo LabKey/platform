@@ -40,7 +40,7 @@ jmock-legacy-2.6.0.jar|jMock|2.6.0|{link:jMock|http://www.jmock.org/}|{link:jMoc
 js.jar|Mozilla Rhino|1.7R3 PRERELEASE 2010/12/16|{link:Mozilla Rhino|http://www.mozilla.org/rhino/}|{link:MPL 1.1|http://www.mozilla.org/MPL}|kevink|Embedded JavaScript engine
 js-engine.jar|JSR-223 ScriptEngine for Rhino|Aug. 8th, 2008|{link:Scripting Project|https://scripting.dev.java.net/}|{link:BSD|http://www.opensource.org/licenses/bsd-license.php}|kevink|JSR-223 ScriptEngine APIs for Rhino
 json_simple-1.1.jar|JSON.simple - A Simple Java toolkit for JSON|Version 1.1|{link:JSON.simple|https://code.google.com/p/json-simple/}|{link:Apache License 2.0|http://www.apache.org/licenses/LICENSE-2.0}|gktaylor|JSON parser for remoteapi
-junit-4.11.jar|JUnit|4.11|{link:Junit|http://www.junit.org}|{link:CPL 1.0|http://www.opensource.org/licenses/cpl1.0.php}|jeckels|Unit testing
+junit-4.12.jar|JUnit|4.12|{link:Junit|http://www.junit.org}|{link:CPL 1.0|http://www.opensource.org/licenses/cpl1.0.php}|jeckels|Unit testing
 jxl.jar|Java Excel|2.6.8|{link:Java Excel API|http://jexcelapi.sourceforge.net//}|{link:LGPL|http://www.gnu.org/copyleft/lesser.html}|adam|Import/Export Excel files
 kaptcha-2.3.jar|Captcha generator|2.3|{link:kaptcha|http://code.google.com/p/kaptcha/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|nicka|User signup forms
 log4j-1.2.16.jar|Log4j|1.2.16|{link:Apache|http://logging.apache.org/log4j/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Logging
