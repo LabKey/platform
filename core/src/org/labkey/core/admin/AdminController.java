@@ -5624,6 +5624,7 @@ public class AdminController extends SpringActionController
     {
         private double[] _ignore = new double[0];  // Module versions to ignore (filter out of the results)
         private boolean _managedOnly = false;
+        private boolean _unmanagedOnly = false;
 
         public double[] getIgnore()
         {
@@ -5645,12 +5646,54 @@ public class AdminController extends SpringActionController
             return _managedOnly;
         }
 
+        @SuppressWarnings("unused")
         public void setManagedOnly(boolean managedOnly)
         {
             _managedOnly = managedOnly;
         }
+
+        public boolean isUnmanagedOnly()
+        {
+            return _unmanagedOnly;
+        }
+
+        @SuppressWarnings("unused")
+        public void setUnmanagedOnly(boolean unmanagedOnly)
+        {
+            _unmanagedOnly = unmanagedOnly;
+        }
     }
 
+
+    enum ManageFilter
+    {
+        ManagedOnly
+            {
+                @Override
+                boolean accept(Module module)
+                {
+                    return module.shouldManageVersion();
+                }
+            },
+        UnmanagedOnly
+            {
+                @Override
+                boolean accept(Module module)
+                {
+                    return !module.shouldManageVersion();
+                }
+            },
+        All
+            {
+                @Override
+                boolean accept(Module module)
+                {
+                    return true;
+                }
+            };
+
+        abstract boolean accept(Module module);
+    }
 
     @AdminConsoleAction
     public class ModulesAction extends SimpleViewAction<ModulesForm>
@@ -5665,7 +5708,8 @@ public class AdminController extends SpringActionController
             knownModules.removeAll(unknownModules);
 
             Set<Double> ignoreSet = form.getIgnoreSet();
-            String link = "";
+            String managedLink = "";
+            String unmanagedLink = "";
 
             // Option to filter out all modules whose version shouldn't be managed, or whose version matches the previous release
             // version or 0.00. This can be helpful during the end-of-release consolidation process. Show the link only in dev mode.
@@ -5677,7 +5721,7 @@ public class AdminController extends SpringActionController
                     ActionURL url = new ActionURL(AdminController.ModulesAction.class, ContainerManager.getRoot());
                     url.addParameter("ignore", "0.00," + previousRelease);
                     url.addParameter("managedOnly", true);
-                    link = PageFlowUtil.textLink("Click here to ignore 0.00, " + previousRelease + ", and unmanaged modules", url);
+                    managedLink = PageFlowUtil.textLink("Click here to ignore 0.00, " + previousRelease + ", and unmanaged modules", url);
                 }
                 else
                 {
@@ -5689,20 +5733,32 @@ public class AdminController extends SpringActionController
                     String ignoreString = ignore.isEmpty() ? null : ignore.toString();
                     String unmanaged = form.isManagedOnly() ? "unmanaged" : null;
 
-                    link = "(Currently ignoring " + Joiner.on(" and ").skipNulls().join(new String[]{ignoreString, unmanaged}) + ")";
+                    managedLink = "(Currently ignoring " + Joiner.on(" and ").skipNulls().join(new String[]{ignoreString, unmanaged}) + ") ";
+                }
+
+                if (!form.isUnmanagedOnly())
+                {
+                    ActionURL url = new ActionURL(AdminController.ModulesAction.class, ContainerManager.getRoot());
+                    url.addParameter("unmanagedOnly", true);
+                    unmanagedLink = PageFlowUtil.textLink("Click here to show unmanaged modules only", url);
+                }
+                else
+                {
+                    unmanagedLink = "(Currently showing unmanaged modules only)";
                 }
             }
 
+            ManageFilter filter = form.isManagedOnly() ? ManageFilter.ManagedOnly : (form.isUnmanagedOnly() ? ManageFilter.UnmanagedOnly : ManageFilter.All);
             String deleteInstructions = "<br><br>" + PageFlowUtil.filter("The delete links below will remove all record of a module from the database tables, " +
                 "but to remove a module completely you must also manually delete its .module file and exploded module directory from your LabKey Server deployment directory. " +
                 "Module files are typically deployed in <labkey_deployment_root>/modules and <labkey_deployment_root>/externalModules.");
-            HttpView known = new ModulesView(knownModules, "Known", PageFlowUtil.filter("Each of these modules is installed and has a valid module file. ") + link + deleteInstructions, null, ignoreSet, form.isManagedOnly());
+            HttpView known = new ModulesView(knownModules, "Known", PageFlowUtil.filter("Each of these modules is installed and has a valid module file. ") + managedLink + unmanagedLink + deleteInstructions, null, ignoreSet, filter);
             HttpView unknown = new ModulesView(unknownModules, "Unknown",
                 PageFlowUtil.filter((1 == unknownModules.size() ? "This module" : "Each of these modules") + " has been installed on this server " +
                 "in the past but the corresponding module file is currently missing or invalid. Possible explanations: the " +
                 "module is no longer being distributed, the module has been renamed, the server location where the module " +
                 "is stored is not accessible, or the module file is corrupted.") + deleteInstructions, PageFlowUtil.filter("A module is considered \"unknown\" if it was installed on this server " +
-                "in the past but the corresponding module file is currently missing or invalid. This server has no unknown modules."), Collections.<Double>emptySet(), form.isManagedOnly());
+                "in the past but the corresponding module file is currently missing or invalid. This server has no unknown modules."), Collections.<Double>emptySet(), filter);
 
             return new VBox(known, unknown);
         }
@@ -5714,9 +5770,9 @@ public class AdminController extends SpringActionController
             private final String _descriptionHtml;
             private final String _noModulesDescriptionHtml;
             private final Set<Double> _ignoreVersions;
-            private final boolean _managedOnly;
+            private final ManageFilter _manageFilter;
 
-            private ModulesView(Collection<ModuleContext> contexts, String type, String descriptionHtml, String noModulesDescriptionHtml, Set<Double> ignoreVersions, boolean managedOnly)
+            private ModulesView(Collection<ModuleContext> contexts, String type, String descriptionHtml, String noModulesDescriptionHtml, Set<Double> ignoreVersions, ManageFilter manageFilter)
             {
                 super(FrameType.PORTAL);
                 List<ModuleContext> sorted = new ArrayList<>(contexts);
@@ -5727,7 +5783,7 @@ public class AdminController extends SpringActionController
                 _descriptionHtml = descriptionHtml;
                 _noModulesDescriptionHtml = noModulesDescriptionHtml;
                 _ignoreVersions = ignoreVersions;
-                _managedOnly = managedOnly;
+                _manageFilter = manageFilter;
                 setTitle(_type + " Modules");
             }
 
@@ -5752,7 +5808,7 @@ public class AdminController extends SpringActionController
 
                         Module module = ModuleLoader.getInstance().getModule(moduleContext.getName());
 
-                        if (_managedOnly && null != module && !module.shouldManageVersion())
+                        if (null != module && !_manageFilter.accept(module))
                             continue;
 
                         List<String> schemas = moduleContext.getSchemaList();
