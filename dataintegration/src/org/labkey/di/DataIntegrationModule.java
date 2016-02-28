@@ -69,7 +69,7 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
 
     public double getVersion()
     {
-        return 15.30;
+        return 16.10;
     }
 
     protected void init()
