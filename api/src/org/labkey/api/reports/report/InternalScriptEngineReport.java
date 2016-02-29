@@ -25,14 +25,13 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.api.writer.PrintWriters;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -122,7 +121,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
                 {
                     File console = new File(getReportDir(context.getContainer().getId()), CONSOLE_OUTPUT);
 
-                    try (PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(console))))
+                    try (PrintWriter pw = PrintWriters.getPrintWriter(console))
                     {
                         if (output != null)
                             pw.write(output.toString());

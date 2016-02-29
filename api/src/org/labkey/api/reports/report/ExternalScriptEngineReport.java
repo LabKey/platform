@@ -35,13 +35,18 @@ import org.labkey.api.reports.report.r.view.ConsoleOutput;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RunReportView;
 import org.labkey.api.thumbnail.Thumbnail;
-import org.labkey.api.util.*;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.api.writer.PrintWriters;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -55,7 +60,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -285,7 +289,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         {
             File console = new File(getReportDir(context.getContainer().getId()), CONSOLE_OUTPUT);
 
-            try (PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(console))))
+            try (PrintWriter pw = PrintWriters.getPrintWriter(console))
             {
                 pw.write(output.toString());
             }
