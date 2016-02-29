@@ -28,6 +28,7 @@ import org.labkey.api.data.SimpleFilter.ColumnNameFormatter;
 import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.MvColumn;
+import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserIdForeignKey;
@@ -967,7 +968,8 @@ public enum CompareType
             }
 
             // TODO: How can I tell if this column is the core.Users DisplayName display column?
-            if (colInfo.getJdbcType() == JdbcType.VARCHAR && colInfo instanceof LookupColumn &&
+            if (colInfo.getJdbcType() == JdbcType.VARCHAR &&
+                    (colInfo instanceof LookupColumn  || (colInfo instanceof AliasedColumn && ((AliasedColumn)colInfo).getColumn() instanceof LookupColumn)) &&
                     (colInfo.getPropertyURI().endsWith("core#UsersData.DisplayName") || colInfo.getPropertyURI().endsWith("core#Users.DisplayName")))
             {
                 if (user != null)
