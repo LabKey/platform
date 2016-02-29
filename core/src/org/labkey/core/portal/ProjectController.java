@@ -1556,7 +1556,7 @@ public class ProjectController extends SpringActionController
     }
 
 
-    @RequiresPermission(AdminPermission.class)
+    @RequiresSiteAdmin
     public class SetWebPartPermissionsAction extends ApiAction<WebPartPermissionsForm>
     {
         @Override
