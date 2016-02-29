@@ -379,21 +379,30 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public ActionURL urlSchemaBrowser(Container c, String schemaName)
+        public ActionURL urlSchemaBrowser(Container c, @Nullable String schemaName)
         {
             ActionURL ret = urlSchemaBrowser(c);
-            ret.addParameter(QueryParam.schemaName.toString(), schemaName);
+            if (schemaName != null)
+            {
+                ret.addParameter(QueryParam.schemaName.toString(), schemaName);
+            }
             return ret;
         }
 
         @Override
-        public ActionURL urlSchemaBrowser(Container c, String schemaName, String queryName)
+        public ActionURL urlSchemaBrowser(Container c, @Nullable String schemaName, @Nullable String queryName)
         {
             if (StringUtils.isEmpty(queryName))
                 return urlSchemaBrowser(c, schemaName);
             ActionURL ret = urlSchemaBrowser(c);
-            ret.addParameter(QueryParam.schemaName.toString(), schemaName);
-            ret.addParameter(QueryParam.queryName.toString(), queryName);
+            if (schemaName != null)
+            {
+                ret.addParameter(QueryParam.schemaName.toString(), schemaName);
+            }
+            if (queryName != null)
+            {
+                ret.addParameter(QueryParam.queryName.toString(), queryName);
+            }
             return ret;
         }
 

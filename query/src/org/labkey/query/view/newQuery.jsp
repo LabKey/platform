@@ -21,6 +21,8 @@
 <%@ page import="org.labkey.query.controllers.QueryController" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.query.QueryUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -34,7 +36,7 @@
 <% if (namesAndLabels.size() == 0) { %>
     Cannot create a new query: no tables/queries exist in the current schema to base the new query on.
 <% } else { %>
-    <labkey:form action="<%=urlFor(QueryController.NewQueryAction.class)%>" method="POST">
+    <labkey:form id="createQueryForm" action="<%=urlFor(QueryController.NewQueryAction.class)%>" method="POST">
         <input type="hidden" name="<%=QueryParam.schemaName%>" value="<%=h(form.getSchemaName())%>" />
         <input type="hidden" name="ff_redirect" id="ff_redirect" value="sourceQuery" />
 
@@ -57,6 +59,19 @@
                 <% } %>
             </select>
         </p>
-        <labkey:button text="Create and Edit Source" />
+        <labkey:button text="Create and Edit Source" id="submit-form-btn" onclick="disableCreateButton();" />
+        <labkey:button text="Cancel" href="<%= h(PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(getContainer(), form.getSchemaName()))%>" />
     </labkey:form>
 <% } %>
+
+<script type="text/javascript">
+    var disableCreateButton = function ()
+    {
+        var submitButton = document.getElementById("submit-form-btn");
+        LABKEY.Utils.replaceClass(submitButton, 'labkey-button', 'labkey-disabled-button');
+
+        return true;
+    }
+</script>
+
+
