@@ -6780,7 +6780,23 @@ public class AdminController extends SpringActionController
                 {
                     throw new NotFoundException("No such short URL: " + shortURL);
                 }
-                service.deleteShortURL(shortURLRecord, getUser());
+                try
+                {
+                    service.deleteShortURL(shortURLRecord, getUser());
+                }
+                catch (ValidationException e)
+                {
+                    errors.addError(new LabkeyError("Error deleting short URL:"));
+                    for(ValidationError error: e.getErrors())
+                    {
+                        errors.addError(new LabkeyError(error.getMessage()));
+                    }
+                }
+
+                if (errors.getErrorCount() > 0)
+                {
+                    return false;
+                }
             }
             else
             {

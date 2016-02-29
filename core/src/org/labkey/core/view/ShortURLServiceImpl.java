@@ -25,6 +25,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityPolicy;
@@ -39,7 +40,9 @@ import org.labkey.api.view.ShortURLRecord;
 import org.labkey.api.view.ShortURLService;
 import org.labkey.api.view.UnauthorizedException;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * User: jeckels
@@ -47,6 +50,9 @@ import java.util.List;
  */
 public class ShortURLServiceImpl implements ShortURLService
 {
+    // Thread-safe list implementation that allows iteration and modifications without external synchronization
+    private static final List<ShortURLListener> _listeners = new CopyOnWriteArrayList<>();
+
     @Override @Nullable
     public ShortURLRecord resolveShortURL(@NotNull String shortURL)
     {
@@ -67,13 +73,31 @@ public class ShortURLServiceImpl implements ShortURLService
         return new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getArrayList(ShortURLRecord.class);
     }
 
-    public void deleteShortURL(@NotNull ShortURLRecord record, @NotNull User user)
+    public void deleteShortURL(@NotNull ShortURLRecord record, @NotNull User user) throws ValidationException
     {
         SecurityPolicy policy = SecurityPolicyManager.getPolicy(record);
         if (!policy.hasPermission(user, DeletePermission.class))
         {
             throw new UnauthorizedException("You are not authorized to delete the short URL '" + record.getShortURL() + "'");
         }
+
+        List<ShortURLListener> listeners = getListeners();
+        List<String> allErrors = new ArrayList<>();
+        for(ShortURLListener listener: listeners)
+        {
+            allErrors.addAll(listener.canDelete(record));
+        }
+
+        if (!allErrors.isEmpty())
+        {
+            ValidationException exception = new ValidationException();
+            for (String error : allErrors)
+            {
+                exception.addError(new SimpleValidationError(error));
+            }
+            throw exception;
+        }
+
         try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
         {
             SecurityPolicyManager.deletePolicy(record);
@@ -148,5 +172,25 @@ public class ShortURLServiceImpl implements ShortURLService
     {
         return new TableSelector(CoreSchema.getInstance().getTableInfoShortURL(),
                                  new SimpleFilter(FieldKey.fromParts("EntityId"), entityId), null).getObject(ShortURLRecord.class);
+    }
+
+    public void addListener(ShortURLListener listener)
+    {
+        _listeners.add(listener);
+    }
+
+
+    public void removeListener(ShortURLListener listener)
+    {
+        _listeners.remove(listener);
+    }
+
+
+    private List<ShortURLListener> getListeners()
+    {
+        List<ShortURLListener> toReturn = new ArrayList<>(_listeners.size());
+        toReturn.addAll(_listeners);
+
+        return toReturn;
     }
 }
