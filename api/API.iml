@@ -389,7 +389,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$TOMCAT_HOME$/lib/jasper.jar!/" />
+          <root url="jar://CATALINA_HOME$/lib/jasper.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -398,7 +398,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$TOMCAT_HOME$/lib/el-api.jar!/" />
+          <root url="jar://$CATALINA_HOME$/lib/el-api.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -407,7 +407,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$TOMCAT_HOME$/lib/jsp-api.jar!/" />
+          <root url="jar://$CATALINA_HOME$/lib/jsp-api.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -416,7 +416,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$TOMCAT_HOME$/bin/bootstrap.jar!/" />
+          <root url="jar://$CATALINA_HOME$/bin/bootstrap.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
