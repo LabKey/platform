@@ -254,52 +254,55 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             if (sourceApplication != null)
             {
                 ExpRun run = sourceApplication.getRun();
-                ExpProtocol protocol = run.getProtocol();
-                AssayProvider provider = AssayService.get().getProvider(protocol);
-
-                Domain domain;
-                if (provider != null)
+                if (run != null)
                 {
-                    domain = provider.getResultsDomain(protocol);
-                }
-                else
-                {
-                    // Be tolerant of the AssayProvider no longer being available. See if we have the default
-                    // results/data domain for TSV-style assays
-                    try
-                    {
-                        domain = AbstractAssayProvider.getDomainByPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_DATA);
-                    }
-                    catch (IllegalStateException ignored)
-                    {
-                        domain = null;
-                        // Be tolerant of not finding a domain anymore, if the provider has gone away
-                    }
-                }
+                    ExpProtocol protocol = run.getProtocol();
+                    AssayProvider provider = AssayService.get().getProvider(protocol);
 
-                if (domain != null && domain.getStorageTableName() != null)
-                {
-                    SQLFragment deleteSQL = new SQLFragment("DELETE FROM ");
-                    deleteSQL.append(domain.getDomainKind().getStorageSchemaName());
-                    deleteSQL.append(".");
-                    deleteSQL.append(domain.getStorageTableName());
-                    deleteSQL.append(" WHERE DataId = ?");
-                    deleteSQL.add(d.getRowId());
-
-                    try
+                    Domain domain;
+                    if (provider != null)
                     {
-                        new SqlExecutor(DbSchema.get(domain.getDomainKind().getStorageSchemaName())).execute(deleteSQL);
+                        domain = provider.getResultsDomain(protocol);
                     }
-                    catch (BadSqlGrammarException x)
+                    else
                     {
-                        // (18035) presumably this is an optimistic concurrency problem and the table is gone
-                        // postgres returns 42P01 in this case... SQL Server?
-                        if (SqlDialect.isObjectNotFoundException(x))
+                        // Be tolerant of the AssayProvider no longer being available. See if we have the default
+                        // results/data domain for TSV-style assays
+                        try
                         {
-                            // CONSIDER: unfortunately we can't swallow this exception, because Postgres leaves
-                            // the connection in an unusable state
+                            domain = AbstractAssayProvider.getDomainByPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_DATA);
                         }
-                        throw x;
+                        catch (IllegalStateException ignored)
+                        {
+                            domain = null;
+                            // Be tolerant of not finding a domain anymore, if the provider has gone away
+                        }
+                    }
+
+                    if (domain != null && domain.getStorageTableName() != null)
+                    {
+                        SQLFragment deleteSQL = new SQLFragment("DELETE FROM ");
+                        deleteSQL.append(domain.getDomainKind().getStorageSchemaName());
+                        deleteSQL.append(".");
+                        deleteSQL.append(domain.getStorageTableName());
+                        deleteSQL.append(" WHERE DataId = ?");
+                        deleteSQL.add(d.getRowId());
+
+                        try
+                        {
+                            new SqlExecutor(DbSchema.get(domain.getDomainKind().getStorageSchemaName())).execute(deleteSQL);
+                        }
+                        catch (BadSqlGrammarException x)
+                        {
+                            // (18035) presumably this is an optimistic concurrency problem and the table is gone
+                            // postgres returns 42P01 in this case... SQL Server?
+                            if (SqlDialect.isObjectNotFoundException(x))
+                            {
+                                // CONSIDER: unfortunately we can't swallow this exception, because Postgres leaves
+                                // the connection in an unusable state
+                            }
+                            throw x;
+                        }
                     }
                 }
             }
