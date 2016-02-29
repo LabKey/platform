@@ -51,9 +51,24 @@ public interface ShortURLService
      * Delete the previously saved short URL.
      * @throws org.labkey.api.view.UnauthorizedException if the user does not have permission to delete the URL
      */
-    void deleteShortURL(@NotNull ShortURLRecord record, @NotNull User user);
+    void deleteShortURL(@NotNull ShortURLRecord record, @NotNull User user) throws ValidationException;
 
     String validateShortURL(String shortURL) throws ValidationException;
 
     ShortURLRecord getForEntityId(@NotNull String entityId);
+
+    public void addListener(ShortURLListener listener);
+
+    public void removeListener(ShortURLListener listener);
+
+    public static interface ShortURLListener
+    {
+        /**
+         * Called prior to deleting a shortURL, to determine if a shortURL can be deleted.
+         * @return a list of errors that should prevent the shortURL from being deleted (e.g. if this shortURL is still
+         * referenced as a FK in another table)
+         */
+        @NotNull
+        List<String> canDelete(ShortURLRecord shortUrl);
+    }
 }
