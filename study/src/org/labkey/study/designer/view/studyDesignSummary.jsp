@@ -45,7 +45,14 @@
         return;
     }
 
-    StudyDesignInfo info = StudyDesignManager.get().getDesignForStudy(user, study, false);
+    // issue 21432: only create study design as admin if the label is not already in use
+    StudyDesignInfo info = StudyDesignManager.get().getDesignForStudy(study);
+    boolean designExistsForLabel = StudyDesignManager.get().getStudyDesign(c, study.getLabel()) != null;
+    if (info == null && c.hasPermission(user, AdminPermission.class) && !designExistsForLabel)
+    {
+        info = StudyDesignManager.get().getDesignForStudy(user, study, true);
+    }
+
     if (null == info)
     {%>
         No protocol has been registered for this study.<%
