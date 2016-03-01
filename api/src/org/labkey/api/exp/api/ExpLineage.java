@@ -117,6 +117,19 @@ public class ExpLineage
                 json.put("name", expObject.getName());
                 json.put("url", expObject.detailsURL());
                 json.put("rowId", expObject.getRowId());
+
+                // TODO: Replace this casting with inclusion of cpastype for DataClasses
+                String dataClass = null;
+                if (expObject instanceof ExpData)
+                {
+                    ExpData data = (ExpData) expObject;
+
+                    if (data.getDataClass() != null)
+                        dataClass = data.getDataClass().getLSID();
+                }
+
+                json.put("type", expObject.getLSIDNamespacePrefix());
+                json.put("dataClass", dataClass);
             }
 
             nodes.put(node.getKey(), json);
@@ -155,6 +168,29 @@ public class ExpLineage
             json.put("lsid", child);
             json.put("role", _role);
             return json;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result = parent.hashCode();
+            result = 31 * result + child.hashCode();
+            result = 31 * result + _role.hashCode();
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Edge edge = (Edge) o;
+
+            if (!parent.equals(edge.parent)) return false;
+            if (!child.equals(edge.child)) return false;
+            return _role.equals(edge._role);
+
         }
     }
 }
