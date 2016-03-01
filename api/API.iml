@@ -389,7 +389,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://CATALINA_HOME$/lib/jasper.jar!/" />
+          <root url="jar://$CATALINA_HOME$/lib/jasper.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
