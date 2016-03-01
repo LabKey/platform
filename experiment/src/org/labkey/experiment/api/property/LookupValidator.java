@@ -209,6 +209,7 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
             }
 
             errors.add(new PropertyValidationError("Value '" + value + "' was not present in lookup target '" + field.getLookupSchema() + "." + field.getLookupQuery() + "' for field '" + field.getNonBlankCaption() + "'", field.getNonBlankCaption()));
+            return false;
         }
         return true;
     }
