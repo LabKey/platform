@@ -13,7 +13,9 @@ if (!LABKEY.DataRegions) {
     // CONSTANTS
     //
     var ALL_FILTERS_SKIP_PREFIX = '.~';
+    var COLUMNS_PREFIX = '.columns';
     var PARAM_PREFIX = '.param.';
+    var REPORTID_PREFIX = '.reportId';
     var SORT_PREFIX = '.sort', SORT_ASC = '+', SORT_DESC = '-';
     var OFFSET_PREFIX = '.offset';
     var MAX_ROWS_PREFIX = '.maxRows', SHOW_ROWS_PREFIX = '.showRows';
@@ -1029,14 +1031,14 @@ if (!LABKEY.DataRegions) {
 
     /**
      * Show a message in the header of this DataRegion.
-     * @param {String / Object} config the HTML source of the message to be shown or a config object witht the following properties:
+     * @param {String / Object} config the HTML source of the message to be shown or a config object with the following properties:
      *      <ul>
      *          <li><strong>html</strong>: {String} the HTML source of the message to be shown.</li>
      *          <li><strong>part</strong>: {String} The part of the message area to render the message to.</li>
      *          <li><strong>duration</strong>: {Integer} The amount of time (in milliseconds) the message will stay visible.</li>
      *          <li><strong>hideButtonPanel</strong>: {Boolean} If true the button panel (customize view, export, etc.) will be hidden if visible.</li>
      *      </ul>
-     * @param part The part of the message are to render the message to. Used to scope messages so they can be added
+     * @param part The part of the message area to render the message to. Used to scope messages so they can be added
      *      and removed without clearing other messages.
      * @return {Ext.Element} The Ext.Element of the newly created message div.
      */
@@ -1066,6 +1068,24 @@ if (!LABKEY.DataRegions) {
      */
     Proto.clearMessage = function() {
         if (this.msgbox) this.msgbox.clear();
+    };
+
+    /**
+     * @param part The part of the message area to render the message to. Used to scope messages so they can be added
+     *      and removed without clearing other messages.
+     * @return {String} The message for 'part'. Could be undefined.
+     */
+    Proto.getMessage = function(part) {
+        if (this.msgbox) { return this.msgbox.getMessage(part); } // else undefined
+    };
+
+    /**
+     * @param part The part of the message area to render the message to. Used to scope messages so they can be added
+     *      and removed without clearing other messages.
+     * @return {Boolean} true iff there is a message area for this region and it has the message keyed by 'part'.
+     */
+    Proto.hasMessage = function(part) {
+        return this.msgbox && this.msgbox.hasMessage(part);
     };
 
     /**
@@ -1340,11 +1360,13 @@ if (!LABKEY.DataRegions) {
             return;
         }
 
-        var paramValPairs = [], newSort = [];
+        var paramValPairs = [],
+            newSort = [],
+            skipPrefixes = [OFFSET_PREFIX, SHOW_ROWS_PREFIX, VIEWNAME_PREFIX, REPORTID_PREFIX];
 
         if (view) {
             if (view.type == 'report')
-                paramValPairs.push([".reportId", view.reportId]);
+                paramValPairs.push([REPORTID_PREFIX, view.reportId]);
             else if (view.type == 'view' && view.viewName)
                 paramValPairs.push([VIEWNAME_PREFIX, view.viewName]);
             else if (LABKEY.Utils.isString(view))
@@ -1366,10 +1388,15 @@ if (!LABKEY.DataRegions) {
             if (urlParameters.containerFilter) {
                 paramValPairs.push([CONTAINER_FILTER_NAME, urlParameters.containerFilter]);
             }
+
+            // removes all filter, sort, and container filter parameters
+            skipPrefixes = skipPrefixes.concat([
+                ALL_FILTERS_SKIP_PREFIX, SORT_PREFIX, COLUMNS_PREFIX, CONTAINER_FILTER_NAME
+            ]);
         }
 
         // removes all filter, sort, and container filter parameters
-        _setParameters(this, paramValPairs, [OFFSET_PREFIX, SHOW_ROWS_PREFIX, VIEWNAME_PREFIX, ".reportId", ALL_FILTERS_SKIP_PREFIX, SORT_PREFIX, ".columns", CONTAINER_FILTER_NAME]);
+        _setParameters(this, paramValPairs, skipPrefixes);
     };
 
     Proto.revertCustomView = function() {
@@ -1402,7 +1429,7 @@ if (!LABKEY.DataRegions) {
         var additionalFields = {},
             userFilter = [],
             userSort = this.getUserSort(),
-            userColumns = this.getParameter(this.name + '.columns'),
+            userColumns = this.getParameter(this.name + COLUMNS_PREFIX),
             fields = [],
             viewName = (this.view && this.view.name) || this.viewName || '';
 
@@ -2589,7 +2616,7 @@ if (!LABKEY.DataRegions) {
             params[name + VIEWNAME_PREFIX] = region.viewName;
         }
         if (region.reportId) {
-            params[name + '.reportId'] = region.reportId;
+            params[name + REPORTID_PREFIX] = region.reportId;
         }
 
         var cf = region.getContainerFilter.call(region);
@@ -3294,6 +3321,10 @@ if (!LABKEY.DataRegions) {
 
     MsgProto.getMessage = function(part) {
         return this.parts[part.toLowerCase()];
+    };
+
+    MsgProto.hasMessage = function(part) {
+        return this.getMessage(part) !== undefined;
     };
 
     MsgProto.removeAll = function() {
