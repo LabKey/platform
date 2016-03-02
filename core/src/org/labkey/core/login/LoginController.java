@@ -290,7 +290,11 @@ public class LoginController extends SpringActionController
             ActionURL url = new ActionURL(SsoRedirectAction.class, ContainerManager.getRoot());
             url.addParameter("provider", provider.getName());
             if (null != returnURL)
+            {
                 url.addReturnURL(returnURL);
+                if (null != returnURL.getFragment())
+                    url.addParameter("urlhash", "#" + returnURL.getFragment());
+            }
             return url;
         }
     }
@@ -1107,7 +1111,12 @@ public class LoginController extends SpringActionController
         public Object execute(LoginForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            String otherLoginMechanisms = AuthenticationManager.getLoginPageLogoHtml(form.getReturnActionURL());
+            ActionURL returnURL = form.getReturnActionURL();
+            if (null != returnURL && null != form.getUrlhash())
+            {
+                returnURL.setFragment(form.getUrlhash().replace("#", ""));
+            }
+            String otherLoginMechanisms = AuthenticationManager.getLoginPageLogoHtml(returnURL);
             response.put("otherLoginMechanismsContent", otherLoginMechanisms);
             return response;
         }
