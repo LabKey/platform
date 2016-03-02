@@ -32,7 +32,7 @@
   {
       LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
       resources.add(ClientDependency.fromPath("File"));
-      resources.add(ClientDependency.fromPath("Ext4ClientApi"));
+      resources.add(ClientDependency.fromPath("Ext4ClientApi")); // LABKEY.ext4.Util.resizeToViewport
       return resources;
   }
 %>
@@ -83,7 +83,7 @@
             }
         %>
 
-        var fb = Ext4.create('File.panel.Browser', {
+        var config = {
             renderTo: <%=q(bean.getContentId())%>,
             containerPath: <%=q(c.getPath())%>,
             fileSystem: Ext4.create('File.system.Webdav', {
@@ -93,35 +93,51 @@
             }),
             startDirectory: startDirectory,
             height: <%= height %>,
-            showFolderTree: <%=bean.isShowFolderTree()%>,
-            expandFolderTree: <%=!bean.isFolderTreeCollapsed()%>,
+            folderTreeOptions: {
+                hidden: <%=!bean.isShowFolderTree()%>,
+                collapsed: <%=bean.isFolderTreeCollapsed()%>
+            },
             disableGeneralAdminSettings: <%=bean.isDisableGeneralAdminSettings()%>,
             showDetails: <%=bean.isShowDetails()%>,
             expandUpload: <%=bean.isExpandFileUpload()%>,
             isPipelineRoot: <%=bean.isPipelineRoot()%>,
             adminUser: <%=c.hasPermission(getUser(), AdminPermission.class)%>,
             statePrefix: <%=q(bean.getStatePrefix())%>,
-            tbarItems: buttonActions
-            <%
-                if (bean.isShowDetails())
-                {
-            %>
-            ,listeners: {
-                afterrender: {
-                    fn: function(f) { f.detailCheck(); },
-                    single: true
-                }
+            actions: buttonActions
+        };
+
+        <%
+            if (bean.isListing())
+            {
+        %>
+        Ext4.apply(config, {
+            allowSelection: false,
+            expandUpload: false,
+            minWidth: 250,
+            useServerActions: false,
+            useServerFileProperties: false,
+            showColumnHeaders: false,
+            showFolderTree: false,
+            showToolbar: false,
+            showUpload: false,
+            listDirectories: false,
+            actions: ['parentFolder', 'refresh'],
+            columns: ['iconfacls', 'name'],
+            folderTreeOptions: {
+                hidden: true,
+                collapsed: true
             }
-            <%
-                }
-            %>
         });
+        <%
+            }
+        %>
+
+        var fb = Ext4.create('File.panel.Browser', config);
 
         var _resize = function(w, h) {
             if (!fb || !fb.rendered)
                 return;
 
-            //resizeToViewport: function(extContainer, width, height, paddingX, paddingY, offsetX, offsetY)
             <% if (me.getFrame() == WebPartView.FrameType.PORTAL) {%>
                 var paddingX = 26;
                 var paddingY = 95;

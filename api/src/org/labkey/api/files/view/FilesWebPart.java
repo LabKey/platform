@@ -28,7 +28,6 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FileUrls;
 import org.labkey.api.files.FilesAdminOptions;
 import org.labkey.api.files.MissingRootDirectoryException;
-import org.labkey.api.jsp.JspLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
@@ -68,14 +67,12 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
     public static final String PART_NAME = "Files";
     private static final Logger _log = Logger.getLogger(FilesWebPart.class);
 
-    private boolean wide = true;
     private boolean showAdmin = false;
     private String fileSet;
     private Container container;
     private boolean _isPipelineFiles;       // viewing @pipeline files
 
     private static final String JSP = "/org/labkey/api/files/view/filesWebPart.jsp";
-    private static final String JSP_RIGHT = "/org/labkey/filecontent/view/files.jsp";
 
     public FilesWebPart(Container c, @Nullable String fileSet)
     {
@@ -168,14 +165,14 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             }
         }
 
-        setWide(null == webPartDescriptor.getLocation() || HttpView.BODY.equals(webPartDescriptor.getLocation()));
-        setShowAdmin(container.hasPermission(ctx.getUser(), AdminPermission.class));
-
-        if (!isWide())
+        boolean displayAsListing = WebPartFactory.LOCATION_RIGHT.equals(webPartDescriptor.getLocation());
+        getModelBean().setListing(displayAsListing);
+        if (displayAsListing)
         {
-            _path = JSP_RIGHT;
-            _page = JspLoader.createPage((String)null, _path);
+            getModelBean().setAutoResize(false);
         }
+
+        setShowAdmin(container.hasPermission(ctx.getUser(), AdminPermission.class));
     }
 
     protected void init()
@@ -286,14 +283,6 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         return form;
     }
 
-    @Override
-    public String getLocation()
-    {
-        if (!this.isWide())
-            return WebPartFactory.LOCATION_RIGHT;
-        return WebPartFactory.LOCATION_BODY;
-    }
-
     public static String getRootPath(Container c, @Nullable String davName)
     {
         return getRootPath(c, davName, null);
@@ -346,16 +335,6 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
     protected SecurableResource getSecurableResource()
     {
         return getViewContext().getContainer();
-    }
-
-    public boolean isWide()
-    {
-        return wide;
-    }
-
-    public void setWide(boolean wide)
-    {
-        this.wide = wide;
     }
 
     public boolean isShowAdmin()
@@ -435,6 +414,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         private boolean _expandFileUpload;
         private boolean _disableGeneralAdminSettings;
         private Integer _height = null;
+        private boolean _isListing;
 
         public enum actions {
             download,
@@ -640,5 +620,14 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             this._height = h;
         }
 
+        public boolean isListing()
+        {
+            return _isListing;
+        }
+
+        public void setListing(boolean listing)
+        {
+            this._isListing = listing;
+        }
     }
 }
