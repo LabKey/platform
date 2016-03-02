@@ -21,7 +21,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.MailHelper;
 
+import javax.mail.MessagingException;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -41,6 +44,12 @@ public class NotificationService
          * Insert a new notification in the specified container.
          */
         Notification addNotification(Container container, User user, @NotNull Notification notification) throws ValidationException;
+
+        /* backward compatible version of addNotification(), send e-mail as well */
+        Notification sendMessage(Container c, User user, MailHelper.MultipartMessage m,
+                                        String linkText, String linkURL,
+                                        String id, String type
+                ) throws IOException, MessagingException, ValidationException;
 
         /*
          * Returns a list of notifications for a specific user.

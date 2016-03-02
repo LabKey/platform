@@ -15,8 +15,10 @@
  */
 package org.labkey.api.admin.notification;
 
+import org.labkey.api.data.Transient;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.util.Date;
 
@@ -31,10 +33,11 @@ public class Notification
     private int _userId;
     private String _objectId;
     private String _type;
-    private String _description;
     private Date _readOn;
     private String _actionLinkText;
     private String _actionLinkURL;
+    private String _content;
+    private String _contentType;
 
     public Notification()
     {}
@@ -96,14 +99,11 @@ public class Notification
         _container = container;
     }
 
-    public String getDescription()
-    {
-        return _description;
-    }
-
+    @Deprecated
     public void setDescription(String description)
     {
-        _description = description;
+        _content = description;
+        _contentType = "text/plain";
     }
 
     public Date getReadOn()
@@ -134,5 +134,41 @@ public class Notification
     public void setActionLinkURL(String actionLinkURL)
     {
         _actionLinkURL = actionLinkURL;
+    }
+
+    public String getContent()
+    {
+        return _content;
+    }
+
+    public void setContent(String content)
+    {
+        _content = content;
+    }
+
+    public String getContentType()
+    {
+        return _contentType;
+    }
+
+    public void setContentType(String contentType)
+    {
+        _contentType = contentType;
+    }
+
+    public void setContent(String content, String contentType)
+    {
+        setContent(content);
+        setContentType(contentType);
+    }
+
+    @Transient
+    public String getHtmlContent()
+    {
+        String content = getContent();
+        if ("text/html".equals(getContentType()))
+            return content;
+        else
+            return PageFlowUtil.filter(content, true, true);
     }
 }
