@@ -90,55 +90,64 @@ public class ExpLineage
     public JSONObject toJSON()
     {
         Map<String, ExpObject> nodeMeta = processNodes();
-        ExpObject expObject;
-
         Map<String, Object> values = new HashMap<>();
         JSONObject nodes = new JSONObject();
-        Map<String, Object> json;
 
-        for (Map.Entry<String, Pair<Set<Edge>, Set<Edge>>> node : processEdges().entrySet())
+        if (_edges.isEmpty())
         {
-            json = new JSONObject();
-
-            JSONArray array = new JSONArray();
-            for (Edge edge : node.getValue().first)
-                array.put(edge.toParentJSON());
-            json.put("parents", array);
-
-            array = new JSONArray();
-            for (Edge edge : node.getValue().second)
-                array.put(edge.toChildJSON());
-            json.put("children", array);
-
-            if (nodeMeta.get(node.getKey()) != null)
+            // just publish the seed
+            nodes.put(_seed.getLSID(), publishNode(_seed, new JSONArray(), new JSONArray()));
+        }
+        else
+        {
+            for (Map.Entry<String, Pair<Set<Edge>, Set<Edge>>> node : processEdges().entrySet())
             {
-                expObject = nodeMeta.get(node.getKey());
+                JSONArray parents = new JSONArray();
+                for (Edge edge : node.getValue().first)
+                    parents.put(edge.toParentJSON());
 
-                json.put("name", expObject.getName());
-                json.put("url", expObject.detailsURL());
-                json.put("rowId", expObject.getRowId());
+                JSONArray children = new JSONArray();
+                for (Edge edge : node.getValue().second)
+                    children.put(edge.toChildJSON());
 
-                // TODO: Replace this casting with inclusion of cpastype for DataClasses
-                String dataClass = null;
-                if (expObject instanceof ExpData)
-                {
-                    ExpData data = (ExpData) expObject;
-
-                    if (data.getDataClass() != null)
-                        dataClass = data.getDataClass().getLSID();
-                }
-
-                json.put("type", expObject.getLSIDNamespacePrefix());
-                json.put("dataClass", dataClass);
+                nodes.put(node.getKey(), publishNode(nodeMeta.get(node.getKey()), parents, children));
             }
-
-            nodes.put(node.getKey(), json);
         }
 
         values.put("seed", _seed.getLSID());
         values.put("nodes", nodes);
 
         return new JSONObject(values);
+    }
+
+    private JSONObject publishNode(ExpObject expObject, JSONArray parents, JSONArray children)
+    {
+        JSONObject json = new JSONObject();
+
+        json.put("parents", parents);
+        json.put("children", children);
+
+        if (expObject != null)
+        {
+            json.put("name", expObject.getName());
+            json.put("url", expObject.detailsURL());
+            json.put("rowId", expObject.getRowId());
+
+            // TODO: Replace this casting with inclusion of cpastype for DataClasses
+            String dataClass = null;
+            if (expObject instanceof ExpData)
+            {
+                ExpData data = (ExpData) expObject;
+
+                if (data.getDataClass() != null)
+                    dataClass = data.getDataClass().getLSID();
+            }
+
+            json.put("type", expObject.getLSIDNamespacePrefix());
+            json.put("dataClass", dataClass);
+        }
+
+        return json;
     }
 
     public static class Edge
