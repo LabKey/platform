@@ -494,7 +494,6 @@ public class FileContentController extends SpringActionController
             }
 
             part.setFrame(WebPartView.FrameType.NONE);
-            part.setWide(true);
             part.getModelBean().setAutoResize(true);
             part.getModelBean().setShowDetails(true);
             return part;
@@ -506,32 +505,6 @@ public class FileContentController extends SpringActionController
             return root;
         }
     }
-
-   private static class FileSetsWebPart extends WebPartView
-   {
-       private Container c;
-       public FileSetsWebPart(Container c)
-       {
-           super("File Sets");
-           this.c = c;
-       }
-
-
-       @Override
-       protected void renderView(Object model, PrintWriter out) throws Exception
-       {
-           FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-           AttachmentDirectory main = svc.getMappedAttachmentDirectory(c, false);
-           if (null != main && null != main.getFileSystemDirectory())
-               out.write("<a href='begin.view'>Default</a><br>");
-
-           for (AttachmentDirectory attDir : svc.getRegisteredDirectories(c))
-               out.write("<a href='begin.view?fileSetName=" + PageFlowUtil.filter(attDir.getLabel()) + "'>" + PageFlowUtil.filter(attDir.getLabel()) + "</a><br>");
-
-           if (HttpView.currentContext().getUser().isSiteAdmin())
-               out.write("<br>" + PageFlowUtil.textLink("Configure", "showAdmin.view"));
-       }
-   }
 
 
    @RequiresPermission(InsertPermission.class)

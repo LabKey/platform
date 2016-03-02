@@ -250,8 +250,8 @@ Ext4.define('File.panel.Actions', {
         };
 
         // request configuration
-        File.panel.Browser._getPipelineConfiguration(function(response) {
-            this.parseActionConfiguration(response);
+        File.panel.Browser._getPipelineConfiguration(function(json) {
+            this.parseActionConfiguration(json);
             hasConfig = true;
             onReady.call(this);
         }, this.containerPath, this);
@@ -279,10 +279,9 @@ Ext4.define('File.panel.Actions', {
         }
     },
 
-    parseActionConfiguration : function(response) {
+    parseActionConfiguration : function(json) {
 
-        var o = Ext4.decode(response.responseText);
-        var config = o.success ? o.config : {};
+        var config = json.success ? json.config : {};
 
         // check whether the import data button is enabled
         Ext4.apply(this, {

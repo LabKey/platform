@@ -1523,6 +1523,7 @@ public class DavController extends SpringActionController
     {
         private int _limit = -1;
         private int _start = -1;
+        private boolean _collections = true;
         private boolean _paging = false;
         private Map<String, String> _sort = Collections.emptyMap();
 
@@ -1586,6 +1587,16 @@ public class DavController extends SpringActionController
         {
             return _sort;
         }
+
+        public void setCollections(boolean collections)
+        {
+            _collections = collections;
+        }
+
+        public boolean includeCollections()
+        {
+            return _collections;
+        }
     }
 
     @RequiresNoPermission
@@ -1636,40 +1647,45 @@ public class DavController extends SpringActionController
                             continue;
                         resource = resolvePath(root.getPath().append(p));
                         if (resource != null && resource.canList(getUser(), true))
-                            resources.add(resource);
+                        {
+                            if (resource.isCollection())
+                            {
+                                if (form.includeCollections())
+                                    resources.add(resource);
+                            }
+                            else
+                            {
+                                resources.add(resource);
+                            }
+                        }
                     }
 
                     // Establish size
                     resourceWriter.writeProperty("fileCount", resources.size());
 
                     // Sort
-                    Collections.sort(resources, new Comparator<WebdavResource>()
-                    {
+                    Collections.sort(resources, (o1, o2) -> {
+                        if (o1 == null && o2 == null) return 0;
+                        if (o1 == null) return 1;
+                        if (o2 == null) return -1;
 
-                        public int compare(WebdavResource o1, WebdavResource o2)
+                        boolean o1Collection = o1.isCollection();
+                        boolean o2Collection = o2.isCollection();
+
+                        if (o1Collection && o2Collection || (!o1Collection && !o2Collection))
                         {
-                            if (o1 == null && o2 == null) return 0;
-                            if (o1 == null) return 1;
-                            if (o2 == null) return -1;
-
-                            boolean o1Collection = o1.isCollection();
-                            boolean o2Collection = o2.isCollection();
-
-                            if (o1Collection && o2Collection || (!o1Collection && !o2Collection))
-                            {
-                                try {
-                                    return doCompare(o1, o2);
-                                }
-                                catch (IOException e)
-                                {
-                                    throw new RuntimeException(e);
-                                }
+                            try {
+                                return doCompare(o1, o2);
                             }
-                            if (o1Collection)
-                                return -1;
-                            else
-                                return 1;
+                            catch (IOException e)
+                            {
+                                throw new RuntimeException(e);
+                            }
                         }
+                        if (o1Collection)
+                            return -1;
+                        else
+                            return 1;
                     });
 
                     // Support for Limits

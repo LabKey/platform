@@ -84,7 +84,12 @@
                         mode: 'MULTI'
                     }
                 },
-                tbarItems : ['->', htmlViewAction, <%= getUser().isGuest() ? "loginAction" : "logoutAction" %>]
+                actions: [
+                    'folderTreeToggle', 'parentFolder', 'refresh',
+                    'createDirectory', 'download', 'deletePath', 'upload',
+                    '->', htmlViewAction, <%= getUser().isGuest() ? "loginAction" : "logoutAction" %>
+                ],
+                useServerActions: false
             }],
             listeners: {
                 resize: function(vp) {

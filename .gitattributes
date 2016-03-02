@@ -916,7 +916,6 @@ filecontent/src/org/labkey/filecontent/view/configure.jsp -text
 filecontent/src/org/labkey/filecontent/view/configureEmail.jsp -text
 filecontent/src/org/labkey/filecontent/view/fileDigestNotify.jsp -text
 filecontent/src/org/labkey/filecontent/view/fileDigestNotifyPlain.jsp -text
-filecontent/src/org/labkey/filecontent/view/files.jsp -text
 filecontent/src/org/labkey/filecontent/view/iframe.jsp -text
 filecontent/webapp/File.lib.xml -text
 filecontent/webapp/File/FileContent.css -text
@@ -927,7 +926,6 @@ filecontent/webapp/File/data/webdav/URI.js -text
 filecontent/webapp/File/panel/Actions.js -text
 filecontent/webapp/File/panel/Admin.js -text
 filecontent/webapp/File/panel/Browser.js -text
-filecontent/webapp/File/panel/ContextMenu.js -text
 filecontent/webapp/File/panel/EditCustomFileProps.js -text
 filecontent/webapp/File/panel/EmailProps.js -text
 filecontent/webapp/File/panel/FileProperties.js -text

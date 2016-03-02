@@ -135,12 +135,6 @@
                 containerPath: LABKEY.ActionURL.getContainer()
             });
 
-//        this.baseUrl = this.rootPath;
-//        this.offsetUrl = this.rootOffset ? this.rootOffset.replace('/_webdav/', '') : '/';
-//
-//        this.webdavBase = this.concatPaths(LABKEY.contextPath, '/_webdav');
-//        this.webdavOffset = this.baseUrl.replace(this.webdavBase, '');
-
             var prefix = this.concatPaths(this.baseUrl, this.rootPath);
             if (prefix.length > 0 && prefix.charAt(prefix.length - 1) == this.separator)
                 prefix = prefix.substring(0, prefix.length - 1);
@@ -152,14 +146,14 @@
             return (type == 'xml' ? 'File.data.webdav.XMLResponse' : 'File.data.webdav.JSONResponse');
         },
 
-        getProxyCfg: function (type)
+        getProxyCfg: function (type, options)
         {
-            return (type == 'xml' ? this.getXMLProxyCfg() : this.getJsonProxyCfg());
+            return (type == 'xml' ? this.getXMLProxyCfg(options) : this.getJsonProxyCfg(options));
         },
 
-        getJsonProxyCfg: function ()
+        getJsonProxyCfg: function (options)
         {
-            return {
+            var jsonProxy = {
                 type: 'ajax',
                 url: this.concatPaths(LABKEY.ActionURL.getBaseURL(true), LABKEY.ActionURL.encodePath(this.getURL())),
                 extraParams: {
@@ -170,6 +164,12 @@
                     totalProperty: 'fileCount'
                 }
             };
+
+            if (options && options.collections === false) {
+                jsonProxy.extraParams.collections = false;
+            }
+
+            return jsonProxy;
         },
 
         getXMLProxyCfg: function ()
@@ -216,7 +216,7 @@
 
         /**
          * Returns true if the current user can read the passed file
-         * @param {Ext.Record} record(s) The Ext record associated with the file.  See LABKEY.AbstractFileSystem.FileRecord for more information.
+         * @param {Ext.Record} records The Ext record associated with the file.  See LABKEY.AbstractFileSystem.FileRecord for more information.
          * @methodOf LABKEY.FileSystem.WebdavFileSystem#
          */
         canRead: function (records)
@@ -323,7 +323,7 @@
         },
 
 
-/**
+        /**
          * Can be used to delete a file or folder.
          * @param config Configuration properties.
          * @param {String} config.path The source file, which should be a URL relative to the fileSystem's rootPath
