@@ -621,7 +621,8 @@
       <ns:column columnName="UserId"/>
       <ns:column columnName="ObjectId"/>
       <ns:column columnName="Type"/>
-      <ns:column columnName="Description"/>
+      <ns:column columnName="Content"/>
+      <ns:column columnName="ContentType"/>
       <ns:column columnName="ReadOn"/>
       <ns:column columnName="ActionLinkText"/>
       <ns:column columnName="ActionLinkURL"/>

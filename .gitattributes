@@ -179,6 +179,7 @@ core/resources/schemas/dbscripts/postgresql/core-15.21-15.22.sql -text
 core/resources/schemas/dbscripts/postgresql/core-15.30-15.31.sql -text
 core/resources/schemas/dbscripts/postgresql/core-15.30-16.10.sql -text
 core/resources/schemas/dbscripts/postgresql/core-15.31-15.32.sql -text
+core/resources/schemas/dbscripts/postgresql/core-16.10-16.11.sql -text
 core/resources/schemas/dbscripts/postgresql/core-create.sql -text
 core/resources/schemas/dbscripts/postgresql/core-drop.sql -text
 core/resources/schemas/dbscripts/postgresql/labkey-0.00-13.30.sql -text
@@ -220,6 +221,7 @@ core/resources/schemas/dbscripts/sqlserver/core-15.22-15.23.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-15.23-15.24.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-15.30-16.10.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-15.31-15.32.sql -text
+core/resources/schemas/dbscripts/sqlserver/core-16.10-16.11.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-drop.sql -text
 core/resources/schemas/dbscripts/sqlserver/group_concat_install.sql -text
@@ -430,6 +432,7 @@ core/src/org/labkey/core/login/register.jsp -text
 core/src/org/labkey/core/login/resetPassword.jsp -text
 core/src/org/labkey/core/login/setPassword.jsp -text
 core/src/org/labkey/core/notification/NotificationServiceImpl.java -text
+core/src/org/labkey/core/notification/notificationpanel.jsp -text
 core/src/org/labkey/core/portal/PortalJUnitTest.java -text
 core/src/org/labkey/core/portal/UtilController.java -text
 core/src/org/labkey/core/portal/customizeErrors.jsp -text

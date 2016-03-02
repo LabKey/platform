@@ -37,10 +37,15 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ContainerUtil;
+import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.TestContext;
 
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMultipart;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -64,6 +69,41 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
     {
         ContainerManager.addContainerListener(this);
     }
+
+
+    /* for compatibility with code that uses/used MailHelper directly */
+    @Override
+    public Notification sendMessage(Container c, User user, MailHelper.MultipartMessage m,
+            String linkText, String linkURL,
+            String id, String type
+            ) throws IOException, MessagingException, ValidationException
+    {
+        MailHelper.send(m, user, c);
+
+        if (!AppProps.getInstance().isExperimentalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATIONMENU))
+            return null;
+        Notification notification = new Notification();
+        String contentType = m.getContentType();
+        notification.setContentType(contentType);
+        Object contentObject = m.getContent();
+        if (contentObject instanceof MimeMultipart)
+        {
+            MimeMultipart mm = (MimeMultipart) contentObject;
+            notification.setContent(mm.getBodyPart(0).getContent().toString(), mm.getBodyPart(0).getContentType());
+        }
+        else if (null != contentObject)
+        {
+            notification.setContent(contentObject.toString(), "text/plain");
+        }
+        notification.setActionLinkText(linkText);
+        notification.setActionLinkURL(linkURL);
+        notification.setObjectId(id);
+        notification.setType(type);
+        notification.setUserId(user.getUserId());
+
+        return NotificationService.get().addNotification(c, user, notification);
+    }
+
 
     @Override
     public Notification addNotification(Container container, User user, @NotNull Notification notification) throws ValidationException
@@ -211,12 +251,12 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
             _notif1 = new Notification("objectId1", "type1", _user);
             _notif1.setActionLinkText("actionLinkText1");
             _notif1.setActionLinkURL("actionLinkURL1");
-            _notif1.setDescription("description1");
+            _notif1.setContent("description1", "text/plain");
 
             _notif2 = new Notification("objectId2", "type2", _user);
             _notif2.setActionLinkText("actionLinkText2");
             _notif2.setActionLinkURL("actionLinkURL2");
-            _notif2.setDescription("description2");
+            _notif2.setContent("description2", "text/plain");
         }
 
         @AfterClass
@@ -304,7 +344,7 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
             assertEquals("Unexpected notification userId value", before.getUserId(), after.getUserId());
             assertEquals("Unexpected notification objectId value", before.getObjectId(), after.getObjectId());
             assertEquals("Unexpected notification type value", before.getType(), after.getType());
-            assertEquals("Unexpected notification description value", before.getDescription(), after.getDescription());
+            assertEquals("Unexpected notification content value", before.getContent(), after.getContent());
             assertEquals("Unexpected notification actionLinkText value", before.getActionLinkText(), after.getActionLinkText());
             assertEquals("Unexpected notification actionLinkURL value", before.getActionLinkURL(), after.getActionLinkURL());
         }

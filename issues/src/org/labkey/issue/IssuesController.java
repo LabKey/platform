@@ -36,6 +36,8 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.notification.Notification;
+import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
@@ -369,6 +371,7 @@ public class IssuesController extends SpringActionController
             page.setMoveDestinations(IssueManager.getMoveDestinationContainers(getContainer()).size() != 0 ? true : false);
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
 
+            NotificationService.get().markAsRead(getContainer(), getUser(), "issue:" + _issue.getIssueId(), Arrays.asList(Issue.class.getName()), getUser().getUserId());
             return new JspView<>("/org/labkey/issue/view/detailView.jsp", page);
         }
 
@@ -1416,7 +1419,11 @@ public class IssuesController extends SpringActionController
                     html.append("</body></html>");
                     m.setEncodedHtmlContent(html.toString());
 
-                    MailHelper.send(m, getUser(), getContainer());
+                    NotificationService.get().sendMessage(getContainer(), user, m,
+                            "view " + IssueManager.getEntryTypeNames(getContainer()).singularName,
+                            new ActionURL(DetailsAction.class,getContainer()).addParameter("issueId",issue.getIssueId()).getLocalURIString(false),
+                            "issue:" + issue.getIssueId(),
+                            Issue.class.getName());
                 }
             }
             catch (ConfigurationException | AddressException e)
