@@ -18,4 +18,5 @@ ALTER TABLE core.Notifications ADD Content NVARCHAR(MAX);
 ALTER TABLE core.Notifications ADD ContentType NVARCHAR(100);
 
 UPDATE core.Notifications SET Content = Description, ContentType='text/plain';
-ALTER TABLE core.Notifications DROP Description;
+ALTER TABLE core.Notifications DROP COLUMN Description;
+GO
