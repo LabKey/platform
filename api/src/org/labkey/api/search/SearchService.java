@@ -88,9 +88,9 @@ public interface SearchService
         keywordsLo("keywordsLo"),
         keywordsMed("keywordsMed"),
         keywordsHi("keywordsHi"),
-        indentifiersLo("indentifiersLo"),
-        indentifiersMed("indentifiersMed"),
-        indentifiersHi("indentifiersHi"),
+        identifiersLo("identifiersLo"),
+        identifiersMed("identifiersMed"),
+        identifiersHi("identifiersHi"),
         categories("searchCategories"),
         securableResourceId(SecurableResource.class.getName()),
         navtrail(NavTree.class.getName());  // as in NavTree.toJS()
