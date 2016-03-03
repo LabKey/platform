@@ -188,7 +188,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         LuceneDirectoryType configured = getDirectoryType();
         // Display the current directory class name, but only if we're currently set to Default (otherwise, we don't know what the default implementation is)
-        String defaultDescription = "Default" + (LuceneDirectoryType.Default == configured ? " (" + _indexManager.getCurrentDirectory().getClass().getSimpleName() + ")" : "");
+        String defaultDescription = "Default" + (_indexManager.isReal() && LuceneDirectoryType.Default == configured ? " (" + _indexManager.getCurrentDirectory().getClass().getSimpleName() + ")" : "");
 
         List<Pair<String, String>> list = new LinkedList<>();
 
