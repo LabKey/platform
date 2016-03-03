@@ -221,6 +221,9 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         }
         catch (Exception e)
         {
+            if (e instanceof IOException && e.getClass().getSimpleName().equals("ClientAbortException"))
+                return null;
+
             ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), e);
             Logger.getLogger(ApiAction.class).error("ApiAction exception: ", e);
 
