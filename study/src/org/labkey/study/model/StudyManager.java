@@ -151,7 +151,6 @@ import org.labkey.study.visitmanager.RelativeDateVisitManager;
 import org.labkey.study.visitmanager.SequenceVisitManager;
 import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.writer.DatasetDataWriter;
-import org.labkey.study.writer.DatasetWriter;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.BindException;
 
@@ -4590,7 +4589,7 @@ public class StudyManager
                 Map<String, Object> props = new HashMap<>();
                 props.put(SearchService.PROPERTY.categories.toString(), subjectCategory.getName());
                 props.put(SearchService.PROPERTY.title.toString(), displayTitle);
-                props.put(SearchService.PROPERTY.indentifiersHi.toString(), uniqueIds);
+                props.put(SearchService.PROPERTY.identifiersHi.toString(), uniqueIds);
                 props.put(SearchService.PROPERTY.navtrail.toString(), nav);
 
                 // Index a barebones participant document for now TODO: Figure out if it's safe to include demographic data or not (can all study users see it?)

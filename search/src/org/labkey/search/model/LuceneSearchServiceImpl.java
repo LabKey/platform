@@ -385,7 +385,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     private static final Set<String> KNOWN_PROPERTIES = PageFlowUtil.set(
             PROPERTY.categories.toString(), PROPERTY.title.toString(), PROPERTY.keywordsLo.toString(),
-            PROPERTY.keywordsMed.toString(), PROPERTY.keywordsHi.toString(), PROPERTY.indentifiersHi.toString(),
+            PROPERTY.keywordsMed.toString(), PROPERTY.keywordsHi.toString(), PROPERTY.identifiersHi.toString(),
             PROPERTY.navtrail.toString(), PROPERTY.securableResourceId.toString());
 
     @Override
@@ -574,9 +574,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             for (String category : categories.split("\\s+"))
                 doc.add(new Field(PROPERTY.categories.toString(), category.toLowerCase(), StringField.TYPE_NOT_STORED));
 
-            addIdentifiers(doc, props, PROPERTY.indentifiersLo, FIELD_NAME.identifiersLo, identifiersLo);
-            addIdentifiers(doc, props, PROPERTY.indentifiersMed, FIELD_NAME.identifiersMed, null);
-            addIdentifiers(doc, props, PROPERTY.indentifiersHi, FIELD_NAME.identifiersHi, null);
+            addIdentifiers(doc, props, PROPERTY.identifiersLo, FIELD_NAME.identifiersLo, identifiersLo);
+            addIdentifiers(doc, props, PROPERTY.identifiersMed, FIELD_NAME.identifiersMed, null);
+            addIdentifiers(doc, props, PROPERTY.identifiersHi, FIELD_NAME.identifiersHi, null);
 
             // === Index and analyze, don't store ===
 

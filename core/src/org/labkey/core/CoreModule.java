@@ -1015,7 +1015,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             Map<String, Object> properties = new HashMap<>();
 
             assert (null != keywords);
-            properties.put(SearchService.PROPERTY.indentifiersMed.toString(), identifiers);
+            properties.put(SearchService.PROPERTY.identifiersMed.toString(), identifiers);
             properties.put(SearchService.PROPERTY.keywordsMed.toString(), keywords);
             properties.put(SearchService.PROPERTY.title.toString(), title);
             properties.put(SearchService.PROPERTY.categories.toString(), SearchService.navigationCategory.getName());
