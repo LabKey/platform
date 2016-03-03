@@ -34,7 +34,6 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
 import javax.mail.Message;
@@ -129,35 +128,28 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
 
     private static MailHelper.MultipartMessage getDailyDigestMessage(Container c, DiscussionService.Settings settings, Permissions perm, List<AnnouncementModel> announcementModels, User recipient) throws Exception
     {
-        ActionURL boardURL = AnnouncementsController.getBeginURL(c);
-        // Hack! Push a ViewContext with the recipient as the user, so embedded webparts get rendered with that
-        // user's permissions, etc.
-        try (ViewContext.StackResetter ignored = ViewContext.pushMockViewContext(recipient, c, boardURL))
-        {
-            DailyDigestBean bean = new DailyDigestBean(c, settings, perm, announcementModels);
-            DailyDigestEmailTemplate template = EmailTemplateService.get().getEmailTemplate(DailyDigestEmailTemplate.class, c);
-            template.init(bean);
+        DailyDigestBean bean = new DailyDigestBean(c, recipient, settings, perm, announcementModels);
+        DailyDigestEmailTemplate template = EmailTemplateService.get().getEmailTemplate(DailyDigestEmailTemplate.class, c);
+        template.init(bean);
 
-            MailHelper.MultipartMessage message = MailHelper.createMultipartMessage();
-            message.setEncodedHtmlContent(template.renderBody(c));
-            message.setSubject(template.renderSubject(c));
-            message.setFrom(template.renderFrom(c, LookAndFeelProperties.getInstance(c).getSystemEmailAddress()));
-            message.setRecipient(Message.RecipientType.TO, new InternetAddress(recipient.getEmail()));
+        MailHelper.MultipartMessage message = MailHelper.createMultipartMessage();
+        message.setEncodedHtmlContent(template.renderBody(c));
+        message.setSubject(template.renderSubject(c));
+        message.setFrom(template.renderFrom(c, LookAndFeelProperties.getInstance(c).getSystemEmailAddress()));
+        message.setRecipient(Message.RecipientType.TO, new InternetAddress(recipient.getEmail()));
 
-            return message;
-        }
+        return message;
     }
 
     public static class DailyDigestEmailTemplate extends EmailTemplate
     {
-        protected static final String DEFAULT_SUBJECT =
-                "New posts to ^folderName^";
-        protected static final String DEFAULT_DESCRIPTION =
-                "Message board daily digest notification";
+        protected static final String DEFAULT_SUBJECT = "New posts to ^folderName^";
+        protected static final String DEFAULT_DESCRIPTION = "Message board daily digest notification";
         protected static final String NAME = "Message board daily digest";
         protected static final String BODY_PATH = "/org/labkey/announcements/dailyDigest.txt";
 
-        private List<EmailTemplate.ReplacementParam> _replacements = new ArrayList<>();
+        private final List<EmailTemplate.ReplacementParam> _replacements = new ArrayList<>();
+
         private DailyDigestBean dailyDigestBean = null;
         private String reasonForEmail;
         private String posts;
@@ -232,9 +224,9 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
             sb.append(PageFlowUtil.filter(dailyDigestBean.siteUrl));
             sb.append("\">");
             sb.append(PageFlowUtil.filter(dailyDigestBean.siteUrl));
-            sb.append(" </a>. You must login to respond to this message. If you no longer wish to receive these notifications, please <a href=\"");
+            sb.append("</a>. If you no longer wish to receive these notifications, please <a href=\"");
             sb.append(PageFlowUtil.filter(dailyDigestBean.removeURL.getURIString()));
-            sb.append(")\">change your email preferences.</a>");
+            sb.append(")\">change your email preferences</a>.");
 
             reasonForEmail = sb.toString();
         }
@@ -270,13 +262,15 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
 
                 int attachmentCount = ann.getAttachments().size();
                 sb.append("<tr><td>");
-                sb.append(ann.getCreatedByName(dailyDigestBean.includeGroups, HttpView.currentContext().getUser(), true));
+                sb.append(ann.getCreatedByName(dailyDigestBean.includeGroups, dailyDigestBean.recipient, true));
 
-                if (null == ann.getParent()) {
+                if (null == ann.getParent())
+                {
                     sb.append(" created this ");
                     sb.append(dailyDigestBean.conversationName);
                 }
-                else {
+                else
+                {
                     sb.append(" responded ");
                 }
                 sb.append(" at ");
@@ -284,7 +278,8 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
                 String messageTime =  df.format(ann.getCreated());
                 sb.append(messageTime);
 
-                if (attachmentCount > 0) {
+                if (attachmentCount > 0)
+                {
                     sb.append(" and attached ");
                     sb.append(attachmentCount);
                     sb.append(" document");
@@ -311,35 +306,34 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
             }
             posts = sb.toString();
         }
-
     }
 
     public static class DailyDigestBean
     {
-        private Container c;
-        private List<AnnouncementModel> announcementModels;
-        private String conversationName;
-        private DiscussionService.Settings settings;
-        private ActionURL boardURL;
-        private String boardPath;
-        private String siteUrl;
-        private ActionURL removeURL;
-        private boolean includeGroups;
+        private final Container c;
+        private final User recipient;
+        private final List<AnnouncementModel> announcementModels;
+        private final String conversationName;
+        private final DiscussionService.Settings settings;
+        private final ActionURL boardURL;
+        private final String boardPath;
+        private final String siteUrl;
+        private final ActionURL removeURL;
+        private final boolean includeGroups;
 
-        public DailyDigestBean(Container c, DiscussionService.Settings settings, Permissions perm, List<AnnouncementModel> announcementModels)
+        public DailyDigestBean(Container c, User recipient, DiscussionService.Settings settings, Permissions perm, List<AnnouncementModel> announcementModels)
         {
+            this.c = c;
+            this.recipient = recipient;
             this.conversationName = settings.getConversationName().toLowerCase();
             this.settings = settings;
-            this.c = c;
             this.announcementModels = announcementModels;
             this.boardPath = c.getPath();
             this.boardURL = AnnouncementsController.getBeginURL(c);
             this.siteUrl = ActionURL.getBaseServerURL();
             this.removeURL = new ActionURL(AnnouncementsController.EmailPreferencesAction.class, c);
             this.includeGroups = perm.includeGroups();
-
         }
     }
-
 }
 

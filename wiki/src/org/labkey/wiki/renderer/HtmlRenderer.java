@@ -62,7 +62,7 @@ public class HtmlRenderer implements WikiRenderer
     {
         _hrefPrefix = hrefPrefix;
         _attachPrefix = attachPrefix;
-        _nameTitleMap = nameTitleMap == null ? new HashMap<HString, HString>() : nameTitleMap;
+        _nameTitleMap = nameTitleMap == null ? new HashMap<>() : nameTitleMap;
         _attachments = new HashMap<>();
 
         if (null != attachments)

@@ -17,14 +17,18 @@
 package org.labkey.announcements.model;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.announcements.permissions.DeleteMessagePermission;
 import org.labkey.api.announcements.permissions.UpdateMessagePermission;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.*;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.security.roles.RoleManager;
 
@@ -36,10 +40,9 @@ import org.labkey.api.security.roles.RoleManager;
 
 public class NormalMessageBoardPermissions implements Permissions
 {
-    protected Container _c;
-    protected User _user;
-    protected DiscussionService.Settings _settings;
-    protected static CommSchema _comm = CommSchema.getInstance();
+    protected final Container _c;
+    protected final User _user;
+    protected final DiscussionService.Settings _settings;
 
     public NormalMessageBoardPermissions(Container c, User user, DiscussionService.Settings settings)
     {
@@ -65,7 +68,7 @@ public class NormalMessageBoardPermissions implements Permissions
 
     public boolean allowUpdate(AnnouncementModel ann)
     {
-        // User might be explicity given permission to update
+        // User might be explicitly given permission to update
         if (_c.hasPermission(_user, UpdateMessagePermission.class))
             return true;
         
@@ -106,6 +109,6 @@ public class NormalMessageBoardPermissions implements Permissions
 
     public boolean includeGroups()
     {
-        return  _settings.includeGroups() && hasPermission(AdminPermission.class);
+        return _settings.includeGroups() && hasPermission(AdminPermission.class);
     }
 }

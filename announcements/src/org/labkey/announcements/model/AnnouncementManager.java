@@ -436,15 +436,16 @@ public class AnnouncementManager
         renderAndEmailThread.start();
     }
 
-    private static MailHelper.MultipartMessage getMessage(Container c, User recipient, DiscussionService.Settings settings, @NotNull Permissions perm, AnnouncementModel parent, AnnouncementModel a, boolean isResponse, ActionURL removeURL, WikiRendererType currentRendererType, EmailNotificationBean.Reason reason, User user) throws Exception
+    private static MailHelper.MultipartMessage getMessage(Container c, User recipient, DiscussionService.Settings settings, @NotNull Permissions perm, AnnouncementModel parent, AnnouncementModel a, boolean isResponse, ActionURL removeURL, WikiRendererType currentRendererType, EmailNotificationBean.Reason reason, User sender) throws Exception
     {
         ActionURL threadURL = AnnouncementsController.getThreadURL(c, parent.getEntityId(), a.getRowId());
+
         try (ViewContext.StackResetter ignore = ViewContext.pushMockViewContext(recipient, c, threadURL))
         {
             EmailNotificationBean notificationBean = new EmailNotificationBean(c, recipient, settings, perm, parent, a, isResponse, removeURL, currentRendererType, reason);
 
             NotificationEmailTemplate template = EmailTemplateService.get().getEmailTemplate(NotificationEmailTemplate.class, c);
-            template.init(notificationBean, user);
+            template.init(notificationBean, sender);
             MailHelper.MultipartMessage message = MailHelper.createMultipartMessage();
 
             message.setEncodedHtmlContent(template.renderBody(c));
@@ -922,17 +923,14 @@ public class AnnouncementManager
 
     public static class NotificationEmailTemplate extends UserOriginatedEmailTemplate
     {
-        protected static final String DEFAULT_SUBJECT =
-                "^messageSubject^";
-        protected static final String DEFAULT_DESCRIPTION =
-                "Message board notification for individual new post";
-
+        protected static final String DEFAULT_SUBJECT = "^messageSubject^";
+        protected static final String DEFAULT_DESCRIPTION = "Message board notification for individual new post";
         protected static final String NAME = "Message board notification";
-
         protected static final String BODY_PATH = "/org/labkey/announcements/emailNotification.txt";
-        private List<EmailTemplate.ReplacementParam> _replacements = new ArrayList<>();
-        private EmailNotificationBean notificationBean = null;
 
+        private final List<EmailTemplate.ReplacementParam> _replacements = new ArrayList<>();
+
+        private EmailNotificationBean notificationBean = null;
         private String reasonForEmail = "";
         private String attachments = "";
         private String messageUrl = "";
@@ -974,7 +972,6 @@ public class AnnouncementManager
 
             _replacements.add(new ReplacementParam<String>("messageUrl", String.class, "Link to the original message", ContentType.HTML)
             {
-
                 public String getValue(Container c)
                 {
                      return messageUrl;
@@ -1003,7 +1000,6 @@ public class AnnouncementManager
 
             _replacements.add(new ReplacementParam<String>("attachments", String.class, "Attachments for this message", ContentType.HTML)
             {
-
                 public String getValue(Container c)
                 {
                     return attachments;
@@ -1041,10 +1037,10 @@ public class AnnouncementManager
             }
         }
 
-        public void init(EmailNotificationBean notification, User user)
+        public void init(EmailNotificationBean notification, User sender)
         {
             this.notificationBean = notification;
-            this.setOriginatingUser(user);
+            this.setOriginatingUser(sender);
             initReason();
             initAttachments();
         }
@@ -1052,6 +1048,7 @@ public class AnnouncementManager
         private void initReason()
         {
             StringBuilder sb = new StringBuilder();
+
             if (notificationBean.reason == EmailNotificationBean.Reason.signedUp)
             {
                 sb.append("You have received this email because you are signed up to receive notifications about new posts to <a href=\"");
@@ -1062,21 +1059,21 @@ public class AnnouncementManager
                 sb.append(PageFlowUtil.filter(notificationBean.siteURL));
                 sb.append("\">");
                 sb.append(PageFlowUtil.filter(notificationBean.siteURL));
-                sb.append(" </a>. You must login to respond to this message. If you no longer wish to receive these notifications you can <a href=\"");
+                sb.append("</a>. If you no longer wish to receive these notifications you can <a href=\"");
                 sb.append(PageFlowUtil.filter(notificationBean.removeURL.getURIString()));
-                sb.append(")\">change your email preferences.</a>");
-                reasonForEmail = sb.toString();
+                sb.append(")\">change your email preferences</a>.");
             }
             else
             {
                 sb.append("<p>You have received this email because you are on the member list for this ");
                 sb.append(notificationBean.settings.getConversationName().toLowerCase());
-                sb.append(". You must login to respond to this message. If you no longer wish to receive these notifications you can remove yourself from the member list by ");
+                sb.append(". If you no longer wish to receive these notifications you can remove yourself from the member list by ");
                 sb.append("<a href=\"");
                 sb.append(PageFlowUtil.filter(notificationBean.removeURL.getURIString()));
                 sb.append("\">clicking here</a>.</p>");
-                reasonForEmail = sb.toString();
             }
+
+            reasonForEmail = sb.toString();
         }
 
         private void initAttachments()
@@ -1100,28 +1097,26 @@ public class AnnouncementManager
             }
             this.attachments = sb.toString();
             messageUrl = announcementModel.getParent() == null ? notificationBean.threadURL.getURIString() : notificationBean.threadParentURL.getURIString();
-
         }
     }
 
     public static class EmailNotificationBean
     {
-        private Container c;
-        private User recipient;
-        private ActionURL threadURL;
-        private ActionURL threadParentURL;
-        private String boardPath;
-        private ActionURL boardURL;
-        private String siteURL;
-        private AnnouncementModel announcementModel;
-        private AnnouncementModel parentModel;
-        private boolean isResponse;
-        private String body;
-        private DiscussionService.Settings settings;
-        private ActionURL removeURL;
-        private Reason reason;
-
-        public boolean includeGroups;
+        private final Container c;
+        private final User recipient;
+        private final ActionURL threadURL;
+        private final ActionURL threadParentURL;
+        private final String boardPath;
+        private final ActionURL boardURL;
+        private final String siteURL;
+        private final AnnouncementModel announcementModel;
+        private final AnnouncementModel parentModel;
+        private final boolean isResponse;
+        private final String body;
+        private final DiscussionService.Settings settings;
+        private final ActionURL removeURL;
+        private final Reason reason;
+        private final boolean includeGroups;
 
         public enum Reason { signedUp, memberList }
 
@@ -1147,13 +1142,12 @@ public class AnnouncementManager
             if (!settings.isSecure())
             {
                 WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
-                if (null != wikiService)
-                {
-                    this.body = wikiService.getFormattedHtml(currentRendererType, a.getBody());
-                }
+                this.body = null != wikiService ? wikiService.getFormattedHtml(currentRendererType, a.getBody()) : null;
             }
             else
+            {
                 this.body = a.getBody();
+            }
         }
     }
 }

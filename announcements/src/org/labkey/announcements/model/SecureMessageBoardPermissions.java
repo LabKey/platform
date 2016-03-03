@@ -17,6 +17,7 @@
 package org.labkey.announcements.model;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
@@ -77,7 +78,7 @@ public class SecureMessageBoardPermissions extends NormalMessageBoardPermissions
 
         // Filter for non-editors
         if (!hasPermission(SecureMessageBoardReadPermission.class))
-            filter.addWhereClause("RowId IN (SELECT MessageId FROM " + _comm.getTableInfoMemberList() + " WHERE UserId = ?)", new Object[]{_user.getUserId()});
+            filter.addWhereClause("RowId IN (SELECT MessageId FROM " + CommSchema.getInstance().getTableInfoMemberList() + " WHERE UserId = ?)", new Object[]{_user.getUserId()});
 
         return filter;
     }

@@ -26,12 +26,12 @@ import org.labkey.api.data.SimpleFilter;
  */
 public interface Permissions
 {
-    public boolean allowResponse(AnnouncementModel ann);
-    public boolean allowRead(@Nullable AnnouncementModel ann);
-    public boolean allowInsert();
-    public boolean allowUpdate(AnnouncementModel ann);
-    public boolean allowDeleteMessage(AnnouncementModel ann);
-    public boolean allowDeleteAnyThread();
-    public SimpleFilter getThreadFilter();
-    public boolean includeGroups();
+    boolean allowResponse(AnnouncementModel ann);
+    boolean allowRead(@Nullable AnnouncementModel ann);
+    boolean allowInsert();
+    boolean allowUpdate(AnnouncementModel ann);
+    boolean allowDeleteMessage(AnnouncementModel ann);
+    boolean allowDeleteAnyThread();
+    SimpleFilter getThreadFilter();
+    boolean includeGroups();
 }
