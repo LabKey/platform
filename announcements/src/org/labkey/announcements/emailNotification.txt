@@ -18,7 +18,7 @@
         <tr>
             <td colspan="3">
                 <a href="^messageUrl^">Click here</a>
-                 to reply to this message or go to
+                 to view this message or go to
                  <a href="^messageUrl^">^messageUrl^</a>
             </td>
         </tr>
