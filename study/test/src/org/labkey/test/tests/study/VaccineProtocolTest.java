@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.test.tests;
+package org.labkey.test.tests.study;
 
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
