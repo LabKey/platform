@@ -291,9 +291,11 @@ public class LoginController extends SpringActionController
             url.addParameter("provider", provider.getName());
             if (null != returnURL)
             {
+                String fragment = returnURL.getFragment();
+                returnURL.setFragment(null);
                 url.addReturnURL(returnURL);
-                if (null != returnURL.getFragment())
-                    url.addParameter("urlhash", "#" + returnURL.getFragment());
+                if (null != fragment)
+                    url.replaceParameter("urlhash", "#" + fragment);
             }
             return url;
         }
