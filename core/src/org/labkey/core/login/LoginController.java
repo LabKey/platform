@@ -292,7 +292,8 @@ public class LoginController extends SpringActionController
             if (null != returnURL)
             {
                 String fragment = returnURL.getFragment();
-                returnURL.setFragment(null);
+                if (!returnURL.isReadOnly())
+                    returnURL.setFragment(null);
                 url.addReturnURL(returnURL);
                 if (null != fragment)
                     url.replaceParameter("urlhash", "#" + fragment);
