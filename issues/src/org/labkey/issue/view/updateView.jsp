@@ -240,15 +240,18 @@
                     <tr>
                         <td class="labkey-form-label-nowrap"><%=text(bean.getLabel("NotifyList", true))%><%=text(popup)%><br/><br/>
     <%
-                        if (bean.isInsert())
+                        if (!user.isGuest())
                         {
+                            if (bean.isInsert())
+                            {
     %>
                             <%= textLink("email prefs", IssuesController.issueURL(c, IssuesController.EmailPrefsAction.class))%>
     <%
-                        } else {
+                            } else {
     %>
                             <%= textLink("email prefs", IssuesController.issueURL(c, IssuesController.EmailPrefsAction.class).addParameter("issueId", issue.getIssueId()))%>
     <%
+                            }
                         }
     %>
                         </td>
@@ -342,27 +345,31 @@ window.onbeforeunload = LABKEY.beforeunload(isDirty);
         String description = h(indefArticle) + " " + h(names.singularName);
 
         StringBuilder sb = new StringBuilder();
-        sb.append("Email notifications can be controlled via either this notification list (one email address per line) ");
-        sb.append("or your user <a href=\"" + h(buildURL(IssuesController.EmailPrefsAction.class)));
-        if (issueId != 0)
+        sb.append("Email notifications can be controlled via this notification list (one email address per line)");
+
+        if (!getUser().isGuest())
         {
-            sb.append("issueId=").append(issueId);
+            sb.append(" or your user <a href=\"").append(h(buildURL(IssuesController.EmailPrefsAction.class)));
+            if (issueId != 0)
+            {
+                sb.append("issueId=").append(issueId);
+            }
+            sb.append("\">email preferences</a>. ");
         }
-        sb.append("\">email preferences</a>. ");
         if (emailPrefs != 0)
         {
             sb.append("Your current preferences are to receive notification emails when:<br>");
             sb.append("<ul>");
             if ((emailPrefs & IssueManager.NOTIFY_ASSIGNEDTO_OPEN) != 0)
-                sb.append("<li>" + description + " is opened and assigned to you</li>");
+                sb.append("<li>").append(description).append(" is opened and assigned to you</li>");
             if ((emailPrefs & IssueManager.NOTIFY_ASSIGNEDTO_UPDATE) != 0)
-                sb.append("<li>" + description + " that's assigned to you is modified</li>");
+                sb.append("<li>").append(description).append(" that's assigned to you is modified</li>");
             if ((emailPrefs & IssueManager.NOTIFY_CREATED_UPDATE) != 0)
-                sb.append("<li>" + description + " you opened is modified</li>");
+                sb.append("<li>").append(description).append(" you opened is modified</li>");
             if ((emailPrefs & IssueManager.NOTIFY_SUBSCRIBE) != 0)
-                sb.append("<li>any " + h(names.singularName) + " is created or modified</li>");
+                sb.append("<li>any ").append(h(names.singularName)).append(" is created or modified</li>");
             if ((emailPrefs & IssueManager.NOTIFY_SELF_SPAM) != 0)
-                sb.append("<li>you create or modify " + description + "</li>");
+                sb.append("<li>you create or modify ").append(description).append("</li>");
             sb.append("</ul>");
         }
         return PageFlowUtil.helpPopup("Email Notifications", sb.toString(), true);

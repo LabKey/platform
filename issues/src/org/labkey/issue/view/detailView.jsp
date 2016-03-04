@@ -143,9 +143,11 @@
     {
         %><td><%= textLink("move", "javascript:void(0)", "Issues.window.MoveIssue.create([" + issueId + "])", "")%></td><%
     }
-    %><td><%= textLink("print", context.cloneActionURL().replaceParameter("_print", "1"))%></td>
-    <td><%= textLink("email prefs", IssuesController.issueURL(c, EmailPrefsAction.class).addParameter("issueId", issueId))%></td>
-    <%
+    %><td><%= textLink("print", context.cloneActionURL().replaceParameter("_print", "1"))%></td><%
+    if (!getUser().isGuest())
+    {
+        %><td><%= textLink("email prefs", IssuesController.issueURL(c, EmailPrefsAction.class).addParameter("issueId", issueId))%></td><%
+    }
     if (showRelatedIssuesButton)
     {
         %><td><%= textLink("create related issue", "javascript:createRelatedIssue()") %></td><%

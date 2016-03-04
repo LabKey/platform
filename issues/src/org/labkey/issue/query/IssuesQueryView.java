@@ -236,8 +236,11 @@ public class IssuesQueryView extends QueryView
         adminButton.setDisplayPermission(AdminPermission.class);
         bar.add(adminButton);
 
-        ActionButton prefsButton = new ActionButton(IssuesController.EmailPrefsAction.class, "Email Preferences", DataRegion.MODE_GRID, ActionButton.Action.LINK);
-        bar.add(prefsButton);
+        if (!getUser().isGuest())
+        {
+            ActionButton prefsButton = new ActionButton(IssuesController.EmailPrefsAction.class, "Email Preferences", DataRegion.MODE_GRID, ActionButton.Action.LINK);
+            bar.add(prefsButton);
+        }
     }
 
     protected ActionURL urlFor(QueryAction action)
