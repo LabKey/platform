@@ -922,15 +922,39 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+    public static class DataClassForm extends ExpObjectForm
+    {
+        private String _name;
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+    }
+
     @RequiresPermission(ReadPermission.class)
-    public class ShowDataClassAction extends SimpleViewAction<ExpObjectForm>
+    public class ShowDataClassAction extends SimpleViewAction<DataClassForm>
     {
         private ExpDataClassImpl _dataClass;
 
         @Override
-        public ModelAndView getView(ExpObjectForm form, BindException errors) throws Exception
+        public ModelAndView getView(DataClassForm form, BindException errors) throws Exception
         {
-            _dataClass = ExperimentServiceImpl.get().getDataClass(form.getRowId());
+            if (form.getName() != null)
+            {
+                _dataClass = ExperimentServiceImpl.get().getDataClass(getContainer(), getUser(), form.getName());
+                if (_dataClass == null)
+                    throw new NotFoundException("No data class found for name '" + form.getName() + "'");
+            }
+
+            if (_dataClass == null && form.getRowId() > 0)
+                _dataClass = ExperimentServiceImpl.get().getDataClass(form.getRowId());
+
             if (_dataClass == null)
                 throw new NotFoundException("No data class found");
 
@@ -944,7 +968,7 @@ public class ExperimentController extends SpringActionController
 
             TableInfo table = ExpSchema.TableType.DataClasses.createTable(expSchema, null);
             QueryUpdateForm tvf = new QueryUpdateForm(table, getViewContext(), null);
-            tvf.setPkVal(form.getRowId());
+            tvf.setPkVal(_dataClass.getRowId());
             DetailsView detailsView = new DetailsView(tvf);
             detailsView.setTitle("Data Class Properties");
 

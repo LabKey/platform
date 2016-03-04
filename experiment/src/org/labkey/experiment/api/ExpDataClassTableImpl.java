@@ -72,7 +72,7 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
         {
             case Folder:
                 ColumnInfo columnInfo = wrapColumn(alias, _rootTable.getColumn("Container"));
-                ContainerForeignKey.initColumn(columnInfo, _userSchema, new ActionURL(ExperimentController.ShowDataClassAction.class, getContainer()));
+                ContainerForeignKey.initColumn(columnInfo, _userSchema, new ActionURL(ExperimentController.ListDataClassAction.class, getContainer()));
                 return columnInfo;
 
             case Description:
@@ -84,6 +84,11 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
             {
                 ColumnInfo c = wrapColumn(alias, getRealTable().getColumn(column.name()));
                 c.setShownInUpdateView(false);
+
+                // Since the 'Name' column isn't a real PK column, we can't use the ShowDataClassAction with 'Name' as
+                // a parameter for the table's detailsURL.  However, we can use it as the url for this column.
+                c.setURL(new DetailsURL(new ActionURL(ExperimentController.ShowDataClassAction.class, _userSchema.getContainer()),
+                        Collections.singletonMap("name", "Name")));
                 return c;
             }
 

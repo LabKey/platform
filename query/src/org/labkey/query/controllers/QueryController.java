@@ -2140,25 +2140,15 @@ public class QueryController extends SpringActionController
             String queryName = form.getQueryName();
 
             if (null == schemaName || null == queryName)
-                errors.reject(ERROR_MSG, "You must supply a schemaName and queryName!");
+                throw new NotFoundException("schemaName and queryName are required");
 
-            if (!errors.hasErrors())
-            {
-                schema = QueryService.get().getUserSchema(getUser(), getContainer(), schemaName);
-                if (null == schema)
-                {
-                    errors.reject(ERROR_MSG, "The schema '" + schemaName + "' does not exist.");
-                }
+            schema = QueryService.get().getUserSchema(getUser(), getContainer(), schemaName);
+            if (null == schema)
+                throw new NotFoundException("The schema '" + schemaName + "' does not exist.");
 
-                if (!errors.hasErrors())
-                {
-                    table = schema.getTable(queryName);
-                    if (null == table)
-                    {
-                        errors.reject(ERROR_MSG, "The query '" + queryName + "' in the schema '" + schemaName + "' does not exist.");
-                    }
-                }
-            }
+            table = schema.getTable(queryName);
+            if (null == table)
+                throw new NotFoundException("The query '" + queryName + "' in the schema '" + schemaName + "' does not exist.");
         }
 
         @Override
