@@ -21,6 +21,7 @@ import org.json.JSONObject;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.DisplayElement;
 
 import java.io.IOException;
@@ -41,6 +42,7 @@ public abstract class AbstractDataRegion extends DisplayElement
     private String _name = null;
     private QuerySettings _settings = null;
     protected boolean _allowHeaderLock = true; // Set to 'true' to enable header locking.
+    private final String _domId = "lk-region-" + UniqueID.getServerSessionScopedUID(); // TODO: Consider using UniqueID.getRequestScopedUID(request) instead
 
     public enum PaginationLocation
     {
@@ -53,6 +55,16 @@ public abstract class AbstractDataRegion extends DisplayElement
         view,
         filter,
         header,
+    }
+
+    public final String getDomId()
+    {
+        return _domId;
+    }
+
+    public final String getFormId()
+    {
+        return getDomId() + "-form";
     }
 
     public String getName()
@@ -104,6 +116,7 @@ public abstract class AbstractDataRegion extends DisplayElement
     protected JSONObject getDataRegionJSON(RenderContext ctx, boolean showRecordSelectors)
     {
         JSONObject dataRegionJSON = new JSONObject();
+        dataRegionJSON.put("domId", getDomId());
         dataRegionJSON.put("name", getName());
 
         if (getSettings() != null)
@@ -317,13 +330,13 @@ public abstract class AbstractDataRegion extends DisplayElement
         out.write("\n<tr");
         if (!shouldRenderHeader(renderButtons))
             out.write(" style=\"display:none\"");
-        out.write(" id=\"" + PageFlowUtil.filter("dataregion_header_row_" + getName()) + "\">");
+        out.write(" id=\"" + PageFlowUtil.filter(getDomId() + "-header-row") + "\">");
 
         out.write("<td colspan=\"");
         out.write(String.valueOf(colCount));
         out.write("\" class=\"labkey-data-region-header-container\">\n");
 
-        out.write("<table class=\"labkey-data-region-header\" cellpadding=\"0\" cellspacing=\"0\" id=\"" + PageFlowUtil.filter("dataregion_header_" + getName()) + "\">\n");
+        out.write("<table class=\"labkey-data-region-header\" cellpadding=\"0\" cellspacing=\"0\" id=\"" + PageFlowUtil.filter(getDomId() + "-header") + "\">\n");
         out.write("<tr><td nowrap>\n");
         if (renderButtons)
         {
@@ -348,7 +361,7 @@ public abstract class AbstractDataRegion extends DisplayElement
             out.write("\n<tr");
             if (!shouldRenderHeader(renderButtons))
                 out.write(" style=\"display:none\"");
-            out.write(" id=\"" + PageFlowUtil.filter("dataregion_header_row_spacer_" + getName()) + "\" style=\"display: none;\">");
+            out.write(" id=\"" + PageFlowUtil.filter(getDomId() + "-header-row-spacer") + "\" style=\"display: none;\">");
 
             out.write("<td colspan=\"");
             out.write(String.valueOf(colCount));
@@ -384,7 +397,7 @@ public abstract class AbstractDataRegion extends DisplayElement
 
     protected void renderMessageBox(RenderContext ctx, Writer out, int colCount) throws IOException
     {
-        out.write("<tr id=\"" + PageFlowUtil.filter("dataregion_msgbox_" + getName()) + "\" style=\"display:none\">");
+        out.write("<tr id=\"" + PageFlowUtil.filter(getDomId() + "-msgbox") + "\" style=\"display:none\">");
         out.write("<td colspan=\"");
         out.write("2");
         out.write("\" class=\"labkey-dataregion-msgbox\">");

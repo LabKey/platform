@@ -30,6 +30,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.QueryChangeListener;
+import org.labkey.api.query.QueryParam;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
@@ -243,7 +244,14 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         if (o != null)
         {
             if (o instanceof String)
+            {
+                // Reports can create nested regions, this ensures the nested regions are uniquely named
+                if (prop.toString().equals(QueryParam.dataRegionName.toString()))
+                {
+                    return ((String)o) + getReportId();
+                }
                 return (String)o;
+            }
             throw new IllegalStateException("Property value for: " + prop.toString() + " is not a String");
         }
         return null;

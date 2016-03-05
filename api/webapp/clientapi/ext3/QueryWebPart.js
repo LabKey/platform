@@ -379,7 +379,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
     },
 
     updateRenderElement : function(dr) {
-        var renderEl = Ext.get(dr.name).parent('div'); // Ext will assign an ID if one is not found
+        var renderEl = Ext.get(dr.domId + '-form').parent('div'); // Ext will assign an ID if one is not found
         this.renderTo = renderEl.id;
     },
 
@@ -390,8 +390,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         this._clearUserFilters();
         this.userSort = "";
         this.userContainerFilter = "";
-        for (var key in params)
-        {
+        for (var key in params) {
             if (params.hasOwnProperty(key)) {
                 if (key.indexOf(this.dataRegionName + ".") == 0 && key.indexOf("~") > -1)
                 {

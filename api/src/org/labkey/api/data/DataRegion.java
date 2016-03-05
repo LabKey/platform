@@ -731,12 +731,14 @@ public class DataRegion extends AbstractDataRegion
 
     public class ParameterViewBean
     {
+        public String dataRegionDomId;
         public String dataRegionName;
         public Collection<QueryService.ParameterDecl> params;
         public Map<String, Object> values;
 
-        ParameterViewBean(String dataRegionName, Collection<QueryService.ParameterDecl> params, Map<String, Object> values)
+        ParameterViewBean(String dataRegionDomId, String dataRegionName, Collection<QueryService.ParameterDecl> params, Map<String, Object> values)
         {
+            this.dataRegionDomId = dataRegionDomId;
             this.dataRegionName = dataRegionName;
             this.params = params;
             this.values = values;
@@ -747,7 +749,7 @@ public class DataRegion extends AbstractDataRegion
     {
         ParameterView(Collection<QueryService.ParameterDecl> params, Map<String, Object> defaults)
         {
-            super(DataRegion.class, "parameterForm.jsp", new ParameterViewBean(DataRegion.this.getName(), params, defaults));
+            super(DataRegion.class, "parameterForm.jsp", new ParameterViewBean(DataRegion.this.getDomId(), DataRegion.this.getName(), params, defaults));
         }
     }
 
@@ -942,9 +944,14 @@ public class DataRegion extends AbstractDataRegion
             out.write(" labkey-fixed-width-columns");
         out.write("\"");
 
-        out.write(" id=\"");
-        out.write(PageFlowUtil.filter("dataregion_" + getName()));
-        out.write("\">\n");
+        out.write(" id=\"" + PageFlowUtil.filter(getDomId()) + "\"");
+
+        String name = getName();
+        if (name != null)
+        {
+            out.write(" lk-region-name=\"" + PageFlowUtil.filter(name) + "\" ");
+        }
+        out.write(">\n");
 
         //colgroup
         out.write("\n<colgroup>");
@@ -1073,7 +1080,7 @@ public class DataRegion extends AbstractDataRegion
             out.write("<tr><td colspan=\"");
             out.write(String.valueOf(colCount));
             out.write("\" class=\"labkey-data-region-header-container\">\n");
-            out.write("<table class=\"labkey-data-region-header\" id=\"" + PageFlowUtil.filter("dataregion_footer_" + getName()) + "\">\n");
+            out.write("<table class=\"labkey-data-region-header\" id=\"" + PageFlowUtil.filter(getDomId() + "-footer") + "\">\n");
             out.write("<tr><td nowrap>\n");
             if (renderButtons && _buttonBarPosition.atBottom())
             {
@@ -1236,7 +1243,7 @@ public class DataRegion extends AbstractDataRegion
     protected void renderGridHeaderColumns(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers)
             throws IOException, SQLException
     {
-        out.write("\n<tr id=\"" + PageFlowUtil.filter("dataregion_column_header_row_" + getName()) + "\">");
+        out.write("\n<tr id=\"" + PageFlowUtil.filter(getDomId() + "-column-header-row") + "\">");
 
         if (showRecordSelectors)
         {
@@ -1332,7 +1339,7 @@ public class DataRegion extends AbstractDataRegion
 
         if (this.getAllowHeaderLock())
         {
-            out.write("\n<tr class=\"dataregion_column_header_row_spacer\" style=\"display: none;\" id=\"" + PageFlowUtil.filter("dataregion_column_header_row_spacer_" + getName()) + "\">");
+            out.write("\n<tr class=\"dataregion_column_header_row_spacer\" style=\"display: none;\" id=\"" + PageFlowUtil.filter(getDomId() + "-column-header-row-spacer") + "\">");
 
             if (showRecordSelectors)
             {
@@ -1544,12 +1551,7 @@ public class DataRegion extends AbstractDataRegion
 
     protected void renderFormHeader(RenderContext ctx, Writer out, int mode) throws IOException
     {
-        out.write("<form method=\"post\" ");
-        String name = getName();
-        if (name != null)
-        {
-            out.write("id=\"" + PageFlowUtil.filter(name) + "\" ");
-        }
+        out.write("<form method=\"post\" id=\"" + PageFlowUtil.filter(getDomId() + "-form") + "\" ");
         String actionAttr = null == getFormActionUrl() ? "" : getFormActionUrl().getLocalURIString();
         switch (mode)
         {
@@ -2536,10 +2538,9 @@ public class DataRegion extends AbstractDataRegion
         _horizontalGroups = horizontalGroups;
     }
 
-    public String getJavascriptFormReference(boolean htmlEncode)
+    public String getJavascriptFormReference()
     {
-        String name = htmlEncode ? PageFlowUtil.filterQuote(getName()) : PageFlowUtil.jsString(getName());
-        return "document.forms[" + name + "]";
+        return "document.forms[" + PageFlowUtil.jsString(getFormId()) + "]";
     }
 
     public boolean isShowBorders()

@@ -28,10 +28,9 @@
 <%
     DataRegion.ParameterViewBean bean = (DataRegion.ParameterViewBean)HttpView.currentModel();
 %>
-<script>
+<script type="text/javascript">
 (function (){
 var dataRegionName = <%=q(bean.dataRegionName)%>;
-var divId = <%=q("dataregion_" + bean.dataRegionName)%>;
 var decl = [
     <%
     Collection<QueryService.ParameterDecl> decls = bean.params;
@@ -61,7 +60,7 @@ function submitHandler()
     delete formpanel;
 
     var values = {};
-    for (var i=0 ; i<decl.length ; i++)
+    for (var i=0; i < decl.length; i++)
     {
         var parameter = dataRegionName + ".param." + decl[i].name;
         values[parameter] = valuesRaw[parameter];
@@ -74,36 +73,40 @@ function submitHandler()
     }
     else
     {
-        var query = LABKEY.ActionURL.getParameters();
-        query = Ext.apply(query||{}, values);
-        var u = LABKEY.ActionURL.queryString(query);
-        window.location.search = "?" + u;
+        var query = Ext.apply(LABKEY.ActionURL.getParameters() || {}, values);
+        window.location.search = "?" + LABKEY.ActionURL.queryString(query);
     }
 }
 Ext.onReady(function()
 {
-    var items = [];
-    for (var i=0 ; i<decl.length ; i++)
+    var items = [], item,
+        p, name, i=0;
+
+    for (; i < decl.length; i++)
     {
-        var p = decl[i];
-        var item = {};
-        item.xtype = p.xtype || 'textfield';
-        if (p.jsontype == 'int')
-            item.decimalPrecision=0;
-        item.fieldLabel = p.name;
-        item.width = 250;
-        item.name = <%=PageFlowUtil.qh(bean.dataRegionName)%> + ".param." + Ext.util.Format.htmlEncode(p.name);
-        item.value= LABKEY.ActionURL.getParameter(item.name) || p.value;
+        p = decl[i];
+        name = <%=PageFlowUtil.qh(bean.dataRegionName)%> + ".param." + Ext.util.Format.htmlEncode(p.name);
+
+        item = {
+            xtype: p.xtype || 'textfield',
+            fieldLabel: p.name,
+            width: 250,
+            name: name,
+            value: LABKEY.ActionURL.getParameter(name) || p.value
+        };
+        if (p.jsontype == 'int') {
+            item.decimalPrecision = 0;
+        }
         items.push(item);
     }
     formpanel = new LABKEY.ext.FormPanel({
-        items:items,
+        renderTo: <%=PageFlowUtil.jsString(bean.dataRegionDomId)%>,
+        items: items,
         bodyStyle: 'padding: 5px;',
-        bbar:[{text:'Submit', handler:submitHandler}]
+        bbar: [{text: 'Submit', handler: submitHandler}]
     });
-    formpanel.render(divId);
 });
 })();
 </script>
 <%-- NOTE: div id must match DataRegion.js expected <table> element so it can be removed in DataRegion.destroy() --%>
-<div id=<%=PageFlowUtil.qh("dataregion_" + bean.dataRegionName)%>></div>
+<div id=<%=PageFlowUtil.qh(bean.dataRegionDomId)%>></div>

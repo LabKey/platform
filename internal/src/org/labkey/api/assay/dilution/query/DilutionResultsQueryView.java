@@ -63,7 +63,7 @@ public abstract class DilutionResultsQueryView extends ResultsQueryView
         return "Neutralization by " + propLabel;
     }
 
-    protected void addGraphSubItems(NavTree parent, Domain domain, String dataRegionName, Set<String> excluded)
+    protected void addGraphSubItems(NavTree parent, Domain domain, String formId, Set<String> excluded)
     {
         ActionURL graphSelectedURL = getGraphSelectedURL();
         for (DomainProperty prop : domain.getProperties())
@@ -71,11 +71,11 @@ public abstract class DilutionResultsQueryView extends ResultsQueryView
             if (!excluded.contains(prop.getName()))
             {
                 NavTree menuItem = new NavTree(prop.getLabel(), "#");
-                menuItem.setScript("document.forms['" + dataRegionName + "'].action = '" + graphSelectedURL.getLocalURIString() + "';\n" +
-                        "document.forms['" + dataRegionName + "'].captionColumn.value = '" + prop.getName() + "';\n" +
-                        "document.forms['" + dataRegionName + "'].chartTitle.value = '" + getChartTitle(prop.getLabel()) + "';\n" +
-                        "document.forms['" + dataRegionName + "'].method = 'POST';\n" +
-                        "document.forms['" + dataRegionName + "'].submit(); return false;");
+                menuItem.setScript("document.forms[" + PageFlowUtil.jsString(formId) + "].action = '" + graphSelectedURL.getLocalURIString() + "';\n" +
+                        "document.forms[" + PageFlowUtil.jsString(formId) + "].captionColumn.value = '" + prop.getName() + "';\n" +
+                        "document.forms[" + PageFlowUtil.jsString(formId) + "].chartTitle.value = '" + getChartTitle(prop.getLabel()) + "';\n" +
+                        "document.forms[" + PageFlowUtil.jsString(formId) + "].method = 'POST';\n" +
+                        "document.forms[" + PageFlowUtil.jsString(formId) + "].submit(); return false;");
                 parent.addChild(menuItem);
             }
         }
@@ -117,18 +117,18 @@ public abstract class DilutionResultsQueryView extends ResultsQueryView
         rgn.addHiddenFormField("chartTitle", "");
 
         graphSelectedButton.addMenuItem("Default Graph", "#",
-                "document.forms['" + rgn.getName() + "'].action = '" + graphSelectedURL.getLocalURIString() + "';\n" +
-                "document.forms['" + rgn.getName() + "'].method = 'POST';\n" +
-                "document.forms['" + rgn.getName() + "'].submit(); return false;");
+                "document.forms[" + PageFlowUtil.jsString(rgn.getFormId()) + "].action = '" + graphSelectedURL.getLocalURIString() + "';\n" +
+                "document.forms[" + PageFlowUtil.jsString(rgn.getFormId()) + "].method = 'POST';\n" +
+                "document.forms[" + PageFlowUtil.jsString(rgn.getFormId()) + "].submit(); return false;");
 
         Domain sampleDomain = ((DilutionAssayProvider) _provider).getSampleWellGroupDomain(_protocol);
         NavTree sampleSubMenu = new NavTree("Custom Caption (Sample)");
-        addGraphSubItems(sampleSubMenu, sampleDomain, rgn.getName(), getExcludedSampleProperties());
+        addGraphSubItems(sampleSubMenu, sampleDomain, rgn.getFormId(), getExcludedSampleProperties());
         graphSelectedButton.addMenuItem(sampleSubMenu);
 
         Domain runDomain = _provider.getRunDomain(_protocol);
         NavTree runSubMenu = new NavTree("Custom Caption (Run)");
-        addGraphSubItems(runSubMenu, runDomain, rgn.getName(), getExcludedRunProperties());
+        addGraphSubItems(runSubMenu, runDomain, rgn.getFormId(), getExcludedRunProperties());
         graphSelectedButton.addMenuItem(runSubMenu);
         graphSelectedButton.setRequiresSelection(true);
         bbar.add(graphSelectedButton);

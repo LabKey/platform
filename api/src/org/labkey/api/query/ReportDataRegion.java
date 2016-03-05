@@ -48,7 +48,8 @@ public class ReportDataRegion extends AbstractDataRegion
     {
         setSettings(settings);
 
-        try {
+        try
+        {
             // subtle, but we always want to use the data region specified from the enclosing query
             report.getDescriptor().setProperty(ReportDescriptor.Prop.dataRegionName, settings.getDataRegionName());
 
@@ -69,7 +70,8 @@ public class ReportDataRegion extends AbstractDataRegion
     @Override
     public void render(RenderContext ctx, HttpServletRequest request, HttpServletResponse response) throws IOException
     {
-        try {
+        try
+        {
             StringBuilder viewmsg = new StringBuilder();
             StringBuilder filter = new StringBuilder();
 
@@ -84,12 +86,15 @@ public class ReportDataRegion extends AbstractDataRegion
                 messages.put(MessagePart.filter.name(), filter.toString());
 
             // for now set the width to 100%, but we want to be smarter about calculating the viewport width less scroll
-            out.write("\n<table width=\"100%\" class=\"labkey-data-region");
-            // Issue 12961: Extra lines at bottom of R report designer
-            //out.write(" labkey-show-borders\"");
-            out.write(" id=\"");
-            out.write(PageFlowUtil.filter("dataregion_" + getName()));
-            out.write("\">\n");
+            out.write("<table width=\"100%\" class=\"labkey-data-region\"");
+            out.write(" id=\"" + PageFlowUtil.filter(getDomId()) + "\"");
+
+            String name = getName();
+            if (name != null)
+            {
+                out.write(" lk-region-name=\"" + PageFlowUtil.filter(name) + "\" ");
+            }
+            out.write(">");
 
             renderHeader(ctx, out, true, 0);
 
@@ -105,26 +110,11 @@ public class ReportDataRegion extends AbstractDataRegion
         {
             throw new IOException(e);
         }
-        //_report.getRunReportView(getViewContext()).render(model, request, response);
-
-        //super.render(ctx, request, response);
     }
 
     @Override
     public void render(RenderContext ctx, Writer out) throws IOException
     {
-/*
-        StringBuilder sb = new StringBuilder();
-
-        if (_buttonBar != null)
-            _button
-        addFilterMessage(sb, ctx, true);
-        renderHeaderScript(ctx, out, sb.toString());
-
-        out.write("<table class=\"labkey-data-region-header\" id=\"" + PageFlowUtil.filter("dataregion_header_" + getName()) + "\">\n");
-        renderMessageBox(ctx, out, 0);
-        out.write("</table>");
-*/
     }
 
     @Override

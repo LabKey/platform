@@ -21,12 +21,12 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         }
 
         this.dataRegion = config.dataRegion;
-        var renderTarget = 'dataregion_facet_' + config.dataRegion.name;
+        var renderTarget = config.dataRegion.domId + '-facet';
         var topEl = this.getContainerEl(config.dataRegion);
         var tableEl = this.getDataRegionTableEl(config.dataRegion);
         tableEl.setWidth(tableEl.getBox().width);
         if (topEl) {
-            var targetHTML = '<div id="' + renderTarget + '" style="float: left;"></div>';
+            var targetHTML = '<div id="' + renderTarget + '" style="float: left;" lk-region-facet-name="' + config.dataRegion.name + '"></div>';
             topEl.insertHtml('beforeBegin', targetHTML);
         }
 
@@ -48,7 +48,7 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
                 cls : 'facet_header'
             },
             cls : 'labkey-data-region-facet',
-            height : Ext4.get('dataregion_' + config.dataRegion.name).getBox().height,
+            height : tableEl.getBox().height,
             minHeight : 450
         });
 
@@ -70,11 +70,11 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
 
         this.callParent(arguments);
 
-        var task = new Ext4.util.DelayedTask(function(){
+        var task = new Ext4.util.DelayedTask(function() {
             this.add(this.getFilterCfg());
         }, this);
 
-        this.on('afterrender',  function() {
+        this.on('afterrender', function() {
             this.getWrappedDataRegion();
             task.delay(200); // animation time
         }, this, {single: true});
@@ -82,26 +82,27 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         this.on('beforeexpand', function() {
             this._beforeShow(); this.show();
         }, this);
-        this.on('collapse',     function() {
+        this.on('collapse', function() {
             this.hide(); this._afterHide();
         }, this);
 
         // Attach resize event listeners
-        this.on('resize',       this.onResize, this);
+        this.on('resize', this.onResize, this);
         Ext4.EventManager.onWindowResize(this._beforeShow, this);
     },
 
     getContainerEl : function(dr) {
         if (dr && dr.name) {
-            var el = Ext4.get(dr.name);
-            if (el)
+            var el = Ext4.get(dr.domId + '-form');
+            if (el) {
                 return el.up('div');
+            }
         }
     },
 
     getDataRegionTableEl : function(dr) {
         if (dr && dr.name) {
-            return Ext4.get('dataregion_' + dr.name);
+            return Ext4.get(dr.domId);
         }
     },
 
@@ -216,7 +217,7 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
     _resizeTask : function(panel, w, h, oldW, oldH) {
 
         // Resize data region wrapper
-        var wrap = Ext4.get('dataregion_' + this.dataRegion.name);
+        var wrap = this.getDataRegionTableEl(this.dataRegion);
 
         if (wrap)
             wrap = wrap.parent('div.labkey-data-region-wrap');

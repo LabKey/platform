@@ -176,9 +176,9 @@ public class ExperimentRunListView extends QueryView
             addToExperimentButton.setRequiresSelection(true);
 
             ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getCreateRunGroupURL(getContainer(), getReturnURL(), true);
-            String javascript = view.getDataRegion().getJavascriptFormReference(false) + ".method = \"POST\";\n " +
-                    view.getDataRegion().getJavascriptFormReference(false) + ".action = " + PageFlowUtil.jsString(url + "&noPost=true") + ";\n " +
-                    view.getDataRegion().getJavascriptFormReference(false) + ".submit();";
+            String javascript = view.getDataRegion().getJavascriptFormReference() + ".method = \"POST\";\n " +
+                    view.getDataRegion().getJavascriptFormReference() + ".action = " + PageFlowUtil.jsString(url + "&noPost=true") + ";\n " +
+                    view.getDataRegion().getJavascriptFormReference() + ".submit();";
             addToExperimentButton.addMenuItem("Create new run group...", null, javascript);
 
             List<? extends ExpExperiment> experiments = ExperimentService.get().getExperiments(c, getViewContext().getUser(), true, false);
@@ -190,7 +190,7 @@ public class ExperimentRunListView extends QueryView
             for (ExpExperiment exp : experiments)
             {
                 ActionURL addRunUrl = PageFlowUtil.urlProvider(ExperimentUrls.class).getAddRunsToExperimentURL(getContainer(), exp);
-                addToExperimentButton.addMenuItem(exp.getName(), null, "if (verifySelected(" + view.getDataRegion().getJavascriptFormReference(false) + ", \"" + addRunUrl.getLocalURIString() + "\", \"post\", \"run\")) { " + view.getDataRegion().getJavascriptFormReference(false) + ".submit(); }");
+                addToExperimentButton.addMenuItem(exp.getName(), null, "if (verifySelected(" + view.getDataRegion().getJavascriptFormReference() + ", \"" + addRunUrl.getLocalURIString() + "\", \"post\", \"run\")) { " + view.getDataRegion().getJavascriptFormReference() + ".submit(); }");
             }
             bar.add(addToExperimentButton);
         }

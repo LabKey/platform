@@ -131,6 +131,8 @@ if (!LABKEY.DataRegions) {
 
                 detailsURL: undefined,
 
+                domId: undefined,
+
                 /**
                  * The faceted filter pane as been loaded
                  * @private
@@ -685,7 +687,7 @@ if (!LABKEY.DataRegions) {
      * @see LABKEY.DataRegion#getSelected to get all selected rows.
      */
     Proto.getSelectionCount = function() {
-        if (!$('dataregion_' + this.name)) {
+        if (!$('#' + this.domId)) {
             return 0;
         }
 
@@ -2108,11 +2110,11 @@ if (!LABKEY.DataRegions) {
     };
 
     var _getFormSelector = function(region) {
-        var form = $('form#' + region.name);
+        var form = $('form#' + region.domId + '-form');
 
         // derived DataRegion's may not include the form id
         if (form.length == 0) {
-            form = $('#dataregion_' + region.name).closest('form');
+            form = $('#' + region.domId).closest('form');
         }
 
         return form;
@@ -2123,7 +2125,7 @@ if (!LABKEY.DataRegions) {
     };
 
     var _getHeaderSelector = function(region) {
-        return $('#dataregion_header_' + region.name);
+        return $('#' + region.domId + '-header');
     };
 
     // Formerly, LABKEY.DataRegion.getParamValPairs
@@ -2995,18 +2997,18 @@ if (!LABKEY.DataRegions) {
         this.region = region;
 
         // initialize constants
-        this.headerRow = $('#dataregion_header_row_' + region.name);
+        this.headerRow = $('#' + region.domId + '-header-row');
         if (!this.headerRow) {
             region._allowHeaderLock = false;
             return;
         }
 
-        this.table = $('#dataregion_' + region.name);
+        this.table = $('#' + region.domId);
         this.headerRowContent = this.headerRow.children('td');
-        this.headerSpacer = $('#dataregion_header_row_spacer_' + region.name);
-        this.colHeaderRow = $('#dataregion_column_header_row_' + region.name);
-        this.colHeaderRowSpacer = $('#dataregion_column_header_row_spacer_' + region.name);
-        this.paginationEl = $('#dataregion_header_' + region.name);
+        this.headerSpacer = $('#' + region.domId + '-header-row-spacer');
+        this.colHeaderRow = $('#' + region.domId + '-column-header-row');
+        this.colHeaderRowSpacer = $('#' + region.domId + '-column-header-row-spacer');
+        this.paginationEl = $('#' + region.domId + '-header');
 
         // check if the header row is being used
         this.includeHeader = this.headerRow.is(':visible'); // formerly isDisplayed()
@@ -3300,7 +3302,7 @@ if (!LABKEY.DataRegions) {
      * @constructor
      */
     var MessageArea = function(dataRegion, messages) {
-        this.parentSel = '#dataregion_msgbox_' + dataRegion.name;
+        this.parentSel = '#' + dataRegion.domId + '-msgbox';
 
         if (messages) {
             this.setMessages(messages);

@@ -359,7 +359,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     protected void addResetButton(FormType newRunForm, InsertView insertView, ButtonBar bbar)
     {
         ActionButton resetDefaultsButton = new ActionButton(getViewContext().cloneActionURL().deleteParameters(), "Reset Default Values");
-        resetDefaultsButton.setScript(insertView.getDataRegion().getJavascriptFormReference(false) + ".resetDefaultValues.value = 'true';", true);
+        resetDefaultsButton.setScript(insertView.getDataRegion().getJavascriptFormReference() + ".resetDefaultValues.value = 'true';", true);
         resetDefaultsButton.setActionType(ActionButton.Action.POST);
         resetDefaultsButton.setId("Btn-ResetDefaultValues");
         bbar.add(resetDefaultsButton);
@@ -500,7 +500,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
     protected void addFinishButtons(FormType newRunForm, InsertView insertView, ButtonBar bbar)
     {
-        String jsFormReferenceStr = insertView.getDataRegion().getJavascriptFormReference(false);
+        String jsFormReferenceStr = insertView.getDataRegion().getJavascriptFormReference();
 
         ActionButton saveFinishButton = new ActionButton(getViewContext().getActionURL().clone().deleteParameters(), "Save and Finish");
         saveFinishButton.setScript(jsFormReferenceStr + ".multiRunUpload.value = \"false\"; this.className += \" labkey-disabled-button\";");
