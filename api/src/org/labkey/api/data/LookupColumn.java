@@ -46,7 +46,7 @@ public class LookupColumn extends ColumnInfo
         leftOuter("LEFT OUTER");
         private final String _sql;
 
-        private JoinType(String sql)
+        JoinType(String sql)
         {
             _sql = sql;
         }

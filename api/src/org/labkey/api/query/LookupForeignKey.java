@@ -16,14 +16,19 @@
 
 package org.labkey.api.query;
 
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.*;
+import org.labkey.api.data.AbstractForeignKey;
+import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilterable;
+import org.labkey.api.data.DelegatingContainerFilter;
+import org.labkey.api.data.LookupColumn;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.Pair;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.view.ActionURL;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,8 +37,6 @@ import java.util.Set;
 
 abstract public class LookupForeignKey extends AbstractForeignKey implements Cloneable
 {
-    private static Logger _log = Logger.getLogger(LookupForeignKey.class);
-
     private final ActionURL _baseURL;
     private final Object _param;
     private boolean _prefixColumnCaption = false;
