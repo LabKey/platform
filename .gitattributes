@@ -2482,8 +2482,17 @@ study/test/src/org/labkey/test/pages/DesignerController/DesignerTester.java -tex
 study/test/src/org/labkey/test/pages/studydesigncontroller/ManageAssayScheduleTester.java -text
 study/test/src/org/labkey/test/pages/studydesigncontroller/ManageStudyProductsTester.java -text
 study/test/src/org/labkey/test/pages/studydesigncontroller/ManageTreatmentsTester.java -text
+study/test/src/org/labkey/test/tests/study/AncillaryStudyTest.java -text
+study/test/src/org/labkey/test/tests/study/AssayTest.java -text
+study/test/src/org/labkey/test/tests/study/CohortTest.java -text
+study/test/src/org/labkey/test/tests/study/ExtraKeyStudyTest.java -text
+study/test/src/org/labkey/test/tests/study/QuerySnapshotTest.java -text
+study/test/src/org/labkey/test/tests/study/SCHARPStudyTest.java -text
+study/test/src/org/labkey/test/tests/study/SampleMindedImportTest.java -text
 study/test/src/org/labkey/test/tests/study/SearchTest.java -text
 study/test/src/org/labkey/test/tests/study/SharedStudyTest.java -text
+study/test/src/org/labkey/test/tests/study/SpecimenMergeTest.java -text
+study/test/src/org/labkey/test/tests/study/SpecimenReplaceTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyCohortExportTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyDatasetImportFieldsTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyDatasetReloadTest.java -text
@@ -2504,6 +2513,8 @@ study/test/src/org/labkey/test/tests/study/StudyShortTest.java -text
 study/test/src/org/labkey/test/tests/study/StudySimpleExportTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyVisitTagTest.java -text
+study/test/src/org/labkey/test/tests/study/TargetStudyTest.java -text
+study/test/src/org/labkey/test/tests/study/TruncationTest.java -text
 study/test/src/org/labkey/test/tests/study/VaccineProtocolTest.java -text
 study/test/test_study.iml -text
 study/webapp/WEB-INF/study/studyContext.xml -text

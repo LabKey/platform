@@ -23,7 +23,6 @@ import org.labkey.remoteapi.Connection;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyB;
-import org.labkey.test.categories.Study;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
@@ -36,7 +35,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
-@Category({DailyB.class, Study.class})
+@Category({DailyB.class})
 public class StudyDataspaceTest extends StudyBaseTest
 {
     protected final String FOLDER_STUDY1 = "Study 1";

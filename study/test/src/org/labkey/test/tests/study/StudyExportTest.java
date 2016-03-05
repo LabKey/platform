@@ -22,7 +22,6 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyB;
 import org.labkey.test.categories.FileBrowser;
-import org.labkey.test.categories.Study;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 
@@ -30,7 +29,7 @@ import java.io.File;
 
 import static org.junit.Assert.*;
 
-@Category({DailyB.class, Study.class, FileBrowser.class})
+@Category({DailyB.class, FileBrowser.class})
 public class StudyExportTest extends StudyManualTest
 {
     private static final String SPECIMEN_ARCHIVE_B = "/sampledata/study/specimens/sample_b.specimens";

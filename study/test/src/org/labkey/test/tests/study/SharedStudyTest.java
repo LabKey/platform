@@ -30,7 +30,6 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.DailyA;
-import org.labkey.test.categories.Study;
 import org.labkey.test.components.ParticipantListWebPart;
 import org.labkey.test.pages.DatasetInsertPage;
 import org.labkey.test.util.DataRegionTable;
@@ -46,7 +45,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-@Category({DailyA.class, Study.class})
+@Category({DailyA.class})
 public class SharedStudyTest extends BaseWebDriverTest
 {
     private static final String STUDY1 = "Study001";

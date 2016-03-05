@@ -17,10 +17,9 @@
 package org.labkey.test.tests.study;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.categories.DailyB;
-import org.labkey.test.categories.Study;
 import org.labkey.test.util.DataRegionTable;
 
-@Category({DailyB.class, Study.class})
+@Category({DailyB.class})
 public class StudyCohortExportTest extends StudyExportTest
 {
     @Override

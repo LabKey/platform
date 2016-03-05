@@ -25,7 +25,6 @@ import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyB;
-import org.labkey.test.categories.Study;
 import org.labkey.test.pages.studydesigncontroller.ManageAssayScheduleTester;
 import org.labkey.test.pages.studydesigncontroller.ManageTreatmentsTester;
 import org.labkey.test.pages.studydesigncontroller.ManageStudyProductsTester;
@@ -42,7 +41,7 @@ import static org.junit.Assert.*;
 /**
  * Created by tchadick on 1/29/14.
  */
-@Category({DailyB.class, Study.class})
+@Category({DailyB.class})
 public class StudyProtocolDesignerTest extends BaseWebDriverTest
 {
     private static final File STUDY_ARCHIVE = TestFileUtils.getSampleData("studies/CohortStudy.zip");

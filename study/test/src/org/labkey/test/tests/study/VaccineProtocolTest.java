@@ -23,7 +23,6 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyA;
-import org.labkey.test.categories.Study;
 import org.labkey.test.pages.DesignerController.DesignerTester;
 import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.PortalHelper;
@@ -32,7 +31,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
-@Category({DailyA.class, Study.class})
+@Category({DailyA.class})
 public class VaccineProtocolTest extends BaseWebDriverTest
 {
     protected static final String PROJECT_NAME = "ProtocolVerifyProject";

@@ -21,7 +21,6 @@ import org.junit.experimental.categories.Category;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyB;
-import org.labkey.test.categories.Study;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.PortalHelper;
@@ -33,7 +32,7 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 
-@Category({DailyB.class, Study.class})
+@Category({DailyB.class})
 public class StudyVisitTagTest extends StudyBaseTest
 {
     protected final String VISIT_TAG_QWP_TITLE = "VisitTag";

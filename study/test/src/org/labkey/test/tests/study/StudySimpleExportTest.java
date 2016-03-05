@@ -26,7 +26,6 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyB;
 import org.labkey.test.categories.FileBrowser;
-import org.labkey.test.categories.Study;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.ListHelper;
@@ -48,7 +47,7 @@ import static org.junit.Assert.*;
  * The @BeforeClass creates a new study manuall using the default settings.
  * Each @Test then sets a property in that study, exports the study, and reimports it into a subfolder
  */
-@Category({DailyB.class, Study.class, FileBrowser.class})
+@Category({DailyB.class, FileBrowser.class})
 public class StudySimpleExportTest extends StudyBaseTest
 {
     private static final String TEST_DATASET_NAME = "TestDataset";
