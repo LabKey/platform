@@ -60,6 +60,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: matthewb
@@ -69,7 +70,7 @@ import java.util.Set;
 public class CoreQuerySchema extends UserSchema
 {
     private Set<Integer> _projectUserIds;
-    final boolean _mustCheckPermissions;
+    private final boolean _mustCheckPermissions;
 
     public static final String NAME = "core";
     public static final String USERS_TABLE_NAME = "Users";
@@ -381,10 +382,12 @@ public class CoreQuerySchema extends UserSchema
                 _projectUserIds = new HashSet<>(SecurityManager.getFolderUserids(getContainer()));
                 Group siteAdminGroup = SecurityManager.getGroup(Group.groupAdministrators);
 
-                for (UserPrincipal adminUser : SecurityManager.getGroupMembers(siteAdminGroup, MemberType.ACTIVE_AND_INACTIVE_USERS))
-                {
-                    _projectUserIds.add(adminUser.getUserId());
-                }
+                _projectUserIds.addAll(
+                    SecurityManager.getGroupMembers(siteAdminGroup, MemberType.ACTIVE_AND_INACTIVE_USERS)
+                        .stream()
+                        .map(UserPrincipal::getUserId)
+                        .collect(Collectors.toList())
+                );
             }
             ColumnInfo userid = users.getRealTable().getColumn("userid");
             users.addInClause(userid, _projectUserIds);
@@ -400,7 +403,6 @@ public class CoreQuerySchema extends UserSchema
 
         return users;
     }
-
 
 
     private void addGroupsColumn(FilteredTable users)
@@ -419,7 +421,6 @@ public class CoreQuerySchema extends UserSchema
         visibleColumns.add(groupsCol.getFieldKey());
         users.setDefaultVisibleColumns(visibleColumns);
     }
-
 
 
     protected TableInfo getMembersTable()
@@ -533,7 +534,6 @@ public class CoreQuerySchema extends UserSchema
                     }
                 };
             }
-
         });
         return t;
     }
@@ -585,12 +585,11 @@ public class CoreQuerySchema extends UserSchema
         {
             try
             {
-                List<String> requiredFields = new ArrayList<>();
-                for (DomainProperty prop : domain.getProperties())
-                {
-                    if (prop.isRequired() && prop.isShownInUpdateView())
-                        requiredFields.add(prop.getName());
-                }
+                List<String> requiredFields = domain.getProperties()
+                    .stream()
+                    .filter(prop -> prop.isRequired() && prop.isShownInUpdateView())
+                    .map(DomainProperty::getName)
+                    .collect(Collectors.toList());
 
                 if (!requiredFields.isEmpty())
                 {
