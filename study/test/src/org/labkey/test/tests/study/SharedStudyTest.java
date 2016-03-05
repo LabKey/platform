@@ -149,12 +149,12 @@ public class SharedStudyTest extends BaseWebDriverTest
         _customizeViewsHelper.saveCustomView(viewName, false, true);
 
         log("Verify visit folder is project");
-        DataRegionTable table = new DataRegionTable("query", this, false);
+        DataRegionTable table = new DataRegionTable("query", this);
         Assert.assertEquals(getProjectName(), table.getDataAsText(0, "Folder"));
 
         log("Verify visit folder is project");
         beginAt("/query/" + getProjectName() + "/" + STUDY1 + "/executeQuery.view?schemaName=study&query.queryName=Visit&query.viewName=" + viewName);
-        table = new DataRegionTable("query", this, false);
+        table = new DataRegionTable("query", this);
         Assert.assertEquals(getProjectName(), table.getDataAsText(0, "Folder"));
     }
 
@@ -169,7 +169,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         _customizeViewsHelper.saveCustomView("withfolder");
 
         log("Verify visit folder is project");
-        DataRegionTable table = new DataRegionTable("query", this, false);
+        DataRegionTable table = new DataRegionTable("query", this);
         Assert.assertEquals(getProjectName(), table.getDataAsText(0, "Folder"));
     }
 

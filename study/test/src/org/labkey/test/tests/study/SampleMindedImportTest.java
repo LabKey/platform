@@ -119,7 +119,7 @@ public class SampleMindedImportTest extends BaseWebDriverTest
         waitForElement(Locator.linkWithText("BAL"));
         clickAndWait(Locator.linkWithText("BAL"));
         assertTextPresent("BAL Supernatant", "FREE (007)");
-        DataRegionTable specimenTable = new DataRegionTable("SpecimenDetail", this, true, true);
+        DataRegionTable specimenTable = new DataRegionTable("SpecimenDetail", this);
         assertEquals("Incorrect number of vials.", "Count:  5", specimenTable.getTotal("Global Unique Id"));
 
         clickAndWait(Locator.linkWithText("Group vials"));

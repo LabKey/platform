@@ -124,21 +124,6 @@ public class AncillaryStudyTest extends StudyBaseTest
 
         _extHelper.selectExtGridItem(null, null, 0, "studyWizardParticipantList", false);
 
-        // kbl: commented out current wizard only allows existing participant groups or all participants (although this could change)
-/*
-        checkRadioButton("renderType", "new");
-        waitForElement(Locator.xpath("//table[@id='dataregion_demoDataRegion']"), WAIT_FOR_JAVASCRIPT);
-        assertWizardError("Next", "Mouse Category Label required.");
-        setFormElement("categoryLabel", PARTICIPANT_GROUP);
-        assertWizardError("Next", "One or more Mouse Identifiers required.");
-        waitForElement(Locator.name(".toggle"), WAIT_FOR_JAVASCRIPT);
-        sleep(100); // wait for specimen grid to be ready.
-        checkAllOnPage("demoDataRegion");
-        uncheckDataRegionCheckbox("demoDataRegion", 0);
-        uncheckDataRegionCheckbox("demoDataRegion", 1);
-        clickButton("Add Selected", 0);
-        sleep(1000); // wait for specimen Ids to appear in form.
-*/
         clickButton("Next", 0);
 
         //Wizard page 3 - select datasets
@@ -235,8 +220,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         _extHelper.clickMenuButton("Views", "Edit Snapshot");
         clickButton("Update Snapshot", 0);
         assertAlert("Updating will replace all existing data with a new set of data. Continue?");
-        waitForElement(Locator.tagWithClass("table", "labkey-data-region"));
-        DataRegionTable table = new DataRegionTable("Dataset", this, true, true);
+        DataRegionTable table = new DataRegionTable("Dataset", this);
         assertEquals("Dataset does not reflect changes in source study.", 21, table.getDataRowCount());
         assertTextPresent(SEQ_NUMBER + ".0");
         table.getColumnDataAsText("Sequence Num");
@@ -245,7 +229,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         log("Modify row in source dataset");
         clickFolder(getFolderName());
         clickAndWait(Locator.linkWithText(DATASETS[0]));
-        Map nameAndValue = new HashMap(1);
+        Map<String, String> nameAndValue = new HashMap<>();
         nameAndValue.put("Sequence Num", SEQ_NUMBER2);
         (new ChartHelper(this)).editDrtRow(1, nameAndValue);
 
@@ -258,7 +242,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         clickButton("Update Snapshot", 0);
         assertAlert("Updating will replace all existing data with a new set of data. Continue?");
         waitForElement(Locator.tagWithClass("table", "labkey-data-region"));
-        table = new DataRegionTable("Dataset", this, true, true);
+        table = new DataRegionTable("Dataset", this);
         assertEquals("Dataset does not reflect changes in source study.", 21, table.getDataRowCount());
         assertTextPresent(SEQ_NUMBER2 + ".0");
         assertTextNotPresent(SEQ_NUMBER + ".0");
@@ -281,7 +265,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         clickButton("Update Snapshot", 0);
         assertAlert("Updating will replace all existing data with a new set of data. Continue?");
         waitForElement(Locator.tagWithClass("table", "labkey-data-region"));
-        table = new DataRegionTable("Dataset", this, true, true);
+        table = new DataRegionTable("Dataset", this);
         assertEquals("Dataset does not reflect changes in source study.", 20, table.getDataRowCount());
         assertTextNotPresent(SEQ_NUMBER + ".0", SEQ_NUMBER2 + ".0");
     }
@@ -345,13 +329,13 @@ public class AncillaryStudyTest extends StudyBaseTest
         waitAndClickAndWait(Locator.linkWithText("Specimen Data"));
         sleep(2000); // the link moves while the specimen search form finishes layout
         waitAndClickAndWait(Locator.linkWithText("By Vial Group"));
-        DataRegionTable table = new DataRegionTable("SpecimenSummary", this, false, true);
+        DataRegionTable table = new DataRegionTable("SpecimenSummary", this);
         assertEquals("Did not find expected number of specimens.", specimenCount, table.getDataRowCount());
         assertEquals("Incorrect total vial count.", String.valueOf(vialCount), table.getDataAsText(specimenCount, "Vial Count"));
         waitAndClickAndWait(Locator.linkWithText("Specimen Data"));
         sleep(2000); // the link moves while the specimen search form finishes layout
         waitAndClickAndWait(Locator.linkWithText("By Individual Vial"));
-        table = new DataRegionTable("SpecimenDetail", this, false, true);
+        table = new DataRegionTable("SpecimenDetail", this);
         assertEquals("Did not find expected number of vials.", vialCount, table.getDataRowCount());
 
         log("Verify that Ancillary study doesn't support requests.");

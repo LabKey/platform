@@ -370,7 +370,7 @@ public class StudyPublishTest extends StudyProtectedExportTest
             goToQueryView("study", DATE_SHIFT_DATASET, false);
             Set<String> unshiftedDates = new HashSet<>();
             Set<String> shiftedDates = new HashSet<>();
-            DataRegionTable datasetTable = new DataRegionTable("query", this, true, true);
+            DataRegionTable datasetTable = new DataRegionTable("query", this);
             unshiftedDates.addAll(datasetTable.getColumnDataAsText(UNSHIFTED_DATE_FIELD.getValue()));
             shiftedDates.addAll(datasetTable.getColumnDataAsText(SHIFTED_DATE_FIELD.getValue()));
             assertTrue("Column '" + UNSHIFTED_DATE_FIELD.getValue() + "' should not be shifted", unshiftedDatesByStudy.get(name).containsAll(unshiftedDates));
@@ -611,14 +611,14 @@ public class StudyPublishTest extends StudyProtectedExportTest
             for (String group : groups)
             {
                 _extHelper.clickMenuButton(true, "Mouse Groups", group);
-                DataRegionTable datasetTable = new DataRegionTable("Dataset", this, true, true);
+                DataRegionTable datasetTable = new DataRegionTable("Dataset", this);
                 unshiftedDates.addAll(datasetTable.getColumnDataAsText(UNSHIFTED_DATE_FIELD.getValue()));
                 preshiftedDates.addAll(datasetTable.getColumnDataAsText(SHIFTED_DATE_FIELD.getValue()));
             }
         }
         else
         {
-            DataRegionTable datasetTable = new DataRegionTable("Dataset", this, true, true);
+            DataRegionTable datasetTable = new DataRegionTable("Dataset", this);
             unshiftedDates.addAll(datasetTable.getColumnDataAsText(UNSHIFTED_DATE_FIELD.getValue()));
             preshiftedDates.addAll(datasetTable.getColumnDataAsText(SHIFTED_DATE_FIELD.getValue()));
         }

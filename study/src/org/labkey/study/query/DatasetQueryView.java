@@ -533,9 +533,8 @@ public class DatasetQueryView extends StudyQueryView
         {
             button.addSeparator();
             ActionURL updateAction = new ActionURL(StudyController.UpdateQCStateAction.class, getContainer());
-            NavTree updateItem = button.addMenuItem("Update state of selected rows", "#", "if (verifySelected(document.forms[\"" +
-                    getDataRegionName() + "\"], \"" + updateAction.getLocalURIString() + "\", \"post\", \"rows\")) document.forms[\"" +
-                    getDataRegionName() + "\"].submit()");
+            NavTree updateItem = button.addMenuItem("Update state of selected rows", "#", "if (verifySelected(LABKEY.DataRegions[" + PageFlowUtil.jsString(getDataRegionName()) + "].form, \"" +
+                    updateAction.getLocalURIString() + "\", \"post\", \"rows\")) LABKEY.DataRegions[" + PageFlowUtil.jsString(getDataRegionName()) + "].form.submit()");
             updateItem.setId("QCState:updateSelected");
 
             button.addMenuItem("Manage states", new ActionURL(StudyController.ManageQCStatesAction.class,

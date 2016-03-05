@@ -338,7 +338,7 @@ public class StudyTest extends StudyBaseTest
 
         }
 
-        DataRegionTable table = new DataRegionTable("Dataset", this, true, true);
+        DataRegionTable table = new DataRegionTable("Dataset", this);
         for (int i=0; i < 5; i++)
             table.checkCheckbox(i);
 
@@ -547,7 +547,7 @@ public class StudyTest extends StudyBaseTest
     {
         startCreateParticipantGroup();
         setFormElement(Locator.name(LABEL_FIELD), listName);
-        DataRegionTable table = new DataRegionTable("demoDataRegion", this, true);
+        DataRegionTable table = new DataRegionTable("demoDataRegion", this);
 
         if(filtered)
         {
@@ -1058,7 +1058,7 @@ public class StudyTest extends StudyBaseTest
         clickAndWait(Locator.linkWithText("Types"));
         log("Verifying sequence numbers and visit names imported correctly");
 
-        DataRegionTable table = new DataRegionTable("Dataset", this, true, true);
+        DataRegionTable table = new DataRegionTable("Dataset", this);
         List<String> visits = table.getColumnDataAsText("Visit");
 
         int enrollmentCount = 0;
@@ -1172,8 +1172,7 @@ public class StudyTest extends StudyBaseTest
         // Then check that item in MouseVisit table
         goToSchemaBrowser();
         viewQueryData("study", "MouseVisit");
-        waitForElement(Locator.id("dataregion_query"));
-        DataRegionTable table = new DataRegionTable("query", this, false);
+        DataRegionTable table = new DataRegionTable("query", this);
         table.setFilter("Day", "Equals", "102");
         assertTextPresent("999320016", "Screening", "101.0", "2005-01-01", "102", "Group 1");
     }

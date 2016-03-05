@@ -949,7 +949,7 @@ public class AssayTest extends AbstractAssayTest
 
         //verify study properties (grid view)
         clickFolder(TEST_ASSAY_FLDR_STUDIES);
-        DataRegionTable table = new DataRegionTable("qwpStudies", this, false);
+        DataRegionTable table = new DataRegionTable("qwpStudies", this);
         assertEquals("Studies not sorted correctly.", TEST_ASSAY_FLDR_STUDY1 + " Study", table.getDataAsText(0, "Label"));
         assertEquals("Failed to set study investigator.", INVESTIGATOR, table.getDataAsText(0, "Investigator"));
         assertEquals("Failed to set study grant.", GRANT, table.getDataAsText(0, "Grant"));

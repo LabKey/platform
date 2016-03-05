@@ -19,14 +19,12 @@ import org.apache.commons.collections15.Bag;
 import org.apache.commons.collections15.bag.HashBag;
 import org.junit.Assert;
 import org.junit.experimental.categories.Category;
-import org.labkey.remoteapi.Connection;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyB;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
-import org.labkey.test.util.PasswordUtil;
 import org.labkey.test.util.PortalHelper;
 import org.openqa.selenium.WebElement;
 
@@ -41,8 +39,8 @@ public class StudyDataspaceTest extends StudyBaseTest
     protected final String FOLDER_STUDY1 = "Study 1";
     protected final String FOLDER_STUDY2 = "Study 2";
     protected final String FOLDER_STUDY5 = "Study 5";
+    protected final String SUBFOLDER_STUDY5 = "SubFolder 5";
     protected final String VISIT_TAG_QWP_TITLE = "VisitTag";
-    protected final String VISIT_TAG_MAP_QWP_TITLE = "VisitTagMap";
     private final PortalHelper _portalHelper = new PortalHelper(this);
 
     @Override
@@ -92,19 +90,14 @@ public class StudyDataspaceTest extends StudyBaseTest
     @Override
     protected void doVerifySteps()
     {
-        PortalHelper portalHelper = new PortalHelper(this);
-        Connection cn = new Connection(getBaseURL(), PasswordUtil.getUsername(), PasswordUtil.getPassword());
-
         log("Verify project has study, but can't import or export");
         clickFolder(getProjectName());
         clickTab("Manage");
-        assertButtonNotPresent("Export Study");
-        assertButtonNotPresent("Reload Study");
-        clickTab("Overview");
-        portalHelper.addQueryWebPart(null, "study", "Product", null);
+        assertElementNotPresent(Locator.lkButton("Export Study"));
+        assertElementNotPresent(Locator.lkButton("Reload Study"));
+        goToModule("Query");
+        viewQueryData("study", "Product");
         assertTextPresent("Insert New", "Import Data");     // Can insert into Product table in project
-        String qwpTableId = "dataregion_qwp2";
-        int qwpDefaultTableRowCount = 5;
 
         // Import first study
         log("Import first study and verify");
@@ -115,9 +108,9 @@ public class StudyDataspaceTest extends StudyBaseTest
         assertTextPresent("tracks data in", "over 97 time points", "Data is present for 8 Participants");
 
         log("Check dataset 'Lab Results'");
-        clickAndWait(Locator.linkContainingText("4 datasets"));
-        clickAndWait(Locator.linkContainingText("Lab Results"));
-        DataRegionTable labResultsTable = new DataRegionTable("Dataset", this, false);
+        goToModule("Query");
+        viewQueryData("study", "Lab Results");
+        DataRegionTable labResultsTable = new DataRegionTable("query", this);
         assertEquals("Expected cell value.", "Buffalo1", labResultsTable.getDataAsText(0, "Lab"));
         assertEquals("Expected cell value.", "gp145", labResultsTable.getDataAsText(0, "Product"));
         assertEquals("Expected cell value.", "VRC-HIVADV014-00-VP", labResultsTable.getDataAsText(0, "Treatment"));
@@ -130,8 +123,11 @@ public class StudyDataspaceTest extends StudyBaseTest
 
         log("Verify Product rows added");
         clickFolder(getProjectName());
-        Assert.assertTrue("Product row count incorrect.", getTableRowCount(qwpTableId) == qwpDefaultTableRowCount + 8);
-        List<String> productNames = getTableColumnValues(qwpTableId, 3);
+        goToModule("Query");
+        viewQueryData("study", "Product");
+        DataRegionTable productTable = new DataRegionTable("query", this);
+        Assert.assertTrue("Product row count incorrect.", productTable.getDataRowCount() == 8);
+        List<String> productNames = productTable.getColumnDataAsText("Label");
         Assert.assertTrue("Product table should contain these products.",
                 productNames.contains("gag") && productNames.contains("gag-pol-nef") && productNames.contains("gp145"));
 
@@ -143,21 +139,24 @@ public class StudyDataspaceTest extends StudyBaseTest
         assertTextPresent("tracks data in", "over 103 time points", "Data is present for 8 Participants");
 
         log("Check dataset 'Lab Results'");
-        clickAndWait(Locator.linkContainingText("2 datasets"));
-        clickAndWait(Locator.linkContainingText("Lab Results"));
-        DataRegionTable labResultsTable2 = new DataRegionTable("Dataset", this, false);
-        assertEquals("Expected cell value.", "Buffalo1", labResultsTable2.getDataAsText(1, "Lab"));
-        assertEquals("Expected cell value.", "gakkon", labResultsTable2.getDataAsText(1, "Product"));
-        assertEquals("Expected cell value.", "Placebo", labResultsTable2.getDataAsText(1, "Treatment"));
-        assertEquals("Expected cell value.", "520", labResultsTable2.getDataAsText(1, "CD4"));
-        assertEquals("Expected cell value.", "Frankie Lee", labResultsTable2.getDataAsText(1, "Treatment By"));
+        goToModule("Query");
+        viewQueryData("study", "Lab Results");
+        labResultsTable = new DataRegionTable("query", this);
+        assertEquals("Expected cell value.", "Buffalo1", labResultsTable.getDataAsText(1, "Lab"));
+        assertEquals("Expected cell value.", "gakkon", labResultsTable.getDataAsText(1, "Product"));
+        assertEquals("Expected cell value.", "Placebo", labResultsTable.getDataAsText(1, "Treatment"));
+        assertEquals("Expected cell value.", "520", labResultsTable.getDataAsText(1, "CD4"));
+        assertEquals("Expected cell value.", "Frankie Lee", labResultsTable.getDataAsText(1, "Treatment By"));
 
         log("Verify Product rows added");
         clickFolder(getProjectName());
-        Assert.assertTrue("Product row count incorrect.", getTableRowCount(qwpTableId) == qwpDefaultTableRowCount + 8);
-        List<String> productNames2 = getTableColumnValues(qwpTableId, 3);
+        goToModule("Query");
+        viewQueryData("study", "Product");
+        productTable = new DataRegionTable("query", this);
+        Assert.assertTrue("Product row count incorrect.", productTable.getDataRowCount() == 8);
+        productNames = productTable.getColumnDataAsText("Label");
         Assert.assertTrue("Product table should contain these products.",
-                productNames2.contains("gakkon") && productNames2.contains("gag-pol-nef") && productNames2.contains("gp145"));
+                productNames.contains("gakkon") && productNames.contains("gag-pol-nef") && productNames.contains("gp145"));
 
         // Import third study
         clickFolder(FOLDER_STUDY5);
@@ -166,10 +165,13 @@ public class StudyDataspaceTest extends StudyBaseTest
 
         log("Verify Product rows added");
         clickFolder(getProjectName());
-        Assert.assertTrue("Product row count incorrect.", getTableRowCount(qwpTableId) == qwpDefaultTableRowCount + 8);
-        List<String> productNames3 = getTableColumnValues(qwpTableId, 3);
+        goToModule("Query");
+        viewQueryData("study", "Product");
+        productTable = new DataRegionTable("query", this);
+        Assert.assertTrue("Product row count incorrect.", productTable.getDataRowCount() == 8);
+        productNames = productTable.getColumnDataAsText("Label");
         Assert.assertTrue("Product table should contain these products.",
-                productNames3.contains("gakkon") && productNames3.contains("gag-pol-nef") && productNames3.contains("gp145"));
+                productNames.contains("gakkon") && productNames.contains("gag-pol-nef") && productNames.contains("gp145"));
 
         // Export archive without Treatment, Product, etc.
         clickFolder(FOLDER_STUDY5);
@@ -182,22 +184,21 @@ public class StudyDataspaceTest extends StudyBaseTest
 
         // Load study in another folder
         _fileBrowserHelper.selectFileBrowserItem("export/study/study.xml");
-        _containerHelper.createSubfolder(getProjectName(), getProjectName(), "SubFolder 5", "Collaboration", null, true);
-        clickFolder("SubFolder 5");
+        _containerHelper.createSubfolder(getProjectName(), getProjectName(), SUBFOLDER_STUDY5, "Collaboration", null, true);
+        clickFolder(SUBFOLDER_STUDY5);
         setPipelineRoot(getPipelinePath());
         importFolderFromPipeline("/export/folder.xml", 1, false);
 
         log("Check dataset 'Lab Results'");
-        clickProject(getProjectName());
-        clickFolder("SubFolder 5");
-        clickAndWait(Locator.linkContainingText("1 dataset"));
-        clickAndWait(Locator.linkContainingText("Lab Results"));
-        DataRegionTable labResultsTable3 = new DataRegionTable("Dataset", this, false);
-        assertEquals("Expected cell value.", "Buffalo1", labResultsTable3.getDataAsText(1, "Lab"));
-        assertEquals("Expected cell value.", "gakkon", labResultsTable3.getDataAsText(1, "Product"));
-        assertEquals("Expected cell value.", "1850", labResultsTable3.getDataAsText(1, "Lymphocytes"));
-        assertEquals("Expected cell value.", "LabKeyLab", labResultsTable3.getDataAsText(4, "Lab"));
-        assertEquals("Expected cell value.", "gakkon", labResultsTable3.getDataAsText(4, "Product"));
+        clickFolder(SUBFOLDER_STUDY5);
+        goToModule("Query");
+        viewQueryData("study", "Lab Results");
+        labResultsTable = new DataRegionTable("query", this);
+        assertEquals("Expected cell value.", "Buffalo1", labResultsTable.getDataAsText(1, "Lab"));
+        assertEquals("Expected cell value.", "gakkon", labResultsTable.getDataAsText(1, "Product"));
+        assertEquals("Expected cell value.", "1850", labResultsTable.getDataAsText(1, "Lymphocytes"));
+        assertEquals("Expected cell value.", "LabKeyLab", labResultsTable.getDataAsText(4, "Lab"));
+        assertEquals("Expected cell value.", "gakkon", labResultsTable.getDataAsText(4, "Product"));
 
         verifyVisitTags();
     }
@@ -220,8 +221,9 @@ public class StudyDataspaceTest extends StudyBaseTest
 
         // Check visit tags
         clickFolder(getProjectName());
-        _portalHelper.addQueryWebPart(VISIT_TAG_MAP_QWP_TITLE, "study", "VisitTagMap", null);
-        DataRegionTable visitTagMaps = new DataRegionTable(DataRegionTable.getTableNameByTitle("VisitTagMap", this), this, false);
+        goToModule("Query");
+        viewQueryData("study", "VisitTagMap");
+        DataRegionTable visitTagMaps = new DataRegionTable("query", this);
         Bag<List<String>> actualRows = new HashBag<>(visitTagMaps.getRows("VisitTag", "Visit", "Cohort"));
 
         assertEquals("Wrong Rows", expectedRows, actualRows);
@@ -236,7 +238,9 @@ public class StudyDataspaceTest extends StudyBaseTest
         expectedRows = new HashBag<>(DataRegionTable.collateColumnsIntoRows(STUDY5_VISIT_TAG_MAP_TAGS, STUDY5_VISIT_TAG_MAP_VISITS, STUDY5_VISIT_TAG_MAP_COHORTS));
 
         clickFolder(FOLDER_STUDY5);
-        visitTagMaps = new DataRegionTable(DataRegionTable.getTableNameByTitle("VisitTagMap", this), this);
+        goToModule("Query");
+        viewQueryData("study", "VisitTagMap");
+        visitTagMaps = new DataRegionTable("query", this);
         actualRows = new HashBag<>(visitTagMaps.getRows("VisitTag", "Visit", "Cohort"));
 
         assertEquals("Wrong Visit Tag Map Rows in study folder", expectedRows, actualRows);
@@ -244,6 +248,7 @@ public class StudyDataspaceTest extends StudyBaseTest
         buttons = visitTagMaps.getHeaderButtons();
         Assert.assertTrue("Should be able to 'Insert New' into VisitTagMap from dataspace study", getTexts(buttons).contains("INSERT NEW"));
 
+        clickTab("Overview");
         _portalHelper.removeWebPart("VisitTagMap");
         _portalHelper.addQueryWebPart(VISIT_TAG_QWP_TITLE, "study", "VisitTag", null);
         assertTextNotPresent("Insert New");

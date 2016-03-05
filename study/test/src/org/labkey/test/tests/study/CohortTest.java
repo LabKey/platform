@@ -85,7 +85,7 @@ public class CohortTest extends BaseWebDriverTest
     {
         waitAndClick(WAIT_FOR_JAVASCRIPT, Locator.linkWithText("Blood"), WAIT_FOR_PAGE);
 
-        DataRegionTable specimenTable = new DataRegionTable("SpecimenDetail", this, true, true);
+        DataRegionTable specimenTable = new DataRegionTable("SpecimenDetail", this);
         assertEquals("Incorrect number of vials.", "Count:  25", specimenTable.getTotal("Global Unique Id")); // 5 participants x 5 visits
         List<String> cohortValues = specimenTable.getColumnDataAsText("Collection Cohort");
         assertEquals(10, Collections.frequency(cohortValues, "Positive"));
@@ -244,7 +244,7 @@ public class CohortTest extends BaseWebDriverTest
         clickProject(PROJECT_NAME);
         waitAndClick(WAIT_FOR_JAVASCRIPT, Locator.linkWithText("Blood"), WAIT_FOR_PAGE);
 
-        specimenTable = new DataRegionTable("SpecimenDetail", this, true, true);
+        specimenTable = new DataRegionTable("SpecimenDetail", this);
         verifyVialCount(specimenTable, 20); // 5 participants x 4 visits (was five visits, but one was just deleted)
 
         setCohortFilter("Negative", AdvancedCohortType.INITIAL);
@@ -571,7 +571,7 @@ public class CohortTest extends BaseWebDriverTest
 
         if (enrolledMenu)
         {
-            DataRegionTable specimenTable = new DataRegionTable("SpecimenDetail", this, true, true);
+            DataRegionTable specimenTable = new DataRegionTable("SpecimenDetail", this);
             _extHelper.clickMenuButton("Participant Groups", "Enrolled");
             verifyVialCount(specimenTable, enrolledRowCount);
         }
@@ -584,7 +584,7 @@ public class CohortTest extends BaseWebDriverTest
     private void verifySpecimenEnrolledCohortFilterAdvanced(String specimenLink, int allRowCount, int initialRowCount, int currentRowCount, int dataCollectionRowCount)
     {
         verifyUnfilteredSpecimens(specimenLink, allRowCount);
-        DataRegionTable specimenTable = new DataRegionTable("SpecimenDetail", this, true, true);
+        DataRegionTable specimenTable = new DataRegionTable("SpecimenDetail", this);
 
         _extHelper.clickMenuButton("Participant Groups", "Enrolled", AdvancedCohortType.INITIAL.toString());
         verifyVialCount(specimenTable, initialRowCount);
@@ -601,7 +601,7 @@ public class CohortTest extends BaseWebDriverTest
         clickTab("Specimen Data");
         waitAndClickAndWait(Locator.linkWithText(specimenLink));
 
-        DataRegionTable specimenTable = new DataRegionTable("SpecimenDetail", this, true, true);
+        DataRegionTable specimenTable = new DataRegionTable("SpecimenDetail", this);
         verifyVialCount(specimenTable, allRowCount);
     }
 
@@ -620,7 +620,7 @@ public class CohortTest extends BaseWebDriverTest
     {
         if (toggleAll)
         {
-            Locator all = DataRegionTable.Locators.faceRowCheckbox("All");
+            Locator all = DataRegionTable.Locators.facetRowCheckbox("All");
             waitAndClick(all);
         }
 

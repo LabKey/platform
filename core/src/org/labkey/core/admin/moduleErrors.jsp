@@ -19,7 +19,6 @@
 <%@ page import="java.io.PrintWriter" %>
 <%@ page import="java.io.StringWriter" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.springframework.beans.PropertyBatchUpdateException" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Map<String,Throwable> moduleFailures = ModuleLoader.getInstance().getModuleFailures();

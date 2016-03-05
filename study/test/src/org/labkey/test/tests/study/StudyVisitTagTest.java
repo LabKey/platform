@@ -23,20 +23,17 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyB;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
-import org.labkey.test.util.PortalHelper;
-import org.labkey.test.util.WikiHelper;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 @Category({DailyB.class})
 public class StudyVisitTagTest extends StudyBaseTest
 {
-    protected final String VISIT_TAG_QWP_TITLE = "VisitTag";
-    protected final String VISIT_TAG_MAP_QWP_TITLE = "VisitTagMap";
     protected final String PARENT_FOLDER_STUDY = "VisitTagsStarter";
     protected final String STUDY_TEMPLATE = "StudyAxistTestTemplate";
     protected final String DATE_FOLDER_STUDY1 = "StudyAxisTest1";
@@ -58,14 +55,8 @@ public class StudyVisitTagTest extends StudyBaseTest
     protected final String[] DATE_BASED_STUDIES = {DATE_FOLDER_STUDY1}; //, DATE_FOLDER_STUDY2, DATE_FOLDER_STUDY3, DATE_FOLDER_STUDY4, DATE_FOLDER_STUDY7, DATE_FOLDER_STUDY8};
     protected final String[] SINGLE_USE_TAG_ERRORS = {DATE_FOLDER_STUDY5}; //, DATE_FOLDER_STUDY6};
     protected final String[] VISIT_BASED_STUDIES = {VISIT_FOLDER_STUDY1}; //, VISIT_FOLDER_STUDY2, VISIT_FOLDER_STUDY3, VISIT_FOLDER_STUDY4, VISIT_FOLDER_STUDY5, VISIT_FOLDER_STUDY6, VISIT_FOLDER_STUDY7, VISIT_FOLDER_STUDY8};
-    protected final String WIKIPAGE_NAME = "VisitTagGetDataAPITest";
-    protected final String TEST_DATA_API_PATH = "server/test/data/api";
-    //TODO: placeholder, need to create a new test page with appropriate js to test getData api in this context
-    protected final String TEST_DATA_API_CONTENT = "/getDataVisitTest.html";
-    //private Map<String, String> _visitTagMaps = new HashMap<>();
-    private final PortalHelper _portalHelper = new PortalHelper(this);
-    private final PortalHelper portalHelper = new PortalHelper(this);
-    private final WikiHelper wikiHelper = new WikiHelper(this);
+
+    private List<String> ALL_STUDIES = new ArrayList<>();
 
     @Override
     protected BrowserType bestBrowser()
@@ -74,8 +65,18 @@ public class StudyVisitTagTest extends StudyBaseTest
     }
 
     @Override
+    protected String getProjectName()
+    {
+        return "VisitTagStudyVerifyProject";
+    }
+
+    @Override
     protected void doCreateSteps()
     {
+        ALL_STUDIES.addAll(Arrays.asList(DATE_BASED_STUDIES));
+        ALL_STUDIES.addAll(Arrays.asList(VISIT_BASED_STUDIES));
+        ALL_STUDIES.addAll(Arrays.asList(SINGLE_USE_TAG_ERRORS));
+
         doCleanup(false);
         initializeFolder();
         setPipelineRoot(getStudySampleDataPath() + "VisitTags");
@@ -86,17 +87,9 @@ public class StudyVisitTagTest extends StudyBaseTest
     protected void initializeFolder()
     {
         _containerHelper.createProject(getProjectName(), "Study");
-        for(String Study : DATE_BASED_STUDIES)
+        for (String study : ALL_STUDIES)
         {
-            _containerHelper.createSubfolder(getProjectName(), getProjectName(), Study, "Study", null, true);
-        }
-        for(String Study : VISIT_BASED_STUDIES)
-        {
-            _containerHelper.createSubfolder(getProjectName(), getProjectName(), Study, "Study", null, true);
-        }
-        for(String Study : SINGLE_USE_TAG_ERRORS)
-        {
-            _containerHelper.createSubfolder(getProjectName(), getProjectName(), Study, "Study", null, true);
+            _containerHelper.createSubfolder(getProjectName(), getProjectName(), study, "Study", null, true);
         }
     }
 
@@ -105,37 +98,28 @@ public class StudyVisitTagTest extends StudyBaseTest
         String visitTagsPath = TestFileUtils.getSampledataPath() + "/VisitTags";
         goToProjectHome();
         startImportStudyFromZip(new File(visitTagsPath, PARENT_FOLDER_STUDY + ".folder.zip"), false, false);
-        goToProjectHome();
-        addVisitTagAndTagMapQWP();
-        for(String Study : DATE_BASED_STUDIES)
+
+        for (String study : DATE_BASED_STUDIES)
         {
-            clickFolder(Study);
-            startImportStudyFromZip(new File(visitTagsPath, Study + ".folder.zip"), false, false);
+            clickFolder(study);
+            startImportStudyFromZip(new File(visitTagsPath, study + ".folder.zip"), false, false);
             waitForPipelineJobsToComplete(1, "Study import", false);
-            clickFolder(Study);
-            addVisitTagAndTagMapQWP();
-//            setupAPITestWiki();
-        }
-        for(String Study : VISIT_BASED_STUDIES)
-        {
-            clickFolder(Study);
-            startImportStudyFromZip(new File(visitTagsPath, Study + ".folder.zip"), false, false);
-            waitForPipelineJobsToComplete(1, "Study import", false);
-            clickFolder(Study);
-            addVisitTagAndTagMapQWP();
-//            setupAPITestWiki();
-        }
-        for(String Study : SINGLE_USE_TAG_ERRORS)
-        {
-            clickFolder(Study);
-            startImportStudyFromZip(new File(visitTagsPath, Study + ".folder.zip"), false, false);
-            waitForPipelineJobsToComplete(1, "Study import", true);
-            checkExpectedErrors(1);
-            clickFolder(Study);
-            addVisitTagAndTagMapQWP();
-//            setupAPITestWiki();
         }
 
+        for (String study : VISIT_BASED_STUDIES)
+        {
+            clickFolder(study);
+            startImportStudyFromZip(new File(visitTagsPath, study + ".folder.zip"), false, false);
+            waitForPipelineJobsToComplete(1, "Study import", false);
+        }
+
+        for (String study : SINGLE_USE_TAG_ERRORS)
+        {
+            clickFolder(study);
+            startImportStudyFromZip(new File(visitTagsPath, study + ".folder.zip"), false, false);
+            waitForPipelineJobsToComplete(1, "Study import", true /* expect error */);
+            checkExpectedErrors(1);
+        }
     }
 
     @Override
@@ -146,7 +130,9 @@ public class StudyVisitTagTest extends StudyBaseTest
         Bag<List<String>> expectedRows = new HashBag<>(DataRegionTable.collateColumnsIntoRows(VISIT_TAG_NAMES, VISIT_TAG_CAPTIONS));
 
         goToProjectHome();
-        DataRegionTable visitTags = getVisitTagTable();
+        goToModule("Query");
+        viewQueryData("study", "VisitTag");
+        DataRegionTable visitTags = new DataRegionTable("query", this);
         Bag<List<String>> actualRows = new HashBag<>(visitTags.getRows("Name", "Caption"));
         assertEquals("Wrong Visit Tag Data", expectedRows, actualRows);
 
@@ -155,53 +141,79 @@ public class StudyVisitTagTest extends StudyBaseTest
         final List<String> VISIT_TAG_MAP_COHORTS = Arrays.asList(" ", "Positive", "Negative", "Negative", "Positive", " ");
         expectedRows = new HashBag<>(DataRegionTable.collateColumnsIntoRows(VISIT_TAG_MAP_TAGS, VISIT_TAG_MAP_VISITS, VISIT_TAG_MAP_COHORTS));
 
-        DataRegionTable visitTagMaps = getVisitTagMapTable();
+        goToModule("Query");
+        viewQueryData("study", "VisitTagMap");
+        DataRegionTable visitTagMaps = new DataRegionTable("query", this);
         actualRows = new HashBag<>(visitTagMaps.getRows("VisitTag", "Visit", "Cohort"));
         assertEquals("Wrong Visit Tag Map Data", expectedRows, actualRows);
 
-        verifyInsertEditVisitTags();
-    }
-
-    protected String getProjectName()
-    {
-        return "VisitTagStudyVerifyProject";
-    }
-
-    protected void addVisitTagAndTagMapQWP()
-    {
-        _portalHelper.addQueryWebPart(VISIT_TAG_QWP_TITLE, "study", "VisitTag", null);
-        _portalHelper.addQueryWebPart(VISIT_TAG_MAP_QWP_TITLE, "study", "VisitTagMap", null);
-    }
-
-    protected void setupAPITestWiki()
-    {
-        portalHelper.addWebPart("Wiki");
-        wikiHelper.createNewWikiPage("HTML");
-        setFormElement(Locator.name("name"), WIKIPAGE_NAME);
-        setFormElement(Locator.name("title"), WIKIPAGE_NAME);
-        wikiHelper.setWikiBody(TestFileUtils.getFileContents(TEST_DATA_API_PATH + "/getDataVisitTest.html"));
-        wikiHelper.saveWikiPage();
-        waitForText(WAIT_FOR_JAVASCRIPT, "Current Config");
-    }
-
-    protected DataRegionTable getVisitTagTable()
-    {
-        return new DataRegionTable(DataRegionTable.getTableNameByTitle("VisitTag", this), this);
-    }
-
-    protected DataRegionTable getVisitTagMapTable()
-    {
-        return new DataRegionTable(DataRegionTable.getTableNameByTitle("VisitTagMap", this), this);
-    }
-
-    protected void verifyInsertEditVisitTags()
-    {
+        // verify insert/edit of tags
         goToProjectHome();
-        insertVisitTag(VISIT_TAG_QWP_TITLE, new VisitTag("FollowUp1", "Follow Up 1", "", false));
-        insertVisitTagMap(VISIT_TAG_MAP_QWP_TITLE, new VisitTagMap("FollowUp1", "Visit5", null));
-
-        insertVisitTagMap(VISIT_TAG_MAP_QWP_TITLE, new VisitTagMap("FollowUp1", "Visit5", null));
+        insertVisitTag(new VisitTag("FollowUp1", "Follow Up 1", "", false));
+        insertVisitTagMap(new VisitTagMap("FollowUp1", "Visit5", null));
+        insertVisitTagMap(new VisitTagMap("FollowUp1", "Visit5", null));
         assertTextPresent("VisitTagMap may contain only one row for each (VisitTag, Visit, Cohort) combination.");
         clickButton("Cancel");
+    }
+
+    private void insertVisitTag(VisitTag tag)
+    {
+        goToModule("Query");
+        viewQueryData("study", "VisitTag");
+
+        clickButton("Insert New");
+        waitForElement(Locator.input("quf_Name"));
+        setFormElement(Locator.input("quf_Name"), tag.name);
+        setFormElement(Locator.input("quf_Caption"), tag.caption);
+        setFormElement(Locator.tagWithName("textarea", "quf_Description"), tag.description);
+        if (tag.isSingleUse)
+        {
+            click(Locator.checkboxByName("quf_SingleUse"));
+        }
+        clickAndWait(Locator.linkWithSpan("Submit"));
+    }
+
+    private void insertVisitTagMap(VisitTagMap map)
+    {
+        goToModule("Query");
+        viewQueryData("study", "VisitTagMap");
+
+        clickButton("Insert New");
+        waitForElement(Locator.name("quf_VisitTag"));
+        selectOptionByValue(Locator.name("quf_VisitTag"), map.visitTag);
+        selectOptionByText(Locator.name("quf_Visit"), map.visit);
+        if (null != map.cohort && !map.cohort.isEmpty())
+            selectOptionByText(Locator.name("quf_Cohort"), map.cohort);
+        clickAndWait(Locator.linkWithSpan("Submit"));
+    }
+
+    public class VisitTag
+    {
+        protected String name;
+        protected String caption;
+        protected String description;
+        protected Boolean isSingleUse;
+
+        public VisitTag(String name, String caption, String description, Boolean isSingleUse)
+        {
+            this.name = name;
+            this.caption = caption;
+            this.description = description;
+            this.isSingleUse = isSingleUse;
+        }
+    }
+
+    public class VisitTagMap
+    {
+        protected String visitTag;
+        protected String visit;
+        protected String cohort;
+
+        public VisitTagMap(String visitTag, String visit, String cohort)
+        {
+            this.visitTag = visitTag;
+            this.visit = visit;
+            this.cohort = cohort;
+        }
     }
 }

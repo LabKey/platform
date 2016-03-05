@@ -1379,52 +1379,6 @@ public class ReportsController extends BaseStudyController
         public String getViewName(){return _viewName;}
     }
 
-/*  Unused: TODO: Delete this!
-
-    public static class ReportData
-    {
-        private TableInfo tableInfo;
-        private ResultSet resultSet;
-
-        public ReportData(Study study, int datasetId, int visitRowId, User user, ActionURL filterUrl) throws ServletException, SQLException
-        {
-            Dataset def = study.getDataset(datasetId);
-            if (def == null)
-            {
-                throw new NotFoundException();
-            }
-            VisitImpl visit = null;
-            if (0 != visitRowId)
-            {
-                visit = StudyManager.getInstance().getVisitForRowId(study, visitRowId);
-                if (null == visit)
-                {
-                    throw new NotFoundException();
-                }
-            }
-
-            tableInfo = def.getTableInfo(user);
-
-            SimpleFilter filter = new SimpleFilter();
-            if (null != visit)
-                visit.addVisitFilter(filter);
-            filter.addUrlFilters(filterUrl, tableInfo.getName());
-
-            resultSet = Table.selectForDisplay(tableInfo, Table.ALL_COLUMNS, null, filter, null, Table.NO_ROWS, Table.NO_OFFSET);
-        }
-
-        public TableInfo getTableInfo()
-        {
-            return tableInfo;
-        }
-
-        public ResultSet getResultSet()
-        {
-            return resultSet;
-        }
-    }
-*/
-
     @RequiresPermission(ReadPermission.class)
     public class DesignChartAction extends SimpleViewAction<ChartDesignerBean>
     {

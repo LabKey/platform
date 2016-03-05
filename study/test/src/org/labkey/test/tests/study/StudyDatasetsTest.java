@@ -249,7 +249,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         waitForText("Edit Definition");
         clickButton("Edit Definition");
 
-        for(String item : items)
+        for (String item : items)
         {
             waitForText(item);
         }
@@ -265,7 +265,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         click(Locator.xpath("//a[text()='" + name + "']"));
         waitForText("Dataset Properties");
         clickButtonContainingText("View Data");
-        for(String item : items)
+        for (String item : items)
         {
             waitForText(item);
         }
@@ -277,8 +277,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         clickProject(getProjectName());
         clickFolder(getFolderName());
         clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
-        DataRegionTable dataregion = new DataRegionTable("Dataset", this);
-        verifyFilterPanelOnDemographics(dataregion);
+        verifyFilterPanelOnDemographics("Dataset");
 
         _studyHelper.deleteCustomParticipantGroup(EXTRA_GROUP, "Mouse");
 
@@ -286,56 +285,63 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         clickFolder(getFolderName());
         PortalHelper portalHelper = new PortalHelper(this);
         portalHelper.addQueryWebPart("Demographics", "study", "DEM-1 (DEM-1: Demographics)", null);
-        dataregion = new DataRegionTable("qwp6", this);
-        verifyFilterPanelOnDemographics(dataregion);
+        verifyFilterPanelOnDemographics("qwp6");
     }
 
     @LogMethod
-    private void verifyFilterPanelOnDemographics(DataRegionTable dataset)
+    private void verifyFilterPanelOnDemographics(String regionName)
     {
-        dataset.openSideFilterPanel();
+        DataRegionTable dataregion = new DataRegionTable(regionName, this);
+        dataregion.openSideFilterPanel();
 
         waitForElement(Locator.paginationText(24));
         _ext4Helper.clickParticipantFilterGridRowText(GROUP1A, 0);
         waitForElementToDisappear(Locator.css(".labkey-pagination"), WAIT_FOR_JAVASCRIPT);
         waitForElement(Locator.linkWithText(PTIDS[0]));
         assertElementPresent(Locator.linkWithText(PTIDS[1]));
-        assertEquals("Wrong number of rows after filter", 2, dataset.getDataRowCount());
+        dataregion = new DataRegionTable(regionName, this);
+        assertEquals("Wrong number of rows after filter", 2, dataregion.getDataRowCount());
 
-        _ext4Helper.checkGridRowCheckbox(GROUP1B); // GROUP1A OR GROU1B
+        _ext4Helper.checkGridRowCheckbox(GROUP1B); // GROUP1A OR GROUP1B
         waitForElement(Locator.linkWithText(PTIDS[2]));
         assertElementPresent(Locator.linkWithText(PTIDS[0]));
         assertElementPresent(Locator.linkWithText(PTIDS[1]));
         assertElementPresent(Locator.linkWithText(PTIDS[3]));
-        assertEquals("Wrong number of rows after filter", 4, dataset.getDataRowCount());
+        dataregion = new DataRegionTable(regionName, this);
+        assertEquals("Wrong number of rows after filter", 4, dataregion.getDataRowCount());
 
-        _ext4Helper.clickParticipantFilterGridRowText(GROUP2A, 0);// (GROUP1A OR GROU1B) AND GROUP2A
+        _ext4Helper.clickParticipantFilterGridRowText(GROUP2A, 0);// (GROUP1A OR GROUP1B) AND GROUP2A
         waitForElementToDisappear(Locator.linkWithText(PTIDS[2]));
         waitForElement(Locator.linkWithText(PTIDS[1]));
         assertElementPresent(Locator.linkWithText(PTIDS[3]));
-        assertEquals("Wrong number of rows after filter", 2, dataset.getDataRowCount());
+        dataregion = new DataRegionTable(regionName, this);
+        assertEquals("Wrong number of rows after filter", 2, dataregion.getDataRowCount());
 
         _ext4Helper.clickParticipantFilterGridRowText("Not in any group", 1); // (GROUP1A OR GROUP1B) AND (CATEGORY2 = NULL)
         waitForElementToDisappear(Locator.linkWithText(PTIDS[1]));
         waitForElement(Locator.linkWithText(PTIDS[0]));
-        assertEquals("Wrong number of rows after filter", 1, dataset.getDataRowCount());
+        dataregion = new DataRegionTable(regionName, this);
+        assertEquals("Wrong number of rows after filter", 1, dataregion.getDataRowCount());
 
         _ext4Helper.clickParticipantFilterCategory(CATEGORY2); // (GROUP1A OR GROUP1B)
         waitForElement(Locator.linkWithText(PTIDS[2]));
         assertElementPresent(Locator.linkWithText(PTIDS[0]));
         assertElementPresent(Locator.linkWithText(PTIDS[1]));
         assertElementPresent(Locator.linkWithText(PTIDS[3]));
-        assertEquals("Wrong number of rows after filter", 4, dataset.getDataRowCount());
+        dataregion = new DataRegionTable(regionName, this);
+        assertEquals("Wrong number of rows after filter", 4, dataregion.getDataRowCount());
 
         _ext4Helper.uncheckGridRowCheckbox("Group 1"); // (GROUP1A OR GROUP1B) AND (NOT(COHORT 1))
         waitForElementToDisappear(Locator.linkWithText(PTIDS[0]));
         waitForElement(Locator.linkWithText(PTIDS[1]));
         assertElementPresent(Locator.linkWithText(PTIDS[2]));
-        assertEquals("Wrong number of rows after filter", 2, dataset.getDataRowCount());
+        dataregion = new DataRegionTable(regionName, this);
+        assertEquals("Wrong number of rows after filter", 2, dataregion.getDataRowCount());
 
-        dataset.toggleAllFacetsCheckbox();
+        dataregion.toggleAllFacetsCheckbox();
         waitForElement(Locator.linkWithText(PTIDS[5]));
-        assertEquals("Wrong number of rows after filter", 24, dataset.getDataRowCount());
+        dataregion = new DataRegionTable(regionName, this);
+        assertEquals("Wrong number of rows after filter", 24, dataregion.getDataRowCount());
 
         _extHelper.clickMenuButton(false, "Mouse Groups", "Create Mouse Group", "From All Mice");
         final Locator.XPathLocator window = Ext4Helper.Locators.window("Define Mouse Group");

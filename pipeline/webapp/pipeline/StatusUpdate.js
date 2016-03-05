@@ -108,7 +108,7 @@ LABKEY.pipeline.StatusUpdate = function(controller, action, returnURL)
         // fail if there were any problems
         if(el && response && response.responseText)
         {
-            if (response.responseText.indexOf('dataregion_StatusFiles') < 0)
+            if (response.responseText.indexOf('StatusFiles') < 0)
             {
                 setStatusFailure(true, 'Refresh this page.')
             }
