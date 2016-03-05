@@ -462,7 +462,10 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 File errors = new File(errorFile);
                 try
                 {
+                    LOG.info("Transform Warning: Error file size before write to string - " + errors.length());
                     warning = FileUtils.readFileToString(errors, StringUtilsLabKey.DEFAULT_CHARSET);
+                    LOG.info("Transform Warning: Warning string length - " + warning.length());
+                    LOG.info("Transform Warning: Warning string - " + warning);
                 }
                 catch (Exception e)
                 {
@@ -779,7 +782,10 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
                         // Catch errors file
                         if(file.getName().equals(TRANS_ERR_FILE))
+                        {
                             transErrorFile = targetFile.getPath();
+                            LOG.info("Transform Warning: " + transErrorFile.length());
+                        }
                         else
                             tempOutputFiles.add(targetFile);
 

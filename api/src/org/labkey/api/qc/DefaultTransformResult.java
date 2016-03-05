@@ -16,6 +16,7 @@
 
 package org.labkey.api.qc;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.property.DomainProperty;
 
@@ -37,6 +38,7 @@ public class DefaultTransformResult implements TransformResult
     private String _assayId;
     private String _warnings;
     private List<File> _files;
+    private static final Logger LOG = Logger.getLogger(DefaultTransformResult.class);
 
     public List<File> getFiles()
     {
@@ -50,6 +52,7 @@ public class DefaultTransformResult implements TransformResult
 
     public String getWarnings()
     {
+        LOG.info("Transform Warning: getWarnings - " + _warnings);
         return _warnings;
     }
 
