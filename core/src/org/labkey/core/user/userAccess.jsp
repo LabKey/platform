@@ -33,6 +33,7 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.data.DataRegion" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -58,6 +59,9 @@
     UserController.AccessDetail bean = me.getModelBean();
     List<UserController.AccessDetailRow> rows = bean.getRows();
 
+    DataRegion accessRegion = new DataRegion();
+    accessRegion.setName("access");
+
     int cellPadding = 3;
 %>
 
@@ -75,7 +79,7 @@
 However, If this account is re-enabled, it would have the following permissions.</div>
 <% } %>
 
-<table id="dataregion_access" class="labkey-data-region labkey-show-borders">
+<table id=<%=q(accessRegion.getDomId())%> lk-region-name=<%=q(accessRegion.getName())%> class="labkey-data-region labkey-show-borders">
     <colgroup><col><col><col></colgroup>
     <tr id="dataregion_column_header_row_access">
 <%

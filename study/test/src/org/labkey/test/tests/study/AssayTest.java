@@ -35,9 +35,8 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
 import static org.labkey.test.util.ListHelper.ListColumnType;
-
-import static org.junit.Assert.*;
 
 @Category({BVT.class, Assays.class})
 public class AssayTest extends AbstractAssayTest
@@ -119,7 +118,7 @@ public class AssayTest extends AbstractAssayTest
 
         //delete user accounts
         deleteUsersIfPresent(TEST_ASSAY_USR_PI1, TEST_ASSAY_USR_TECH1);
-    } //doCleanup()
+    }
 
     /**
      *  Performs the Assay security test
@@ -156,7 +155,8 @@ public class AssayTest extends AbstractAssayTest
         clickProject(getProjectName());
         clickFolder(TEST_ASSAY_FLDR_LAB1);
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
-        checkDataRegionCheckbox("Runs", 0);
+        DataRegionTable assayRuns = new DataRegionTable("Runs", this);
+        assayRuns.checkCheckbox(0);
         clickButton("Delete");
         // Make sure that it shows that the data is part of study datasets
         assertTextPresent("SecondRun", "2 dataset(s)", TEST_ASSAY);
@@ -301,7 +301,7 @@ public class AssayTest extends AbstractAssayTest
         clickButton("Save", 0);
         waitForText(20000, "Save successful.");
 
-    } //defineAssay()
+    }
 
     /**
      * Generates the text that appears in the target study drop-down for a given study name
@@ -314,7 +314,7 @@ public class AssayTest extends AbstractAssayTest
         // /<project>/<studies>/<study1> (<study> Study)
         return "/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" +
                     studyName + " (" + studyName + " Study)";
-    } //getTargetStudyOptionText()
+    }
 
     /**
      * Uploads run data for the centrally defined Assay while impersonating a labtech-style user
@@ -480,7 +480,7 @@ public class AssayTest extends AbstractAssayTest
         assertElementNotPresent(Locator.linkContainingText("AAA"));
         stopImpersonating();
         clickProject(TEST_ASSAY_PRJ_SECURITY);
-    } //uploadRuns()
+    }
 
     /**
      * Impersonates the PI user and publishes the data previous uploaded.
@@ -607,7 +607,7 @@ public class AssayTest extends AbstractAssayTest
         assertTextPresent("All rows that were previously copied in this event have been recalled");
 
         stopImpersonating();
-    } //publishData()
+    }
 
     /**
      * Designed to test automatic timepoint generation when copying to a date based study.
@@ -705,7 +705,7 @@ public class AssayTest extends AbstractAssayTest
                 "Day 90 - 95",
                 "Day 120 - 127",
                 "Day 152 - 159");
-    } //publishDataToDateBasedStudy()
+    }
 
 
     /**
@@ -808,7 +808,7 @@ public class AssayTest extends AbstractAssayTest
                 "50.0-70.0",
                 "Test Visit3",
                 "302.0-303.0");
-    } //publishDataToVisitBasedStudy()
+    }
 
     /**
      * Tests editing of an existing assay definition
@@ -855,14 +855,13 @@ public class AssayTest extends AbstractAssayTest
         clickButton("Submit", defaultWaitForPage);
 
         // Set the container filter to include subfolders
-        Locator dataregionLoc = Locator.xpath("//form[starts-with(@id, 'Runs')]");
-        String dataregionId = dataregionLoc.findElement(getDriver()).getAttribute("id");
-        DataRegionTable assayRuns = new DataRegionTable(dataregionId, this);
+        DataRegionTable assayRuns = DataRegionTable.findDataRegionWithinWebpart(this, TEST_ASSAY + " Runs");
         assayRuns.clickHeaderButton("Views", "Folder Filter", "Current folder and subfolders");
 
         assertTextPresent("FirstRun", "SecondRun");
 
         log("Setting the customized view to include subfolders");
+        assayRuns = DataRegionTable.findDataRegionWithinWebpart(this, TEST_ASSAY + " Runs");
         // TODO: DatRegion change. Use this declaration.
 //        CustomizeView customizeViewsHelper = new CustomizeView(assayRuns);
         CustomizeViewsHelper customizeViewsHelper = new CustomizeViewsHelper(assayRuns);
@@ -874,7 +873,8 @@ public class AssayTest extends AbstractAssayTest
         assertTextPresent("FirstRun", "SecondRun");
 
         log("Testing select all data and view");
-        checkAllOnPage(dataregionId);
+        assayRuns = DataRegionTable.findDataRegionWithinWebpart(this, TEST_ASSAY + " Runs");
+        assayRuns.checkAllOnPage();
         clickButton("Show Results", defaultWaitForPage);
         verifySpecimensPresent(3, 2, 3);
 
