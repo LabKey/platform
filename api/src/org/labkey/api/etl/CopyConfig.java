@@ -50,6 +50,8 @@ public class CopyConfig
     protected String _targetQuery;
     protected boolean _bulkLoad;
     protected int _transactionSize;
+    protected int _batchSize;
+    protected String _batchColumn = null;
     protected TargetOptions _targetOptions = TargetOptions.append;
     protected boolean _useTarget = true;
     protected TargetTypes _targetType = TargetTypes.query;
@@ -89,7 +91,7 @@ public class CopyConfig
         {
             if (TargetTypes.file.equals(getTargetType()))
             {
-                _targetString = getTargetFileProperties().get(TargetFileProperties.baseName) + "." + getTargetFileProperties().get(TargetFileProperties.extension);;
+                _targetString = getTargetFileProperties().get(TargetFileProperties.baseName) + getTargetFileProperties().get(TargetFileProperties.extension);;
             }
             else _targetString = getTargetSchema().toString() + "." + getTargetQuery();
         }
@@ -353,6 +355,26 @@ public class CopyConfig
     public void setTransactionSize(int transactionSize)
     {
         _transactionSize = transactionSize;
+    }
+
+    public int getBatchSize()
+    {
+        return _batchSize;
+    }
+
+    public void setBatchSize(int batchSize)
+    {
+        _batchSize = batchSize;
+    }
+
+    public String getBatchColumn()
+    {
+        return _batchColumn;
+    }
+
+    public void setBatchColumn(String batchColumn)
+    {
+        _batchColumn = batchColumn;
     }
 
     public boolean isGating()

@@ -16,13 +16,18 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.ResultSetRowMapFactory;
+import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.view.HttpView;
 
+import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -148,6 +153,100 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
         }
     }
 
+    /**
+     * Write multiple files, limiting size by either number of rows or number of values found in a specified batch column.
+     * @param outputDir Directory to write files to.
+     * @param baseName The base name to use for output files. When batchSize > 0, will be appended with "-1", "-2", etc.
+     * @param extension The full extension to add to the base (+ batch number) filename. Leading "." is optional and will be added if missing.
+     * @param batchSize The number of records (or batchColumn values, see below), to include in one file before closing and starting the next. 0 == no batching, write a single file.
+     * @param batchColumn Optional. Sentinel column to monitor in the result set. Instead of incrementing batch counter on every row, only increment when this value changes.
+     *                    Note this method does not sort the resultset, so this will work best if the results are grouped or ordered by the batchColumn values.
+     * @return List of the output Files.
+     * @throws IOException
+     */
+    @NotNull
+    public List<File> writeBatchFiles(@NotNull File outputDir, @NotNull String baseName, @Nullable String extension, int batchSize, @Nullable FieldKey batchColumn) throws IOException
+    {
+        if (batchSize > 0 && null != batchColumn && !_rs.hasColumn(batchColumn))
+            throw new IllegalArgumentException("Batch column " + batchColumn + "not found in results");
+        extension = StringUtils.trimToEmpty(extension);
+        extension = "".equals(extension) || extension.startsWith(".") ? extension : "." + extension;
+        return writeResultSetBatches(_rs, outputDir, baseName, extension, batchSize, batchColumn);
+    }
+
+    @NotNull
+    private List<File> writeResultSetBatches(Results rs, File outputDir, String baseName, String extension, int batchSize, @Nullable FieldKey batchColumn) throws IOException
+    {
+        int currentBatchSize = 0;
+        int totalBatches = 1;
+        Object previousBatchColumnValue = null;
+        Object newBatchColumnValue;
+        List<File> outputFiles = new ArrayList<>();
+        outputFiles.add(startBatchFile(outputDir, baseName, extension, batchSize, totalBatches));
+        RenderContext ctx = getRenderContext();
+        ctx.setResults(rs);
+        try
+        {
+            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
+            while (rs.next())
+            {
+                ctx.setRow(factory.getRowMap(rs));
+                if (batchSize > 0)
+                {
+                    if (null != batchColumn)
+                    {
+                        newBatchColumnValue = ctx.get(batchColumn, Object.class);
+                        if ((null != newBatchColumnValue && !newBatchColumnValue.equals(previousBatchColumnValue))
+                                || (null != previousBatchColumnValue && null == newBatchColumnValue)
+                                || (null == previousBatchColumnValue && currentBatchSize == 0))
+                        {
+                            previousBatchColumnValue = newBatchColumnValue;
+                            currentBatchSize++;
+                        }
+                    }
+                    else
+                    {
+                        currentBatchSize++;
+                    }
+                    if (currentBatchSize > batchSize)
+                    {
+                        // Close this file and start the next
+                        closeBatchFile(false);
+                        currentBatchSize = 1;
+                        outputFiles.add(startBatchFile(outputDir, baseName, extension, batchSize, ++totalBatches));
+                    }
+                }
+                writeRow(ctx, _displayColumns);
+            }
+        }
+        catch (SQLException ex)
+        {
+            throw new RuntimeSQLException(ex);
+        }
+        closeBatchFile(true);
+        return outputFiles;
+    }
+
+    @NotNull
+    private File startBatchFile(File outputDir, String baseName, String extension, int batchSize, int totalBatches) throws IOException
+    {
+        String batchId = batchSize == 0 ? "" : "-" + totalBatches;
+        File file = new File(outputDir, baseName + batchId + extension);
+        prepare(file);
+        writeFileHeader();
+        if (isHeaderRowVisible())
+            writeColumnHeaders();
+        return file;
+    }
+
+    private void closeBatchFile(boolean closeResultSet) throws IOException
+    {
+        writeFileFooter();
+        if (closeResultSet)
+            close();
+        else
+            super.close();
+    }
 
     @Override
     public void close() throws IOException
