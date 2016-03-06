@@ -222,6 +222,7 @@ import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.samples.UploadMaterialSetForm;
 import org.labkey.experiment.samples.UploadSamplesHelper;
+import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.XarExportSelection;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -298,7 +299,7 @@ public class ExperimentController extends SpringActionController
     @Override
     public PageConfig defaultPageConfig()
     {
-        // set default help topic for query controler
+        // set default help topic for controller
         PageConfig config = super.defaultPageConfig();
         config.setHelpTopic(new HelpTopic("experiment"));
         return config;
@@ -5613,6 +5614,12 @@ public class ExperimentController extends SpringActionController
         public ActionURL getUploadXARURL(Container container)
         {
             return new ActionURL(ShowAddXarFileAction.class, container);
+        }
+
+        @Override
+        public ActionURL getRepairTypeURL(Container container)
+        {
+            return new ActionURL(TypesController.RepairAction.class, container);
         }
     }
 

@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
+import org.labkey.api.data.TableChange.ChangeType;
 import org.labkey.api.exp.DomainURIFactory;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
@@ -982,13 +983,9 @@ public class ListManager implements SearchService.DocumentProvider
                 PropertyStorageSpec newContainerSpec =  new PropertyStorageSpec("container", JdbcType.VARCHAR).setEntityId(true).setNullable(false);
                 newContainerSpec.setDefaultValue(list.getContainer().getEntityId());
 
-                TableChange change = new TableChange(kind.getStorageSchemaName(), domain.getStorageTableName(), TableChange.ChangeType.AddColumns);
+                TableChange change = new TableChange(domain, ChangeType.AddColumns);
                 change.addColumn(newContainerSpec);
-                for (String sql : scope.getSqlDialect().getChangeStatements(change))
-                {
-                    conn.prepareStatement(sql).execute();
-                }
-                kind.invalidate(domain);
+                change.execute();
             }
             transaction.commit();
         }

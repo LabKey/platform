@@ -492,7 +492,7 @@ public class QueryController extends SpringActionController
     @Override
     public PageConfig defaultPageConfig()
     {
-        // set default help topic for query controler
+        // set default help topic for query controller
         PageConfig config = super.defaultPageConfig();
         config.setHelpTopic(new HelpTopic("querySchemaBrowser"));
         return config;

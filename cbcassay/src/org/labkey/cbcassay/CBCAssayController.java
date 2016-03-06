@@ -299,7 +299,7 @@ public class CBCAssayController extends SpringActionController
             return new ResultsQueryView(_protocol, getViewContext(), settings);
         }
 
-        // XXX: move ListControler.setDisplayColumnsFromDefaultView to query
+        // XXX: move ListController.setDisplayColumnsFromDefaultView to query
         // XXX: or use table.getUserModifiableColumns() ?
         // XXX: or change these columns return false for .getShowInUpdateView()
         private List<DisplayColumn> getUpdateableColumns(QueryView queryView)

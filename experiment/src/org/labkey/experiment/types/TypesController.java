@@ -91,7 +91,6 @@ public class TypesController extends SpringActionController
 
     public TypesController() throws Exception
     {
-        super();
         setActionResolver(_actionResolver);
     }
 
