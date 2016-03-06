@@ -35,7 +35,7 @@ import org.springframework.web.servlet.ModelAndView;
 * Date: Jul 26, 2007
 * Time: 7:23:24 PM
 */
-@RequiresPermission(ReadPermission.class) //will check explicity in code below
+@RequiresPermission(ReadPermission.class) //will check explicitly in code below
 public class DeleteAction extends BaseAssayAction<ProtocolIdForm>
 {
     public ModelAndView getView(ProtocolIdForm protocolIdForm, BindException errors) throws Exception

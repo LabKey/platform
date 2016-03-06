@@ -582,7 +582,7 @@ LABKEY.ext.FormHelper =
         // Ext.form.ComboBox defaults to mode=='remote', however, we often want to default to 'local'
         // We don't want the combo cause a requery (see Combo.doQuery()) when we expect the store
         // to be loaded exactly once.  Just treat like a local store in this case.
-        // NOTE: if the user over-rides the field.store, they may have to explicity set the mode to 'remote', even
+        // NOTE: if the user over-rides the field.store, they may have to explicitly set the mode to 'remote', even
         // though 'remote' is the Ext.form.ComboBox default
         if (field.xtype == 'combo' && Ext.isDefined(field.store) && field.store.autoLoad && field.triggerAction != 'query' && !Ext.isDefined(field.mode))
             field.mode = 'local';
