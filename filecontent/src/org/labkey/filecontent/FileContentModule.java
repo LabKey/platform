@@ -151,7 +151,7 @@ public class FileContentModule extends DefaultModule
     }
 
     @Override
-    public void startBackgroundThreads(ModuleContext moduleContext)
+    public void startBackgroundThreads()
     {
         ShortMessageDigest.getInstance().initializeTimer();
     }

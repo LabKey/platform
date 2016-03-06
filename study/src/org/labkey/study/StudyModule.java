@@ -446,7 +446,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     }
 
     @Override
-    public void startBackgroundThreads(ModuleContext moduleContext)
+    public void startBackgroundThreads()
     {
         StudyReload.initializeAllTimers();
     }

@@ -731,7 +731,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
     @Override
-    public void startBackgroundThreads(ModuleContext moduleContext)
+    public void startBackgroundThreads()
     {
         SystemMaintenance.setTimer();
     }

@@ -195,7 +195,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
 
 
     @Override
-    public void startBackgroundThreads(ModuleContext moduleContext)
+    public void startBackgroundThreads()
     {
         DailyMessageDigest.getInstance().initializeTimer();
     }
