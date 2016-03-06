@@ -156,10 +156,10 @@ public interface Module extends Comparable<Module>
 
     /**
      * All modules have been upgraded and started, plus the base server URL is known (either the property is set or first
-     * request has been received). Its now safe to produce absolute URLs (e.g., URLHelper.getURIString()), which background
+     * request has been received). It's now safe to produce absolute URLs (e.g., URLHelper.getURIString()), which background
      * threads like to do (when sending email or constructing mock requests).
      */
-    default void startBackgroundThreads(ModuleContext moduleContext)
+    default void startBackgroundThreads()
     {
     }
 

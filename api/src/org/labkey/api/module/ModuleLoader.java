@@ -1295,7 +1295,16 @@ public class ModuleLoader implements Filter
                 _backgroundThreadsStarted = true;
 
                 for (Module module : _modules)
-                    module.startBackgroundThreads(null);
+                {
+                    try
+                    {
+                        module.startBackgroundThreads();
+                    }
+                    catch (Throwable t)
+                    {
+                        _log.error("Error starting background threads for module \"" + module.getName() + "\"", t);
+                    }
+                }
             }
         }
     }
