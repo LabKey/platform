@@ -195,14 +195,6 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         }
     }
 
-    private void executeChange(DbScope scope, Connection conn, TableChange change) throws SQLException
-    {
-        for (String sql : scope.getSqlDialect().getChangeStatements(change))
-        {
-            conn.prepareStatement(sql).execute();
-        }
-    }
-
     @Override
     public final Domain getDomain()
     {

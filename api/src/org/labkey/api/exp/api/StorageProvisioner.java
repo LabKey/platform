@@ -28,7 +28,9 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
-import org.labkey.api.data.DbScope.*;
+import org.labkey.api.data.DbScope.SchemaTableOptions;
+import org.labkey.api.data.DbScope.Transaction;
+import org.labkey.api.data.TableChange.ChangeType;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
@@ -49,9 +51,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ActionURL;
 import org.springframework.validation.BindException;
 
@@ -68,6 +70,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /**
  * Creates and maintains "hard" tables in the underlying database based on dynamically configured data types.
@@ -108,9 +111,9 @@ public class StorageProvisioner
                 transaction.commit();
                 return tableName;
             }
-            tableName = makeTableName(kind, domain);
 
-            TableChange change = new TableChange(kind.getStorageSchemaName(), tableName, TableChange.ChangeType.CreateTable);
+            tableName = makeTableName(kind, domain);
+            TableChange change = new TableChange(domain, ChangeType.CreateTable, tableName);
 
             Set<String> base = Sets.newCaseInsensitiveHashSet();
 
@@ -149,7 +152,7 @@ public class StorageProvisioner
 
             change.setForeignKeys(domain.getPropertyForeignKeys());
 
-            execute(scope, scope.getConnection(), change);
+            change.execute();
 
             DomainDescriptor editDD = dd.edit()
                     .setStorageTableName(tableName)
@@ -163,10 +166,6 @@ public class StorageProvisioner
             transaction.commit();
 
             return tableName;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
         }
         finally
         {
@@ -203,13 +202,11 @@ public class StorageProvisioner
 
         if (scope.getSqlDialect().isTableExists(scope, schemaName, tableName))
         {
-            TableChange change = new TableChange(kind.getStorageSchemaName(), tableName, TableChange.ChangeType.DropTable);
+            TableChange change = new TableChange(domain, ChangeType.DropTable);
 
             try (Transaction transaction = scope.ensureTransaction())
             {
-                Connection con = transaction.getConnection();
-                execute(scope, con, change);
-                kind.invalidate(domain);
+                change.execute();
                 transaction.commit();
             }
             catch (RuntimeSQLException e)
@@ -240,7 +237,7 @@ public class StorageProvisioner
             return;
         }
 
-        TableChange change = new TableChange(kind.getStorageSchemaName(), tableName, TableChange.ChangeType.AddColumns);
+        TableChange change = new TableChange(domain, ChangeType.AddColumns);
 
         Set<String> base = Sets.newCaseInsensitiveHashSet();
         for (PropertyStorageSpec s : kind.getBaseProperties())
@@ -278,22 +275,7 @@ public class StorageProvisioner
             return;
         }
 
-        Connection con = null;
-
-        try
-        {
-            con = scope.getConnection();
-            execute(scope, con, change);
-            kind.invalidate(domain);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            scope.releaseConnection(con);
-        }
+        change.execute();
     }
 
     public static void dropMvIndicator(DomainProperty... props)
@@ -306,30 +288,14 @@ public class StorageProvisioner
         // should be in a transaction with propertydescriptor changes
         assert scope.isTransactionActive();
 
-        String tableName = domain.getStorageTableName();
+        TableChange change = new TableChange(domain, ChangeType.DropColumns);
 
-        TableChange change = new TableChange(kind.getStorageSchemaName(), tableName, TableChange.ChangeType.DropColumns);
         for (DomainProperty prop : props)
         {
             change.addColumn(makeMvColumn(prop));
         }
 
-        Connection con = null;
-
-        try
-        {
-            con = scope.getConnection();
-            execute(scope, con, change);
-            kind.invalidate(domain);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            scope.releaseConnection(con);
-        }
+        change.execute();
     }
 
     public static void addMvIndicator(DomainProperty... props)
@@ -346,28 +312,14 @@ public class StorageProvisioner
         if (null == tableName)
             tableName = makeTableName(kind, domain);
 
-        TableChange change = new TableChange(kind.getStorageSchemaName(), tableName, TableChange.ChangeType.AddColumns);
+        TableChange change = new TableChange(domain, ChangeType.AddColumns, tableName);
+
         for (DomainProperty prop : props)
         {
             change.addColumn(makeMvColumn(prop));
         }
 
-        Connection con = null;
-
-        try
-        {
-            con = scope.getConnection();
-            execute(scope, con, change);
-            kind.invalidate(domain);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            scope.releaseConnection(con);
-        }
+        change.execute();
     }
 
 
@@ -385,7 +337,8 @@ public class StorageProvisioner
         for (PropertyStorageSpec s : kind.getBaseProperties())
             base.add(s.getName());
 
-        TableChange change = new TableChange(kind.getStorageSchemaName(), tableName, TableChange.ChangeType.DropColumns);
+        TableChange change = new TableChange(domain, ChangeType.DropColumns);
+
         for (DomainProperty prop : properties)
         {
             if (base.contains(prop.getName()))
@@ -403,22 +356,7 @@ public class StorageProvisioner
             return;
         }
 
-        Connection con = null;
-
-        try
-        {
-            con = scope.getConnection();
-            execute(scope, con, change);
-            kind.invalidate(domain);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            scope.releaseConnection(con);
-        }
+        change.execute();
     }
 
     /**
@@ -432,56 +370,41 @@ public class StorageProvisioner
         // should be in a transaction with propertydescriptor changes
         assert scope.isTransactionActive();
 
-        Connection con = null;
+        TableChange renamePropChange = new TableChange(domain, ChangeType.RenameColumns);
 
-        try
+        Set<String> base = Sets.newCaseInsensitiveHashSet();
+        for (PropertyStorageSpec s : kind.getBaseProperties())
+            base.add(s.getName());
+
+        for (Map.Entry<DomainProperty, PropertyDescriptor> rename : propsRenamed.entrySet())
         {
-            con = scope.getConnection();
-            TableChange renamePropChange = new TableChange(kind.getStorageSchemaName(), domain.getStorageTableName(), TableChange.ChangeType.RenameColumns);
+            PropertyStorageSpec prop = new PropertyStorageSpec(rename.getKey().getPropertyDescriptor());
+            String oldPropName = rename.getValue().getName();
+            String oldColumnName = rename.getValue().getStorageColumnName();
 
-            Set<String> base = Sets.newCaseInsensitiveHashSet();
-            for (PropertyStorageSpec s : kind.getBaseProperties())
-                base.add(s.getName());
+            renamePropChange.addColumnRename(oldColumnName, prop.getName());
 
-            for (Map.Entry<DomainProperty, PropertyDescriptor> rename : propsRenamed.entrySet())
+            if (!allowRenameOfColumnsDuringUpgrade)
             {
-                PropertyStorageSpec prop = new PropertyStorageSpec(rename.getKey().getPropertyDescriptor());
-                String oldPropName = rename.getValue().getName();
-                String oldColumnName = rename.getValue().getStorageColumnName();
-
-                renamePropChange.addColumnRename(oldColumnName, prop.getName());
-
-                if (!allowRenameOfColumnsDuringUpgrade)
+                if (base.contains(oldPropName))
                 {
-                    if (base.contains(oldPropName))
-                    {
-                        throw new IllegalArgumentException("Cannot rename built-in column " + oldPropName);
-                    }
-                    else if (base.contains(prop.getName()))
-                    {
-                        throw new IllegalArgumentException("Cannot rename " + oldPropName + " to built-in column name " + prop.getName());
-                    }
+                    throw new IllegalArgumentException("Cannot rename built-in column " + oldPropName);
                 }
-
-                // Rename the MV column if it already exists. We'll handle removing it later if the new version
-                // of the column doesn't have MV enabled
-                if (rename.getValue().isMvEnabled())
+                else if (base.contains(prop.getName()))
                 {
-                    renamePropChange.addColumnRename(PropertyStorageSpec.getMvIndicatorColumnName(oldPropName), prop.getMvIndicatorColumnName());
+                    throw new IllegalArgumentException("Cannot rename " + oldPropName + " to built-in column name " + prop.getName());
                 }
             }
 
-            execute(scope, con, renamePropChange);
-            kind.invalidate(domain);
+            // Rename the MV column if it already exists. We'll handle removing it later if the new version
+            // of the column doesn't have MV enabled
+            if (rename.getValue().isMvEnabled())
+            {
+                renamePropChange.addColumnRename(PropertyStorageSpec.getMvIndicatorColumnName(oldPropName), prop.getMvIndicatorColumnName());
+            }
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            scope.releaseConnection(con);
-        }
+
+        renamePropChange.execute();
     }
 
     /**
@@ -498,40 +421,25 @@ public class StorageProvisioner
         if(!scope.isTransactionActive())
             throw new ChangePropertyDescriptorException("Unable to change property size. Transaction is not active within change scope");
 
-        Connection con = null;
+        TableChange resizePropChange = new TableChange(domain, ChangeType.ResizeColumns);
 
-        try
+        Set<String> base = Sets.newCaseInsensitiveHashSet();
+        kind.getBaseProperties().forEach(s ->
+                base.add(s.getName()));
+
+        for (DomainProperty prop : properties)
         {
-            con = scope.getConnection();
-            TableChange resizePropChange = new TableChange(kind.getStorageSchemaName(), domain.getStorageTableName(), TableChange.ChangeType.ResizeColumns);
-
-            Set<String> base = Sets.newCaseInsensitiveHashSet();
-            kind.getBaseProperties().forEach(s ->
-                    base.add(s.getName()));
-
-            for (DomainProperty prop : properties)
-            {
-                if (!base.contains(prop.getName()))
-                    resizePropChange.addColumn(prop.getPropertyDescriptor());
-            }
-
-            if (resizePropChange.getColumns().isEmpty())
-            {
-                // Nothing to do, so don't try to run an ALTER TABLE that doesn't actually do anything
-                return;
-            }
-
-            execute(scope, con, resizePropChange);
-            kind.invalidate(domain);
+            if (!base.contains(prop.getName()))
+                resizePropChange.addColumn(prop.getPropertyDescriptor());
         }
-        catch (SQLException e)
+
+        if (resizePropChange.getColumns().isEmpty())
         {
-            throw new RuntimeSQLException(e);
+            // Nothing to do, so don't try to run an ALTER TABLE that doesn't actually do anything
+            return;
         }
-        finally
-        {
-            scope.releaseConnection(con);
-        }
+
+        resizePropChange.execute();
     }
 
     public static String makeTableName(DomainKind kind, Domain domain)
@@ -637,14 +545,14 @@ public class StorageProvisioner
 
     public static class _VirtualTable extends VirtualTable implements UpdateableTableInfo
     {
-        final SchemaTableInfo _inner;
-        final CaseInsensitiveHashMap<String> _map = new CaseInsensitiveHashMap<>();
+        private final SchemaTableInfo _inner;
+        private final CaseInsensitiveHashMap<String> _map = new CaseInsensitiveHashMap<>();
 
         _VirtualTable(DbSchema schema, String name, SchemaTableInfo inner, Map<String,String> map)
         {
             super(schema, name);
-            this._inner = inner;
-            this._map.putAll(map);
+            _inner = inner;
+            _map.putAll(map);
         }
 
         @Override
@@ -809,22 +717,18 @@ public class StorageProvisioner
         if (null == tableName)
             throw new IllegalStateException("Table must already exist.");
 
+        TableChange change = new TableChange(domain, doAdd ? ChangeType.AddIndices : ChangeType.DropIndices);
+
         Collection<PropertyStorageSpec.Index> indices = new ArrayList<>();
         indices.addAll(kind.getPropertyIndices());
         indices.addAll(domain.getPropertyIndices());
 
-        TableChange change = new TableChange(kind.getStorageSchemaName(), tableName,
-                doAdd ? TableChange.ChangeType.AddIndices : TableChange.ChangeType.DropIndices);
         change.setIndexedColumns(indices);
 
         try (Transaction transaction = scope.ensureTransaction())
         {
-            execute(scope, scope.getConnection(), change);
+            change.execute();
             transaction.commit();
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
         }
     }
 
@@ -864,9 +768,9 @@ public class StorageProvisioner
             if (!seenProperties.add(p.getName()))
             {
                 // There is more than property descriptor with this name attached to this table. This shouldn't happen, but we've seen
-                // at least one occurance of it in a dev's db, thought to have been caused by in-flux code in 12/2013. The result would
-                // be calls to retrieve metadata would throw an uniformative IllegalStateException on an array index out of bounds. Throwing this
-                // runtimeexception instead gives better diagnostic info.
+                // at least one occurrence of it in a dev's db, thought to have been caused by in-flux code in 12/2013. The result would
+                // be calls to retrieve metadata would throw an uninformative IllegalStateException on an array index out of bounds. Throwing this
+                // RuntimeException instead gives better diagnostic info.
                 throw new RuntimeException("Duplicate property descriptor name found for: " + tableName + "." + p.getName());
             }
 
@@ -914,7 +818,6 @@ public class StorageProvisioner
 
         try (Transaction transaction = scope.ensureTransaction())
         {
-            Connection conn = scope.getConnection();
             Domain domain = PropertyService.get().getDomain(c, domainUri);
             if (null == domain)
             {
@@ -935,9 +838,9 @@ public class StorageProvisioner
             }
             ProvisioningReport.DomainReport report = preport.getProvisionedDomains().iterator().next();
 
-            TableChange drops = new TableChange(kind.getStorageSchemaName(), domain.getStorageTableName(), TableChange.ChangeType.DropColumns);
+            TableChange drops = new TableChange(domain, ChangeType.DropColumns);
             boolean hasDrops = false;
-            TableChange adds = new TableChange(kind.getStorageSchemaName(), domain.getStorageTableName(), TableChange.ChangeType.AddColumns);
+            TableChange adds = new TableChange(domain, ChangeType.AddColumns);
             boolean hasAdds = false;
 
             for (ProvisioningReport.ColumnStatus st : report.getColumns())
@@ -978,9 +881,9 @@ public class StorageProvisioner
             }
 
             if (hasDrops)
-                execute(scope, conn, drops);
+                drops.execute();
             if (hasAdds)
-                execute(scope, conn, adds);
+                adds.execute();
             kind.invalidate(domain);
             transaction.commit();
             return !errors.hasErrors();
@@ -989,23 +892,6 @@ public class StorageProvisioner
         {
             errors.reject(SpringActionController.ERROR_MSG, x.getMessage());
             return false;
-        }
-    }
-
-    private static void execute(DbScope scope, Connection conn, TableChange change)
-    {
-        for (String sql : scope.getSqlDialect().getChangeStatements(change))
-        {
-            try
-            {
-                log.debug("Will issue: " + sql);
-                conn.prepareStatement(sql).execute();
-            }
-            catch (SQLException e)
-            {
-                log.error(sql);
-                throw new RuntimeSQLException(e);
-            }
         }
     }
 
@@ -1043,7 +929,7 @@ public class StorageProvisioner
             for (Path schemaName : schemaNames)
             {
                 DbSchema schema = DbSchema.get(schemaName.getName(), DbSchemaType.Provisioned);
-                Collection<String> tableNames = null;
+                Collection<String> tableNames;
 
                 try
                 {
@@ -1062,26 +948,21 @@ public class StorageProvisioner
             }
         }
 
-        new SqlSelector(OntologyManager.getExpSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
+        new SqlSelector(OntologyManager.getExpSchema(), sql).forEach(rs -> {
+            ProvisioningReport.DomainReport domain = new ProvisioningReport.DomainReport();
+            domain.setId(rs.getInt("domainid"));
+            domain.setName(rs.getString("name"));
+            if (rs.getString("storagetablename") == null)
             {
-                ProvisioningReport.DomainReport domain = new ProvisioningReport.DomainReport();
-                domain.setId(rs.getInt("domainid"));
-                domain.setName(rs.getString("name"));
-                if (rs.getString("storagetablename") == null)
-                {
-                    report.addUnprovisioned(domain);
-                }
-                else
-                {
-                    domain.setSchemaName(rs.getString("storageschemaname"));
-                    domain.setTableName(rs.getString("storagetablename"));
-                    report.addProvisioned(domain);
-                    // table is accounted for
-                    provisionedTables.remove(new Path(domain.getSchemaName(), domain.getTableName()));
-                }
+                report.addUnprovisioned(domain);
+            }
+            else
+            {
+                domain.setSchemaName(rs.getString("storageschemaname"));
+                domain.setTableName(rs.getString("storagetablename"));
+                report.addProvisioned(domain);
+                // table is accounted for
+                provisionedTables.remove(new Path(domain.getSchemaName(), domain.getTableName()));
             }
         });
 
@@ -1133,8 +1014,10 @@ public class StorageProvisioner
             Set<String> basePropertyNames = new HashSet<>();
             if (kind.hasPropertiesIncludeBaseProperties())
             {
-                for (PropertyStorageSpec spec : kind.getBaseProperties())
-                    basePropertyNames.add(spec.getName().toLowerCase());
+                basePropertyNames.addAll(kind.getBaseProperties()
+                    .stream()
+                    .map(spec -> spec.getName().toLowerCase())
+                    .collect(Collectors.toList()));
             }
 
             for (DomainProperty domainProp : domain.getProperties())
@@ -1143,7 +1026,7 @@ public class StorageProvisioner
                     continue;
 
                 ProvisioningReport.ColumnStatus status = new ProvisioningReport.ColumnStatus();
-                domainReport.columns.add(status);
+                domainReport._columns.add(status);
                 status.prop = domainProp;
                 if (hardColumnNames.remove(domainProp.getName()))
                     status.colName = domainProp.getName();
@@ -1173,7 +1056,7 @@ public class StorageProvisioner
             for (PropertyStorageSpec spec : kind.getBaseProperties())
             {
                 ProvisioningReport.ColumnStatus status = new ProvisioningReport.ColumnStatus();
-                domainReport.columns.add(status);
+                domainReport._columns.add(status);
                 status.spec = spec;
                 if (hardColumnNames.remove(spec.getName()))
                     status.colName = spec.getName();
@@ -1200,14 +1083,14 @@ public class StorageProvisioner
                         status.hasProblem = true;
                 }
             }
-            for (String name : hardColumnNames.toArray(new String[0]))
+            for (String name : hardColumnNames.toArray(new String[hardColumnNames.size()]))
             {
                 if (name.endsWith("_" + MvColumn.MV_INDICATOR_SUFFIX))
                     continue;
                 domainReport.addError(String.format("database table %s.%s has column '%s' without a property descriptor",
                         domainReport.getSchemaName(), domainReport.getTableName(), name));
                 ProvisioningReport.ColumnStatus status = new ProvisioningReport.ColumnStatus();
-                domainReport.columns.add(status);
+                domainReport._columns.add(status);
 
                 hardColumnNames.remove(name);
                 status.colName = name;
@@ -1221,16 +1104,20 @@ public class StorageProvisioner
                 domainReport.addError(String.format("database table %s.%s has column '%s' without a property descriptor",
                         domainReport.getSchemaName(), domainReport.getTableName(), name));
                 ProvisioningReport.ColumnStatus status = new ProvisioningReport.ColumnStatus();
-                domainReport.columns.add(status);
+                domainReport._columns.add(status);
                 status.mvColName = name;
                 status.fix = "Delete column '" + name + "'";
                 status.hasProblem = true;
             }
-            if (!domainReport.errors.isEmpty())
+            if (!domainReport._errors.isEmpty())
             {
-                ActionURL fix = new ActionURL("experiment-types", "repair", domain.getContainer());
-                fix.addParameter("domainUri", domain.getTypeURI());
-                domainReport.addError("See this page for more info: " + fix.getURIString());
+                ExperimentUrls urls = PageFlowUtil.urlProvider(ExperimentUrls.class);
+                if (null != urls)
+                {
+                    ActionURL fix = urls.getRepairTypeURL(domain.getContainer());
+                    fix.addParameter("domainUri", domain.getTypeURI());
+                    domainReport.addError("See this page for more info: " + fix.getURIString());
+                }
             }
         }
 
@@ -1247,9 +1134,9 @@ public class StorageProvisioner
 
     public static class ProvisioningReport
     {
-        private Set<DomainReport> unprovisionedDomains = new HashSet<>();
-        private Set<DomainReport> provisionedDomains = new HashSet<>();
-        private List<String> globalErrors = new ArrayList<>();
+        private final Set<DomainReport> unprovisionedDomains = new HashSet<>();
+        private final Set<DomainReport> provisionedDomains = new HashSet<>();
+        private final List<String> globalErrors = new ArrayList<>();
 
         public void addUnprovisioned(DomainReport domain)
         {
@@ -1315,66 +1202,67 @@ public class StorageProvisioner
 
         public static class DomainReport
         {
-            Integer id;
-            String name;
-            String schemaName;
-            String tableName;
-            List<String> errors = new ArrayList<>();
-            List<ColumnStatus> columns = new ArrayList<>();
+            private Integer _id;
+            private String _name;
+            private String _schemaName;
+            private String _tableName;
+
+            private final List<String> _errors = new ArrayList<>();
+            private final List<ColumnStatus> _columns = new ArrayList<>();
 
             public Integer getId()
             {
-                return id;
+                return _id;
             }
 
             public void setId(Integer id)
             {
-                this.id = id;
+                _id = id;
             }
 
             public String getName()
             {
-                return name;
+                return _name;
             }
 
             public void setName(String name)
             {
-                this.name = name;
+                _name = name;
             }
 
             public String getSchemaName()
             {
-                return schemaName;
+                return _schemaName;
             }
 
             public void setSchemaName(String schemaName)
             {
-                this.schemaName = schemaName;
+                _schemaName = schemaName;
             }
 
             public String getTableName()
             {
-                return tableName;
+                return _tableName;
             }
 
             public void setTableName(String tableName)
             {
-                this.tableName = tableName;
+                _tableName = tableName;
             }
 
             public void addError(String message)
             {
-                errors.add(message);
+                _errors.add(message);
             }
 
             public List<String> getErrors()
             {
-                return errors;
+                return _errors;
             }
 
             public List<ColumnStatus> getColumns()
             {
-                return columns;
+                return _columns;
             }
         }
     }
@@ -1423,7 +1311,6 @@ public class StorageProvisioner
             Lsid lsid = new Lsid("TestDatasetDomainKind", "Folder-" + container.getRowId(), domainName);
             domain = PropertyService.get().createDomain(container, lsid.toString(), domainName);
             domain.save(new User());
-            DomainKind kind = domain.getDomainKind();
             StorageProvisioner.createTableInfo(domain);
             domain = PropertyService.get().getDomain(domain.getTypeId());
         }
@@ -1444,9 +1331,7 @@ public class StorageProvisioner
         public void testAddProperty() throws Exception
         {
             addPropertyB();
-            Assert.assertNotNull("adding a property added a new column to the hard table",
-                    getJdbcColumnMetadata(domain.getDomainKind().getStorageSchemaName(),
-                            domain.getStorageTableName(), propNameB));
+            Assert.assertNotNull("adding a property added a new column to the hard table", getJdbcColumnMetadata(domain, propNameB));
         }
 
         @Test
@@ -1459,8 +1344,7 @@ public class StorageProvisioner
             domain.save(new User());
             domain = PropertyService.get().getDomain(domain.getTypeId());
 
-            Assert.assertNull("column for dropped property is gone", getJdbcColumnMetadata(domain.getDomainKind().getStorageSchemaName(),
-                    domain.getStorageTableName(), propNameB));
+            Assert.assertNull("column for dropped property is gone", getJdbcColumnMetadata(domain, propNameB));
         }
 
         @Test
@@ -1475,15 +1359,11 @@ public class StorageProvisioner
             domain.save(new User());
             domain = PropertyService.get().getDomain(domain.getTypeId());
 
-            Assert.assertNull("renamed column is not present in old name",
-                    getJdbcColumnMetadata(domain.getDomainKind().getStorageSchemaName(),
-                            domain.getStorageTableName(), oldColumnName));
+            Assert.assertNull("renamed column is not present in old name", getJdbcColumnMetadata(domain, oldColumnName));
 
             propB = domain.getPropertyByName(newName);
             String newColumnName = propB.getPropertyDescriptor().getStorageColumnName();
-            Assert.assertNotNull("renamed column is provisioned in new name",
-                    getJdbcColumnMetadata(domain.getDomainKind().getStorageSchemaName(),
-                            domain.getStorageTableName(), newColumnName));
+            Assert.assertNotNull("renamed column is provisioned in new name", getJdbcColumnMetadata(domain, newColumnName));
         }
 /*
 
@@ -1509,8 +1389,7 @@ public class StorageProvisioner
             domain.save(new User());
             domain = PropertyService.get().getDomain(domain.getTypeId());
 
-            ColumnMetadata col = getJdbcColumnMetadata(domain.getDomainKind().getStorageSchemaName(),
-                            domain.getStorageTableName(), propBMvColumnName);
+            ColumnMetadata col = getJdbcColumnMetadata(domain, propBMvColumnName);
             Assert.assertNotNull("enabled mvindicator causes mvindicator column to be provisioned",
                     col);
         }
@@ -1532,9 +1411,7 @@ public class StorageProvisioner
             domain.save(new User());
             domain = PropertyService.get().getDomain(domain.getTypeId());
 
-            Assert.assertNull("property with disabled mvindicator has no mvindicator column",
-                    getJdbcColumnMetadata(domain.getDomainKind().getStorageSchemaName(),
-                            domain.getStorageTableName(), propBMvColumnName));
+            Assert.assertNull("property with disabled mvindicator has no mvindicator column", getJdbcColumnMetadata(domain, propBMvColumnName));
         }
 
 /*
@@ -1610,27 +1487,23 @@ renaming a property AND toggling mvindicator on in the same change.
 
 
         // TODO: We have this (or something much like it) in the SqlDialect -- merge!
-        private ColumnMetadata getJdbcColumnMetadata(String schema, String table, String column) throws Exception
+        private ColumnMetadata getJdbcColumnMetadata(Domain domain, String column) throws Exception
         {
-            Connection con = null;
-            ResultSet rs = null;
+            String schema = domain.getDomainKind().getStorageSchemaName();
+            String table = domain.getStorageTableName();
 
-            try
+            try (Connection con = DbScope.getLabKeyScope().getConnection())
             {
-                con = DbScope.getLabKeyScope().getConnection();
                 DatabaseMetaData dbmd = con.getMetaData();
-                rs = dbmd.getColumns(null, schema, table, column);
 
-                if (!rs.next())
-                    // no column matched the column, table and schema given
-                    return null;
+                try (ResultSet rs = dbmd.getColumns(null, schema, table, column))
+                {
+                    if (!rs.next())
+                        // no column matched the column, table and schema given
+                        return null;
 
-                return new ColumnMetadata(rs.getString("IS_NULLABLE"), rs.getInt("COLUMN_SIZE"), rs.getInt("DATA_TYPE"), rs.getString("COLUMN_NAME"));
-            }
-            finally
-            {
-                ResultSetUtil.close(rs);
-                if (con != null) { con.close(); }
+                    return new ColumnMetadata(rs.getString("IS_NULLABLE"), rs.getInt("COLUMN_SIZE"), rs.getInt("DATA_TYPE"), rs.getString("COLUMN_NAME"));
+                }
             }
         }
 
@@ -1648,7 +1521,6 @@ renaming a property AND toggling mvindicator on in the same change.
                 this.sqlTypeInt = sqlTypeInt;
                 this.name = name;
             }
-
         }
     }
 }

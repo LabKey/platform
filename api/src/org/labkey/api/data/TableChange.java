@@ -15,8 +15,11 @@
  */
 package org.labkey.api.data;
 
-import org.labkey.api.exp.PropertyDescriptor;
+import org.apache.log4j.Logger;
 import org.labkey.api.data.PropertyStorageSpec.Index;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -31,45 +34,77 @@ import java.util.Map;
  */
 public class TableChange
 {
-    final ChangeType type;
-    final String schemaName;
-    final String tableName;
-    Collection<PropertyStorageSpec> columns = new LinkedHashSet<>();
-    Collection<Index> indices = new LinkedHashSet<>();
-    Collection<PropertyStorageSpec.ForeignKey> foreignKeys = Collections.emptySet();
-    Map<String, String> columnRenames = new LinkedHashMap<>();
-    Map<Index, Index> indexRenames = new LinkedHashMap<>();
+    private static final Logger LOG = Logger.getLogger(TableChange.class);
 
-    public TableChange(String schemaName, String tableName, ChangeType changeType)
+    private final ChangeType _type;
+    private final String _schemaName;
+    private final String _tableName;
+    private final Collection<PropertyStorageSpec> _columns = new LinkedHashSet<>();
+    private final Map<String, String> _columnRenames = new LinkedHashMap<>();
+    private final Map<Index, Index> _indexRenames = new LinkedHashMap<>();
+    private final Domain _domain;
+
+    private Collection<Index> _indices = new LinkedHashSet<>();
+    private Collection<PropertyStorageSpec.ForeignKey> _foreignKeys = Collections.emptySet();
+
+    /** In most cases, domain knows the storage table name **/
+    public TableChange(Domain domain, ChangeType changeType)
     {
-        this.schemaName = schemaName;
-        this.tableName = tableName;
-        this.type = changeType;
+        this(domain, changeType, domain.getStorageTableName());
+    }
+
+    /** Only for cases where domain doesn't have a storage table name, e.g., create table **/
+    public TableChange(Domain domain, ChangeType changeType, String tableName)
+    {
+        _domain = domain;
+        _schemaName = domain.getDomainKind().getStorageSchemaName();
+        _tableName = tableName;
+        _type = changeType;
+    }
+
+    public void execute()
+    {
+        DomainKind kind = _domain.getDomainKind();
+        DbScope scope = kind.getScope();
+        SqlExecutor executor = new SqlExecutor(scope);
+
+        try
+        {
+            for (String sql : scope.getSqlDialect().getChangeStatements(this))
+            {
+                LOG.debug("Will issue: " + sql);
+                executor.execute(sql);
+            }
+        }
+        finally
+        {
+            kind.invalidate(_domain);
+        }
     }
 
     public ChangeType getType()
     {
-        return type;
+        return _type;
     }
 
     public String getSchemaName()
     {
-        return schemaName;
+        return _schemaName;
     }
 
     public String getTableName()
     {
-        return tableName;
+        return _tableName;
     }
 
     public Collection<PropertyStorageSpec> getColumns()
     {
-        return columns;
+        return _columns;
     }
 
     public void addColumn(PropertyStorageSpec prop)
     {
-        columns.add(prop);
+        _columns.add(prop);
     }
 
     public void addColumn(PropertyDescriptor prop)
@@ -79,7 +114,7 @@ public class TableChange
 
     public void addColumnRename(String oldName, String newName)
     {
-        columnRenames.put(oldName, newName);
+        _columnRenames.put(oldName, newName);
     }
 
     /**
@@ -92,16 +127,16 @@ public class TableChange
      */
     public void addIndexRename(Index oldIndex, Index newIndex)
     {
-        indexRenames.put(oldIndex, newIndex);
+        _indexRenames.put(oldIndex, newIndex);
     }
 
     public void dropColumnExactName(String name)
     {
-        if (type != ChangeType.DropColumns)
+        if (_type != ChangeType.DropColumns)
             throw new IllegalStateException();
         PropertyStorageSpec p = new PropertyStorageSpec(name, JdbcType.VARCHAR);
         p.setExactName(true);
-        columns.add(p);
+        _columns.add(p);
     }
 
     /**
@@ -109,7 +144,7 @@ public class TableChange
      */
     public Map<String, String> getColumnRenames()
     {
-        return columnRenames;
+        return _columnRenames;
     }
 
     /**
@@ -117,27 +152,27 @@ public class TableChange
      */
     public Map<Index, Index> getIndexRenames()
     {
-        return indexRenames;
+        return _indexRenames;
     }
 
     public Collection<Index> getIndexedColumns()
     {
-        return indices;
+        return _indices;
     }
 
     public void setIndexedColumns(Collection<Index> indices)
     {
-        this.indices = indices;
+        _indices = indices;
     }
 
     public Collection<PropertyStorageSpec.ForeignKey> getForeignKeys()
     {
-        return foreignKeys;
+        return _foreignKeys;
     }
 
     public void setForeignKeys(Collection<PropertyStorageSpec.ForeignKey> foreignKeys)
     {
-        this.foreignKeys = foreignKeys;
+        _foreignKeys = foreignKeys;
     }
 
     public enum ChangeType
@@ -151,6 +186,4 @@ public class TableChange
         AddIndices,
         ResizeColumns
     }
-
-
 }
