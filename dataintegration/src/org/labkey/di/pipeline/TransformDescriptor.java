@@ -73,6 +73,7 @@ import org.labkey.di.steps.ExternalPipelineTaskMeta;
 import org.labkey.di.steps.StepMeta;
 import org.labkey.di.steps.TaskRefTransformStepMeta;
 import org.labkey.di.steps.TestTask;
+import org.labkey.etl.xml.EtlType;
 import org.quartz.CronExpression;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.Job;
@@ -111,6 +112,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
     private final boolean _gatedByStep;
     private final boolean _standalone;
     private final boolean _siteScope;
+    private boolean _allowMultipleQueuing;
     private static final String XAR_EXT = ".etl.xar.xml";
 
     // declared variables
@@ -124,19 +126,22 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
     private final FilterStrategy.Factory _defaultFactory;
     private final ArrayList<StepMeta> _stepMetaDatas;
 
-
-    public TransformDescriptor(String id, String name, String description, String moduleName, Long interval,
-                               CronExpression cron, FilterStrategy.Factory defaultFactory, ArrayList<StepMeta> stepMetaDatas,
-                               Map<ParameterDescription, Object> declaredVariables) throws XmlException, IOException
+    public TransformDescriptor(String id, String name, String moduleName) throws XmlException, IOException
     {
-        this(id, name, description, moduleName, interval, cron, defaultFactory, stepMetaDatas, declaredVariables, false, false, true, false);
+        this(id, name, null, moduleName, null, null, null, null, null, false, false, true, false, false);
     }
 
-    // TODO: Create a descriptor builder
+    public TransformDescriptor(String id, EtlType etlXml, String moduleName, Long interval,
+                               CronExpression cron, FilterStrategy.Factory defaultFactory, ArrayList<StepMeta> stepMetaDatas,
+                               Map<ParameterDescription, Object> declaredVariables, boolean gatedByStep) throws XmlException, IOException
+    {
+        this(id, etlXml.getName(), etlXml.getDescription(), moduleName, interval, cron, defaultFactory, stepMetaDatas, declaredVariables, etlXml.getLoadReferencedFiles(), gatedByStep, etlXml.getStandalone(), etlXml.getSiteScope(), etlXml.getAllowMultipleQueuing());
+    }
+
     public TransformDescriptor(String id, String name, String description, String moduleName, Long interval,
                                CronExpression cron, FilterStrategy.Factory defaultFactory, ArrayList<StepMeta> stepMetaDatas,
                                Map<ParameterDescription, Object> declaredVariables,
-                               boolean loadReferencedFiles, boolean gatedByStep, boolean standalone, boolean siteScope) throws XmlException, IOException
+                               boolean loadReferencedFiles, boolean gatedByStep, boolean standalone, boolean siteScope, boolean allowMultipleQueuing) throws XmlException, IOException
     {
         _id = id;
         _name = name;
@@ -152,8 +157,8 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         _gatedByStep = gatedByStep;
         _standalone = standalone;
         _siteScope = siteScope;
+        _allowMultipleQueuing = allowMultipleQueuing;
     }
-
 
     public String getName()
     {
@@ -286,16 +291,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
 
             for (StepMeta stepMeta : _stepMetaDatas)
             {
-                /* <FOR TESTING ONLY> */
-                boolean throwNullPointerException = false;
-                if (throwNullPointerException)
-                {
-                    throw new NullPointerException("NPE: TESTING");
-                }
-                /* </FOR TESTING ONLY> */
-
                 TransformTask step = stepMeta.getProvider().createStepInstance(null, null, stepMeta, (TransformJobContext)context);
-
                 if (step.hasWork())
                     return true;
             }
@@ -471,6 +467,10 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             i++;
             if ((meta instanceof ExternalPipelineTaskMeta))
             {
+                // If the first step of an etl is a pipeline command task, the logic on whether or not to queue a
+                // second job if one is already pending does not apply.
+                if (i == 1)
+                    _allowMultipleQueuing = true;
                 progressionSpec.add(((ExternalPipelineTaskMeta) meta).getExternalTaskId());
 
                 // Register the task to generate an experiment run to track this transform.
@@ -533,6 +533,12 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
     public boolean isPending(ContainerUser context)
     {
         return TransformManager.get().transformIsPending(context, getId(), getFullTaskName(_stepMetaDatas.get(0)));
+    }
+
+    @Override
+    public boolean isAllowMultipleQueuing()
+    {
+        return _allowMultipleQueuing;
     }
 
     public static class TestCase extends Assert

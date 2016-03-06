@@ -43,6 +43,7 @@ import java.io.File;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -55,13 +56,13 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
 {
     private final TransformDescriptor _etlDescriptor;
     private int _runId;
-//    private Integer _expRunId;
     private Integer _recordCount;
     private TransformJobContext _transformJobContext;
     private final VariableMapImpl _variableMap = new VariableMapImpl(null);
     private final Map<String,VariableMapImpl> _stepVariableMaps = new HashMap<>();
     public static final String ETL_PREFIX = "ETL Job: ";
     private static final String LOG_EXTENSION = "etl.log";
+    private final Set<String> _outputFileBaseNames = new LinkedHashSet<>();
 
     public TransformPipelineJob(@NotNull TransformJobContext info, TransformDescriptor etlDescriptor)
     {
@@ -224,6 +225,11 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
             return _etlDescriptor.getTaskPipeline();
 
         return null;
+    }
+
+    public Set<String> getOutputFileBaseNames()
+    {
+        return _outputFileBaseNames;
     }
 
     //

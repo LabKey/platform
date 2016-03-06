@@ -334,7 +334,7 @@ public class DataIntegrationController extends SpringActionController
                 throw new NotFoundException(form.getTransformId());
             String status;
             JSONObject ret = new JSONObject();
-            if (etl.isPending(getViewContext()))
+            if (etl.isPending(getViewContext()) && !etl.isAllowMultipleQueuing())
             {
                 status = TransformManager.getJobPendingMessage(null);
                 LOG.info(status);
@@ -417,7 +417,6 @@ public class DataIntegrationController extends SpringActionController
 
     @RequiresPermission(AdminPermission.class)
     public class TruncateTransformStateAction extends ResetTransformStateAction
-//    public class TruncateTransformStateAction extends MutatingApiAction<TransformConfigurationForm>
     {
         @Override
         public ApiResponse execute(TransformConfigurationForm form, BindException errors) throws Exception

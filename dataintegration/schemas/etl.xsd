@@ -31,6 +31,11 @@
                 <documentation>ETL can run at a site level scope, not just in a container.</documentation>
             </annotation>
         </attribute>
+        <attribute name="allowMultipleQueuing" type="boolean" default="false">
+            <annotation>
+                <documentation>By default, if a job for the etl is already pending (waiting), we block adding another instance of the etl to the job queue. Set this flag to override and allow multiple instances in the queue.</documentation>
+            </annotation>
+        </attribute>
     </complexType>
 
     <complexType name="SourceObjectType">
@@ -102,6 +107,16 @@
         <attribute name="transactionSize" type="nonNegativeInteger" use="optional" default="0">
             <annotation>
                 <documentation>Incrementally commit target transaction every n rows instead of in a single wrapping transaction.</documentation>
+            </annotation>
+        </attribute>
+        <attribute name="batchSize" type="nonNegativeInteger" use="optional" default="0">
+            <annotation>
+                <documentation>For file targets, instead of writing a single file, create a new file every n rows. Each will be the fileBaseName + "-1", "-2", etc, + fileExtension</documentation>
+            </annotation>
+        </attribute>
+        <attribute name="batchColumn" type="string" use="optional">
+            <annotation>
+                <documentation>If specified, rather than count individual rows for the batchSize, use this as a sentinel field, and only increment the count of a current batch when the value in this field changes.</documentation>
             </annotation>
         </attribute>
     </complexType>

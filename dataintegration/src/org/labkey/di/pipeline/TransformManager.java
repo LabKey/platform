@@ -264,16 +264,14 @@ public class TransformManager implements DataIntegrationService.Interface
             // XmlSchema validate the document after we've attempted to parse it since we can provide better error messages.
             XmlBeansUtil.validateXmlDocument(document, "ETL '" + resource.getPath() + "'");
 
-            return new TransformDescriptor(configId, etlXml.getName(), etlXml.getDescription(), module.getName(), interval, cron, defaultFactory, stepMetaDatas, declaredVariables, etlXml.getLoadReferencedFiles(), hasGateStep, etlXml.getStandalone(), etlXml.getSiteScope());
+            return new TransformDescriptor(configId, etlXml, module.getName(), interval, cron, defaultFactory, stepMetaDatas, declaredVariables, hasGateStep);
         }
     }
-
 
     boolean isConfigFile(String filename)
     {
         return filename.endsWith(".xml");
     }
-
 
     String getConfigName(String filename)
     {
@@ -281,12 +279,10 @@ public class TransformManager implements DataIntegrationService.Interface
         return FileUtil.getBaseName(filename);
     }
 
-
     String createConfigId(Module module, String configName)
     {
         return "{" + module.getName() + "}/" + configName;
     }
-
 
     private FilterStrategy.Factory createFilterFactory(FilterType filterTypeXML)
     {
@@ -301,7 +297,6 @@ public class TransformManager implements DataIntegrationService.Interface
             return new SelectAllFilterStrategy.Factory(filterTypeXML);
         throw new IllegalArgumentException("Class is not a recognized filter strategy: " + className);
     }
-
 
     // errors
     static final String INVALID_TYPE = "Invalid transform type specified";
@@ -391,7 +386,7 @@ public class TransformManager implements DataIntegrationService.Interface
         {
             ContainerUser context = descriptor.getJobContext(container, user, params);
             // Don't double queue jobs
-            if (descriptor.isPending(context))
+            if (descriptor.isPending(context) && !descriptor.isAllowMultipleQueuing())
             {
                 LOG.info(getJobPendingMessage(descriptor.getId()));
                 return null;
@@ -951,7 +946,7 @@ public class TransformManager implements DataIntegrationService.Interface
             {
                 private TestTransformDescriptor(String id, String name, String moduleName) throws XmlException, IOException
                 {
-                    super(id, name, null, moduleName, null, null, null, null, null);
+                    super(id, name, moduleName);
                 }
 
                 @Override

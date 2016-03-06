@@ -16,6 +16,7 @@
 package org.labkey.di.pipeline;
 
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -52,6 +53,7 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -73,6 +75,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: daxh
@@ -349,20 +352,24 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
         // Append is a little tricky: need some overload methods on TextWriter to create a FileWriter with append == true,
         // and suppress writing column headers.
         // Also, who's to say the output columns match the existing file?
+        // Update 3/3/16 ... and now that we're adding feature to write to multiple files based on batch size, I'm not sure what an
+        // append would look like at all.
         try
         {
+            Results results = new DataIteratorResultsImpl(source.getDataIterator(context));
+            FieldKey batchColumn = meta.getBatchColumn() == null ? null : FieldKey.fromParts(meta.getBatchColumn());
+            if (meta.getBatchSize() > 0 && null != batchColumn && !results.hasColumn(batchColumn))
+                throw new ConfigurationException("Batch column " + batchColumn + " not found in etl source results.");
+
             File outputDir = _txJob.getPipeRoot().resolvePath(meta.getTargetFileProperties().get(CopyConfig.TargetFileProperties.dir));
-            if (!outputDir.exists() && !outputDir.mkdirs())
+            if (null == outputDir || (!outputDir.exists() && !outputDir.mkdirs()))
             {
                 context.getErrors().addRowError(new ValidationException("Can't create output directory: " + outputDir));
                 return -1;
             }
-            String baseName = makeFileBaseName(meta);
-            String extension = meta.getTargetFileProperties().get(CopyConfig.TargetFileProperties.extension);
-            File outputFile = new File(outputDir, baseName + "." + extension);
-            TSVGridWriter tsv = new TSVGridWriter(new DataIteratorResultsImpl(source.getDataIterator(context)));
-            tsv.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
 
+            TSVGridWriter tsv = new TSVGridWriter(results);
+            tsv.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
             String specialChar = meta.getTargetFileProperties().get(CopyConfig.TargetFileProperties.columnDelimiter);
             if (specialChar != null)
                 tsv.setDelimiterCharacter(specialChar.charAt(0));
@@ -373,17 +380,24 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
             if (specialChar != null)
                 tsv.setQuoteCharacter(specialChar.charAt(0));
 
-            tsv.write(outputFile);
+            String baseName = makeFileBaseName(meta);
+            String extension = meta.getTargetFileProperties().get(CopyConfig.TargetFileProperties.extension);
+            List<File> outputFiles = tsv.writeBatchFiles(outputDir, baseName, extension, meta.getBatchSize(), batchColumn);
             int rowCount = tsv.getDataRowCount();
             if (rowCount == 0)
                 getJob().getParameters().put("etlOutputHadRows", "false");
-            log.info("Wrote " + rowCount + " rows to file " + outputFile.toString());
+            String plural = outputFiles.size() == 1 ? "" : "s";
+            log.info("Wrote " + rowCount + " total rows to file" + plural +":\n");
+            outputFiles.forEach((file) ->
+                {
+                    _txJob.getOutputFileBaseNames().add(StringUtils.substringBefore(file.getName(), extension));
+                    log.info(file.toString() + "\n");
+                });
 
             // Set some properties in the job for FileAnalysis pipeline steps
-            // TODO: refactor these out as a separate method so other tasks that write files can do this too (none yet, but seems a file copy task is likely to be needed soon)
             _txJob.setAnalysisDirectory(outputDir);
             _txJob.setBaseName(baseName);
-            setTargetForURI(outputFile);
+            setTargetForURI(outputFiles);
 
             return rowCount;
         }
@@ -515,6 +529,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
 
     abstract public void doWork(RecordedAction action) throws PipelineJobException;
 
+    @SuppressWarnings("unchecked")
     protected void recordWork(RecordedAction action)
     {
         if (-1 != _recordsInserted)
@@ -536,8 +551,10 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
                 Object target = getTargetForURI();
                 if (target instanceof String)
                     action.addOutput(new URI((String)target), TransformTask.OUTPUT_ROLE, false);
-                else if (target instanceof File)
-                    action.addOutput((File)target, TransformTask.OUTPUT_ROLE, false);
+                else if (target instanceof Set)
+                {
+                    ((Set) target).stream().filter(targetItem -> targetItem instanceof File).forEach(targetItem -> action.addOutput((File) targetItem, TransformTask.OUTPUT_ROLE, false));
+                }
 //                // if neither of those we don't know how to resolve it anyway
             }
         }

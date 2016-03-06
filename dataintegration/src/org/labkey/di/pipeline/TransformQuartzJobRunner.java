@@ -49,7 +49,7 @@ public class TransformQuartzJobRunner implements Job
         ScheduledPipelineJobContext infoTemplate = ScheduledPipelineJobContext.getFromQuartzJobDetail(context);
         ScheduledPipelineJobContext info = infoTemplate.clone();
 
-        if (d.isPending(info))
+        if (d.isPending(info) && !d.isAllowMultipleQueuing())
         {
             LOG.info(TransformManager.getJobPendingMessage(d.getId()));
             return;

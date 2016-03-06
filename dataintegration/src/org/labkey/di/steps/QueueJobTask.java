@@ -53,18 +53,33 @@ public class QueueJobTask extends TaskRefTaskImpl
         if (newEtl == null)
             throw new NotFoundException(_transformId);
         TransformJobContext context = transformJob.getTransformJobContext();
-        if (newEtl.isPending(context))
+        if (newEtl.isPending(context) && !newEtl.isAllowMultipleQueuing())
         {
             transformJob.info(TransformManager.getJobPendingMessage(null));
         }
         else
         {
-            Integer jobId = TransformManager.get().runNowPipeline(newEtl, context.getContainer(), context.getUser(), context.getParams(), transformJob.getParameters(), transformJob.getAnalysisDirectory(), transformJob.getBaseName());
-            if (null == jobId)
-                transformJob.info("No work for queued ETL " + _transformId);
-            else transformJob.info("Queued job " + jobId.toString() + " for ETL " + _transformId);
+            if (transformJob.getOutputFileBaseNames().isEmpty())
+            {
+                queueJob(transformJob, newEtl, context, transformJob.getBaseName());
+            }
+            else
+            {
+                for (String basename : transformJob.getOutputFileBaseNames())
+                {
+                    queueJob(transformJob, newEtl, context, basename);
+                }
+            }
         }
         return new RecordedActionSet(makeRecordedAction());
+    }
+
+    private void queueJob(TransformPipelineJob transformJob, ScheduledPipelineJobDescriptor newEtl, TransformJobContext context, String basename) throws PipelineJobException
+    {
+        Integer jobId = TransformManager.get().runNowPipeline(newEtl, context.getContainer(), context.getUser(), context.getParams(), transformJob.getParameters(), transformJob.getAnalysisDirectory(), basename);
+        if (null == jobId)
+            transformJob.info("No work for queued ETL " + _transformId);
+        else transformJob.info("Queued job " + jobId.toString() + " for ETL " + _transformId);
     }
 
     @Override

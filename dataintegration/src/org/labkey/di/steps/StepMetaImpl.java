@@ -118,6 +118,8 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
 
         if (null != destination)
         {
+            setBatchSize(destination.getBatchSize().intValue());
+            setBatchColumn(destination.getBatchColumn());
             if (destination.getType() == null || CopyConfig.TargetTypes.query.name().equals(destination.getType().toString()))
             {
                 setTargetType(CopyConfig.TargetTypes.query);
@@ -145,9 +147,9 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
                 setTargetFileProperties(fileProps);
                 fileProps.put(TargetFileProperties.dir, StringUtils.trimToEmpty(destination.getDir()));
                 fileProps.put(TargetFileProperties.baseName, destination.getFileBaseName());
-                String extension = destination.getFileExtension();
-                if (StringUtils.startsWith(extension, "."))
-                    extension = StringUtils.substringAfter(extension, ".");
+                // Allow leading dot to be optional
+                String extension = StringUtils.trimToEmpty(destination.getFileExtension());
+                extension = "".equals(extension) || extension.startsWith(".") ? extension : "." + extension;
                 fileProps.put(TargetFileProperties.extension, extension);
                 if (destination.getColumnDelimiter() != null)
                     fileProps.put(TargetFileProperties.columnDelimiter, StringEscapeUtils.unescapeJava(destination.getColumnDelimiter()));
