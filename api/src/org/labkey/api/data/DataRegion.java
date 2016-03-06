@@ -1744,12 +1744,21 @@ public class DataRegion extends AbstractDataRegion
         {
             ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
 
+            out.write("<table");
+            out.write(" id=\"" + PageFlowUtil.filter(getDomId()) + "\"");
+
+            String name = getName();
+            if (name != null)
+            {
+                out.write(" lk-region-name=\"" + PageFlowUtil.filter(name) + "\" ");
+            }
+            out.write(">\n");
+
             while (rs.next())
             {
                 rowIndex++;
                 rowMap = factory.getRowMap(rs);
                 ctx.setRow(rowMap);
-                out.write("<table>");
 
                 for (DisplayColumn renderer : renderers)
                 {
@@ -1762,20 +1771,20 @@ public class DataRegion extends AbstractDataRegion
                 }
 
                 out.write("<tr><td style='font-size:1'>&nbsp;</td></tr>");
-                out.write("</table>");
             }
 
             if (rowIndex == 0)
             {
-                out.write("<table>");
                 renderNoRowsMessage(ctx, out, 1);
-                out.write("</table>");
             }
+
+            out.write("</table>");
 
             renderDetailsHiddenFields(out, rowMap);
             _detailsButtonBar.render(ctx, out);
-            out.write("</form>");
         }
+
+        renderFormEnd(ctx, out);
     }
 
 
