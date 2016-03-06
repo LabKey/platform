@@ -1998,7 +1998,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             if (matchError.hasErrors())
                 setupError(matchError.getMessage());
 
-            // select all columns except those we explicity calculate (e.g. lsid)
+            // select all columns except those we explicitly calculate (e.g. lsid)
             for (int in=1 ; in<=input.getColumnCount() ; in++)
             {
                 ColumnInfo inputColumn = input.getColumnInfo(in);
