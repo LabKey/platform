@@ -75,7 +75,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * User: daxh
@@ -541,11 +540,15 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
                 Object target = getTargetForURI();
                 if (target instanceof String)
                     action.addOutput(new URI((String)target), TransformTask.OUTPUT_ROLE, false);
-                else if (target instanceof Set)
+                else if (target instanceof List) // It should be a list of Files
                 {
-                    ((Set) target).stream().filter(targetItem -> targetItem instanceof File).forEach(targetItem -> action.addOutput((File) targetItem, TransformTask.OUTPUT_ROLE, false));
+                    ((List) target).stream().filter(targetItem -> targetItem instanceof File).forEach(targetItem -> action.addOutput((File) targetItem, TransformTask.OUTPUT_ROLE, false));
                 }
-//                // if neither of those we don't know how to resolve it anyway
+                else
+                {
+                    // if neither of those we don't know how to resolve it anyway
+                    _txJob.getLogger().warn("Unknown object type for output URI: " + target.getClass().getName());
+                }
             }
         }
         catch (URISyntaxException ignore)
