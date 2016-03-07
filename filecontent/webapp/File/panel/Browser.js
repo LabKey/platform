@@ -726,13 +726,14 @@ Ext4.define('File.panel.Browser', {
             config = config[0];
         }
 
+        // Need to remove/clean up all actions before re-initializing them below
+        this.removeToolbar();
+
         var actions = this.getActions(),
             tbarConfig = config.tbarActions,
             actionButtons = config.actions,
             buttons = [], i, action,
             reset = false;
-
-        this.removeToolbar();
 
         if (Ext4.isArray(tbarConfig)) {
             // initialize only actions specified in these configs
