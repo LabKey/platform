@@ -347,16 +347,6 @@ public class CopyConfig
         _useTargetTransaction = useTargetTransaction;
     }
 
-    public int getTransactionSize()
-    {
-        return _transactionSize;
-    }
-
-    public void setTransactionSize(int transactionSize)
-    {
-        _transactionSize = transactionSize;
-    }
-
     public int getBatchSize()
     {
         return _batchSize;
