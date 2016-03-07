@@ -297,47 +297,37 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
      */
     private void addTransactionOptions(final TableInfo target, final Container c, final DataIteratorContext context, DbScope.Transaction txTarget, final Map<String, Object> extraContext, final Map<Enum, Object> options)
     {
-        if (_meta.getTransactionSize() > 0)
+        if (_meta.getBatchSize() > 0)
         {
-            options.put(QueryUpdateService.ConfigParameters.TransactionSize, _meta.getTransactionSize());
-            ((Logger)options.get(QueryUpdateService.ConfigParameters.Logger)).info("Target transactions will be committed every " + Integer.toString(_meta.getTransactionSize()) + " rows");
+            options.put(QueryUpdateService.ConfigParameters.TransactionSize, _meta.getBatchSize());
+            ((Logger)options.get(QueryUpdateService.ConfigParameters.Logger)).info("Target transactions will be committed every " + Integer.toString(_meta.getBatchSize()) + " rows");
             if (target.hasTriggers(c))
             {
-                txTarget.addCommitTask(new Runnable()
-                {
-                    @Override
-                    public void run()
+                txTarget.addCommitTask(() -> {
+                    if (BooleanUtils.isNotFalse((Boolean) extraContext.get("hasNextRow")))
                     {
-                        if (BooleanUtils.isNotFalse((Boolean) extraContext.get("hasNextRow")))
+                        try
                         {
-                            try
-                            {
-                                target.fireBatchTrigger(c, TableInfo.TriggerType.INSERT, false, context.getErrors(), extraContext);
-                                target.resetTriggers(c);
-                            }
-                            catch (BatchValidationException e)
-                            {
-                                throw new RuntimeException(e);
-                            }
+                            target.fireBatchTrigger(c, TableInfo.TriggerType.INSERT, false, context.getErrors(), extraContext);
+                            target.resetTriggers(c);
+                        }
+                        catch (BatchValidationException e)
+                        {
+                            throw new RuntimeException(e);
                         }
                     }
                 }, DbScope.CommitTaskOption.PRECOMMIT);
 
-                txTarget.addCommitTask(new Runnable()
-                {
-                    @Override
-                    public void run()
+                txTarget.addCommitTask(() -> {
+                    if (BooleanUtils.isNotFalse((Boolean) extraContext.get("hasNextRow")))
                     {
-                        if (BooleanUtils.isNotFalse((Boolean) extraContext.get("hasNextRow")))
+                        try
                         {
-                            try
-                            {
-                                target.fireBatchTrigger(c, TableInfo.TriggerType.INSERT, true, context.getErrors(), extraContext);
-                            }
-                            catch (BatchValidationException e)
-                            {
-                                throw new RuntimeException(e);
-                            }
+                            target.fireBatchTrigger(c, TableInfo.TriggerType.INSERT, true, context.getErrors(), extraContext);
+                        }
+                        catch (BatchValidationException e)
+                        {
+                            throw new RuntimeException(e);
                         }
                     }
                 }, DbScope.CommitTaskOption.POSTCOMMIT);
@@ -617,7 +607,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
                         getFilterStrategy().setTargetDeletionKeyCol(targetDeletionKeyCol.getColumnName());
                     }
                 }
-                if (meta.getTransactionSize() > 0 && targetSchema.getDbSchema().getScope().equals(sourceDbScope) && sourceDbScope.getSqlDialect().isPostgreSQL())
+                if (meta.getBatchSize() > 0 && targetSchema.getDbSchema().getScope().equals(sourceDbScope) && sourceDbScope.getSqlDialect().isPostgreSQL())
                 {
                     // See issue 22213. Postgres doesn't allow committing transactions mid-stream when source and target
                     // are on the same connection.

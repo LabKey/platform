@@ -104,14 +104,11 @@
                 <documentation>Wrap writing to target query in a transaction. Not used when target is a file.</documentation>
             </annotation>
         </attribute>
-        <attribute name="transactionSize" type="nonNegativeInteger" use="optional" default="0">
-            <annotation>
-                <documentation>Incrementally commit target transaction every n rows instead of in a single wrapping transaction.</documentation>
-            </annotation>
-        </attribute>
         <attribute name="batchSize" type="nonNegativeInteger" use="optional" default="0">
             <annotation>
-                <documentation>For file targets, instead of writing a single file, create a new file every n rows. Each will be the fileBaseName + "-1", "-2", etc, + fileExtension</documentation>
+                <documentation>
+                    Formerly called "transactionsSize". For query targets, incrementally commit target transaction every n rows instead of in a single wrapping transaction.
+                    For file targets, instead of writing a single file, create a new file every n rows. Each will be the fileBaseName + "-1", "-2", etc, + fileExtension</documentation>
             </annotation>
         </attribute>
         <attribute name="batchColumn" type="string" use="optional">

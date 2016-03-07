@@ -56,7 +56,7 @@ public interface StepMeta
 
     boolean isUseTargetTransaction();
 
-    int getTransactionSize();
+    int getBatchSize();
 
     boolean isGating();
 

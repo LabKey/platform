@@ -130,7 +130,6 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
                     setBulkLoad(destination.getBulkLoad());
                 }
                 setUseTargetTransaction(destination.getUseTransaction());
-                setTransactionSize(destination.getTransactionSize().intValue());
             }
             else
             {
