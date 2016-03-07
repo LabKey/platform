@@ -820,7 +820,7 @@ public class StudyTest extends StudyBaseTest
         specimenDetail.setFilter("MouseId", "Equals", "999320812");
 
         waitForElement(Locator.tagContainingText("td", "Mouse Comment"));
-        clearAllFilters("SpecimenDetail", "MouseId");
+        specimenDetail.clearAllFilters("MouseId");
 
         log("verify copying and moving vial comments");
         specimenDetail.setFilter("GlobalUniqueId", "Equals", "AAA07XK5-01");

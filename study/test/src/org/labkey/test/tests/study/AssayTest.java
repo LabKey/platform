@@ -445,7 +445,8 @@ public class AssayTest extends AbstractAssayTest
         int totalTrues = getElementCount(trueLocator);
         assertEquals(4, totalTrues);
 
-        setFilter("Data", "SpecimenID", "Starts With", "AssayTestControl");
+        DataRegionTable region = new DataRegionTable("Data", this);
+        region.setFilter("SpecimenID", "Starts With", "AssayTestControl");
 
         // verify that there are no trues showing for the assay match column that were filtered out
         totalTrues = getElementCount(trueLocator);
@@ -453,7 +454,7 @@ public class AssayTest extends AbstractAssayTest
 
         log("Check out the data for all of the runs");
         clickAndWait(Locator.linkWithText("view results"));
-        clearAllFilters("Data", "SpecimenID");
+        region.clearAllFilters("SpecimenID");
         assertElementPresent(Locator.tagWithText("td", "7.0"));
         assertElementPresent(Locator.tagWithText("td", "18"));
 
@@ -463,7 +464,7 @@ public class AssayTest extends AbstractAssayTest
         int totalFalses = getElementCount(falseLocator);
         assertEquals(3, totalFalses);
 
-        setFilter("Data", "SpecimenID", "Does Not Start With", "BAQ");
+        region.setFilter("SpecimenID", "Does Not Start With", "BAQ");
 
         // verify the falses have been filtered out
         totalFalses = getElementCount(falseLocator);
@@ -514,7 +515,7 @@ public class AssayTest extends AbstractAssayTest
         clickAndWait(Locator.linkWithText("view results"));
 
         //select all the data rows and click publish
-        checkAllOnPage("Data");
+        (new DataRegionTable("Data", this)).checkAllOnPage();
         clickButton("Copy to Study");
 
         //the target study selected before was Study2, but the PI is not an editor there
@@ -590,7 +591,8 @@ public class AssayTest extends AbstractAssayTest
         clickAndWait(Locator.linkWithText("view copy-to-study history"));
 
         // Set a filter so that we know we're recalling SecondRun
-        setFilter("query", "Comment", "Starts With", "3 row(s) were copied to a study from the assay");
+        DataRegionTable region = new DataRegionTable("query", this);
+        region.setFilter("Comment", "Starts With", "3 row(s) were copied to a study from the assay");
         clickAndWait(Locator.linkWithText("details"));
         checkCheckbox(Locator.checkboxByName(".toggle"));
         prepForPageLoad();
@@ -600,7 +602,7 @@ public class AssayTest extends AbstractAssayTest
         assertTextPresent("row(s) were recalled to the assay: " + TEST_ASSAY);
 
         // Set a filter so that we know we're looking at the copy event for SecondRun again
-        setFilter("query", "Comment", "Starts With", "3 row(s) were copied to a study from the assay");
+        region.setFilter("Comment", "Starts With", "3 row(s) were copied to a study from the assay");
 
         // verify audit entry was adjusted
         clickAndWait(Locator.linkWithText("details"));
@@ -884,7 +886,8 @@ public class AssayTest extends AbstractAssayTest
         verifySpecimensPresent(3, 2, 0);
 
         clickAndWait(Locator.linkWithText("view results"));
-        clearAllFilters("Data", "SpecimenID");
+        DataRegionTable region = new DataRegionTable("Data", this);
+        region.clearAllFilters("SpecimenID");
         verifySpecimensPresent(3, 2, 3);
 
         log("Testing assay-study linkage");
@@ -899,7 +902,8 @@ public class AssayTest extends AbstractAssayTest
         verifySpecimensPresent(3, 2, 0);
 
         clickAndWait(Locator.linkWithText("view results"));
-        clearAllFilters("Data", "SpecimenID");
+        region = new DataRegionTable("Data", this);
+        region.clearAllFilters("SpecimenID");
         verifySpecimensPresent(3, 2, 3);
 
         // Verify that the correct copied to study column is present
