@@ -4,11 +4,11 @@
     <br>
     <br>
 </div>
-<table width="100%">
+<table width="100%" style="border-collapse: collapse">
     <tbody>
         <tr style="background:#F4F4F4;"><td colspan="2" style="border:solid 1px #808080; border-right: 0 none">
         ^createdByUser^ ^createdOrResponded^</td>
-        <td align="right" style="border:solid 1px #808080; border-right: 0 none">^messageDatetime^</td>
+        <td align="right" style="border:solid 1px #808080; border-left: 0 none">^messageDatetime^</td>
         </tr>
 
         <tr><td colspan="3" id="message-body">

@@ -28,6 +28,7 @@ import org.labkey.api.message.digest.MessageDigest;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
@@ -159,7 +160,7 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
             super(NAME, DEFAULT_SUBJECT, loadBody(), DEFAULT_DESCRIPTION, ContentType.HTML);
             setEditableScopes(EmailTemplate.Scope.SiteOrFolder);
 
-            _replacements.add(new ReplacementParam<String>("folderName", String.class, "Folder that user subscribed to", ContentType.HTML)
+            _replacements.add(new ReplacementParam<String>("folderName", String.class, "Folder that user subscribed to", ContentType.Plain)
             {
                 public String getValue(Container c)
                 {
@@ -251,13 +252,13 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
                         sb.append("<tr><td><a href=\"")
                                 .append(threadURL.getURIString())
                                 .append("\">View this ")
-                                .append(dailyDigestBean.conversationName)
+                                .append(PageFlowUtil.filter(dailyDigestBean.conversationName))
                                 .append("</a></td></tr>");
                     }
 
                     threadURL = AnnouncementsController.getThreadURL(dailyDigestBean.c, previousThread, ann.getRowId());
                     sb.append("<tr><td>&nbsp;</td></tr><tr style=\"background:#F4F4F4;\"><td colspan=\"2\" style=\"border: solid 1px #808080\">");
-                    sb.append(ann.getTitle()).append("</td></tr>");
+                    sb.append(PageFlowUtil.filter(ann.getTitle())).append("</td></tr>");
                 }
 
                 int attachmentCount = ann.getAttachments().size();
@@ -267,16 +268,14 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
                 if (null == ann.getParent())
                 {
                     sb.append(" created this ");
-                    sb.append(dailyDigestBean.conversationName);
+                    sb.append(PageFlowUtil.filter(dailyDigestBean.conversationName));
                 }
                 else
                 {
                     sb.append(" responded ");
                 }
                 sb.append(" at ");
-                DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-                String messageTime =  df.format(ann.getCreated());
-                sb.append(messageTime);
+                sb.append(DateUtil.formatDateTime(dailyDigestBean.c, ann.getCreated()));
 
                 if (attachmentCount > 0)
                 {
@@ -301,7 +300,7 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
                 sb.append("<tr><td><a href=\"");
                 sb.append(threadURL.getURIString());
                 sb.append("\">View this ");
-                sb.append(dailyDigestBean.conversationName);
+                sb.append(PageFlowUtil.filter(dailyDigestBean.conversationName));
                 sb.append("</a></td></tr>");
             }
             posts = sb.toString();

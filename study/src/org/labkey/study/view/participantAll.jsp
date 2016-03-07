@@ -443,7 +443,7 @@
                         boolean hasDescription = state != null && state.getDescription() != null && state.getDescription().length() > 0;
     %>
     <td class="<%=className%>">
-        <%= h(state == null ? "Unspecified" : state.getLabel())%><%= hasDescription ? helpPopup("QC State: " + state.getLabel(), state.getDescription()) : "" %>
+        <%= h(state == null ? "Unspecified" : state.getLabel())%><%= hasDescription ? helpPopup("QC State: " + state.getLabel(), state.getDescription()) : new _HtmlString("") %>
     </td>
     <%
                 countTD++;
@@ -597,7 +597,8 @@
 
     static CaseInsensitiveHashSet skipColumns = new CaseInsensitiveHashSet(
             "lsid", "sourcelsid", "sequencenum", "qcstate", "participantid",
-            "visitrowid", "dataset", "participantsequencenum", "created", "modified", "createdby", "modifiedby", "participantvisit");
+            "visitrowid", "dataset", "participantsequencenum", "created", "modified", "createdby", "modifiedby", "participantvisit",
+            "container", "_key", "datasets", "folder");
 
 
     ColumnInfo[] sortColumns(Collection<ColumnInfo> cols, Dataset dsd, ViewContext context)
@@ -624,14 +625,18 @@
         }
 
         // default list
-        String subjectcol = StudyService.get().getSubjectColumnName(getContainer());
+        String subjectColumnName = StudyService.get().getSubjectColumnName(getContainer());
+        String subjectVisitColumnName = StudyService.get().getSubjectVisitColumnName(getContainer());
         List<ColumnInfo> ret = new ArrayList<>(cols.size());
         for (ColumnInfo col : cols)
         {
             if (skipColumns.contains(col.getName()))
                 continue;
-            if (subjectcol.equalsIgnoreCase(col.getName()))
+            if (StringUtils.equalsIgnoreCase(subjectColumnName,col.getName()))
                 continue;
+            if (StringUtils.equalsIgnoreCase(subjectVisitColumnName,col.getName()))
+                continue;
+
             if (col.isMvIndicatorColumn())
                 continue;
             ret.add(col);

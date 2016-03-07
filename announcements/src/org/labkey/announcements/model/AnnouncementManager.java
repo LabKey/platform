@@ -940,7 +940,7 @@ public class AnnouncementManager
             super(NAME, DEFAULT_SUBJECT, loadBody(), DEFAULT_DESCRIPTION, ContentType.HTML);
             setEditableScopes(EmailTemplate.Scope.SiteOrFolder);
 
-            _replacements.add(new ReplacementParam<String>("createdByUser", String.class, "User that generated the message", ContentType.HTML)
+            _replacements.add(new ReplacementParam<String>("createdByUser", String.class, "User that generated the message", ContentType.Plain)
             {
                 public String getValue(Container c)
                 {
@@ -970,7 +970,7 @@ public class AnnouncementManager
                 }
             });
 
-            _replacements.add(new ReplacementParam<String>("messageUrl", String.class, "Link to the original message", ContentType.HTML)
+            _replacements.add(new ReplacementParam<String>("messageUrl", String.class, "Link to the original message", ContentType.Plain)
             {
                 public String getValue(Container c)
                 {
@@ -988,7 +988,7 @@ public class AnnouncementManager
                 }
             });
 
-            _replacements.add(new ReplacementParam<String>("messageSubject", String.class, "Message subject", ContentType.HTML)
+            _replacements.add(new ReplacementParam<String>("messageSubject", String.class, "Message subject", ContentType.Plain)
             {
                 public String getValue(Container c)
                 {
@@ -1054,7 +1054,7 @@ public class AnnouncementManager
                 sb.append("You have received this email because you are signed up to receive notifications about new posts to <a href=\"");
                 sb.append(PageFlowUtil.filter(notificationBean.boardURL.getURIString()));
                 sb.append("\">");
-                sb.append(PageFlowUtil.filter(notificationBean.boardURL.getURIString()));
+                sb.append(PageFlowUtil.filter(notificationBean.boardPath));
                 sb.append("</a> at <a href=\"");
                 sb.append(PageFlowUtil.filter(notificationBean.siteURL));
                 sb.append("\">");
@@ -1066,8 +1066,8 @@ public class AnnouncementManager
             else
             {
                 sb.append("<p>You have received this email because you are on the member list for this ");
-                sb.append(notificationBean.settings.getConversationName().toLowerCase());
-                sb.append(". If you no longer wish to receive these notifications you can remove yourself from the member list by ");
+                sb.append(PageFlowUtil.filter(notificationBean.settings.getConversationName().toLowerCase()));
+                sb.append(". You must login to respond to this message. If you no longer wish to receive these notifications you can remove yourself from the member list by ");
                 sb.append("<a href=\"");
                 sb.append(PageFlowUtil.filter(notificationBean.removeURL.getURIString()));
                 sb.append("\">clicking here</a>.</p>");
@@ -1092,7 +1092,7 @@ public class AnnouncementManager
                 {
                     sb.append(separator);
                     separator = ", ";
-                    sb.append("<a href=\"").append((attachment.getDownloadUrl(AnnouncementsController.DownloadAction.class))).append("\">").append((attachment.getName())).append("</a>");
+                    sb.append("<a href=\"").append((attachment.getDownloadUrl(AnnouncementsController.DownloadAction.class))).append("\">").append(PageFlowUtil.filter(attachment.getName())).append("</a>");
                 }
             }
             this.attachments = sb.toString();
