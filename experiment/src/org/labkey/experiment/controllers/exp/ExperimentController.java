@@ -151,6 +151,7 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.actions.UploadWizardAction;
+import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -190,6 +191,7 @@ import org.labkey.experiment.DerivedSamplePropertyHelper;
 import org.labkey.experiment.DotGraph;
 import org.labkey.experiment.ExperimentRunDisplayColumn;
 import org.labkey.experiment.ExperimentRunGraph;
+import org.labkey.experiment.ExpDataFileListener;
 import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.LineageGraphDisplayColumn;
 import org.labkey.experiment.MoveRunsBean;
@@ -1786,6 +1788,84 @@ public class ExperimentController extends SpringActionController
                 return new VBox(vbox, imageView);
             }
             return vbox;
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class CheckDataFileAction extends ApiAction<DataFileForm>
+    {
+        private ExpDataImpl _data;
+
+        @Override
+        public void validateForm(DataFileForm form, Errors errors)
+        {
+            _data = form.lookupData();
+            if (_data == null)
+            {
+                errors.reject("No ExpData found for id: " + form.getRowId());
+            }
+        }
+
+        @Override
+        public ApiResponse execute(DataFileForm form, BindException errors) throws Exception
+        {
+            File dataFile = _data.getFile();
+            boolean fileExists = _data.isFileOnDisk();
+            boolean fileExistsAtCurrent = false;
+            File newDataFile = null;
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("dataFileUrl", _data.getDataFileUrl());
+            response.put("fileExists", fileExists);
+
+            if (!fileExists)
+            {
+                PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(getContainer());
+                if (pipelineRoot != null && pipelineRoot.isValid() && dataFile != null)
+                {
+                    newDataFile = pipelineRoot.resolvePath("/" + AssayFileWriter.DIR_NAME + "/" + dataFile.getName());
+                    fileExistsAtCurrent = NetworkDrive.exists(newDataFile);
+                    response.put("fileExistsAtCurrent", fileExistsAtCurrent);
+                }
+            }
+
+            // if the current dataFileUrl does not exist on disk and we have the file at the current
+            // pipeline root /assaydata dir, fix the dataFileUrl value
+            if (form.isAttemptFilePathFix())
+            {
+                if (fileExistsAtCurrent)
+                {
+                    ExpDataFileListener fileListener = new ExpDataFileListener();
+                    fileListener.fileMoved(dataFile, newDataFile, getUser(), getContainer());
+                    response.put("filePathFixed", true);
+
+                    // update the ExpData object so that we can get the new dataFileUrl
+                    _data = form.lookupData();
+                    response.put("newDataFileUrl", _data.getDataFileUrl());
+                }
+                else
+                {
+                    response.put("filePathFixed", false);
+                }
+            }
+
+            response.put("success", true);
+            return response;
+        }
+    }
+
+    public static class DataFileForm extends DataForm
+    {
+        private boolean _attemptFilePathFix;
+
+        public boolean isAttemptFilePathFix()
+        {
+            return _attemptFilePathFix;
+        }
+
+        public void setAttemptFilePathFix(boolean attemptFilePathFix)
+        {
+            _attemptFilePathFix = attemptFilePathFix;
         }
     }
 
