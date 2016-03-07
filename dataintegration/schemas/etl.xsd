@@ -113,7 +113,9 @@
         </attribute>
         <attribute name="batchColumn" type="string" use="optional">
             <annotation>
-                <documentation>If specified, rather than count individual rows for the batchSize, use this as a sentinel field, and only increment the count of a current batch when the value in this field changes.</documentation>
+                <documentation>If specified, rather than count individual rows for the batchSize, use this as a sentinel field, and only increment the count of a current batch when the value in this field changes.
+                If the name of the relevant column is being mapped via columnTransforms, use the target name, not the source name.
+                </documentation>
             </annotation>
         </attribute>
     </complexType>
