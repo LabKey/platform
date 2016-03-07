@@ -1513,7 +1513,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     }
 
 
-    public static Collection<ColumnInfo> createFromDatabaseMetaData(String schemaName, SchemaTableInfo parentTable) throws SQLException
+    public static Collection<ColumnInfo> createFromDatabaseMetaData(String schemaName, SchemaTableInfo parentTable, @Nullable String columnNamePattern) throws SQLException
     {
          //Use linked hash map to preserve ordering...
         LinkedHashMap<String, ColumnInfo> colMap = new LinkedHashMap<>();
@@ -1528,7 +1528,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                 @Override
                 public ResultSet getResultSet(DatabaseMetaData dbmd, JdbcMetaDataLocator locator) throws SQLException
                 {
-                    return dbmd.getColumns(locator.getCatalogName(), locator.getSchemaName(), locator.getTableName(), null);
+                    return dbmd.getColumns(locator.getCatalogName(), locator.getSchemaName(), locator.getTableName(), columnNamePattern);
                 }
             });
 

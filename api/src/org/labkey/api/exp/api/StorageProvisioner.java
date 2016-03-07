@@ -58,8 +58,6 @@ import org.labkey.api.view.ActionURL;
 import org.springframework.validation.BindException;
 
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1389,9 +1387,8 @@ public class StorageProvisioner
             domain.save(new User());
             domain = PropertyService.get().getDomain(domain.getTypeId());
 
-            ColumnMetadata col = getJdbcColumnMetadata(domain, propBMvColumnName);
-            Assert.assertNotNull("enabled mvindicator causes mvindicator column to be provisioned",
-                    col);
+            ColumnInfo col = getJdbcColumnMetadata(domain, propBMvColumnName);
+            Assert.assertNotNull("enabled mvindicator causes mvindicator column to be provisioned", col);
         }
 
 
@@ -1486,41 +1483,19 @@ renaming a property AND toggling mvindicator on in the same change.
         }
 
 
-        // TODO: We have this (or something much like it) in the SqlDialect -- merge!
-        private ColumnMetadata getJdbcColumnMetadata(Domain domain, String column) throws Exception
+        private @Nullable ColumnInfo getJdbcColumnMetadata(Domain domain, String columnName) throws Exception
         {
-            String schema = domain.getDomainKind().getStorageSchemaName();
-            String table = domain.getStorageTableName();
+            DomainKind kind = domain.getDomainKind();
+            String schemaName = kind.getStorageSchemaName();
+            String tableName = domain.getStorageTableName();
 
-            try (Connection con = DbScope.getLabKeyScope().getConnection())
-            {
-                DatabaseMetaData dbmd = con.getMetaData();
+            DbSchema schema = kind.getScope().getSchema(schemaName, kind.getSchemaType());
+            SchemaTableInfo ti = schema.getTable(tableName);
 
-                try (ResultSet rs = dbmd.getColumns(null, schema, table, column))
-                {
-                    if (!rs.next())
-                        // no column matched the column, table and schema given
-                        return null;
+            // Slight overkill, given that tests merely verify column existence, but might as well reuse existing code
+            Collection<ColumnInfo> cols = ColumnInfo.createFromDatabaseMetaData(schemaName, ti, columnName);
 
-                    return new ColumnMetadata(rs.getString("IS_NULLABLE"), rs.getInt("COLUMN_SIZE"), rs.getInt("DATA_TYPE"), rs.getString("COLUMN_NAME"));
-                }
-            }
-        }
-
-        class ColumnMetadata
-        {
-            final public boolean nullable;
-            final public int size;
-            final public int sqlTypeInt;
-            final public String name;
-
-            ColumnMetadata(String nullable, int size, int sqlTypeInt, String name)
-            {
-                this.nullable = !nullable.equals("NO"); // spec claims it can be empty string, which we'd count as nullable.
-                this.size = size;
-                this.sqlTypeInt = sqlTypeInt;
-                this.name = name;
-            }
+            return cols.isEmpty() ? null : cols.iterator().next();
         }
     }
 }

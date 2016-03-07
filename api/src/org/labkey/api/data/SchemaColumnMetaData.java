@@ -29,7 +29,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -215,11 +214,8 @@ public class SchemaColumnMetaData
 
     private void loadColumnsFromMetaData(SchemaTableInfo ti) throws SQLException
     {
-        String schemaName = ti.getSchema().getName();
-
-        Collection<ColumnInfo> meta = ColumnInfo.createFromDatabaseMetaData(schemaName, ti);
-        for (ColumnInfo c : meta)
-            addColumn(c);
+        ColumnInfo.createFromDatabaseMetaData(ti.getSchema().getName(), ti, null /** all columns **/)
+            .forEach(this::addColumn);
     }
 
     private void loadUniqueIndices(SchemaTableInfo ti) throws SQLException
