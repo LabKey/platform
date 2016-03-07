@@ -102,7 +102,6 @@ import org.labkey.query.CustomViewUtil;
 import org.labkey.query.EditableCustomView;
 import org.labkey.query.ModuleCustomView;
 import org.labkey.query.QueryServiceImpl;
-import org.labkey.query.TableWriter;
 import org.labkey.query.TableXML;
 import org.labkey.query.audit.QueryAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
@@ -5900,7 +5899,7 @@ public class QueryController extends SpringActionController
         {
             HttpServletResponse httpResponse = getViewContext().getResponse();
             Container container = getContainer();
-            TableWriter writer = new TableWriter();
+            QueryServiceImpl svc = (QueryServiceImpl)QueryService.get();
 
             OutputStream outputStream = null;
             try
@@ -5910,7 +5909,7 @@ public class QueryController extends SpringActionController
 
                 try (ZipFile zip = new ZipFile(outputStream, true))
                 {
-                    writer.write(container, getUser(), zip, form);
+                    svc.writeTables(container, getUser(), zip, form.getSchemas(), form.getHeaderType());
                 }
 
                 PageFlowUtil.streamFileBytes(httpResponse, FileUtil.makeFileNameWithTimestamp(container.getName(), "tables.zip"), baos.toByteArray(), false);

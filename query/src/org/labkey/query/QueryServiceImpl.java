@@ -658,6 +658,12 @@ public class QueryServiceImpl extends QueryService
         return ret;
     }
 
+    public void writeTables(Container c, User user, VirtualFile dir, Map<String, List<Map<String, Object>>> schemas, ColumnHeaderType header) throws Exception
+    {
+        TableWriter writer = new TableWriter();
+        writer.write(c, user, dir, schemas, header);
+    }
+
     public int importCustomViews(User user, Container container, VirtualFile viewDir) throws XmlValidationException, IOException
     {
         QueryManager mgr = QueryManager.get();

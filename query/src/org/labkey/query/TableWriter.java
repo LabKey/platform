@@ -26,10 +26,7 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.Results;
 import org.labkey.api.data.ShowRows;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.TableInfo;
@@ -41,15 +38,11 @@ import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.query.SchemaTreeWalker;
-import org.labkey.api.query.SimpleSchemaTreeVisitor;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.XmlBeansUtil;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.data.xml.ColumnType;
@@ -66,7 +59,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -82,14 +74,14 @@ public class TableWriter
 
     public boolean write(Container c, User user, VirtualFile dir) throws Exception
     {
-        return write(c, user, dir, null);
+        return write(c, user, dir, null, null);
     }
 
-    public boolean write(Container c, User user, VirtualFile dir, ExportTablesForm form) throws Exception
+    public boolean write(Container c, User user, VirtualFile dir, Map<String, List<Map<String, Object>>> schemas, ColumnHeaderType header) throws Exception
     {
         QueryService queryService = QueryService.get();
         List<QueryView> views = new ArrayList<>();
-        if (null == form || null == form.getSchemas() || form.getSchemas().size() == 0)
+        if (null == schemas || schemas.size() == 0)
         {
             // TBD
 //            // If no form, get all user queries in container
@@ -98,7 +90,7 @@ public class TableWriter
         }
         else
         {
-            Map<String, List<Map<String, Object>>> schemaMap = form.getSchemas();
+            Map<String, List<Map<String, Object>>> schemaMap = schemas;
 
             for (String schemaName : schemaMap.keySet())
             {
@@ -173,8 +165,8 @@ public class TableWriter
                 tsv.setExportAsWebPage(false);
                 tsv.setDelimiterCharacter(TSVWriter.DELIM.TAB);
                 tsv.setQuoteCharacter(TSVWriter.QUOTE.DOUBLE);
-                if (form != null && form.getHeaderType() != null)
-                    tsv.setColumnHeaderType(form.getHeaderType());
+                if (header != null)
+                    tsv.setColumnHeaderType(header);
 
                 String name = view.getQueryDef().getName();
                 PrintWriter out = dir.getPrintWriter(name + ".tsv");
@@ -328,7 +320,7 @@ public class TableWriter
                 try (ZipFile zip = new ZipFile(file, FileUtil.makeFileNameWithTimestamp("JunitTest", "tables.zip")))
                 {
                     TableWriter tableWriter = new TableWriter();
-                    tableWriter.write(container, testContext.getUser(), zip, form);
+                    tableWriter.write(container, testContext.getUser(), zip, form.getSchemas(), form.getHeaderType());
                 }
             }
             catch (Exception e)

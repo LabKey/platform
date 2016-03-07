@@ -94,6 +94,8 @@
     <div>Participants: <%=sessionGroup.getParticipantIds().length%></div>
 <% } %>
 
+<div id="summaryData"></div>
+
 <br>
 <% if (finderURL != null) { %><%=this.textLink("data finder", finderURL)%><% } %>
 
