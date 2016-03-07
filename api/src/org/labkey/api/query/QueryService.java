@@ -18,6 +18,7 @@ package org.labkey.api.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -117,6 +118,8 @@ abstract public class QueryService
     abstract public UserSchema createLinkedSchema(User user, Container container, String name, String sourceContainerId, String sourceSchemaName,
                                                   String metadata, String tables, String template);
     abstract public void deleteLinkedSchema(User user, Container container, String name);
+
+    abstract public void writeTables(Container c, User user, VirtualFile dir, Map<String, List<Map<String, Object>>> schemas, ColumnHeaderType header) throws Exception;
 
     /**
      * Get the list of custom views.

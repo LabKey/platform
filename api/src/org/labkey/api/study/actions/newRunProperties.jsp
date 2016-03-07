@@ -39,7 +39,7 @@
     {
 %>
         <tr>
-            <td class="labkey-error" colspan="2"><%= bean.getTransformResult().getWarnings() %></td>
+            <td class="labkey-error" colspan="2"><%= text(bean.getTransformResult().getWarnings()) %></td>
         </tr>
         <tr>
             <td><div id="overrideBtn"></div></td>
