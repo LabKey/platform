@@ -882,10 +882,9 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
     {
         final DataIteratorContext _context;
         final Integer _lsidCol;
-        Integer _parentCol;
-        String _parentColName;
-        final Set<String> _allParentNames;
-        final Map<String, Set<String>> _parentNames;
+        final Map<Integer, String> _parentCols;
+        // Map from Data LSID to Set of (parentColName, parentName)
+        final Map<String, Set<Pair<String, String>>> _parentNames;
         final User _user;
 
         protected DerivationDataIterator(DataIterator di, DataIteratorContext context, User user)
@@ -895,8 +894,8 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
             _lsidCol = map.get("lsid");
-            _allParentNames = new HashSet<>();
             _parentNames = new LinkedHashMap<>();
+            _parentCols = new HashMap<>();
             _user = user;
 
             for (Map.Entry<String, Integer> entry : map.entrySet())
@@ -904,9 +903,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                 if (entry.getKey().toLowerCase().startsWith(UploadSamplesHelper.DATA_INPUT_PARENT.toLowerCase()) ||
                     entry.getKey().toLowerCase().startsWith(UploadSamplesHelper.MATERIAL_INPUT_PARENT.toLowerCase()))
                 {
-                    _parentCol = entry.getValue();
-                    _parentColName = entry.getKey();
-                    break;
+                    _parentCols.put(entry.getValue(), entry.getKey());
                 }
             }
         }
@@ -917,19 +914,26 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             boolean hasNext = super.next();
 
             // For each iteration, collect the parent col values
-            if (_parentCol != null)
+            if (!_parentCols.isEmpty())
             {
                 String lsid = (String) get(_lsidCol);
-                String parent = (String) get(_parentCol);
-                if (parent != null)
+                Set<Pair<String,String>> allParts = new HashSet<>();
+                for (Integer parentCol : _parentCols.keySet())
                 {
-                    Set<String> parts = Arrays.stream(parent.split(","))
-                            .map(String::trim)
-                            .filter(s -> !s.isEmpty())
-                            .collect(Collectors.toSet());
-                    _allParentNames.addAll(parts);
-                    _parentNames.put(lsid, parts);
+                    String parent = (String) get(parentCol);
+                    if (parent != null)
+                    {
+                        String parentColName = _parentCols.get(parentCol);
+                        Set<Pair<String, String>> parts = Arrays.stream(parent.split(","))
+                                .map(String::trim)
+                                .filter(s -> !s.isEmpty())
+                                .map(s -> Pair.of(parentColName, s))
+                                .collect(Collectors.toSet());
+
+                        allParts.addAll(parts);
+                    }
                 }
+                _parentNames.put(lsid, allParts);
             }
 
             if (!hasNext)
@@ -937,13 +941,13 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                 try
                 {
                     List<SimpleRunRecord> runRecords = new ArrayList<>();
-                    for (Map.Entry<String, Set<String>> entry : _parentNames.entrySet())
+                    for (Map.Entry<String, Set<Pair<String,String>>> entry : _parentNames.entrySet())
                     {
-                        Map<ExpProtocolOutput, String> parentMap = new HashMap<>();
-                        for (String name : entry.getValue())
-                        {
-                            UploadSamplesHelper.resolveParentInputs(_user, getContainer(), _parentColName, name, null, parentMap);
-                        }
+                        String lsid = entry.getKey();
+                        Set<Pair<String, String>> parentNames = entry.getValue();
+
+                        Map<ExpProtocolOutput, String> parentMap =
+                                UploadSamplesHelper.resolveParentInputs(_user, getContainer(), parentNames, null);
 
                         if (!parentMap.isEmpty())
                         {
@@ -960,7 +964,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                             }
 
                             // get the output data
-                            ExpData outputData = ExperimentService.get().getExpData(entry.getKey());
+                            ExpData outputData = ExperimentService.get().getExpData(lsid);
                             if (outputData != null)
                             {
                                 runRecords.add(new UploadSamplesHelper.UploadSampleRunRecord(parentMaterialMap, Collections.emptyMap(),
