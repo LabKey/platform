@@ -2485,6 +2485,12 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 geom.boxMouseOutFnAes.value(d3.event, this, data);
             });
         }
+        if (geom.boxMouseUpFnAes) {
+            boxWrappers.on('mouseup', function(data) {
+                geom.boxMouseUpFnAes.value(d3.event, this, data);
+            });
+        }
+
     };
 
     var renderDataspacePoints = function(selection, plot, geom, layer) {
@@ -2664,6 +2670,15 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
         else {
             selection.on('mouseout', null);
+        }
+
+        if (geom.mouseUpFnAes) {
+            selection.on('mouseup', function(data) {
+                geom.mouseUpFnAes.value(d3.event, data, layer, this);
+            });
+        }
+        else {
+            selection.on('mouseup', null);
         }
     };
 

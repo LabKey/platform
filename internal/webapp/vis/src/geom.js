@@ -144,6 +144,7 @@ LABKEY.vis.Geom.Point.prototype.render = function(renderer, grid, scales, data, 
     this.pointClickFnAes = layerAes.pointClickFn ? layerAes.pointClickFn : parentAes.pointClickFn;
     this.mouseOverFnAes = layerAes.mouseOverFn ? layerAes.mouseOverFn : parentAes.mouseOverFn;
     this.mouseOutFnAes = layerAes.mouseOutFn ? layerAes.mouseOutFn : parentAes.mouseOutFn;
+    this.mouseUpFnAes = layerAes.mouseUpFn ? layerAes.mouseUpFn : parentAes.mouseUpFn;
 
     renderer.renderPointGeom(data, this);
     return true;
@@ -179,6 +180,7 @@ LABKEY.vis.Geom.Bin.prototype.render = function(renderer, grid, scales, data, la
 
     this.mouseOverFnAes = layerAes.mouseOverFn ? layerAes.mouseOverFn : parentAes.mouseOverFn;
     this.mouseOutFnAes = layerAes.mouseOutFn ? layerAes.mouseOutFn : parentAes.mouseOutFn;
+    this.mouseUpFnAes = layerAes.mouseUpFn ? layerAes.mouseUpFn : parentAes.mouseUpFn;
 
     renderer.renderBinGeom(data, this);
     return true;
@@ -376,8 +378,10 @@ LABKEY.vis.Geom.DataspaceBoxPlot.prototype.render = function(renderer, grid, sca
     this.sizeScale = scales.size;
     this.mouseOverFnAes = layerAes.mouseOverFn ? layerAes.mouseOverFn : parentAes.mouseOverFn;
     this.mouseOutFnAes = layerAes.mouseOutFn ? layerAes.mouseOutFn : parentAes.mouseOutFn;
+    this.mouseUpFnAes = layerAes.mouseUpFn ? layerAes.mouseUpFn : parentAes.mouseUpFn;
     this.boxMouseOverFnAes = layerAes.boxMouseOverFn ? layerAes.boxMouseOverFn : parentAes.boxMouseOverFn;
     this.boxMouseOutFnAes = layerAes.boxMouseOutFn ? layerAes.boxMouseOutFn : parentAes.boxMouseOutFn;
+    this.boxMouseUpFnAes = layerAes.boxMouseUpFn ? layerAes.boxMouseUpFn : parentAes.boxMouseUpFn;
 
     renderer.renderDataspaceBoxPlotGeom(data, this);
     return true;

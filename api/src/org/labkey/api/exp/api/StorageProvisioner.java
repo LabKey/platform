@@ -772,7 +772,7 @@ public class StorageProvisioner
                 throw new RuntimeException("Duplicate property descriptor name found for: " + tableName + "." + p.getName());
             }
 
-            ColumnInfo c = ti.getColumn(p.getName());
+            ColumnInfo c = ti.getColumn(p.getPropertyDescriptor().getStorageColumnName());
 
             if (null == c)
             {
