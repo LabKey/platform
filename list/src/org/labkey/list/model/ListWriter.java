@@ -40,6 +40,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileNameUniquifier;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.XmlBeansUtil;
@@ -299,7 +300,14 @@ public class ListWriter
 
                 // If the column is MV enabled, export the data in the indicator column as well
                 if (!metaData && column.isMvEnabled())
-                    columns.add(tinfo.getColumn(column.getMvColumnName()));
+                {
+                    ColumnInfo mvIndicator = tinfo.getColumn(column.getMvColumnName());
+
+                    if (null == mvIndicator)
+                        ExceptionUtil.logExceptionToMothership(null, new IllegalStateException("MV indicator column not found: " + tinfo.getName() + "|" + column.getMvColumnName()));
+                    else
+                        columns.add(mvIndicator);
+                }
             }
         }
 

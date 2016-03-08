@@ -77,8 +77,8 @@
             <td></td><td>
             <%= button("Save").submit(true) %>
             <%= button("Cancel").href(bean.getReturnURLHelper(urlProvider(AdminUrls.class).getAdminConsoleURL())) %>
-            <%= button("Reset to Default Template").submit(true).onClick("this.form.action='deleteCustomEmail.view';").attributes("id='siteResetButton' style='display: none;'")%>
-            <%= button("Delete Folder-Level Template").submit(true).onClick("this.form.action='deleteCustomEmail.view';").attributes("id='folderResetButton' style='display: none;'")%>
+            <%= button("Reset to Default Template").submit(true).onClick("this.form.action=" + qh(buildURL(AdminController.DeleteCustomEmailAction.class)) + ";").attributes("id='siteResetButton' style='display: none;'")%>
+            <%= button("Delete Folder-Level Template").submit(true).onClick("this.form.action=" + qh(buildURL(AdminController.DeleteCustomEmailAction.class)) + ";").attributes("id='folderResetButton' style='display: none;'")%>
         </tr>
         <tr><td>&nbsp;</td></tr>
         <tr><td colspan="2"><hr></td></tr>

@@ -167,7 +167,7 @@ if (null != webThemeErrors) { %>
             <%
             if (selectedTheme != null && bean.themes.size() > 1)
             {%>
-                <%= button("Delete").submit(true).onClick("var sure = confirm('Are you sure you want to delete the theme named " + request.getParameter("themeName") + "?'); if (sure) document.themeForm.action = 'deleteWebTheme.view'; return sure;").attributes("name=\"Delete\"") %>&nbsp;
+                <%= button("Delete").submit(true).onClick("var sure = confirm('Are you sure you want to delete the theme named " + request.getParameter("themeName") + "?'); if (sure) document.themeForm.action = " + qh(buildURL(AdminController.DeleteWebThemeAction.class)) + "; return sure;").attributes("name=\"Delete\"") %>&nbsp;
             <%}
         }
         else

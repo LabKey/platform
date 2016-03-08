@@ -100,7 +100,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class AssayManager implements AssayService.Interface
 {
-    private static Cache<GUID, List<ExpProtocol>> PROTOCOL_CACHE = CacheManager.getCache(100, TimeUnit.HOURS.toMillis(1), "AssayProtocols");
+    private static Cache<GUID, List<ExpProtocol>> PROTOCOL_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "AssayProtocols");
 
     private List<AssayProvider> _providers = new ArrayList<>();
     /** Synchronization lock object for ensuring that batch names are unique */

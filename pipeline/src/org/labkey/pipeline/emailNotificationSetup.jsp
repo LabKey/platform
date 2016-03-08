@@ -184,7 +184,7 @@
     <table>
         <tr>
             <td><%= button("Update").submit(true) %>
-            <%= button("Reset to Default").submit(true).onClick("this.form.action='resetEmailNotification.view'") %></td>
+            <%= button("Reset to Default").submit(true).onClick("this.form.action=" + qh(buildURL(PipelineController.ResetEmailNotificationAction.class)) + ";") %></td>
         </tr>
         <tr><td></td></tr>
     </table>
