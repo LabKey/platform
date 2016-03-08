@@ -525,6 +525,10 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             ColumnInfo classIdCol = expData.getColumn("classId");
             step0.addColumn(classIdCol, new SimpleTranslator.ConstantColumn(_dataClass.getRowId()));
 
+            // Ensure we have a cpasType column and it is of the right value
+            ColumnInfo cpasTypeCol = expData.getColumn("cpasType");
+            step0.addColumn(cpasTypeCol, new SimpleTranslator.ConstantColumn(_dataClass.getLSID()));
+
             // Ensure we have a name column -- makes the NameExpressionDataIterator easier
             if (!DataIteratorUtil.createColumnNameMap(step0).containsKey("name"))
             {

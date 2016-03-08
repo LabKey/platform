@@ -337,7 +337,9 @@ public class ExpDataClassDataTestCase
         final String domainName = "mydataclass";
 
         Set<Module> activeModules = new HashSet<>(c.getActiveModules());
-        activeModules.add(ModuleLoader.getInstance().getModule("simpletest"));
+        Module m = ModuleLoader.getInstance().getModule("simpletest");
+        Assert.assertNotNull("This test requires 'simplemodule' to be deployed", m);
+        activeModules.add(m);
         c.setActiveModules(activeModules);
 
         DomainTemplateGroup templateGroup = DomainTemplateGroup.get(c, "TestingFromTemplate");

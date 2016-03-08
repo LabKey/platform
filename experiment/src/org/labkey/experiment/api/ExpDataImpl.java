@@ -26,6 +26,7 @@ import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -119,12 +120,16 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
 
     public void save(User user)
     {
+        // Replace the default "Data" cpastype if the Data belongs to a DataClass
+        ExpDataClassImpl dataClass = getDataClass();
+        if (dataClass != null && DEFAULT_CPAS_TYPE.equals(getCpasType()))
+           setCpasType(dataClass.getLSID());
+
         boolean isNew = getRowId() == 0;
         save(user, ExperimentServiceImpl.get().getTinfoData());
 
         if (isNew)
         {
-            ExpDataClassImpl dataClass = getDataClass();
             if (dataClass != null)
             {
                 Map<String, Object> map = new HashMap<>();
@@ -212,7 +217,14 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
     public String getCpasType()
     {
         String result = _object.getCpasType();
-        return result == null ? ExpData.DEFAULT_CPAS_TYPE : result;
+        if (result != null)
+            return result;
+
+        ExpDataClass dataClass = getDataClass();
+        if (dataClass != null)
+            return dataClass.getLSID();
+
+        return ExpData.DEFAULT_CPAS_TYPE;
     }
 
     public void setGenerated(boolean generated)
@@ -240,11 +252,8 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
     public void importDataFile(PipelineJob job, XarSource xarSource) throws ExperimentException
     {
         String dataFileURL = getDataFileUrl();
-
         if (dataFileURL == null)
-        {
             return;
-        }
 
         if (xarSource.shouldIgnoreDataFiles())
         {
