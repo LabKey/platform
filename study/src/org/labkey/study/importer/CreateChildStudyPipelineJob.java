@@ -267,7 +267,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
             if (_errors.hasErrors())
             {
                 StringBuilder sb = new StringBuilder();
-                for (ObjectError error : (List<ObjectError>)_errors.getAllErrors())
+                for (ObjectError error : _errors.getAllErrors())
                 {
                     sb.append(error.getDefaultMessage()).append('\n');
                 }
@@ -327,19 +327,13 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
             dataTypes.add(StudyArchiveDataTypes.TREATMENT_DATA);
         }
 
-        if(folderProps != null)
+        if (folderProps != null)
         {
-            for(int i = 0; i < folderProps.length; i++)
-            {
-                dataTypes.add(folderProps[i]);
-            }
+            Collections.addAll(dataTypes, folderProps);
         }
-        if(studyProps != null)
+        if (studyProps != null)
         {
-            for(int i = 0; i < studyProps.length; i++)
-            {
-                dataTypes.add(studyProps[i]);
-            }
+            Collections.addAll(dataTypes, studyProps);
         }
 
         if (form.getReports() != null)
@@ -373,8 +367,6 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         {
             new CohortImporter().process(importContext, studyDir, errors);
         }
-
-
     }
 
     private void importSpecimenSettings(BindException errors, VirtualFile vf, StudyImportContext importContext) throws Exception

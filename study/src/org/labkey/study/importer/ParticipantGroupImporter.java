@@ -111,7 +111,7 @@ public class ParticipantGroupImporter implements InternalStudyImporter
                     pc.setLabel(category.getLabel());
                     pc.setType(category.getType());
 
-                   if (category.getOwnerId() != null)
+                    if (category.getOwnerId() != null)
                         pc.setOwnerId(category.getOwnerId().intValue());
 
                     pc.setAutoUpdate(category.getAutoUpdate());
