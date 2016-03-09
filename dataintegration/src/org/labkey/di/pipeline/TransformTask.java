@@ -375,8 +375,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
             int rowCount = tsv.getDataRowCount();
             if (rowCount == 0)
                 getJob().getParameters().put("etlOutputHadRows", "false");
-            String plural = outputFiles.size() == 1 ? "" : "s";
-            log.info("Wrote " + rowCount + " total rows to file" + plural +":\n");
+            log.info("Wrote " + rowCount + " total rows to file" + (outputFiles.size() == 1 ? "" : "s") +":\n");
             outputFiles.forEach((file) ->
                 {
                     _txJob.getOutputFileBaseNames().add(StringUtils.substringBefore(file.getName(), extension));
