@@ -149,6 +149,7 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
         }
         catch (SQLException ex)
         {
+            closeResults();
             throw new RuntimeSQLException(ex);
         }
     }
@@ -221,6 +222,7 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
         }
         catch (SQLException ex)
         {
+            closeResults();
             throw new RuntimeSQLException(ex);
         }
         closeBatchFile(true);
@@ -251,8 +253,13 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
     @Override
     public void close() throws IOException
     {
-        if (_rs != null) try { _rs.close(); } catch (SQLException e) {}
+        closeResults();
         super.close();
+    }
+
+    private void closeResults()
+    {
+        if (_rs != null) try { _rs.close(); } catch (SQLException e) {}
     }
 
     protected void writeRow(RenderContext ctx, List<DisplayColumn> displayColumns)

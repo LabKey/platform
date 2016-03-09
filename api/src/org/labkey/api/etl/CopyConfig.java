@@ -91,7 +91,7 @@ public class CopyConfig
         {
             if (TargetTypes.file.equals(getTargetType()))
             {
-                _targetString = getTargetFileProperties().get(TargetFileProperties.baseName) + getTargetFileProperties().get(TargetFileProperties.extension);;
+                _targetString = getTargetFileProperties().get(TargetFileProperties.baseName) + getTargetFileProperties().get(TargetFileProperties.extension);
             }
             else _targetString = getTargetSchema().toString() + "." + getTargetQuery();
         }
