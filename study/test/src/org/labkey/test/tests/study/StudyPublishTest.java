@@ -17,12 +17,20 @@ package org.labkey.test.tests.study;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.experimental.categories.Category;
+import org.labkey.remoteapi.CommandException;
+import org.labkey.remoteapi.Connection;
+import org.labkey.remoteapi.query.Filter;
+import org.labkey.remoteapi.query.SelectRowsCommand;
+import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.test.Locator;
 import org.labkey.test.Locators;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
+import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.DailyA;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
@@ -34,6 +42,7 @@ import org.labkey.test.util.SearchHelper;
 import org.openqa.selenium.WebElement;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -272,15 +281,16 @@ public class StudyPublishTest extends StudyProtectedExportTest
                                         final boolean includeSpecimens, final boolean refreshSpecimens, final int expectedSpecimenCount,
                                         final boolean removeProtected, final boolean shiftDates, final boolean alternateIDs, final boolean maskClinicNames)
     {
-        SearchHelper searchHelper = new SearchHelper(this);
         // Verify alternate IDs (or lack thereof)
+        new SearchHelper(this).searchForSubjects(String.join(" ", ptids));
+        String searchResults = getText(Locator.id("searchResults"));
+
         for (String ptid : ptids)
         {
-            searchHelper.searchForSubjects(ptid);
             if (alternateIDs)
-                assertFalse("Published study contains non-alternate ID: " + ptid, getText(Locator.id("searchResults")).contains(name));
+                assertFalse("Published study contains non-alternate ID: " + ptid, searchResults.contains(name));
             else
-                assertTrue("Published study doesn't contain ID: " + ptid, getText(Locator.id("searchResults")).contains(name));
+                assertTrue("Published study doesn't contain ID: " + ptid, searchResults.contains(name));
         }
 
         // Go to published study
@@ -359,10 +369,8 @@ public class StudyPublishTest extends StudyProtectedExportTest
             assertEquals("Unexpected number of visits", visits.length, getElementCount(Locator.xpath("//table[@id = 'visits']/tbody/tr")) - 1);
         else // All visits were published
             assertEquals("Unexpected number of visits", visitCount, getElementCount(Locator.xpath("//table[@id = 'visits']/tbody/tr")) - 1);
-        for (String visit: visits)
-        {
-            assertTextPresent(visit);
-        }
+
+        assertTextPresent(visits);
 
         if (Arrays.asList(visits).contains(DATE_SHIFT_REQUIRED_VISIT))
         {
@@ -434,10 +442,7 @@ public class StudyPublishTest extends StudyProtectedExportTest
                 }
                 else
                 {
-                    for (String dataset : datasets)
-                    {
-                        assertTextNotPresent(dataset);
-                    }
+                    assertTextNotPresent(datasets);
                 }
 
                 popLocation();
@@ -448,22 +453,18 @@ public class StudyPublishTest extends StudyProtectedExportTest
 
         }
 
-        if(views.length > 0)
+        for (final String view : views)
         {
-            assertTextPresent(views);
-            for (final String view : views)
-            {
-                // Verify the views.
-                pushLocation();
-                clickAndWait(Locator.linkWithText(view));
+            // Verify the views.
+            pushLocation();
+            clickAndWait(Locator.linkWithText(view));
 
-                // Do some sort of check.
-                assertTextPresent(view);
+            // Do some sort of check.
+            assertTextPresent(view);
 
-                popLocation();
-                _extHelper.waitForExt3MaskToDisappear(WAIT_FOR_JAVASCRIPT);
-                waitForText(views[0]);
-            }
+            popLocation();
+            _extHelper.waitForExt3MaskToDisappear(WAIT_FOR_JAVASCRIPT);
+            waitForText(views[0]);
         }
 
         // Verify published lists
@@ -475,10 +476,22 @@ public class StudyPublishTest extends StudyProtectedExportTest
             assertEquals("Unexpected number of lists", lists.length, dr.getDataRowCount());
             for (String list : lists)
             {
-                pushLocation();
-                clickAndWait(Locator.linkWithText(list));
-                assertTitleContains(list);
-                popLocation();
+                String listHref = Locator.linkWithText(list).findElement(getDriver()).getAttribute("href");
+                int response = 0;
+                try
+                {
+                    response = WebTestHelper.getHttpGetResponse(listHref);
+                }
+                catch (IOException e)
+                {
+                    e.printStackTrace();
+                }
+                if (HttpStatus.SC_OK != response)
+                {
+                    // Fail with a useful screenshot
+                    clickAndWait(Locator.linkWithText(list));
+                    fail("Bad response from list: " + list);
+                }
             }
         }
 
@@ -501,9 +514,27 @@ public class StudyPublishTest extends StudyProtectedExportTest
             DataRegionTable t1 = new DataRegionTable("SpecimenDetail", this);
             for (String field : SPECIMEN_PROTECTED_FIELDS)
             {
-                t1.setFilter(field, (removeProtected ? "Is Not Blank" : "Is Blank"), null);
-                assertTextPresent("No data to show.");
-                t1.clearFilter(field);
+                SelectRowsCommand command = new SelectRowsCommand("study", "SpecimenDetail");
+                command.setFilters(Arrays.asList(new Filter(field, null, removeProtected ? Filter.Operator.NONBLANK : Filter.Operator.ISBLANK)));
+                Connection connection = createDefaultConnection(true);
+                SelectRowsResponse response;
+
+                try
+                {
+                    response = command.execute(connection, getCurrentContainerPath());
+                }
+                catch (IOException | CommandException e)
+                {
+                    throw new RuntimeException(e);
+                }
+
+                if (response.getRowCount().intValue() > 0)
+                {
+                    // Fail with a useful screenshot
+                    t1.setFilter(field, (removeProtected ? "Is Not Blank" : "Is Blank"), null);
+                    assertTextPresent("No data to show.");
+                    fail("This should be unreachable. SelectRows response had unexpected rows but DataRegion did not");
+                }
             }
 
             // verify that the vials are filtered by the correct ptids and visits
