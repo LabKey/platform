@@ -53,7 +53,7 @@ public class TableChange
         this(domain, changeType, domain.getStorageTableName());
     }
 
-    /** Only for cases where domain doesn't have a storage table name, e.g., create table **/
+    /** Call directly only in cases where domain doesn't have a storage table name, e.g., create table **/
     public TableChange(Domain domain, ChangeType changeType, String tableName)
     {
         _domain = domain;
