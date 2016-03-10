@@ -21,7 +21,7 @@ package org.labkey.api.admin;
  */
 public interface FolderImporterFactory
 {
-    public static int DEFAULT_PRIORITY = 50;
+    int DEFAULT_PRIORITY = 50;
 
     FolderImporter create();
 
