@@ -6258,7 +6258,7 @@ public class QueryController extends SpringActionController
 
 
     // could make this requires(ReadPermission), but it could be pretty easy to abuse, or maybe RequiresLogin && ReadPermission
-    @RequiresSiteAdmin
+    @RequiresLogin
     public class TestSQLAction extends SimpleViewAction
     {
         @Override
