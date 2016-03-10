@@ -28,7 +28,7 @@ import java.sql.SQLException;
 */
 public interface SpecimenJobSupport
 {
-    /** A specimen archive as original delivered. Might be transformed before import */
+    /** A specimen archive as originally delivered. Might be transformed before import */
     File getSpecimenArchive() throws ImportException, SQLException;
     boolean isMerge();
 }

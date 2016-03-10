@@ -286,9 +286,9 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         {
             if (!success && _destFolderCreated)
                 ContainerManager.delete(_dstContainer, getUser());
-
-            return success;
         }
+
+        return success;
     }
 
     private void importParticipantGroups(VirtualFile vf, BindException errors, StudyImportContext importContext) throws Exception
@@ -527,7 +527,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                         if (datasetErrors.hasErrors())
                         {
                             StringBuilder sb = new StringBuilder();
-                            for (ObjectError error : (List<ObjectError>)datasetErrors.getAllErrors())
+                            for (ObjectError error : datasetErrors.getAllErrors())
                                 sb.append(error.getDefaultMessage()).append('\n');
 
                             error(String.format("Unable to create dataset '%s' : %s", def.getName(), sb.toString()));
