@@ -1271,10 +1271,15 @@ public class Query
         // METHODS
         new SqlTest("SELECT ROUND(R.d) AS _d, ROUND(R.d,1) AS _rnd, ROUND(3.1415,2) AS _pi, CONVERT(R.d,SQL_VARCHAR) AS _str FROM R", 4, Rsize),
         new MethodSqlTest("SELECT ABS(-1) FROM R WHERE rowid=1", JdbcType.INTEGER, 1),
-            // acos
-//        new MethodSqlTest("SELECT AGE(CAST('1/2/2003' AS SQL_TIMESTAMP),CAST('1/2/2004' AS SQL_TIMESTAMP),SQL_TSI_YEAR) FROM R WHERE rowid=1", JdbcType.INTEGER, 1),
-//        new MethodSqlTest("SELECT AGE(CAST('1/2/2003' AS SQL_TIMESTAMP),CAST('1/3/2004' AS SQL_TSI_MONTH),SQL_TSI_YEAR) FROM R WHERE rowid=1", JdbcType.INTEGER, 13),
-            // asin, atan, atan2, cast
+            // TODO: acos
+            // TODO: asin
+            // TODO: atan
+            // TODO: atan2
+        new MethodSqlTest("SELECT CAST(AGE(CAST('02 Jan 2003' AS TIMESTAMP),CAST('02 Jan 2004' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 1),
+        new MethodSqlTest("SELECT CAST(AGE(CAST('02 Jan 2004' AS TIMESTAMP),CAST('02 Jan 2003' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, -1),
+        new MethodSqlTest("SELECT CAST(AGE(CAST('02 Jan 2003' AS TIMESTAMP),CAST('03 Jan 2004' AS TIMESTAMP), SQL_TSI_YEAR) AS INTEGER)", JdbcType.INTEGER, 1),
+        new MethodSqlTest("SELECT CAST(AGE(CAST('02 Jan 2003' AS TIMESTAMP),CAST('01 Feb 2004' AS TIMESTAMP), SQL_TSI_MONTH) AS INTEGER)", JdbcType.INTEGER, 12),
+        new MethodSqlTest("SELECT CAST(AGE(CAST('02 Jan 2003' AS TIMESTAMP),CAST('02 Feb 2004' AS TIMESTAMP), SQL_TSI_MONTH) AS INTEGER)", JdbcType.INTEGER, 13),
         new MethodSqlTest("SELECT CAST('1' AS SQL_INTEGER) ", JdbcType.INTEGER, 1),
         new MethodSqlTest("SELECT CAST('1' AS INTEGER) ", JdbcType.INTEGER, 1),
         new MethodSqlTest("SELECT CAST('1.5' AS DOUBLE) ", JdbcType.DOUBLE, 1.5),
@@ -1290,11 +1295,15 @@ public class Query
             }
         }),
         new MethodSqlTest("SELECT CONVERT(123,VARCHAR) FROM R WHERE rowid=1", JdbcType.VARCHAR, "123"),
-            // cos, cot, curdate,
-//        new MethodSqlTest("SELECT DAYOFMONTH(CAST('1/1/2001' AS TIMESTAMP)) FROM R WHERE rowid=1", JdbcType.INTEGER, 1),
-//        new MethodSqlTest("SELECT DAYOFWEEK(CAST('1/1/2001' AS TIMESTAMP)) FROM R WHERE rowid=1", JdbcType.INTEGER, 1),
-//        new MethodSqlTest("SELECT DAYOFYEAR(CAST('1/1/2001' AS TIMESTAMP)) FROM R WHERE rowid=1", JdbcType.INTEGER, 1),
-            // degrees, exp, floor, hour
+            // TODO: cos
+            // TODO: cot
+            // TODO: curdate
+        new MethodSqlTest("SELECT DAYOFMONTH(CAST('2/2/2001' AS TIMESTAMP)) FROM R WHERE rowid=1", JdbcType.INTEGER, 2),
+        new MethodSqlTest("SELECT DAYOFWEEK(CAST('2/2/2001' AS TIMESTAMP)) FROM R WHERE rowid=1", JdbcType.INTEGER, 6),
+        new MethodSqlTest("SELECT DAYOFYEAR(CAST('2/2/2001' AS TIMESTAMP)) FROM R WHERE rowid=1", JdbcType.INTEGER, 33),
+            // TODO: degrees
+            // TODO: exp
+            // TODO: floor
         new MethodSqlTest("SELECT folderName()", JdbcType.VARCHAR, new Callable(){
             @Override
             public Object call() throws Exception
@@ -1309,6 +1318,7 @@ public class Query
                 return JunitUtil.getTestContainer().getPath();
             }
         }),
+            // TODO: hour
         new MethodSqlTest("SELECT IFNULL(NULL, 'empty') FROM R WHERE rowid=1", JdbcType.VARCHAR, "empty"),
         new MethodSqlTest("SELECT ISEQUAL(NULL, NULL) FROM R WHERE rowid=1", JdbcType.BOOLEAN, true),
         new MethodSqlTest("SELECT ISEQUAL(1, 1) FROM R WHERE rowid=1", JdbcType.BOOLEAN, true),
@@ -1319,17 +1329,38 @@ public class Query
         new MethodSqlTest("SELECT LCASE('FRED') FROM R WHERE rowid=1", JdbcType.VARCHAR, "fred"),
         new MethodSqlTest("SELECT LEFT('FRED',2) FROM R WHERE rowid=1", JdbcType.VARCHAR, "FR"),
         new MethodSqlTest("SELECT lower('FRED') FROM R WHERE rowid=1", JdbcType.VARCHAR, "fred"),
-            // ltrim minute, mod, month, monthname, now
+            // TODO: ltrim
+            // TODO: minute
+            // TODO: mod
+            // TODO: month
+            // TODO: monthname
+            // TODO: now
         new MethodSqlTest("SELECT ROUND(PI()) FROM R WHERE rowid=1", JdbcType.DOUBLE, 3.0),
-            // power, quarter, radians, rand, repeat, round
+            // TODO: power
+            // TODO: quarter
+            // TODO: radians
+            // TODO: rand
+            // TODO: repeat
+            // TODO: round
         new MethodSqlTest("SELECT RTRIM('FRED ')", JdbcType.VARCHAR, "FRED"),
-            // second sign sin sqrt
+            // TODO: second
+            // TODO: sign
+            // TODO: sin
+            // TODO: sqrt
         new MethodSqlTest("SELECT STARTSWITH('FRED ','FR')", JdbcType.BOOLEAN, true),
         new MethodSqlTest("SELECT STARTSWITH('FRED ','Z')", JdbcType.BOOLEAN, false),
         new MethodSqlTest("SELECT SUBSTRING('FRED ',2,3)", JdbcType.VARCHAR, "RED"),
         new MethodSqlTest("SELECT SUBSTRING('FRED ',2,2)", JdbcType.VARCHAR, "RE"),
         new MethodSqlTest("SELECT SUBSTRING('FRED',3)", JdbcType.VARCHAR, "ED"),
-            // tan, timestampadd, week year
+            // TODO: tan
+            // TODO: timestampadd
+        new MethodSqlTest("SELECT CAST(TIMESTAMPDIFF(SQL_TSI_DAY, CAST('01 Jan 2003' AS TIMESTAMP),CAST('31 Jan 2004' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 395),
+        new MethodSqlTest("SELECT CAST(TIMESTAMPDIFF(SQL_TSI_DAY, CAST('31 Jan 2004' AS TIMESTAMP),CAST('01 Jan 2003' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, -395),
+        new MethodSqlTest("SELECT CAST(TIMESTAMPDIFF(SQL_TSI_MINUTE, CAST('01 Jan 2003' AS TIMESTAMP),CAST('01 Jan 2004' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 525600),
+        new MethodSqlTest("SELECT CAST(TIMESTAMPDIFF(SQL_TSI_MINUTE, CAST('01 Jan 2004' AS TIMESTAMP),CAST('01 Jan 2005' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 527040), // leap year
+        new MethodSqlTest("SELECT CAST(TIMESTAMPDIFF(SQL_TSI_SECOND, CAST('01 Jan 2004 5:00' AS TIMESTAMP),CAST('01 Jan 2004 6:00' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 3600),
+            // TODO: week
+            // TODO: year
         new MethodSqlTest("SELECT USERID()", JdbcType.INTEGER, new Callable(){
             @Override
             public Object call() throws Exception
