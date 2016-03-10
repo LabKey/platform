@@ -84,8 +84,6 @@ public class TruncateTransformStep extends SimpleQueryTransformStep
 
         try
         {
-            long start = System.currentTimeMillis();
-
             log.info("Truncating table " + meta.getFullTargetString());
             TableInfo targetTableInfo = targetSchema.getTable(meta.getTargetQuery());
             if (null == targetTableInfo)
@@ -111,8 +109,8 @@ public class TruncateTransformStep extends SimpleQueryTransformStep
                 if (null != txTarget)
                     txTarget.commit();
             }
-            long finish = System.currentTimeMillis();
             log.info("Deleted " + getNumRowsString(_recordsDeleted) + " from " + meta.getFullTargetString());
+            setTargetForURI(meta.getFullTargetString());
             return true;
         }
         catch (BatchValidationException |QueryUpdateServiceException ex)
