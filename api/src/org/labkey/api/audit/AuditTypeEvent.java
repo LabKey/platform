@@ -20,6 +20,8 @@ import org.labkey.api.security.User;
 import java.util.Date;
 
 /**
+ * Bean object to capture audit log entries. Will be used to populate the database tables via get/set methods that
+ * align with column names in the corresponding provisioned table.
  * User: klum
  * Date: 7/12/13
  */
