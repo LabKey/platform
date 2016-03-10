@@ -546,7 +546,10 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
                 else
                 {
                     // if neither of those we don't know how to resolve it anyway
-                    _txJob.getLogger().warn("Unknown object type for output URI: " + target.getClass().getName());
+                    if (null == target)
+                        _txJob.getLogger().warn("Output URI was null");
+                    else
+                        _txJob.getLogger().warn("Unknown object type for output URI: " + target.getClass().getName());
                 }
             }
         }
