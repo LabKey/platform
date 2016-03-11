@@ -19,10 +19,10 @@ import org.apache.commons.lang3.EnumUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.nab.NabSpecimen;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.OORDisplayColumnFactory;
-import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.statistics.FitFailedException;
@@ -89,6 +89,9 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
     public static final String DATA_ROW_LSID_PROPERTY = "Data Row LSID";
     public static final String AUC_PROPERTY_FORMAT = "0.000";
     public static final String STD_DEV_PROPERTY_NAME = "StandardDeviation";
+
+    /** Lock object to only allow one thread to be populating well data at a time */
+    public static final Object WELL_DATA_LOCK_OBJECT = new Object();
 
     private String _dataRowLsidPrefix;
 
@@ -314,6 +317,16 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         Map<String, DomainProperty> runProperties = getRunProperties(provider, protocol);
 
         Map<Integer, String> cutoffs = getCutoffFormats(protocol, run);
+
+        // Attempt to populate the well data for dataFileUrls that may have been fixed since the new
+        // WellData and DilutionData tables were added.
+        synchronized (WELL_DATA_LOCK_OBJECT)
+        {
+            if (useRunForPlates && !isWellDataPopulated(run) && getDataFile(run) != null)
+            {
+                populateWellData(protocol, run, user);
+            }
+        }
 
         List<Plate> plates;
         if (useRunForPlates && isWellDataPopulated(run))
@@ -681,6 +694,25 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         assay.setMaterialWellGroupMapping(inputs);
         assay.setLockAxes(lockAxes);
         return assay;
+    }
+
+    private void populateWellData(ExpProtocol protocol, ExpRun run, User user) throws ExperimentException
+    {
+        try
+        {
+            Map<String, Pair<Integer, String>> wellGroupNameToNabSpecimen = new HashMap<>();
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromString("RunId"), run.getRowId());
+            new TableSelector(DilutionManager.getTableInfoNAbSpecimen(), filter, null).forEach((NabSpecimen nabSpecimen) ->
+            {
+                wellGroupNameToNabSpecimen.put(nabSpecimen.getWellgroupName(), new Pair<>(nabSpecimen.getRowId(), nabSpecimen.getSpecimenLsid()));
+            }, NabSpecimen.class);
+
+            populateWellData(protocol, run, user, getCutoffFormats(protocol, run), wellGroupNameToNabSpecimen);
+        }
+        catch (SQLException e)
+        {
+            throw new ExperimentException(e);
+        }
     }
 
     // Public for upgrade code
