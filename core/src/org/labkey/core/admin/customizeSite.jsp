@@ -108,10 +108,10 @@ Click the Save button at any time to accept the current settings and continue.</
     <td class="labkey-form-label">Base server URL (used to create links in emails sent by the system)</td>
     <td><input type="text" name="baseServerUrl" size="50" value="<%= h(appProps.getBaseServerUrl()) %>"></td>
 </tr>
-    <tr>
-        <td class="labkey-form-label">Use "path first" urls (/home/project-begin.view)</td>
-        <td><labkey:checkbox id="useContainerRelativeURL" name="useContainerRelativeURL" checked="<%= appProps.getUseContainerRelativeURL() %>" value="true" /></td>
-    </tr>
+<tr>
+    <td class="labkey-form-label">Use "path first" urls (/home/project-begin.view)</td>
+    <td><labkey:checkbox id="useContainerRelativeURL" name="useContainerRelativeURL" checked="<%= appProps.getUseContainerRelativeURL() %>" value="true" /></td>
+</tr>
 <tr>
     <td>&nbsp;</td>
 </tr>
@@ -225,7 +225,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
-    <td colspan=2>Configure SSL (<%=bean.helpLink%>)</td>
+    <td colspan=2>Configure Security (<%=bean.helpLink%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
@@ -235,6 +235,10 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr>
     <td class="labkey-form-label">SSL port number (specified in server config file)</td>
     <td><input type="text" name="sslPort" value="<%=appProps.getSSLPort()%>" size="6"></td>
+</tr>
+<tr>
+    <td class="labkey-form-label">Show API session keys</td>
+    <td><labkey:checkbox id="showSessionKeys" name="showSessionKeys" checked="<%= appProps.isShowSessionKeys()%>" value="true"/></td>
 </tr>
 
 <tr>

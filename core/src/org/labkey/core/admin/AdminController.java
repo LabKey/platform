@@ -1233,6 +1233,7 @@ public class AdminController extends SpringActionController
             props.setUserRequestedAdminOnlyMode(form.isAdminOnlyMode());
 
             props.setUseContainerRelativeURL(form.getUseContainerRelativeURL());
+            props.setShowSessionKeys(form.isShowSessionKeys());
 
             try
             {
@@ -1718,6 +1719,7 @@ public class AdminController extends SpringActionController
         private String _baseServerUrl;
         private String _callbackPassword;
         private boolean _useContainerRelativeURL;
+        private boolean _showSessionKeys;
 
         public void setDefaultDomain(String defaultDomain)
         {
@@ -1977,6 +1979,16 @@ public class AdminController extends SpringActionController
         public void setUseContainerRelativeURL(boolean useContainerRelativeURL)
         {
             _useContainerRelativeURL = useContainerRelativeURL;
+        }
+
+        public boolean isShowSessionKeys()
+        {
+            return _showSessionKeys;
+        }
+
+        public void setShowSessionKeys(boolean showSessionKeys)
+        {
+            _showSessionKeys = showSessionKeys;
         }
     }
 

@@ -58,6 +58,7 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DotRunner;
@@ -213,6 +214,15 @@ public class SecurityController extends SpringActionController
         public ActionURL getFolderAccessURL(Container container)
         {
             return new ActionURL(FolderAccessAction.class, container);
+        }
+
+        @Override
+        public ActionURL getApiKeyURL(ActionURL returnURL)
+        {
+            ActionURL url = new ActionURL(ApiKeyAction.class, ContainerManager.getRoot());
+            url.addReturnURL(returnURL);
+
+            return url;
         }
     }
 
@@ -1882,6 +1892,26 @@ public class SecurityController extends SpringActionController
         public void setHideCaption(String hideCaption)
         {
             _hideCaption = hideCaption;
+        }
+    }
+
+    @RequiresLogin
+    public class ApiKeyAction extends SimpleViewAction<ReturnUrlForm>
+    {
+        @Override
+        public ModelAndView getView(ReturnUrlForm form, BindException errors) throws Exception
+        {
+            if (!AppProps.getInstance().isShowSessionKeys())
+                throw new UnauthorizedException("Session API keys are not shown on this site. Contact a site administrator.");
+
+            getPageConfig().setTemplate(PageConfig.Template.Dialog);
+            return new JspView<>("/org/labkey/core/security/apiKey.jsp", form);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
         }
     }
 
