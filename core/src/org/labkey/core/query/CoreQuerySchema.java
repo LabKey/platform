@@ -25,7 +25,10 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.MultiValuedLookupColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SQLFragment;
@@ -415,8 +418,14 @@ public class CoreQuerySchema extends UserSchema
             {
                 return getMembersTable();
             }
-        }, "Group"));
-        users.addColumn(groupsCol);
+        }, "Group"){
+            @Override
+            protected MultiValuedLookupColumn createMultiValuedLookupColumn(ColumnInfo lookupColumn, ColumnInfo parent, ColumnInfo childKey, ColumnInfo junctionKey, ForeignKey fk)
+            {
+                ((LookupColumn)lookupColumn)._joinType = LookupColumn.JoinType.inner;
+                return super.createMultiValuedLookupColumn(lookupColumn, parent, childKey, junctionKey, fk);
+            }
+        });        users.addColumn(groupsCol);
         List<FieldKey> visibleColumns = new ArrayList<>(users.getDefaultVisibleColumns());
         visibleColumns.add(groupsCol.getFieldKey());
         users.setDefaultVisibleColumns(visibleColumns);
