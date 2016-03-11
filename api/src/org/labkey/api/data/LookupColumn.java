@@ -111,7 +111,7 @@ public class LookupColumn extends ColumnInfo
     /** Additional column pairs if this is a multi-column join. Maintain original order using LinkedHashMap to ensure that generated SQL is identical */
     protected Map<ColumnInfo, Pair<ColumnInfo, Boolean>> _additionalJoins = new LinkedHashMap<>();
     /** How to connect from the reference to the target query */
-    protected JoinType _joinType;
+    public JoinType _joinType;
 
     public LookupColumn(ColumnInfo foreignKey, ColumnInfo lookupKey, ColumnInfo lookupColumn)
     {
