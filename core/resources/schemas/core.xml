@@ -58,6 +58,8 @@
       <ns:column columnName="Verification"/>
       <ns:column columnName="LastChanged"/>
       <ns:column columnName="PreviousCrypts"/>
+      <ns:column columnName="RequestedEmail"/>
+      <ns:column columnName="VerificationTimeout"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="Members" tableDbType="TABLE">

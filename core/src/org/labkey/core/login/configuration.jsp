@@ -25,6 +25,8 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="java.io.IOException" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.api.settings.WriteableAppProps" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -42,6 +44,7 @@
 
     <tr><td colspan="5">&nbsp;</td></tr>
     <tr><td colspan="5">Other authentication options:</td></tr>
+    <tr><td colspan="5">&nbsp;</td></tr>
     <tr>
         <td>&nbsp;&nbsp;</td>
         <td>Self sign-up</td>
@@ -74,6 +77,18 @@
 <%
     }
 %>
+    <tr><td colspan="5">&nbsp;</td></tr>
+    <tr><td colspan="5">Configure site-wide authentication options:<br><br></td></tr>
+    <tr>
+        <td>&nbsp;&nbsp;</td>
+        <td>Self-service Email Changes</td>
+        <% if (AuthenticationManager.isSelfServiceEmailChangesEnabled()) { %>
+        <td><%=PageFlowUtil.textLink("Disable", urls.getDisableConfigParameterURL(AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY))%></td>
+        <% } else { %>
+        <td><%=PageFlowUtil.textLink("Enable", urls.getEnableConfigParameterURL(AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY))%></td>
+        <% } %>
+        <td colspan="3">Users can change their own email address if their password is managed by LabKey Server.</td>
+    </tr>
     <tr><td colspan="5">&nbsp;</td></tr>
     <tr><td colspan="5">
     <%=button("Done").href(urlProvider(AdminUrls.class).getAdminConsoleURL())%>
