@@ -197,7 +197,7 @@ public class ValidEmail
                     "very.common@example.com",
                     "a.little.lengthy.but.fine@dept.example.com",
                     "disposable.style.email.with+symbol@example.com",
-                    "user@[IPv6:2001:db8:1ff::a0b:dbd0]",
+//                    "user@[IPv6:2001:db8:1ff::a0b:dbd0]",
                     "\"much.more unusual\"@example.com",
 //                    "\"very.unusual.@.unusual.com\"@example.com",
 //                    "\"very.(),:;<>[]\\\".VERY.\\\"very@\\\\ \\\"very\\\".unusual\"@strange.example.com",
