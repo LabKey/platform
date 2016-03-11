@@ -84,6 +84,7 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     protected static final String EXT3API_REQUIRED = "ext3APIRequired";
     protected static final String SELF_REPORT_EXCEPTIONS = "selfReportExceptions";
     protected static final String USE_CONTAINER_RELATIVE_URL = "useContainerRelativeURL";
+    protected static final String SHOW_SESSION_KEYS = "showSessionKeys";
 
     protected static final String SITE_CONFIG_NAME = "SiteConfig";
 
@@ -485,6 +486,12 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     public boolean getUseContainerRelativeURL()
     {
         return lookupBooleanValue(USE_CONTAINER_RELATIVE_URL, true);
+    }
+
+    @Override
+    public boolean isShowSessionKeys()
+    {
+        return lookupBooleanValue(SHOW_SESSION_KEYS, false);
     }
 
     @Override

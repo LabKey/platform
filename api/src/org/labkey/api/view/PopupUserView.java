@@ -18,10 +18,12 @@ package org.labkey.api.view;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.LoginUrls;
+import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserUrls;
 import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 
 /**
@@ -41,6 +43,13 @@ public class PopupUserView extends PopupMenuView
         NavTree myaccount = new NavTree("My Account", PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId(), currentURL));
         myaccount.setId("__lk-usermenu-myaccount");
         tree.addChild(myaccount);
+
+        if (AppProps.getInstance().isShowSessionKeys())
+        {
+            NavTree apikey = new NavTree("API Key", PageFlowUtil.urlProvider(SecurityUrls.class).getApiKeyURL(currentURL));
+            myaccount.setId("__lk-usermenu-apikey");
+            tree.addChild(apikey);
+        }
 
         if (user.isImpersonated())
         {

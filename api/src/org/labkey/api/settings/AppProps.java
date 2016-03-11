@@ -98,6 +98,7 @@ public class AppProps
         String getWebappConfigurationFilename();
         String getAdministratorContactEmail();
         boolean getUseContainerRelativeURL();
+        boolean isShowSessionKeys();
         boolean isTeamCityEnvironment();
     }
 
