@@ -125,6 +125,8 @@ public class AuthenticationManager
         return isExternalProviderEnabled() && getAuthConfigProperty(AUTO_CREATE_ACCOUNTS_KEY, true);
     }
 
+    public static boolean isSelfServiceEmailChangesEnabled() { return getAuthConfigProperty(SELF_SERVICE_EMAIL_CHANGES_KEY, false);}
+
     public static boolean getAuthConfigProperty(String key, Boolean defaultValue)
     {
         return _authConfigProperties.get(key) == null ? defaultValue : _authConfigProperties.get(key);
@@ -360,6 +362,7 @@ public class AuthenticationManager
     private static final String PROP_SEPARATOR = ":";
     public static final String SELF_REGISTRATION_KEY = "SelfRegistration";
     public static final String AUTO_CREATE_ACCOUNTS_KEY = "AutoCreateAccounts";
+    public static final String SELF_SERVICE_EMAIL_CHANGES_KEY = "SelfServiceEmailChanges";
 
     public static void saveActiveProviders()
     {
@@ -412,6 +415,8 @@ public class AuthenticationManager
             _authConfigProperties.put(SELF_REGISTRATION_KEY, Boolean.valueOf(props.get(SELF_REGISTRATION_KEY)));
         if (props.get(AUTO_CREATE_ACCOUNTS_KEY) != null)
             _authConfigProperties.put(AUTO_CREATE_ACCOUNTS_KEY, Boolean.valueOf(props.get(AUTO_CREATE_ACCOUNTS_KEY)));
+        if (props.get(SELF_SERVICE_EMAIL_CHANGES_KEY) != null)
+            _authConfigProperties.put(SELF_SERVICE_EMAIL_CHANGES_KEY, Boolean.valueOf(props.get(SELF_SERVICE_EMAIL_CHANGES_KEY)));
     }
 
 

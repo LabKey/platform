@@ -26,6 +26,7 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.Entity;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -45,6 +46,8 @@ import org.labkey.api.view.ViewContext;
 import java.beans.PropertyChangeListener;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -68,6 +71,8 @@ public class UserManager
     public static final String USER_AUDIT_EVENT = "UserAuditEvent";
 
     public static final int VALID_GROUP_NAME_LENGTH = 64;
+
+    public static final int VERIFICATION_EMAIL_TIMEOUT = 60 * 24;  // in minutes, one day currently
 
     //
     // UserListener
@@ -445,32 +450,108 @@ public class UserManager
         addToUserHistory(toUpdate, "Contact information for " + toUpdate.getEmail() + " was updated");
     }
 
-
-    public static String changeEmail(int userId, String oldEmail, ValidEmail newEmail, User currentUser)
+    public static void requestEmail(int userId, String currentEmail, ValidEmail requestedEmail, String verificationToken, User currentUser) throws SecurityManager.UserManagementException
     {
-        if (null != getUser(newEmail))
-            return newEmail + " already exists.";
+        if (SecurityManager.loginExists(currentEmail))
+        {
+            Instant timeoutDate = Instant.now().plus(VERIFICATION_EMAIL_TIMEOUT, ChronoUnit.MINUTES);
+            SqlExecutor executor = new SqlExecutor(CORE.getSchema());
+            int rows = executor.execute("UPDATE " + CORE.getTableInfoLogins() + " SET RequestedEmail=?, Verification=?, VerificationTimeout=? WHERE Email=?",
+                    requestedEmail.getEmailAddress(), verificationToken, Date.from(timeoutDate), currentEmail);
+            if (1 != rows)
+                throw new SecurityManager.UserManagementException(requestedEmail, "Unexpected number of rows returned when setting verification: " + rows);
+            addToUserHistory(getUser(userId), currentUser + " requested email address change from " + currentEmail + " to " + requestedEmail.getEmailAddress() +
+                    " with token '" + verificationToken + "'.");
+        }
 
-        SqlExecutor executor = new SqlExecutor(CORE.getSchema());
-        executor.execute("UPDATE " + CORE.getTableInfoPrincipals() + " SET Name=? WHERE UserId=?", newEmail.getEmailAddress(), userId);
+        clearUserList();
+    }
 
+    public static void changeEmail(int userId, String oldEmail, ValidEmail newEmail, String verificationToken, User currentUser) throws SecurityManager.UserManagementException
+    {
+        changeEmail(userId, oldEmail, newEmail.getEmailAddress(), verificationToken, currentUser);
+    }
+
+    public static void changeEmail(int userId, String oldEmail, String newEmail, String verificationToken, User currentUser) throws SecurityManager.UserManagementException
+    {
         if (SecurityManager.loginExists(oldEmail))
         {
-            executor.execute("UPDATE " + CORE.getTableInfoLogins() + " SET Email=? WHERE Email=?", newEmail.getEmailAddress(), oldEmail);
-            addToUserHistory(getUser(userId), currentUser + " changed email from " + oldEmail + " to " + newEmail.getEmailAddress() + ".");
+            SqlExecutor executor = new SqlExecutor(CORE.getSchema());
+            int rows = executor.execute("UPDATE " + CORE.getTableInfoPrincipals() + " SET Name=? WHERE UserId=?", newEmail, userId);
+            if (1 != rows)
+                throw new SecurityManager.UserManagementException(oldEmail, "Unexpected number of rows returned when setting new name: " + rows);
+            rows = executor.execute("UPDATE " + CORE.getTableInfoLogins() + " SET Email=? WHERE Email=?", newEmail, oldEmail);
+            if (1 != rows)
+                throw new SecurityManager.UserManagementException(oldEmail, "Unexpected number of rows returned when setting new email: " + rows);
+            addToUserHistory(getUser(userId), currentUser + " changed an email address from " + oldEmail + " to " + newEmail + " with token '" + verificationToken + "'.");
             User userToBeEdited = getUser(userId);
 
             if (userToBeEdited.getDisplayName(userToBeEdited).equals(oldEmail))
             {
-                executor.execute("UPDATE " + CORE.getTableInfoUsersData() + " SET DisplayName=? WHERE UserId=?", newEmail.getEmailAddress(), userId);
+                rows = executor.execute("UPDATE " + CORE.getTableInfoUsersData() + " SET DisplayName=? WHERE UserId=?", newEmail, userId);
+                if (1 != rows)
+                    throw new SecurityManager.UserManagementException(oldEmail, "Unexpected number of rows returned when setting new display name: " + rows);
             }
         }
 
         clearUserList();
-
-        return null;
     }
 
+    public static void auditEmailTimeout(int userId, String oldEmail, String newEmail, String verificationToken, User currentUser)
+    {
+        addToUserHistory(getUser(userId), currentUser + " tried to change an email address from " + oldEmail + " to " + newEmail +
+                " with token '" + verificationToken + "', but the verification link was timed out.");
+    }
+
+    public static Logger getLOG()
+    {
+        return LOG;
+    }
+
+    public static VerifyEmail getVerifyEmail(ValidEmail email)
+    {
+        SqlSelector sqlSelector = new SqlSelector(CORE.getSchema(), "SELECT RequestedEmail, Verification, VerificationTimeout FROM " + CORE.getTableInfoLogins()
+                + " WHERE Email = ?", email.getEmailAddress());
+        VerifyEmail verifyEmail = sqlSelector.getObject(VerifyEmail.class);
+        return verifyEmail;
+    }
+
+    public static class VerifyEmail
+    {
+        private String _requestedEmail;
+        private String _verification;
+        private Date _verificationTimeout;
+
+        public String getRequestedEmail()
+        {
+            return _requestedEmail;
+        }
+
+        public void setRequestedEmail(String requestedEmail)
+        {
+            this._requestedEmail = requestedEmail;
+        }
+
+        public String getVerification()
+        {
+            return _verification;
+        }
+
+        public void setVerification(String verification)
+        {
+            this._verification = verification;
+        }
+
+        public Date getVerificationTimeout()
+        {
+            return _verificationTimeout;
+        }
+
+        public void setVerificationTimeout(Date verificationTimeout)
+        {
+            this._verificationTimeout = verificationTimeout;
+        }
+    }
 
     public static void deleteUser(int userId) throws SecurityManager.UserManagementException
     {

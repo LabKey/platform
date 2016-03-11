@@ -662,6 +662,12 @@ public class SecurityManager
             _email = email.getEmailAddress();
         }
 
+        public UserManagementException(String email, String message)
+        {
+            super(message);
+            _email = email;
+        }
+
         public UserManagementException(ValidEmail email, String message, Exception cause)
         {
             super(message, cause);
