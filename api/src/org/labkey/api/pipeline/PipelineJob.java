@@ -45,6 +45,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
+import org.labkey.api.reader.Readers;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileType;
@@ -55,6 +56,7 @@ import org.labkey.api.util.SafeFileAppender;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.writer.PrintWriters;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -64,7 +66,6 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.Arrays;
@@ -417,7 +418,7 @@ abstract public class PipelineJob extends Job implements Serializable
         StringBuilder xml = new StringBuilder();
         try (InputStream fIn = new FileInputStream(file))
         {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(fIn));
+            BufferedReader reader = Readers.getReader(fIn);
             String line;
             while ((line = reader.readLine()) != null)
             {
@@ -437,7 +438,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
         try (FileOutputStream fOut = new FileOutputStream(newFile))
         {
-            PrintWriter writer = new PrintWriter(fOut);
+            PrintWriter writer = PrintWriters.getPrintWriter(fOut);
             writer.write(xml);
             writer.flush();
         }
@@ -1153,12 +1154,8 @@ abstract public class PipelineJob extends Job implements Serializable
                 throw new PipelineJobException("Failed starting process '" + pb.command() + "'", eio);
             }
 
-            BufferedReader procReader = null;
-
-            try
+            try (BufferedReader procReader = Readers.getReader(proc.getInputStream()))
             {
-                procReader = new BufferedReader(
-                        new InputStreamReader(proc.getInputStream()));
                 String line;
                 int count = 0;
                 while ((line = procReader.readLine()) != null)
@@ -1181,16 +1178,6 @@ abstract public class PipelineJob extends Job implements Serializable
             catch (IOException eio)
             {
                 throw new PipelineJobException("Failed writing output for process in '" + dirWork.getPath() + "'.", eio);
-            }
-            finally
-            {
-                if (procReader != null)
-                {
-                    try
-                    {   procReader.close(); }
-                    catch (IOException eio)
-                    { }
-                }
             }
         }
         finally

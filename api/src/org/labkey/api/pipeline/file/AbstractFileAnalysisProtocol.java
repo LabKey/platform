@@ -24,11 +24,11 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineProtocol;
 import org.labkey.api.util.FileType;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.writer.PrintWriters;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.StringReader;
 import java.util.HashMap;
 import java.util.List;
@@ -166,7 +166,7 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
                 parser.setInputParameter(entry.getKey(), entry.getValue());
         }
 
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file)))
+        try (PrintWriter writer = PrintWriters.getPrintWriter(file))
         {
             xml = parser.getXML();
             if (xml == null)
