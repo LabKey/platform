@@ -17,7 +17,6 @@
 package org.labkey.study.pipeline;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.tika.io.IOUtils;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.pipeline.PipelineJob;
@@ -36,7 +35,6 @@ import java.text.ParseException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -103,18 +101,12 @@ public class DatasetFileReader
 
     public void validate(List<String> errors) throws IOException
     {
-        InputStream is = null;
         Properties props;
 
-        try
+        try (InputStream is = _datasetsDirectory.getInputStream(_datasetsFileName))
         {
-            is = _datasetsDirectory.getInputStream(_datasetsFileName);
             props = new Properties();
             props.load(is);
-        }
-        finally
-        {
-            IOUtils.closeQuietly(is);
         }
 
         if (null == _study)
@@ -290,18 +282,14 @@ public class DatasetFileReader
         }
 
         _runnables = new ArrayList<>(jobMap.values());
-        Collections.sort(_runnables, new Comparator<DatasetImportRunnable>()
-        {
-            public int compare(DatasetImportRunnable j1, DatasetImportRunnable j2)
-            {
-                String name1 = j1.getFileName();
-                String name2 = j2.getFileName();
-                if (name1 != null && name2 != null)
-                    return name1.compareTo(name2);
-                if (name1 != null || name2 != null)
-                    return name1 == null ? -1 : 1;
-                return j1._datasetDefinition.getDatasetId() - j2._datasetDefinition.getDatasetId();
-            }
+        Collections.sort(_runnables, (j1, j2) -> {
+            String name1 = j1.getFileName();
+            String name2 = j2.getFileName();
+            if (name1 != null && name2 != null)
+                return name1.compareTo(name2);
+            if (name1 != null || name2 != null)
+                return name1 == null ? -1 : 1;
+            return j1._datasetDefinition.getDatasetId() - j2._datasetDefinition.getDatasetId();
         });
     }
 
