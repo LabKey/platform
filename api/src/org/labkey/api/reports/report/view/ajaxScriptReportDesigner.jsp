@@ -66,6 +66,7 @@
     String helpHtml = report.getDesignerHelpHtml();
     boolean readOnly = bean.isReadOnly() || !report.canEdit(user, c);
     Mode mode = bean.getMode();
+    boolean sourceAndHelp = mode.showSourceAndHelp(ctx.getUser()) || bean.isSourceTabVisible();
     String knitrFormat = bean.getKnitrFormat() != null ? bean.getKnitrFormat() : "None";
     boolean useGetDataApi = report.getReportId() == null || bean.isUseGetDataApi();
     ActionURL saveURL = urlProvider(ReportUrls.class).urlAjaxSaveScriptReport(c);
@@ -165,9 +166,8 @@
                 saveURL         : <%=q(saveURL.getLocalURIString())%>,
                 baseURL         : <%=q(baseViewURL.getLocalURIString())%>,
                 preferSourceTab : <%=mode.preferSourceTab()%>,
-
+                sourceAndHelp   : <%=sourceAndHelp%>,
                 redirectUrl     : <%=q(bean.getRedirectUrl())%>,
-
                 sharedScripts   : <%=text(jsonMapper.writeValueAsString(sharedScripts))%>,
                 reportConfig    : <%=text(jsonMapper.writeValueAsString(reportConfig))%>,
                 script          : <%=q(StringUtils.trimToEmpty(bean.getScript()))%>
