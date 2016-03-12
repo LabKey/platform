@@ -10,10 +10,10 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
 
     constructor : function(config){
 
-        Ext4.apply(config, {
+        Ext4.applyIf(config, {
             border  : false,
             frame   : false,
-            sourceAndHelp   : true
+            sourceAndHelp : true
         });
         Ext4.QuickTips.init();
 
@@ -29,11 +29,9 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             this.items.push(this.createDataPanel());
         }
 
-        if (this.sourceAndHelp)
-        {
-            this.items.push(this.createSourcePanel());
-            this.items.push(this.createHelpPanel());
-
+        this.items.push(this.createSourcePanel());
+        this.items.push(this.createHelpPanel());
+        if (this.sourceAndHelp) {
             if (this.preferSourceTab)
                 this.activeTab = this.items.length-2;
         }
@@ -509,6 +507,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
         this.formPanel = Ext4.create('Ext.form.Panel', {
             title   : 'Source',
             cls     : 'reportSource',
+            hidden  : !this.sourceAndHelp,
             frame   : false,
             bodyPadding : 10,
             fieldDefaults  : {
@@ -531,6 +530,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
         return {
             title   : 'Help',
             frame   : false,
+            hidden  : !this.sourceAndHelp,
             bodyPadding : 10,
             html    : this.reportConfig.helpHtml
         };
