@@ -94,12 +94,6 @@ public class ListQuerySchema extends UserSchema
             Domain domain = def.getDomain();
             if (domain != null)
             {
-                if (domain.getDomainKind() != null)
-                {
-                    // Only for supporting migration. These should not be handed out after migration to hard tables.
-                    if (domain.getDomainKind().getClass().equals(ListDomainType.class))
-                        return new OntologyListTable(this, def);
-                }
                 return new ListTable(this, def, def.getDomain());
             }
         }

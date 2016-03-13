@@ -41,7 +41,6 @@ import org.labkey.list.model.FolderListWriter;
 import org.labkey.list.model.IntegerListDomainKind;
 import org.labkey.list.model.ListAuditProvider;
 import org.labkey.list.model.ListDef;
-import org.labkey.list.model.ListDomainType;
 import org.labkey.list.model.ListManager;
 import org.labkey.list.model.ListManagerSchema;
 import org.labkey.list.model.ListQuerySchema;
@@ -92,9 +91,6 @@ public class ListModule extends DefaultModule
         ListService.setInstance(new ListServiceImpl());
         ListQuerySchema.register(this);
         ListManagerSchema.register(this);
-
-        // NOTE: This domain kind is only maintained for purposes of migrating lists to hard tables.
-        PropertyService.get().registerDomainKind(new ListDomainType());
 
         PropertyService.get().registerDomainKind(new IntegerListDomainKind());
         PropertyService.get().registerDomainKind(new VarcharListDomainKind());
