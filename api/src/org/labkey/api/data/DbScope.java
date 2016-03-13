@@ -955,20 +955,10 @@ public class DbScope
         _tableCache.removeAllTables(schemaName, type);
     }
 
-    // Invalidates a single table in this schema
-    // to avoid calls to getSchema in transactions, use the string-based invalidateTable method below
-    @Deprecated
-    public void invalidateTable(DbSchema schema, @NotNull String table)
-    {
-        _tableCache.remove(schema, table);
-
-        // DbSchema holds a hard-coded list of table names; we also need to invalidate the DbSchema to update this list.
-        // Note that all other TableInfos remain cached; this is simply invalidating the schema info and reloading the
-        // meta data XML. If this is too heavyweight, we could instead cache and invalidate the list of table names separate
-        // from the DbSchema.
-        _schemaCache.remove(schema.getName(), schema.getType());
-    }
-
+    // DbSchema holds a hard-coded list of table names, so we need to invalidate the DbSchema to update this list.
+    // Note that all other TableInfos remain cached; this is simply invalidating the schema info and reloading the
+    // meta data XML. If this is too heavyweight, we could instead cache and invalidate the list of table names separate
+    // from the DbSchema.
     public void invalidateTable(String schemaName, String tableName, DbSchemaType type)
     {
         _tableCache.remove(schemaName, tableName, type);

@@ -80,13 +80,7 @@ public class StorageProvisioner
 {
     private static final Logger log = Logger.getLogger(StorageProvisioner.class);
     private static final CPUTimer create = new CPUTimer("StorageProvisioner.create");
-    private static boolean allowRenameOfColumnsDuringUpgrade = false;
-
-    // this is a bit of hackery to avoid worse hackery. avoid rename of built-in columns check.
-    public static void setAllowRenameOfColumnsDuringUpgrade(boolean b)
-    {
-        allowRenameOfColumnsDuringUpgrade = b;
-    }
+    private static boolean allowRenameOfColumnsDuringUpgrade = false;  // TODO: Remove this? No longer used because dataset migration code is gone.
 
 
     private static String _create(DbScope scope, DomainKind kind, Domain domain)
