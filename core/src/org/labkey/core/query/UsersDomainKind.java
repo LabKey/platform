@@ -41,10 +41,8 @@ import org.labkey.api.security.UserUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
-import org.labkey.core.CoreController;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -223,52 +221,6 @@ public class UsersDomainKind extends SimpleTableDomainKind
         {
             throw new RuntimeException(e);
         }
-    }
-
-    public static void ensureDomainPropertyScales(Domain domain, User user)
-    {
-        DbScope scope = CoreSchema.getInstance().getSchema().getScope();
-        try (DbScope.Transaction transaction = scope.ensureTransaction())
-        {
-            Map<String, DomainProperty> existingProps = new HashMap<>();
-            boolean dirty = false;
-
-            if (user == null)
-                user = UserManager.getGuestUser();
-
-            for (DomainProperty dp : domain.getProperties())
-            {
-                existingProps.put(dp.getName(), dp);
-            }
-
-
-            dirty = (ensurePropertyDescriptorScale(existingProps.get("FirstName"), 64)|| dirty);
-            dirty = (ensurePropertyDescriptorScale(existingProps.get("LastName"), 64) || dirty);
-            dirty = (ensurePropertyDescriptorScale(existingProps.get("Phone"), 64)    || dirty);
-            dirty = (ensurePropertyDescriptorScale(existingProps.get("Mobile"), 64)   || dirty);
-            dirty = (ensurePropertyDescriptorScale(existingProps.get("Pager"), 64)    || dirty);
-            dirty = (ensurePropertyDescriptorScale(existingProps.get("IM"), 64)       || dirty);
-            dirty = (ensurePropertyDescriptorScale(existingProps.get("Description"), 255) || dirty);
-
-            if (dirty)
-                domain.save(user);
-
-            transaction.commit();
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static boolean ensurePropertyDescriptorScale(DomainProperty prop, int scale)
-    {
-        if (null != prop && prop.getScale() != scale)
-        {
-            prop.setScale(scale);
-            return true;
-        }
-        return false;
     }
 
     /**

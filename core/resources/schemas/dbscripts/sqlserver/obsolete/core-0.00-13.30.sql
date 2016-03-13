@@ -569,8 +569,4 @@ ALTER TABLE core.PortalPages ADD CONSTRAINT UQ_PortalPage UNIQUE (Container, [In
 ALTER TABLE core.Modules
     ALTER COLUMN Schemas NVARCHAR(4000) NULL;
 
--- We no longer call this inline. Instead, we ensure GROUP_CONCAT in CoreModule.afterUpdate(), see #18979
-
--- Install/upgrade new version (1.00.23696) of GROUP_CONCAT aggregate function on SQL Server
--- This version fixes concurrency and performance issues, see #18600
--- EXEC core.executeJavaUpgradeCode 'installGroupConcat';
+-- We no longer invoke GROUP_CONCAT installation via a script. Instead, we ensure GROUP_CONCAT in CoreModule.afterUpdate(), see #18979

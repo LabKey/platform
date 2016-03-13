@@ -27,18 +27,32 @@ import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.*;
-import org.labkey.api.data.TableChange.ChangeType;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ConditionalFormat;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbSequence;
+import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.PkFilter;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.DomainURIFactory;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.FieldKey;
@@ -48,8 +62,6 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -62,7 +74,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.webdav.SimpleDocumentResource;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -911,94 +922,6 @@ public class ListManager implements SearchService.DocumentProvider
         }
 
         return true;
-    }
-
-    /** Used for 13.30 -> 14.1 upgrade */
-    public void addContainerColumns(User u)
-    {
-         /*
-            Rename any existing Container domain properties to Container_old
-            On the off chance Container_old also already exists, rename Container to Container_old_+ a GUID
-            Then add a real container column to all List hard tables
-         */
-        ListDef[] listDefs = new TableSelector(getListMetadataTable()).getArray(ListDef.class);
-        try
-        {
-            StorageProvisioner.setAllowRenameOfColumnsDuringUpgrade(true);
-            for (ListDef def : listDefs)
-            {
-                ListDefinition list = ListDefinitionImpl.of(def);
-                Domain domain = list.getDomain();
-                DomainProperty existingContainerProp = domain.getPropertyByName("Container");
-                if (existingContainerProp != null)
-                {
-                    String newName = domain.getPropertyByName("Container_old") == null ? "Container_old" : "Container_old_" + GUID.makeGUID();
-                    existingContainerProp.setName(newName);
-                    String uri = ListDomainKind.createPropertyURI(list.getName(), newName, domain.getContainer(), list.getKeyType()).toString();
-                    existingContainerProp.setPropertyURI(uri);
-                    try
-                    {
-                        domain.save(u);
-                    }
-                    catch (Exception e)
-                    {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
-        }
-        finally
-        {
-            StorageProvisioner.setAllowRenameOfColumnsDuringUpgrade(false);
-        }
-
-        DbScope scope = ListSchema.getInstance().getSchema().getScope();
-        try (DbScope.Transaction transaction = scope.ensureTransaction();
-             Connection conn = transaction.getConnection())
-        {
-            for (ListDef def : listDefs)
-            {
-                ListDefinition list = ListDefinitionImpl.of(def);
-                Domain domain = list.getDomain();
-                DomainKind kind = domain.getDomainKind();
-                if (kind instanceof ListDomainType)
-                {
-                    String fullListPath = list.getContainer().getPath() + " " + list.getName();
-                    LOG.warn("Found list that was not migrated to a hard table: " + domain.getTypeURI() + " " + fullListPath);
-                    LOG.warn("This list has not been functional since the 13.2 upgrade. Please contact LabKey for assistance in deleting it.");
-                    continue;
-                }
-
-                try
-                {
-                    if (list.getTable(u).getColumn(FieldKey.fromParts("container")) != null)
-                        continue;
-                }
-                catch (Exception e)
-                {
-                    LOG.error("Exception retrieving metadata for list: " + list.getName() + ", " + domain.getStorageTableName(), e);
-                    continue;
-                }
-
-                PropertyStorageSpec newContainerSpec =  new PropertyStorageSpec("container", JdbcType.VARCHAR).setEntityId(true).setNullable(false);
-                newContainerSpec.setDefaultValue(list.getContainer().getEntityId());
-
-                TableChange change = new TableChange(domain, ChangeType.AddColumns);
-                change.addColumn(newContainerSpec);
-                change.execute();
-            }
-            transaction.commit();
-        }
-        catch (SQLException e)
-        {
-            // We're calling Statement.execute() directly, so we need to log the SQL if an exception occurs
-            String sql = ExceptionUtil.getExceptionDecoration(e, ExceptionUtil.ExceptionInfo.DialectSQL);
-
-            if (null != sql)
-                LOG.error(sql);
-
-            throw new RuntimeSQLException(e);
-        }
     }
 
     public static class TestCase extends Assert

@@ -138,14 +138,4 @@ public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
     {
         return template.getExtraSpecimenProperties();
     }
-
-    // For use by Upgrade code
-    public static PropertyStorageSpec getDrawDateStorageSpec()
-    {
-        return new PropertyStorageSpec(DRAWDATE, JdbcType.DATE, 0);
-    }
-    public static PropertyStorageSpec getDrawTimeStorageSpec()
-    {
-        return new PropertyStorageSpec(DRAWTIME, JdbcType.TIME, 0);
-    }
 }

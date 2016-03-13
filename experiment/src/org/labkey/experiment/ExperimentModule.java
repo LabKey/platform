@@ -126,12 +126,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         return true;
     }
 
-    @Override
-    public UpgradeCode getUpgradeCode()
-    {
-        return new ExperimentUpgradeCode();
-    }
-
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {

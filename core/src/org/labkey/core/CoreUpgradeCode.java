@@ -16,21 +16,14 @@
 package org.labkey.core;
 
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.UpgradeUtils;
-import org.labkey.api.exp.ChangePropertyDescriptorException;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.reports.model.ViewCategoryManager;
-import org.labkey.api.util.UnexpectedException;
-import org.labkey.core.query.CoreQuerySchema;
-import org.labkey.core.query.UsersDomainKind;
 
 import java.sql.SQLException;
 
@@ -55,31 +48,6 @@ public class CoreUpgradeCode implements UpgradeCode
     public void handleUnknownModules(ModuleContext context)
     {
         ModuleLoader.getInstance().handleUnkownModules();
-    }
-
-    // invoked by core-13.31-13.32.sql and core-13.32-13.33.sql
-    @SuppressWarnings({"UnusedDeclaration"})
-    @DeferredUpgrade
-    public void ensureCoreUserPropertyDescriptorScales(final ModuleContext context)
-    {
-        String domainURI = UsersDomainKind.getDomainURI("core", CoreQuerySchema.USERS_TABLE_NAME, UsersDomainKind.getDomainContainer(), context.getUpgradeUser());
-        Domain domain = PropertyService.get().getDomain(UsersDomainKind.getDomainContainer(), domainURI);
-
-        if (domain == null)
-        {
-            // Create the domain if we didn't have it already
-            domain = PropertyService.get().createDomain(UsersDomainKind.getDomainContainer(), domainURI, CoreQuerySchema.USERS_TABLE_NAME);
-            try
-            {
-                domain.save(context.getUpgradeUser());
-            }
-            catch (ChangePropertyDescriptorException e)
-            {
-                throw new UnexpectedException(e);
-            }
-        }
-
-        UsersDomainKind.ensureDomainPropertyScales(domain, context.getUpgradeUser());
     }
 
     // invoked by core-14.23-14.24.sql
