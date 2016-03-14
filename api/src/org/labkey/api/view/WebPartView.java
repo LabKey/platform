@@ -228,12 +228,12 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
 
     public int getWebPartRowId()
     {
-        return _frameConfig._webPartRowId;
+        return _frameConfig._webpart == null ? -1 : _frameConfig._webpart.rowId;
     }
 
-    public void setWebPartRowId(int webPartRowId)
+    public void setWebPart(Portal.WebPart wp)
     {
-        _frameConfig._webPartRowId = webPartRowId;
+        _frameConfig._webpart = wp;
     }
 
     public NavTree getPortalLinks()

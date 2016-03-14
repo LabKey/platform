@@ -715,8 +715,13 @@ public class ModuleLoader implements Filter
         }
 
         simpleModule.setName(moduleName);
-        if (props.containsKey("SourcePath"))
-            simpleModule.setSourcePath((String)props.get("SourcePath"));
+
+        //get SourcePath property if there is one
+        String srcPath = (String)props.get("SourcePath");
+
+        //Ensure property value isn't blank
+        if (StringUtils.isNotBlank(srcPath))
+            simpleModule.setSourcePath(srcPath);
         else
             simpleModule.setSourcePath(moduleDir.getAbsolutePath());
         BeanUtils.populate(simpleModule, props);

@@ -74,6 +74,8 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
     protected final AssayProvider _provider;
     private final Domain _resultsDomain;
 
+    private static final String RUN_ID_ALIAS = "Run";
+
     public AssayResultTable(AssayProtocolSchema schema, boolean includeCopiedToStudyColumns)
     {
         super(StorageProvisioner.createTableInfo(schema.getProvider().getResultsDomain(schema.getProtocol())), schema);
@@ -212,8 +214,9 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
 
         SQLFragment runIdSQL = new SQLFragment();
         runIdSQL.append(ExprColumn.STR_TABLE_ALIAS);
-        runIdSQL.append(".RunId");
-        ExprColumn runColumn = new ExprColumn(this, "Run", runIdSQL, JdbcType.INTEGER);
+        runIdSQL.append(".");
+        runIdSQL.append(RUN_ID_ALIAS);
+        ExprColumn runColumn = new ExprColumn(this, RUN_ID_ALIAS, runIdSQL, JdbcType.INTEGER);
         runColumn.setFk(new LookupForeignKey("RowID")
         {
             public TableInfo getLookupTableInfo()
@@ -287,7 +290,9 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
     public SQLFragment getFromSQL(String alias)
     {
         SQLFragment result = new SQLFragment();
-        result.append("(SELECT innerResults.*, innerData.RunId FROM\n");
+        result.append("(SELECT innerResults.*, innerData.RunId AS " );
+        result.append(RUN_ID_ALIAS);
+        result.append(" FROM\n");
         result.append(super.getFromSQL("innerResults"));
         result.append("\nINNER JOIN ");
         result.append(ExperimentService.get().getTinfoData(), "innerData");

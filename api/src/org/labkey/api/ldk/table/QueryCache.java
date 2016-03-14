@@ -114,9 +114,14 @@ public class QueryCache
                 return null;
             }
 
+            if (ti == null)
+            {
+                _log.info("TableInfo was null: " + schemaPath + "/" + queryName, new Exception());
+                return null;
+            }
+
             cache(ti);
 
-            //_log.info("getting table: " + schemaPath + "/" + queryName);
             return ti;
         }
     }
@@ -128,6 +133,17 @@ public class QueryCache
 
     public void cache(TableInfo ti)
     {
+        if (ti == null)
+        {
+            _log.warn("attempting to cache a null TableInfo", new Exception());
+        }
+
+        if (ti.getUserSchema() == null)
+        {
+            _log.warn("TableInfo lacks a user schema: " + ti.getPublicSchemaName() + "." + ti.getName(), new Exception());
+            return;
+        }
+
         cache(ti.getUserSchema());
 
         _cachedQueries.put(getQueryKey(ti.getUserSchema().getContainer(), ti.getUserSchema().getUser(), ti.getUserSchema().getSchemaPath().toString(), ti.getName()), ti);

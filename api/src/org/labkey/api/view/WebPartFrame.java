@@ -23,8 +23,6 @@ import java.util.List;
 
 public interface WebPartFrame
 {
-    int DEFAULT_WEB_PART_ID = -1;
-
     class FrameConfig
     {
         public FrameConfig()
@@ -45,7 +43,7 @@ public interface WebPartFrame
         public boolean _isEmpty = false;
         public String _helpPopup;
         public FrameType _frame = FrameType.PORTAL;
-        public int _webPartRowId = DEFAULT_WEB_PART_ID;
+        public Portal.WebPart _webpart = null;
         public NavTree _navMenu = null;
         public List<NavTree> _customMenus = null;
         public String _location;

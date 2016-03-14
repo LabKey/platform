@@ -97,9 +97,20 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         return _helper == null ? Collections.<PropertyColumn>emptyList() : _helper.getPropertyColumns();
     }
 
+    /**
+     * Returns the container that the domain is defined
+     */
     protected Container getDomainContainer(Container c)
     {
         return _helper == null ? c : _helper.getDomainContainer(c);
+    }
+
+    /**
+     * Returns the container to insert/update values into
+     */
+    protected Container getDomainObjContainer(Container c)
+    {
+        return _helper == null ? c : _helper.getDomainObjContainer(c);
     }
 
     public interface DomainUpdateHelper
@@ -114,6 +125,8 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         Iterable<PropertyColumn> getPropertyColumns();
 
         Container getDomainContainer(Container c);
+
+        Container getDomainObjContainer(Container c);
     }
 
     public class ImportHelper implements OntologyManager.ImportHelper
@@ -185,7 +198,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             String lsid = (String)row.get(objectUriCol.getName());
             if (lsid != null)
             {
-                Map<String, Object> propertyValues = OntologyManager.getProperties(getDomainContainer(container), lsid);
+                Map<String, Object> propertyValues = OntologyManager.getProperties(getDomainObjContainer(container), lsid);
                 if (propertyValues.size() > 0)
                 {
                     // convert PropertyURI->value map into "Property name"->value map
@@ -268,7 +281,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 values.put(pd.getPropertyURI(), value);
             }
 
-            List<String> lsids = OntologyManager.insertTabDelimited(c, user, null, new ImportHelper(), pds, Collections.singletonList(values), true);
+            List<String> lsids = OntologyManager.insertTabDelimited(getDomainObjContainer(c), user, null, new ImportHelper(), pds, Collections.singletonList(values), true);
             String lsid = lsids.get(0);
 
             // Add the new lsid to the row map.
@@ -372,7 +385,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 pds.add(pd);
 
                 if (lsid != null && hasProperty(oldRow, pd))
-                    OntologyManager.deleteProperty(lsid, pd.getPropertyURI(), getDomainContainer(c), getDomainContainer(c));
+                    OntologyManager.deleteProperty(lsid, pd.getPropertyURI(), getDomainObjContainer(c), getDomainContainer(c));
 
                 Object value = getPropertyValue(row, pd);
                 if (value != null)
@@ -381,7 +394,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
             // Note: copy lsid into newValues map so it will be found by the ImportHelper.beforeImportObject()
             newValues.put(objectUriCol.getName(), lsid);
-            List<String> lsids = OntologyManager.insertTabDelimited(c, user, null, new ImportHelper(), pds, Collections.singletonList(newValues), true);
+            List<String> lsids = OntologyManager.insertTabDelimited(getDomainObjContainer(c), user, null, new ImportHelper(), pds, Collections.singletonList(newValues), true);
 
             // Update the lsid in the row: the lsid may have not existed in the row before the update.
             lsid = lsids.get(0);

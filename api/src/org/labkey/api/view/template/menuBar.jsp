@@ -66,7 +66,8 @@
 <!-- TOPMENU -->
 <div id="topmenu" class="labkey-header-panel">
 <div id="menubar" class="labkey-main-menu">
-    <ul>
+    <div class="labkey-menu-constraint">
+        <ul>
 <%
     if (showProjectNavigation)
     {
@@ -119,6 +120,7 @@
 <%
     include(new HeaderMenu(pageConfig), out);
 %>
+    </div>
 </div>
 <div class="labkey-main-menu main-menu-replicate"></div>
 <script type="text/javascript">

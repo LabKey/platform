@@ -102,7 +102,7 @@ function showPathname(filechooser, element)
     else
          filename = pathname.substring(pathname.lastIndexOf('\\')+1,pathname.length);
     // As of issue 18142, don't show an icon if no file is selected
-    Ext4.get(element).dom.innerHTML = "<table><tr><td>" + (filename == '' ? "" : ("<img src=\"" + LABKEY.Utils.getFileIconUrl(filename) + "\"/>")) + "</td><td>" + filename + "</td></tr></table>";
+    Ext4.get(element).dom.innerHTML = "<table><tr><td>" + (filename == '' ? "" : ("<img src=\"" + LABKEY.Utils.getFileIconUrl(filename) + "\"/>")) + "</td><td>" + Ext4.htmlEncode(filename) + "</td></tr></table>";
     return(true);
 }
 

@@ -1199,7 +1199,7 @@ public class Portal
             view = factory.getWebPartView(portalCtx, webPart);
             if (view != null)
             {
-                view.setWebPartRowId(webPart.getRowId());
+                view.setWebPart(webPart);
                 view.setLocation(webPart.getLocation());
                 Map<String, String> props = webPart.getPropertyMap();
                 if (null != props && props.containsKey("webpart.title"))
@@ -1212,7 +1212,7 @@ public class Portal
             String message = "An unexpected error occurred";
             view = ExceptionUtil.getErrorWebPartView(status, message, t, portalCtx.getRequest());
             view.setTitle(webPart.getName());
-            view.setWebPartRowId(webPart.getRowId());
+            view.setWebPart(webPart);
         }
 
         return view;

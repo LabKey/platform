@@ -219,9 +219,10 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
             String title = StringUtils.trimToEmpty(config._title);
 
             out.print("<!--FrameType.PORTAL-->");
-            out.println("<table name=\"webpart\" id=\"webpart_" + config._webPartRowId + "\" class=\"labkey-wp\">");
-
-            Boolean collapseXd = false;
+            out.println("<table name=\"webpart\"");
+            if (null != config._webpart)
+                out.println(" id=\"webpart_" + config._webpart.getRowId() + "\"");
+            out.println(" class=\"labkey-wp\">");
 
             // Don't render webpart header if title is null or blank
             if (!StringUtils.isEmpty(title))
@@ -291,32 +292,28 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
                     nMenu.addChild(config._customize);
                 }
 
-                if (context.getUser().isSiteAdmin())
+                if (config._webpart != null && context.getUser().isSiteAdmin())
                 {
-                    Portal.WebPart webPart = Portal.getPart(context.getContainer(), config._webPartRowId);
+                    Portal.WebPart webPart = config._webpart;
+                    String permissionString = null;
+                    String containerPathString = null;
 
-                    if (webPart != null)
-                    {
-                        String permissionString = null;
-                        String containerPathString = null;
+                    if (webPart.getPermission() != null)
+                        permissionString = "'" + webPart.getPermission() + "'";
 
-                        if (webPart.getPermission() != null)
-                            permissionString = "'" + webPart.getPermission() + "'";
+                    if (webPart.getPermissionContainer() != null)
+                        containerPathString = PageFlowUtil.qh(webPart.getPermissionContainer().getPath());
 
-                        if (webPart.getPermissionContainer() != null)
-                            containerPathString = PageFlowUtil.qh(webPart.getPermissionContainer().getPath());
+                    // Wrapped in immediately invoke function expression because of Issue 16953
+                    NavTree permissionsNav = new NavTree("Permissions",
+                            "javascript:LABKEY.Portal._showPermissions(" +
+                                    config._webpart.getRowId() + "," +
+                                    permissionString + "," +
+                                    containerPathString + ");"
+                    );
 
-                        // Wrapped in immediately invoke function expression because of Issue 16953
-                        NavTree permissionsNav = new NavTree("Permissions",
-                                "javascript:LABKEY.Portal._showPermissions(" +
-                                        config._webPartRowId + "," +
-                                        permissionString + "," +
-                                        containerPathString + ");"
-                        );
-
-                        permissionsNav.setId("permissions_" + webPart.getRowId());
-                        nMenu.addChild(permissionsNav);
-                    }
+                    permissionsNav.setId("permissions_" + webPart.getRowId());
+                    nMenu.addChild(permissionsNav);
                 }
 
                 if (config._location != null && config._location.equals(WebPartFactory.LOCATION_RIGHT))
