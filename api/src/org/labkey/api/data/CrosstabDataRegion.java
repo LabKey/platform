@@ -65,8 +65,7 @@ public class CrosstabDataRegion extends DataRegion
             //add a row for the column axis label if there is one
             out.write("<tr>\n");
             renderColumnGroupHeader(_numRowAxisCols + (showRecordSelectors ? 1 : 0), _settings.getRowAxis().getCaption(), out, 2, false);
-            renderColumnGroupHeader(renderers.size() - _numRowAxisCols - (showRecordSelectors ? 1 : 0),
-                    _settings.getColumnAxis().getCaption(), out);
+            renderColumnGroupHeader(renderers.size() - _numRowAxisCols, _settings.getColumnAxis().getCaption(), out);
             out.write("</tr>\n");
 
             //add an extra row for the column dimension members
