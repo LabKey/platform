@@ -449,26 +449,21 @@ public class UserManager
         addToUserHistory(toUpdate, "Contact information for " + toUpdate.getEmail() + " was updated");
     }
 
-    public static void requestEmail(int userId, String currentEmail, ValidEmail requestedEmail, String verificationToken, User currentUser) throws SecurityManager.UserManagementException
+    public static void requestEmail(int userId, String currentEmail, String requestedEmail, String verificationToken, User currentUser) throws SecurityManager.UserManagementException
     {
         if (SecurityManager.loginExists(currentEmail))
         {
             Instant timeoutDate = Instant.now().plus(VERIFICATION_EMAIL_TIMEOUT, ChronoUnit.MINUTES);
             SqlExecutor executor = new SqlExecutor(CORE.getSchema());
             int rows = executor.execute("UPDATE " + CORE.getTableInfoLogins() + " SET RequestedEmail=?, Verification=?, VerificationTimeout=? WHERE Email=?",
-                    requestedEmail.getEmailAddress(), verificationToken, Date.from(timeoutDate), currentEmail);
+                    requestedEmail, verificationToken, Date.from(timeoutDate), currentEmail);
             if (1 != rows)
                 throw new SecurityManager.UserManagementException(requestedEmail, "Unexpected number of rows returned when setting verification: " + rows);
-            addToUserHistory(getUser(userId), currentUser + " requested email address change from " + currentEmail + " to " + requestedEmail.getEmailAddress() +
-                    " with token '" + verificationToken + "'.");
+            addToUserHistory(getUser(userId), currentUser + " requested email address change from " + currentEmail + " to " + requestedEmail +
+                    " with token '" + verificationToken + "' and timeout date '" + Date.from(timeoutDate) + "'.");
         }
 
         clearUserList();
-    }
-
-    public static void changeEmail(int userId, String oldEmail, ValidEmail newEmail, String verificationToken, User currentUser) throws SecurityManager.UserManagementException
-    {
-        changeEmail(userId, oldEmail, newEmail.getEmailAddress(), verificationToken, currentUser);
     }
 
     public static void changeEmail(int userId, String oldEmail, String newEmail, String verificationToken, User currentUser) throws SecurityManager.UserManagementException
@@ -502,6 +497,12 @@ public class UserManager
                 " with token '" + verificationToken + "', but the verification link was timed out.");
     }
 
+    public static void auditBadVerificationToken(int userId, String oldEmail, String newEmail, String verificationToken, User currentUser)
+    {
+        addToUserHistory(getUser(userId), currentUser + " tried to change an email address from " + oldEmail + " to " + newEmail +
+                " with token '" + verificationToken + "', but the verification token was incorrect.");
+    }
+
     public static Logger getLOG()
     {
         return LOG;
@@ -509,7 +510,7 @@ public class UserManager
 
     public static VerifyEmail getVerifyEmail(ValidEmail email)
     {
-        SqlSelector sqlSelector = new SqlSelector(CORE.getSchema(), "SELECT RequestedEmail, Verification, VerificationTimeout FROM " + CORE.getTableInfoLogins()
+        SqlSelector sqlSelector = new SqlSelector(CORE.getSchema(), "SELECT Email, RequestedEmail, Verification, VerificationTimeout FROM " + CORE.getTableInfoLogins()
                 + " WHERE Email = ?", email.getEmailAddress());
         VerifyEmail verifyEmail = sqlSelector.getObject(VerifyEmail.class);
         return verifyEmail;
@@ -517,9 +518,20 @@ public class UserManager
 
     public static class VerifyEmail
     {
+        private String _email;
         private String _requestedEmail;
         private String _verification;
         private Date _verificationTimeout;
+
+        public String getEmail()
+        {
+            return _email;
+        }
+
+        public void setEmail(String email)
+        {
+            this._email = email;
+        }
 
         public String getRequestedEmail()
         {
