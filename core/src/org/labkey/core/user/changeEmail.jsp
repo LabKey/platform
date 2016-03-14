@@ -38,23 +38,24 @@
 <% } else if (form.getIsFromVerifiedLink()) { %>
 <p>For security purposes, please enter your password.</p>
 <form <%=formAction(ChangeEmailAction.class, Method.Post)%>><labkey:csrf/>
-<%=formatMissedErrors("form")%>
-<div class="auth-form-body">
-    <label for="username">Email</label>
-    <input id="username" name="username" value="<%=h(form.getUsername())%>" type="text" class="input-block" tabindex="1"%>
-    <label for="password">
-        Password
-        <a href="<%=h(buildURL(LoginController.ResetPasswordAction.class))%>">(forgot password)</a>
-    </label>
-
-    <input id="password" name="password" type="password" class="input-block" tabindex="2" autofocus>
-    <p><%= button("Submit").submit(true) %>
-       <%= button("Cancel").href(cancelURL) %></p>
-    <input type="hidden" name="userId" value="<%=form.getUserId()%>">
-    <input type="hidden" name="currentEmail" value="<%=h(form.getCurrentEmail())%>">
-    <input type="hidden" name="verificationToken" value="<%=h(form.getVerificationToken())%>">
-    <input type="hidden" name="isFromVerifiedLink" value="<%=form.getIsFromVerifiedLink()%>">
-</div>
+<table><%=formatMissedErrorsInTable("form", 2)%>
+    <tr>
+        <td>Email:</td>
+        <td><%=h(form.getCurrentEmail())%></td>
+    </tr>
+    <tr>
+        <td><label for="password">Password <a href="<%=h(buildURL(LoginController.ResetPasswordAction.class))%>">(forgot password)</a>:</label></td>
+        <td><input id="password" name="password" type="password" tabindex="2" autofocus></td>
+    </tr>
+    <tr>
+        <td><%= button("Submit").submit(true) %>
+            <%= button("Cancel").href(cancelURL) %></td>
+    </tr>
+</table>
+<input type="hidden" name="userId" value="<%=form.getUserId()%>">
+<input type="hidden" name="currentEmail" value="<%=h(form.getCurrentEmail())%>">
+<input type="hidden" name="verificationToken" value="<%=h(form.getVerificationToken())%>">
+<input type="hidden" name="isFromVerifiedLink" value="<%=form.getIsFromVerifiedLink()%>">
 </form>
 <% } else {%>
 <form <%=formAction(ChangeEmailAction.class, Method.Post)%>><labkey:csrf/>
