@@ -256,6 +256,12 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 {
                     return UsersDomainKind.getDomainContainer();
                 }
+
+                @Override
+                public Container getDomainObjContainer(Container c)
+                {
+                    return UsersDomainKind.getDomainContainer();
+                }
             };
             QueryUpdateService updateService = new SimpleQueryUpdateService(this, table, helper);
             return new CacheClearingQueryUpdateService(updateService)

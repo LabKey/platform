@@ -2557,8 +2557,9 @@ public class DavController extends SpringActionController
         {
             if (writer instanceof BufferedWriter)
                 out = (BufferedWriter)writer;
-            out = new BufferedWriter(writer);
-            json = new JSONWriter(writer);
+            else
+                out = new BufferedWriter(writer);
+            json = new JSONWriter(out);
             extraProps = new HashMap<>();
         }
 

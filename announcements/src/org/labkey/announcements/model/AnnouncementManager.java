@@ -956,7 +956,7 @@ public class AnnouncementManager
                 {
                     if (notificationBean == null)
                         return null;
-                    return notificationBean.announcementModel.getParent() != null ? " responded" : " created a new " + notificationBean.settings.getConversationName().toLowerCase();
+                    return notificationBean.announcementModel.getParent() != null ? " responded" : " created a new " + PageFlowUtil.filter(notificationBean.settings.getConversationName().toLowerCase());
                 }
             });
 
@@ -988,7 +988,7 @@ public class AnnouncementManager
                 }
             });
 
-            _replacements.add(new ReplacementParam<String>("messageSubject", String.class, "Message subject", ContentType.Plain)
+            _replacements.add(new ReplacementParam<String>("messageSubject", String.class, "Message subject", ContentType.HTML)
             {
                 public String getValue(Container c)
                 {
@@ -1092,7 +1092,7 @@ public class AnnouncementManager
                 {
                     sb.append(separator);
                     separator = ", ";
-                    sb.append("<a href=\"").append((attachment.getDownloadUrl(AnnouncementsController.DownloadAction.class))).append("\">").append(PageFlowUtil.filter(attachment.getName())).append("</a>");
+                    sb.append("<a href=\"").append((attachment.getDownloadUrl(AnnouncementsController.DownloadAction.class).getURIString())).append("\">").append(PageFlowUtil.filter(attachment.getName())).append("</a>");
                 }
             }
             this.attachments = sb.toString();

@@ -1158,7 +1158,7 @@ public class ExperimentController extends SpringActionController
             {
                 ExpDataClass dataClass = ExperimentService.get().createDataClass(
                     getContainer(), getUser(), form.getName(), form.getDescription(),
-                    Collections.emptyList(), Collections.emptyList(), null, form.getNameExpression()
+                    Collections.emptyList(), Collections.emptyList(), form.getMaterialSourceId(), form.getNameExpression()
                 );
 
                 _successUrl = PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(getContainer(), dataClass.getDomain().getTypeURI(), false, false, false);

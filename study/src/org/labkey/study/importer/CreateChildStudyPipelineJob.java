@@ -317,6 +317,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         dataTypes.add(StudyArchiveDataTypes.QC_STATE_SETTINGS);
         dataTypes.add(StudyArchiveDataTypes.VISIT_MAP);
         dataTypes.add(StudyArchiveDataTypes.CRF_DATASETS);
+        dataTypes.add(StudyArchiveDataTypes.DATASET_DATA);
         dataTypes.add(StudyArchiveDataTypes.VIEW_CATEGORIES);
         dataTypes.add(StudyArchiveDataTypes.PARTICIPANT_GROUPS);
 
@@ -549,7 +550,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         {
             // query snapshots need to have participants created ahead of the snapshot
             if (form.isUpdate())
-                ensureGroupParticipants();
+                ensureGroupParticipants(_form.isUseAlternateParticipantIds());
 
             VirtualFile studyDir = vf.getDir("study");
 
@@ -619,11 +620,13 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
     }
 
     /**
-     * Participant groups cannot be created unless the subject id's exist in the participant table, participants are usually
+     * Participant groups cannot be created unless the subject ids exist in the participant table. Participants are usually
      * added via dataset data insertion but we need to have them sooner because we need to filter the datasets on participant
      * group participants.
+     *
+     * @param useAlternateParticipantIds Whether to use alternate participant ids
      */
-    private void ensureGroupParticipants()
+    private void ensureGroupParticipants(boolean useAlternateParticipantIds)
     {
         if (!_participantGroups.isEmpty())
         {
@@ -642,13 +645,21 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
             }
             groupInClause.append(")");
 
+            String columnName = useAlternateParticipantIds ? "AlternateId" : "ParticipantId";
+
             SQLFragment sql = new SQLFragment();
 
             sql.append("INSERT INTO ").append(schema.getTableInfoParticipant()).append(" (ParticipantId, Container)");
-            sql.append(" SELECT DISTINCT(ParticipantId), ? FROM ").append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap(), "");
-            sql.append(" WHERE GroupId IN ").append(groupInClause).append(" AND Container = ?");
+            sql.append(" SELECT DISTINCT(").append(columnName).append("), ? FROM ").append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap(), "gm");
+            sql.add(_dstContainer);
 
-            new SqlExecutor(schema.getSchema()).execute(sql.getSQL(), _dstContainer.getId(), _sourceStudy.getContainer());
+            if (useAlternateParticipantIds)
+                sql.append(" INNER JOIN ").append(schema.getTableInfoParticipant(), "p").append(" ON gm.Container = p.Container AND gm.ParticipantId = p.ParticipantId");
+
+            sql.append(" WHERE GroupId IN ").append(groupInClause).append(" AND gm.Container = ?");
+            sql.add(_sourceStudy.getContainer());
+
+            new SqlExecutor(schema.getSchema()).execute(sql);
         }
     }
 }

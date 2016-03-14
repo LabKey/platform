@@ -108,6 +108,9 @@ import org.labkey.pipeline.analysis.FileAnalysisTaskPipelineImpl;
                 if (pipelineId.getNamespaceClass() == null && pipelineId.getName() != null && pipelineId.getModuleName() != null)
                 {
                     Module module = ModuleLoader.getInstance().getModule(pipelineId.getModuleName());
+                    if (module == null)
+                        return null;
+
                     String configFileName = pipelineId.getName() + PIPELINE_CONFIG_EXTENSION;
 
                     // Look for a "pipeline/pipelines/<name>.pipeline.xml" file

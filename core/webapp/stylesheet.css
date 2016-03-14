@@ -3008,7 +3008,6 @@ input[type="checkbox"], input[type="radio"] {
 /* Used for the "App Bar" containing the main title and the application button bar */
 
 .labkey-app-bar {
-    padding: 10px 20px 0 20px;
     background-color: #e0e6ea;
 }
 
@@ -3449,7 +3448,7 @@ span.button-icon {
 
 div.headermenu {
     position: absolute;
-    top: 0px;
+    top: -1px;
     white-space: nowrap;
     z-index: 1;
     color: gray;
@@ -3735,6 +3734,19 @@ div span.labkey-main-menu-icon {
 .labkey-wp-header .fa-pencil {
     font-size: 16px;
     margin-left: 0.4em;
+}
+
+/* 25800: Add a wrapper to ensure the header menus are still visible if body is wider than viewport */
+.labkey-menu-constraint,
+.labkey-app-menu-constraint
+{
+    width: 99.5vw;
+    position: relative;
+}
+
+.labkey-app-menu-constraint {
+    box-sizing: border-box;
+    padding: 10px 20px 0 20px;
 }
 
 .labkey-wp-header .labkey-wp-icon-button-active .fa-caret-down

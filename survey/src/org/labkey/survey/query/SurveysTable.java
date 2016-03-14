@@ -136,6 +136,12 @@ public class SurveysTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 {
                     return SurveyTableDomainKind.getDomainContainer(c);
                 }
+
+                @Override
+                public Container getDomainObjContainer(Container c)
+                {
+                    return SurveyTableDomainKind.getDomainContainer(c);
+                }
             };
             return new SurveysTableQueryUpdateService(this, table, helper);
         }
