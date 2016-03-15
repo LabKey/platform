@@ -494,10 +494,16 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 FileUtils.deleteQuietly(file);
             }
             if(null != warning)
-                throw new ValidationException(warning);
-                // if error indicated in transformPropertiesFile
+            {
+                ValidationException exception = new ValidationException();
+                exception.addFieldError("transform", warning);
+                throw exception;
+            }
+            // if error indicated in transformPropertiesFile
             else if(null != maxSeverity && maxSeverity.equals(errLevel.ERROR.name()))
+            {
                 throw new ValidationException("Transform script has thrown errors.");
+            }
         }
 
     }
@@ -895,6 +901,10 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 tempOutputFiles.removeAll(_filesToIgnore);
 
                 processWarningsOutput(result, transformedProps, info, transErrorFile, tempOutputFiles);
+            }
+            catch (ValidationException e)
+            {
+                throw e;
             }
             catch (Exception e)
             {

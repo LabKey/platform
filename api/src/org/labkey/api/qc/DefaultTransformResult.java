@@ -52,7 +52,6 @@ public class DefaultTransformResult implements TransformResult
 
     public String getWarnings()
     {
-        LOG.info("Transform Warning: getWarnings - " + _warnings);
         return _warnings;
     }
 
@@ -75,7 +74,6 @@ public class DefaultTransformResult implements TransformResult
         _batchProperties = mergeResult.getBatchProperties();
         _runProperties = mergeResult.getRunProperties();
         _uploadedFile = mergeResult.getUploadedFile();
-//        _hasWarnings = mergeResult.hasWarnings();
         _warnings = mergeResult.getWarnings();
         _files = mergeResult.getFiles();
         _assayId = null;

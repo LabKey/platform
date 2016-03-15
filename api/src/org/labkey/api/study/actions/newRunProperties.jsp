@@ -26,6 +26,8 @@
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.io.File" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.springframework.validation.BindException" %>
+<%@ page import="org.springframework.validation.FieldError" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <script type="text/javascript">LABKEY.requiresScript('completion.js');</script>
 
@@ -78,12 +80,33 @@
 %>
         <tr>
             <td class="labkey-error" id="importErrors" colspan="2">
-                <% for(ObjectError err : bean.getErrors().getAllErrors())
+
+                <%
+                if(bean.getErrors().hasFieldErrors("transform"))
                 {
+                    for(FieldError fe : bean.getErrors().getFieldErrors())
+                    {
+                        if(fe.getField() == "transform")
+                        {
+                %>
+                            <%= text(fe.getDefaultMessage())%>
+                            <br>
+                <%
+                        }
+                    }
+                %>
+                <%
+                }
+                else
+                {
+                    for(ObjectError err : bean.getErrors().getAllErrors())
+                    {
                 %>
                     <%= h(err.getDefaultMessage()) %>
                     <br>
-                <%}%>
+                <%  }
+                }
+                %>
             </td>
         </tr>
         <tr>
