@@ -30,6 +30,7 @@ import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.BindException;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * User: jeckels
@@ -54,36 +55,56 @@ public abstract class AbstractAssayAPIAction<FORM extends SimpleApiJsonForm> ext
 
     public static Pair<ExpProtocol, AssayProvider> getProtocolProvider(JSONObject json, Container c)
     {
-        int assayId = json.getInt(AssayJSONConverter.ASSAY_ID);
-        return getProtocolProvider(assayId, c);
+        int assayId = json.optInt(AssayJSONConverter.ASSAY_ID);
+        if (assayId > 0)
+            return getProtocolProvider(assayId, c);
+
+        String assayName = json.optString(AssayJSONConverter.ASSAY_NAME);
+        String providerName = json.optString(AssayJSONConverter.PROVIDER_NAME);
+        if (assayName == null || providerName == null)
+            throw new IllegalArgumentException("assayId or both protocolName and providerName required");
+
+        return getProtocolProvider(assayName, providerName, c);
     }
 
     public static Pair<ExpProtocol, AssayProvider> getProtocolProvider(Integer assayId, Container c)
     {
         if (assayId == null)
-        {
             throw new IllegalArgumentException("assayId parameter required");
-        }
 
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(assayId);
         if (protocol == null)
-        {
             throw new NotFoundException("Could not find assay id " + assayId);
-        }
 
         List<ExpProtocol> availableAssays = AssayService.get().getAssayProtocols(c);
         if (!availableAssays.contains(protocol))
-        {
             throw new NotFoundException("Assay id " + assayId + " is not visible for folder " + c);
-        }
 
         AssayProvider provider = AssayService.get().getProvider(protocol);
         if (provider == null)
-        {
             throw new NotFoundException("Could not find assay provider for assay id " + assayId);
-        }
 
         return Pair.of(protocol, provider);
+    }
+
+    public static Pair<ExpProtocol, AssayProvider> getProtocolProvider(String protocolName, String providerName, Container c)
+    {
+        AssayProvider provider = AssayService.get().getProvider(providerName);
+        if (provider == null)
+            throw new NotFoundException("Assay provider '" + providerName + "' not found");
+
+        List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(c, provider);
+        if (protocols.isEmpty())
+            throw new NotFoundException("Assay protocol '" + protocolName + "' not found");
+
+        protocols = protocols.stream().filter(p -> protocolName.equals(p.getName())).collect(Collectors.toList());
+        if (protocols.isEmpty())
+            throw new NotFoundException("Assay protocol '" + protocolName + "' not found");
+
+        if (protocols.size() > 1)
+            throw new NotFoundException("More than one assay protocol named '" + protocolName + "' was found.");
+
+        return Pair.of(protocols.get(0), provider);
     }
 
     protected abstract ApiResponse executeAction(ExpProtocol assay, AssayProvider provider, FORM form, BindException errors) throws Exception;

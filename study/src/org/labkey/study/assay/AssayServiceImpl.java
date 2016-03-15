@@ -392,14 +392,17 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                     }
 
                     Map<String, ProtocolParameter> newParams = new HashMap<>(protocol.getProtocolParameters());
-                    for (Map.Entry<String, String> entry : assay.getProtocolParameters().entrySet())
+                    if (assay.getProtocolParameters() != null)
                     {
-                        ProtocolParameter param = new ProtocolParameter();
-                        String uri = entry.getKey();
-                        param.setOntologyEntryURI(uri);
-                        param.setValue(SimpleTypeNames.STRING, entry.getValue());
-                        param.setName(uri.indexOf("#") != -1 ? uri.substring(uri.indexOf("#") + 1) : uri);
-                        newParams.put(uri, param);
+                        for (Map.Entry<String, String> entry : assay.getProtocolParameters().entrySet())
+                        {
+                            ProtocolParameter param = new ProtocolParameter();
+                            String uri = entry.getKey();
+                            param.setOntologyEntryURI(uri);
+                            param.setValue(SimpleTypeNames.STRING, entry.getValue());
+                            param.setName(uri.indexOf("#") != -1 ? uri.substring(uri.indexOf("#") + 1) : uri);
+                            newParams.put(uri, param);
+                        }
                     }
                     protocol.setProtocolParameters(newParams.values());
 

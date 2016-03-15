@@ -36,7 +36,6 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocolApplication;
-import org.labkey.api.exp.api.ExpProtocolOutput;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
@@ -59,6 +58,7 @@ import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpSampleSetImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
+import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 import org.labkey.experiment.samples.UploadMaterialSetForm.InsertUpdateChoice;
 
 import java.io.IOException;
@@ -80,6 +80,8 @@ public class UploadSamplesHelper
     private static final Logger _log = Logger.getLogger(UploadSamplesHelper.class);
     public static final String MATERIAL_INPUT_PARENT = "MaterialInputs";
     public static final String DATA_INPUT_PARENT = "DataInputs";
+    public static final String MATERIAL_OUTPUT_CHILD = "MaterialOutputs";
+    public static final String DATA_OUTPUT_CHILD = "DataOutputs";
 
     UploadMaterialSetForm _form;
     private MaterialSource _materialSource;
@@ -166,7 +168,7 @@ public class UploadSamplesHelper
 
             boolean hasCommentHeader = false;
             boolean addedProperty = false;
-            Set<String> parentColumns = new HashSet<>();
+            Set<String> inputOutputColumns = new HashSet<>();
             for (ColumnDescriptor cd : columns)
             {
                 if (isReservedHeader(cd.name))
@@ -182,9 +184,9 @@ public class UploadSamplesHelper
                     {
                         cd.name = ExpMaterialTable.Column.Name.name();
                     }
-                    else if (isDataInputHeader(cd.name) || isMaterialInputHeader(cd.name))
+                    else if (isInputOutputHeader(cd.name))
                     {
-                        parentColumns.add(cd.name);
+                        inputOutputColumns.add(cd.name);
                     }
                     else
                     {
@@ -398,7 +400,7 @@ public class UploadSamplesHelper
                     }
                 }
             }
-            materials = insertTabDelimitedMaterial(maps, new ArrayList<>(descriptors), _materialSource, reusedMaterialLSIDs, parentColumns);
+            materials = insertTabDelimitedMaterial(maps, new ArrayList<>(descriptors), _materialSource, reusedMaterialLSIDs, inputOutputColumns);
             new ExpSampleSetImpl(_materialSource).onSamplesChanged(_form.getUser(), null);
 
             transaction.commit();
@@ -468,21 +470,17 @@ public class UploadSamplesHelper
         return name.equalsIgnoreCase(ExpMaterialTable.Column.Flag.name()) || name.equalsIgnoreCase("Comment");
     }
 
-    private boolean isDataInputHeader(String name)
+    public static boolean isInputOutputHeader(String name)
     {
-        return name.startsWith(DATA_INPUT_PARENT);
-    }
-
-    private boolean isMaterialInputHeader(String name)
-    {
-        return name.startsWith(MATERIAL_INPUT_PARENT);
+        return name.startsWith(DATA_INPUT_PARENT) || name.startsWith(MATERIAL_INPUT_PARENT) ||
+                name.startsWith(DATA_OUTPUT_CHILD) || name.startsWith(MATERIAL_OUTPUT_CHILD);
     }
 
     private boolean isReservedHeader(String name)
     {
         if (isNameHeader(name) || isCommentHeader(name) || "CpasType".equalsIgnoreCase(name))
             return true;
-        if (isDataInputHeader(name) || isMaterialInputHeader(name))
+        if (isInputOutputHeader(name))
             return true;
         for (ExpMaterialTable.Column column : ExpMaterialTable.Column.values())
         {
@@ -557,7 +555,7 @@ public class UploadSamplesHelper
         return ret.toString();
     }
 
-    public List<ExpMaterial> insertTabDelimitedMaterial(List<Map<String, Object>> rows, List<PropertyDescriptor> descriptors, MaterialSource source, Set<String> reusedMaterialLSIDs, Set<String> parentColumns)
+    public List<ExpMaterial> insertTabDelimitedMaterial(List<Map<String, Object>> rows, List<PropertyDescriptor> descriptors, MaterialSource source, Set<String> reusedMaterialLSIDs, Set<String> inputOutputColumns)
             throws SQLException, ValidationException, ExperimentException
     {
         long start = System.currentTimeMillis();
@@ -574,7 +572,7 @@ public class UploadSamplesHelper
 
         OntologyManager.insertTabDelimited(c, _form.getUser(), ownerObjectId, helper, descriptors, rows, true);
 
-        if (source.getParentCol() != null || !parentColumns.isEmpty())
+        if (source.getParentCol() != null || !inputOutputColumns.isEmpty())
         {
             Map<String, PropertyDescriptor> descriptorMap = new HashMap<>();
             Map<String, List<ExpMaterialImpl>> potentialParents = new HashMap<>();
@@ -606,30 +604,25 @@ public class UploadSamplesHelper
                     }
                 }
 
-                Map<ExpProtocolOutput, String> parentInputMap = resolveParentInputs(
+                Pair<RunInputOutputBean, RunInputOutputBean> inputsAndOutputs = resolveInputsAndOutputs(
                         _form.getUser(), getContainer(),
-                        source, parentColumns,
+                        source, inputOutputColumns,
                         row, potentialParents, helper);
 
-                if (!parentInputMap.isEmpty())
+                if (inputsAndOutputs.first != null)
                 {
-                    // Need to create a new derivation run
-                    Map<ExpMaterial, String> parentMaterialMap = new HashMap<>();
-                    Map<ExpData, String> parentDataMap = new HashMap<>();
-
-                    for (Map.Entry<ExpProtocolOutput, String> entry : parentInputMap.entrySet())
-                    {
-                        if (entry.getKey() instanceof ExpMaterial)
-                        {
-                            parentMaterialMap.put((ExpMaterial)entry.getKey(), entry.getValue());
-                        }
-                        else if (entry.getKey() instanceof ExpData)
-                        {
-                            parentDataMap.put((ExpData)entry.getKey(), entry.getValue());
-                        }
-                    }
+                    // Add parent derivation run
+                    Map<ExpMaterial, String> parentMaterialMap = inputsAndOutputs.first.getMaterials();
+                    Map<ExpData, String> parentDataMap = inputsAndOutputs.first.getDatas();
                     runRecords.add(new UploadSampleRunRecord(parentMaterialMap, Collections.singletonMap(material, "Sample"), parentDataMap, Collections.emptyMap()));
-                    //ExperimentService.get().deriveSamples(parentMap, Collections.singletonMap(material, "Sample"), new ViewBackgroundInfo(_form.getContainer(),  _form.getUser(), null), _log);
+                }
+
+                if (inputsAndOutputs.second != null)
+                {
+                    // Add child derivation run
+                    Map<ExpMaterial, String> childMaterialMap = inputsAndOutputs.second.getMaterials();
+                    Map<ExpData, String> childDataMap = inputsAndOutputs.second.getDatas();
+                    runRecords.add(new UploadSampleRunRecord(Collections.singletonMap(material, "Sample"), childMaterialMap, Collections.emptyMap(), childDataMap));
                 }
             }
 
@@ -699,12 +692,17 @@ public class UploadSamplesHelper
      * @param parentNames - set of (parent column name, parent value) pairs
      * @throws ExperimentException
      */
-    public static Map<ExpProtocolOutput, String> resolveParentInputs(User user, Container c,
-                                           Set<Pair<String, String>> parentNames,
-                                           @Nullable MaterialSource source)
+    public static Pair<RunInputOutputBean, RunInputOutputBean> resolveInputsAndOutputs(User user, Container c,
+                                                                         Set<Pair<String, String>> parentNames,
+                                                                         @Nullable MaterialSource source)
             throws ExperimentException
     {
-        Map<ExpProtocolOutput, String> parentMap = new HashMap<>();
+        Map<ExpMaterial, String> parentMaterials = new HashMap<>();
+        Map<ExpData, String> parentData = new HashMap<>();
+
+        Map<ExpMaterial, String> childMaterials = new HashMap<>();
+        Map<ExpData, String> childData = new HashMap<>();
+
         for (Pair<String, String> parentNameValuePair : parentNames)
         {
             String parentColName = parentNameValuePair.first;
@@ -716,44 +714,54 @@ public class UploadSamplesHelper
             {
                 if (parts[0].equalsIgnoreCase(MATERIAL_INPUT_PARENT))
                 {
-                    ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(c, parts[1]);
-                    if (sampleSet != null)
-                    {
-                        ExpMaterial sample = sampleSet.getSample(c, parentValue);
-                        if (sample != null)
-                            parentMap.put(sample, "Sample");
-                    }
+                    ExpMaterial sample = findMaterial(c, parts[1], parentValue);
+                    if (sample != null)
+                        parentMaterials.put(sample, "Sample");
+                }
+                else if (parts[0].equalsIgnoreCase(MATERIAL_OUTPUT_CHILD))
+                {
+                    ExpMaterial sample = findMaterial(c, parts[1], parentValue);
+                    if (sample != null)
+                        childMaterials.put(sample, "Sample");
                 }
                 else if (parts[0].equalsIgnoreCase(DATA_INPUT_PARENT))
                 {
                     if (source != null)
                         ensureTargetColumnLookup(user, c, source, parentColName, "exp.data", parts[1]);
-                    ExpDataClass dataClass = ExperimentService.get().getDataClass(c, user, parts[1]);
-                    if (dataClass != null)
-                    {
-                        ExpData data = dataClass.getData(c, parentValue);
-                        if (data != null)
-                        {
-                            parentMap.put(data, data.getName());
-                        }
-                    }
+                    ExpData data = findData(c, user, parts[0], parentValue);
+                    if (data != null)
+                        parentData.put(data, data.getName());
+                }
+                else if (parts[0].equalsIgnoreCase(DATA_OUTPUT_CHILD))
+                {
+                    ExpData data = findData(c, user, parts[0], parentValue);
+                    if (data != null)
+                        childData.put(data, data.getName());
                 }
             }
         }
 
-        return parentMap;
+        RunInputOutputBean parents = null;
+        if (!parentMaterials.isEmpty() || !parentData.isEmpty())
+            parents = new RunInputOutputBean(parentMaterials, parentData);
+
+        RunInputOutputBean children = null;
+        if (!childMaterials.isEmpty() || !childData.isEmpty())
+            children = new RunInputOutputBean(childMaterials, childData);
+
+        return Pair.of(parents, children);
     }
 
-    Map<ExpProtocolOutput, String> resolveParentInputs(User user, Container c, MaterialSource source,
-                                                       Set<String> parentColumns,
-                                                       Map<String, Object> row,
-                                                       Map<String, List<ExpMaterialImpl>> potentialParents,
-                                                       MaterialImportHelper helper) throws ExperimentException, ValidationException
+    Pair<RunInputOutputBean, RunInputOutputBean> resolveInputsAndOutputs(User user, Container c, MaterialSource source,
+                                                           Set<String> parentColumns,
+                                                           Map<String, Object> row,
+                                                           Map<String, List<ExpMaterialImpl>> potentialParents,
+                                                           MaterialImportHelper helper) throws ExperimentException, ValidationException
     {
         if (source.getParentCol() != null)
         {
             // legacy magic column value method
-            Map<ExpProtocolOutput, String> parentInputMap = new HashMap<>();
+            Map<ExpMaterial, String> parentInputMap = new HashMap<>();
             String newParent = row.get(source.getParentCol()) == null ? null : row.get(source.getParentCol()).toString();
             if (newParent != null)
             {
@@ -787,9 +795,9 @@ public class UploadSamplesHelper
                         }
                     }
 
-                    List<ExpProtocolOutput> parentMaterials = resolveParentMaterials(newParent, potentialParents);
+                    List<ExpMaterial> parentMaterials = resolveParentMaterials(c, newParent, potentialParents);
                     int index = 1;
-                    for (ExpProtocolOutput parentMaterial : parentMaterials)
+                    for (ExpMaterial parentMaterial : parentMaterials)
                     {
                         parentInputMap.put(parentMaterial, "Sample" + (index == 1 ? "" : Integer.toString(index)));
                         index++;
@@ -797,7 +805,7 @@ public class UploadSamplesHelper
                 }
             }
 
-            return parentInputMap;
+            return Pair.of(new RunInputOutputBean(parentInputMap, null), null);
         }
         else
         {
@@ -819,10 +827,11 @@ public class UploadSamplesHelper
                         .collect(Collectors.toSet()));
             }
 
-            return resolveParentInputs(user, c, parentNames, source);
+            return resolveInputsAndOutputs(user, c, parentNames, source);
         }
     }
 
+    // CONSIDER: This method shouldn't update the domain to make the property into a lookup..
     private static void ensureTargetColumnLookup(User user, Container c, MaterialSource source, String propName, String schemaName, String queryName) throws ExperimentException
     {
         Domain domain = PropertyService.get().getDomain(c, source.getLSID());
@@ -838,9 +847,9 @@ public class UploadSamplesHelper
         }
     }
 
-    private List<ExpProtocolOutput> resolveParentMaterials(String newParent, Map<String, List<ExpMaterialImpl>> materials) throws ValidationException, ExperimentException
+    private List<ExpMaterial> resolveParentMaterials(Container c, String newParent, Map<String, List<ExpMaterialImpl>> materials) throws ValidationException, ExperimentException
     {
-        List<ExpProtocolOutput> parents = new ArrayList<>();
+        List<ExpMaterial> parents = new ArrayList<>();
 
         String[] parentNames = newParent.split(",");
         for (String parentName : parentNames)
@@ -860,7 +869,7 @@ public class UploadSamplesHelper
                 {
                     String sampleSetName = parentName.substring(0, dotIndex);
                     String sampleName = parentName.substring(dotIndex + 1);
-                    parent = findParent(sampleSetName, sampleName);
+                    parent = findMaterial(c, sampleSetName, sampleName);
                 }
                 if (parent != null)
                 {
@@ -879,24 +888,23 @@ public class UploadSamplesHelper
         return parents;
     }
 
-    private ExpMaterial findParent(String sampleSetName, String sampleName)
+    private static ExpMaterial findMaterial(Container c, String sampleSetName, String sampleName)
     {
         // Could easily do some caching here, but probably not a significant perf issue
-        for (ExpSampleSet sampleSet : ExperimentService.get().getSampleSets(getContainer(), _form.getUser(), true))
-        {
-            // Look for a sample set with the right name
-            if (sampleSetName.equals(sampleSet.getName()))
-            {
-                for (ExpMaterial sample : sampleSet.getSamples())
-                {
-                    // Look for a sample with the right name
-                    if (sample.getName().equals(sampleName))
-                    {
-                        return sample;
-                    }
-                }
-            }
-        }
+        ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(c, sampleSetName, true);
+        if (sampleSet != null)
+            return sampleSet.getSample(c, sampleName);
+
+        return null;
+    }
+
+    private static ExpData findData(Container c, User user, String dataClassName, String dataName)
+    {
+        // Could easily do some caching here, but probably not a significant perf issue
+        ExpDataClass dataClass = ExperimentService.get().getDataClass(c, user, dataClassName);
+        if (dataClass != null)
+            return dataClass.getData(c, dataName);
+
         return null;
     }
 

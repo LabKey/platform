@@ -2127,7 +2127,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class TruncateTableAction extends ApiAction<QueryForm>
+    public class TruncateTableAction extends MutatingApiAction<QueryForm>
     {
         UserSchema schema;
         TableInfo table;

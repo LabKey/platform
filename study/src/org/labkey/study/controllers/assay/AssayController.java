@@ -24,7 +24,6 @@ import org.labkey.api.action.AbstractFileUploadAction;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.LabkeyError;
@@ -71,7 +70,29 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.study.actions.*;
+import org.labkey.api.study.actions.AssayBatchDetailsAction;
+import org.labkey.api.study.actions.AssayBatchesAction;
+import org.labkey.api.study.actions.AssayDetailRedirectAction;
+import org.labkey.api.study.actions.AssayHeaderView;
+import org.labkey.api.study.actions.AssayResultDetailsAction;
+import org.labkey.api.study.actions.AssayResultsAction;
+import org.labkey.api.study.actions.AssayRunDetailsAction;
+import org.labkey.api.study.actions.AssayRunUploadForm;
+import org.labkey.api.study.actions.AssayRunsAction;
+import org.labkey.api.study.actions.BaseAssayAction;
+import org.labkey.api.study.actions.DeleteAction;
+import org.labkey.api.study.actions.DesignerAction;
+import org.labkey.api.study.actions.ImportAction;
+import org.labkey.api.study.actions.PlateBasedUploadWizardAction;
+import org.labkey.api.study.actions.ProtocolIdForm;
+import org.labkey.api.study.actions.PublishConfirmAction;
+import org.labkey.api.study.actions.PublishStartAction;
+import org.labkey.api.study.actions.ReimportRedirectAction;
+import org.labkey.api.study.actions.ShowSelectedDataAction;
+import org.labkey.api.study.actions.ShowSelectedRunsAction;
+import org.labkey.api.study.actions.TemplateAction;
+import org.labkey.api.study.actions.TransformResultsAction;
+import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.study.assay.AssayProtocolSchema;
@@ -108,6 +129,7 @@ import org.labkey.study.assay.FileBasedModuleDataHandler;
 import org.labkey.study.assay.ModuleAssayProvider;
 import org.labkey.study.assay.TsvImportAction;
 import org.labkey.study.assay.query.AssayAuditProvider;
+import org.labkey.study.controllers.assay.actions.ProtocolAction;
 import org.labkey.study.controllers.assay.actions.GetAssayBatchAction;
 import org.labkey.study.controllers.assay.actions.GetAssayBatchesAction;
 import org.labkey.study.controllers.assay.actions.ImportRunApiAction;
@@ -169,7 +191,8 @@ public class AssayController extends SpringActionController
             ShowSelectedRunsAction.class,
             ShowSelectedDataAction.class,
             SetDefaultValuesAssayAction.class,
-            AssayDetailRedirectAction.class
+            AssayDetailRedirectAction.class,
+            ProtocolAction.class
         );
 
     public AssayController()

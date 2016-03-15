@@ -60,7 +60,6 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
-import org.labkey.api.exp.api.ExpProtocolOutput;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.property.Domain;
@@ -93,6 +92,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.controllers.exp.ExperimentController;
+import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.io.IOException;
@@ -900,8 +900,8 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
             for (Map.Entry<String, Integer> entry : map.entrySet())
             {
-                if (entry.getKey().toLowerCase().startsWith(UploadSamplesHelper.DATA_INPUT_PARENT.toLowerCase()) ||
-                    entry.getKey().toLowerCase().startsWith(UploadSamplesHelper.MATERIAL_INPUT_PARENT.toLowerCase()))
+                String name = entry.getKey();
+                if (UploadSamplesHelper.isInputOutputHeader(name))
                 {
                     _parentCols.put(entry.getValue(), entry.getKey());
                 }
@@ -946,29 +946,36 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                         String lsid = entry.getKey();
                         Set<Pair<String, String>> parentNames = entry.getValue();
 
-                        Map<ExpProtocolOutput, String> parentMap =
-                                UploadSamplesHelper.resolveParentInputs(_user, getContainer(), parentNames, null);
+                        Pair<RunInputOutputBean, RunInputOutputBean> pair =
+                                UploadSamplesHelper.resolveInputsAndOutputs(_user, getContainer(), parentNames, null);
 
-                        if (!parentMap.isEmpty())
+                        ExpData data = null;
+                        if (pair.first != null)
                         {
-                            // Need to create a new derivation run
-                            Map<ExpMaterial, String> parentMaterialMap = new HashMap<>();
-                            Map<ExpData, String> parentDataMap = new HashMap<>();
+                            // Add parent derivation run
+                            Map<ExpMaterial, String> parentMaterialMap = pair.first.getMaterials();
+                            Map<ExpData, String> parentDataMap = pair.first.getDatas();
 
-                            for (Map.Entry<ExpProtocolOutput, String> mapEntry : parentMap.entrySet())
-                            {
-                                if (mapEntry.getKey() instanceof ExpMaterial)
-                                    parentMaterialMap.put((ExpMaterial)mapEntry.getKey(), mapEntry.getValue());
-                                else if (mapEntry.getKey() instanceof ExpData)
-                                    parentDataMap.put((ExpData)mapEntry.getKey(), mapEntry.getValue());
-                            }
-
-                            // get the output data
-                            ExpData outputData = ExperimentService.get().getExpData(lsid);
-                            if (outputData != null)
+                            data = ExperimentService.get().getExpData(lsid);
+                            if (data != null)
                             {
                                 runRecords.add(new UploadSamplesHelper.UploadSampleRunRecord(parentMaterialMap, Collections.emptyMap(),
-                                        parentDataMap, Collections.singletonMap(outputData, "Data")));
+                                        parentDataMap, Collections.singletonMap(data, "Data")));
+                            }
+                        }
+
+                        if (pair.second != null)
+                        {
+                            // Add child derivation run
+                            Map<ExpMaterial, String> childMaterialMap = pair.second.getMaterials();
+                            Map<ExpData, String> childDataMap = pair.second.getDatas();
+
+                            if (data == null)
+                                data = ExperimentService.get().getExpData(lsid);
+                            if (data != null)
+                            {
+                                runRecords.add(new UploadSamplesHelper.UploadSampleRunRecord(Collections.emptyMap(), childMaterialMap,
+                                        Collections.singletonMap(data, "Data"), childDataMap));
                             }
                         }
                     }

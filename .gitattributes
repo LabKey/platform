@@ -1917,6 +1917,7 @@ study/src/org/labkey/study/controllers/assay/actions/AbstractAssayAPIAction.java
 study/src/org/labkey/study/controllers/assay/actions/GetAssayBatchAction.java -text
 study/src/org/labkey/study/controllers/assay/actions/GetAssayBatchesAction.java -text
 study/src/org/labkey/study/controllers/assay/actions/ImportRunApiAction.java -text
+study/src/org/labkey/study/controllers/assay/actions/ProtocolAction.java -text
 study/src/org/labkey/study/controllers/assay/actions/SaveAssayBatchAction.java -text
 study/src/org/labkey/study/controllers/designer/DesignerController.java -text
 study/src/org/labkey/study/controllers/plate/PlateController.java -text

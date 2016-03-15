@@ -17,6 +17,7 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.NamedObjectList;
@@ -36,6 +37,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.VirtualTable;
@@ -1004,6 +1006,17 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             }
 
             return oldRow;
+        }
+
+        @Override
+        protected int truncateRows(User user, Container c) throws QueryUpdateServiceException, SQLException
+        {
+            final ExperimentServiceImpl svc = ExperimentServiceImpl.get();
+            String sql = "SELECT RowId FROM " + svc.getTinfoExperimentRun() + " WHERE Container = ?";
+            int[] runIds = ArrayUtils.toPrimitive(new SqlSelector(svc.getExpSchema(), sql, c).getArray(Integer.class));
+
+            ExperimentServiceImpl.get().deleteExperimentRunsByRowIds(c, user, runIds);
+            return runIds.length;
         }
     }
 }
