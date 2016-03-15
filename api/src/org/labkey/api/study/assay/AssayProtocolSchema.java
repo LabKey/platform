@@ -46,6 +46,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpExperimentTable;
 import org.labkey.api.exp.query.ExpQCFlagTable;
 import org.labkey.api.exp.query.ExpRunTable;
+import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.gwt.client.ui.PropertiesEditorUtil;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DetailsURL;
@@ -337,15 +338,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
         Domain batchDomain = provider.getBatchDomain(protocol);
         if (batchDomain != null)
         {
-            ColumnInfo propsCol = result.addColumns(batchDomain, BATCH_PROPERTIES_COLUMN_NAME);
-            if (propsCol != null)
-            {
-                // Will be null if the domain doesn't have any properties
-                propsCol.setFk(new AssayPropertyForeignKey(batchDomain));
-                propsCol.setUserEditable(false);
-                propsCol.setShownInInsertView(false);
-                propsCol.setShownInUpdateView(false);
-            }
+            addPropertyColumn(result, batchDomain, BATCH_PROPERTIES_COLUMN_NAME);
             result.setDomain(batchDomain);
         }
 
@@ -398,15 +391,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
         Domain runDomain = getProvider().getRunDomain(getProtocol());
         if (runDomain != null)
         {
-            ColumnInfo propsCol = runTable.addColumns(runDomain, RUN_PROPERTIES_COLUMN_NAME);
-            if (propsCol != null)
-            {
-                // Will be null if the domain doesn't have any properties
-                propsCol.setFk(new AssayPropertyForeignKey(runDomain));
-                propsCol.setUserEditable(false);
-                propsCol.setShownInInsertView(false);
-                propsCol.setShownInUpdateView(false);
-            }
+            addPropertyColumn(runTable, runDomain, RUN_PROPERTIES_COLUMN_NAME);
             runTable.setDomain(runDomain);
         }
 
@@ -448,6 +433,19 @@ public abstract class AssayProtocolSchema extends AssaySchema
         runTable.setDescription("Contains a row per " + getProtocol().getName() + " run.");
 
         return runTable;
+    }
+
+    private void addPropertyColumn(ExpTable table, Domain domain, String columnName)
+    {
+        ColumnInfo propsCol = table.addColumns(domain, columnName);
+        if (propsCol != null)
+        {
+            // Will be null if the domain doesn't have any properties
+            propsCol.setFk(new AssayPropertyForeignKey(domain));
+            propsCol.setUserEditable(false);
+            propsCol.setShownInInsertView(false);
+            propsCol.setShownInUpdateView(false);
+        }
     }
 
     @Nullable

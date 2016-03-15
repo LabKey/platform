@@ -501,7 +501,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
 
         if (material == null)
         {
-            // Get SampleSet by id or name
+            // Get SampleSet by id, name, or lsid
             if (materialObject.has(ExperimentJSONConverter.SAMPLE_SET))
             {
                 JSONObject sampleSetJson = materialObject.getJSONObject(ExperimentJSONConverter.SAMPLE_SET);
@@ -518,6 +518,13 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
                     sampleSet = ExperimentService.get().getSampleSet(context.getContainer(), sampleSetName, true);
                     if (sampleSet == null)
                         throw new NotFoundException("A sample set named '" + sampleSetName + "' doesn't exist.");
+                }
+                else if (sampleSetJson.has(ExperimentJSONConverter.LSID))
+                {
+                    String lsid = sampleSetJson.getString(ExperimentJSONConverter.LSID);
+                    sampleSet = ExperimentService.get().getSampleSet(lsid);
+                    if (sampleSet == null)
+                        throw new NotFoundException("A sample set with LSID '" + lsid + "' doesn't exist.");
                 }
             }
 

@@ -54,6 +54,8 @@ LABKEY.Experiment = new function()
             method: 'POST',
             jsonData: {
                 assayId: config.assayId,
+                assayName: config.assayName,
+                providerName: config.providerName,
                 batches: config.batches
             },
             success: getSuccessCallbackWrapper(createExps, config.success, config.scope),
@@ -69,11 +71,6 @@ LABKEY.Experiment = new function()
     // appropriate for _saveBatches call above
     function getSaveBatchesConfig(config)
     {
-        if (!LABKEY.Utils.getOnSuccess(config)) {
-            console.error("You must specify a callback function in config.success when calling LABKEY.Exp.saveBatch()!");
-            return;
-        }
-
         var wrapConfig = {};
 
         if (config.batches)
@@ -86,6 +83,8 @@ LABKEY.Experiment = new function()
             wrapConfig.batches.push(config.batch);
         }
         wrapConfig.assayId = config.assayId;
+        wrapConfig.assayName = config.assayName;
+        wrapConfig.providerName = config.providerName;
         wrapConfig.scope = config.scope;
         wrapConfig.success = LABKEY.Utils.getOnSuccess(config);
         wrapConfig.failure = LABKEY.Utils.getOnFailure(config);
@@ -119,12 +118,6 @@ LABKEY.Experiment = new function()
          */
         createHiddenRunGroup : function (config)
         {
-            if(!LABKEY.Utils.getOnSuccess(config))
-            {
-                alert("You must specify a callback function in config.success when calling LABKEY.Exp.createHiddenRunGroup()!");
-                return;
-            }
-
             function createExp(json)
             {
                 return new LABKEY.Exp.RunGroup(json);
@@ -166,11 +159,6 @@ LABKEY.Experiment = new function()
          */
         loadBatch : function (config)
         {
-            if (!LABKEY.Utils.getOnSuccess(config)) {
-                console.error("You must specify a callback function in config.success when calling LABKEY.Exp.loadBatch()!");
-                return;
-            }
-
             function createExp(json)
             {
                 return new LABKEY.Exp.RunGroup(json.batch);
@@ -184,6 +172,8 @@ LABKEY.Experiment = new function()
                 scope: config.scope,
                 jsonData : {
                     assayId: config.assayId,
+                    assayName: config.assayName,
+                    providerName: config.providerName,
                     batchId: config.batchId
                 },
                 headers : {
@@ -214,11 +204,6 @@ LABKEY.Experiment = new function()
          */
         loadBatches : function (config)
         {
-            if (!LABKEY.Utils.getOnSuccess(config)) {
-                console.error("You must specify a callback function in config.success when calling LABKEY.Exp.loadBatches()!");
-                return;
-            }
-
             function createExp(json)
             {
                 var batches = [];
@@ -238,6 +223,8 @@ LABKEY.Experiment = new function()
                 scope: config.scope,
                 jsonData : {
                     assayId: config.assayId,
+                    assayName: config.assayName,
+                    providerName: config.providerName,
                     batchIds: config.batchIds
                 },
                 headers : {
@@ -333,11 +320,6 @@ LABKEY.Experiment = new function()
          */
         saveMaterials : function (config)
         {
-            if (!LABKEY.Utils.getOnSuccess(config)) {
-                console.error("You must specify a callback function in config.success when calling LABKEY.Exp.saveBatch()!");
-                return;
-            }
-
             LABKEY.Query.insertRows({
                 schemaName: 'Samples',
                 queryName: config.name,
@@ -498,12 +480,6 @@ LABKEY.Exp.Run.prototype.constructor = LABKEY.Exp.Run;
  */
 LABKEY.Exp.Run.prototype.deleteRun = function(config)
 {
-    if(!LABKEY.Utils.getOnSuccess(config))
-    {
-        console.error("You must specify a callback function in config.success when calling LABKEY.Exp.Run.deleteRun()!");
-        return;
-    }
-
     LABKEY.Ajax.request(
     {
         url : LABKEY.ActionURL.buildURL("experiment", "deleteRun"),
