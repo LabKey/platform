@@ -30,53 +30,57 @@
     ActionURL cancelURL = new ActionURL(UserController.DetailsAction.class, getContainer()).addParameter("userId", form.getUserId());
     String currentEmail = UserManager.getEmailForId(form.getUserId());
 %>
-<% if(form.getIsVerifyRedirect()) {%>
+<% if (form.getIsChangeEmailRequest()) {%>
+<form <%=formAction(ChangeEmailAction.class, Method.Post)%>><labkey:csrf/>
+    <table><%=formatMissedErrorsInTable("form", 2)%>
+        <tr>
+            <td>Current Email:</td>
+            <td><%=h(currentEmail)%></td>
+        </tr>
+        <tr>
+            <td>New Email:</td>
+            <td><input type="text" name="requestedEmail" id="requestedEmail" value="<%=h(form.getRequestedEmail())%>"></td>
+        </tr>
+        <tr>
+            <td>New Email (verify):</td>
+            <td><input type="text" name="requestedEmailConfirmation" id="requestedEmailConfirmation" value="<%=h(form.getRequestedEmailConfirmation())%>"></td>
+        </tr>
+        <tr>
+            <td><%= button("Submit").submit(true) %>
+                <%= button("Cancel").href(cancelURL) %></td>
+        </tr>
+    </table>
+    <input type="hidden" name="userId" value="<%=form.getUserId()%>">
+    <input type="hidden" name="isChangeEmailRequest" value="true">
+</form>
+<% } else if (form.getIsPasswordPrompt()) { %>
+<p>For security purposes, please enter your password.</p>
+<form <%=formAction(ChangeEmailAction.class, Method.Post)%>><labkey:csrf/>
+    <table><%=formatMissedErrorsInTable("form", 2)%>
+        <tr>
+            <td>Email:</td>
+            <td><%=h(form.getCurrentEmail())%></td>
+        </tr>
+        <tr>
+            <td><label for="password">Password <a href="<%=h(buildURL(LoginController.ResetPasswordAction.class))%>">(forgot password)</a>:</label></td>
+            <td><input id="password" name="password" type="password" tabindex="2" autofocus></td>
+        </tr>
+        <tr>
+            <td><%= button("Submit").submit(true) %>
+                <%= button("Cancel").href(cancelURL) %></td>
+        </tr>
+    </table>
+    <input type="hidden" name="userId" value="<%=form.getUserId()%>">
+    <input type="hidden" name="currentEmail" value="<%=h(form.getCurrentEmail())%>">
+    <input type="hidden" name="requestedEmail" value="<%=h(form.getRequestedEmail())%>">
+    <input type="hidden" name="verificationToken" value="<%=h(form.getVerificationToken())%>">
+    <input type="hidden" name="isPasswordPrompt" value="true">
+</form>
+<% } else if (form.getIsVerifyRedirect()) {%>
 <p>We have sent a verification email to <%=h(currentEmail)%>. Please follow the link in the email to continue the email update process.</p>
+<% } else if (form.getIsFromVerifiedLink())  { // only still set here when there are errors in verification link processing %>
+<p><%=formatMissedErrors("form")%></p>
 <% } else if (form.getIsVerified()) { %>
 <p>Email change from <%=h(form.getCurrentEmail())%> to <%=h(form.getRequestedEmail())%> was successful. An email has been sent to the old
     address for security purposes.</p>
-<% } else if (form.getIsFromVerifiedLink()) { %>
-<p>For security purposes, please enter your password.</p>
-<form <%=formAction(ChangeEmailAction.class, Method.Post)%>><labkey:csrf/>
-<table><%=formatMissedErrorsInTable("form", 2)%>
-    <tr>
-        <td>Email:</td>
-        <td><%=h(form.getCurrentEmail())%></td>
-    </tr>
-    <tr>
-        <td><label for="password">Password <a href="<%=h(buildURL(LoginController.ResetPasswordAction.class))%>">(forgot password)</a>:</label></td>
-        <td><input id="password" name="password" type="password" tabindex="2" autofocus></td>
-    </tr>
-    <tr>
-        <td><%= button("Submit").submit(true) %>
-            <%= button("Cancel").href(cancelURL) %></td>
-    </tr>
-</table>
-<input type="hidden" name="userId" value="<%=form.getUserId()%>">
-<input type="hidden" name="currentEmail" value="<%=h(form.getCurrentEmail())%>">
-<input type="hidden" name="verificationToken" value="<%=h(form.getVerificationToken())%>">
-<input type="hidden" name="isFromVerifiedLink" value="<%=form.getIsFromVerifiedLink()%>">
-</form>
-<% } else {%>
-<form <%=formAction(ChangeEmailAction.class, Method.Post)%>><labkey:csrf/>
-<table><%=formatMissedErrorsInTable("form", 2)%>
-    <tr>
-        <td>Current Email:</td>
-        <td><%=h(currentEmail)%></td>
-    </tr>
-    <tr>
-        <td>New Email:</td>
-        <td><input type="text" name="requestedEmail" id="requestedEmail" value="<%=h(form.getRequestedEmail())%>"></td>
-    </tr>
-    <tr>
-        <td>New Email (verify):</td>
-        <td><input type="text" name="requestedEmailConfirmation" id="requestedEmailConfirmation" value="<%=h(form.getRequestedEmailConfirmation())%>"></td>
-    </tr>
-    <tr>
-        <td><%= button("Submit").submit(true) %>
-            <%= button("Cancel").href(cancelURL) %></td>
-    </tr>
-</table>
-<input type="hidden" name="userId" value="<%=form.getUserId()%>">
-</form>
 <% } %>
