@@ -728,13 +728,13 @@ public class UploadSamplesHelper
                 {
                     if (source != null)
                         ensureTargetColumnLookup(user, c, source, parentColName, "exp.data", parts[1]);
-                    ExpData data = findData(c, user, parts[0], parentValue);
+                    ExpData data = findData(c, user, parts[1], parentValue);
                     if (data != null)
                         parentData.put(data, data.getName());
                 }
                 else if (parts[0].equalsIgnoreCase(DATA_OUTPUT_CHILD))
                 {
-                    ExpData data = findData(c, user, parts[0], parentValue);
+                    ExpData data = findData(c, user, parts[1], parentValue);
                     if (data != null)
                         childData.put(data, data.getName());
                 }
