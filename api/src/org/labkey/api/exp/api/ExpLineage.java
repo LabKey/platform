@@ -129,22 +129,17 @@ public class ExpLineage
 
         if (expObject != null)
         {
+            String cpasType = null;
+            if (expObject instanceof ExpProtocolOutput)
+            {
+                cpasType = ((ExpProtocolOutput) expObject).getCpasType();
+            }
+
             json.put("name", expObject.getName());
             json.put("url", expObject.detailsURL());
             json.put("rowId", expObject.getRowId());
-
-            // TODO: Replace this casting with inclusion of cpastype for DataClasses
-            String dataClass = null;
-            if (expObject instanceof ExpData)
-            {
-                ExpData data = (ExpData) expObject;
-
-                if (data.getDataClass() != null)
-                    dataClass = data.getDataClass().getLSID();
-            }
-
             json.put("type", expObject.getLSIDNamespacePrefix());
-            json.put("dataClass", dataClass);
+            json.put("cpasType", cpasType);
         }
 
         return json;
