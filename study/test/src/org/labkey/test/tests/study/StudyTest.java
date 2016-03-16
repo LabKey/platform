@@ -40,6 +40,7 @@ import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.PasswordUtil;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.SearchHelper;
+import org.labkey.test.util.search.SearchAdminAPIHelper;
 
 import java.io.File;
 import java.io.IOException;
@@ -119,7 +120,7 @@ public class StudyTest extends StudyBaseTest
 
     protected void doCreateSteps()
     {
-        pauseSearchCrawler(); //necessary for the alternate ID testing
+        SearchAdminAPIHelper.pauseCrawler(); //necessary for the alternate ID testing
         enableEmailRecorder();
 
         importStudy();
@@ -132,7 +133,6 @@ public class StudyTest extends StudyBaseTest
     {
         super.doCleanup(afterTest);
         deleteUsers(false, authorUser); // Subclasses may not have created this user
-        unpauseSearchCrawler();
     }
 
     protected void emptyParticipantPickerList()
@@ -531,7 +531,7 @@ public class StudyTest extends StudyBaseTest
         String dataset = getFormElement(Locator.name("infoCombo"));
         if (dataset.length() > 0)
         {
-            waitForElement(Locator.id("demoDataRegion"));
+            DataRegionTable.waitForDataRegion(this, "demoDataRegion");
         }
     }
 

@@ -2499,6 +2499,10 @@ study/test/src/org/labkey/test/pages/DesignerController/DesignerTester.java -tex
 study/test/src/org/labkey/test/pages/studydesigncontroller/ManageAssayScheduleTester.java -text
 study/test/src/org/labkey/test/pages/studydesigncontroller/ManageStudyProductsTester.java -text
 study/test/src/org/labkey/test/pages/studydesigncontroller/ManageTreatmentsTester.java -text
+study/test/src/org/labkey/test/tests/search/SearchTest.java -text
+study/test/src/org/labkey/test/tests/search/SearchTestMMap.java -text
+study/test/src/org/labkey/test/tests/search/SearchTestNIOFS.java -text
+study/test/src/org/labkey/test/tests/search/SearchTestSimpleFS.java -text
 study/test/src/org/labkey/test/tests/study/AncillaryStudyTest.java -text
 study/test/src/org/labkey/test/tests/study/AssayTest.java -text
 study/test/src/org/labkey/test/tests/study/CohortTest.java -text
@@ -2506,7 +2510,6 @@ study/test/src/org/labkey/test/tests/study/ExtraKeyStudyTest.java -text
 study/test/src/org/labkey/test/tests/study/QuerySnapshotTest.java -text
 study/test/src/org/labkey/test/tests/study/SCHARPStudyTest.java -text
 study/test/src/org/labkey/test/tests/study/SampleMindedImportTest.java -text
-study/test/src/org/labkey/test/tests/study/SearchTest.java -text
 study/test/src/org/labkey/test/tests/study/SharedStudyTest.java -text
 study/test/src/org/labkey/test/tests/study/SpecimenMergeTest.java -text
 study/test/src/org/labkey/test/tests/study/SpecimenReplaceTest.java -text

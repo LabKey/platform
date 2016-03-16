@@ -13,18 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.test.tests.study;
+package org.labkey.test.tests.search;
 
-import org.junit.experimental.categories.Category;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.labkey.remoteapi.CommandException;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
-import org.labkey.test.categories.DailyB;
 import org.labkey.test.tests.IssuesTest;
+import org.labkey.test.tests.study.StudyTest;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.SearchHelper;
 import org.labkey.test.util.WikiHelper;
+import org.labkey.test.util.search.SearchAdminAPIHelper;
 
 import java.io.File;
 import java.util.Arrays;
@@ -33,8 +36,7 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 
-@Category({DailyB.class})
-public class SearchTest extends StudyTest
+public abstract class SearchTest extends StudyTest
 {
     private final SearchHelper _searchHelper = new SearchHelper(this);
     
@@ -72,15 +74,28 @@ public class SearchTest extends StudyTest
         return BrowserType.CHROME;
     }
 
-    @Override
     protected String getFolderName()
     {
         return FOLDER_NAME;
     }
 
+    @Override
+    protected String getProjectName()
+    {
+        return "SearchTest" + TRICKY_CHARACTERS_FOR_PROJECT_NAMES + " Project";
+    }
+
+    @Before
+    public void preTest()
+    {
+        _containerHelper.deleteProject(getProjectName(), false);
+        SearchAdminAPIHelper.pauseCrawler(); //necessary for the alternate ID testing
+        _searchHelper.initialize();
+        enableEmailRecorder();
+    }
+
     protected void doCreateSteps()
     {
-        _searchHelper.deleteIndex();
         addSearchableStudy(); // Must come first;  Creates project.
         addSearchableLists();
         addSearchableContainers();
@@ -197,7 +212,7 @@ public class SearchTest extends StudyTest
     @Override
     protected void doCleanup(boolean afterTest) throws TestTimeoutException
     {
-        super.doCleanup(afterTest);
+        _containerHelper.deleteProject(getProjectName(), afterTest);
         if (afterTest)
         {
             _searchHelper.verifyNoSearchResults();
@@ -212,7 +227,10 @@ public class SearchTest extends StudyTest
 
     private void addSearchableStudy()
     {
-        super.doCreateSteps(); // import study and specimens
+        importStudy();
+        startSpecimenImport(2);
+
+        waitForPipelineJobsToComplete(2, "study import", false);
 
         _searchHelper.enqueueSearchItem("999320016", Locator.linkContainingText("999320016"));
         _searchHelper.enqueueSearchItem("Urinalysis", Locator.linkContainingText("URF-1"),
@@ -351,5 +369,11 @@ public class SearchTest extends StudyTest
 
         _searchHelper.enqueueSearchItem("antidisestablishmentarianism", true, Locator.linkWithText(file.getName()));
         _searchHelper.enqueueSearchItem("ThermoFinnigan", true, Locator.linkWithText(MLfile.getName()));
+    }
+
+    @Override @Test @Ignore
+    public void testSteps() throws Exception
+    {
+        // Mask parent test
     }
 }
