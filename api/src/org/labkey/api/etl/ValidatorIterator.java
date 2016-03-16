@@ -105,14 +105,14 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
     public void addLengthValidator(int i)
     {
         ColumnInfo col = _data.getColumnInfo(i);
-        addValidator(i, ColumnValidators.createLengthValidator(col));
+        addValidator(i, ColumnValidators.createLengthValidator(col, null));
     }
 
 
     public void addDateValidator(int i)
     {
         ColumnInfo col = _data.getColumnInfo(i);
-        addValidator(i, ColumnValidators.createDateValidator(col));
+        addValidator(i, ColumnValidators.createDateValidator(col, null));
     }
 
 

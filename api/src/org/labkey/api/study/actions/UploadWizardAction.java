@@ -68,6 +68,7 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.writer.ContainerUser;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -569,17 +570,17 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
     }
 
-    public static boolean validateColumnProperties(Map<ColumnInfo, String> properties, BindException errors)
+    public static boolean validateColumnProperties(ContainerUser context, Map<ColumnInfo, String> properties, BindException errors)
     {
-        for (ValidationError error : DefaultAssayRunCreator.validateColumnProperties(properties))
+        for (ValidationError error : DefaultAssayRunCreator.validateColumnProperties(context, properties))
             errors.reject(SpringActionController.ERROR_MSG, error.getMessage());
         
         return errors.getErrorCount() == 0;
     }
 
-    public static boolean validatePostedProperties(Map<DomainProperty, String> properties, BindException errors)
+    public static boolean validatePostedProperties(ContainerUser context, Map<DomainProperty, String> properties, BindException errors)
     {
-        for (ValidationError error : DefaultAssayRunCreator.validateProperties(properties))
+        for (ValidationError error : DefaultAssayRunCreator.validateProperties(context, properties))
             errors.reject(SpringActionController.ERROR_MSG, error.getMessage());
 
         return errors.getErrorCount() == 0;
@@ -593,7 +594,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         {
             try
             {
-                if (!form.isResetDefaultValues() && validatePostedProperties(form.getBatchProperties(), errors))
+                if (!form.isResetDefaultValues() && validatePostedProperties(getViewContext(), form.getBatchProperties(), errors))
                     return getRunPropertiesView(form, false, false, errors);
             }
             catch (ExperimentException e)
@@ -695,7 +696,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         {
             try
             {
-                return validatePostedProperties(form.getRunProperties(), errors);
+                return validatePostedProperties(getViewContext(), form.getRunProperties(), errors);
             }
             catch (ExperimentException e)
             {

@@ -61,10 +61,10 @@ public class ColumnValidators
         List<ColumnValidator> validators = new ArrayList<>();
 
         add(validators, createRequiredValidator(col, dp, allowEmptyString));
-        add(validators, createLengthValidator(col));
+        add(validators, createLengthValidator(col, dp));
         add(validators, createPropertyValidators(dp));
-        add(validators, createDateValidator(col));
-        add(validators, createNumberValidator(col));
+        add(validators, createDateValidator(col, dp));
+        add(validators, createNumberValidator(col, dp));
 
         if (validators.isEmpty())
             return Collections.emptyList();
@@ -101,14 +101,15 @@ public class ColumnValidators
     }
 
     @Nullable
-    public static LengthValidator createLengthValidator(@Nullable ColumnInfo col)
+    public static LengthValidator createLengthValidator(@Nullable ColumnInfo col, @Nullable DomainProperty dp)
     {
-        if (col == null)
+        if (col == null && dp == null)
             return null;
 
-        JdbcType jdbcType = col.getJdbcType();
-        if (jdbcType.isText() && jdbcType != JdbcType.GUID && col.getScale() > 0)
-            return new LengthValidator(col.getName(), col.getScale());
+        JdbcType jdbcType = col != null ? col.getJdbcType() : dp.getPropertyType().getJdbcType();
+        int scale = col != null ? col.getScale() : dp.getScale();
+        if (jdbcType.isText() && jdbcType != JdbcType.GUID && scale > 0)
+            return new LengthValidator(col != null ? col.getName() : dp.getName(), scale);
 
         return null;
     }
@@ -130,21 +131,27 @@ public class ColumnValidators
     }
 
     @Nullable
-    public static DateValidator createDateValidator(@Nullable ColumnInfo col)
+    public static DateValidator createDateValidator(@Nullable ColumnInfo col, @Nullable DomainProperty dp)
     {
-        if (col == null || !col.getJdbcType().isDateOrTime())
+        if ((col == null || !col.getJdbcType().isDateOrTime()) &&
+            (dp == null || !JdbcType.valueOf(dp.getSqlType()).isDateOrTime()))
+        {
             return null;
-
-        return new DateValidator(col.getName());
+        }
+        return new DateValidator(col != null ? col.getName() : dp.getName());
     }
 
     @Nullable
-    public static NumberValidator createNumberValidator(@Nullable ColumnInfo col)
+    public static NumberValidator createNumberValidator(@Nullable ColumnInfo col, @Nullable DomainProperty dp)
     {
-        if (col == null || !col.getJdbcType().equals(JdbcType.REAL))        // Only check REAL (not DOUBLE)
+        if (col == null && dp == null)
             return null;
 
-        return new NumberValidator(col.getName());
+        JdbcType type = col != null ? col.getJdbcType() : dp.getPropertyType().getJdbcType();
+        if (!type.equals(JdbcType.REAL))        // Only check REAL (not DOUBLE)
+            return null;
+
+        return new NumberValidator(col != null ? col.getName() : dp.getName());
     }
 
     @Nullable

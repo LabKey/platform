@@ -81,7 +81,7 @@ public abstract class PlateBasedUploadWizardAction <FormType extends PlateUpload
                 {
                     // if samplePropsValid flips to false, we want to leave it false (via the "&&" below).  We don't
                     // short-circuit the loop because we want to run through all samples every time, so all errors can be reported.
-                    samplePropsValid = validatePostedProperties(entry.getValue(), errors) && samplePropsValid;
+                    samplePropsValid = validatePostedProperties(getViewContext(), entry.getValue(), errors) && samplePropsValid;
                 }
             }
             catch (ExperimentException e)

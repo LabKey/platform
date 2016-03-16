@@ -15,6 +15,8 @@
  */
 package org.labkey.api.data.validator;
 
+import org.labkey.api.exp.property.ValidatorContext;
+
 /**
  * Column-level value validation run just before insert or update.
  */
@@ -22,4 +24,5 @@ public interface ColumnValidator
 {
     public String validate(int rowNum, Object value);
 
+    public String validate(int rowNum, Object value, ValidatorContext validatorContext);
 }

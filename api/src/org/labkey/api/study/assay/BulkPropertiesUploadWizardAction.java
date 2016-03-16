@@ -71,7 +71,7 @@ public class BulkPropertiesUploadWizardAction<FormType extends BulkPropertiesUpl
                 // second time during its reshow logic
                 try
                 {
-                    if (validatePostedProperties(form.getBatchProperties(), batchErrors))
+                    if (validatePostedProperties(getViewContext(), form.getBatchProperties(), batchErrors))
                     {
                         List<ExpRun> runs = insertRuns(form, errors);
                         if (batchErrors.getErrorCount() == 0 && errors.getErrorCount() == 0 && !runs.isEmpty())
@@ -109,7 +109,7 @@ public class BulkPropertiesUploadWizardAction<FormType extends BulkPropertiesUpl
                         additionalStatus = collector.getAdditionalUploadType(form);
                         form.getUploadedData();
                         form.getBulkProperties();
-                        validatePostedProperties(form.getRunProperties(), errors);
+                        validatePostedProperties(getViewContext(), form.getRunProperties(), errors);
                         if (errors.getErrorCount() > 0)
                         {
                             // Intentionally don't commit - we hit some errors

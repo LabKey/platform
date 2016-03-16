@@ -26,6 +26,8 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.validator.ColumnValidator;
+import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
@@ -52,6 +54,7 @@ import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.qc.DataTransformer;
 import org.labkey.api.qc.TransformDataHandler;
 import org.labkey.api.qc.TransformResult;
+import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
@@ -63,6 +66,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.writer.ContainerUser;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -291,7 +295,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 if (!transformResult.getBatchProperties().isEmpty())
                 {
                     Map<DomainProperty, String> props = transformResult.getBatchProperties();
-                    List<ValidationError> errors = validateProperties(props);
+                    List<ValidationError> errors = validateProperties(context, props);
                     if (!errors.isEmpty())
                         throw new ValidationException(errors);
                     savePropertyObject(batch, props, context.getUser());
@@ -305,7 +309,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             if (!transformResult.getRunProperties().isEmpty())
             {
                 Map<DomainProperty, String> props = transformResult.getRunProperties();
-                List<ValidationError> errors = validateProperties(props);
+                List<ValidationError> errors = validateProperties(context, props);
                 if (!errors.isEmpty())
                     throw new ValidationException(errors);
                 savePropertyObject(run, props, context.getUser());
@@ -752,17 +756,17 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
     }
 
-    public static List<ValidationError> validateColumnProperties(Map<ColumnInfo, String> properties)
+    public static List<ValidationError> validateColumnProperties(ContainerUser context, Map<ColumnInfo, String> properties)
     {
         List<ValidationError> errors = new ArrayList<>();
         for (Map.Entry<ColumnInfo, String> entry : properties.entrySet())
         {
-            validateProperty(entry.getValue(), entry.getKey().getName(), false, entry.getKey().getJavaClass(), errors);
+            validateProperty(context, ColumnValidators.create(entry.getKey(), null), entry.getValue(), entry.getKey().getName(), false, entry.getKey().getJavaClass(), errors);
         }
         return errors;
     }
 
-    public static List<ValidationError> validateProperties(Map<DomainProperty, String> properties)
+    public static List<ValidationError> validateProperties(ContainerUser context, Map<DomainProperty, String> properties)
     {
         List<ValidationError> errors = new ArrayList<>();
 
@@ -772,15 +776,16 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             String value = entry.getValue();
             String label = dp.getPropertyDescriptor().getNonBlankCaption();
             PropertyType type = dp.getPropertyDescriptor().getPropertyType();
-            validateProperty(value, label, dp.isRequired(), type.getJavaType(), errors);
+            validateProperty(context, ColumnValidators.create(null, dp), value, label, dp.isRequired(), type.getJavaType(), errors);
         }
         return errors;
     }
 
-    // TODO: Consolidate with OntologyManager.validateProperty and ColumnValidator
-    private static void validateProperty(String value, String label, Boolean required, Class type, List<ValidationError> errors)
+    private static void validateProperty(ContainerUser context, List<ColumnValidator> validators, String value, String label, Boolean required, Class type, List<ValidationError> errors)
     {
         boolean missing = (value == null || value.length() == 0);
+        int rowNum = 0;
+
         if (required && missing)
         {
             errors.add(new SimpleValidationError(label + " is required and must be of type " + ColumnInfo.getFriendlyTypeName(type) + "."));
@@ -789,7 +794,14 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         {
             try
             {
-                ConvertUtils.convert(value, type);
+                Object o = ConvertUtils.convert(value, type);
+                ValidatorContext validatorContext = new ValidatorContext(context.getContainer(), context.getUser());
+                for (ColumnValidator validator : validators)
+                {
+                    String msg = validator.validate(rowNum, o, validatorContext);
+                    if (msg != null)
+                        errors.add(new PropertyValidationError(msg, label));
+                }
             }
             catch (ConversionException e)
             {

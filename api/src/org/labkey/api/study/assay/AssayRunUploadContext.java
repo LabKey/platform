@@ -28,6 +28,7 @@ import org.labkey.api.qc.TransformResult;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
@@ -44,7 +45,7 @@ import java.util.Map;
  * User: brittp
  * Date: Jul 11, 2007
 */
-public interface AssayRunUploadContext<ProviderType extends AssayProvider>
+public interface AssayRunUploadContext<ProviderType extends AssayProvider> extends ContainerUser
 {
     @NotNull
     ExpProtocol getProtocol();

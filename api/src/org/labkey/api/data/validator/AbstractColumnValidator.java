@@ -16,6 +16,7 @@
 package org.labkey.api.data.validator;
 
 import org.labkey.api.exp.MvFieldWrapper;
+import org.labkey.api.exp.property.ValidatorContext;
 
 public abstract class AbstractColumnValidator implements ColumnValidator
 {
@@ -27,11 +28,18 @@ public abstract class AbstractColumnValidator implements ColumnValidator
         _columnName = columnName;
     }
 
+    @Override
     public String validate(int rowNum, Object o)
     {
         if (o instanceof MvFieldWrapper && !(this instanceof UnderstandsMissingValues))
             return null;
         return _validate(rowNum, o);
+    }
+
+    @Override
+    public String validate(int rowNum, Object value, ValidatorContext validatorContext)
+    {
+        return validate(rowNum, value);
     }
 
     protected abstract String _validate(int rowNum, Object value);
