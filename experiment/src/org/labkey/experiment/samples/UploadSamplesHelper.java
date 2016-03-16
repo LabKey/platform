@@ -692,6 +692,7 @@ public class UploadSamplesHelper
      * @param parentNames - set of (parent column name, parent value) pairs
      * @throws ExperimentException
      */
+    @NotNull
     public static Pair<RunInputOutputBean, RunInputOutputBean> resolveInputsAndOutputs(User user, Container c,
                                                                          Set<Pair<String, String>> parentNames,
                                                                          @Nullable MaterialSource source)
@@ -752,6 +753,7 @@ public class UploadSamplesHelper
         return Pair.of(parents, children);
     }
 
+    @NotNull
     Pair<RunInputOutputBean, RunInputOutputBean> resolveInputsAndOutputs(User user, Container c, MaterialSource source,
                                                            Set<String> parentColumns,
                                                            Map<String, Object> row,
@@ -805,7 +807,11 @@ public class UploadSamplesHelper
                 }
             }
 
-            return Pair.of(new RunInputOutputBean(parentInputMap, null), null);
+            RunInputOutputBean parents = null;
+            if (!parentInputMap.isEmpty())
+                parents = new RunInputOutputBean(parentInputMap, Collections.emptyMap());
+
+            return Pair.of(parents, null);
         }
         else
         {

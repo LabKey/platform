@@ -16,8 +16,9 @@
 
 package org.labkey.experiment.controllers.exp;
 
-import org.labkey.api.exp.api.ExpMaterial;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpMaterial;
 
 import java.util.Map;
 
@@ -30,17 +31,19 @@ public class RunInputOutputBean
     private final Map<ExpMaterial, String> _materials;
     private final Map<ExpData, String> _datas;
 
-    public RunInputOutputBean(Map<ExpMaterial, String> materials, Map<ExpData, String> datas)
+    public RunInputOutputBean(@NotNull Map<ExpMaterial, String> materials, @NotNull Map<ExpData, String> datas)
     {
         _materials = materials;
         _datas = datas;
     }
 
+    @NotNull
     public Map<ExpMaterial, String> getMaterials()
     {
         return _materials;
     }
 
+    @NotNull
     public Map<ExpData, String> getDatas()
     {
         return _datas;
