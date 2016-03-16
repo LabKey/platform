@@ -90,7 +90,10 @@
                                 animEl: folderDefaultBtn.getEl(),
                                 msg: o.message
                             });
-                            setTimeout(function(){Ext4.MessageBox.hide()}, 1500);
+                            setTimeout(function(){
+                                Ext4.MessageBox.hide();
+                                LABKEY.Utils.signalWebDriverTest('notificationSettingUpdate');
+                            }, 1500);
                         }
                     },
                     failure: function(response, opts) {
