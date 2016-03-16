@@ -32,7 +32,30 @@ import org.labkey.api.cache.DbCache;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.*;
+import org.labkey.api.data.AttachmentParentEntity;
+import org.labkey.api.data.BeanObjectFactory;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DatabaseCache;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.AbstractParameter;
@@ -132,6 +155,8 @@ import org.labkey.experiment.ExperimentAuditProvider;
 import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.XarExportType;
 import org.labkey.experiment.XarReader;
+import org.labkey.experiment.api.data.ChildOfClause;
+import org.labkey.experiment.api.data.ParentOfClause;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.pipeline.ExpGeneratorHelper;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
@@ -1543,13 +1568,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-
-    @Override
-    public ExpLineage getLineage(ExpProtocolOutput start, ExpLineageOptions options)
+    public List<ExpRun> collectRunsToInvestigate(ExpProtocolOutput start, ExpLineageOptions options)
     {
-        if (isUnknownMaterial(start))
-            return new ExpLineage(start);
-
         List<ExpRun> runsToInvestigate = new ArrayList<>();
         boolean up = options.isParents();
         boolean down = options.isChildren();
@@ -1568,6 +1588,16 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 runsToInvestigate.addAll(ExperimentServiceImpl.get().getRunsUsingMaterials(start.getRowId()));
             runsToInvestigate.remove(start.getRun());
         }
+
+        return runsToInvestigate;
+    }
+
+    @Override
+    public ExpLineage getLineage(ExpProtocolOutput start, ExpLineageOptions options)
+    {
+        if (isUnknownMaterial(start))
+            return new ExpLineage(start);
+        List<ExpRun> runsToInvestigate = collectRunsToInvestigate(start, options);
 
         if (runsToInvestigate.isEmpty())
             return new ExpLineage(start);
@@ -1633,7 +1663,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     }
 
 
-    private SQLFragment generateExperimentTreeSQL(List<ExpRun> runs, ExpLineageOptions options)
+    public SQLFragment generateExperimentTreeSQL(List<ExpRun> runs, ExpLineageOptions options)
     {
         List<String> lsids = runs.stream().map((r)->r.getLSID()).collect(Collectors.toList());
         String comma="";
@@ -1691,7 +1721,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
 
 
-    private boolean isUnknownMaterial(ExpProtocolOutput output)
+    public boolean isUnknownMaterial(ExpProtocolOutput output)
     {
         return "Unknown".equals(output.getName()) &&
                 ParticipantVisit.ASSAY_RUN_MATERIAL_NAMESPACE.equals(output.getLSIDNamespacePrefix());
@@ -1708,6 +1738,18 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 result.add(material);
         }
         return result;
+    }
+
+    @Override
+    public SimpleFilter.FilterClause createChildOfClause(@NotNull FieldKey fieldKey, Object value)
+    {
+        return new ChildOfClause(fieldKey, value);
+    }
+
+    @Override
+    public SimpleFilter.FilterClause createParentOfClause(@NotNull FieldKey fieldKey, Object value)
+    {
+        return new ParentOfClause(fieldKey, value);
     }
 
     /**
