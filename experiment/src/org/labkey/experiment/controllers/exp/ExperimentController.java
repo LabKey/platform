@@ -4541,7 +4541,7 @@ public class ExperimentController extends SpringActionController
             {
                 boolean valid = true;
                 for (Map.Entry<String, Map<DomainProperty, String>> entry : helper.getPostedPropertyValues(getViewContext().getRequest()).entrySet())
-                    valid = UploadWizardAction.validatePostedProperties(entry.getValue(), errors) && valid;
+                    valid = UploadWizardAction.validatePostedProperties(getViewContext(), entry.getValue(), errors) && valid;
                 if (!valid)
                     return redirectError(form, errors);
 
