@@ -500,7 +500,7 @@ public class UserManager
     public static void auditBadVerificationToken(int userId, String oldEmail, String newEmail, String verificationToken, User currentUser)
     {
         addToUserHistory(getUser(userId), currentUser + " tried to change an email address from " + oldEmail + " to " + newEmail +
-                " with token '" + verificationToken + "', but the verification token was incorrect.");
+                " with token '" + verificationToken + "', but the verification token for that email address was not correct.");
     }
 
     public static Logger getLOG()
