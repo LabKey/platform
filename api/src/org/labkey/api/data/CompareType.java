@@ -28,6 +28,7 @@ import org.labkey.api.data.SimpleFilter.ColumnNameFormatter;
 import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.MvColumn;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -528,6 +529,36 @@ public enum CompareType
             }
         },
 
+    EXP_CHILD_OF("Is Child Of", "exp:childof", "EXP_CHILD_OF", true, " is child of", OperatorType.EXP_CHILDOF)
+            {
+                @Override
+                FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+                {
+                    return ExperimentService.get().createChildOfClause(fieldKey, value);
+                }
+
+                @Override
+                public boolean meetsCriteria(Object value, Object[] paramVals)
+                {
+                    throw new UnsupportedOperationException("Conditional formatting not yet supported for EXP_CHILD_OF");
+                }
+            },
+
+    EXP_PARENT_OF("Is Parent Of", "exp:parentof", "EXP_PARENT_OF", true, " is parent of", OperatorType.EXP_PARENTOF)
+            {
+                @Override
+                FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+                {
+                    return ExperimentService.get().createParentOfClause(fieldKey, value);
+                }
+
+                @Override
+                public boolean meetsCriteria(Object value, Object[] paramVals)
+                {
+                    throw new UnsupportedOperationException("Conditional formatting not yet supported for EXP_PARENT_OF");
+                }
+            },
+
     //
     // These are the "no data value" operators
     //
@@ -815,7 +846,7 @@ public enum CompareType
 
     public static class CompareClause extends AbstractCompareClause
     {
-        CompareType _comparison;
+        final CompareType _comparison;
 
         public CompareClause(@NotNull FieldKey fieldKey, CompareType comparison, Object value)
         {
@@ -1620,7 +1651,7 @@ public enum CompareType
 
     private static class MemberOfClause extends CompareClause
     {
-        MemberOfClause(FieldKey fieldKey, Object value)
+        MemberOfClause(@NotNull FieldKey fieldKey, Object value)
         {
             super(fieldKey, CompareType.MEMBER_OF, value);
         }

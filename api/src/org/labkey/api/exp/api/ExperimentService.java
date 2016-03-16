@@ -23,10 +23,11 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.ExperimentMaterialListener;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.ExperimentMaterialListener;
 import org.labkey.api.exp.ExperimentRunListView;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.ExperimentRunTypeSource;
@@ -55,6 +56,7 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -238,6 +240,9 @@ public class ExperimentService
         Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(ExpProtocolOutput start);
 
         ExpLineage getLineage(ExpProtocolOutput start, ExpLineageOptions options);
+
+        SimpleFilter.FilterClause createChildOfClause(@NotNull FieldKey fieldKey, Object value);
+        SimpleFilter.FilterClause createParentOfClause(@NotNull FieldKey fieldKey, Object value);
 
         /**
          * The following methods return TableInfo's suitable for using in queries.
