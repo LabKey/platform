@@ -28,14 +28,15 @@
     JspView<UserController.UserForm> me = (JspView<UserController.UserForm>) HttpView.currentView();
     UserController.UserForm form = me.getModelBean();
     ActionURL cancelURL = new ActionURL(UserController.DetailsAction.class, getContainer()).addParameter("userId", form.getUserId());
-    String currentEmail = UserManager.getEmailForId(form.getUserId());
+    String currentEmail = getUser().getEmail();
+    String currentFormEmail = UserManager.getUser(form.getUserId()).getEmail();
 %>
 <% if (form.getIsChangeEmailRequest()) {%>
 <form <%=formAction(ChangeEmailAction.class, Method.Post)%>><labkey:csrf/>
     <table><%=formatMissedErrorsInTable("form", 2)%>
         <tr>
             <td>Current Email:</td>
-            <td><%=h(currentEmail)%></td>
+            <td><%=h(currentFormEmail)%></td>
         </tr>
         <tr>
             <td>New Email:</td>
@@ -59,7 +60,7 @@
     <table><%=formatMissedErrorsInTable("form", 2)%>
         <tr>
             <td>Email:</td>
-            <td><%=h(form.getCurrentEmail())%></td>
+            <td><%=h(currentEmail)%></td>
         </tr>
         <tr>
             <td><label for="password">Password <a href="<%=h(buildURL(LoginController.ResetPasswordAction.class))%>">(forgot password)</a>:</label></td>
@@ -71,7 +72,6 @@
         </tr>
     </table>
     <input type="hidden" name="userId" value="<%=form.getUserId()%>">
-    <input type="hidden" name="currentEmail" value="<%=h(form.getCurrentEmail())%>">
     <input type="hidden" name="requestedEmail" value="<%=h(form.getRequestedEmail())%>">
     <input type="hidden" name="verificationToken" value="<%=h(form.getVerificationToken())%>">
     <input type="hidden" name="isPasswordPrompt" value="true">
@@ -81,6 +81,6 @@
 <% } else if (form.getIsFromVerifiedLink())  { // only still set here when there are errors in verification link processing %>
 <p><%=formatMissedErrors("form")%></p>
 <% } else if (form.getIsVerified()) { %>
-<p>Email change from <%=h(form.getCurrentEmail())%> to <%=h(form.getRequestedEmail())%> was successful. An email has been sent to the old
+<p>Email change from <%=h(form.getOldEmail())%> to <%=h(form.getRequestedEmail())%> was successful. An email has been sent to the old
     address for security purposes.</p>
 <% } %>
