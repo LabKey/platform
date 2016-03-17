@@ -62,7 +62,14 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
                 }]
             }],
             margin: '1 0 2 0',
-            items: []
+            items: [],
+            listeners: {
+                scope: this,
+                activate : function(cmp) {
+                    // ensure the window is scrolled into view
+                    window.scrollTo(0,0);
+                }
+            }
         });
 
         if (layoutHorizontal)
@@ -583,7 +590,14 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
             border: false,
             bodyStyle: 'padding-top: 25px;',
             defaults: { border: false, width: 250 },
-            items: items
+            items: items,
+            listeners: {
+                scope: this,
+                activate : function(cmp) {
+                    // ensure the window is scrolled into view
+                    window.scrollTo(0,0);
+                }
+            }
         }));
     },
 
