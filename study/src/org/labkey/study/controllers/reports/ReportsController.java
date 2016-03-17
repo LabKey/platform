@@ -389,36 +389,6 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
-    @Deprecated // there should no longer be any UI that refers to this action
-    public class ConvertQueryToReportAction extends ApiAction<SaveReportViewForm>
-    {
-        public ApiResponse execute(SaveReportViewForm form, BindException errors) throws Exception
-        {
-            Report report = form.getReport(getViewContext());
-            final String key = ReportUtil.getReportQueryKey(report.getDescriptor());
-
-            if (!reportNameExists(getViewContext(), form.getViewName(), key))
-            {
-                if (report instanceof StudyQueryReport)
-                {
-                    // add the dataset id
-                    Study study = getStudyThrowIfNull();
-                    Dataset def = StudyManager.getInstance().getDatasetDefinitionByQueryName(study, form.getQueryName());
-                    if (def != null)
-                    {
-                        report.getDescriptor().setProperty("showWithDataset", String.valueOf(def.getDatasetId()));
-                        ((StudyQueryReport) report).renameReport(getViewContext(), key, form.getViewName());
-                        return new ApiSimpleResponse("success", true);
-                    }
-                }
-            }
-            else
-                throw new UnauthorizedException("A report of the same name already exists");
-            return new ApiSimpleResponse("success", false);
-        }
-    }
-
     @RequiresLogin
     @RequiresPermission(ReadPermission.class)
     /**
