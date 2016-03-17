@@ -25,7 +25,6 @@ announcements/resources/schemas/dbscripts/sqlserver/obsolete/comm-14.12-14.13.sq
 announcements/resources/schemas/dbscripts/sqlserver/obsolete/comm-14.30-14.31.sql -text
 announcements/src/org/labkey/announcements/AnnouncementListener.java -text
 announcements/src/org/labkey/announcements/AnnouncementModule.java -text
-announcements/src/org/labkey/announcements/DailyDigestPage.java -text
 announcements/src/org/labkey/announcements/EmailPreferencesPage.java -text
 announcements/src/org/labkey/announcements/EmailServiceImpl.java -text
 announcements/src/org/labkey/announcements/NotificationSettingsImporterFactory.java -text
@@ -50,9 +49,7 @@ announcements/src/org/labkey/announcements/confirmRemoveUser.jsp -text
 announcements/src/org/labkey/announcements/customize.jsp -text
 announcements/src/org/labkey/announcements/customizeAnnouncementWebPart.jsp -text
 announcements/src/org/labkey/announcements/customizeDiscussionWebPart.jsp -text
-announcements/src/org/labkey/announcements/dailyDigest.jsp -text
 announcements/src/org/labkey/announcements/dailyDigest.txt -text
-announcements/src/org/labkey/announcements/dailyDigestPlain.jsp -text
 announcements/src/org/labkey/announcements/discussionMenu.jsp -text
 announcements/src/org/labkey/announcements/discussionMenuAjax.jsp -text
 announcements/src/org/labkey/announcements/emailNotification.txt -text
