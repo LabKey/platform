@@ -128,7 +128,9 @@ public class QueryReport extends AbstractReport
         String schemaName = getDescriptor().getProperty(ReportDescriptor.Prop.schemaName);
         String queryName = getDescriptor().getProperty(ReportDescriptor.Prop.queryName);
         String viewName = getDescriptor().getProperty(ReportDescriptor.Prop.viewName);
-        String dataRegionName = StringUtils.defaultString(getDescriptor().getProperty(ReportDescriptor.Prop.dataRegionName), QueryView.DATAREGIONNAME_DEFAULT);
+
+        // query reports can be rendered within another data region, need to make sure inner and outer data regions are unique
+        String dataRegionName = StringUtils.defaultString(getDescriptor().getProperty(ReportDescriptor.Prop.dataRegionName), QueryView.DATAREGIONNAME_DEFAULT) + "_" + getReportId().toString();
 
         if (schemaName == null)
             errors.addError(new LabkeyError("schema name cannot be empty"));
@@ -185,20 +187,6 @@ public class QueryReport extends AbstractReport
 
         return null;
     }
-
-    // issue : 18356 - I'm not sure why we would want to delete a custom view that a report is wrapping.
-/*
-    public void beforeDelete(ContainerUser context)
-    {
-        CustomView view = getCustomView(context);
-        if (view != null)
-        {
-            HttpServletRequest request = new MockHttpServletRequest();
-            view.delete(context.getUser(), request);
-        }
-        super.beforeDelete(context);
-    }
-*/
 
     @Override
     public Thumbnail generateThumbnail(@Nullable ViewContext context)
