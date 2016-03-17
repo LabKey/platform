@@ -28,15 +28,23 @@
     JspView<UserController.UserForm> me = (JspView<UserController.UserForm>) HttpView.currentView();
     UserController.UserForm form = me.getModelBean();
     ActionURL cancelURL = new ActionURL(UserController.DetailsAction.class, getContainer()).addParameter("userId", form.getUserId());
-    String currentEmail = getUser().getEmail();
-    String currentFormEmail = UserManager.getUser(form.getUserId()).getEmail();
+    String currentEmail;
+    boolean isSiteAdmin = getUser().isSiteAdmin();
+    if(!isSiteAdmin)
+    {
+        currentEmail = getUser().getEmail();
+    }
+    else
+    {
+        currentEmail = UserManager.getUser(form.getUserId()).getEmail();
+    }
 %>
 <% if (form.getIsChangeEmailRequest()) {%>
 <form <%=formAction(ChangeEmailAction.class, Method.Post)%>><labkey:csrf/>
     <table><%=formatMissedErrorsInTable("form", 2)%>
         <tr>
             <td>Current Email:</td>
-            <td><%=h(currentFormEmail)%></td>
+            <td><%=h(currentEmail)%></td>
         </tr>
         <tr>
             <td>New Email:</td>

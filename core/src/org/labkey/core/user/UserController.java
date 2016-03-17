@@ -1567,6 +1567,10 @@ public class UserController extends SpringActionController
             boolean isSiteAdmin = getUser().isSiteAdmin();
             if(!isSiteAdmin)
             {
+                if(!AuthenticationManager.isSelfServiceEmailChangesEnabled())  // uh oh, shouldn't be here
+                {
+                    throw new UnauthorizedException("User attempted to access self-service email change, but this function is disabled.");
+                }
                 _urlUserId = getUser().getUserId();
             }
             else  // site admin, could be another user's ID
@@ -1582,7 +1586,7 @@ public class UserController extends SpringActionController
                     User user = getUser();
                     int userId = user.getUserId();
 
-                    ValidEmail requestedValidEmailFromDatabase = new ValidEmail(_requestedEmailFromDatabase);  // should always succeed since we validated it earlier (in validateCommand())
+                    ValidEmail requestedValidEmailFromDatabase = new ValidEmail(_requestedEmailFromDatabase);
                     // update email in database
                     UserManager.changeEmail(userId, _currentEmailFromDatabase, _requestedEmailFromDatabase, form.getVerificationToken(), getUser());
                     SecurityManager.setVerification(requestedValidEmailFromDatabase, null);  // so we don't let user use this link again
@@ -1601,7 +1605,7 @@ public class UserController extends SpringActionController
         }
 
         // Cribbed heavily from LoginController.SetPasswordAction.verify()
-        public void validateVerification(UserForm target, Errors errors)
+        protected void validateVerification(UserForm target, Errors errors)
         {
             boolean isSiteAdmin = getUser().isSiteAdmin();
 
@@ -1693,6 +1697,11 @@ public class UserController extends SpringActionController
 
             if (!isSiteAdmin)  // need to verify email before changing if not site admin
             {
+                if(!AuthenticationManager.isSelfServiceEmailChangesEnabled())  // uh oh, shouldn't be here
+                {
+                    throw new UnauthorizedException("User attempted to access self-service email change, but this function is disabled.");
+                }
+
                 if(form.getIsChangeEmailRequest())
                 {
                     // do nothing, validation happened earlier
@@ -1701,12 +1710,22 @@ public class UserController extends SpringActionController
                 {
                     User user = getUser();
                     String userEmail = user.getEmail();
+                    ValidEmail validRequestedEmail;
+                    try
+                    {
+                        validRequestedEmail = new ValidEmail(form.getRequestedEmail());  // in case user altered this in the URL parameter
+                    }
+                    catch (ValidEmail.InvalidEmailException e)
+                    {
+                        errors.reject(ERROR_MSG, "Invalid requested email address.");
+                        return false;
+                    }
 
                     boolean isAuthenticated = authenticate(userEmail, form.getPassword(), getViewContext().getActionURL().getReturnURL(), errors, getViewContext(), true);
                     if (isAuthenticated)
                     {
                         String verificationToken = SecurityManager.createTempPassword();
-                        UserManager.requestEmail(user.getUserId(), userEmail, form.getRequestedEmail(), verificationToken, getUser());
+                        UserManager.requestEmail(user.getUserId(), userEmail, validRequestedEmail.getEmailAddress(), verificationToken, getUser());
                         // verification email
                         Container c = getContainer();
 
@@ -1714,7 +1733,7 @@ public class UserController extends SpringActionController
                         verifyLinkUrl.addParameter("verificationToken", verificationToken);
                         verifyLinkUrl.addParameter("isFromVerifiedLink", true);
 
-                        SecurityManager.sendEmail(c, user, getRequestEmailMessage(userEmail, form.getRequestedEmail()), userEmail, verifyLinkUrl);
+                        SecurityManager.sendEmail(c, user, getRequestEmailMessage(userEmail, validRequestedEmail.getEmailAddress()), userEmail, verifyLinkUrl);
                     }
                 }
                 else  // something strange happened
@@ -1757,7 +1776,7 @@ public class UserController extends SpringActionController
                     verifyRedirectUrl.addParameter("isVerifyRedirect", true);
                     return verifyRedirectUrl;
                 }
-                else  // actually making self-service email change, so redirect user details page
+                else  // actually making self-service email change, so redirect to user details page
                 {
                     return new UserUrlsImpl().getUserDetailsURL(getContainer(), getUser().getUserId(), form.getReturnURLHelper());
                 }
@@ -1769,7 +1788,7 @@ public class UserController extends SpringActionController
         }
 
         // Cribbed heavily from LoginController.authenticate()
-        private boolean authenticate(String email, String password, URLHelper returnUrlHelper, BindException errors, ViewContext viewContext, boolean logFailures)
+        protected boolean authenticate(String email, String password, URLHelper returnUrlHelper, BindException errors, ViewContext viewContext, boolean logFailures)
         {
             HttpServletRequest request = viewContext.getRequest();
             ApiSimpleResponse response = null;
