@@ -348,7 +348,17 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
             Results results = new DataIteratorResultsImpl(source.getDataIterator(context));
             FieldKey batchColumn = meta.getBatchColumn() == null ? null : FieldKey.fromParts(meta.getBatchColumn());
             if (meta.getBatchSize() > 0 && null != batchColumn && !results.hasColumn(batchColumn))
-                throw new ConfigurationException("Batch column " + batchColumn + " not found in etl source results.");
+            {
+                StringBuilder sb = new StringBuilder("Batch column '").append(batchColumn).append("' not found in etl source results.");
+                if (meta.getColumnTransforms().containsKey(batchColumn.toString()))
+                {
+                    sb.append("\nThis source column name is mapped in the etl xml via destination columnTransforms. Specify the target column name '")
+                            .append(meta.getColumnTransforms().get(batchColumn.toString()))
+                            .append("' as the batch column instead.");
+                }
+                throw new ConfigurationException(sb.toString());
+            }
+
 
             File outputDir = _txJob.getPipeRoot().resolvePath(meta.getTargetFileProperties().get(CopyConfig.TargetFileProperties.dir));
             if (null == outputDir || (!outputDir.exists() && !outputDir.mkdirs()))
