@@ -19,6 +19,7 @@ package org.labkey.api.etl;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.query.SchemaKey;
 
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -385,5 +386,10 @@ public class CopyConfig
     public void setSaveState(boolean saveState)
     {
         _saveState = saveState;
+    }
+
+    public Map<String, String> getColumnTransforms()
+    {
+        return Collections.unmodifiableMap(_columnTransforms);
     }
 }
