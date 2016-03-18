@@ -1677,7 +1677,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     }
 
 
-    private SQLFragment generateExperimentTreeSQL(SQLFragment lsidsFrag, ExpLineageOptions options)
+    public SQLFragment generateExperimentTreeSQL(SQLFragment lsidsFrag, ExpLineageOptions options)
     {
         String sourceSQL = getExpSchema().getSqlDialect().isPostgreSQL() ? exp_graph_pgsql : exp_graph_mssql;
         SQLFragment sqlf = new SQLFragment(sourceSQL.replace("${LSIDS}", lsidsFrag.getRawSQL()), lsidsFrag.getParams());

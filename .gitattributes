@@ -800,6 +800,8 @@ experiment/src/org/labkey/experiment/api/ExperimentRunGraph.sql -text
 experiment/src/org/labkey/experiment/api/ExperimentServiceImpl.java -text
 experiment/src/org/labkey/experiment/api/IdentifiableEntity.java -text
 experiment/src/org/labkey/experiment/api/InputForeignKey.java -text
+experiment/src/org/labkey/experiment/api/LineageMethod.java -text
+experiment/src/org/labkey/experiment/api/LineageTableInfo.java -text
 experiment/src/org/labkey/experiment/api/LogDataType.java -text
 experiment/src/org/labkey/experiment/api/Material.java -text
 experiment/src/org/labkey/experiment/api/MaterialInput.java -text

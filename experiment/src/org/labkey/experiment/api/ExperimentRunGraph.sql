@@ -1,3 +1,4 @@
+-- noinspection SqlDialectInspectionForFile
 WITH /*RECURSIVE*/
 
 _Nodes AS
@@ -67,7 +68,9 @@ _Edges AS
 _GraphParents AS
 (
 	SELECT
-		0 AS depth,
+		0 AS depth, -- TODO: need to add a 'path' and a column to check for cycles
+		lsid AS self_lsid,
+		rowid AS self_rowid,
 		container AS parent_container,
 		exptype AS parent_exptype,
 		cpastype AS parent_cpastype,
@@ -83,10 +86,12 @@ _GraphParents AS
 		rowid AS child_rowid
 	FROM _Seed
 
-	UNION ALL
+	UNION
 
 	SELECT
-		_Graph.depth - 1 AS depth,
+		_Graph.depth - 1 AS depth, -- TODO: need to add a 'path' and a column to check for cycles
+		_Graph.self_lsid,
+		_Graph.self_rowid,
 		_Edges.parent_container,
 		_Edges.parent_exptype,
 		_Edges.parent_cpastype,
@@ -106,7 +111,9 @@ _GraphParents AS
 _GraphChildren AS
 (
 	SELECT
-		0 AS depth,
+		0 AS depth, -- TODO: need to add a 'path' and a column to check for cycles
+		lsid AS self_lsid,
+		rowid AS self_rowid,
 		container AS parent_container,
 		exptype AS parent_exptype,
 		cpastype AS parent_cpastype,
@@ -122,10 +129,12 @@ _GraphChildren AS
 		rowid AS child_rowid
 	FROM _Seed
 
-	UNION ALL
+	UNION
 
 	SELECT
-		_Graph.depth + 1 AS depth,
+		_Graph.depth + 1 AS depth, -- TODO: need to add a 'path' and a column to check for cycles
+		_Graph.self_lsid,
+		_Graph.self_rowid,
 		_Edges.parent_container,
 		_Edges.parent_exptype,
 		_Edges.parent_cpastype,

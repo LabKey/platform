@@ -93,6 +93,12 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
 
             if ("Property".equalsIgnoreCase(name))
                 return createPropertyColumn("Property");
+
+            if ("Parents".equalsIgnoreCase(name))
+                return createColumn("Parents", Column.LSID);
+
+            if ("Children".equalsIgnoreCase(name))
+                return createColumn("Children", Column.LSID);
         }
         return result;
     }
@@ -373,6 +379,9 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
 
         setDefaultVisibleColumns(defaultCols);
 
+        // NOTE: for some strange reason, a column must exist with the same name as the method
+        addMethod("Children", new LineageMethod(getContainer(), getColumn("Children"), false));
+        addMethod("Parents", new LineageMethod(getContainer(), getColumn("Parents"), true));
     }
 
     public Domain getDomain()

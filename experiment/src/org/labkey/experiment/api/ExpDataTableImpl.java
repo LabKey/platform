@@ -135,6 +135,10 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
                 setDomain(domain);
             }
         }
+
+        // NOTE: for some strange reason, a column must exist with the same name as the method
+        addMethod("Children", new LineageMethod(getContainer(), getColumn("Children"), false));
+        addMethod("Parents", new LineageMethod(getContainer(), getColumn("Parents"), true));
     }
 
     @Override
@@ -142,6 +146,21 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
     {
         FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
         return svc.getFilePropsUpdateService(this, getContainer());
+    }
+
+    @Override
+    protected ColumnInfo resolveColumn(String name)
+    {
+        ColumnInfo result = super.resolveColumn(name);
+        if (result == null)
+        {
+            if ("Parents".equalsIgnoreCase(name))
+                return createColumn("Parents", Column.LSID);
+
+            if ("Children".equalsIgnoreCase(name))
+                return createColumn("Children", Column.LSID);
+        }
+        return result;
     }
 
     public ColumnInfo createColumn(String alias, Column column)
