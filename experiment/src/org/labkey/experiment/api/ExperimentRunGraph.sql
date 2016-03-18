@@ -86,7 +86,7 @@ _GraphParents AS
 		rowid AS child_rowid
 	FROM _Seed
 
-	UNION
+	UNION ALL
 
 	SELECT
 		_Graph.depth - 1 AS depth, -- TODO: need to add a 'path' and a column to check for cycles
@@ -129,7 +129,7 @@ _GraphChildren AS
 		rowid AS child_rowid
 	FROM _Seed
 
-	UNION
+	UNION ALL
 
 	SELECT
 		_Graph.depth + 1 AS depth, -- TODO: need to add a 'path' and a column to check for cycles
