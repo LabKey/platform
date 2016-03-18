@@ -197,6 +197,7 @@
                         break;
                     break;
                 }
+                LABKEY.Utils.signalWebDriverTest('importFailureSignal');
             }
         });
     }
