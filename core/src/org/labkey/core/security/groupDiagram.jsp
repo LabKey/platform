@@ -21,7 +21,6 @@
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
@@ -30,7 +29,7 @@
     }
 %>
 <%
-    ActionURL groupDiagramURL = new ActionURL(SecurityController.GroupDiagramAction.class, getContainer());
+    ActionURL groupDiagramURL = urlFor(SecurityController.GroupDiagramAction.class);
 %>
 <div id="unconnected" style="padding:5px;"></div>
 <div id="groupDiagram"></div>

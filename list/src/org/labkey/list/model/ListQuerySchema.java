@@ -39,8 +39,8 @@ import org.labkey.list.controllers.ListController;
 import org.labkey.list.view.ListQueryView;
 import org.springframework.validation.BindException;
 
-import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ListQuerySchema extends UserSchema
 {
@@ -77,12 +77,10 @@ public class ListQuerySchema extends UserSchema
 
     public Set<String> getTableNames()
     {
-        Set<String> ret = new HashSet<>();
-        for (ListDef def : ListManager.get().getLists(getContainer()))
-        {
-            ret.add(def.getName());
-        }
-        return ret;
+        return ListManager.get().getLists(getContainer())
+            .stream()
+            .map(ListDef::getName)
+            .collect(Collectors.toSet());
     }
 
     @Nullable
