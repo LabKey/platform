@@ -174,6 +174,7 @@
                 else if("rowCount" in action.result && action.result.rowCount == 0)
                 {
                     serverInvalid({errors: {_form: "No rows were inserted. Please check to make sure your data is formatted properly."}});
+                    LABKEY.Utils.signalWebDriverTest('importFailureSignal');
                 }
                 else
                     window.location = returnUrl;
