@@ -1,3 +1,5 @@
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%
 /*
  * Copyright (c) 2011-2015 LabKey Corporation
@@ -17,8 +19,13 @@
 %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%
-    addClientDependency("clientapi/ext4");
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromPath("clientapi/ext4"));
+        return resources;
+    }
 %>
 <labkey:errors/>
 
