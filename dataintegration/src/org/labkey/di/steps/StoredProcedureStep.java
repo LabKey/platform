@@ -242,7 +242,7 @@ public class StoredProcedureStep extends TransformTask
         }
         catch (Exception x)
         {
-            throw new PipelineJobException(x);
+            throw new PipelineJobException("Error processing with stored procedure", x);
         }
     }
 
