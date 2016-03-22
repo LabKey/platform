@@ -2188,9 +2188,8 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
         this.schemaKey = LABKEY.SchemaKey.fromParts(response.schemaName);
 
         for (i = 0; i < response.metaData.fields.length; i++) {
-            // response.metaData.fields[i] = new LABKEY.Query.Field(response.metaData.fields[i]);
             var field = response.metaData.fields[i],
-                    lookup = field.lookup;
+                lookup = field.lookup;
 
             field.fieldKey = LABKEY.FieldKey.fromParts(field.fieldKey);
 
@@ -2203,7 +2202,8 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
                 field.getDisplayField = generateGetDisplayField(field.displayField, response.metaData.fields);
             }
 
-            if (field.extFormatFn) {
+            // Only parse the 'extFormatFn' if ExtJS is present
+            if (field.extFormatFn && window && (window.Ext !== undefined || window.Ext4 !== undefined)) {
                 field.extFormatFn = eval(field.extFormatFn);
             }
         }
