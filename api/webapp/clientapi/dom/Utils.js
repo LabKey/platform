@@ -393,7 +393,7 @@ LABKEY.Utils = new function(impl, $) {
         var signalContainerId = 'testSignals';
         var signalContainerSelector = '#' + signalContainerId;
         var signalContainer = $(signalContainerSelector);
-        var formHTML = '<META id="' + signalContainerId + '"></META>';
+        var formHTML = '<META id="' + signalContainerId + '"/>';
 
         if (!signalContainer.length)
         {
