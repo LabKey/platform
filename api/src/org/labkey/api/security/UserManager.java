@@ -466,8 +466,18 @@ public class UserManager
         clearUserList();
     }
 
-    public static void changeEmail(int userId, String oldEmail, String newEmail, String verificationToken, User currentUser) throws SecurityManager.UserManagementException
+    public static void changeEmail(boolean isAdmin, int userId, String oldEmail, String newEmail, String verificationToken, User currentUser)
+            throws SecurityManager.UserManagementException, ValidEmail.InvalidEmailException
     {
+        if(!isAdmin)
+        {
+            ValidEmail validUserEmail = new ValidEmail(currentUser.getEmail());
+            if (!SecurityManager.verify(validUserEmail, verificationToken))  // shouldn't happen! should be testing this earlier too
+            {
+                throw new SecurityManager.UserManagementException(validUserEmail, "Verification token '" + verificationToken + "' is incorrect for email change for user " + validUserEmail.getEmailAddress());
+            }
+        }
+
         if (SecurityManager.loginExists(oldEmail))
         {
             SqlExecutor executor = new SqlExecutor(CORE.getSchema());
@@ -477,7 +487,14 @@ public class UserManager
             rows = executor.execute("UPDATE " + CORE.getTableInfoLogins() + " SET Email=? WHERE Email=?", newEmail, oldEmail);
             if (1 != rows)
                 throw new SecurityManager.UserManagementException(oldEmail, "Unexpected number of rows returned when setting new email: " + rows);
-            addToUserHistory(getUser(userId), currentUser + " changed an email address from " + oldEmail + " to " + newEmail + " with token '" + verificationToken + "'.");
+            if(isAdmin)
+            {
+                addToUserHistory(getUser(userId), "Admin " + currentUser + " changed an email address from " + oldEmail + " to " + newEmail + ".");
+            }
+            else
+            {
+                addToUserHistory(getUser(userId), currentUser + " changed their email address from " + oldEmail + " to " + newEmail + " with token '" + verificationToken + "'.");
+            }
             User userToBeEdited = getUser(userId);
 
             if (userToBeEdited.getDisplayName(userToBeEdited).equals(oldEmail))
@@ -486,6 +503,9 @@ public class UserManager
                 if (1 != rows)
                     throw new SecurityManager.UserManagementException(oldEmail, "Unexpected number of rows returned when setting new display name: " + rows);
             }
+
+            ValidEmail validNewEmail = new ValidEmail(newEmail);
+            SecurityManager.setVerification(validNewEmail, null);  // so we don't let user use this link again
         }
 
         clearUserList();
