@@ -478,32 +478,31 @@ public class UserManager
             }
         }
 
-        if (SecurityManager.loginExists(oldEmail))
+        SqlExecutor executor = new SqlExecutor(CORE.getSchema());
+        int rows = executor.execute("UPDATE " + CORE.getTableInfoPrincipals() + " SET Name=? WHERE UserId=?", newEmail, userId);
+        if (1 != rows)
+            throw new SecurityManager.UserManagementException(oldEmail, "Unexpected number of rows returned when setting new name: " + rows);
+
+        executor.execute("UPDATE " + CORE.getTableInfoLogins() + " SET Email=? WHERE Email=?", newEmail, oldEmail);  // won't update if non-LabKey-managed, because there is no data here
+        if(isAdmin)
         {
-            SqlExecutor executor = new SqlExecutor(CORE.getSchema());
-            int rows = executor.execute("UPDATE " + CORE.getTableInfoPrincipals() + " SET Name=? WHERE UserId=?", newEmail, userId);
-            if (1 != rows)
-                throw new SecurityManager.UserManagementException(oldEmail, "Unexpected number of rows returned when setting new name: " + rows);
-            rows = executor.execute("UPDATE " + CORE.getTableInfoLogins() + " SET Email=? WHERE Email=?", newEmail, oldEmail);
-            if (1 != rows)
-                throw new SecurityManager.UserManagementException(oldEmail, "Unexpected number of rows returned when setting new email: " + rows);
-            if(isAdmin)
-            {
-                addToUserHistory(getUser(userId), "Admin " + currentUser + " changed an email address from " + oldEmail + " to " + newEmail + ".");
-            }
-            else
-            {
-                addToUserHistory(getUser(userId), currentUser + " changed their email address from " + oldEmail + " to " + newEmail + " with token '" + verificationToken + "'.");
-            }
-            User userToBeEdited = getUser(userId);
+            addToUserHistory(getUser(userId), "Admin " + currentUser + " changed an email address from " + oldEmail + " to " + newEmail + ".");
+        }
+        else
+        {
+            addToUserHistory(getUser(userId), currentUser + " changed their email address from " + oldEmail + " to " + newEmail + " with token '" + verificationToken + "'.");
+        }
+        User userToBeEdited = getUser(userId);
 
-            if (userToBeEdited.getDisplayName(userToBeEdited).equals(oldEmail))
-            {
-                rows = executor.execute("UPDATE " + CORE.getTableInfoUsersData() + " SET DisplayName=? WHERE UserId=?", newEmail, userId);
-                if (1 != rows)
-                    throw new SecurityManager.UserManagementException(oldEmail, "Unexpected number of rows returned when setting new display name: " + rows);
-            }
+        if (userToBeEdited.getDisplayName(userToBeEdited).equals(oldEmail))
+        {
+            rows = executor.execute("UPDATE " + CORE.getTableInfoUsersData() + " SET DisplayName=? WHERE UserId=?", newEmail, userId);
+            if (1 != rows)
+                throw new SecurityManager.UserManagementException(oldEmail, "Unexpected number of rows returned when setting new display name: " + rows);
+        }
 
+        if (!isAdmin)
+        {
             ValidEmail validNewEmail = new ValidEmail(newEmail);
             SecurityManager.setVerification(validNewEmail, null);  // so we don't let user use this link again
         }
