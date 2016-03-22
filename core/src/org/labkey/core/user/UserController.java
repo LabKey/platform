@@ -25,7 +25,6 @@ import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.FormattedError;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.RedirectAction;
@@ -60,25 +59,8 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.UserSchemaAction;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.security.AuthenticationManager;
-import org.labkey.api.security.CSRF;
-import org.labkey.api.security.Group;
-import org.labkey.api.security.LoginUrls;
-import org.labkey.api.security.MemberType;
-import org.labkey.api.security.RequiresLogin;
-import org.labkey.api.security.RequiresNoPermission;
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityMessage;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurityPolicyManager;
-import org.labkey.api.security.SecurityUrls;
-import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
-import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.UserUrls;
-import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UnauthorizedImpersonationException;
@@ -119,6 +101,8 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.view.template.TemplateHeaderView;
+import org.labkey.core.login.DbLoginAuthenticationProvider;
+import org.labkey.core.login.LoginController;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.UserAuditProvider;
 import org.labkey.core.query.UsersDomainKind;
@@ -131,7 +115,6 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.mail.Address;
 import javax.mail.Message;
 import javax.mail.internet.MimeMessage;
-import javax.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1414,11 +1397,7 @@ public class UserController extends SpringActionController
                     bb.add(reset);
                 }
 
-                ActionURL changeEmailURL = getChangeEmailAction(c, detailsUser);
-                changeEmailURL.addParameter("isChangeEmailRequest", true);
-                ActionButton changeEmail = new ActionButton(changeEmailURL, "Change Email");
-                changeEmail.setActionType(ActionButton.Action.LINK);
-                bb.add(changeEmail);
+                bb.add(makeChangeEmailButton(c, detailsUser));
 
                 if (!isOwnRecord)
                 {
@@ -1447,11 +1426,7 @@ public class UserController extends SpringActionController
                         && loginExists  // only show link to users where LabKey manages the password
                         && AuthenticationManager.isSelfServiceEmailChangesEnabled())
                 {
-                    ActionURL changeEmailURL = getChangeEmailAction(c, detailsUser);
-                    changeEmailURL.addParameter("isChangeEmailRequest", true);
-                    ActionButton changeEmail = new ActionButton(changeEmailURL, "Change Email");
-                    changeEmail.setActionType(ActionButton.Action.LINK);
-                    bb.add(changeEmail);
+                    bb.add(makeChangeEmailButton(c, detailsUser));
                 }
 
                 ActionButton doneButton;
@@ -1509,6 +1484,15 @@ public class UserController extends SpringActionController
             }
 
             return view;
+        }
+
+        private ActionButton makeChangeEmailButton(Container c, User user)
+        {
+            ActionURL changeEmailURL = getChangeEmailAction(c, user);
+            changeEmailURL.addParameter("isChangeEmailRequest", true);
+            ActionButton changeEmail = new ActionButton(changeEmailURL, "Change Email");
+            changeEmail.setActionType(ActionButton.Action.LINK);
+            return changeEmail;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1586,10 +1570,8 @@ public class UserController extends SpringActionController
                     User user = getUser();
                     int userId = user.getUserId();
 
-                    ValidEmail requestedValidEmailFromDatabase = new ValidEmail(_requestedEmailFromDatabase);
                     // update email in database
-                    UserManager.changeEmail(userId, _currentEmailFromDatabase, _requestedEmailFromDatabase, form.getVerificationToken(), getUser());
-                    SecurityManager.setVerification(requestedValidEmailFromDatabase, null);  // so we don't let user use this link again
+                    UserManager.changeEmail(isSiteAdmin, userId, _currentEmailFromDatabase, _requestedEmailFromDatabase, form.getVerificationToken(), getUser());
                     // post-verification email to old account
                     Container c = getContainer();
                     MimeMessage m = getChangeEmailMessage(_currentEmailFromDatabase, _requestedEmailFromDatabase);
@@ -1604,34 +1586,27 @@ public class UserController extends SpringActionController
             return new JspView<>("/org/labkey/core/user/changeEmail.jsp", form, errors);
         }
 
-        // Cribbed heavily from LoginController.SetPasswordAction.verify()
         protected void validateVerification(UserForm target, Errors errors)
         {
             boolean isSiteAdmin = getUser().isSiteAdmin();
 
             try
             {
-                ValidEmail validUserEmail = new ValidEmail(getUser().getEmail());  // use logged-in email throughout
+                User loggedInUser = getUser();
+                String loggedInUserEmail = loggedInUser.getEmail();
+                ValidEmail validUserEmail = new ValidEmail(loggedInUser.getEmail());  // use logged-in email throughout
 
                 String verificationToken = target.getVerificationToken();
                 UserManager.VerifyEmail verifyEmail = UserManager.getVerifyEmail(validUserEmail);
-                User user = UserManager.getUser(validUserEmail);
-                String loggedInUserEmail = getUser().getEmail();
                 String currentEmailFromDatabase = verifyEmail.getEmail();
                 String requestedEmailFromDatabase = verifyEmail.getRequestedEmail();
 
-                if (SecurityManager.verify(validUserEmail, verificationToken))
+                boolean isVerified = SecurityManager.verify(validUserEmail, verificationToken);
+                LoginController.checkVerificationErrors(isVerified, loggedInUser, validUserEmail, verificationToken, errors);
+
+                if(errors.getErrorCount() == 0)  // verified
                 {
-                    if (user == null)
-                    {
-                        errors.reject(ERROR_MSG, "This user doesn't exist.  Make sure you've copied the entire link into your browser's address bar.");
-                    }
-                    else if (!user.isActive())
-                    {
-                        errors.reject(ERROR_MSG, "This user account has been deactivated.  Please contact a system " +
-                                "administrator if you need to reactivate this account.");
-                    }
-                    else if(!(currentEmailFromDatabase.equals(loggedInUserEmail)))
+                    if(!(currentEmailFromDatabase.equals(loggedInUserEmail)))
                     {
                         errors.reject(ERROR_MSG, "The current user is not the same user that initiated this request.  Please log in with the account you used to make " +
                                 "this email change request.");
@@ -1643,7 +1618,7 @@ public class UserController extends SpringActionController
                         {
                             if(!isSiteAdmin)  // don't bother auditing admin password link clicks
                             {
-                                UserManager.auditEmailTimeout(user.getUserId(), validUserEmail.getEmailAddress(), requestedEmailFromDatabase, verificationToken, getUser());
+                                UserManager.auditEmailTimeout(loggedInUser.getUserId(), validUserEmail.getEmailAddress(), requestedEmailFromDatabase, verificationToken, getUser());
                             }
                             errors.reject(ERROR_MSG, "This verification link has expired.  Please try to change your email address again.");
                         }
@@ -1658,26 +1633,22 @@ public class UserController extends SpringActionController
                 }
                 else
                 {
-                    if (SecurityManager.isVerified(validUserEmail))
-                    {
-                        errors.reject(ERROR_MSG, "This email address change has already been verified.");
-                    }
-                    else if ((verificationToken == null) || (verificationToken.length() != SecurityManager.tempPasswordLength))
+                    if ((verificationToken == null) || (verificationToken.length() != SecurityManager.tempPasswordLength))
                     {
                         if(!isSiteAdmin)  // don't bother auditing admin password link clicks
                         {
-                            UserManager.auditBadVerificationToken(user.getUserId(), validUserEmail.getEmailAddress(), verifyEmail.getRequestedEmail(), verificationToken, getUser());
+                            UserManager.auditBadVerificationToken(loggedInUser.getUserId(), validUserEmail.getEmailAddress(), verifyEmail.getRequestedEmail(), verificationToken, loggedInUser);
                         }
-                        errors.reject(ERROR_MSG, "Verification link is incorrect.  Make sure you've copied the entire link into your browser's address bar.");
+                        errors.reject(ERROR_MSG, "Verification was incorrect.  Make sure you've copied the entire link into your browser's address bar.");  // double error, to better explain to user
                     }
                     else if(!(verificationToken.equals(verifyEmail.getVerification())))
                     {
                         if(!isSiteAdmin)  // don't bother auditing admin password link clicks
                         {
-                            UserManager.auditBadVerificationToken(user.getUserId(), validUserEmail.getEmailAddress(), verifyEmail.getRequestedEmail(), verificationToken, getUser());
+                            UserManager.auditBadVerificationToken(loggedInUser.getUserId(), validUserEmail.getEmailAddress(), verifyEmail.getRequestedEmail(), verificationToken, loggedInUser);
                         }
                         errors.reject(ERROR_MSG, "The current user is not the same user that initiated this request.  Please log in with the account you used to make " +
-                                "this email change request.");
+                                "this email change request.");  // double error, to better explain to user
                     }
                     else  // not sure if/how this can happen
                     {
@@ -1694,6 +1665,19 @@ public class UserController extends SpringActionController
         public boolean handlePost(UserForm form, BindException errors) throws Exception
         {
             boolean isSiteAdmin = getUser().isSiteAdmin();
+            User user;
+            int userId;
+
+            if (!isSiteAdmin)
+            {
+                user = getUser();
+                userId = user.getUserId();
+            }
+            else  // admin, so use form user ID, which may be different from admin's
+            {
+                userId = form.getUserId();
+                user = UserManager.getUser(userId);
+            }
 
             if (!isSiteAdmin)  // need to verify email before changing if not site admin
             {
@@ -1708,12 +1692,10 @@ public class UserController extends SpringActionController
                 }
                 else if(form.getIsPasswordPrompt())
                 {
-                    User user = getUser();
-                    String userEmail = user.getEmail();
                     ValidEmail validRequestedEmail;
                     try
                     {
-                        validRequestedEmail = new ValidEmail(form.getRequestedEmail());  // in case user altered this in the URL parameter
+                        validRequestedEmail = new ValidEmail(form.getRequestedEmail());  // validate in case user altered this in the URL parameter
                     }
                     catch (ValidEmail.InvalidEmailException e)
                     {
@@ -1721,11 +1703,12 @@ public class UserController extends SpringActionController
                         return false;
                     }
 
-                    boolean isAuthenticated = authenticate(userEmail, form.getPassword(), getViewContext().getActionURL().getReturnURL(), errors, getViewContext(), true);
+                    String userEmail = user.getEmail();
+                    boolean isAuthenticated = authenticate(userEmail, form.getPassword(), getViewContext().getActionURL().getReturnURL(), errors);
                     if (isAuthenticated)
                     {
                         String verificationToken = SecurityManager.createTempPassword();
-                        UserManager.requestEmail(user.getUserId(), userEmail, validRequestedEmail.getEmailAddress(), verificationToken, getUser());
+                        UserManager.requestEmail(userId, userEmail, validRequestedEmail.getEmailAddress(), verificationToken, getUser());
                         // verification email
                         Container c = getContainer();
 
@@ -1743,11 +1726,8 @@ public class UserController extends SpringActionController
             }
             else  // site admin, so make change directly
             {
-                int urlUserId = form.getUserId();  // use userId from form, to avoid overwriting admin's email address
-                User urlUser = UserManager.getUser(urlUserId);
-
-                // use "ADMIN" as verification token, but should never be checked/used
-                UserManager.changeEmail(urlUser.getUserId(), urlUser.getEmail(), form.getRequestedEmail(), "ADMIN", getUser());
+                // use "ADMIN" as verification token for debugging, but should never be checked/used
+                UserManager.changeEmail(isSiteAdmin, userId, user.getEmail(), form.getRequestedEmail(), "ADMIN", getUser());
             }
 
             return !errors.hasErrors();
@@ -1759,10 +1739,11 @@ public class UserController extends SpringActionController
 
             if(!isSiteAdmin)
             {
+                User user = getUser();
+
                 if (form.getIsChangeEmailRequest())
                 {
                     Container c = getContainer();
-                    User user = getUser();
                     ActionURL passwordPromptUrl = getChangeEmailAction(c, user);
                     passwordPromptUrl.addParameter("isPasswordPrompt", true);
                     passwordPromptUrl.addParameter("requestedEmail", form.getRequestedEmail());
@@ -1771,14 +1752,13 @@ public class UserController extends SpringActionController
                 else if (form.getIsPasswordPrompt())
                 {
                     Container c = getContainer();
-                    User user = getUser();
                     ActionURL verifyRedirectUrl = getChangeEmailAction(c, user);
                     verifyRedirectUrl.addParameter("isVerifyRedirect", true);
                     return verifyRedirectUrl;
                 }
                 else  // actually making self-service email change, so redirect to user details page
                 {
-                    return new UserUrlsImpl().getUserDetailsURL(getContainer(), getUser().getUserId(), form.getReturnURLHelper());
+                    return new UserUrlsImpl().getUserDetailsURL(getContainer(), user.getUserId(), form.getReturnURLHelper());
                 }
             }
             else  // admin email change, so redirect to user details page
@@ -1787,67 +1767,12 @@ public class UserController extends SpringActionController
             }
         }
 
-        // Cribbed heavily from LoginController.authenticate()
-        protected boolean authenticate(String email, String password, URLHelper returnUrlHelper, BindException errors, ViewContext viewContext, boolean logFailures)
+        protected boolean authenticate(String email, String password, URLHelper returnUrlHelper, BindException errors)
         {
-            HttpServletRequest request = viewContext.getRequest();
-            ApiSimpleResponse response = null;
-
             try
             {
-                // Attempt authentication with all active form providers
-                AuthenticationManager.PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, email, password, returnUrlHelper, logFailures);
-                LookAndFeelProperties laf;
-
-                switch (result.getStatus())
-                {
-                    case Success:
-                        User user = result.getUser();
-                        AuthenticationManager.setPrimaryAuthenticationUser(request, user);
-                        return true;   // Only success case... everything else returns false
-                    case InactiveUser:
-                        laf = LookAndFeelProperties.getInstance(viewContext.getContainer());
-                        errors.addError(new FormattedError("Your account has been deactivated. Please <a href=\"mailto:" + PageFlowUtil.filter(laf.getSystemEmailAddress()) + "\">contact a system administrator</a> if you need to reactivate this account."));
-                        break;
-                    case BadCredentials:
-                        if (null != email || null != password)
-                        {
-                            // Email & password were specified, but authentication failed...
-                            // display either invalid email address error or generic "couldn't authenticate" message
-                            new ValidEmail(email);
-                            errors.reject(ERROR_MSG, "The e-mail address and password you entered did not match any accounts on file.\nNote: Passwords are case sensitive; make sure your Caps Lock is off.");
-                        }
-                        break;
-                    case LoginPaused:
-                        if (null != email || null != password)
-                        {
-                            new ValidEmail(email);
-                            errors.reject(ERROR_MSG, "Due to the number of recent failed login attempts, authentication has been temporarily paused.\nTry again in one minute.");
-                        }
-                        break;
-                    case UserCreationError:
-                        laf = LookAndFeelProperties.getInstance(viewContext.getContainer());
-                        errors.addError(new FormattedError("The server could not create your account. Please <a href=\"mailto:" + PageFlowUtil.filter(laf.getSystemEmailAddress()) + "\">contact a system administrator</a> for assistance."));
-                        break;
-                    case UserCreationNotAllowed:
-                        laf = LookAndFeelProperties.getInstance(viewContext.getContainer());
-                        errors.addError(new FormattedError("Please <a href=\"mailto:" + PageFlowUtil.filter(laf.getSystemEmailAddress()) + "\">contact a system administrator</a> to have your account created."));
-                        break;
-                    case PasswordExpired:
-                    case Complexity:
-                        AuthenticationManager.AuthenticationResult authResult = AuthenticationManager.handleAuthentication(getViewContext().getRequest(), getContainer());
-                        if (null != authResult && null != authResult.getRedirectURL() && !authResult.getRedirectURL().getPath().isEmpty())
-                        {
-                            URLHelper redirectUrl = authResult.getRedirectURL();
-                            response = new ApiSimpleResponse();
-                            response.put("success", false);
-                            response.put("returnUrl", redirectUrl.toString());
-                            AuthenticationManager.setLoginReturnProperties(getViewContext().getRequest(), null);
-                        }
-                        break;
-                    default:
-                        throw new IllegalStateException("Unknown authentication status: " + result.getStatus());
-                }
+                DbLoginAuthenticationProvider loginProvider = (DbLoginAuthenticationProvider) AuthenticationManager.getProvider("Database");
+                return loginProvider.authenticate(email, password, returnUrlHelper).isAuthenticated();
             }
             catch (ValidEmail.InvalidEmailException e)
             {

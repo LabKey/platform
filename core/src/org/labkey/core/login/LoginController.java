@@ -1799,36 +1799,18 @@ public class LoginController extends SpringActionController
             try
             {
                 String verification = form.getVerification();
+                boolean isVerified = SecurityManager.verify(email, verification);
 
-                if (SecurityManager.verify(email, verification))
+                if (isVerified)
                 {
                     _email = email;
-
-                    User user = UserManager.getUser(_email);
-                    if (user == null)
-                    {
-                        errors.reject("setPassword", "This user doesn't exist.  Make sure you've copied the entire link into your browser's address bar.");
-                        _unrecoverableError = true;
-                    }
-                    else if (!user.isActive())
-                    {
-                        errors.reject("setPassword", "This user account has been deactivated. Please contact a system "
-                                + "administrator if you need to reactivate this account.");
-                        _unrecoverableError = true;
-                    }
                 }
-                else
-                {
-                    if (!SecurityManager.loginExists(email))
-                        errors.reject("setPassword", "This email address doesn't exist.  Make sure you've copied the entire link into your browser's address bar.");
-                    else if (SecurityManager.isVerified(email))
-                        errors.reject("setPassword", "This email address has already been verified.");
-                    else if (null == verification || verification.length() < SecurityManager.tempPasswordLength)
-                        errors.reject("setPassword", "Make sure you've copied the entire link into your browser's address bar.");
-                    else
-                        // Incorrect verification string
-                        errors.reject("setPassword", "Verification failed.  Make sure you've copied the entire link into your browser's address bar.");
 
+                User user = UserManager.getUser(email);
+                LoginController.checkVerificationErrors(isVerified, user, email, verification, errors);
+
+                if (errors.getErrorCount() > 0)
+                {
                     _unrecoverableError = true;
                 }
             }
@@ -1872,6 +1854,34 @@ public class LoginController extends SpringActionController
             {
                 errors.reject("password", "Resetting verification failed.  Contact the " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getShortName() + " team.");
             }
+        }
+    }
+
+    public static void checkVerificationErrors(boolean isVerified, User user, ValidEmail email, String verification, Errors errors)
+    {
+        if(isVerified)
+        {
+            if (user == null)
+            {
+                errors.reject("setPassword", "This user doesn't exist.  Make sure you've copied the entire link into your browser's address bar.");
+            }
+            else if (!user.isActive())
+            {
+                errors.reject("setPassword", "This user account has been deactivated. Please contact a system "
+                        + "administrator if you need to reactivate this account.");
+            }
+        }
+        else
+        {
+            if (!SecurityManager.loginExists(email))
+                errors.reject("setPassword", "This email address doesn't exist.  Make sure you've copied the entire link into your browser's address bar.");
+            else if (SecurityManager.isVerified(email))
+                errors.reject("setPassword", "This email address has already been verified.");
+            else if (null == verification || verification.length() < SecurityManager.tempPasswordLength)
+                errors.reject("setPassword", "Make sure you've copied the entire link into your browser's address bar.");
+            else
+                // Incorrect verification string
+                errors.reject("setPassword", "Verification failed.  Make sure you've copied the entire link into your browser's address bar.");
         }
     }
 
