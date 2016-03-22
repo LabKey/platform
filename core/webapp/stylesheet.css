@@ -629,8 +629,7 @@ span.labkey-button {
 }
 
 a.labkey-button:hover,
-span.labkey-button:hover,
-.zeroclipboard-button-hover
+span.labkey-button:hover
 {
     padding: 3px 5px;
 	margin-right: 5px;
@@ -681,8 +680,7 @@ a.labkey-disabled-button {
 }
 
 a.labkey-button:active,
-span.labkey-button:active,
-.zeroclipboard-button-active
+span.labkey-button:active
 {
     padding: 3px 5px;
 	margin-right: 5px;

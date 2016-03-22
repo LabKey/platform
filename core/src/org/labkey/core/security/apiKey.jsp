@@ -27,7 +27,8 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("internal/ZeroClipboard/ZeroClipboard.js"));
+        resources.add(ClientDependency.fromPath("internal/jQuery"));
+        resources.add(ClientDependency.fromPath("internal/clipboard/clipboard-1.5.9.min.js"));
         return resources;
     }
 %>
@@ -41,18 +42,18 @@ This API key can be used to authorize client code accessing LabKey Server using 
 copying and storing your credentials on the client machine. Also, all client API access is tied to the current browser session, which means the code runs under the
 current context (e.g., your user, your authorizations, your declared terms of use and PHI level, your impersonation state, etc.). It also means the API key will
 likely lose authorization when the session expires, e.g., when you sign out via the browser or the server automatically times out your session.
-<br><br>
-<%=h(id)%><br><br>
-<%=button("Done").href(returnURL).build()%><%=button("Copy to Clipboard").id("clipboard").attributes("data-clipboard-text=\"" + h(id) + "\"").build()%>
+<br/><br/>
+<input id="session-token" value="<%=h(id)%>" style="width: 300px;" readonly/>
+<%= button("Copy to clipboard").attributes("data-clipboard-target=\"#session-token\"") %>
+<br/><br/>
+<%= button("Done").href(returnURL) %>
 <script type="application/javascript">
-    var target = document.getElementById("clipboard");
-    // These styles make the copy-to-clipboard button act like a normal button, even though the flash movie is receiving all the events
-    ZeroClipboard.config({hoverClass: "zeroclipboard-button-hover", activeClass: "zeroclipboard-button-active"});
-    new ZeroClipboard(target).on("error", function(e)
-    {
-        // Disable the button at the first sign of trouble (flash not installed, plug-in not installed, plug-in not enabled, etc.)
-        // TODO: Would be nice to add a hover over the button explaining that flash is required. Could also supply a reason (e.message).
-        target.className = "labkey-disabled-button";
-//        target.style.display = "none";  // Alternative is to hide the button altogether
-    });
+    (function($) {
+        var clip = new Clipboard('.labkey-button');
+        clip.on('success', function(e) {
+            $(e.trigger).html('Copied!'); e.clearSelection();
+            setTimeout(function() { $(e.trigger).html('Copy to clipboard'); }, 2500);
+        });
+        clip.on('error', function(e) { $(e.trigger).html('Press Ctrl+C to copy'); });
+    })(jQuery);
 </script>
