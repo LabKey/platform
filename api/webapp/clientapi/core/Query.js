@@ -2211,9 +2211,14 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
         // Generate Column Model
         this.columnModel = generateColumnModel(this.metaData.fields);
 
-        // Wrap the rows
-        for (i = 0; i < this.rows.length; i++) {
-            this.rows[i] = new LABKEY.Query.Row(this.rows[i]);
+        // Wrap the rows -- may not be in the response (e.g. maxRows: 0)
+        if (this.rows !== undefined) {
+            for (i = 0; i < this.rows.length; i++) {
+                this.rows[i] = new LABKEY.Query.Row(this.rows[i]);
+            }
+        }
+        else {
+            this.rows = [];
         }
 
         return this;
