@@ -311,7 +311,7 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
                                 }
                             }
                             else {
-                                Ext4.Msg.alert('Category Managment', 'Failed to save updates.');
+                                Ext4.Msg.alert('Category Management', 'Failed to save updates.');
                                 zix.register(mb);
                             }
                             e.grid.getStore().load();
