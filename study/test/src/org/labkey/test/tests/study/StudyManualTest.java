@@ -16,7 +16,6 @@
 
 package org.labkey.test.tests.study;
 
-import com.thoughtworks.selenium.SeleniumException;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.util.ListHelper;
@@ -218,14 +217,7 @@ public abstract class StudyManualTest extends StudyTest
     // row is one-based
     private String getVisitLabel(int row)
     {
-        try
-        {
-            return getText(Locator.xpath("//table[@id='visits']/tbody/tr[" + row + "]/th"));
-        }
-        catch (SeleniumException e)
-        {
-            return null;
-        }
+        return getText(Locator.xpath("//table[@id='visits']/tbody/tr[" + row + "]/th"));
     }
 
     protected void createCustomAssays()
