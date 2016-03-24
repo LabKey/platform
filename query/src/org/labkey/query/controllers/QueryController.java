@@ -5234,13 +5234,20 @@ public class QueryController extends SpringActionController
             {
                 for (String qname : uschema.getVisibleTableNames())
                 {
-                    // Go direct against the UserSchema instead of calling into QueryService, which takes a schema and
-                    // query name as strings and therefore has to create new instances
-                    QueryDefinition qdef = uschema.getQueryDefForTable(qname);
-                    if (qdef != null)
+                    // StudydData can be slow to evaluate if there are many schemas, so don't bother
+                    if (qname.equalsIgnoreCase("StudyData")) {
+                        qinfos.add(getMinimalQueryPropsForStudyData());
+                    }
+                    else
                     {
-                        ActionURL viewDataUrl = uschema.urlFor(QueryAction.executeQuery, qdef);
-                        qinfos.add(getQueryProps(qdef, viewDataUrl, false, uschema, form.isIncludeColumns()));
+                        // Go direct against the UserSchema instead of calling into QueryService, which takes a schema and
+                        // query name as strings and therefore has to create new instances
+                        QueryDefinition qdef = uschema.getQueryDefForTable(qname);
+                        if (qdef != null)
+                        {
+                            ActionURL viewDataUrl = uschema.urlFor(QueryAction.executeQuery, qdef);
+                            qinfos.add(getQueryProps(qdef, viewDataUrl, false, uschema, form.isIncludeColumns()));
+                        }
                     }
                 }
             }
@@ -5312,6 +5319,17 @@ public class QueryController extends SpringActionController
             }
 
             qinfo.put("title", title);
+            return qinfo;
+        }
+
+        protected Map<String, Object> getMinimalQueryPropsForStudyData()
+        {
+            // obtaining TableInfo for StudyData takes time because all datasets in study must be examined
+            // this provides just the values needed by Schema Browser to show the contents of the study folder
+            Map<String, Object> qinfo = new HashMap<>();
+            qinfo.put("name", "StudyData");
+            qinfo.put("description", "Contains one row for every row in every dataset in this folder with the columns that are common across all the datasets");
+            qinfo.put("title", "StudyData");
             return qinfo;
         }
     }
