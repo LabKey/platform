@@ -1552,6 +1552,13 @@ public class DataRegion extends AbstractDataRegion
     protected void renderFormHeader(RenderContext ctx, Writer out, int mode) throws IOException
     {
         out.write("<form method=\"post\" id=\"" + PageFlowUtil.filter(getDomId() + "-form") + "\" ");
+
+        String name = getName();
+        if (name != null)
+        {
+            out.write(" lk-region-form=\"" + PageFlowUtil.filter(name) + "\" ");
+        }
+
         String actionAttr = null == getFormActionUrl() ? "" : getFormActionUrl().getLocalURIString();
         switch (mode)
         {

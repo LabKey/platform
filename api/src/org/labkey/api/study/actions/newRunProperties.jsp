@@ -18,22 +18,32 @@
 <%@ page import="org.apache.commons.lang3.StringUtils"%>
 <%@ page import="org.labkey.api.exp.property.DomainProperty" %>
 <%@ page import="org.labkey.api.study.actions.AssayRunUploadForm" %>
+<%@ page import="org.labkey.api.study.actions.AssayRunsAction" %>
 <%@ page import="org.labkey.api.study.actions.TransformResultsAction" %>
 <%@ page import="org.labkey.api.study.assay.AssayProvider" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.springframework.validation.FieldError" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.io.File" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.springframework.validation.BindException" %>
-<%@ page import="org.springframework.validation.FieldError" %>
+<%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<script type="text/javascript">LABKEY.requiresScript('completion.js');</script>
-
+<%!
+    public void addClientDependencies(Set<String> resources)
+    {
+        resources.add("internal/jQuery");
+        resources.add("Ext4"); // required for completion.js
+        resources.add("completion.js");
+    }
+%>
 <%
     JspView<AssayRunUploadForm> me = (JspView<AssayRunUploadForm>) HttpView.currentView();
     AssayRunUploadForm<? extends AssayProvider> bean = me.getModelBean();
+
+    ActionURL returnURL = new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", bean.getRowId());
 %>
 <table>
 <%
@@ -44,7 +54,10 @@
             <td class="labkey-error" colspan="2"><%= text(bean.getTransformResult().getWarnings()) %></td>
         </tr>
         <tr>
-            <td><div id="overrideBtn"></div></td>
+            <td>
+                <%= button("Proceed").onClick("submitForm(getRegionForm()); return false;") %>
+                <%= button("Cancel").href(returnURL).attributes("style: margin: 0 0 0 10px;") %>
+            </td>
         </tr>
         <tr>
             <td>&nbsp;</td>
@@ -52,7 +65,7 @@
         <tr class="labkey-wp-header">
             <td colspan="2">Output Files</td>
         </tr>
-        <% for(File file : bean.getTransformResult().getFiles())
+        <% for (File file : bean.getTransformResult().getFiles())
         { %>
             <tr>
                 <td colspan="2"><a class="labkey-text-link" href='<%= new ActionURL(TransformResultsAction.class,getContainer())
@@ -82,11 +95,11 @@
             <td class="labkey-error" id="importErrors" colspan="2">
 
                 <%
-                if(bean.getErrors().hasFieldErrors("transform"))
+                if (bean.getErrors().hasFieldErrors("transform"))
                 {
-                    for(FieldError fe : bean.getErrors().getFieldErrors())
+                    for (FieldError fe : bean.getErrors().getFieldErrors())
                     {
-                        if(fe.getField() == "transform")
+                        if (fe.getField().equals("transform"))
                         {
                 %>
                             <%= text(fe.getDefaultMessage())%>
@@ -99,7 +112,7 @@
                 }
                 else
                 {
-                    for(ObjectError err : bean.getErrors().getAllErrors())
+                    for (ObjectError err : bean.getErrors().getAllErrors())
                     {
                 %>
                     <%= h(err.getDefaultMessage()) %>
@@ -117,12 +130,12 @@
         <td colspan="2">Assay Properties</td>
     </tr>
     <tr>
-        <td class="labkey-form-label" nowrap="true">Name</td>
+        <td class="labkey-form-label" nowrap>Name</td>
         <td width="100%"><%= h(bean.getProtocol().getName()) %></td>
     </tr>
     <% if (!StringUtils.isEmpty(bean.getProtocol().getDescription())) { %>
         <tr>
-            <td class="labkey-form-label" nowrap="true">Description</td>
+            <td class="labkey-form-label" nowrap>Description</td>
             <td><%= h(bean.getProtocol().getProtocolDescription()) %></td>
         </tr>
     <% } %>
@@ -137,7 +150,7 @@
             {
                 %>
                 <tr>
-                    <td class="labkey-form-label" nowrap="true"><%= h(entry.getKey().getPropertyDescriptor().getNonBlankCaption()) %></td>
+                    <td class="labkey-form-label" nowrap><%= h(entry.getKey().getPropertyDescriptor().getNonBlankCaption()) %></td>
                     <td>
                         <%= h(bean.getBatchPropertyValue(entry.getKey().getPropertyDescriptor(), entry.getValue())) %>
                     </td>
@@ -151,67 +164,58 @@
 
 <script type="text/javascript">
 
-    Ext4.onReady(function(){
-        Ext4.create('Ext.Button', {
-            text: 'Proceed',
-            renderTo: Ext4.get("overrideBtn"),
-            handler: function() {
-                this.form = document.getElementById('ExperimentRun');
-                if (isTrueOrUndefined(function(){
-                            document.forms['ExperimentRun'].multiRunUpload.value = '<%= bean.isMultiRunUpload()%>';
-                            this.className += " labkey-disabled-button";
-                        }.call(this))) {
-                    submitForm(document.getElementById('ExperimentRun'));
-                    return false;
-                }
+    (function($) {
+
+        <%-- Used by button handlers --%>
+        window.getRegionForm = function() {
+            var form = $('form[lk-region-form="ExperimentRun"]');
+            if (form.length == 1) {
+                return form[0];
             }
-        });
-        Ext4.create('Ext.Button', {
-            text: 'Cancel',
-            renderTo: Ext4.get("overrideBtn"),
-            margin: '0 0 0 10',
-            handler: function() {
-                var row = document.getElementsByName('rowId')[0].value;
-                location = LABKEY.ActionURL.buildURL('assay', 'assayruns', null, {rowId: row});
+            else {
+                throw new Error('Unable to resolve region form. Did the "lk-region-form" selector change?');
             }
-        });
+        };
 
         <%
         if (bean.getTransformResult().getWarnings() != null)
         {
         %>
-        var form = document.getElementById("ExperimentRun");
-        var elements = form.elements;
-        for (var i = 0, len = elements.length; i < len; ++i) {
-            if(elements[i].type != "hidden") {
-                if (elements[i].type == "radio") {
-                    if(elements[i].id == "Previouslyuploadedfiles")
-                        elements[i].checked = true;
+        $(function() {
+
+            var form = getRegionForm();
+
+            <%-- Mark inputs as disabled or readonly and check the option to use the previous result --%>
+            var elements = form.elements;
+            for (var i = 0, len = elements.length; i < len; ++i) {
+                if (elements[i].type != "hidden") {
+                    if (elements[i].type == "radio") {
+                        if (elements[i].id == "Previouslyuploadedfiles")
+                            elements[i].checked = true;
+                        else
+                            elements[i].disabled = true;
+                    }
                     else
-                        elements[i].disabled = true;
+                        elements[i].readOnly = true;
                 }
-                else
-                    elements[i].readOnly = true;
             }
-        }
 
+            <%-- disable buttons in the form --%>
+            $('.labkey-button', form).addClass('labkey-disabled-button');
 
-        var buttons = document.querySelectorAll('.labkey-button');
-        len = buttons.length;
-        for (i = 0; i < len; i++) {
-            buttons[i].setAttribute("class", "labkey-disabled-button");
-        }
+            <%-- populate name field --%>
+            $('input[name=name]').val(<%= PageFlowUtil.jsString(bean.getName()) %>);
+            <% if (bean.getComments() != null) { %>
+            $('input[name=comments]').val(<%= PageFlowUtil.jsString(bean.getComments()) %>);
+            <% } %>
 
-        // populate name field
-        document.getElementsByName('name')[0].value = '<%= bean.getName()%>';
-        if(<%= bean.getComments()%> != null)
-            document.getElementsByName('comments')[0].value = '<%= bean.getComments()%>';
-
-        hideAllCollectors();
-        showCollector('Previously uploaded files');
+            hideAllCollectors();
+            showCollector('Previously uploaded files');
+        });
         <%
         }
         %>
-    });
+
+    })(jQuery);
 
 </script>
