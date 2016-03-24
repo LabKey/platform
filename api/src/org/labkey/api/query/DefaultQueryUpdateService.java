@@ -604,4 +604,31 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             row.put("container", container.getId());
         }
     }
+
+    protected boolean hasAttachmentProperties()
+    {
+        Domain domain = getDomain();
+        if (null != domain)
+        {
+            for (DomainProperty dp : domain.getProperties())
+                if (null != dp && isAttachmentProperty(dp))
+                    return true;
+        }
+        return false;
+    }
+
+    protected boolean isAttachmentProperty(@NotNull DomainProperty dp)
+    {
+        PropertyDescriptor pd = dp.getPropertyDescriptor();
+        return (pd.getPropertyType().equals(PropertyType.ATTACHMENT));
+    }
+
+    protected boolean isAttachmentProperty(String name)
+    {
+        DomainProperty dp = getDomain().getPropertyByName(name);
+        if (dp != null)
+            return isAttachmentProperty(dp);
+        return false;
+    }
+
 }
