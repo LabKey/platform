@@ -18,7 +18,13 @@
 
     var convertDate = function(s)
     {
-        var number = parseFloat(s);
+        if (!s) 
+            return null;
+        var number;
+        if (0 < s.indexOf("-"))
+            number = Date.parse(s);
+        else
+            number = parseFloat(s);
         return new Date(!isNaN(number) && isFinite(number) ? number : s);
     };
 
