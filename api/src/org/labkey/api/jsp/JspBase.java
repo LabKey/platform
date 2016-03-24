@@ -662,7 +662,7 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return full + query;
     }
 
-    // Override to add ClientDependencies. Most JSPs should override addClientDependencies() instead.
+    // Override to add ClientDependencies. Note: Most JSPs should override addClientDependencies() instead.
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         Set<String> clientResources = new LinkedHashSet<>();
@@ -682,6 +682,7 @@ abstract public class JspBase extends JspContext implements HasViewContext
     }
 
     // Override to add client dependency paths
+    @SuppressWarnings("UnusedParameters")
     public void addClientDependencies(Set<String> resources)
     {
     }
