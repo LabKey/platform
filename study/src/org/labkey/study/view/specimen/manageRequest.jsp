@@ -24,7 +24,6 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.study.SpecimenManager" %>
 <%@ page import="org.labkey.study.controllers.CreateChildStudyAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.ShowSearchAction" %>
@@ -35,18 +34,16 @@
 <%@ page import="org.labkey.study.model.SpecimenRequestStatus" %>
 <%@ page import="org.labkey.study.model.Vial" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Set" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 
 <%!
-    public LinkedHashSet<ClientDependency> getClientDependencies(){
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("clientapi/ext3"));
-        resources.add(ClientDependency.fromPath("FileUploadField.js"));
-        resources.add(ClientDependency.fromPath("study/StudyWizard.js"));
-        return resources;
+    public void addClientDependencies(Set<String> resources){
+        resources.add("clientapi/ext3");
+        resources.add("FileUploadField.js");
+        resources.add("study/StudyWizard.js");
     }
 %>
 <%
@@ -283,10 +280,19 @@
                 This request's requirements are complete. Next steps include:<br>
                 <ul>
                     <li>Email specimen lists to their originating locations: <%= textLink("Originating Location Specimen Lists",
-                        buildURL(SpecimenController.LabSpecimenListsAction.class, "id=" + bean.getSpecimenRequest().getRowId() + "&listType=" + SpecimenController.LabSpecimenListsBean.Type.ORIGINATING.toString())) %></li>
+                        new ActionURL(SpecimenController.LabSpecimenListsAction.class, c)
+                                .addParameter("id", bean.getSpecimenRequest().getRowId())
+                                .addParameter("listType", SpecimenController.LabSpecimenListsBean.Type.ORIGINATING.toString())) %>
+                    </li>
                     <li>Email specimen lists to their providing locations: <%= textLink("Providing Location Specimen Lists",
-                        buildURL(SpecimenController.LabSpecimenListsAction.class, "id=" + bean.getSpecimenRequest().getRowId() + "&listType=" + SpecimenController.LabSpecimenListsBean.Type.PROVIDING.toString())) %></li>
-                    <li>Update request status to indicate completion: <%= textLink("Update Request", buildURL(SpecimenController.ManageRequestStatusAction.class,"id=" + bean.getSpecimenRequest().getRowId())) %></li>
+                        new ActionURL(SpecimenController.LabSpecimenListsAction.class, c)
+                                .addParameter("id", bean.getSpecimenRequest().getRowId())
+                                .addParameter("listType", SpecimenController.LabSpecimenListsBean.Type.PROVIDING.toString())) %>
+                    </li>
+                    <li>Update request status to indicate completion: <%= textLink("Update Request",
+                        new ActionURL(SpecimenController.ManageRequestStatusAction.class, c)
+                                .addParameter("id", bean.getSpecimenRequest().getRowId())) %>
+                    </li>
                 </ul>
 <%
         }
@@ -366,11 +372,11 @@
                 <table>
                     <tr>
                         <th valign="top" align="right">Requester</th>
-                        <td><%= h(creatingUser != null ? h(creatingUser.getDisplayName(user)) : "Unknown") %></td>
+                        <td><%= h(creatingUser != null ? creatingUser.getDisplayName(user) : "Unknown") %></td>
                     </tr>
                     <tr>
                         <th valign="top" align="right">Requesting Location</th>
-                        <td><%= h(destinationLocation != null ? h(destinationLocation.getDisplayName()) : "Not specified") %></td>
+                        <td><%= h(destinationLocation != null ? destinationLocation.getDisplayName() : "Not specified") %></td>
                     </tr>
                     <tr>
                         <th valign="top" align="right">Request Date</th>
@@ -389,20 +395,24 @@
         </tr>
 <tr>
     <td>
-        <%= textLink("View History", buildURL(SpecimenController.RequestHistoryAction.class) + "id=" + bean.getSpecimenRequest().getRowId()) %>&nbsp;
-        <%= bean.isRequestManager() ? textLink("Update Request", buildURL(SpecimenController.ManageRequestStatusAction.class) + "id=" + bean.getSpecimenRequest().getRowId()) : "" %>
+        <%= textLink("View History", new ActionURL(SpecimenController.RequestHistoryAction.class, c).addParameter("id", bean.getSpecimenRequest().getRowId())) %>&nbsp;
+        <%= text(bean.isRequestManager() ? textLink("Update Request", new ActionURL(SpecimenController.ManageRequestStatusAction.class, c).addParameter("id", bean.getSpecimenRequest().getRowId())) : "") %>
         <%
             if (hasExtendedRequestView)
             {
         %>
-        <%= bean.isRequestManager() ? textLink("Update Extended Request", new ActionURL(SpecimenController.ExtendedSpecimenRequestAction.class, c).addParameter("id", bean.getSpecimenRequest().getRowId())) : "" %>
+        <%= text(bean.isRequestManager() ? textLink("Update Extended Request", new ActionURL(SpecimenController.ExtendedSpecimenRequestAction.class, c).addParameter("id", bean.getSpecimenRequest().getRowId())) : "") %>
         <%
             }
         %>
-        <%= bean.isRequestManager() ? textLink("Originating Location Specimen Lists",
-                buildURL(SpecimenController.LabSpecimenListsAction.class) + "id=" + bean.getSpecimenRequest().getRowId() + "&listType=" + SpecimenController.LabSpecimenListsBean.Type.ORIGINATING.toString()) : "" %>
-        <%= bean.isRequestManager() ? textLink("Providing Location Specimen Lists",
-                buildURL(SpecimenController.LabSpecimenListsAction.class) + "id=" + bean.getSpecimenRequest().getRowId() + "&listType=" + SpecimenController.LabSpecimenListsBean.Type.PROVIDING.toString()) : "" %>
+        <%= text(bean.isRequestManager() ? textLink("Originating Location Specimen Lists",
+                    new ActionURL(SpecimenController.LabSpecimenListsAction.class, c)
+                            .addParameter("id", bean.getSpecimenRequest().getRowId())
+                            .addParameter("listType", SpecimenController.LabSpecimenListsBean.Type.ORIGINATING.toString())) : "") %>
+        <%= text(bean.isRequestManager() ? textLink("Providing Location Specimen Lists",
+                    new ActionURL(SpecimenController.LabSpecimenListsAction.class, c)
+                            .addParameter("id", bean.getSpecimenRequest().getRowId())
+                            .addParameter("listType", SpecimenController.LabSpecimenListsBean.Type.PROVIDING.toString())) : "") %>
     </td>
 </tr>
 <labkey:form action="<%=h(buildURL(SpecimenController.ManageRequestAction.class))%>" name="addRequirementForm" enctype="multipart/form-data" method="POST">
@@ -452,7 +462,9 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <%= textLink("Details", buildURL(SpecimenController.ManageRequirementAction.class) + "id=" + requirement.getRequestId() + "&requirementId=" + requirement.getRowId())%>
+                                    <%= textLink("Details", new ActionURL(SpecimenController.ManageRequirementAction.class, c)
+                                            .addParameter("id", requirement.getRequestId())
+                                            .addParameter("requirementId", requirement.getRowId()))%>
                                 </td>
                             </tr>
                     <%
