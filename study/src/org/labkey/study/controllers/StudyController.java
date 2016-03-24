@@ -3919,7 +3919,9 @@ public class StudyController extends BaseStudyController
 
     public static ActionURL getViewPreferencesURL(Container c, int id, String viewName)
     {
-        return new ActionURL(ViewPreferencesAction.class, c).addParameter(DatasetDefinition.DATASETKEY, id).addParameter("defaultView", viewName);
+        // Issue 26030: we don't distinguish null vs empty string for url parameters.
+        // Empty string will be converted to null for beans so "" shouldn't be used as the url param for Default Grid View.
+        return new ActionURL(ViewPreferencesAction.class, c).addParameter(DatasetDefinition.DATASETKEY, id).addParameter("defaultView", viewName != null ? (viewName.equals("") ? "defaultGrid": viewName) : null);
     }
 
     public static class ViewPreferencesForm extends DatasetController.DatasetIdForm
@@ -3933,7 +3935,7 @@ public class StudyController extends BaseStudyController
 
         public void setDefaultView(String defaultView)
         {
-            _defaultView = defaultView;
+            _defaultView = "defaultGrid".equals(defaultView) ? "" : defaultView;
         }
     }
 
