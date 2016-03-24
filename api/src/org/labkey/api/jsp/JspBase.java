@@ -55,6 +55,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Base class for nearly all JSP pages that we use.
@@ -67,13 +68,14 @@ import java.util.Set;
  */
 abstract public class JspBase extends JspContext implements HasViewContext
 {
+    private static final LinkedHashSet<ClientDependency> EMPTY_SET = new LinkedHashSet<>();
+
     protected JspBase()
     {
         super();
     }
 
     private ViewContext _viewContext;
-    private LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<>();
 
     public ViewContext getViewContext()
     {
@@ -660,27 +662,29 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return full + query;
     }
 
+    // Override to add ClientDependencies. Most JSPs should override addClientDependencies() instead.
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
-        return _clientDependencies;
+        Set<String> clientResources = new LinkedHashSet<>();
+        addClientDependencies(clientResources);
+
+        if (clientResources.isEmpty())
+        {
+            return EMPTY_SET;
+        }
+        else
+        {
+            return clientResources
+                .stream()
+                .map(ClientDependency::fromPath)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        }
     }
 
-    public void setClientDependencies(LinkedHashSet<ClientDependency> scripts)
+    // Override to add client dependency paths
+    public void addClientDependencies(Set<String> resources)
     {
-        _clientDependencies = scripts;
     }
-
-    public void addClientDependency(String scriptPath)
-    {
-        if (null != scriptPath)
-            _clientDependencies.add(ClientDependency.fromPath(scriptPath));
-    }
-
-    public void addClientDependencies(Set<ClientDependency> resources)
-    {
-        _clientDependencies.addAll(resources);
-    }
-
 
     protected final _HtmlString _hs(String html)
     {
