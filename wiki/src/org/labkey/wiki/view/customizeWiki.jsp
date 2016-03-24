@@ -25,15 +25,13 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.Set" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(Set<String> resources)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("Ext4"));
-        return resources;
+        resources.add("Ext4");
     }
 %>
 <%

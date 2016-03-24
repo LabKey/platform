@@ -20,22 +20,19 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
 <%@ page import="org.labkey.wiki.WikiController" %>
 <%@ page import="org.labkey.wiki.WikiController.DownloadAction" %>
 <%@ page import="org.labkey.wiki.model.WikiEditModel" %>
 <%@ page import="org.labkey.wiki.model.WikiTree" %>
-<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(Set<String> resources)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("tiny_mce/tiny_mce.js"));
-        resources.add(ClientDependency.fromPath("wiki/internal/wikiEdit.js"));
-        return resources;
+        resources.add("tiny_mce/tiny_mce.js");
+        resources.add("wiki/internal/wikiEdit.js");
     }
 %>
 <%

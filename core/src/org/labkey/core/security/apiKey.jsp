@@ -20,16 +20,13 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(Set<String> resources)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("internal/jQuery"));
-        resources.add(ClientDependency.fromPath("internal/clipboard/clipboard-1.5.9.min.js"));
-        return resources;
+        resources.add("internal/jQuery");
+        resources.add("internal/clipboard/clipboard-1.5.9.min.js");
     }
 %>
 <%

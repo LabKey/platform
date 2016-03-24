@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="org.labkey.api.settings.FolderSettingsCache" %>
 <%@ page import="org.labkey.api.util.ExtUtil" %>
 <%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
@@ -29,18 +30,14 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.visualization.VisualizationController" %>
-<%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.labkey.api.settings.FolderSettingsCache" %>
+<%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(Set<String> resources)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("vischart"));
-        return resources;
+        resources.add("vischart");
     }
 %>
 <%
