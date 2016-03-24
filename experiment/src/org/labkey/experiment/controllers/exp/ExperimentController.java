@@ -1161,7 +1161,9 @@ public class ExperimentController extends SpringActionController
                     Collections.emptyList(), Collections.emptyList(), form.getMaterialSourceId(), form.getNameExpression()
                 );
 
-                _successUrl = PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(getContainer(), dataClass.getDomain().getTypeURI(), false, false, false);
+                Domain domain = dataClass.getDomain();
+                DomainKind kind = domain.getDomainKind();
+                _successUrl = kind.urlEditDefinition(domain, getViewContext());
             }
 
             return true;

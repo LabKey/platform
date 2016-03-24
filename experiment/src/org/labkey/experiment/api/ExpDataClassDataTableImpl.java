@@ -1072,17 +1072,37 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             if (lsid == null)
                 throw new ValidationException("lsid required to update row");
 
+            // Replace attachment columns with filename and keep AttachmentFiles
+            Map<String, Object> rowStripped = new CaseInsensitiveHashMap<>();
+            Map<String, Object> attachments = new CaseInsensitiveHashMap<>();
+            row.forEach((name, value) -> {
+                if (isAttachmentProperty(name) && value instanceof AttachmentFile)
+                {
+                    AttachmentFile file = (AttachmentFile) value;
+                    if (null != file.getFilename())
+                    {
+                        rowStripped.put(name, file.getFilename());
+                        attachments.put(name, value);
+                    }
+                }
+                else
+                {
+                    rowStripped.put(name, value);
+                }
+            });
+
             // update exp.data
-            Map<String, Object> ret = new CaseInsensitiveHashMap<>(super._update(user, c, row, oldRow, keys));
+            Map<String, Object> ret = new CaseInsensitiveHashMap<>(super._update(user, c, rowStripped, oldRow, keys));
 
             // update provisioned table -- note that LSID isn't the PK so we need to use the filter to update the correct row instead
             keys = new Object[] { };
             TableInfo t = ExpDataClassDataTableImpl.this._dataClass.getTinfo();
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("LSID"), lsid);
-            ret.putAll(Table.update(user, t, row, keys, filter, Level.DEBUG));
+            ret.putAll(Table.update(user, t, rowStripped, keys, filter, Level.DEBUG));
 
             // handle attachments
             removePreviousAttachments(user, c, row, oldRow);
+            ret.putAll(attachments);
             addAttachments(user, c, ret, lsid);
 
             return ret;
@@ -1126,12 +1146,9 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             }
         }
 
-        private boolean isAttachmentProperty(String name)
+        protected Domain getDomain()
         {
-            DomainProperty dp = _dataClass.getDomain().getPropertyByName(name);
-            if (dp != null)
-                return PropertyType.ATTACHMENT.equals(dp.getPropertyDescriptor().getPropertyType());
-            return false;
+            return _dataClass.getDomain();
         }
 
         private void addAttachments(User user, Container c, Map<String, Object> row, String lsidStr)

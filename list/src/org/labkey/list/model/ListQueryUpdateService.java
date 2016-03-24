@@ -37,8 +37,6 @@ import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.ObjectProperty;
-import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListImportProgress;
 import org.labkey.api.exp.list.ListItem;
@@ -564,23 +562,6 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             value = map.get(key.replaceAll("\\s", "_"));
 
         return value;
-    }
-
-    private boolean hasAttachmentProperties()
-    {
-        if (null != _list.getDomain())
-        {
-            for (DomainProperty dp : _list.getDomain().getProperties())
-                if (null != dp && isAttachmentProperty(dp))
-                    return true;
-        }
-        return false;
-    }
-
-    private boolean isAttachmentProperty(@NotNull DomainProperty dp)
-    {
-        PropertyDescriptor pd = dp.getPropertyDescriptor();
-        return (pd.getPropertyType().equals(PropertyType.ATTACHMENT));
     }
 
     /**
