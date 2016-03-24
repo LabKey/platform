@@ -199,7 +199,7 @@ public class SqlController extends SpringActionController
     void writeResults_text(PrintWriter out, Results rs, String sep, String eol) throws IOException, SQLException
     {
         final int count = rs.getMetaData().getColumnCount();
-        final boolean serializeDateAsNumber=true;
+        final boolean serializeDateAsNumber=false;
 
         for (int i = 1; i <= count; i++)
         {
@@ -260,7 +260,8 @@ public class SqlController extends SpringActionController
                                 if (serializeDateAsNumber)
                                     out.print(date.getTime());
                                 else
-                                    out.write(DateUtil.formatJsonDateTime(date));
+                                    //out.write(DateUtil.formatJsonDateTime(date));
+                                    out.write(DateUtil.formatDateTimeISO8601(date));
                             }
                             break printValue;
                         }
