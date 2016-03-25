@@ -18,6 +18,7 @@ package org.labkey.bigiron.oracle;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.ConnectionWrapper;
+import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.ResultSetWrapper;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
@@ -90,6 +91,14 @@ public abstract class OracleDialect extends SimpleSqlDialect
     {
         // the limit for Oracle is 30, but we reserve 2 characters for appending qualifiers to create aliases
         return 28;
+    }
+
+    @Override
+    public boolean canCheckIndices(TableInfo ti)
+    {
+        // The Oracle JDBC driver throws a SQLException when calling DatabaseMetaData.getIndexInfo(), so need to avoid
+        // calling it
+        return ti.getTableType() == DatabaseTableType.TABLE;
     }
 
     @Override
