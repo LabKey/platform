@@ -26,6 +26,7 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -449,7 +450,7 @@ public class UserManager
         addToUserHistory(toUpdate, "Contact information for " + toUpdate.getEmail() + " was updated");
     }
 
-    public static void requestEmail(int userId, String currentEmail, String requestedEmail, String verificationToken, User currentUser) throws SecurityManager.UserManagementException
+    public static void requestEmailChange(int userId, String currentEmail, String requestedEmail, String verificationToken, User currentUser) throws SecurityManager.UserManagementException
     {
         if (SecurityManager.loginExists(currentEmail))
         {
@@ -469,42 +470,48 @@ public class UserManager
     public static void changeEmail(boolean isAdmin, int userId, String oldEmail, String newEmail, String verificationToken, User currentUser)
             throws SecurityManager.UserManagementException, ValidEmail.InvalidEmailException
     {
-        if(!isAdmin)
+        DbScope scope = CORE.getSchema().getScope();
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            ValidEmail validUserEmail = new ValidEmail(currentUser.getEmail());
-            if (!SecurityManager.verify(validUserEmail, verificationToken))  // shouldn't happen! should be testing this earlier too
+            if (!isAdmin)
             {
-                throw new SecurityManager.UserManagementException(validUserEmail, "Verification token '" + verificationToken + "' is incorrect for email change for user " + validUserEmail.getEmailAddress());
+                ValidEmail validUserEmail = new ValidEmail(currentUser.getEmail());
+                if (!SecurityManager.verify(validUserEmail, verificationToken))  // shouldn't happen! should be testing this earlier too
+                {
+                    throw new SecurityManager.UserManagementException(validUserEmail, "Verification token '" + verificationToken + "' is incorrect for email change for user " + validUserEmail.getEmailAddress());
+                }
             }
-        }
 
-        SqlExecutor executor = new SqlExecutor(CORE.getSchema());
-        int rows = executor.execute("UPDATE " + CORE.getTableInfoPrincipals() + " SET Name=? WHERE UserId=?", newEmail, userId);
-        if (1 != rows)
-            throw new SecurityManager.UserManagementException(oldEmail, "Unexpected number of rows returned when setting new name: " + rows);
-
-        executor.execute("UPDATE " + CORE.getTableInfoLogins() + " SET Email=? WHERE Email=?", newEmail, oldEmail);  // won't update if non-LabKey-managed, because there is no data here
-        if(isAdmin)
-        {
-            addToUserHistory(getUser(userId), "Admin " + currentUser + " changed an email address from " + oldEmail + " to " + newEmail + ".");
-        }
-        else
-        {
-            addToUserHistory(getUser(userId), currentUser + " changed their email address from " + oldEmail + " to " + newEmail + " with token '" + verificationToken + "'.");
-        }
-        User userToBeEdited = getUser(userId);
-
-        if (userToBeEdited.getDisplayName(userToBeEdited).equals(oldEmail))
-        {
-            rows = executor.execute("UPDATE " + CORE.getTableInfoUsersData() + " SET DisplayName=? WHERE UserId=?", newEmail, userId);
+            SqlExecutor executor = new SqlExecutor(CORE.getSchema());
+            int rows = executor.execute("UPDATE " + CORE.getTableInfoPrincipals() + " SET Name=? WHERE UserId=?", newEmail, userId);
             if (1 != rows)
-                throw new SecurityManager.UserManagementException(oldEmail, "Unexpected number of rows returned when setting new display name: " + rows);
-        }
+                throw new SecurityManager.UserManagementException(oldEmail, "Unexpected number of rows returned when setting new name: " + rows);
 
-        if (!isAdmin)
-        {
-            ValidEmail validNewEmail = new ValidEmail(newEmail);
-            SecurityManager.setVerification(validNewEmail, null);  // so we don't let user use this link again
+            executor.execute("UPDATE " + CORE.getTableInfoLogins() + " SET Email=? WHERE Email=?", newEmail, oldEmail);  // won't update if non-LabKey-managed, because there is no data here
+            if (isAdmin)
+            {
+                addToUserHistory(getUser(userId), "Admin " + currentUser + " changed an email address from " + oldEmail + " to " + newEmail + ".");
+            }
+            else
+            {
+                addToUserHistory(getUser(userId), currentUser + " changed their email address from " + oldEmail + " to " + newEmail + " with token '" + verificationToken + "'.");
+            }
+            User userToBeEdited = getUser(userId);
+
+            if (userToBeEdited.getDisplayName(userToBeEdited).equals(oldEmail))
+            {
+                rows = executor.execute("UPDATE " + CORE.getTableInfoUsersData() + " SET DisplayName=? WHERE UserId=?", newEmail, userId);
+                if (1 != rows)
+                    throw new SecurityManager.UserManagementException(oldEmail, "Unexpected number of rows returned when setting new display name: " + rows);
+            }
+
+            if (SecurityManager.loginExists(newEmail))
+            {
+                ValidEmail validNewEmail = new ValidEmail(newEmail);
+                SecurityManager.setVerification(validNewEmail, null);  // so we don't let user use this link again
+            }
+
+            transaction.commit();
         }
 
         clearUserList();
