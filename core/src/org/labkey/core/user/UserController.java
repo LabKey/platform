@@ -1515,6 +1515,8 @@ public class UserController extends SpringActionController
         private String _currentEmailFromDatabase;
         private String _requestedEmailFromDatabase;
         private int _urlUserId;
+        private boolean _isPasswordPrompt = false;
+        private ValidEmail _validRequestedEmail;
 
         public void validateCommand(UserForm target, Errors errors)
         {
@@ -1586,7 +1588,7 @@ public class UserController extends SpringActionController
             return new JspView<>("/org/labkey/core/user/changeEmail.jsp", form, errors);
         }
 
-        protected void validateVerification(UserForm target, Errors errors)
+        void validateVerification(UserForm target, Errors errors)
         {
             boolean isSiteAdmin = getUser().isSiteAdmin();
 
@@ -1690,12 +1692,22 @@ public class UserController extends SpringActionController
                 {
                     // do nothing, validation happened earlier
                 }
-                else if(form.getIsPasswordPrompt())
+                else if(form.getIsPasswordPrompt() || _isPasswordPrompt)
                 {
+                    _isPasswordPrompt = true; // in case we get an error and need to come back to this action again
+
                     ValidEmail validRequestedEmail;
                     try
                     {
-                        validRequestedEmail = new ValidEmail(form.getRequestedEmail());  // validate in case user altered this in the URL parameter
+                        if(form.getRequestedEmail() != null)
+                        {
+                            validRequestedEmail = new ValidEmail(form.getRequestedEmail());  // validate in case user altered this in the URL parameter
+                            _validRequestedEmail = validRequestedEmail;
+                        }
+                        else
+                        {
+                            validRequestedEmail = _validRequestedEmail;  // try and get it from internal variable, in case we're re-trying here
+                        }
                     }
                     catch (ValidEmail.InvalidEmailException e)
                     {
@@ -1708,7 +1720,7 @@ public class UserController extends SpringActionController
                     if (isAuthenticated)
                     {
                         String verificationToken = SecurityManager.createTempPassword();
-                        UserManager.requestEmail(userId, userEmail, validRequestedEmail.getEmailAddress(), verificationToken, getUser());
+                        UserManager.requestEmailChange(userId, userEmail, validRequestedEmail.getEmailAddress(), verificationToken, getUser());
                         // verification email
                         Container c = getContainer();
 
@@ -1717,6 +1729,15 @@ public class UserController extends SpringActionController
                         verifyLinkUrl.addParameter("isFromVerifiedLink", true);
 
                         SecurityManager.sendEmail(c, user, getRequestEmailMessage(userEmail, validRequestedEmail.getEmailAddress()), userEmail, verifyLinkUrl);
+                    }
+                    else
+                    {
+                        errors.reject(ERROR_MSG, "Incorrect password.");
+                        Container c = getContainer();
+                        ActionURL passwordPromptRetryUrl = getChangeEmailAction(c, user);
+                        passwordPromptRetryUrl.addParameter("isPasswordPrompt", true);
+                        passwordPromptRetryUrl.addParameter("requestedEmail", form.getRequestedEmail());
+                        //form.setReturnUrl(passwordPromptRetryUrl.);
                     }
                 }
                 else  // something strange happened
@@ -1767,7 +1788,7 @@ public class UserController extends SpringActionController
             }
         }
 
-        protected boolean authenticate(String email, String password, URLHelper returnUrlHelper, BindException errors)
+        boolean authenticate(String email, String password, URLHelper returnUrlHelper, BindException errors)
         {
             try
             {
@@ -2005,7 +2026,7 @@ public class UserController extends SpringActionController
         }
     }
 
-    public static SecurityMessage getRequestEmailMessage(String currentEmailAddress, String requestedEmailAddress) throws Exception
+    private static SecurityMessage getRequestEmailMessage(String currentEmailAddress, String requestedEmailAddress) throws Exception
     {
         SecurityMessage sm = new SecurityMessage();
         RequestAddressEmailTemplate et = EmailTemplateService.get().getEmailTemplate(RequestAddressEmailTemplate.class);
@@ -2020,9 +2041,9 @@ public class UserController extends SpringActionController
 
     public static class RequestAddressEmailTemplate extends SecurityManager.SecurityEmailTemplate
     {
-        protected static final String DEFAULT_SUBJECT =
+        static final String DEFAULT_SUBJECT =
                 "Verification link for ^organizationName^ ^siteShortName^ Web Site email change";
-        protected static final String DEFAULT_BODY =
+        static final String DEFAULT_BODY =
                 "You recently requested a change to the email address associated with your account on the " +
                 "^organizationName^ ^siteShortName^ Web Site.  If you did not issue this request, you can ignore this email.\n\n" +
                 "To complete the process of changing your account's email address from ^currentEmailAddress^ to ^newEmailAddress^, " +
@@ -2033,9 +2054,9 @@ public class UserController extends SpringActionController
                 "you'll need to paste the parts into the address bar of your browser to form the full link.\n\n" +
                 "This step confirms that you are the owner of the new email account.  After you click the link, you will need " +
                 "to use the new email address when logging into the server.";
-        protected String _currentEmailAddress;
-        protected String _requestedEmailAddress;
-        protected List<EmailTemplate.ReplacementParam> _replacements = new ArrayList<>();
+        String _currentEmailAddress;
+        String _requestedEmailAddress;
+        List<EmailTemplate.ReplacementParam> _replacements = new ArrayList<>();
 
         @SuppressWarnings("UnusedDeclaration") // Constructor called via reflection
         public RequestAddressEmailTemplate()
@@ -2043,7 +2064,7 @@ public class UserController extends SpringActionController
             this("Request email address");
         }
 
-        public RequestAddressEmailTemplate(String name)
+        RequestAddressEmailTemplate(String name)
         {
             super(name);
             setSubject(DEFAULT_SUBJECT);
@@ -2059,13 +2080,13 @@ public class UserController extends SpringActionController
             _replacements.addAll(super.getValidReplacements());
         }
 
-        public void setCurrentEmailAddress(String currentEmailAddress) { _currentEmailAddress = currentEmailAddress; }
-        public void setRequestedEmailAddress(String requestedEmailAddress) { _requestedEmailAddress = requestedEmailAddress; }
+        void setCurrentEmailAddress(String currentEmailAddress) { _currentEmailAddress = currentEmailAddress; }
+        void setRequestedEmailAddress(String requestedEmailAddress) { _requestedEmailAddress = requestedEmailAddress; }
         @Override
         public List<ReplacementParam> getValidReplacements(){ return _replacements; }
     }
 
-    public MimeMessage getChangeEmailMessage(String oldEmailAddress, String newEmailAddress) throws Exception
+    private MimeMessage getChangeEmailMessage(String oldEmailAddress, String newEmailAddress) throws Exception
     {
         MailHelper.MultipartMessage m = MailHelper.createMultipartMessage();
 
@@ -2083,16 +2104,16 @@ public class UserController extends SpringActionController
 
     public static class ChangeAddressEmailTemplate extends UserOriginatedEmailTemplate
     {
-        protected static final String DEFAULT_SUBJECT =
+        static final String DEFAULT_SUBJECT =
                 "Notification that ^organizationName^ ^siteShortName^ Web Site email has changed";
-        protected static final String DEFAULT_BODY =
+        static final String DEFAULT_BODY =
                 "The email address associated with your account on the ^organizationName^ ^siteShortName^ Web Site has been updated, " +
                 "from ^oldEmailAddress^ to ^newEmailAddress^.\n\n" +
                 "If you did not request this change, please contact the server administrator immediately.  Otherwise, no further action " +
                 "is required, and you may use the new email address when logging into the server going forward.";
-        protected String _oldEmailAddress;
-        protected String _newEmailAddress;
-        protected List<EmailTemplate.ReplacementParam> _replacements = new ArrayList<>();
+        String _oldEmailAddress;
+        String _newEmailAddress;
+        List<EmailTemplate.ReplacementParam> _replacements = new ArrayList<>();
 
         @SuppressWarnings("UnusedDeclaration") // Constructor called via reflection
         public ChangeAddressEmailTemplate()
@@ -2100,7 +2121,7 @@ public class UserController extends SpringActionController
             this("Change email address");
         }
 
-        public ChangeAddressEmailTemplate(String name)
+        ChangeAddressEmailTemplate(String name)
         {
             super(name);
             setSubject(DEFAULT_SUBJECT);
@@ -2116,8 +2137,8 @@ public class UserController extends SpringActionController
             _replacements.addAll(super.getValidReplacements());
         }
 
-        public void setOldEmailAddress(String oldEmailAddress) { _oldEmailAddress = oldEmailAddress; }
-        public void setNewEmailAddress(String newEmailAddress) { _newEmailAddress = newEmailAddress; }
+        void setOldEmailAddress(String oldEmailAddress) { _oldEmailAddress = oldEmailAddress; }
+        void setNewEmailAddress(String newEmailAddress) { _newEmailAddress = newEmailAddress; }
         @Override
         public List<ReplacementParam> getValidReplacements(){ return _replacements; }
     }

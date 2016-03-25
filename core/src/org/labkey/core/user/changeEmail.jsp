@@ -41,6 +41,9 @@
 %>
 <% if (form.getIsChangeEmailRequest()) {%>
 <form <%=formAction(ChangeEmailAction.class, Method.Post)%>><labkey:csrf/>
+    <% if (!isSiteAdmin) {%>
+        <p>NOTE: You will need to know your account password and have access to your current email address to change your email address!</p>
+    <% } %>
     <table><%=formatMissedErrorsInTable("form", 2)%>
         <tr>
             <td>Current Email:</td>
