@@ -2,10 +2,10 @@ package org.labkey.test.tests.search;
 
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.labkey.test.categories.DailyB;
+import org.labkey.test.categories.DailyA;
 import org.labkey.test.util.search.SearchAdminAPIHelper;
 
-@Category({DailyB.class})
+@Category({DailyA.class})
 public class SearchTestSimpleFS extends SearchTest
 {
     @Test
