@@ -41,12 +41,12 @@ current context (e.g., your user, your authorizations, your declared terms of us
 likely lose authorization when the session expires, e.g., when you sign out via the browser or the server automatically times out your session.
 <br/><br/>
 <input id="session-token" value="<%=h(id)%>" style="width: 300px;" readonly/>
-<%= button("Copy to clipboard").attributes("data-clipboard-target=\"#session-token\"") %>
+<%= button("Copy to clipboard").id("session-token-copy").attributes("data-clipboard-target=\"#session-token\"") %>
 <br/><br/>
 <%= button("Done").href(returnURL) %>
 <script type="application/javascript">
     (function($) {
-        var clip = new Clipboard('.labkey-button');
+        var clip = new Clipboard('#session-token-copy');
         clip.on('success', function(e) {
             $(e.trigger).html('Copied!'); e.clearSelection();
             setTimeout(function() { $(e.trigger).html('Copy to clipboard'); }, 2500);
