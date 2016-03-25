@@ -223,49 +223,55 @@ public class SchemaColumnMetaData
         DbSchema schema = ti.getSchema();
         DbScope scope = schema.getScope();
         String schemaName = schema.getName();
-
-        try (JdbcMetaDataLocator locator = scope.getSqlDialect().getJdbcMetaDataLocator(scope, schemaName, ti.getMetaDataName()))
+        if (!ti.getSqlDialect().canCheckIndices(ti))
         {
-            JdbcMetaDataSelector uqSelector = new JdbcMetaDataSelector(locator,
-                    ((dbmd, l) -> dbmd.getIndexInfo(l.getCatalogName(), l.getSchemaName(), l.getTableName(), true, false)));
-
-            Set<String> ignoreIndex = new HashSet<>();
-            Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> uniqueIndexMap = new HashMap<>();
-            uqSelector.forEach(rs -> {
-                String colName = rs.getString("COLUMN_NAME");
-                String uniqueIndexName = rs.getString("INDEX_NAME");
-                if (uniqueIndexName == null)
-                    return;
-
-                uniqueIndexName = uniqueIndexName.toLowerCase();
-
-                Pair<TableInfo.IndexType, List<ColumnInfo>> pair = uniqueIndexMap.get(uniqueIndexName);
-                if (pair == null)
-                    uniqueIndexMap.put(uniqueIndexName, pair = Pair.of(TableInfo.IndexType.Unique, new ArrayList<>(2)));
-
-                ColumnInfo colInfo = getColumn(colName);
-                // Column will be null for indices over expressions, eg.: "lower(name)"
-                if (colInfo == null)
-                    ignoreIndex.add(uniqueIndexName);
-                else
-                    pair.getValue().add(colInfo);
-            });
-
-            // Remove ignored indices
-            ignoreIndex.forEach(uniqueIndexMap::remove);
-
-            // Search for the primary index and change the index type to Primary
-            for (Map.Entry<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> entry : uniqueIndexMap.entrySet())
+            _indices = Collections.emptyMap();
+        }
+        else
+        {
+            try (JdbcMetaDataLocator locator = scope.getSqlDialect().getJdbcMetaDataLocator(scope, schemaName, ti.getMetaDataName()))
             {
-                List<ColumnInfo> cols = entry.getValue().getValue();
-                if (getPkColumns().equals(cols))
-                {
-                    entry.setValue(Pair.of(TableInfo.IndexType.Primary, cols));
-                    break;
-                }
-            }
+                JdbcMetaDataSelector uqSelector = new JdbcMetaDataSelector(locator,
+                        ((dbmd, l) -> dbmd.getIndexInfo(l.getCatalogName(), l.getSchemaName(), l.getTableName(), true, false)));
 
-            _indices = Collections.unmodifiableMap(uniqueIndexMap);
+                Set<String> ignoreIndex = new HashSet<>();
+                Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> uniqueIndexMap = new HashMap<>();
+                uqSelector.forEach(rs -> {
+                    String colName = rs.getString("COLUMN_NAME");
+                    String uniqueIndexName = rs.getString("INDEX_NAME");
+                    if (uniqueIndexName == null)
+                        return;
+
+                    uniqueIndexName = uniqueIndexName.toLowerCase();
+
+                    Pair<TableInfo.IndexType, List<ColumnInfo>> pair = uniqueIndexMap.get(uniqueIndexName);
+                    if (pair == null)
+                        uniqueIndexMap.put(uniqueIndexName, pair = Pair.of(TableInfo.IndexType.Unique, new ArrayList<>(2)));
+
+                    ColumnInfo colInfo = getColumn(colName);
+                    // Column will be null for indices over expressions, eg.: "lower(name)"
+                    if (colInfo == null)
+                        ignoreIndex.add(uniqueIndexName);
+                    else
+                        pair.getValue().add(colInfo);
+                });
+
+                // Remove ignored indices
+                ignoreIndex.forEach(uniqueIndexMap::remove);
+
+                // Search for the primary index and change the index type to Primary
+                for (Map.Entry<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> entry : uniqueIndexMap.entrySet())
+                {
+                    List<ColumnInfo> cols = entry.getValue().getValue();
+                    if (getPkColumns().equals(cols))
+                    {
+                        entry.setValue(Pair.of(TableInfo.IndexType.Primary, cols));
+                        break;
+                    }
+                }
+
+                _indices = Collections.unmodifiableMap(uniqueIndexMap);
+            }
         }
     }
 

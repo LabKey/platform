@@ -895,6 +895,12 @@ public abstract class SqlDialect
         return md;
     }
 
+    /** Not all databases support checking of indices on non-tables (such as views) */
+    public boolean canCheckIndices(TableInfo ti)
+    {
+        return true;
+    }
+
     protected class SQLSyntaxException extends SQLException
     {
         private Collection<String> _errors;
