@@ -16,11 +16,14 @@
 package org.labkey.api.gwt.client.ui.property;
 
 import com.google.gwt.user.client.DOM;
-import com.google.gwt.user.client.ui.*;
+import com.google.gwt.user.client.ui.FlexTable;
+import com.google.gwt.user.client.ui.FlowPanel;
+import com.google.gwt.user.client.ui.InlineLabel;
+import com.google.gwt.user.client.ui.TextBox;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.gwt.client.ui.PropertyPane;
 import org.labkey.api.gwt.client.ui.HelpPopup;
+import org.labkey.api.gwt.client.ui.PropertyPane;
 
 /**
  * User: jeckels
@@ -55,7 +58,7 @@ public class ImportAliasesItem<DomainType extends GWTDomain<FieldType>, FieldTyp
     public boolean copyValuesToPropertyDescriptor(FieldType field)
     {
         String aliasString = _aliasesTextBox.getText().trim();
-        boolean changed = aliasString.equals(field.getImportAliases());
+        boolean changed = !aliasString.equals(field.getImportAliases());
         field.setImportAliases("".equals(aliasString) ? null : aliasString);
         return changed;
     }
