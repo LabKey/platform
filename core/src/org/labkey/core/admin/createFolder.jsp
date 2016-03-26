@@ -22,22 +22,19 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.writer.Writer" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.writer.FolderSerializationRegistryImpl" %>
 <%@ page import="org.labkey.core.portal.ProjectController" %>
 <%@ page import="java.util.Collection" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.LinkedList" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("clientapi/ext4"));
-        resources.add(ClientDependency.fromPath("createFolder.css"));
-        return resources;
+        dependencies.add("clientapi/ext4");
+        dependencies.add("createFolder.css");
     }
 %>
 <%

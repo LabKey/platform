@@ -16,29 +16,26 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.study.Visit" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.StudyDesignController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.security.permissions.ManageStudyPermission" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-  public LinkedHashSet<ClientDependency> getClientDependencies()
-  {
-      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-      resources.add(ClientDependency.fromPath("Ext4ClientApi"));
-      resources.add(ClientDependency.fromPath("study/StudyVaccineDesign.js"));
-      resources.add(ClientDependency.fromPath("dataview/DataViewsPanel.css"));
-      return resources;
-  }
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("Ext4ClientApi");
+        dependencies.add("study/StudyVaccineDesign.js");
+        dependencies.add("dataview/DataViewsPanel.css");
+    }
 %>
 <%
     JspView<StudyDesignController.AssayScheduleForm> me = (JspView<StudyDesignController.AssayScheduleForm>) HttpView.currentView();

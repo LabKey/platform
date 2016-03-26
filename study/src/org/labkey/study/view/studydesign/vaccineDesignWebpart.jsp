@@ -17,28 +17,25 @@
 %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.WebThemeManager" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.controllers.StudyDesignController" %>
 <%@ page import="org.labkey.study.model.ProductImpl" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.TreatmentManager" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("Ext4ClientApi"));
-        resources.add(ClientDependency.fromPath("study/StudyVaccineDesign.js"));
-        resources.add(ClientDependency.fromPath("study/StudyVaccineDesign.css"));
-        return resources;
+        dependencies.add("Ext4ClientApi");
+        dependencies.add("study/StudyVaccineDesign.js");
+        dependencies.add("study/StudyVaccineDesign.css");
     }
 %>
 <%

@@ -18,11 +18,13 @@
 <%@ page import="org.json.JSONObject"%>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.module.FolderType" %>
+<%@ page import="org.labkey.api.module.FolderTypeManager" %>
 <%@ page import="org.labkey.api.module.Module" %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.admin.FolderManagementAction" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Collection" %>
@@ -31,19 +33,12 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.api.study.StudyService" %>
-<%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="org.labkey.api.module.FolderTypeManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("Ext4"));
-        return resources;
+        dependencies.add("Ext4");
     }
 %>
 <labkey:errors/>

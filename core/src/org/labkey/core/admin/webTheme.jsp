@@ -19,19 +19,16 @@
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.WebTheme" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("color_functions.js"));
-        resources.add(ClientDependency.fromPath("js_color_picker_v2.js"));
-        resources.add(ClientDependency.fromPath("js_color_picker_v2.css"));
-        return resources;
+        dependencies.add("color_functions.js");
+        dependencies.add("js_color_picker_v2.js");
+        dependencies.add("js_color_picker_v2.css");
     }
 %>
 <%

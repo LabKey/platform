@@ -19,20 +19,16 @@
 <%@ page import="org.labkey.api.reports.ExternalScriptEngine"%>
 <%@ page import="org.labkey.api.reports.report.ExternalScriptEngineReport"%>
 <%@ page import="org.labkey.api.reports.report.RReport" %>
+<%@ page import="org.labkey.api.reports.report.ScriptEngineReport" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.FileUtil" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.reports.report.ScriptEngineReport" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("Ext3"));
-        return resources;
+        dependencies.add("Ext3");
     }
 %>
 <%

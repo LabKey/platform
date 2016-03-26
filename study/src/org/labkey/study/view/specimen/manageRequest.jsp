@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView"%>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.SpecimenManager" %>
 <%@ page import="org.labkey.study.controllers.CreateChildStudyAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.ShowSearchAction" %>
@@ -32,18 +33,17 @@
 <%@ page import="org.labkey.study.model.SpecimenRequestActor" %>
 <%@ page import="org.labkey.study.model.SpecimenRequestRequirement" %>
 <%@ page import="org.labkey.study.model.SpecimenRequestStatus" %>
-<%@ page import="org.labkey.study.model.Vial" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.study.model.Vial" %>
 <%@ page import="java.util.List" %>
-<%@ page import="java.util.Set" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
-
 <%!
-    public void addClientDependencies(Set<String> resources){
-        resources.add("clientapi/ext3");
-        resources.add("FileUploadField.js");
-        resources.add("study/StudyWizard.js");
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("clientapi/ext3");
+        dependencies.add("FileUploadField.js");
+        dependencies.add("study/StudyWizard.js");
     }
 %>
 <%

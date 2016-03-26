@@ -18,21 +18,17 @@
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.survey.SurveyController" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-  public LinkedHashSet<ClientDependency> getClientDependencies()
-  {
-      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-      resources.add(ClientDependency.fromPath("Ext4"));
-      resources.add(ClientDependency.fromPath("codemirror"));
-      resources.add(ClientDependency.fromPath("sqv"));
-      resources.add(ClientDependency.fromPath("survey"));
-
-      return resources;
-  }
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("Ext4");
+        dependencies.add("codemirror");
+        dependencies.add("sqv");
+        dependencies.add("survey");
+    }
 %>
 <%
     JspView<SurveyController.SurveyDesignForm> me = (JspView<SurveyController.SurveyDesignForm>) HttpView.currentView();

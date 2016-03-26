@@ -27,11 +27,10 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page import="org.labkey.experiment.samples.UploadMaterialSetForm" %>
 <%@ page import="org.labkey.experiment.samples.UploadMaterialSetForm.InsertUpdateChoice" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -41,14 +40,11 @@
 
     ActionURL templateURL = PageFlowUtil.urlProvider(QueryUrls.class).urlCreateExcelTemplate(getContainer(), SamplesSchema.SCHEMA_NAME, form.getName());
 %>
-
 <%!
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("Ext3"));
-        resources.add(ClientDependency.fromPath("FileUploadField.js"));
-        return resources;
+        dependencies.add("Ext3");
+        dependencies.add("FileUploadField.js");
     }
 
     public String getDisplayName(DomainProperty prop)

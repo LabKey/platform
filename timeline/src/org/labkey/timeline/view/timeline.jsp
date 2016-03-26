@@ -15,22 +15,19 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.timeline.TimelineSettings" %>
-<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.timeline.TimelineSettings" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("Ext3"));
-        resources.add(ClientDependency.fromPath("timeline.js"));
-        resources.add(ClientDependency.fromPath("similetimeline/bundle.js"));
-        resources.add(ClientDependency.fromPath("similetimeline/scripts/l10n/en/timeline.js"));
-        resources.add(ClientDependency.fromPath("similetimeline/scripts/l10n/en/labellers.js"));
-        return resources;
+        dependencies.add("Ext3");
+        dependencies.add("timeline.js");
+        dependencies.add("similetimeline/bundle.js");
+        dependencies.add("similetimeline/scripts/l10n/en/timeline.js");
+        dependencies.add("similetimeline/scripts/l10n/en/labellers.js");
     }
 %>
 <%

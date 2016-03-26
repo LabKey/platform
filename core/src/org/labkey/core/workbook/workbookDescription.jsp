@@ -17,18 +17,14 @@
 %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("Ext3"));
-        resources.add(ClientDependency.fromPath("editInPlaceElement.css"));
-        resources.add(ClientDependency.fromPath("editInPlaceElement.js"));
-        return resources;
+        dependencies.add("Ext3");
+        dependencies.add("editInPlaceElement.css");
+        dependencies.add("editInPlaceElement.js");
     }
 %>
 <%

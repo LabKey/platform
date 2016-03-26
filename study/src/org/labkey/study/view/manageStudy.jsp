@@ -35,7 +35,7 @@
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.controllers.CohortController" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageReloadAction" %>
@@ -54,22 +54,18 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.StudySnapshot" %>
 <%@ page import="org.labkey.study.security.permissions.ManageRequestSettingsPermission" %>
-<%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Collection" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
-  public LinkedHashSet<ClientDependency> getClientDependencies()
-  {
-      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-      resources.add(ClientDependency.fromPath("clientapi/ext3"));
-      resources.add(ClientDependency.fromPath("reports/rowExpander.js"));
-      resources.add(ClientDependency.fromPath("FileUploadField.js"));
-      resources.add(ClientDependency.fromPath("study/StudyWizard.js"));
-      return resources;
-  }
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("clientapi/ext3");
+        dependencies.add("reports/rowExpander.js");
+        dependencies.add("FileUploadField.js");
+        dependencies.add("study/StudyWizard.js");
+    }
 %>
 <%
     StudyImpl study = getStudy();

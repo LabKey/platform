@@ -24,9 +24,8 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.issue.ColumnType" %>
-<%@ page import="org.labkey.issue.model.IssuePage" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
 <%@ page import="org.labkey.issue.IssuesController.CloseAction" %>
 <%@ page import="org.labkey.issue.IssuesController.EmailPrefsAction" %>
@@ -37,18 +36,16 @@
 <%@ page import="org.labkey.issue.IssuesController.UpdateAction" %>
 <%@ page import="org.labkey.issue.model.Issue" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
+<%@ page import="org.labkey.issue.model.IssuePage" %>
 <%@ page import="java.util.Arrays" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("Ext4"));
-        resources.add(ClientDependency.fromPath("issues/detail.js"));
-        return resources;
+        dependencies.add("Ext4");
+        dependencies.add("issues/detail.js");
     }
 %>
 <%

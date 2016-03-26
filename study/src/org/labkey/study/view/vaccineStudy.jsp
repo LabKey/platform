@@ -24,22 +24,19 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.WebTheme" %>
 <%@ page import="org.labkey.api.view.WebThemeManager" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.designer.StudyDesignManager" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.view.StudyGWTView" %>
 <%@ page import="org.labkey.study.view.VaccineStudyWebPart" %>
 <%@ page import="java.util.HashMap" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%!
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("study/StudyVaccineDesign.css"));
-        return resources;
+        dependencies.add("study/StudyVaccineDesign.css");
     }
 %>
 <%

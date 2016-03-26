@@ -20,27 +20,23 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.api.view.ViewContext"%>
+<%@ page import="org.labkey.api.view.template.ClientDependencies"%>
 <%@ page import="org.labkey.study.SpecimenManager"%>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController"%>
 <%@ page import="org.labkey.study.model.LocationImpl"%>
-<%@ page import="org.labkey.study.model.Vial"%>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.study.model.Vial" %>
 <%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(ClientDependencies dependencies)
     {
         // TODO: --Ext3-- This should be declared as part of the included views
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("clientapi/ext3"));
-        return resources;
+        dependencies.add("clientapi/ext3");
     }
 %>
 <%

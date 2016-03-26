@@ -16,19 +16,20 @@
  */
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils"%>
+<%@ page import="org.json.JSONArray" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.ColumnInfo" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.DataRegion" %>
 <%@ page import="org.labkey.api.data.Sort" %>
 <%@ page import="org.labkey.api.security.Group" %>
-<%@ page import="org.labkey.api.security.SecurityManager" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page import="org.labkey.api.security.permissions.Permission" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.issue.ColumnType" %>
 <%@ page import="org.labkey.issue.IssueUpdateEmailTemplate" %>
 <%@ page import="org.labkey.issue.IssuesController.AdminBean" %>
@@ -40,20 +41,15 @@
 <%@ page import="org.labkey.issue.model.IssueManager.CustomColumnConfiguration" %>
 <%@ page import="org.labkey.issue.model.KeywordManager" %>
 <%@ page import="java.util.Arrays" %>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.json.JSONArray" %>
 <%@ page import="java.util.LinkedList" %>
+<%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("Ext4"));
-        resources.add(ClientDependency.fromPath("issues/admin.js"));
-        return resources;
+        dependencies.add("Ext4");
+        dependencies.add("issues/admin.js");
     }
 %>
 <%

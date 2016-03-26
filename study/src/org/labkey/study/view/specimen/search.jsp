@@ -1,8 +1,3 @@
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="org.labkey.study.specimen.SpecimenSearchBean" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%
 /*
  * Copyright (c) 2011-2015 LabKey Corporation
@@ -20,24 +15,25 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.study.specimen.SpecimenSearchBean" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-
-  public LinkedHashSet<ClientDependency> getClientDependencies()
-  {
-      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-      resources.add(ClientDependency.fromPath("clientapi"));
-      resources.add(ClientDependency.fromPath("Ext4ClientApi"));
-      resources.add(ClientDependency.fromPath("extWidgets/SearchPanel.js"));
-      resources.add(ClientDependency.fromPath("study/redesignUtils.js"));
-      resources.add(ClientDependency.fromPath("ux/CheckCombo/CheckCombo.js"));
-      resources.add(ClientDependency.fromPath("ux/CheckCombo/CheckCombo.css"));
-      resources.add(ClientDependency.fromPath("study/SpecimenSearchPanel.js"));
-      resources.add(ClientDependency.fromModuleName("Study"));
-      return resources;
-  }
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("clientapi");
+        dependencies.add("Ext4ClientApi");
+        dependencies.add("extWidgets/SearchPanel.js");
+        dependencies.add("study/redesignUtils.js");
+        dependencies.add("ux/CheckCombo/CheckCombo.js");
+        dependencies.add("ux/CheckCombo/CheckCombo.css");
+        dependencies.add("study/SpecimenSearchPanel.js");
+        dependencies.add(ClientDependency.fromModuleName("Study"));
+    }
 %>
-
 <%
     JspView<SpecimenSearchBean> me = (JspView) HttpView.currentView();
     int webPartId = me.getModelBean().getWebPartId();

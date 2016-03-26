@@ -19,7 +19,7 @@
 <%@ page import="org.labkey.api.data.RenderContext" %>
 <%@ page import="org.labkey.api.di.ScheduledPipelineJobDescriptor" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.di.pipeline.TransformConfiguration" %>
 <%@ page import="org.labkey.di.pipeline.TransformManager" %>
 <%@ page import="org.labkey.di.pipeline.TransformRun" %>
@@ -29,18 +29,14 @@
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.HashMap" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("Ext4"));
-        return resources;
+        dependencies.add("Ext4");
     }
 %>
 <%

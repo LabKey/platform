@@ -18,18 +18,14 @@
 <%@ page import="org.labkey.api.files.FileContentService"%>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="java.io.File" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("Ext4"));
-        resources.add(ClientDependency.fromPath("createFolder.css"));
-        return resources;
+        dependencies.add("Ext4");
+        dependencies.add("createFolder.css");
     }
 %>
 <%

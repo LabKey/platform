@@ -40,6 +40,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.webdav.WebdavResource" %>
 <%@ page import="org.labkey.search.SearchController" %>
 <%@ page import="org.labkey.search.SearchController.SearchForm" %>
@@ -48,17 +49,12 @@
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.List" %>
-<%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("Ext3"));
-        return resources;
+        dependencies.add("Ext3");
     }
 %>
 <%

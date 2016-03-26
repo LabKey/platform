@@ -22,19 +22,16 @@
 <%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.assay.ModuleAssayProvider" %>
 <%@ page import="org.labkey.study.controllers.assay.AssayController" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     // TODO: --Ext3-- This should be declared as part of the included views
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("Ext3"));
-        return resources;
+        dependencies.add("Ext3");
     }
 %>
 <%

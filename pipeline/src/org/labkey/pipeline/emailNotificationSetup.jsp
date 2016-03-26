@@ -17,30 +17,26 @@
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.pipeline.PipelineController" %>
 <%@ page import="org.labkey.pipeline.api.PipelineEmailPreferences" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("Ext3"));
-        return resources;
+        dependencies.add("Ext3");
     }
 
-    public String getTitle(String pref, Container c, String title)
+    private String getTitle(String pref, Container c, String title)
     {
         if (PipelineEmailPreferences.get().isInherited(c, pref))
             return ("<span class=\"labkey-error\">*</span>&nbsp;" + title);
         return title;
     }
 
-    public String getSelected(String value, String option)
+    private String getSelected(String value, String option)
     {
         if (StringUtils.equals(value, option))
             return "selected";

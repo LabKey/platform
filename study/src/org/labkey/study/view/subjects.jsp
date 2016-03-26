@@ -15,50 +15,46 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.ColumnInfo" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.DbSchema" %>
+<%@ page import="org.labkey.api.data.SQLFragment" %>
 <%@ page import="org.labkey.api.data.Selector" %>
 <%@ page import="org.labkey.api.data.SqlSelector" %>
+<%@ page import="org.labkey.api.data.TableInfo" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.study.Cohort" %>
+<%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.WebTheme" %>
 <%@ page import="org.labkey.api.view.WebThemeManager" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.StudySchema" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.CohortImpl" %>
 <%@ page import="org.labkey.study.model.ParticipantCategoryImpl" %>
 <%@ page import="org.labkey.study.model.ParticipantGroup" %>
 <%@ page import="org.labkey.study.model.ParticipantGroupManager" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.study.query.StudyQuerySchema" %>
 <%@ page import="org.labkey.study.view.SubjectsWebPart" %>
 <%@ page import="java.io.IOException" %>
 <%@ page import="java.sql.ResultSet" %>
 <%@ page import="java.sql.SQLException" %>
+<%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.BitSet" %>
 <%@ page import="java.util.HashMap" %>
-<%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="java.util.Collections" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.study.Study" %>
-<%@ page import="org.labkey.study.query.StudyQuerySchema" %>
-<%@ page import="org.labkey.study.model.StudyImpl" %>
-<%@ page import="org.labkey.api.data.TableInfo" %>
-<%@ page import="org.labkey.api.data.ColumnInfo" %>
-<%@ page import="org.labkey.api.data.SQLFragment" %>
-<%@ page import="java.util.ArrayList" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("Ext4"));
-        resources.add(ClientDependency.fromPath("study/ParticipantFilterPanel.js"));
-        return resources;
+        dependencies.add("Ext4");
+        dependencies.add("study/ParticipantFilterPanel.js");
     }
 %>
 <%

@@ -18,18 +18,15 @@
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.Path" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.webdav.WebdavResource" %>
 <%@ page import="org.labkey.core.webdav.DavController" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-  public LinkedHashSet<ClientDependency> getClientDependencies()
-  {
-      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-      resources.add(ClientDependency.fromPath("File"));
-      return resources;
-  }
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("File");
+    }
 %>
 <%
     DavController.ListPage listpage = (DavController.ListPage) HttpView.currentModel();

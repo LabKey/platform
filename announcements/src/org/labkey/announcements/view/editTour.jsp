@@ -17,23 +17,19 @@
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.announcements.model.TourModel" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-
 <%!
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("internal/jQuery"));
-        resources.add(ClientDependency.fromPath("Ext4"));
-        resources.add(ClientDependency.fromPath("codemirror"));
-        resources.add(ClientDependency.fromPath("announcements/EditTour.css"));
-        resources.add(ClientDependency.fromPath("announcements/EditTour.js"));
-        return resources;
+        dependencies.add("internal/jQuery");
+        dependencies.add("Ext4");
+        dependencies.add("codemirror");
+        dependencies.add("announcements/EditTour.css");
+        dependencies.add("announcements/EditTour.js");
     }
 %>
 <%

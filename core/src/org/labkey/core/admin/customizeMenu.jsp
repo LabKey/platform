@@ -17,17 +17,14 @@
 %>
 <%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.admin.CustomizeMenuForm" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("clientapi/ext3"));
-        resources.add(ClientDependency.fromPath("viewPicker.js"));
-        return resources;
+        dependencies.add("clientapi/ext3");
+        dependencies.add("viewPicker.js");
     }
 %>
 <%

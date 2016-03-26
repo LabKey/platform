@@ -19,19 +19,16 @@
 <%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.SpecimenManager" %>
-<%@ page import="org.labkey.study.specimen.SpecimenWebPart" %>
 <%@ page import="org.labkey.study.security.permissions.RequestSpecimensPermission" %>
-<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.study.specimen.SpecimenWebPart" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("Ext3"));
-        resources.add(ClientDependency.fromPath("study/redesignUtils.js"));
-        return resources;
+        dependencies.add("Ext3");
+        dependencies.add("study/redesignUtils.js");
     }
 %>
 <%

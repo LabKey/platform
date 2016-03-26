@@ -15,25 +15,22 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.study.StudyService" %>
-<%@ page import="org.labkey.api.study.Study" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.pipeline.PipelineController.StartFolderImportForm" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.pipeline.PipelineController" %>
+<%@ page import="org.labkey.pipeline.PipelineController.StartFolderImportForm" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("Ext4"));
-        resources.add(ClientDependency.fromPath("pipeline/ImportAdvancedOptions.js"));
-        return resources;
+        dependencies.add("Ext4");
+        dependencies.add("pipeline/ImportAdvancedOptions.js");
     }
 %>
 <%

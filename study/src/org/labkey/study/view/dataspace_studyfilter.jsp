@@ -15,30 +15,27 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.study.Study" %>
-<%@ page import="org.labkey.api.module.ModuleLoader" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.module.Module" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.module.Module" %>
+<%@ page import="org.labkey.api.module.ModuleLoader" %>
+<%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.util.GUID" %>
-<%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.study.model.ParticipantGroup" %>
+<%@ page import="org.labkey.study.model.ParticipantGroupManager" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.query.DataspaceQuerySchema" %>
 <%@ page import="java.util.ArrayList" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.study.model.ParticipantGroupManager" %>
-<%@ page import="org.labkey.study.model.ParticipantGroup" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromFilePath("clientapi/ext4"));
-        return resources;
+        dependencies.add(ClientDependency.fromFilePath("clientapi/ext4"));
     }
 %>
 <%

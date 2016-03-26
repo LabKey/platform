@@ -21,23 +21,18 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.query.controllers.QueryController" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-
 <%!
-  public LinkedHashSet<ClientDependency> getClientDependencies()
-  {
-      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-      resources.add(ClientDependency.fromPath("clientapi/ext3"));
-      resources.add(ClientDependency.fromPath("codemirror"));
-      resources.add(ClientDependency.fromPath("query/QueryEditorPanel.js"));
-      return resources;
-  }
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("clientapi/ext3");
+        dependencies.add("codemirror");
+        dependencies.add("query/QueryEditorPanel.js");
+    }
 %>
-
 <%
     QueryController.SourceQueryAction action = (QueryController.SourceQueryAction)HttpView.currentModel();
     QueryDefinition queryDef = action._queryDef;

@@ -22,19 +22,16 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.project.FolderNavigationForm" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("internal/jQuery"));
-        resources.add(ClientDependency.fromPath("internal/jQuery/jquery.menu-aim.js"));
-        resources.add(ClientDependency.fromPath("Ext4"));
-        resources.add(ClientDependency.fromPath("nav/betanav.css"));
-        return resources;
+        dependencies.add("internal/jQuery");
+        dependencies.add("internal/jQuery/jquery.menu-aim.js");
+        dependencies.add("Ext4");
+        dependencies.add("nav/betanav.css");
     }
 %>
 <%

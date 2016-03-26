@@ -20,13 +20,13 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-    public void addClientDependencies(Set<String> resources)
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        resources.add("internal/jQuery");
-        resources.add("internal/clipboard/clipboard-1.5.9.min.js");
+        dependencies.add("internal/jQuery");
+        dependencies.add("internal/clipboard/clipboard-1.5.9.min.js");
     }
 %>
 <%

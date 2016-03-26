@@ -17,6 +17,7 @@
 %>
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.data.ContainerManager"%>
+<%@ page import="org.labkey.api.data.DataRegion"%>
 <%@ page import="org.labkey.api.security.Group"%>
 <%@ page import="org.labkey.api.security.SecurityManager"%>
 <%@ page import="org.labkey.api.security.SecurityUrls"%>
@@ -27,22 +28,17 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.user.UserController" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.labkey.api.data.DataRegion" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
-
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("Ext4"));
-        return resources;
+        dependencies.add("Ext4");
     }
 %>
 <%

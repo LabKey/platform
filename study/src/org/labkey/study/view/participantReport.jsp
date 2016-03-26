@@ -15,28 +15,25 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.reports.permissions.ShareReportPermission" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
-<%@ page import="org.labkey.study.controllers.reports.ReportsController.ParticipantReportForm" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.study.controllers.reports.ReportsController.ParticipantReportForm" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.reports.permissions.ShareReportPermission" %>
-<%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("Ext4"));
-        resources.add(ClientDependency.fromPath("TemplateHelper.js"));
-        resources.add(ClientDependency.fromPath("/study/ParticipantReport.js"));
-        resources.add(ClientDependency.fromPath("/study/MeasurePicker.js"));
-        return resources;
+        dependencies.add("Ext4");
+        dependencies.add("TemplateHelper.js");
+        dependencies.add("/study/ParticipantReport.js");
+        dependencies.add("/study/MeasurePicker.js");
     }
 %>
 <%

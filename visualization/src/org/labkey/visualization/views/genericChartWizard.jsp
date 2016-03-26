@@ -30,14 +30,14 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.visualization.VisualizationController" %>
-<%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
-    public void addClientDependencies(Set<String> resources)
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        resources.add("vischart");
+        dependencies.add("vischart");
     }
 %>
 <%

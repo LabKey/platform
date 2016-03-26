@@ -19,19 +19,16 @@
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
-  public LinkedHashSet<ClientDependency> getClientDependencies()
-  {
-      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-      //Need to include the Util for a use of the form panel configuration.
-      resources.add(ClientDependency.fromPath("clientapi/ext4"));
-      return resources;
-  }
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        //Need to include the Util for a use of the form panel configuration.
+        dependencies.add("clientapi/ext4");
+    }
 %>
 <%
     boolean canEdit = getContainer().hasPermission(getUser(), AdminPermission.class);

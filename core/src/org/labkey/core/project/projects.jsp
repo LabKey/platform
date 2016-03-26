@@ -25,16 +25,14 @@
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-
-  public LinkedHashSet<ClientDependency> getClientDependencies()
-  {
-      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-      resources.add(ClientDependency.fromPath("Ext4ClientApi")); // needed for labkey-combo
-      resources.add(ClientDependency.fromPath("/extWidgets/IconPanel.js"));
-      resources.add(ClientDependency.fromPath("extWidgets/IconPanel.css"));
-      return resources;
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+      dependencies.add("Ext4ClientApi"); // needed for labkey-combo
+      dependencies.add("/extWidgets/IconPanel.js");
+      dependencies.add("extWidgets/IconPanel.css");
   }
 %>
 <%

@@ -17,33 +17,27 @@
 %>
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.query.controllers.OlapController" %>
+<%@ page import="org.labkey.query.olap.CustomOlapSchemaDescriptor" %>
 <%@ page import="org.labkey.query.olap.OlapSchemaDescriptor" %>
 <%@ page import="org.labkey.query.olap.ServerManager" %>
-<%@ page import="org.olap4j.OlapConnection" %>
+<%@ page import="org.labkey.query.olap.rolap.RolapCubeDef" %>
 <%@ page import="org.olap4j.metadata.Cube" %>
 <%@ page import="org.olap4j.metadata.Dimension" %>
 <%@ page import="org.olap4j.metadata.Hierarchy" %>
 <%@ page import="org.olap4j.metadata.Level" %>
 <%@ page import="org.olap4j.metadata.Member" %>
-<%@ page import="org.olap4j.metadata.Schema" %>
 <%@ page import="java.util.Collection" %>
-<%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.labkey.query.olap.CustomOlapSchemaDescriptor" %>
-<%@ page import="org.labkey.query.olap.rolap.RolapCubeDef" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <labkey:errors/>
 
 <%!
-
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("Ext4"));
-        return resources;
+        dependencies.add("Ext4");
     }
 %>
 <%=textLink("create new", new ActionURL(OlapController.CreateDefinitionAction.class, getContainer()).addReturnURL(getActionURL().clone()))%>

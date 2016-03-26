@@ -19,7 +19,7 @@
 <%@ page import="org.json.JSONArray" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.data.xml.externalSchema.TemplateSchemaType" %>
 <%@ page import="org.labkey.query.controllers.QueryController.BaseExternalSchemaBean" %>
 <%@ page import="org.labkey.query.persist.AbstractExternalSchemaDef" %>
@@ -27,16 +27,13 @@
 <%@ page import="org.labkey.query.persist.LinkedSchemaDef" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-  public LinkedHashSet<ClientDependency> getClientDependencies()
-  {
-      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-      resources.add(ClientDependency.fromPath("Ext4"));
-      resources.add(ClientDependency.fromPath("sqv"));
-      return resources;
-  }
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("Ext4");
+        dependencies.add("sqv");
+    }
 %>
 <%
     BaseExternalSchemaBean bean = (BaseExternalSchemaBean)HttpView.currentModel();

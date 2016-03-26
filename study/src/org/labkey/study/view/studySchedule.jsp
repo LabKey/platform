@@ -21,20 +21,17 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
-  public LinkedHashSet<ClientDependency> getClientDependencies()
-  {
-      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-      resources.add(ClientDependency.fromPath("dataviews"));
-      resources.add(ClientDependency.fromPath("study/StudySchedule.css"));
-      resources.add(ClientDependency.fromPath("study/StudyScheduleGrid.js"));
-      return resources;
-  }
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("dataviews");
+        dependencies.add("study/StudySchedule.css");
+        dependencies.add("study/StudyScheduleGrid.js");
+    }
 %>
 <%
     JspView<Portal.WebPart> me = (JspView) HttpView.currentView();
