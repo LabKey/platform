@@ -171,7 +171,7 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
             else
             {
                 String[] specimenIds = form.getSpecimenIds();
-                ArrayList<Vial> list = new ArrayList<>(specimenIds.length);
+                List<Vial> list = new ArrayList<>(specimenIds.length);
                 User user = getUser();
                 for (String specimenId : specimenIds)
                 {

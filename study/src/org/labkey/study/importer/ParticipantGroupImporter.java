@@ -146,6 +146,10 @@ public class ParticipantGroupImporter implements InternalStudyImporter
                             pg.setParticipantIds(ids.toArray(new String[ids.size()]));
                             ParticipantGroupManager.getInstance().setParticipantGroup(ctx.getContainer(), ctx.getUser(), pg);
                         }
+                        else
+                        {
+                            ctx.getLogger().info("Skipping participant group " + group.getLabel() + " since none of its members could be found");
+                        }
                     }
                 }
                 transaction.commit();
