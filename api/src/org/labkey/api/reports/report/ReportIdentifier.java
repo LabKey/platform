@@ -19,14 +19,10 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.reports.Report;
 import org.labkey.api.writer.ContainerUser;
 
-/*
-* User: Dave
-* Date: Dec 11, 2008
-* Time: 3:35:39 PM
-*/
-
 /**
  * Uniquely identifies a report
+ * User: Dave
+ * Date: Dec 11, 2008
  */
 public interface ReportIdentifier
 {

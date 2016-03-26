@@ -36,7 +36,7 @@ import java.util.*;
  * is <b>not thread-safe</b> so do not share an instance of this between threads. When modifying
  * an existing policy, create a new instance of this class passing the existing SecurityPolicy instance
  * to the constructor. This will create a copy of the role assignments that you can then modify.
- * To save the policy, pass the instance of this class to SecurityManager.savePolicy().
+ * To save the policy, pass the instance of this class to {@link SecurityPolicyManager#savePolicy(MutableSecurityPolicy)}.
  */
 public class MutableSecurityPolicy extends SecurityPolicy
 {
