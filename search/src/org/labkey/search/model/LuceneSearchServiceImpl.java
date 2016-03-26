@@ -57,6 +57,8 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
@@ -72,19 +74,24 @@ import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HTMLContentExtractor;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MinorConfigurationException;
 import org.labkey.api.util.MultiPhaseCPUTimer;
 import org.labkey.api.util.MultiPhaseCPUTimer.InvocationTimer;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.Path;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.ActionResource;
+import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.search.view.SearchWebPart;
 import org.xml.sax.ContentHandler;
@@ -95,7 +102,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -104,6 +110,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -484,7 +491,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     if (isTooBig(fs, type))
                         html = "<html><body></body></html>";
                     else
-                        html = PageFlowUtil.getStreamContentsAsString(is, StandardCharsets.UTF_8);
+                        html = PageFlowUtil.getStreamContentsAsString(is);
 
                     // TODO: Need better check for issue HTML vs. rendered page HTML
                     if (r instanceof ActionResource)
@@ -512,7 +519,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     if (isTooBig(fs, type))
                         body = "";
                     else
-                        body = PageFlowUtil.getStreamContentsAsString(is, StandardCharsets.UTF_8);
+                        body = PageFlowUtil.getStreamContentsAsString(is);
                 }
                 else
                 {
@@ -788,7 +795,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     private void addIdentifiers(Document doc, Map<String, ?> props, PROPERTY property, FIELD_NAME fieldName, @Nullable String standardIdentifiers)
     {
         String documentIdentifiers = (String)props.get(property.toString());
-        String identifiers = (null == standardIdentifiers ? "" : standardIdentifiers + " ") + (null == documentIdentifiers ? "" : documentIdentifiers);
+        String identifiers = (StringUtils.isEmpty(standardIdentifiers) ? "" : standardIdentifiers + " ") + (null == documentIdentifiers ? "" : documentIdentifiers);
 
         // Split the identifiers string by whitespace, index each without stemming
         if (!identifiers.isEmpty())
@@ -1537,5 +1544,104 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     protected Analyzer getAnalyzer()
     {
         return ExternalAnalyzer.EnglishAnalyzer.getAnalyzer();
+    }
+
+
+
+    public static class TestCase extends Assert
+    {
+        private final int DOC_COUNT = 6;  // TODO: Make static, once test development is complete
+
+        private final Container _c = JunitUtil.getTestContainer();
+        private final SearchCategory _category = new SearchCategory("SearchTest", "Just a test");
+        private final SearchService _ss = ServiceRegistry.get(SearchService.class);
+        private final CountDownLatch _latch = new CountDownLatch(DOC_COUNT);
+
+        @Test
+        public void testKeywordsAndIdentifiers() throws InterruptedException, IOException
+        {
+            if (null == _ss || !(_ss instanceof LuceneSearchServiceImpl))
+                return;
+
+            LuceneSearchServiceImpl impl = (LuceneSearchServiceImpl)_ss;
+            impl.deleteIndexedContainer(_c.getId());
+
+            byte[] body = new byte[0];
+
+            Map<String, Object> props = new HashMap<>();
+            props.put(PROPERTY.keywordsHi.toString(), "kumquat running coding dancing");
+            index("testresource:keywordsHi", "Test keywordsHi", body, props);
+
+            props = new HashMap<>();
+            props.put(PROPERTY.keywordsMed.toString(), "wombat running coding dancing");
+            index("testresource:keywordsMed", "Test keywordsMed", body, props);
+
+            props = new HashMap<>();
+            props.put(PROPERTY.keywordsLo.toString(), "perihelion running coding dancing");
+            index("testresource:keywordsLo", "Test keywordsLo", body, props);
+
+            props = new HashMap<>();
+            props.put(PROPERTY.identifiersHi.toString(), "123ABC running coding dancing 456def");
+            index("testresource:identifiersHi", "Test identifiersHi", body, props);
+
+            props = new HashMap<>();
+            props.put(PROPERTY.identifiersMed.toString(), "789GHI running coding dancing 012jkl");
+            index("testresource:identifiersMed", "Test identifiersMed", body, props);
+
+            props = new HashMap<>();
+            props.put(PROPERTY.identifiersLo.toString(), "345MNO running coding dancing 678pqr");
+            index("testresource:identifiersLo", "Test identifiersLo", body, props);
+
+            // Wait until all docs are indexed
+            _latch.await();
+
+            test("kumquat", 1);
+            test("wombat", 1);
+            test("perihelion", 1);
+            test("run", 3);
+            test("code", 3);
+            test("dance", 3);
+
+            test("123ABC", 1);
+            test("456def", 1);
+            test("789GHI", 1);
+            test("012jkl", 1);
+            test("345MNO", 1);
+            test("678pqr", 1);
+
+            // TODO: These three tests should return six documents, but we currently have an analyzer mismatch - identifiers are not stemmed but queries always are. See #26028
+            test("running", 3);
+            test("coding", 3);
+            test("dancing", 3);
+
+            impl.deleteIndexedContainer(_c.getId());
+        }
+
+        private void test(String query, int expectedCount) throws IOException
+        {
+            assertEquals(expectedCount, search(query).size());
+        }
+
+        private void index(String docId, String title, byte[] body, Map<String, Object> props) throws InterruptedException
+        {
+            props.put(PROPERTY.categories.toString(), _category.getName());
+            props.put(PROPERTY.title.toString(), title);
+
+            SimpleDocumentResource resource1 = new SimpleDocumentResource(new Path(docId), docId, _c.getId(), body, new ActionURL(), props) {
+                @Override
+                public void setLastIndexed(long ms, long modified)
+                {
+                    _latch.countDown();
+                }
+            };
+            _ss.defaultTask().addResource(resource1, PRIORITY.item);
+        }
+
+        private List<SearchHit> search(String query) throws IOException
+        {
+            SearchResult result = _ss.search(query, Collections.singletonList(_category), User.getSearchUser(), _c, SearchScope.Folder, 0, 100);
+
+            return result.hits;
+        }
     }
 }

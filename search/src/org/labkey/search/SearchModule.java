@@ -226,4 +226,11 @@ public class SearchModule extends DefaultModule
         };
         ContextListener.addStartupListener(l);
     }
+
+    @NotNull
+    @Override
+    public Set<Class> getIntegrationTests()
+    {
+        return Collections.singleton(LuceneSearchServiceImpl.TestCase.class);
+    }
 }
