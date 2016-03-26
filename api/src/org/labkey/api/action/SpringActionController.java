@@ -326,17 +326,22 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
         ActionURL url = context.getActionURL();
         long startTime = System.currentTimeMillis();
-        Controller action = null;
+        Controller controller = null;
 
         try
         {
-            action = resolveAction(url.getAction());
-            if (null == action)
+            controller = resolveAction(url.getAction());
+            if (null == controller)
             {
                 throw new NotFoundException("Unable to find action '" + url.getAction() + "' to handle request in controller '" + url.getController() + "'");
             }
 
-            ActionURL redirectURL = getUpgradeMaintenanceRedirect(request, action);
+            if (!(controller instanceof PermissionCheckable))
+                throw new IllegalStateException("All actions must implement PermissionCheckable. " + controller.getClass().getName() + " should extend PermissionCheckableAction or one of its subclasses.");
+
+            PermissionCheckable checkable = (PermissionCheckable)controller;
+
+            ActionURL redirectURL = getUpgradeMaintenanceRedirect(request, controller);
 
             if (null != redirectURL)
             {
@@ -364,12 +369,12 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
             PageConfig pageConfig = defaultPageConfig();
 
-            if (action instanceof HasViewContext)
-                ((HasViewContext)action).setViewContext(context);
-            if (action instanceof HasPageConfig)
-                ((HasPageConfig)action).setPageConfig(pageConfig);
+            if (controller instanceof HasViewContext)
+                ((HasViewContext)controller).setViewContext(context);
+            if (controller instanceof HasPageConfig)
+                ((HasPageConfig)controller).setPageConfig(pageConfig);
 
-            Class<? extends Controller> actionClass = action.getClass();
+            Class<? extends Controller> actionClass = controller.getClass();
             if (actionClass.isAnnotationPresent(IgnoresAllocationTracking.class) || "true".equals(request.getParameter("skip-profiling")))
             {
                 MemTracker.get().ignore();
@@ -391,15 +396,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 }
             }
 
-            if (action instanceof PermissionCheckable)
-            {
-                ((PermissionCheckable)action).checkPermissions();
-            }
-            else
-            {
-                // TODO: Remove this? What scenario causes this to be called?
-                BaseViewAction.checkPermissionsAndTermsOfUse(actionClass, context, null, false);
-            }
+            checkable.checkPermissions();
 
             // Actions can annotate themselves with an ActionType, which helps custom schemas that want to limit access from generic actions
             if (actionClass.isAnnotationPresent(Action.class))
@@ -408,8 +405,8 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 QueryService.get().setEnvironment(QueryService.Environment.ACTION, actionAnnotation.value());
             }
 
-            beforeAction(action);
-            ModelAndView mv = action.handleRequest(request, response);
+            beforeAction(controller);
+            ModelAndView mv = controller.handleRequest(request, response);
             if (mv != null)
             {
                 if (mv.getView() instanceof RedirectView)
@@ -417,7 +414,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                     // treat same as a throw redirect
                     throw new RedirectException(((RedirectView)mv.getView()).getUrl());
                 }
-                renderInTemplate(context, action, pageConfig, mv);
+                renderInTemplate(context, controller, pageConfig, mv);
             }
         }
         catch (HttpRequestMethodNotSupportedException x)
@@ -434,8 +431,8 @@ public abstract class SpringActionController implements Controller, HasViewConte
         {
             afterAction(throwable);
 
-            if (null != action)
-                _actionResolver.addTime(action, System.currentTimeMillis() - startTime);
+            if (null != controller)
+                _actionResolver.addTime(controller, System.currentTimeMillis() - startTime);
         }
 
         return null;

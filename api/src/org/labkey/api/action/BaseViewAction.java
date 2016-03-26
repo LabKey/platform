@@ -22,43 +22,15 @@ import org.apache.commons.beanutils.DynaBean;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DataRegion;
-import org.labkey.api.security.AdminConsoleAction;
-import org.labkey.api.security.CSRF;
-import org.labkey.api.security.ContextualRoles;
-import org.labkey.api.security.IgnoresTermsOfUse;
-import org.labkey.api.security.RequiresAllOf;
-import org.labkey.api.security.RequiresAnyOf;
-import org.labkey.api.security.RequiresLogin;
-import org.labkey.api.security.RequiresNoPermission;
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.security.SecurityLogger;
-import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityManager.TermsOfUseProvider;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.AdminReadPermission;
-import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.ForbiddenProjectException;
-import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.RedirectException;
-import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.UnauthorizedException.Type;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.beans.AbstractPropertyAccessor;
 import org.springframework.beans.BeanUtils;
@@ -86,7 +58,6 @@ import org.springframework.web.bind.ServletRequestParameterPropertyValues;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -96,26 +67,23 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * User: matthewb
  * Date: May 16, 2007
  * Time: 1:48:01 PM
  */
-public abstract class BaseViewAction<FORM> implements Controller, HasViewContext, Validator, HasPageConfig, PermissionCheckable
+public abstract class BaseViewAction<FORM> extends PermissionCheckableAction implements Validator, HasPageConfig
 {
     protected static final Logger logger = Logger.getLogger(BaseViewAction.class);
-    private ViewContext _context = null;
+
     private PageConfig _pageConfig = null;
     private PropertyValues _pvs;
     private boolean _robot = false;  // Is this request from GoogleBot or some other crawler?
     private boolean _debug = false;
 
-    protected Type _unauthorizedType = Type.redirectToLogin;
     protected boolean _print = false;
     protected Class _commandClass;
     protected String _commandName = "form";
@@ -163,12 +131,6 @@ public abstract class BaseViewAction<FORM> implements Controller, HasViewContext
     }
 
 
-    protected void setUnauthorizedType(Type unauthorizedType)
-    {
-        _unauthorizedType = unauthorizedType;
-    }
-
-
     public void setProperties(PropertyValues pvs)
     {
         _pvs = pvs;
@@ -210,7 +172,7 @@ public abstract class BaseViewAction<FORM> implements Controller, HasViewContext
     {
         if (null == getPropertyValues())
             setProperties(new ServletRequestParameterPropertyValues(request));
-        _context.setBindPropertyValues(getPropertyValues());
+        getViewContext().setBindPropertyValues(getPropertyValues());
         handleSpecialProperties();
 
         return handleRequest();
@@ -238,17 +200,6 @@ public abstract class BaseViewAction<FORM> implements Controller, HasViewContext
 
     public abstract ModelAndView handleRequest() throws Exception;
 
-
-    public ViewContext getViewContext()
-    {
-        return _context;
-    }
-
-
-    public void setViewContext(ViewContext context)
-    {
-        _context = context;
-    }
 
     public void setPageConfig(PageConfig page)
     {
@@ -660,208 +611,6 @@ public abstract class BaseViewAction<FORM> implements Controller, HasViewContext
             return convertIfNecessary(value, requiredType);
         }
     }
-
-    public void checkPermissions() throws UnauthorizedException
-    {
-        checkPermissions(_unauthorizedType);
-    }
-
-    protected void checkPermissions(Type unauthorizedType) throws UnauthorizedException
-    {
-        // ideally, we should pass the bound FORM to getContextualRoles so that actions can determine if the OwnerRole
-        // should apply, but this would require a large amount of rework that is too much to consider now.
-        //
-        // If the action needs Basic Authentication, then do the standard permissions check, but ignore terms-of-use
-        // (non-web clients can't view/respond to terms of use page). If user is guest and unauthorized, then send a
-        // Basic Authentication request.
-        try
-        {
-            boolean isSendBasic = (unauthorizedType == Type.sendBasicAuth || unauthorizedType == Type.sendUnauthorized);
-            checkPermissionsAndTermsOfUse(getClass(), getViewContext(), getContextualRoles(), isSendBasic);
-        }
-        catch (UnauthorizedException e)
-        {
-            e.setType(unauthorizedType);
-            throw e;
-        }
-    }
-
-
-    /**
-     * Actions may provide a set of {@link Role}s used during permission checking
-     * or null if no contextual roles apply.
-     */
-    @Nullable
-    protected Set<Role> getContextualRoles()
-    {
-        return null;
-    }
-
-
-    public static void checkActionPermissions(Class<? extends Controller> actionClass, ViewContext context, Set<Role> contextualRoles) throws UnauthorizedException
-    {
-        try
-        {
-            SecurityLogger.indent("BaseViewAction.checkActionPermissions(" + actionClass.getName() + ")");
-            _checkActionPermissions(actionClass, context, contextualRoles);
-        }
-        finally
-        {
-            SecurityLogger.outdent();
-        }
-    }
-
-
-    private static void _checkActionPermissions(Class<? extends Controller> actionClass, ViewContext context, Set<Role> contextualRoles) throws UnauthorizedException
-    {
-        String method = context.getRequest().getMethod();
-        boolean isPOST = "POST".equals(method);
-
-        Container c = context.getContainer();
-        User user = context.getUser();
-
-        if (c.isForbiddenProject(user))
-            throw new ForbiddenProjectException();
-
-        boolean requiresSiteAdmin = actionClass.isAnnotationPresent(RequiresSiteAdmin.class);
-        if (requiresSiteAdmin && !user.isSiteAdmin())
-        {
-            throw new UnauthorizedException();
-        }
-
-        boolean requiresLogin = actionClass.isAnnotationPresent(RequiresLogin.class);
-        if (requiresLogin && user.isGuest())
-        {
-            throw new UnauthorizedException();
-        }
-
-        // User must have ALL permissions in this set
-        Set<Class<? extends Permission>> permissionsRequired = new HashSet<>();
-
-        RequiresPermission requiresPerm = actionClass.getAnnotation(RequiresPermission.class);
-        if (null != requiresPerm)
-        {
-            permissionsRequired.add(requiresPerm.value());
-        }
-
-        RequiresAllOf requiresAllOf = actionClass.getAnnotation(RequiresAllOf.class);
-        if (null != requiresAllOf)
-        {
-            Collections.addAll(permissionsRequired, requiresAllOf.value());
-        }
-
-        RequiresPermissionClass requiresPermClass = actionClass.getAnnotation(RequiresPermissionClass.class);
-        if (null != requiresPermClass)
-        {
-            permissionsRequired.add(requiresPermClass.value());
-        }
-
-        // Special handling for admin console actions to support TroubleShooter role. Only site admins can POST,
-        // but those with AdminReadPermission (i.e., TroubleShooters) can GET. 
-        boolean adminConsoleAction = actionClass.isAnnotationPresent(AdminConsoleAction.class);
-        if (adminConsoleAction)
-        {
-            if (!c.isRoot())
-                throw new NotFoundException();
-
-            if (isPOST)
-            {
-                if (!user.isSiteAdmin())
-                {
-                    throw new UnauthorizedException();
-                }
-            }
-            else
-            {
-                permissionsRequired.add(AdminReadPermission.class);
-            }
-        }
-
-        ContextualRoles rolesAnnotation = actionClass.getAnnotation(ContextualRoles.class);
-        if (rolesAnnotation != null)
-        {
-            contextualRoles = RoleManager.mergeContextualRoles(context, rolesAnnotation.value(), contextualRoles);
-        }
-
-        // Policy must have all permissions in permissionsRequired
-        SecurityPolicy policy = SecurityPolicyManager.getPolicy(c);
-        if (!policy.hasPermissions(user, permissionsRequired, contextualRoles))
-            throw new UnauthorizedException();
-
-
-        csrfChecking:
-        {
-            boolean requiresAdmin = permissionsRequired.contains(AdminPermission.class);
-
-            // this is default CSRF rule if there is not an explicit @CSRF annotation
-            //   currently all POSTS on admin action are validated
-            CSRF.Method csrfCheck = (requiresSiteAdmin || requiresAdmin) ? CSRF.Method.POST : CSRF.Method.NONE;
-
-            // A more aggressive option, check _all_ POST requests
-            // CSRF.Method csrfCheck = CSRF.Method.POST;
-
-            if (actionClass.isAnnotationPresent(CSRF.class))
-            {
-                CSRF csrfAnnotation = actionClass.getAnnotation(CSRF.class);
-                csrfCheck = csrfAnnotation.value();
-            }
-
-            csrfCheck.validate(context);
-        }
-
-        // User must have at least one permission in this set
-        Set<Class<? extends Permission>> permissionsAnyOf = Collections.emptySet();
-        RequiresAnyOf requiresAnyOf = actionClass.getAnnotation(RequiresAnyOf.class);
-        if (null != requiresAnyOf)
-        {
-            permissionsAnyOf = new HashSet<>();
-            Collections.addAll(permissionsAnyOf, requiresAnyOf.value());
-            if (!policy.hasOneOf(user, permissionsAnyOf, contextualRoles))
-                throw new UnauthorizedException();
-        }
-
-        boolean requiresNoPermission = actionClass.isAnnotationPresent(RequiresNoPermission.class);
-
-        if (permissionsRequired.isEmpty() && !requiresSiteAdmin && !requiresLogin && !requiresNoPermission && !adminConsoleAction && permissionsAnyOf.isEmpty())
-        {
-            throw new ConfigurationException("@RequiresPermission, @RequiresSiteAdmin, @RequiresLogin, @RequiresNoPermission, or @AdminConsoleAction annotation is required on class " + actionClass.getName());
-        }
-
-        // All permission checks have succeeded, now check for deprecated action.
-        if (actionClass.isAnnotationPresent(DeprecatedAction.class))
-            throw new DeprecatedActionException(actionClass);
-    }
-
-
-    public static void checkPermissionsAndTermsOfUse(Class<? extends Controller> actionClass, ViewContext context, Set<Role> contextualRoles, boolean isSendBasic) throws UnauthorizedException
-    {
-        checkActionPermissions(actionClass, context, contextualRoles);
-
-        if (!actionClass.isAnnotationPresent(IgnoresTermsOfUse.class))
-            verifyTermsOfUse(context, isSendBasic);
-    }
-
-
-    /**
-     * Check if terms of use are ever required for this request. If so, enumerate all the terms-of-use providers and ask
-     * each to verify terms are set via its custom mechanism. If a provider's terms are active and the user hasn't yet
-     * agreed to them then the provider redirects to its terms action by throwing a RedirectException.
-     */
-    public static void verifyTermsOfUse(ViewContext context, boolean isSendBasic) throws RedirectException
-    {
-        if (context.getUser().isSearchUser())
-            return;
-
-        Container c = context.getContainer();
-        if (null == c)
-            return;
-
-        boolean isBasicAuth = isSendBasic || SecurityManager.isBasicAuthentication(context.getRequest());
-
-        for (TermsOfUseProvider provider : SecurityManager.getTermsOfUseProviders())
-            provider.verifyTermsOfUse(context, isBasicAuth);
-    }
-
 
     /**
      * @return a map from form element name to uploaded files

@@ -16,28 +16,27 @@
 
 package org.labkey.api.action;
 
-import org.springframework.web.servlet.mvc.Controller;
-import org.springframework.web.servlet.ModelAndView;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.module.ModuleLoader;
+import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.ServletOutputStream;
-import java.lang.reflect.Method;
-import java.util.Map;
-import java.util.HashMap;
+import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.ByteArrayOutputStream;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * User: matthewb
  * Date: Sep 24, 2007
  * Time: 3:48:55 PM
  */
-public abstract class InterfaceAction<I> implements Controller
+public abstract class InterfaceAction<I> extends PermissionCheckableAction
 {
     int _defaultVersion = 0;
     Map<String,Method> _methods;
