@@ -15,6 +15,7 @@
  */
 package org.labkey.search.model;
 
+import org.apache.commons.collections15.iterators.ArrayIterator;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -1598,9 +1599,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             test("kumquat", 1);
             test("wombat", 1);
             test("perihelion", 1);
-            test("run", 3);
-            test("code", 3);
-            test("dance", 3);
+            test("run", 3, "Test keywordsHi", "Test keywordsMed", "Test keywordsLo");
+            test("code", 3, "Test keywordsHi", "Test keywordsMed", "Test keywordsLo");
+            test("dance", 3, "Test keywordsHi", "Test keywordsMed", "Test keywordsLo");
 
             test("123ABC", 1);
             test("456def", 1);
@@ -1610,16 +1611,28 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             test("678pqr", 1);
 
             // TODO: These three tests should return six documents, but we currently have an analyzer mismatch - identifiers are not stemmed but queries always are. See #26028
-            test("running", 3);
-            test("coding", 3);
-            test("dancing", 3);
+            test("running", 3, "Test keywordsHi", "Test keywordsMed", "Test keywordsLo");
+            test("coding", 3, "Test keywordsHi", "Test keywordsMed", "Test keywordsLo");
+            test("dancing", 3, "Test keywordsHi", "Test keywordsMed", "Test keywordsLo");
 
             impl.deleteIndexedContainer(_c.getId());
         }
 
-        private void test(String query, int expectedCount) throws IOException
+        private void test(String query, int expectedCount, String... titles) throws IOException
         {
-            assertEquals(expectedCount, search(query).size());
+            List<SearchHit> hits = search(query);
+            assertEquals(expectedCount, hits.size());
+
+            // Make sure hits are in the expected order
+            if (titles.length > 0)
+            {
+                Iterator<String> iter = new ArrayIterator<>(titles);
+
+                for (SearchHit hit : hits)
+                {
+                    assertEquals(iter.next(), hit.title);
+                }
+            }
         }
 
         private void index(String docId, String title, byte[] body, Map<String, Object> props) throws InterruptedException
