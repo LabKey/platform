@@ -38,6 +38,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.template.ClientDependencies;
 import org.labkey.api.view.template.ClientDependency;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
@@ -55,7 +56,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Base class for nearly all JSP pages that we use.
@@ -68,8 +68,6 @@ import java.util.stream.Collectors;
  */
 abstract public class JspBase extends JspContext implements HasViewContext
 {
-    private static final LinkedHashSet<ClientDependency> EMPTY_SET = new LinkedHashSet<>();
-
     protected JspBase()
     {
         super();
@@ -662,28 +660,31 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return full + query;
     }
 
-    // Override to add ClientDependencies. Note: Most JSPs should override addClientDependencies() instead.
+    // Overriding this is @Deprecated. JSPs should override addClientDependencies() instead.
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
-        Set<String> clientResources = new LinkedHashSet<>();
-        addClientDependencies(clientResources);
+        LinkedHashSet<ClientDependency> dependencies = new LinkedHashSet<>();
+        ClientDependencies clientDependencies = new ClientDependencies(dependencies);
+        addClientDependencies(clientDependencies);
 
-        if (clientResources.isEmpty())
-        {
-            return EMPTY_SET;
-        }
-        else
-        {
-            return clientResources
-                .stream()
-                .map(ClientDependency::fromPath)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-        }
+        // TODO: Very temporary... delete this
+        LinkedHashSet<String> resources = new LinkedHashSet<>();
+        addClientDependencies(resources);
+        resources.forEach(clientDependencies::add);
+
+        return dependencies;
     }
 
     // Override to add client dependency paths
     @SuppressWarnings("UnusedParameters")
+    @Deprecated // TODO: Delete this
     public void addClientDependencies(Set<String> resources)
+    {
+    }
+
+    // Override to add client dependencies
+    @SuppressWarnings("UnusedParameters")
+    public void addClientDependencies(ClientDependencies dependencies)
     {
     }
 

@@ -25,18 +25,18 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.springframework.validation.FieldError" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.io.File" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-    public void addClientDependencies(Set<String> resources)
+    public void addClientDependencies(ClientDependencies dependencies)
     {
-        resources.add("internal/jQuery");
-        resources.add("Ext4"); // required for completion.js
-        resources.add("completion.js");
+        dependencies.add("internal/jQuery");
+        dependencies.add("Ext4"); // required for completion.js
+        dependencies.add("completion.js");
     }
 %>
 <%
