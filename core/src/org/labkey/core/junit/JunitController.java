@@ -26,6 +26,7 @@ import org.junit.runner.notification.Failure;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.PermissionCheckableAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.StatusAppender;
@@ -44,7 +45,6 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -672,7 +672,7 @@ public class JunitController extends SpringActionController
 
 
     @RequiresNoPermission
-    public class EchoFormAction implements Controller
+    public class EchoFormAction extends PermissionCheckableAction
     {
         public ModelAndView handleRequest(HttpServletRequest req, HttpServletResponse res) throws Exception
         {

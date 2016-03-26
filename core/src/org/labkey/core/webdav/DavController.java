@@ -33,6 +33,7 @@ import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.IgnoresAllocationTracking;
+import org.labkey.api.action.PermissionCheckableAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.cache.Cache;
@@ -632,7 +633,7 @@ public class DavController extends SpringActionController
 
 
     @RequiresNoPermission
-    private abstract class DavAction implements Controller
+    private abstract class DavAction extends PermissionCheckableAction
     {
         final String method;
         final boolean allowDuringUpgrade;
