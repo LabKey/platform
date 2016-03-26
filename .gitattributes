@@ -781,7 +781,6 @@ api/src/org/labkey/api/jsp/JspBase.java -text
 api/src/org/labkey/api/jsp/JspClassLoader.java -text
 api/src/org/labkey/api/jsp/JspContext.java -text
 api/src/org/labkey/api/jsp/JspLoader.java -text
-api/src/org/labkey/api/jsp/LabkeyJspFactory.java -text
 api/src/org/labkey/api/jsp/RecompilingJspClassLoader.java -text
 api/src/org/labkey/api/jsp/taglib/AutoCompleteTag.java -text
 api/src/org/labkey/api/jsp/taglib/AutoCompleteTextTag.java -text
