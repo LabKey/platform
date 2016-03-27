@@ -23,12 +23,12 @@ import org.junit.Test;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.FormattedError;
 import org.labkey.api.action.LabkeyError;
+import org.labkey.api.action.PermissionCheckableAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -90,7 +90,6 @@ import org.labkey.core.user.UserController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.mvc.Controller;
 
 import javax.mail.MessagingException;
 import javax.servlet.ServletException;
@@ -1947,17 +1946,21 @@ public class SecurityController extends SpringActionController
             policy.addRoleAssignment(user, RoleManager.getRole(EditorRole.class));
             SecurityPolicyManager.savePolicy(policy);
 
+            SecurityController controller = new SecurityController();
+
             // @RequiresNoPermission
-            assertPermission(guest, BeginAction.class);
-            assertPermission(user, BeginAction.class);
-            assertPermission(admin, BeginAction.class);
-            assertPermission(site, BeginAction.class);
+            BeginAction beginAction = controller.new BeginAction();
+            assertPermission(guest, beginAction);
+            assertPermission(user, beginAction);
+            assertPermission(admin, beginAction);
+            assertPermission(site, beginAction);
 
             // @RequiresSiteAdmin
-            assertNoPermission(guest, AddUsersAction.class);
-            assertNoPermission(user, AddUsersAction.class);
-            assertNoPermission(admin, AddUsersAction.class);
-            assertPermission(site, AddUsersAction.class);
+            AddUsersAction addUsersAction = controller.new AddUsersAction();
+            assertNoPermission(guest, addUsersAction);
+            assertNoPermission(user, addUsersAction);
+            assertNoPermission(admin, addUsersAction);
+            assertPermission(site, addUsersAction);
 
             assertTrue(ContainerManager.delete(c, TestContext.get().getUser()));
             UserManager.deleteUser(admin.getUserId());
@@ -1966,11 +1969,13 @@ public class SecurityController extends SpringActionController
         }
 
 
-        private void assertPermission(User u, Class<? extends Controller> actionClass) throws Exception
+        private void assertPermission(User u, PermissionCheckableAction action) throws Exception
         {
+            action.setViewContext(makeContext(u));
+
             try
             {
-                BaseViewAction.checkActionPermissions(actionClass, makeContext(u), null);
+                action.checkPermissions();
             }
             catch (UnauthorizedException x)
             {
@@ -1978,11 +1983,13 @@ public class SecurityController extends SpringActionController
             }
         }
 
-        private void assertNoPermission(User u, Class<? extends Controller> actionClass) throws Exception
+        private void assertNoPermission(User u, PermissionCheckableAction action) throws Exception
         {
+            action.setViewContext(makeContext(u));
+
             try
             {
-                BaseViewAction.checkActionPermissions(actionClass, makeContext(u), null);
+                action.checkPermissions();
                 fail("Should not have permission");
             }
             catch (UnauthorizedException x)
