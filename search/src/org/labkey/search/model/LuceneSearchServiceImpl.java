@@ -1596,6 +1596,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             // Wait until all docs are indexed
             _latch.await();
 
+            impl.commit();
+
             test("kumquat", 1);
             test("wombat", 1);
             test("perihelion", 1);
