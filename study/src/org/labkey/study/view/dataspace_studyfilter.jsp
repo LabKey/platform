@@ -23,7 +23,6 @@
 <%@ page import="org.labkey.api.util.GUID" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.study.model.ParticipantGroup" %>
 <%@ page import="org.labkey.study.model.ParticipantGroupManager" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
@@ -35,7 +34,7 @@
 <%!
     public void addClientDependencies(ClientDependencies dependencies)
     {
-        dependencies.add(ClientDependency.fromFilePath("clientapi/ext4"));
+        dependencies.add("clientapi/ext4");
     }
 %>
 <%
