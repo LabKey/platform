@@ -78,7 +78,7 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         try
         {
             boolean isSendBasic = (unauthorizedType == UnauthorizedException.Type.sendBasicAuth || unauthorizedType == UnauthorizedException.Type.sendUnauthorized);
-            checkPermissionsAndTermsOfUse(getClass(), getContextualRoles(), isSendBasic);
+            checkPermissionsAndTermsOfUse(getContextualRoles(), isSendBasic);
         }
         catch (UnauthorizedException e)
         {
@@ -87,12 +87,12 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         }
     }
 
-    public static void checkActionPermissions(Class<? extends Controller> actionClass, ViewContext context, Set<Role> contextualRoles) throws UnauthorizedException
+    private void checkActionPermissions(Set<Role> contextualRoles) throws UnauthorizedException
     {
         try
         {
-            SecurityLogger.indent("BaseViewAction.checkActionPermissions(" + actionClass.getName() + ")");
-            _checkActionPermissions(actionClass, context, contextualRoles);
+            SecurityLogger.indent("BaseViewAction.checkActionPermissions(" + getClass().getName() + ")");
+            _checkActionPermissions(contextualRoles);
         }
         finally
         {
@@ -101,8 +101,9 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
     }
 
 
-    private static void _checkActionPermissions(Class<? extends Controller> actionClass, ViewContext context, Set<Role> contextualRoles) throws UnauthorizedException
+    private void _checkActionPermissions(Set<Role> contextualRoles) throws UnauthorizedException
     {
+        ViewContext context = getViewContext();
         String method = context.getRequest().getMethod();
         boolean isPOST = "POST".equals(method);
 
@@ -111,6 +112,8 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
 
         if (c.isForbiddenProject(user))
             throw new ForbiddenProjectException();
+
+        Class<? extends Controller> actionClass = getClass();
 
         boolean requiresSiteAdmin = actionClass.isAnnotationPresent(RequiresSiteAdmin.class);
         if (requiresSiteAdmin && !user.isSiteAdmin())
@@ -222,11 +225,11 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
     }
 
 
-    private void checkPermissionsAndTermsOfUse(Class<? extends Controller> actionClass, Set<Role> contextualRoles, boolean isSendBasic) throws UnauthorizedException
+    private void checkPermissionsAndTermsOfUse(Set<Role> contextualRoles, boolean isSendBasic) throws UnauthorizedException
     {
-        checkActionPermissions(actionClass, getViewContext(), contextualRoles);
+        checkActionPermissions(contextualRoles);
 
-        if (!actionClass.isAnnotationPresent(IgnoresTermsOfUse.class))
+        if (!getClass().isAnnotationPresent(IgnoresTermsOfUse.class))
             verifyTermsOfUse(isSendBasic);
     }
 
