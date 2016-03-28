@@ -522,7 +522,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     if (null == title)
                         logBadDocument("Null title", r);
                 }
-                else if (type.startsWith("text/") && !type.contains("xml"))
+                else if (type.startsWith("text/") && !type.contains("xml") && !StringUtils.equals(type, "text/comma-separated-values"))
                 {
                     if (isTooBig(fs, type))
                         body = "";

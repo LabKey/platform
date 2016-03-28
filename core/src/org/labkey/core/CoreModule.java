@@ -621,6 +621,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AuditLogService.get().registerAuditType(new ClientApiAuditProvider());
         AuditLogService.registerAuditType(new AuthenticationProviderConfigAuditTypeProvider());
 
+        if (null != ServiceRegistry.get(SearchService.class))
+            ServiceRegistry.get(SearchService.class).addDocumentParser(new TabLoader.CsvFactoryNoConversions());
+
         TempTableTracker.init();
         ContextListener.addShutdownListener(TempTableTracker.getShutdownListener());
         ContextListener.addShutdownListener(DavController.getShutdownListener());
