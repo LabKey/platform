@@ -20,6 +20,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldType;
@@ -103,6 +105,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -114,6 +117,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * User: adam
@@ -395,6 +399,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             PROPERTY.categories.toString(), PROPERTY.title.toString(), PROPERTY.keywordsLo.toString(),
             PROPERTY.keywordsMed.toString(), PROPERTY.keywordsHi.toString(), PROPERTY.identifiersHi.toString(),
             PROPERTY.navtrail.toString(), PROPERTY.securableResourceId.toString());
+
+//    This should address #26015, however, it also seems to trip up the ranking checks in the junit test... so need to investigate that before committing
+//    private static final Set<String> KNOWN_PROPERTIES = Arrays.asList(PROPERTY.values()).stream().map(PROPERTY::toString).collect(Collectors.toSet());
 
     @Override
     Map<?, ?> preprocess(String id, WebdavResource r, Throwable[] handledException)
@@ -1209,7 +1216,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         enumMap.put(FIELD_NAME.keywordsLo, 1.0f);
         enumMap.put(FIELD_NAME.identifiersLo, 1.0f);
 
-        enumMap.put(FIELD_NAME.title, 2.0f);          // TODO: Deprecated... old documents only
         enumMap.put(FIELD_NAME.keywordsMed, 2.0f);
         enumMap.put(FIELD_NAME.identifiersMed, 2.0f);
 
@@ -1533,7 +1539,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         {
             SecurityPolicy policy = SecurityPolicyManager.getPolicy(_externalIndexManager);
             if (policy.hasPermission(user, AdminPermission.class))
-                return Collections.singletonList((SecurableResource) _externalIndexManager);
+                return Collections.singletonList(_externalIndexManager);
         }
 
         return Collections.emptyList();
@@ -1548,7 +1554,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-
     public static class TestCase extends Assert
     {
         private final int DOC_COUNT = 6;  // TODO: Make static, once test development is complete
@@ -1557,6 +1562,33 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         private final SearchCategory _category = new SearchCategory("SearchTest", "Just a test");
         private final SearchService _ss = ServiceRegistry.get(SearchService.class);
         private final CountDownLatch _latch = new CountDownLatch(DOC_COUNT);
+
+        @Test // Doesn't really test anything; just provides a convenient way to exercise all the standard analyzers.
+        public void testAnalyzers() throws IOException
+        {
+            analyze("casale WISP-R 123ABC this.doc running coding dance dancing danced");
+        }
+
+        /**
+         *  Analyzes text with all ExternalAnalyzers and logs the results
+         */
+        private void analyze(String text) throws IOException
+        {
+            for (ExternalAnalyzer analyzer : ExternalAnalyzer.values())
+            {
+                List<String> result = new LinkedList<>();
+
+                try (TokenStream stream = analyzer.getAnalyzer().tokenStream("foo", text))
+                {
+                    stream.reset();
+
+                    while (stream.incrementToken())
+                        result.add(stream.getAttribute(CharTermAttribute.class).toString());
+                }
+
+                _log.info(analyzer.name() + ": " + result);
+            }
+        }
 
         @Test
         public void testKeywordsAndIdentifiers() throws InterruptedException, IOException
