@@ -70,8 +70,8 @@ import java.util.regex.Pattern;
  */
 public class TabLoader extends DataLoader
 {
-    public static final FileType TSV_FILE_TYPE = new TabFileType(Arrays.asList(".tsv", ".txt"), ".tsv");
-    public static final FileType CSV_FILE_TYPE = new TabFileType(Collections.singletonList(".csv"), ".csv");
+    public static final FileType TSV_FILE_TYPE = new TabFileType(Arrays.asList(".tsv", ".txt"), ".tsv", "text/tab-separated-values");
+    public static final FileType CSV_FILE_TYPE = new TabFileType(Collections.singletonList(".csv"), ".csv", "text/comma-separated-values");
 
     private static final Logger _log = Logger.getLogger(TabLoader.class);
 
@@ -110,6 +110,30 @@ public class TabLoader extends DataLoader
         {
             TabLoader loader = new TabLoader(new InputStreamReader(is, StandardCharsets.UTF_8), hasColumnHeaders, mvIndicatorContainer);
             loader.parseAsCSV();
+            return loader;
+        }
+
+        @NotNull @Override
+        public FileType getFileType() { return CSV_FILE_TYPE; }
+    }
+
+    public static class CsvFactoryNoConversions extends CsvFactory
+    {
+        @NotNull @Override
+        public DataLoader createLoader(File file, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+        {
+
+            DataLoader loader = super.createLoader(file, hasColumnHeaders, mvIndicatorContainer);
+            loader.setInferTypes(false);
+            return loader;
+        }
+
+        @NotNull @Override
+        // A DataLoader created with this constructor does NOT close the reader
+        public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+        {
+            DataLoader loader = super.createLoader(is, hasColumnHeaders, mvIndicatorContainer);
+            loader.setInferTypes(false);
             return loader;
         }
 

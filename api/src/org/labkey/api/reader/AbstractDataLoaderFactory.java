@@ -18,6 +18,7 @@ package org.labkey.api.reader;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.search.AbstractDocumentParser;
 import org.labkey.api.util.FileType;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.webdav.WebdavResource;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -81,44 +82,46 @@ public abstract class AbstractDataLoaderFactory extends AbstractDocumentParser i
         DataLoader loader = createLoader(stream, true);
         ColumnDescriptor[] cols = loader.getColumns();
 
-        startTag(h, "table");
+
+        startTag(h, "pre");
         newline(h);
 
-        startTag(h, "tr");
         for (ColumnDescriptor cd : cols)
         {
-            if (cd.load)
+            if (!cd.load)
                 continue;
             
-            tab(h);
-            startTag(h, "th");
             write(h, cd.name);
-            endTag(h, "th");
+            tab(h);
         }
-        endTag(h, "tr");
         newline(h);
 
         for (Map<String, Object> row : loader)
         {
-            startTag(h, "tr");
             for (ColumnDescriptor cd : cols)
             {
-                if (cd.load)
+                if (!cd.load)
                     continue;
 
-                tab(h);
-                startTag(h, "td");
-                // XXX: format value
                 Object value = row.get(cd.name);
-                write(h, String.valueOf(value));
-                endTag(h, "td");
+                if (value != null)
+                {
+                    if (value instanceof String)
+                    {
+                        String str = (String)value;
+                        if (str.contains("<"))
+                            str = PageFlowUtil.filterXML(str);
+                        write(h, str);
+                    }
+                    else
+                        write(h, String.valueOf(value));
+                }
+                tab(h);
             }
 
-            endTag(h, "tr");
             newline(h);
-        }
-
-        endTag(h, "table");
+       }
+       endTag(h, "pre");
     }
 
 }

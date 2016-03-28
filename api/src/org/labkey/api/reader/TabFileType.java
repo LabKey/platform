@@ -17,9 +17,11 @@ package org.labkey.api.reader;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.StringUtilsLabKey;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -34,9 +36,9 @@ class TabFileType extends FileType
 
     private final String delim;
 
-    public TabFileType(List<String> suffixes, String defaultSuffix)
+    public TabFileType(List<String> suffixes, String defaultSuffix, String contentType)
     {
-        super(suffixes, defaultSuffix);
+        super(suffixes, defaultSuffix, Arrays.asList(contentType));
         if (".tsv".equals(defaultSuffix))
             delim = "\t";
         else if (".csv".equals(defaultSuffix))
