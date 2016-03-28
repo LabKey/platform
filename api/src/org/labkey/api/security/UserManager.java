@@ -454,17 +454,20 @@ public class UserManager
     {
         if (SecurityManager.loginExists(currentEmail))
         {
-            Instant timeoutDate = Instant.now().plus(VERIFICATION_EMAIL_TIMEOUT, ChronoUnit.MINUTES);
-            SqlExecutor executor = new SqlExecutor(CORE.getSchema());
-            int rows = executor.execute("UPDATE " + CORE.getTableInfoLogins() + " SET RequestedEmail=?, Verification=?, VerificationTimeout=? WHERE Email=?",
-                    requestedEmail, verificationToken, Date.from(timeoutDate), currentEmail);
-            if (1 != rows)
-                throw new SecurityManager.UserManagementException(requestedEmail, "Unexpected number of rows returned when setting verification: " + rows);
-            addToUserHistory(getUser(userId), currentUser + " requested email address change from " + currentEmail + " to " + requestedEmail +
-                    " with token '" + verificationToken + "' and timeout date '" + Date.from(timeoutDate) + "'.");
+            DbScope scope = CORE.getSchema().getScope();
+            try (DbScope.Transaction transaction = scope.ensureTransaction())
+            {
+                Instant timeoutDate = Instant.now().plus(VERIFICATION_EMAIL_TIMEOUT, ChronoUnit.MINUTES);
+                SqlExecutor executor = new SqlExecutor(CORE.getSchema());
+                int rows = executor.execute("UPDATE " + CORE.getTableInfoLogins() + " SET RequestedEmail=?, Verification=?, VerificationTimeout=? WHERE Email=?",
+                        requestedEmail, verificationToken, Date.from(timeoutDate), currentEmail);
+                if (1 != rows)
+                    throw new SecurityManager.UserManagementException(requestedEmail, "Unexpected number of rows returned when setting verification: " + rows);
+                addToUserHistory(getUser(userId), currentUser + " requested email address change from " + currentEmail + " to " + requestedEmail +
+                        " with token '" + verificationToken + "' and timeout date '" + Date.from(timeoutDate) + "'.");
+                transaction.commit();
+            }
         }
-
-        clearUserList();
     }
 
     public static void changeEmail(boolean isAdmin, int userId, String oldEmail, String newEmail, String verificationToken, User currentUser)
@@ -527,11 +530,6 @@ public class UserManager
     {
         addToUserHistory(getUser(userId), currentUser + " tried to change an email address from " + oldEmail + " to " + newEmail +
                 " with token '" + verificationToken + "', but the verification token for that email address was not correct.");
-    }
-
-    public static Logger getLOG()
-    {
-        return LOG;
     }
 
     public static VerifyEmail getVerifyEmail(ValidEmail email)
