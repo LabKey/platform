@@ -360,7 +360,7 @@ public class StudyExportTest extends StudyManualTest
 
         // check to see that data in the specimen archive was merged correctly:
         clickFolder(getFolderName());
-        clickAndWait(Locator.linkWithText("By Individual Vial"));
+        clickAndWait(Locator.linkContainingText("By Individual Vial"));
         _extHelper.clickMenuButton("Page Size", "Show All");
         assertTextPresent("DRT000XX-01");
         clickAndWait(Locator.linkWithText("Search"));
