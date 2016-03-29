@@ -8,13 +8,13 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
     singleton : true,
     alternateClassName : ['LABKEY.study.DataViewUtil'],
 
-    MODELS_DEFINED : false,
+    constructor : function(config) {
+        this.callParent([config]);
+
+        this.defineModels();
+    },
 
     defineModels : function() {
-
-        if (this.MODELS_DEFINED) {
-            return;
-        }
 
         if (!Ext4.ModelManager.isRegistered('Dataset.Browser.View')) {
             Ext4.define('Dataset.Browser.View', {
@@ -81,6 +81,7 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
         if (!Ext4.ModelManager.isRegistered('Dataset.Browser.Category')) {
             Ext4.define('Dataset.Browser.Category', {
                 extend : 'Ext.data.Model',
+                idProperty: 'rowid',
                 fields : [
                     {name : 'created'},
                     {name : 'createdBy'},
@@ -104,15 +105,11 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
                 ]
             });
         }
-
-        this.MODELS_DEFINED = true;
     },
 
     getUsersStore : function() {
 
-        this.defineModels();
-
-        var config = {
+        return Ext4.create('Ext.data.Store', {
             model   : 'LABKEY.data.User',
             autoLoad: true,
             pageSize: 10000,
@@ -134,9 +131,7 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
                     s.insert(0, {UserId : -1, DisplayName : 'None'});
                 }
             }
-        };
-
-        return Ext4.create('Ext.data.Store', config);
+        });
     },
 
     getViewCategoriesStore : function(opts) {
@@ -147,8 +142,6 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
         if (options.index == undefined) {
             options.index = 1;
         }
-
-        this.defineModels();
 
         var config = {
             pageSize: 100,
@@ -231,8 +224,6 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
 
     getManageCategoriesDialog : function() {
 
-        this.defineModels();
-
         var cellEditing = Ext4.create('Ext.grid.plugin.CellEditing', {
             pluginId : 'categorycell',
             clicksToEdit: 2
@@ -248,9 +239,10 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
         var zix = new Ext4.ZIndexManager(this);
 
         var grid = Ext4.create('Ext.grid.Panel', {
-            store    : store,
-            border   : false, frame: false,
-            scroll   : 'vertical',
+            store: store,
+            border: false,
+            frame: false,
+            scroll: 'vertical',
             bubbleEvents : ['categorychange'],
             columns  : [{
                 xtype    : 'templatecolumn',
@@ -286,14 +278,11 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
                     dragText: 'Drag and drop to reorganize'
                 }],
                 listeners : {
-                    drop : function() {
-                        var s = grid.getStore();
-                        var display = 1;
-                        s.each(function(rec){
-                            rec.set('displayOrder', display);
+                    drop : function(node, data) {
+                        data.view.getStore().each(function(rec, i) {
+                            rec.set('displayOrder', i+1);
                             rec.setDirty();
-                            display++;
-                        }, this);
+                        });
                     }
                 }
             },
@@ -331,16 +320,19 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
                     if (rec.data && rec.data.rowid == 0) { return; }
 
                     if (w && w.isVisible()) {
-                        var box = w.getBox();
 
+                        var box = w.getBox();
                         var sw = Ext4.getCmp(subwinID);
+                        var pid = rec.data.rowid;
+
                         if (sw) {
                             var s = sw.getComponent(sw.gid).getStore();
-                            s.getProxy().extraParams['parent'] = rec.data.rowid;
+                            s.getProxy().extraParams['parent'] = pid;
                             s.load();
-                            sw.setParent(rec.data.rowid);
-                            if (!sw.isVisible())
+                            sw.setParent(pid);
+                            if (!sw.isVisible()) {
                                 sw.show();
+                            }
                         }
                         else {
                             var gid = Ext4.id();
@@ -348,22 +340,23 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
                                 id : subwinID,
                                 width : 250,
                                 height : 300,
-                                x : box.x+box.width, y : box.y,
+                                x: box.x + box.width,
+                                y: box.y,
                                 autoShow : true,
                                 cls : 'data-window',
                                 title : 'Subcategories',
                                 draggable : false,
                                 resizable : false,
-                                closable : true,
+                                closable: false,
                                 floatable : true,
                                 gid : gid,
-                                items : [this.getCategoryGrid(grid, rec.data.rowid, gid, zix)],
+                                items : [this.getCategoryGrid(grid, pid, gid, zix)],
                                 listeners : {
                                     close : function(p) {
                                         p.destroy();
                                     }
                                 },
-                                pid : rec.data.rowid,
+                                pid: pid,
                                 setParent : function(pid) {
                                     this.pid = pid;
                                 },
@@ -372,14 +365,12 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
                                     text : 'New Subcategory',
                                     handler : function(b) {
                                         var grid = Ext4.getCmp(gid);
-                                        var store = grid.getStore();
-                                        var p = b.up('window').getParentId();
                                         var r = Ext4.ModelManager.create({
-                                            label        : 'New Subcategory',
-                                            displayOrder : 0,
-                                            parent       : p
+                                            label: 'New Subcategory',
+                                            displayOrder: 0,
+                                            parent: b.up('window').getParentId()
                                         }, 'Dataset.Browser.Category');
-                                        store.insert(0, r);
+                                        grid.getStore().insert(0, r);
                                         grid.getPlugin('subcategorycell').startEditByPosition({row : 0, column : 0});
                                     }
                                 }]
@@ -403,6 +394,7 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
             layout : 'fit',
             cls    : 'data-window',
             modal  : true,
+            closable: false,
             draggable : false,
             defaults  : {
                 frame : false
@@ -415,28 +407,29 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
                         label        : 'New Category',
                         displayOrder : 0
                     }, 'Dataset.Browser.Category');
-                    store.insert(0, r);
+                    grid.getStore().insert(0, r);
                     cellEditing.startEditByPosition({row : 0, column : 0});
 
                     // hide subcategory
                     if (this._subwinID) {
                         var sw = Ext4.getCmp(this._subwinID);
-                        if (sw && sw.isVisible())
+                        if (sw && sw.isVisible()) {
                             sw.hide();
+                        }
                     }
                 }
             },{
-                text    : 'Done',
-                handler : function() {
+                text: 'Done',
+                handler: function() {
                     grid.getStore().sync({
-                        success : function() {
-                        },
-                        scope : this
+                        success : function() {},
+                        scope: this
                     });
+
                     dialog.fireEvent('afterchange', dialog);
                     dialog.close();
                 },
-                scope : this
+                scope: this
             }],
             listeners : {
                 beforeclose : function() {
@@ -468,9 +461,30 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
 
         var store = this.initializeCategoriesStore({categoryId : categoryid});
 
-        var grid = Ext4.create('Ext.grid.Panel', {
+        function syncSaveAndLoad() {
+            store.sync({
+                success : function() {
+                    store.load();
+                },
+                failure : function(batch) {
+                    if (batch.operations && batch.operations.length > 0) {
+                        if (!batch.operations[0].request.scope.reader.jsonData.success) {
+                            var mb = Ext4.Msg.alert('Category Management', batch.operations[0].request.scope.reader.jsonData.message);
+                            idxMgr.register(mb);
+                        }
+                    }
+                    else {
+                        Ext4.Msg.alert('Category Management', 'Failed to save updates.');
+                        idxMgr.register(mb);
+                    }
+                    store.load();
+                }
+            });
+        }
+
+        return Ext4.create('Ext.grid.Panel', {
             id : gridid || Ext4.id(),
-            store   : store,
+            store: store,
             columns : [{
                 xtype    : 'templatecolumn',
                 text     : 'Subcategory',
@@ -497,26 +511,28 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
                     scope : this
                 }
             }],
+            viewConfig : {
+                stripRows : true,
+                plugins   : [{
+                    ptype : 'gridviewdragdrop',
+                    dragText: 'Drag and drop to reorganize'
+                }],
+                listeners : {
+                    drop : function(node, data) {
+
+                        // update the displayOrder in the subCategory store
+                        data.view.getStore().each(function(rec, i) {
+                            rec.set('displayOrder', i+1);
+                            rec.setDirty();
+                        });
+
+                        syncSaveAndLoad();
+                    }
+                }
+            },
             listeners : {
                 edit : function(editor, e) {
-                    e.grid.getStore().sync({
-                        success : function() {
-                            e.grid.getStore().load();
-                        },
-                        failure : function(batch) {
-                            if (batch.operations && batch.operations.length > 0) {
-                                if (!batch.operations[0].request.scope.reader.jsonData.success) {
-                                    var mb = Ext4.Msg.alert('Category Management', batch.operations[0].request.scope.reader.jsonData.message);
-                                    idxMgr.register(mb);
-                                }
-                            }
-                            else {
-                                Ext4.Msg.alert('Category Managment', 'Failed to save updates.');
-                                idxMgr.register(mb);
-                            }
-                            e.grid.getStore().load();
-                        }
-                    });
+                    syncSaveAndLoad();
                 }
             },
             mutliSelect : false,
@@ -525,19 +541,18 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
             selType : 'rowmodel',
             scope   : this
         });
-
-        return grid;
     },
 
     /**
      * @private
+     * @param grid
      * @param store
      * @param idx
      * @param idxMgr
      * @param subcategory
      */
     onDeleteCategory : function(grid, store, idx, idxMgr, subcategory) {
-        var label = store.getAt(idx).data.label;
+        var label = store.getAt(idx).get('label');
 
         // hide subcategory
         if (!subcategory && this._subwinID) {
@@ -576,8 +591,7 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
      */
     initializeCategoriesStore : function(opts) {
 
-        var options = {};
-        Ext4.apply(options, opts, {index : 1});
+        var options = Ext4.apply({}, opts, {index : 1});
 
         var extraParams = {
             // These parameters are required for specific webpart filtering
@@ -590,9 +604,9 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
             extraParams.parent = -1;
         }
 
-        var config = {
+        return Ext4.create('Ext.data.Store', {
             pageSize: 100,
-            model   : 'Dataset.Browser.Category',
+            model: 'Dataset.Browser.Category',
             autoLoad: true,
             autoSync: false,
             proxy   : {
@@ -610,8 +624,6 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
             listeners : {
                 load : function(s) { s.sort('displayOrder', 'ASC'); }
             }
-        };
-
-        return Ext4.create('Ext.data.Store', config);
+        });
     }
 });
