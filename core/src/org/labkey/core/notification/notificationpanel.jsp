@@ -3,7 +3,11 @@
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <style>
-    div.lk-notificationpanel
+    A.labkey-menu-text-link I
+    {
+        font-size:120%;
+    }
+    DIV.lk-notificationpanel
     {
         position:fixed; right:0; top:0;
         background-color: #323336;
@@ -11,12 +15,12 @@
         height:100%;
         width:400px;
     }
-    div.lk-notification
+    DIV.lk-notification
     {
         color:#ffffff;
         padding:10px;
     }
-    .lk-notificationpanel a.lk-action
+    .lk-notificationpanel A.lk-action
     {
         color:#aaaaaa;
     }
@@ -30,8 +34,6 @@
         border:solid 1px #000;
         padding:10px;
     }
-
-
 </style>
 <%
     List<Notification> notifications = (List<Notification>) HttpView.currentModel();
@@ -56,7 +58,7 @@ LABKEY.notifications.markAsSeen = function(el)
     $(el).addClass('labkey-hidden');
 }
 </script>
-<a href=# class='labkey-menu-text-link' onclick="return LABKEY.notifications.showNotificationsPanel()"><%=notifications.size()%></a>
+<a href=# class='labkey-menu-text-link' onclick="return LABKEY.notifications.showNotificationsPanel()"><i class="fa fa-inbox"></i>&nbsp;<%=notifications.size()%></a>
 <div class="labkey-hidden lk-notificationpanel" style="" id="labkey-notifications-panel">
 <div>
     <img style="float:left;" src="<%=contextPath%>/_images/close.png" onclick="return LABKEY.notifications.hideNotificationsPanel()" alt="close">
