@@ -112,7 +112,7 @@
 
     if (bean.getHasUpdatePermissions())
     {
-        %><td><%= textLink("new " + names.singularName.getSource().toLowerCase(), PageFlowUtil.getLastFilter(context, IssuesController.issueURL(c, InsertAction.class)))%></td><%
+        %><td><%= textLink("new " + names.singularName.toLowerCase(), PageFlowUtil.getLastFilter(context, IssuesController.issueURL(c, InsertAction.class)))%></td><%
     }%>
 
     <td><%= textLink("return to grid", PageFlowUtil.getLastFilter(context, IssuesController.issueURL(c, ListAction.class)).deleteParameter("error"))%></td><%

@@ -57,7 +57,7 @@ public class WikiCache
 
     public static void uncache(Container c, Wiki wiki, boolean uncacheContainerContent)
     {
-        String name = wiki.getName().getSource();
+        String name = wiki.getName();
         BLOCKING_CACHE.remove(getCacheKey(c, name));
 
         if (uncacheContainerContent)

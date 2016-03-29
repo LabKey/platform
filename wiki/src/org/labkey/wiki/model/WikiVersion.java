@@ -16,9 +16,9 @@
 
 package org.labkey.wiki.model;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
-import org.labkey.api.util.HString;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.wiki.WikiRenderer;
@@ -44,21 +44,21 @@ public class WikiVersion
     private int _rowId;
     private String _pageEntityId;
     private int _version;
-    private HString _title;
+    private String _title;
     private String _body;
     private int _createdBy;
     private Date _created;
     private WikiRendererType _rendererType;
     private boolean _cache = true;
 
-    private HString _wikiName;
+    private String _wikiName;
 
     public WikiVersion()
     {
         MemTracker.getInstance().put(this);
     }
 
-    public WikiVersion(HString wikiname)
+    public WikiVersion(String wikiname)
     {
         _wikiName = wikiname;
         MemTracker.getInstance().put(this);
@@ -80,12 +80,12 @@ public class WikiVersion
         MemTracker.getInstance().put(this);
     }
 
-    public HString getName()
+    public String getName()
     {
         return _wikiName;
     }
 
-    public void setName(HString wikiname)
+    public void setName(String wikiname)
     {
         _wikiName = wikiname;
     }
@@ -136,14 +136,14 @@ public class WikiVersion
         return WikiManager.get().formatWiki(c, wiki, this).getClientDependencies();
     }
 
-    public HString getTitle()
+    public String getTitle()
     {
         if (null == _title)
-            _title = (null == _wikiName || HString.eq(_wikiName, "default")) ? new HString("Wiki", false) : _wikiName;
+            _title = (null == _wikiName || StringUtils.equals(_wikiName, "default")) ? "Wiki" : _wikiName;
         return _title;
     }
 
-    public void setTitle(HString title)
+    public void setTitle(String title)
     {
         _title = title;
     }
@@ -205,7 +205,7 @@ public class WikiVersion
 
     public WikiRenderer getRenderer(String hrefPrefix,
                                     String attachPrefix,
-                                    Map<HString, HString> nameTitleMap,
+                                    Map<String, String> nameTitleMap,
                                     Collection<? extends Attachment> attachments)
     {
         if (_rendererType == null)

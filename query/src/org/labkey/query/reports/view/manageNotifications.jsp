@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.api.reports.model.ViewCategory"%>
 <%@ page import="org.labkey.api.reports.model.ViewCategoryManager.ViewCategoryTreeNode"%>
-<%@ page import="org.labkey.api.util.ReturnURLString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -33,7 +32,7 @@
 <%
     JspView<NotificationsForm> me = (JspView<NotificationsForm>) HttpView.currentView();
     List<ViewCategoryTreeNode> categories = me.getModelBean().getCategorySubcriptionTree();
-    ReturnURLString returnURLString = me.getModelBean().getReturnUrl();
+    String returnURLString = me.getModelBean().getReturnUrl();
 %>
 
 <script type="text/javascript">

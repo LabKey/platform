@@ -89,7 +89,6 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DetailsView;
@@ -381,22 +380,7 @@ public class ListController extends SpringActionController
         @NotNull
         public URLHelper getSuccessURL(ListDefinitionForm form)
         {
-            try
-            {
-                ReturnURLString ret = form.getReturnUrl();
-                if(ret != null)
-                {
-                    return new URLHelper(ret);
-                }
-                else
-                {
-                    return getBeginURL(getContainer());
-                }
-            }
-            catch (URISyntaxException e)
-            {
-                throw new RuntimeException(e);
-            }
+            return form.getReturnURLHelper(getBeginURL(getContainer()));
         }
     }
 
@@ -1188,10 +1172,7 @@ public class ListController extends SpringActionController
 
         public ActionURL getSuccessURL(ListDefinitionForm form)
         {
-            ReturnURLString returnURLString = form.getReturnUrl();
-            if (null != returnURLString)
-                return new ActionURL(returnURLString);
-            return getBeginURL(getContainer());
+            return form.getReturnActionURL( getBeginURL(getContainer()));
         }
 
         public NavTree appendNavTrail(NavTree root)

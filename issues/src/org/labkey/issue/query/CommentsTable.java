@@ -54,7 +54,7 @@ public class CommentsTable extends FilteredTable<IssuesQuerySchema>
 
         IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
         ColumnInfo issueIdColumn = wrapColumn(_rootTable.getColumn("IssueId"));
-        issueIdColumn.setLabel(names.singularName.getSource());
+        issueIdColumn.setLabel(names.singularName);
         ActionURL base = IssuesController.issueURL(_userSchema.getContainer(), IssuesController.DetailsAction.class);
         issueIdColumn.setURL(new DetailsURL(base, Collections.singletonMap("issueId", "IssueId")));
         addColumn(issueIdColumn);

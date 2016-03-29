@@ -127,7 +127,6 @@ import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.GridView;
@@ -148,8 +147,6 @@ import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.api.writer.ZipUtil;
-import org.labkey.folder.xml.FolderDocument;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.SpecimenManager;
@@ -3209,9 +3206,9 @@ public class StudyController extends BaseStudyController
     {
         private StudyImpl _study;
         private List<QCState> _states;
-        private ReturnURLString _returnUrl;
+        private String _returnUrl;
 
-        public ManageQCStatesBean(StudyImpl study, ReturnURLString returnUrl)
+        public ManageQCStatesBean(StudyImpl study, String returnUrl)
         {
             _study = study;
             _returnUrl = returnUrl;
@@ -3229,13 +3226,13 @@ public class StudyController extends BaseStudyController
             return _study;
         }
 
-        public ReturnURLString getReturnUrl()
+        public String getReturnUrl()
         {
             return _returnUrl;
         }
     }
 
-    public static class ManageQCStatesForm
+    public static class ManageQCStatesForm extends ReturnUrlForm
     {
         private int[] _ids;
         private String[] _labels;
@@ -3250,7 +3247,7 @@ public class StudyController extends BaseStudyController
         private Integer _defaultDirectEntryQCState;
         private boolean _showPrivateDataByDefault;
         private boolean _blankQCStatePublic;
-        private ReturnURLString _returnUrl;
+        private String _returnUrl;
 
         public int[] getIds()
         {
@@ -3370,16 +3367,6 @@ public class StudyController extends BaseStudyController
         public void setShowPrivateDataByDefault(boolean showPrivateDataByDefault)
         {
             _showPrivateDataByDefault = showPrivateDataByDefault;
-        }
-
-        public ReturnURLString getReturnUrl()
-        {
-            return _returnUrl;
-        }
-
-        public void setReturnUrl(ReturnURLString returnUrl)
-        {
-            _returnUrl = returnUrl;
         }
 
         public boolean isBlankQCStatePublic()

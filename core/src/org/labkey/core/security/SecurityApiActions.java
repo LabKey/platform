@@ -46,7 +46,6 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.Dataset;
-import org.labkey.api.util.HString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -1681,7 +1680,7 @@ public class SecurityApiActions
     public static class RenameForm
     {
         private int _id = -1;
-        private HString _newName;
+        private String _newName;
 
         public int getId()
         {
@@ -1693,16 +1692,17 @@ public class SecurityApiActions
             _id = id;
         }
 
-        public HString getNewName()
+        public String getNewName()
         {
             return _newName;
         }
 
-        public void setNewName(HString newName)
+        public void setNewName(String newName)
         {
             _newName = newName;
         }
     }
+
 
     @RequiresPermission(AdminPermission.class)
     @CSRF
@@ -1894,15 +1894,15 @@ public class SecurityApiActions
 
     public static class CreateNewUserForm
     {
-        private HString _email;
+        private String _email;
         private boolean _sendEmail = true;
 
-        public HString getEmail()
+        public String getEmail()
         {
             return _email;
         }
 
-        public void setEmail(HString email)
+        public void setEmail(String email)
         {
             _email = email;
         }
@@ -1924,7 +1924,7 @@ public class SecurityApiActions
     {
         public ApiResponse execute(CreateNewUserForm form, BindException errors) throws Exception
         {
-            if (null == form.getEmail() || form.getEmail().trim().length() == 0)
+            if (null == StringUtils.trimToNull(form.getEmail()))
                 throw new IllegalArgumentException("You must specify a valid email address in the 'email' parameter!");
 
             //FIX: 8585 -- must have Admin perm on the project as well as the current container
@@ -1936,7 +1936,7 @@ public class SecurityApiActions
 
             try
             {
-                email = new ValidEmail(form.getEmail().getSource().trim());
+                email = new ValidEmail(form.getEmail().trim());
             }
             catch (ValidEmail.InvalidEmailException e)
             {

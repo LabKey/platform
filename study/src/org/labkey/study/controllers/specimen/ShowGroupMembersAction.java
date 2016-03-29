@@ -25,7 +25,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -142,13 +141,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
 
     public ActionURL getSuccessURL(UpdateGroupForm form)
     {
-        ReturnURLString returnURL = form.getReturnUrl();
-        if (null != returnURL && !returnURL.isEmpty())
-            return new ActionURL(returnURL.getSource());
-        else
-        {
-            return new ActionURL(SpecimenController.ManageActorsAction.class, getContainer());
-        }
+        return form.getReturnActionURL(new ActionURL(SpecimenController.ManageActorsAction.class, getContainer()));
     }
 
     public NavTree appendNavTrail(NavTree root)
@@ -239,9 +232,9 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
         private LocationImpl _location;
         private User[] _members;
         private String _ldapDomain;
-        private ReturnURLString _returnUrl;
+        private String _returnUrl;
 
-        public GroupMembersBean(SpecimenRequestActor actor, LocationImpl location, User[] members, ReturnURLString returnUrl)
+        public GroupMembersBean(SpecimenRequestActor actor, LocationImpl location, User[] members, String returnUrl)
         {
             _actor = actor;
             _location = location;
@@ -270,7 +263,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
             return _ldapDomain;
         }
 
-        public ReturnURLString getReturnUrl()
+        public String getReturnUrl()
         {
             return _returnUrl;
         }

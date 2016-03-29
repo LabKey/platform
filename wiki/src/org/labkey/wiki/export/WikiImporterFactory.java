@@ -28,7 +28,6 @@ import org.labkey.api.attachments.InputStreamAttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
-import org.labkey.api.util.HString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.wiki.WikiRendererType;
@@ -147,7 +146,7 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
             {
                 // Look up the parent in the database because it's possible that it wasn't included in the archive
                 // that we imported, but was already present
-                Wiki parentWiki = WikiSelectManager.getWiki(ctx.getContainer(), new HString(entry.getValue()));
+                Wiki parentWiki = WikiSelectManager.getWiki(ctx.getContainer(), entry.getValue());
                 if (parentWiki == null)
                 {
                     ctx.getLogger().warn("Could not find parent wiki: " + entry.getValue());
@@ -163,14 +162,14 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
 
         private Wiki importWiki(String name, String title, boolean shouldIndex, boolean showAttachments, VirtualFile wikiSubDir, ImportContext ctx, int displayOrder) throws IOException, SQLException, ImportException
         {
-            Wiki existingWiki = WikiSelectManager.getWiki(ctx.getContainer(), new HString(name));
+            Wiki existingWiki = WikiSelectManager.getWiki(ctx.getContainer(), name);
             List<String> existingAttachmentNames = new ArrayList<>();
 
             Wiki wiki;
 
             if (existingWiki == null)
             {
-                wiki = new Wiki(ctx.getContainer(), new HString(name));
+                wiki = new Wiki(ctx.getContainer(), name);
             }
             else
             {
@@ -203,7 +202,7 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
                 }
             }
 
-            wikiversion.setTitle(title == null ? wiki.getName() : new HString(title));
+            wikiversion.setTitle(title == null ? wiki.getName() : title);
             if (existingWiki == null)
             {
                 WikiManager.get().insertWiki(ctx.getUser(), ctx.getContainer(), wiki, wikiversion, attachments);

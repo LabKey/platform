@@ -100,7 +100,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
         });
 
         issueIdColumn.setKeyField(true);
-        issueIdColumn.setLabel(names.singularName.getSource() + " ID");
+        issueIdColumn.setLabel(names.singularName + " ID");
         issueIdColumn.setURL(detailsURL);
         addColumn(issueIdColumn);
 

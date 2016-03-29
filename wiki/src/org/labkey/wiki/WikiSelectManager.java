@@ -26,7 +26,6 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.util.HString;
 import org.labkey.api.view.NavTree;
 import org.labkey.wiki.WikiCache.WikiCacheLoader;
 import org.labkey.wiki.model.Wiki;
@@ -52,7 +51,7 @@ import java.util.Set;
 public class WikiSelectManager
 {
     // List of page names in this folder, in depth-first tree order
-    public static List<HString> getPageNames(Container c)
+    public static List<String> getPageNames(Container c)
     {
         return getWikiCollections(c).getNames();
     }
@@ -73,7 +72,7 @@ public class WikiSelectManager
 
 
     // Wiki name -> current title map, in depth-first tree order
-    public static Map<HString, HString> getNameTitleMap(Container c)
+    public static Map<String, String> getNameTitleMap(Container c)
     {
         return getWikiCollections(c).getNameTitleMap();
     }
@@ -82,7 +81,7 @@ public class WikiSelectManager
     // Get a single wiki by rowId
     public static Wiki getWiki(Container c, int rowId)
     {
-        HString name = getWikiCollections(c).getName(rowId);
+        String name = getWikiCollections(c).getName(rowId);
 
         if (null == name)
             return null;
@@ -99,13 +98,13 @@ public class WikiSelectManager
 
 
     // Get a single wiki by name
-    public static Wiki getWiki(Container c, final HString name)
+    public static Wiki getWiki(Container c, final String name)
     {
         if (name == null)
         {
             return null;
         }
-        return WikiCache.getWiki(c, name.getSource(), new WikiCacheLoader<Wiki>()
+        return WikiCache.getWiki(c, name, new WikiCacheLoader<Wiki>()
         {
             @Override
             public Wiki load(String key, Container c)
@@ -129,7 +128,7 @@ public class WikiSelectManager
 
 
     // Available outside this class only to support junit tests
-    static Wiki getWikiFromDatabase(Container c, HString name)
+    static Wiki getWikiFromDatabase(Container c, String name)
     {
         if (name == null)
             return null;
@@ -229,7 +228,7 @@ public class WikiSelectManager
     }
 
     // Single WikiTree
-    public static WikiTree getWikiTree(Container c, HString name)
+    public static WikiTree getWikiTree(Container c, String name)
     {
         return getWikiCollections(c).getWikiTree(name);
     }

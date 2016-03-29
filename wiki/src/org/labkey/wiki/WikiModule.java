@@ -32,7 +32,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.roles.DeveloperRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.HString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartFactory;
@@ -178,9 +177,9 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
 
     private void loadWikiContent(Container c, User user, String name, String title, String resource, WikiRendererType renderAs)
     {
-        Wiki wiki = new Wiki(c, new HString(name));
+        Wiki wiki = new Wiki(c, name);
         WikiVersion wikiversion = new WikiVersion();
-        wikiversion.setTitle(new HString(title));
+        wikiversion.setTitle(title);
 
         InputStream is = getClass().getResourceAsStream(resource);
         String body = PageFlowUtil.getStreamContentsAsString(is);

@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.HString"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
@@ -26,7 +25,7 @@
     JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
     Portal.WebPart webPart = me.getModelBean();
     String title = webPart.getPropertyMap().get("title");
-    HString singularName = IssueManager.getEntryTypeNames(getContainer()).singularName;
+    String singularName = IssueManager.getEntryTypeNames(getContainer()).singularName;
 %>
 <% // Post to current action; URL includes pageId and index parameters %>
 <labkey:form name="frmCustomize" method="post">

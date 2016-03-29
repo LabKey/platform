@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils"%>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.util.HString" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
@@ -227,10 +226,10 @@ function restoreDefaultPage()
             <%}
             else
             {
-                for (Map.Entry<HString, HString> entry : me.getContainerNameTitleMap().entrySet())
+                for (Map.Entry<String, String> entry : me.getContainerNameTitleMap().entrySet())
                 {
-                    HString name = entry.getKey();
-                    HString title = entry.getValue();
+                    String name = entry.getKey();
+                    String title = entry.getValue();
 
                     //if there's a "default" page and no other page has been selected as default, select it.
                     if (name.equalsIgnoreCase("default") && webPart.getPropertyMap().get("name") == null)

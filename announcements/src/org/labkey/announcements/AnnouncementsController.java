@@ -96,7 +96,6 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
@@ -1305,9 +1304,9 @@ public class AnnouncementsController extends SpringActionController
 
             // Needs to support non-ActionURL (e.g., an HTML page using the client API with embedded discussion webpart)
             // so we can't use getSuccessURL()
-            ReturnURLString url = form.getReturnUrl();
-            if (null != url)
-                throw new RedirectException(form.getReturnUrl());
+            URLHelper urlHelper = form.getReturnURLHelper();
+            if (null != urlHelper)
+                throw new RedirectException(urlHelper);
             else
                 throw new RedirectException(new ActionURL(ThreadAction.class, getContainer()).addParameter("rowId",ann.getRowId()));
         }

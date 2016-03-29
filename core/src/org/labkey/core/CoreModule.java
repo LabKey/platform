@@ -860,7 +860,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 StringExpressionFactory.TestCase.class,
                 Path.TestCase.class,
                 Lsid.TestCase.class,
-                HString.TestCase.class,
                 PageFlowUtil.TestCase.class,
                 ResultSetUtil.TestCase.class,
                 ArrayListMap.TestCase.class,

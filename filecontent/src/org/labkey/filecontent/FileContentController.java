@@ -1032,8 +1032,8 @@ public class FileContentController extends SpringActionController
 
             properties.put("typeURI", uri);
             properties.put("domainName", FileContentServiceImpl.PROPERTIES_DOMAIN);
-            properties.put(ActionURL.Param.returnUrl.name(), form.getReturnUrl()==null?null:form.getReturnUrl().getSource());
-            properties.put(ActionURL.Param.cancelUrl.name(), form.getReturnUrl()==null?null:form.getReturnUrl().getSource());
+            properties.put(ActionURL.Param.returnUrl.name(), form.getReturnUrl());
+            properties.put(ActionURL.Param.cancelUrl.name(), form.getReturnUrl());
 
             return new GWTView("org.labkey.filecontent.designer.FilePropertiesDesigner", properties);
         }

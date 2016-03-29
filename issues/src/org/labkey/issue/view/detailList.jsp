@@ -53,7 +53,7 @@
 %>
 <labkey:form name="jumpToIssue" action="<%=h(buildURL(IssuesController.JumpToIssueAction.class))%>" method="get">
 <table><tr>
-    <td><%= textLink("new " + names.singularName.getSource().toLowerCase(), IssuesController.issueURL(c, IssuesController.InsertAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
+    <td><%= textLink("new " + names.singularName.toLowerCase(), IssuesController.issueURL(c, IssuesController.InsertAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
     <td><%= textLink("view grid", IssuesController.issueURL(c, IssuesController.ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
     <td><%= textLink("print", printLink)%></td>
     <td>&nbsp;&nbsp;&nbsp;Jump to <%=h(names.singularName)%>: <input type="text" size="5" name="issueId"/></td>

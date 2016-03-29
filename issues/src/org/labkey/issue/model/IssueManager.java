@@ -63,7 +63,6 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.FileStream;
-import org.labkey.api.util.HString;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
@@ -797,8 +796,8 @@ public class IssueManager
 
     public static class EntryTypeNames
     {
-        public HString singularName = new HString("Issue", false);
-        public HString pluralName = new HString("Issues", false);
+        public String singularName = "Issue";
+        public String pluralName = "Issues";
 
         public String getIndefiniteSingularArticle()
         {
@@ -833,9 +832,9 @@ public class IssueManager
         Map<String,String> props = PropertyManager.getProperties(getInheritFromOrCurrentContainer(container), CAT_ENTRY_TYPE_NAMES);
         EntryTypeNames ret = new EntryTypeNames();
         if (props.containsKey(PROP_ENTRY_TYPE_NAME_SINGULAR))
-            ret.singularName = new HString(props.get(PROP_ENTRY_TYPE_NAME_SINGULAR), true);
+            ret.singularName =props.get(PROP_ENTRY_TYPE_NAME_SINGULAR);
         if (props.containsKey(PROP_ENTRY_TYPE_NAME_PLURAL))
-            ret.pluralName = new HString(props.get(PROP_ENTRY_TYPE_NAME_PLURAL), true);
+            ret.pluralName = props.get(PROP_ENTRY_TYPE_NAME_PLURAL);
         return ret;
     }
 
@@ -856,17 +855,17 @@ public class IssueManager
         Map<String,String> props = PropertyManager.getProperties(c, CAT_ENTRY_TYPE_NAMES);
         EntryTypeNames ret = new EntryTypeNames();
         if (props.containsKey(PROP_ENTRY_TYPE_NAME_SINGULAR))
-            ret.singularName = new HString(props.get(PROP_ENTRY_TYPE_NAME_SINGULAR), true);
+            ret.singularName = props.get(PROP_ENTRY_TYPE_NAME_SINGULAR);
         if (props.containsKey(PROP_ENTRY_TYPE_NAME_PLURAL))
-            ret.pluralName = new HString(props.get(PROP_ENTRY_TYPE_NAME_PLURAL), true);
+            ret.pluralName = props.get(PROP_ENTRY_TYPE_NAME_PLURAL);
         return ret;
     }
 
     public static void saveEntryTypeNames(Container container, EntryTypeNames names)
     {
             PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(container, CAT_ENTRY_TYPE_NAMES, true);
-            props.put(PROP_ENTRY_TYPE_NAME_SINGULAR, names.singularName.getSource());
-            props.put(PROP_ENTRY_TYPE_NAME_PLURAL, names.pluralName.getSource());
+            props.put(PROP_ENTRY_TYPE_NAME_SINGULAR, names.singularName);
+            props.put(PROP_ENTRY_TYPE_NAME_PLURAL, names.pluralName);
             props.save();
     }
 
@@ -1189,13 +1188,13 @@ public class IssueManager
         map.save();
     }
 
-    public static void setRequiredIssueFields(Container container, HString[] requiredFields)
+    public static void setRequiredIssueFields(Container container, String[] requiredFields)
     {
             final StringBuilder sb = new StringBuilder();
             if (requiredFields.length > 0)
             {
                 String sep = "";
-                for (HString field : requiredFields)
+                for (String field : requiredFields)
                 {
                     sb.append(sep);
                     sb.append(field);
@@ -1415,11 +1414,6 @@ public class IssueManager
             super(new Path("issue:" + String.valueOf(issue.getIssueId())));
             _issueId = issue.issueId;
             Map<String,Object> m = _issueFactory.toMap(issue, null);
-            for (Map.Entry<String,Object> e : m.entrySet())
-            {
-                if (e.getValue() instanceof HString)
-                    e.setValue(((HString)e.getValue()).getSource());
-            }
             // UNDONE: custom field names
             // UNDONE: user names
             m.remove("comments");

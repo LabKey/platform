@@ -25,7 +25,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.util.HString;
 import org.labkey.api.view.NavTree;
 import org.labkey.wiki.model.WikiTree;
 
@@ -51,10 +50,10 @@ public class WikiCollections
 {
     private final WikiTree _root = WikiTree.createRootWikiTree();
     private final Map<Integer, WikiTree> _treesByRowId = new LinkedHashMap<>();
-    private final Map<HString, WikiTree> _treesByName = new LinkedHashMap<>();
-    private final List<HString> _names = new ArrayList<>();
+    private final Map<String, WikiTree> _treesByName = new LinkedHashMap<>();
+    private final List<String> _names = new ArrayList<>();
     private final int _pageCount;
-    private final Map<HString, HString> _nameTitleMap = new LinkedHashMap<>();
+    private final Map<String, String> _nameTitleMap = new LinkedHashMap<>();
     private final List<NavTree> _navTree;
 
 
@@ -88,9 +87,9 @@ public class WikiCollections
             public void exec(ResultSet rs) throws SQLException
             {
                 int rowId = rs.getInt(1);
-                HString name = new HString(rs.getString(2));
+                String name = rs.getString(2);
                 int parentId = rs.getInt(3);
-                HString title = new HString(rs.getString(4));
+                String title = rs.getString(4);
 
                 assert !name.isEmpty();
                 assert !title.isEmpty();
@@ -110,7 +109,7 @@ public class WikiCollections
         _pageCount = _names.size();
 
         // Now create the name->title map
-        for (HString name : _names)
+        for (String name : _names)
             _nameTitleMap.put(name, _treesByName.get(name).getTitle());
 
         _navTree = createNavTree(c, true);
@@ -167,7 +166,7 @@ public class WikiCollections
         {
             if (!child.getName().startsWith("_") || showHidden)
             {
-                NavTree node = new NavTree(child.getTitle().getSource(), WikiController.getPageURL(c, child.getName()), true);
+                NavTree node = new NavTree(child.getTitle(), WikiController.getPageURL(c, child.getName()), true);
                 node.addChildren(createNavTree(c, rootId, child, showHidden));
                 node.setId(rootId);
                 elements.add(node);
@@ -192,7 +191,7 @@ public class WikiCollections
 
     // TODO: Return unmodifiable collections
 
-    @NotNull List<HString> getNames()
+    @NotNull List<String> getNames()
     {
         return _names;
     }
@@ -204,7 +203,7 @@ public class WikiCollections
     }
 
     // Returns null for non-existent wiki
-    @Nullable WikiTree getWikiTree(@Nullable HString name)
+    @Nullable WikiTree getWikiTree(@Nullable String name)
     {
         return _treesByName.get(name);
     }
@@ -216,7 +215,7 @@ public class WikiCollections
     }
 
     // Returns null for non-existent wiki, empty collection for existing but no children
-    @Nullable Collection<WikiTree> getChildren(@Nullable HString parentName)
+    @Nullable Collection<WikiTree> getChildren(@Nullable String parentName)
     {
         WikiTree parent = getWikiTree(parentName);
 
@@ -233,12 +232,12 @@ public class WikiCollections
     }
 
     // TODO: Change to return the root WikiTree?
-    Map<HString, HString> getNameTitleMap()
+    Map<String, String> getNameTitleMap()
     {
         return _nameTitleMap;
     }
 
-    HString getName(int rowId)
+    String getName(int rowId)
     {
         WikiTree tree = getWikiTree(rowId);
 

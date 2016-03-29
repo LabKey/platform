@@ -22,7 +22,6 @@ import org.labkey.api.attachments.DownloadURL;
 import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.util.HString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.wiki.WikiController;
 import org.labkey.wiki.WikiController.DownloadAction;
@@ -50,7 +49,7 @@ public class Wiki extends AttachmentParentEntity implements Serializable
     // name because that's what's on the URL
 
     private int _rowId;
-    private HString _name;
+    private String _name;
     private int _parent = -1;
     private float _displayOrder = 0;
     private Integer _pageVersionId;
@@ -62,14 +61,14 @@ public class Wiki extends AttachmentParentEntity implements Serializable
     }
 
 
-    public Wiki(Container c, HString name)
+    public Wiki(Container c, String name)
     {
         setContainerId(c.getId());
         _name = name;
     }
 
 
-    public ActionURL getWikiURL(Class<? extends Controller> actionClass, HString name)
+    public ActionURL getWikiURL(Class<? extends Controller> actionClass, String name)
     {
         return WikiController.getWikiURL(lookupContainer(), actionClass, name);
     }
@@ -143,13 +142,13 @@ public class Wiki extends AttachmentParentEntity implements Serializable
     }
 
 
-    public HString getName()
+    public String getName()
     {
         return _name;
     }
 
 
-    public void setName(HString name)
+    public void setName(String name)
     {
         _name = name;
     }

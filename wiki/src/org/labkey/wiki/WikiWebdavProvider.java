@@ -34,7 +34,6 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.HString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -142,15 +141,11 @@ public class WikiWebdavProvider implements WebdavService.Provider
         @NotNull
         public Collection<String> listNames()
         {
-            List<HString> names = WikiSelectManager.getPageNames(_c);
+            List<String> names = WikiSelectManager.getPageNames(_c);
             ArrayList<String> strs = new ArrayList<>();
             strs.add(WikiWriterFactory.WIKIS_FILENAME);
-
             if (names != null)
-            {
-                for (HString name : names)
-                    strs.add(name.getSource());
-            }
+                strs.addAll(names);
 
             return strs;
         }
@@ -258,15 +253,15 @@ public class WikiWebdavProvider implements WebdavService.Provider
                 {
                     WikiType wikiXml = wikis.addNewWiki();
                     Wiki wiki = WikiSelectManager.getWiki(_parent._c, wikiTree.getName());
-                    wikiXml.setName(wiki.getName().getSource());
+                    wikiXml.setName(wiki.getName());
                     Wiki parentWiki = wiki.getParentWiki();
                     if (parentWiki != null)
                     {
-                        wikiXml.setParent(parentWiki.getName().getSource());
+                        wikiXml.setParent(parentWiki.getName());
                     }
 
                     WikiVersion wikiVersion = wiki.getLatestVersion();
-                    wikiXml.setTitle(wikiVersion.getTitle().getSource());
+                    wikiXml.setTitle(wikiVersion.getTitle());
                     wikiXml.setShowAttachments(wiki.isShowAttachments());
                     wikiXml.setShouldIndex(wiki.isShouldIndex());
                 }
@@ -312,7 +307,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
             _c = folder._c;
             _containerId = _c.getId();
             setPolicy(_c.getPolicy());
-            _wiki = WikiSelectManager.getWiki(_c, new HString(name));
+            _wiki = WikiSelectManager.getWiki(_c, name);
             if (null != _wiki)
                 _attachments = AttachmentService.get().getAttachmentResource(getPath(), _wiki);
         }
@@ -389,7 +384,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
     static String getResourcePath(Wiki page)
     {
         String docname = getDocumentName(page);
-        return AbstractWebdavResource.c(page.getContainerPath(),WIKI_NAME,page.getName().getSource(),docname);
+        return AbstractWebdavResource.c(page.getContainerPath(),WIKI_NAME,page.getName(),docname);
     }
 
 
@@ -411,7 +406,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
         catch (IllegalArgumentException x)
         {
         }
-        return r.getDocumentName(wiki.getName().getSource());
+        return r.getDocumentName(wiki.getName());
     }
 
 
@@ -426,12 +421,12 @@ public class WikiWebdavProvider implements WebdavService.Provider
         String _name;
         String _body = null;
         WikiRendererType _type = WikiRendererType.HTML;
-        private HString _title;
+        private String _title;
 
         WikiPageResource(WikiFolder folder, Wiki wiki, String docName)
         {
             super(folder.getPath(), docName);
-            init(folder._c, wiki.getName().getSource(), wiki.getEntityId(), folder, folder._c.getPolicy(), new HashMap<String, Object>());
+            init(folder._c, wiki.getName(), wiki.getEntityId(), folder, folder._c.getPolicy(), new HashMap<String, Object>());
 
             _wiki = wiki;
             WikiVersion v = getWikiVersion();
@@ -441,7 +436,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
                 setBody(getWikiVersion().getBody());
                 _title = getWikiVersion().getTitle();
                 _type = getWikiVersion().getRendererTypeEnum();
-                _properties.put(SearchService.PROPERTY.title.toString(), v.getTitle().getSource());
+                _properties.put(SearchService.PROPERTY.title.toString(), v.getTitle());
             }
         }
 
@@ -516,7 +511,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
         @Override
         public String getDescription()
         {
-            return null != _title ? _title.toString() : null;
+            return null != _title ? _title : null;
         }
 
         @Override

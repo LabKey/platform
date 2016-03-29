@@ -113,7 +113,6 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.JspView;
@@ -510,7 +509,6 @@ public class AssayController extends SpringActionController
 
     public static class CreateAssayForm extends ProtocolIdForm
     {
-        private ReturnURLString returnURL;
         private String _assayContainer;
 
         public CreateAssayForm() { }

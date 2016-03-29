@@ -79,7 +79,6 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.URLHelper;
@@ -2415,19 +2414,20 @@ public class LoginController extends SpringActionController
     }
 
 
-    public static class TokenAuthenticationForm
+    public static class TokenAuthenticationForm extends ReturnUrlForm
     {
         String _labkeyToken;
-        ReturnURLString _returnUrl;
 
-        public ReturnURLString getReturnUrl()
+        @Override
+        public void setReturnUrl(String s)
         {
-            return _returnUrl;
+            super.setReturnUrl(s);
         }
 
-        public void setReturnUrl(ReturnURLString returnUrl)
+        @Override
+        public String getReturnUrl()
         {
-            _returnUrl = returnUrl;
+            return super.getReturnUrl();
         }
 
         public String getLabkeyToken()
@@ -2442,21 +2442,7 @@ public class LoginController extends SpringActionController
 
         public URLHelper getValidReturnUrl()
         {
-            URLHelper returnUrl = null;
-
-            if (null != getReturnUrl())
-            {
-                try
-                {
-                    returnUrl = new URLHelper(getReturnUrl());
-                }
-                catch (URISyntaxException e)
-                {
-                    // Bad URL case -- return null
-                }
-            }
-
-            return returnUrl;
+            return getReturnURLHelper();
         }
     }
 

@@ -18,7 +18,6 @@ package org.labkey.wiki.model;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.util.HString;
 
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -32,8 +31,8 @@ import java.util.LinkedHashSet;
 public class WikiTree
 {
     private final int _rowId;
-    private final HString _name;
-    private final HString _title;
+    private final String _name;
+    private final String _title;
     private final Collection<WikiTree> _children;
 
     private int _depth = -1;
@@ -44,7 +43,7 @@ public class WikiTree
         return new WikiTree(-1, null, null);
     }
 
-    public WikiTree(int rowId, HString name, HString title)
+    public WikiTree(int rowId, String name, String title)
     {
         _rowId = rowId;
         _name = name;
@@ -57,12 +56,12 @@ public class WikiTree
         return _rowId;
     }
 
-    public HString getName()
+    public String getName()
     {
         return _name;
     }
 
-    public HString getTitle()
+    public String getTitle()
     {
         return _title;
     }

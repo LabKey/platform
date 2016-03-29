@@ -56,7 +56,6 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.query.ResultsQueryView;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
@@ -101,7 +100,6 @@ public class CBCAssayController extends SpringActionController
         int _runId;
         int[] _objectId;
         String[] _sampleId;
-        ReturnURLString _returnURL;
 
         public int getRunId()
         {

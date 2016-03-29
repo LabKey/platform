@@ -20,7 +20,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
-import org.labkey.api.util.HString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
@@ -68,7 +67,7 @@ public abstract class BaseWikiView extends JspView<Object>
     }
 
 
-    protected void init(Container c, HString name)
+    protected void init(Container c, String name)
     {
         ViewContext context = getViewContext();
         User user = context.getUser();
@@ -80,21 +79,21 @@ public abstract class BaseWikiView extends JspView<Object>
         folderHasWikis = WikiSelectManager.hasPages(c);
 
         //set initial page title
-        HString title;
+        String title;
 
         if (isWebPart())
-            title = new HString("Wiki Web Part");
+            title ="Wiki Web Part";
         else
         {
             if (folderHasWikis)
                 title = name;
             else
-                title = new HString("Wiki");
+                title ="Wiki";
         }
 
         if (name == null)
         {
-            wiki = new Wiki(c, new HString("default", false));
+            wiki = new Wiki(c, "default");
             hasContent = false;
         }
         else
@@ -132,7 +131,7 @@ public abstract class BaseWikiView extends JspView<Object>
 
             //set title if page has content and user has permission to see it
             if (html != null && perms.allowRead(wiki))
-                title = getTitle() == null ? wikiVersion.getTitle() : new HString(getTitle());
+                title = getTitle() == null ? wikiVersion.getTitle() : getTitle();
 
             //what does "~" represent?
             if (!wiki.getName().startsWith("~"))
@@ -241,7 +240,7 @@ public abstract class BaseWikiView extends JspView<Object>
             }
         }
 
-        setTitle(title.getSource());
+        setTitle(title);
     }
 
     @Override

@@ -22,7 +22,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.HString;
 import org.labkey.api.util.TidyUtil;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.wiki.WikiRenderer;
@@ -45,7 +44,7 @@ public class HtmlRenderer implements WikiRenderer
 {
     private final String _hrefPrefix;
     private final String _attachPrefix;
-    private final Map<HString, HString> _nameTitleMap;
+    private final Map<String, String> _nameTitleMap;
     private final Map<String, Attachment> _attachments;
 
     private static Map<String, SubstitutionHandler> _substitutionHandlers = new HashMap<>();
@@ -58,7 +57,7 @@ public class HtmlRenderer implements WikiRenderer
     }
 
 
-    public HtmlRenderer(String hrefPrefix, String attachPrefix, Map<HString, HString> nameTitleMap, @Nullable Collection<? extends Attachment> attachments)
+    public HtmlRenderer(String hrefPrefix, String attachPrefix, Map<String, String> nameTitleMap, @Nullable Collection<? extends Attachment> attachments)
     {
         _hrefPrefix = hrefPrefix;
         _attachPrefix = attachPrefix;
@@ -107,7 +106,7 @@ public class HtmlRenderer implements WikiRenderer
                 if (href.startsWith("#"))
                     continue;
 
-                HString title = _nameTitleMap.get(new HString(href));
+                String title = _nameTitleMap.get(href);
                 if (null != title)
                 {
                     // UNDONE: why is l.getName() null???

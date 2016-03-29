@@ -16,6 +16,7 @@
 
 package org.labkey.cbcassay;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.DisplayColumn;
@@ -26,7 +27,6 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.query.AssayBaseQueryView;
-import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 
@@ -47,15 +47,7 @@ public class EditResultsQueryView extends AssayBaseQueryView
         super(protocol, schema, settings);
         _runId = runId;
         _provider = (CBCAssayProvider)AssayService.get().getProvider(_protocol);
-        _returnURL = returnURL;
-    }
-
-    public EditResultsQueryView(ExpProtocol protocol, AssayProtocolSchema schema, QuerySettings settings, int runId, ReturnURLString returnURL)
-    {
-        super(protocol, schema, settings);
-        _runId = runId;
-        _provider = (CBCAssayProvider)AssayService.get().getProvider(_protocol);
-        _returnURL = (null == returnURL || returnURL.isEmpty()) ? null : returnURL.getSource();
+        _returnURL = StringUtils.trimToNull(returnURL);
     }
 
     public DataView createDataView()

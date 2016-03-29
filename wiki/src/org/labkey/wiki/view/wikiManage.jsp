@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.util.HString"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -208,7 +207,7 @@
 <%= button("Edit Content").submit(true).onClick("document.manage.nextAction.value = " + PageFlowUtil.jsString(WikiController.NextAction.edit.name()) + "; return true;").attributes("title=\"Edit Content and Attachments\"")%>
 
 <script type="text/javascript">
-    existingWikiPages = [<% for (HString name : bean.pageNames) out.print(text(PageFlowUtil.jsString(name) + ",")); %>];
+    existingWikiPages = [<% for (String name : bean.pageNames) out.print(text(PageFlowUtil.jsString(name) + ",")); %>];
 
     function checkWikiName(name)
     {

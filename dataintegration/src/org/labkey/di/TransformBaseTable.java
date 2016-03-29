@@ -34,7 +34,6 @@ import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.util.HString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.di.pipeline.TransformRun;
@@ -325,7 +324,7 @@ abstract public class TransformBaseTable extends VirtualTable
                     String filename = filePath.substring(filePath.lastIndexOf("/") + 1);
                     ActionURL jobAction = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlShowFile(ctx.getContainer(), jobId, filename);
                     String onClickScript = dataRegionName + ShowLog + "(" + hq(jobAction.toString()) + "," + hq(filename) + ")";
-                    String link = PageFlowUtil.unstyledTextLink(statusValue, new HString("#viewLog"), onClickScript, null /*id*/);
+                    String link = PageFlowUtil.unstyledTextLink(statusValue, "#viewLog", onClickScript, null /*id*/);
                     out.write(link);
                     return;
                 }

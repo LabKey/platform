@@ -60,7 +60,6 @@ import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
-import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
@@ -1542,10 +1541,8 @@ public class ProjectController extends SpringActionController
         @Override
         public ModelAndView getView(ReturnUrlForm returnUrlForm, BindException errors) throws Exception
         {
-            ReturnURLString r = returnUrlForm.getReturnUrl();
-            if (null != r && !r.isEmpty())
-                throw new RedirectException(r);
-            throw new RedirectException(AppProps.getInstance().getHomePageUrl());
+            URLHelper r = returnUrlForm.getReturnURLHelper(new URLHelper(AppProps.getInstance().getHomePageUrl()));
+            throw new RedirectException(r);
         }
 
         @Override

@@ -23,7 +23,6 @@ import org.junit.Test;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.HString;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
@@ -87,7 +86,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
     private static final MessageFormat WIKI_LINK_FORMAT = new MessageFormat("<a class=\"{2}\" href=\"{0}\">{1}</a>");
     private static final MessageFormat WIKI_IMG_FORMAT = new MessageFormat("<img class=\"{2}\" src=\"{0}\" title=\"{1}\">");
 
-    private Map<HString, HString> _pageTitles;
+    private Map<String, String> _pageTitles;
     private Collection<? extends Attachment>  _attachments;
 
     public RadeoxRenderer()
@@ -98,7 +97,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
 
     // UNDONE: switch to format from prefix
     public RadeoxRenderer(String hrefPrefix, String attachPrefix,
-                          Map<HString, HString> pageTitles, @Nullable Collection<? extends Attachment> attachments)
+                          Map<String, String> pageTitles, @Nullable Collection<? extends Attachment> attachments)
     {
         this();
         if (null != hrefPrefix)
@@ -428,7 +427,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
             return true;
         if (null == _pageTitles)
             return false;
-        return _pageTitles.containsKey(new HString(s));
+        return _pageTitles.containsKey(s);
     }
 
 
@@ -486,9 +485,9 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
                 view = name.lastIndexOf('/') >= 0 ? name.substring(name.lastIndexOf('/')) : name;
             if (null != _pageTitles)
             {
-                HString title = _pageTitles.get(new HString(name));
+                String title = _pageTitles.get(name);
                 if (null != title)
-                    view = title.getSource();
+                    view = title;
             }
         }
 

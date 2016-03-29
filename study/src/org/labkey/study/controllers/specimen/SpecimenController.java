@@ -17,6 +17,7 @@
 package org.labkey.study.controllers.specimen;
 
 import gwt.client.org.labkey.study.StudyApplication;
+import org.apache.commons.io.Charsets;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -95,7 +96,6 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
 import org.labkey.api.view.Portal.WebPart;
@@ -285,7 +285,7 @@ public class SpecimenController extends BaseStudyController
         return getManageRequestURL(requestID, null);
     }
 
-    private ActionURL getManageRequestURL(int requestID, ReturnURLString returnUrl)
+    private ActionURL getManageRequestURL(int requestID, String returnUrl)
     {
         ActionURL url = new ActionURL(ManageRequestAction.class, getContainer());
         url.addParameter(IdForm.PARAMS.id, Integer.toString(requestID));
@@ -294,7 +294,7 @@ public class SpecimenController extends BaseStudyController
         return url;
     }
 
-    private ActionURL getExtendedRequestURL(int requestID, ReturnURLString returnUrl)
+    private ActionURL getExtendedRequestURL(int requestID, String returnUrl)
     {
         ActionURL url = new ActionURL(ExtendedSpecimenRequestAction.class, getContainer());
         url.addParameter(IdForm.PARAMS.id, Integer.toString(requestID));
@@ -649,7 +649,7 @@ public class SpecimenController extends BaseStudyController
     {
         private Vial _vial;
 
-        public SpecimenEventBean(Vial vial, ReturnURLString returnUrl)
+        public SpecimenEventBean(Vial vial, String returnUrl)
         {
             _vial = vial;
             setReturnUrl(returnUrl);
@@ -943,9 +943,9 @@ public class SpecimenController extends BaseStudyController
         protected List<String> _missingSpecimens = null;
         private Boolean _submissionResult;
         private Location[] _providingLocations;
-        private ReturnURLString _returnUrl;
+        private String _returnUrl;
 
-        public ManageRequestBean(ViewContext context, SpecimenRequest specimenRequest, boolean forExport, Boolean submissionResult, ReturnURLString returnUrl) throws SQLException, ServletException
+        public ManageRequestBean(ViewContext context, SpecimenRequest specimenRequest, boolean forExport, Boolean submissionResult, String returnUrl) throws SQLException, ServletException
         {
             super(context, SpecimenManager.getInstance().getRequestVials(specimenRequest), !forExport, !forExport, forExport, false);
             _submissionResult = submissionResult;
@@ -1070,12 +1070,12 @@ public class SpecimenController extends BaseStudyController
             return _providingLocations;
         }
 
-        public ReturnURLString getReturnUrl()
+        public String getReturnUrl()
         {
             return _returnUrl;
         }
 
-        public void setReturnUrl(ReturnURLString returnUrl)
+        public void setReturnUrl(String returnUrl)
         {
             _returnUrl = returnUrl;
         }
@@ -1435,7 +1435,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    public static class CreateSampleRequestForm implements HiddenFormInputGenerator
+    public static class CreateSampleRequestForm extends ReturnUrlForm implements HiddenFormInputGenerator
     {
         public enum PARAMS
         {
@@ -1450,7 +1450,7 @@ public class SpecimenController extends BaseStudyController
         private boolean[] _required;
         private boolean _fromGroupedView;
         private Integer _preferredLocation;
-        private ReturnURLString _returnUrl;
+        private String _returnUrl;
         private boolean _ignoreReturnUrl;
         private boolean _extendedRequestUrl;
         private String[] _sampleIds;
@@ -1564,12 +1564,12 @@ public class SpecimenController extends BaseStudyController
             _preferredLocation = preferredLocation;
         }
 
-        public ReturnURLString getReturnUrl()
+        public String getReturnUrl()
         {
             return _returnUrl;
         }
 
-        public void setReturnUrl(ReturnURLString returnUrl)
+        public void setReturnUrl(String returnUrl)
         {
             _returnUrl = returnUrl;
         }
@@ -1643,7 +1643,7 @@ public class SpecimenController extends BaseStudyController
         private String[] _inputValues;
         private int _selectedSite;
         private BindException _errors;
-        private ReturnURLString _returnUrl;
+        private String _returnUrl;
 
         public NewRequestBean(ViewContext context, SpecimenUtils.RequestedSpecimens requestedSpecimens, CreateSampleRequestForm form, BindException errors) throws SQLException
         {
@@ -1680,7 +1680,7 @@ public class SpecimenController extends BaseStudyController
             return _errors;
         }
 
-        public ReturnURLString getReturnUrl()
+        public String getReturnUrl()
         {
             return _returnUrl;
         }
@@ -1847,16 +1847,16 @@ public class SpecimenController extends BaseStudyController
             ActionURL modifiedReturnURL = null;
             if (createSampleRequestForm.isExtendedRequestUrl())
             {
-                return getExtendedRequestURL(_specimenRequest.getRowId(), modifiedReturnURL != null ? new ReturnURLString(modifiedReturnURL.getLocalURIString()) : null);
+                return getExtendedRequestURL(_specimenRequest.getRowId(), modifiedReturnURL != null ? modifiedReturnURL.getLocalURIString() : null);
             }
             if (createSampleRequestForm.getReturnUrl() != null)
             {
-                modifiedReturnURL = createSampleRequestForm.getReturnUrl().getActionURL();
+                modifiedReturnURL = createSampleRequestForm.getReturnActionURL();
             }
             if (modifiedReturnURL != null && !createSampleRequestForm.isIgnoreReturnUrl())
                 return modifiedReturnURL;
             else
-                return getManageRequestURL(_specimenRequest.getRowId(), modifiedReturnURL != null ? new ReturnURLString(modifiedReturnURL.getLocalURIString()) : null);
+                return getManageRequestURL(_specimenRequest.getRowId(), modifiedReturnURL != null ? modifiedReturnURL.getLocalURIString() : null);
         }
     }
 
@@ -2827,7 +2827,7 @@ public class SpecimenController extends BaseStudyController
                         TSVGridWriter tsvWriter = getUtils().getSpecimenListTsvWriter(request, originatingOrProvidingLocation, receivingLocation, type);
                         StringBuilder tsvBuilder = new StringBuilder();
                         tsvWriter.write(tsvBuilder);
-                        formFiles.add(new ByteArrayAttachmentFile(tsvWriter.getFilenamePrefix() + ".tsv", tsvBuilder.toString().getBytes(), "text/tsv"));
+                        formFiles.add(new ByteArrayAttachmentFile(tsvWriter.getFilenamePrefix() + ".tsv", tsvBuilder.toString().getBytes(Charsets.UTF_8), "text/tsv"));
                     }
 
                     if (form.isSendXls())
@@ -5842,7 +5842,7 @@ public class SpecimenController extends BaseStudyController
 
             if (form.getReturnUrl() != null)
             {
-                properties.put(ActionURL.Param.returnUrl.name(), form.getReturnUrl().getSource());
+                properties.put(ActionURL.Param.returnUrl.name(), form.getReturnUrl());
             }
 
             // hack for 4404 : Lookup picker performance is terrible when there are many containers

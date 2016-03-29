@@ -47,7 +47,6 @@ import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.HString;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -213,13 +212,13 @@ public class WikiManager implements WikiService
             //NOTE: getWikiByEntityId does not use the cache, so we'll get a fresh copy from the database
             wikiOld = getWikiByEntityId(c, wikiNew.getEntityId());
             WikiVersion versionOld = wikiOld.getLatestVersion();
-            String oldTitle = StringUtils.trimToEmpty(versionOld.getTitle().getSource());
+            String oldTitle = StringUtils.trimToEmpty(versionOld.getTitle());
             boolean rename = !wikiOld.getName().equals(wikiNew.getName());
 
             uncacheAllContent = rename
                     || wikiOld.getParent() != wikiNew.getParent()
                     || wikiOld.getDisplayOrder() != wikiNew.getDisplayOrder()
-                    || (null != versionNew && !oldTitle.equals(versionNew.getTitle().getSource()));
+                    || (null != versionNew && !oldTitle.equals(versionNew.getTitle()));
 
             //update Pages table
             //UNDONE: should take RowId, not EntityId
@@ -396,13 +395,13 @@ public class WikiManager implements WikiService
 
     public FormattedHtml formatWiki(Container c, Wiki wiki, WikiVersion wikiversion)
     {
-        String hrefPrefix = wiki.getWikiURL(WikiController.PageAction.class, HString.EMPTY).toString();
+        String hrefPrefix = wiki.getWikiURL(WikiController.PageAction.class, null).toString();
         String attachPrefix = null;
 
         if (null != wiki.getEntityId())
             attachPrefix = wiki.getAttachmentLink("");
 
-        Map<HString, HString> nameTitleMap = WikiSelectManager.getNameTitleMap(c);
+        Map<String, String> nameTitleMap = WikiSelectManager.getNameTitleMap(c);
 
         //get formatter specified for this version
         WikiRenderer w = wikiversion.getRenderer(hrefPrefix, attachPrefix, nameTitleMap, wiki.getAttachments());
@@ -411,14 +410,14 @@ public class WikiManager implements WikiService
     }
 
 
-    public static boolean wikiNameExists(Container c, HString wikiname)
+    public static boolean wikiNameExists(Container c, String wikiname)
     {
         return WikiSelectManager.getWiki(c, wikiname) != null;
     }
 
 
     //copies a single wiki page
-    public Wiki copyPage(User user, Container cSrc, Wiki srcPage, Container cDest, List<HString> destPageNames,
+    public Wiki copyPage(User user, Container cSrc, Wiki srcPage, Container cDest, List<String> destPageNames,
                           Map<Integer, Integer> pageIdMap, boolean fOverwrite)
             throws SQLException, IOException, AttachmentService.DuplicateFilenameException
     {
@@ -426,8 +425,8 @@ public class WikiManager implements WikiService
         WikiVersion srcLatestVersion = srcPage.getLatestVersion();
 
         //create new wiki page
-        HString srcName = srcPage.getName();
-        HString destName = srcName;
+        String srcName = srcPage.getName();
+        String destName = srcName;
         Wiki destPage = WikiSelectManager.getWiki(cDest, destName);
 
         //check whether name exists in destination container
@@ -503,9 +502,9 @@ public class WikiManager implements WikiService
         return newWikiPage;
     }
 
-    private boolean containsCaseInsensitive(HString str, List<HString> list)
+    private boolean containsCaseInsensitive(String str, List<String> list)
     {
-        for (HString s : list)
+        for (String s : list)
         {
             if (s.equalsIgnoreCase(str))
                 return true;
@@ -585,7 +584,7 @@ public class WikiManager implements WikiService
         }
         Container c = getContainerService().getForId(page.getContainerId());
         if (null != c)
-            indexWikis(null, c, null, page.getName().getSource());
+            indexWikis(null, c, null, page.getName());
     }
 
 
@@ -705,7 +704,7 @@ public class WikiManager implements WikiService
                 Wiki parent = new Wiki();
                 parent.setContainer(c.getId());
                 parent.setEntityId(entityId);
-                parent.setName(new HString(wikiName, false));
+                parent.setName(wikiName);
                 ids.put(entityId, parent);
                 titles.put(entityId, wikiTitle);
             }
@@ -767,7 +766,7 @@ public class WikiManager implements WikiService
 
         try
         {
-            Wiki wiki = WikiSelectManager.getWiki(c, new HString(name));
+            Wiki wiki = WikiSelectManager.getWiki(c, new String(name));
             if (null == wiki)
                 return null;
             WikiVersion version = wiki.getLatestVersion();
@@ -796,9 +795,9 @@ public class WikiManager implements WikiService
     @Override
     public void insertWiki(User user, Container c, String name, String body, WikiRendererType renderType, String title)
     {
-        Wiki wiki = new Wiki(c, new HString(name));
+        Wiki wiki = new Wiki(c, new String(name));
         WikiVersion wikiversion = new WikiVersion();
-        wikiversion.setTitle(new HString(title));
+        wikiversion.setTitle(new String(title));
 
         wikiversion.setBody(body);
 
@@ -848,7 +847,7 @@ public class WikiManager implements WikiService
                 String html = getHtml(c, name);
                 return null == html ? null : new HtmlView(html);
             }
-            Wiki wiki = WikiSelectManager.getWiki(c, new HString(name));
+            Wiki wiki = WikiSelectManager.getWiki(c, new String(name));
             if (null == wiki)
                 return null;
             WikiVersion version = wiki.getLatestVersion();
@@ -863,7 +862,7 @@ public class WikiManager implements WikiService
 
     public WebPartView getHistoryView(Container c, String name)
     {
-        Wiki wiki = WikiSelectManager.getWiki(c, new HString(name));
+        Wiki wiki = WikiSelectManager.getWiki(c, name);
         if (null == wiki)
             return null;
         WikiVersion version = wiki.getLatestVersion();
@@ -908,7 +907,7 @@ public class WikiManager implements WikiService
     }
 
     public WikiRenderer getRenderer(WikiRendererType rendererType, String hrefPrefix,
-                                    String attachPrefix, Map<HString, HString> nameTitleMap,
+                                    String attachPrefix, Map<String, String> nameTitleMap,
                                     Collection<? extends Attachment> attachments)
     {
         WikiRenderer renderer;
@@ -934,11 +933,8 @@ public class WikiManager implements WikiService
 
     public List<String> getNames(Container c)
     {
-        List<HString> l = WikiSelectManager.getPageNames(c);
-        ArrayList<String> ret = new ArrayList<>();
-        for (HString h : l)
-            ret.add(h.getSource());
-        return ret;
+        List<String> l = WikiSelectManager.getPageNames(c);
+        return new ArrayList<>(l);
     }
 
     @Override
@@ -1041,19 +1037,19 @@ public class WikiManager implements WikiService
             //
             // CREATE
             //
-            Wiki wikiA = new Wiki(c, new HString("pageA", false));
+            Wiki wikiA = new Wiki(c, "pageA");
             WikiVersion wikiversion = new WikiVersion();
-            wikiversion.setTitle(new HString("Topic A", false));
+            wikiversion.setTitle("Topic A");
             wikiversion.setBody("[pageA]");
 
             _m.insertWiki(user, c, wikiA, wikiversion, null);
 
             // verify objects
-            wikiA = WikiSelectManager.getWikiFromDatabase(c, new HString("pageA", false));
+            wikiA = WikiSelectManager.getWikiFromDatabase(c, "pageA");
             wikiversion = WikiVersionCache.getVersion(c, wikiA.getPageVersionId());
-            assertTrue(HString.eq("Topic A", wikiversion.getTitle()));
+            assertEquals("Topic A", wikiversion.getTitle());
 
-            assertNull(WikiSelectManager.getWikiFromDatabase(c, new HString("pageNA", false)));
+            assertNull(WikiSelectManager.getWikiFromDatabase(c, "pageNA"));
 
             //
             // DELETE
@@ -1061,7 +1057,7 @@ public class WikiManager implements WikiService
             _m.deleteWiki(user, c, wikiA);
 
             // verify
-            assertNull(WikiSelectManager.getWikiFromDatabase(c, new HString("pageA", false)));
+            assertNull(WikiSelectManager.getWikiFromDatabase(c, "pageA"));
 
             purgePages(c, true);
         }

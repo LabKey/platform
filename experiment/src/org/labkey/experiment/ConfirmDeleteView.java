@@ -23,7 +23,6 @@ import org.labkey.api.exp.form.DeleteForm;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.springframework.web.servlet.mvc.Controller;
@@ -47,7 +46,7 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
         private final List<? extends ExpObject> _objects;
         private final String _objectType;
         private final Class<? extends Controller> _detailAction;
-        private ReturnURLString _returnURL;
+        private String _returnURL;
         private String _dataRegionSelectionKey;
         private Integer _singleObjectRowId;
         private final String _extraNoun;
@@ -92,7 +91,7 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
             return _detailAction;
         }
 
-        public void setReturnUrl(ReturnURLString url)
+        public void setReturnUrl(String url)
         {
             _returnURL =  url;
         }
@@ -112,7 +111,7 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
             return _noPermissionExtras;
         }
 
-        public ReturnURLString getReturnUrl()
+        public String getReturnUrl()
         {
             return _returnURL;
         }

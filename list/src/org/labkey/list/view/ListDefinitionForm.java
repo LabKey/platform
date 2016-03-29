@@ -18,7 +18,6 @@ package org.labkey.list.view;
 
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
-import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -58,7 +57,7 @@ public class ListDefinitionForm extends ViewForm
     }
 
     // alias to support both returnUrl and srcURL parameters
-    public void setSrcURL(ReturnURLString srcUrl)
+    public void setSrcURL(String srcUrl)
     {
         setReturnUrl(srcUrl);
     }

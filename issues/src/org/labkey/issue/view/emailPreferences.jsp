@@ -68,7 +68,7 @@
     <%= button("Update").submit(true) %><%
     if (issueId > 0)
     {
-        %><%= button("Back to " + names.singularName.getSource()).href(IssuesController.issueURL(c, IssuesController.DetailsAction.class).addParameter("issueId", bean.getIssueId())) %><%
+        %><%= button("Back to " + names.singularName).href(IssuesController.issueURL(c, IssuesController.DetailsAction.class).addParameter("issueId", bean.getIssueId())) %><%
     }
     else
     {

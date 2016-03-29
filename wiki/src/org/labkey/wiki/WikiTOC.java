@@ -23,7 +23,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.util.HString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -144,10 +143,10 @@ public class WikiTOC extends NavTreeMenu
 
             //if no current page, determine the default page for the toc container
             if (null == pageViewName)
-                pageViewName = WikiController.getDefaultPage(_cToc).getName().getSource();
+                pageViewName = WikiController.getDefaultPage(_cToc).getName();
 
             if (null != pageViewName)
-                return WikiSelectManager.getWiki(_cToc, new HString(pageViewName));
+                return WikiSelectManager.getWiki(_cToc, pageViewName);
         }
 
         return null;
@@ -208,9 +207,9 @@ public class WikiTOC extends NavTreeMenu
         //FIX: per 5246, we will no longer expand the children of the current page by default
         if (null != selectedPage)
         {
-            HString path = HString.EMPTY;
+            String path = "";
             Wiki page = selectedPage;
-            Stack<HString> stkPages = new Stack<>();
+            Stack<String> stkPages = new Stack<>();
 
             page = page.getParentWiki();
 
@@ -222,8 +221,8 @@ public class WikiTOC extends NavTreeMenu
 
             while (!stkPages.empty())
             {
-                path = new HString(path, "/", NavTree.escapeKey(stkPages.pop().getSource()));
-                NavTree node = root.findSubtree(path.getSource());
+                path = path + "/" + NavTree.escapeKey(stkPages.pop());
+                NavTree node = root.findSubtree(path);
                 //Don't add it to the expand collapse set, since this would slowly collect
                 //every node we've ever visited.  This way we'll only remember the state
                 //if the user explicitly visits a node
@@ -243,7 +242,7 @@ public class WikiTOC extends NavTreeMenu
         if (null != selectedPage)
         {
             //get next and previous links
-            List<HString> nameList = WikiSelectManager.getPageNames(_cToc);
+            List<String> nameList = WikiSelectManager.getPageNames(_cToc);
 
             if (nameList.contains(selectedPage.getName()))
             {
@@ -252,19 +251,19 @@ public class WikiTOC extends NavTreeMenu
 
                 //if it's not the first page in the list, display the previous link
                 if (pageIndex > 0)
-                {
-                    prevURL = WikiController.getPageURL(_cToc, nameList.get(pageIndex - 1));
-                }
-
-                //if it's not the last page in the list, display the next link
-                if (pageIndex < nameList.size() - 1)
-                {
-                    nextURL = WikiController.getPageURL(_cToc, nameList.get(pageIndex + 1));
-                }
-            }
+        {
+            prevURL = WikiController.getPageURL(_cToc, nameList.get(pageIndex - 1));
         }
 
-        out.println("<div id=\"NavTree-"+ getId() +"\">");
+        //if it's not the last page in the list, display the next link
+        if (pageIndex < nameList.size() - 1)
+        {
+            nextURL = WikiController.getPageURL(_cToc, nameList.get(pageIndex + 1));
+        }
+    }
+}
+
+out.println("<div id=\"NavTree-"+ getId() +"\">");
         super.renderView(model, out);
         out.println("</div>");
 

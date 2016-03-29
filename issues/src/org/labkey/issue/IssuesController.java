@@ -74,11 +74,9 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.HString;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
@@ -298,7 +296,7 @@ public class IssuesController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
-            return root.addChild(names.pluralName.getSource() + " List", getURL());
+            return root.addChild(names.pluralName + " List", getURL());
         }
 
         public ActionURL getURL()
@@ -358,7 +356,7 @@ public class IssuesController extends SpringActionController
             EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
             if (null == _issue)
             {
-                throw new NotFoundException("Unable to find " + names.singularName.getSource() + " " + form.getIssueId());
+                throw new NotFoundException("Unable to find " + names.singularName + " " + form.getIssueId());
             }
 
             IssuePage page = new IssuePage(getContainer(), getUser());
@@ -378,7 +376,7 @@ public class IssuesController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return new ListAction(getViewContext()).appendNavTrail(root)
-                    .addChild(getSingularEntityName().getSource() + " " + _issue.getIssueId() + ": " + _issue.getTitle(), getURL());
+                    .addChild(getSingularEntityName() + " " + _issue.getIssueId() + ": " + _issue.getTitle(), getURL());
         }
 
         public ActionURL getURL()
@@ -387,7 +385,7 @@ public class IssuesController extends SpringActionController
         }
     }
 
-    private HString getSingularEntityName()
+    private String getSingularEntityName()
     {
         return IssueManager.getEntryTypeNames(getContainer()).singularName;
     }
@@ -444,7 +442,7 @@ public class IssuesController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
-            return new ListAction(getViewContext()).appendNavTrail(root).addChild(names.singularName.getSource() + " Details");
+            return new ListAction(getViewContext()).appendNavTrail(root).addChild(names.singularName + " Details");
         }
     }
 
@@ -610,7 +608,7 @@ public class IssuesController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
-            return new ListAction(getViewContext()).appendNavTrail(root).addChild("Insert New " + names.singularName.getSource());
+            return new ListAction(getViewContext()).appendNavTrail(root).addChild("Insert New " + names.singularName);
         }
     }
 
@@ -1003,7 +1001,7 @@ public class IssuesController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return new DetailsAction(_issue, getViewContext()).appendNavTrail(root)
-                    .addChild("Update " + getSingularEntityName().getSource() + ": " + _issue.getTitle());
+                    .addChild("Update " + getSingularEntityName() + ": " + _issue.getTitle());
         }
     }
 
@@ -1098,7 +1096,7 @@ public class IssuesController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
-            return (new DetailsAction(_issue, getViewContext()).appendNavTrail(root)).addChild("Resolve " + names.singularName.getSource());
+            return (new DetailsAction(_issue, getViewContext()).appendNavTrail(root)).addChild("Resolve " + names.singularName);
         }
     }
 
@@ -1141,7 +1139,7 @@ public class IssuesController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
-            return (new DetailsAction(_issue, getViewContext()).appendNavTrail(root)).addChild("Close " + names.singularName.getSource());
+            return (new DetailsAction(_issue, getViewContext()).appendNavTrail(root)).addChild("Close " + names.singularName);
         }
     }
 
@@ -1187,7 +1185,7 @@ public class IssuesController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
-            return (new DetailsAction(_issue, getViewContext()).appendNavTrail(root)).addChild("Reopen " + names.singularName.getSource());
+            return (new DetailsAction(_issue, getViewContext()).appendNavTrail(root)).addChild("Reopen " + names.singularName);
         }
     }
 
@@ -1692,7 +1690,7 @@ public class IssuesController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
-            return (new ListAction(getViewContext())).appendNavTrail(root).addChild(names.pluralName.getSource() + " Admin Page", getUrl());
+            return (new ListAction(getViewContext())).appendNavTrail(root).addChild(names.pluralName + " Admin Page", getUrl());
         }
 
         public ActionURL getUrl()
@@ -1850,10 +1848,10 @@ public class IssuesController extends SpringActionController
         private String _moveToContainer = null;
         private String _moveToContainerSelect = null;
 
-        private HString[] _requiredFields = new HString[0];
+        private String[] _requiredFields = new String[0];
 
-        private HString _entrySingularName;
-        private HString _entryPluralName;
+        private String _entrySingularName;
+        private String _entryPluralName;
 
         private String _relatedIssuesList;
 
@@ -1930,32 +1928,32 @@ public class IssuesController extends SpringActionController
             _moveToContainerSelect = moveToContainerSelect;
         }
 
-        public HString getEntrySingularName()
+        public String getEntrySingularName()
         {
             return _entrySingularName;
         }
 
-        public void setEntrySingularName(HString entrySingularName)
+        public void setEntrySingularName(String entrySingularName)
         {
             _entrySingularName = entrySingularName;
         }
 
-        public HString getEntryPluralName()
+        public String getEntryPluralName()
         {
             return _entryPluralName;
         }
 
-        public void setEntryPluralName(HString entryPluralName)
+        public void setEntryPluralName(String entryPluralName)
         {
             _entryPluralName = entryPluralName;
         }
 
-        public void setRequiredFields(HString[] requiredFields)
+        public void setRequiredFields(String[] requiredFields)
         {
             _requiredFields = requiredFields;
         }
 
-        public HString[] getRequiredFields()
+        public String[] getRequiredFields()
         {
             return _requiredFields;
         }
@@ -2146,9 +2144,9 @@ public class IssuesController extends SpringActionController
             //only check for null values if there is no inheriting container of the current container
             if(currentContainer.equals(IssueManager.getInheritFromOrCurrentContainer(currentContainer)))
             {
-                if (form.getEntrySingularName() == null || form.getEntrySingularName().trimToEmpty().length() == 0)
+                if (null == StringUtils.trimToNull(form.getEntrySingularName()))
                     errors.reject(ConfigureIssuesForm.ParamNames.entrySingularName.name(), "You must specify a value for the entry type singular name!");
-                if (form.getEntryPluralName() == null || form.getEntryPluralName().trimToEmpty().length() == 0)
+                if (null == StringUtils.trimToNull(form.getEntryPluralName()))
                     errors.reject(ConfigureIssuesForm.ParamNames.entryPluralName.name(), "You must specify a value for the entry type plural name!");
 
                 try
@@ -2168,13 +2166,13 @@ public class IssuesController extends SpringActionController
 
         private void checkPickLists(ConfigureIssuesForm form, Errors errors)
         {
-            ArrayList<HString> newRequiredFields = new ArrayList<>();
+            ArrayList<String> newRequiredFields = new ArrayList<>();
              /**
              * You have to make the required fields all lower case to compare them to the STRING_#_STRING constants.
              * I made the mistake of trying to make the field use lowercase names but it ruins the camelcasing when
              * you ouput the form on the JSP, which then breaks the tests.
              */
-            for(HString required : form.getRequiredFields())
+            for(String required : form.getRequiredFields())
             {
                 newRequiredFields.add(required.toLowerCase());
             }
@@ -2182,7 +2180,7 @@ public class IssuesController extends SpringActionController
             CustomColumnConfiguration newColumnConfiguration = new CustomColumnConfiguration(getViewContext());
             CustomColumnConfiguration oldColumnConfiguration = getCustomColumnConfiguration();
 
-            for (HString required : form.getRequiredFields())
+            for (String required : form.getRequiredFields())
             {
                 /**
                  * If the required field is one of the custom string fields, and it has no keywords, and it has just been
@@ -2196,11 +2194,11 @@ public class IssuesController extends SpringActionController
                     String name = type.getColumnName();
 
                     if (newColumnConfiguration.hasPickList(name) && !oldColumnConfiguration.hasPickList(name))
-                        newRequiredFields.remove(new HString(name));
+                        newRequiredFields.remove(name);
                 }
             }
 
-            form.setRequiredFields(newRequiredFields.toArray(new HString[newRequiredFields.size()]));
+            form.setRequiredFields(newRequiredFields.toArray(new String[newRequiredFields.size()]));
         }
 
         public boolean handlePost(ConfigureIssuesForm form, BindException errors)
@@ -2515,7 +2513,7 @@ public class IssuesController extends SpringActionController
         public NavTree appendNavTrail(NavTree root, ViewContext ctx, @NotNull SearchScope scope, @Nullable String category)
         {
             String status = ctx.getActionURL().getParameter("status");
-            String pluralName = IssueManager.getEntryTypeNames(ctx.getContainer()).pluralName.getSource();
+            String pluralName = IssueManager.getEntryTypeNames(ctx.getContainer()).pluralName;
             root.addChild(pluralName + " List", issueURL(ctx.getContainer(), ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true"));
             root.addChild("Search " + (null != status ? status + " " : "") + pluralName);
 
@@ -2615,10 +2613,10 @@ public class IssuesController extends SpringActionController
             else
             {
                 sbText.append(" changed from ");
-                sbText.append(HString.EMPTY.equals(from) ? "blank" : "\"" + from + "\"");
+                sbText.append(StringUtils.isEmpty(from) ? "blank" : "\"" + from + "\"");
             }
             sbText.append(" to ");
-            sbText.append(HString.EMPTY.equals(to) ? "blank" : "\"" + to + "\"");
+            sbText.append(StringUtils.isEmpty(to) ? "blank" : "\"" + to + "\"");
             sbText.append("\n");
             String encFrom = PageFlowUtil.filter(from);
             String encTo = PageFlowUtil.filter(to);
@@ -3212,9 +3210,9 @@ public class IssuesController extends SpringActionController
         private static Map<String, Class> extraProps()
         {
             Map<String, Class> map = new LinkedHashMap<>();
-            map.put("action", HString.class);
-            map.put("comment", HString.class);
-            map.put("callbackURL", ReturnURLString.class);
+            map.put("action", String.class);
+            map.put("comment", String.class);
+            map.put("callbackURL", String.class);
             return map;
         }
 
@@ -3240,7 +3238,6 @@ public class IssuesController extends SpringActionController
             }
         }
 
-        // XXX: change return value to typed HString
         public String getComment()
         {
             return _stringValues.get("comment");
@@ -3313,7 +3310,7 @@ public class IssuesController extends SpringActionController
             //set specified web part title
             Object title = context.get("title");
             if (title == null)
-                title = IssueManager.getEntryTypeNames(c).pluralName.getSource() + " Summary";
+                title = IssueManager.getEntryTypeNames(c).pluralName + " Summary";
             setTitle(title.toString());
 
             User u = context.getUser();

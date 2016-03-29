@@ -40,11 +40,11 @@
         if (c.hasPermission(getUser(), InsertPermission.class))
         {
     %>
-            <%= button("New " + names.singularName.getSource()).href(new ActionURL(IssuesController.InsertAction.class, c)) %>&nbsp;&nbsp;&nbsp;
+            <%= button("New " + names.singularName).href(new ActionURL(IssuesController.InsertAction.class, c)) %>&nbsp;&nbsp;&nbsp;
     <%
         }
     %><input type="text" size="5" name="issueId"/>
-        <%= button("Jump to " + names.singularName.getSource()).submit(true).attributes("align=\"top\" vspace=\"2\"") %></labkey:form></td>
+        <%= button("Jump to " + names.singularName).submit(true).attributes("align=\"top\" vspace=\"2\"") %></labkey:form></td>
     <td width=100%>&nbsp;</td>
     <td align="right" nowrap>
         <labkey:form action="<%=h(urlProvider(SearchUrls.class).getSearchURL(c, null))%>" method="get">

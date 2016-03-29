@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
-<%@ page import="org.labkey.api.util.HString" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -142,7 +141,7 @@
                                 {
                                     String indent = "";
                                     int depth = possibleParent.getDepth();
-                                    HString parentTitle = possibleParent.getTitle();
+                                    String parentTitle = possibleParent.getTitle();
                                     while (depth-- > 0)
                                         indent = indent + "&nbsp;&nbsp;";
                                     %><option<%=selected(possibleParent.getRowId() == model.getParent())%> value="<%= possibleParent.getRowId() %>"><%=text(indent)%><%= h(parentTitle) %> (<%= possibleParent.getName() %>)</option><%

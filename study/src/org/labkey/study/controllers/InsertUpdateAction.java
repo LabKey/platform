@@ -16,6 +16,7 @@
 
 package org.labkey.study.controllers;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ActionButton;
@@ -45,7 +46,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -195,13 +195,10 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         }
         DataRegion dataRegion = view.getDataRegion();
 
-        ReturnURLString referer = form.getReturnUrl();
-        if (referer == null || referer.isEmpty())
-            referer =  new ReturnURLString(HttpView.currentRequest().getHeader("Referer"));
-
+        String referer = StringUtils.defaultString(form.getReturnUrl(), HttpView.currentRequest().getHeader("Referer"));
         URLHelper cancelURL;
 
-        if (referer.isEmpty())
+        if (StringUtils.isEmpty(referer))
         {
             cancelURL = new ActionURL(StudyController.DatasetAction.class, getContainer());
             cancelURL.addParameter(DatasetDefinition.DATASETKEY, ""+form.getDatasetId());
