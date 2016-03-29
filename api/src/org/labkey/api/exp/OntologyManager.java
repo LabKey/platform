@@ -51,6 +51,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.test.TestTimeout;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.Pair;
@@ -2880,6 +2881,7 @@ public class OntologyManager
 
 
     @TestWhen(TestWhen.When.BVT)
+    @TestTimeout(120)
     public static class TestCase extends Assert
     {
         @Test
@@ -3662,7 +3664,7 @@ public class OntologyManager
     {
         String name = pd.getName();
         validateValue(name, "Name", null);
-        validateValue(pd.getPropertyURI(), "PropertyURI", "Please use a shorter field name.");
+        validateValue(pd.getPropertyURI(), "PropertyURI", "Please use a shorter field name. Name = " + name);
         validateValue(pd.getLabel(), "Label", null);
         validateValue(pd.getImportAliases(), "ImportAliases", null);
         validateValue(pd.getURL() != null ? pd.getURL().getSource() : null, "URL", null);
