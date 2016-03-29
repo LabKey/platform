@@ -42,7 +42,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Formats;
-import org.labkey.api.util.HString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
@@ -320,20 +319,6 @@ public class DataRegion extends AbstractDataRegion
     }
 
 
-    public void addHiddenFormField(Enum name, HString value)
-    {
-        addHiddenFormField(name.toString(), value);
-    }
-
-
-    //TODO: Fix these up. They are just regular fields that are hidden (not rendered in grid mode)
-    public void addHiddenFormField(String name, HString value)
-    {
-        if (null != value)
-            _hiddenFormFields.add(new Pair<String, Object>(name, value));
-    }
-
-
     public void addHiddenFormField(String name, String value)
     {
         if (null != value)
@@ -346,10 +331,7 @@ public class DataRegion extends AbstractDataRegion
         {
             if (name.equals(hiddenFormField.getKey()))
             {
-                if (hiddenFormField.getValue() instanceof HString)
-                    return ((HString) hiddenFormField.getValue()).getSource();
-                else
-                    return (String) hiddenFormField.getValue();
+                return (String) hiddenFormField.getValue();
             }
         }
         return null;
@@ -1594,10 +1576,7 @@ public class DataRegion extends AbstractDataRegion
         out.write("<input type=\"hidden\" name=\"" + CSRFUtil.csrfName + "\" value=\"" + CSRFUtil.getExpectedToken(ctx.getViewContext()) + "\">");
         for (Pair<String, Object> field : _hiddenFormFields)
         {
-            if (field.second instanceof HString)
-                out.write("<input type=\"hidden\" name=\"" + PageFlowUtil.filter(field.first) + "\" value=\"" + PageFlowUtil.filter((HString) field.second) + "\">");
-            else
-                out.write("<input type=\"hidden\" name=\"" + PageFlowUtil.filter(field.first) + "\" value=\"" + PageFlowUtil.filter((String) field.second) + "\">");
+            out.write("<input type=\"hidden\" name=\"" + PageFlowUtil.filter(field.first) + "\" value=\"" + PageFlowUtil.filter((String) field.second) + "\">");
         }
 
         if (mode == MODE_UPDATE_MULTIPLE)

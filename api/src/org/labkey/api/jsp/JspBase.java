@@ -28,8 +28,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Button;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
-import org.labkey.api.util.HString;
-import org.labkey.api.util.HStringBuilder;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -128,13 +126,6 @@ abstract public class JspBase extends JspContext implements HasViewContext
     }
 
 
-    public String text(HString s)
-    {
-        // should this assert !s.isTainted()?
-        return null==s ? "" : s.getSource();
-    }
-
-
     /**
      * Html escape an object.toString().
      * The name comes from Embedded Ruby.
@@ -142,24 +133,6 @@ abstract public class JspBase extends JspContext implements HasViewContext
     public String h(Object o)
     {
         return PageFlowUtil.filter(o);
-    }
-
-    /**
-     * Html escape a string.
-     * The name comes from Embedded Ruby.
-     */
-    public HString h(HString str)
-    {
-        return PageFlowUtil.filter(str);
-    }
-
-    /**
-     * Html escape a string.
-     * The name comes from Embedded Ruby.
-     */
-    public HString h(HStringBuilder str)
-    {
-        return PageFlowUtil.filter(str);
     }
 
     /**
@@ -310,11 +283,6 @@ abstract public class JspBase extends JspContext implements HasViewContext
 
     @Deprecated  // Use textLink(text, actionClass) or textLink(text, url) instead
     public String textLink(String text, String href)
-    {
-        return PageFlowUtil.textLink(text, href, null, null);
-    }
-
-    public String textLink(String text, HString href)
     {
         return PageFlowUtil.textLink(text, href, null, null);
     }

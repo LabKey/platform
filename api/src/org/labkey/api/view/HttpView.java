@@ -23,7 +23,6 @@ import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.Debug;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.HString;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.template.ClientDependency;
@@ -562,11 +561,6 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         return new HttpRedirectView(url);
     }
 
-
-    public static HttpView redirect(HString url)
-    {
-        return new HttpRedirectView(url.getSource());
-    }
 
     /**
      * Pulls out the context's URL for redirecting. This fetches

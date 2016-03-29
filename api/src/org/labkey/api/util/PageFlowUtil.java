@@ -160,25 +160,6 @@ public class PageFlowUtil
         return filter(s,false,false);
     }
 
-    /** HTML encode a string */
-    static public HString filter(HString s)
-    {
-        if (null == s)
-            return HString.EMPTY;
-
-        return new HString(filter(s.getSource()), false);
-    }
-
-
-    /** HTML encode a string */
-    static public HString filter(HStringBuilder s)
-    {
-        if (null == s)
-            return HString.EMPTY;
-
-        return new HString(filter(s.getSource()), false);
-    }
-
 
     /** HTML encode a string */
     static public String filter(String s, boolean encodeSpace, boolean encodeLinks)
@@ -336,11 +317,7 @@ public class PageFlowUtil
         if (cs == null)
             return "''";
 
-        String s;
-        if (cs instanceof HString)
-            s = ((HString)cs).getSource();
-        else
-            s = cs.toString();
+        String s = cs.toString();
 
         // UNDONE: what behavior do we want for tainted strings? IllegalArgumentException()?
         if (cs instanceof Taintable && ((Taintable)cs).isTainted())
@@ -1333,14 +1310,6 @@ public class PageFlowUtil
         return textLink(text, href, null, null);
     }
 
-    public static String textLink(String text, HString href, String onClickScript, String id)
-    {
-        return "<a class='labkey-text-link' href=\"" + filter(href) + "\"" +
-                (id != null ? " id=\"" + id + "\"" : "") +
-                (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                ">" + filter(text) + "</a>";
-    }
-
     @Deprecated
     public static String textLink(String text, String href, @Nullable String onClickScript, @Nullable String id)
     {
@@ -1402,7 +1371,7 @@ public class PageFlowUtil
         return textLink(text, url == null ? null : url.getLocalURIString(), null, id);
     }
 
-    public static String unstyledTextLink(String text, HString href, String onClickScript, String id)
+    public static String unstyledTextLink(String text, String href, String onClickScript, String id)
     {
         return "<a href=\"" + filter(href) + "\"" +
                 (id != null ? " id=\"" + id + "\"" : "") +
@@ -1411,7 +1380,7 @@ public class PageFlowUtil
     }
     public static String unstyledTextLink(String text, URLHelper url)
     {
-        return unstyledTextLink(text, url.toHString(), null, null);
+        return unstyledTextLink(text, url.toString(), null, null);
     }
 
 

@@ -39,7 +39,7 @@ import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.query.PublishResultsQueryView;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ReturnURLString;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -256,14 +256,10 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
             queryView.getSettings().setContainerFilterName(publishConfirmForm.getContainerFilterName());
 
         List<ActionButton> buttons = new ArrayList<>();
-        ReturnURLString returnURL;
-        if (publishConfirmForm.getReturnUrl() != null)
+        URLHelper returnURL = publishConfirmForm.getReturnURLHelper();
+        if (null == returnURL)
         {
-            returnURL = publishConfirmForm.getReturnUrl();
-        }
-        else
-        {
-            returnURL = new ReturnURLString(getSummaryLink(_protocol).addParameter("clearDataRegionSelectionKey", publishConfirmForm.getDataRegionSelectionKey()).toString(), false);
+            returnURL = getSummaryLink(_protocol).addParameter("clearDataRegionSelectionKey", publishConfirmForm.getDataRegionSelectionKey());
         }
         String script = "window.onbeforeunload = null;"; // Need to prevent a warning if the user clicks on these buttons
 
@@ -292,7 +288,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
             buttons.add(fromSpecimenButton);
         }
 
-        ActionButton cancelButton = new ActionButton("Cancel", new ActionURL(returnURL));
+        ActionButton cancelButton = new ActionButton("Cancel", returnURL);
         cancelButton.setScript(script, true);
         buttons.add(cancelButton);
 

@@ -22,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.util.HString;
 import org.labkey.api.util.JdbcUtil;
 
 import java.io.IOException;
@@ -92,7 +91,6 @@ public class SQLFragment implements Appendable, CharSequence
 
     public SQLFragment(CharSequence sql, @Nullable List<?> params)
     {
-        guard(sql);
         this.sql = sql.toString();
         if (null != params)
             this.params = new ArrayList<>(params);
@@ -255,7 +253,6 @@ public class SQLFragment implements Appendable, CharSequence
     @Override
     public SQLFragment append(CharSequence s)
     {
-        guard(s);
         getStringBuilder().append(s);
         return this;
     }
@@ -286,7 +283,6 @@ public class SQLFragment implements Appendable, CharSequence
     /** Adds the object's toString() to the SQL */
     public SQLFragment append(Object o)
     {
-        guard(o);
         getStringBuilder().append(o);
         return this;
     }
@@ -399,13 +395,12 @@ public class SQLFragment implements Appendable, CharSequence
     }
 
     /** Add to the SQL as either an in-line string literal or as a JDBC parameter depending on whether it would need escaping */
-    public SQLFragment appendStringLiteral(CharSequence s)
+    public SQLFragment appendStringLiteral(@NotNull CharSequence s)
     {
-        String source = HString.source(s);        
-        if (s instanceof HString || source.contains("'") || source.contains("\\"))
+        if (StringUtils.contains(s,"'") || StringUtils.contains(s,"\\"))
         {
             append("?");
-            add(s);
+            add(s.toString());
             return this;
         }
         append("'");
@@ -460,12 +455,6 @@ public class SQLFragment implements Appendable, CharSequence
         return sql.replaceAll("\"", "");
     }
 
-
-    void guard(Object s)
-    {
-        if (s instanceof HString && ((HString)s).isTainted())
-            throw new IllegalArgumentException(((HString)s).getSource());
-    }
 
     @Override
     public char charAt(int index)

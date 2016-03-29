@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
  * Date: Feb 9, 2009
  * Time: 10:40:19 AM
  */
-public class IdentifierString extends HString
+public class IdentifierString
 {
     static Pattern idPattern = Pattern.compile("[\\p{Alpha}_][\\p{Alnum}_]*");
 
@@ -35,65 +35,5 @@ public class IdentifierString extends HString
         if (StringUtils.isEmpty(s) || idPattern.matcher(s).matches())
             return null;
         return "Value is not a valid identifier: " + s;
-    }
-
-    IdentifierString(String s)
-    {
-        _source = s;
-        _tainted = _source.length() != 0 && !idPattern.matcher(s).matches();
-    }
-
-	IdentifierString(HString s)
-	{
-		this(null == s ? "" : s._source);
-	}
-
-	IdentifierString(String s, boolean t)
-	{
-		_source = s;
-		_tainted = _source.length() != 0 && t;
-	}
-
-    IdentifierString(Container c)
-    {
-        _source = c.getId();
-        _tainted = false;
-    }
-
-	public String toString()
-    {
-        return isTainted() ? "" : _source;
-    }
-
-    @Override
-    public boolean equals(Object o)
-    {
-        return (o instanceof IdentifierString) && _source.equalsIgnoreCase(((IdentifierString)o)._source);
-    }
-
-    @Override
-    public int compareTo(HString str)
-    {
-        return super.compareToIgnoreCase(str);
-    }
-
-
-    public static class Converter implements org.apache.commons.beanutils.Converter
-    {
-        public Object convert(Class type, Object value)
-        {
-            if (value == null)
-                return null;
-            if (value instanceof IdentifierString)
-                return value;
-            if (value instanceof HString)
-                value = ((HString)value).getSource();
-            String s = String.valueOf(value);
-            validateChars(s);
-            IdentifierString id = new IdentifierString(s);
-            if (id.isTainted())
-                throw new ConversionException("Invalid identifier");
-            return id;
-        }
     }
 }

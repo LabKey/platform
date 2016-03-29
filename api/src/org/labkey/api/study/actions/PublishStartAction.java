@@ -39,7 +39,6 @@ import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayTableMetadata;
 import org.labkey.api.study.assay.AssayUrls;
-import org.labkey.api.util.HString;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -117,12 +116,12 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
         private boolean _nullStudies;
         private boolean _insufficientPermissions;
         private String _dataRegionSelectionKey;
-        private final HString _returnURL;
+        private final String _returnURL;
         private final String _containerFilterName;
 
         public PublishBean(AssayProvider provider, ExpProtocol protocol,
                            List<Integer> ids, String dataRegionSelectionKey,
-                           Set<Container> studies, boolean nullStudies, boolean insufficientPermissions, HString returnURL,
+                           Set<Container> studies, boolean nullStudies, boolean insufficientPermissions, String returnURL,
                            String containerFilterName)
         {
             _insufficientPermissions = insufficientPermissions;
@@ -136,13 +135,13 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
             _containerFilterName = containerFilterName;
         }
 
-        public HString getReturnURL()
+        public String getReturnURL()
         {
             if (_returnURL != null)
             {
                 return _returnURL;
             }
-            return new HString(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), getProtocol()).addParameter("clearDataRegionSelectionKey", getDataRegionSelectionKey()).toString());
+            return PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), getProtocol()).addParameter("clearDataRegionSelectionKey", getDataRegionSelectionKey()).toString();
         }
 
         public List<Integer> getIds()
@@ -279,7 +278,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
                         containers,
                         nullsFound,
                         insufficientPermissions,
-                        publishForm.getReturnUrl(),
+                        publishForm.getReturnUrl().toString(),
                         publishForm.getContainerFilterName()));
         }
     }

@@ -87,13 +87,6 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     }
 
 
-    public URLHelper(HString url) throws URISyntaxException
-    {
-        this(url.getSource());
-        _tainted = url.isTainted();
-    }
-
-
     public URLHelper(String url) throws URISyntaxException
     {
         String p;
@@ -176,10 +169,11 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     }
 
 
-    public HString toLocalString(boolean allowSubstSyntax)
+    public String toLocalString(boolean allowSubstSyntax)
     {
-        String local = getLocalURIString(allowSubstSyntax);
-        return new HString(local, _tainted);
+        String local;
+        local = getLocalURIString(allowSubstSyntax);
+        return local;
     }
 
 
@@ -458,17 +452,6 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     }
 
 
-    public URLHelper addParameter(String key, HString value)
-    {
-        if (_readOnly) throw new java.lang.IllegalStateException();
-        if (null == _parameters)
-            _parameters = new ArrayList<>();
-        _parameters.add(new Pair<>(key, null==value ? null : value.getSource()));
-        _tainted |= (null != value && value.isTainted());
-        return this;
-    }
-    
-
     public URLHelper addParameters(Map m)
     {
         return addParameters(null, m);
@@ -725,12 +708,6 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     public String toString()
     {
         return getLocalURIString(true);
-    }
-
-
-    public HString toHString()
-    {
-        return toLocalString(true);
     }
 
 

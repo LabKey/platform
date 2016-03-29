@@ -18,7 +18,6 @@ package org.labkey.api.message.settings;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
@@ -131,9 +130,9 @@ public class MessageConfigService
 
         ConfigTypeProvider getProvider();
 
-        void setReturnUrl(ReturnURLString returnUrl);
+        void setReturnUrl(String returnUrl);
 
-        ReturnURLString getReturnUrl();
+        String getReturnUrl();
     }
 
 

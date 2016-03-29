@@ -50,6 +50,6 @@ public abstract class DefaultValuesAction<FormType extends DomainIdForm> extends
 
     public ActionURL getSuccessURL(FormType domainIdForm)
     {
-        return new ActionURL(domainIdForm.getReturnUrl());
+        return domainIdForm.getReturnActionURL();
     }
 }

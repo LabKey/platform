@@ -15,59 +15,60 @@
  */
 package org.labkey.api.util;
 
+import org.apache.commons.beanutils.ConversionException;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ConvertHelper;
+import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewServlet;
+
 
 /**
  * User: matthewb
  * Date: Nov 3, 2009
  * Time: 12:22:55 PM
  */
-public class ReturnURLString extends HString
+public class ReturnURLString
 {
-    public static ReturnURLString EMPTY = new ReturnURLString("",false)
-    {
-        @Override
-        public boolean isEmpty()
-        {
-            return true;
-        }
+    private final String _source;
 
-        @Override
-        public int length()
-        {
-            return 0;
-        }
-    };
+    public static ReturnURLString EMPTY = new ReturnURLString("");
 
     
     public ReturnURLString(CharSequence s)
     {
-        super(s);
+        _source = null == s ? null : String.valueOf(s);
     }
 
 
-    public ReturnURLString(CharSequence s, boolean tainted)
+    public boolean isEmpty()
     {
-        super(s, tainted);
+        if (StringUtils.isEmpty(_source))
+            return true;
+        return null == getURLHelper();
     }
 
 
-    @Override
     public String getSource()
     {
-        return super.getSource();
+        return _source;
     }
 
-    @Override
+    @Override @NotNull
     public String toString()
     {
-        if (!isTainted())
+        try
+        {
+            if (StringUtils.isEmpty(_source))
+                return "";
+            new ActionURL(getSource());
             return _source;
-        if (null == _safe)
-            _safe = PageFlowUtil.filter(_source);
-        return _safe;
+        }
+        catch (Exception x)
+        {
+            return "";
+        }
     }
 
 
@@ -76,7 +77,9 @@ public class ReturnURLString extends HString
     {
         try
         {
-            return new ActionURL(this);
+            if (StringUtils.isEmpty(_source))
+                return null;
+            return new ActionURL(_source);
         }
         catch (Exception x)
         {
@@ -90,7 +93,9 @@ public class ReturnURLString extends HString
     {
         try
         {
-            return new URLHelper(this);
+            if (StringUtils.isEmpty(_source))
+                return null;
+            return new URLHelper(this._source);
         }
         catch (Exception x)
         {
@@ -114,11 +119,11 @@ public class ReturnURLString extends HString
                 seq = (CharSequence)value;
             else
                 seq = (String)_impl.convert(String.class, value);
-            validateChars(seq);
 
-            // TODO more validation for crazy char encoding
+            if (!ViewServlet.validChars(seq))
+                throw new ConversionException("Invalid characters in string");
 
-            return new ReturnURLString(seq, true);
+            return new ReturnURLString(seq);
         }
     }
 }

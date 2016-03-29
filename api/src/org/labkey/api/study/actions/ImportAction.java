@@ -94,7 +94,7 @@ public class ImportAction extends BaseAssayAction<ImportAction.ImportForm>
 
         if (form.getReturnUrl() != null)
         {
-            properties.put(ActionURL.Param.returnUrl.name(), form.getReturnUrl().getSource());
+            properties.put(ActionURL.Param.returnUrl.name(), form.getReturnUrl());
         }
 
         VBox result = new VBox();

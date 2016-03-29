@@ -57,8 +57,6 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleConverter;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.HString;
-import org.labkey.api.util.IdentifierString;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -149,9 +147,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new NullSafeConverter(new FloatConverter()), Float.class);
         _register(new FloatConverter(), Float.TYPE);
         _register(new FloatArrayConverter(), float[].class);
-        _register(new HString.Converter(), HString.class);
         _register(new ReturnURLString.Converter(), ReturnURLString.class);
-        _register(new IdentifierString.Converter(), IdentifierString.class);
         _register(new NullSafeConverter(new IntegerArrayConverter()), int[].class);
         _register(new NullSafeConverter(new _IntegerConverter()), Integer.class);
         _register(new _IntegerConverter(), Integer.TYPE);

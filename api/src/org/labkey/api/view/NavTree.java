@@ -20,7 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.util.HString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 
@@ -191,11 +190,6 @@ public class NavTree implements Collapsible
         return child;
     }
 
-    public NavTree addChild(HString display)
-    {
-        return addChild(display.getSource());
-    }
-
     public NavTree addChild(String display)
     {
         return addChild(new NavTree(display));
@@ -218,11 +212,6 @@ public class NavTree implements Collapsible
     {
         addChild(new NavTree(display, href, imageSrc, imageCls));
         return this;
-    }
-
-    public NavTree addChild(HString display, URLHelper urlhelp)
-    {
-        return addChild(display.getSource(), urlhelp);        
     }
 
 

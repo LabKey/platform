@@ -18,7 +18,6 @@ package org.labkey.api.message.settings;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
@@ -69,7 +68,7 @@ public abstract class AbstractConfigTypeProvider implements MessageConfigService
         form.setSetDefaultPrefURL(getSetDefaultPrefURL(context.getContainer()));
 
         form.setDataRegionSelectionKey(info.getDataRegionSelectionKey());
-        form.setReturnUrl(new ReturnURLString(info.getReturnUrl().getLocalURIString()));
+        form.setReturnUrl(info.getReturnUrl().getLocalURIString());
 
         return form;
     }

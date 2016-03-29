@@ -1592,8 +1592,6 @@ api/src/org/labkey/api/util/Filter.java -text
 api/src/org/labkey/api/util/FolderDisplayMode.java -text
 api/src/org/labkey/api/util/Formats.java -text
 api/src/org/labkey/api/util/GUID.java -text
-api/src/org/labkey/api/util/HString.java -text
-api/src/org/labkey/api/util/HStringBuilder.java -text
 api/src/org/labkey/api/util/HTMLContentExtractor.java -text
 api/src/org/labkey/api/util/HeartBeat.java -text
 api/src/org/labkey/api/util/HelpTopic.java -text

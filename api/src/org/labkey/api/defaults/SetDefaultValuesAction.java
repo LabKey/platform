@@ -17,6 +17,7 @@ package org.labkey.api.defaults;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
@@ -36,7 +37,6 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -158,7 +158,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         if (properties.isEmpty())
         {
             return new HtmlView("No fields are defined for this table.<br><br>" + 
-                    PageFlowUtil.button("Cancel").href(new ActionURL(domainIdForm.getReturnUrl())));
+                    PageFlowUtil.button("Cancel").href(domainIdForm.getReturnURLHelper()));
         }
 
 
@@ -206,7 +206,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         }
         bbar.add(new ActionButton("Cancel", _returnUrl));
         rgn.addHiddenFormField("domainId", "" + domainIdForm.getDomainId());
-        rgn.addHiddenFormField(ActionURL.Param.returnUrl, domainIdForm.getReturnUrl());
+        rgn.addHiddenFormField(ActionURL.Param.returnUrl, domainIdForm.getReturnUrl().toString());
         rgn.setButtonBar(bbar);
 
         addAdditionalFormFields(domainIdForm, rgn);
@@ -294,11 +294,12 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         formDefaults.put(propName, stringValue);
     }
 
-    private void appendEditURL(StringBuilder builder, Container container, Domain domain, ReturnURLString returnUrl)
+    private void appendEditURL(StringBuilder builder, Container container, Domain domain, String returnUrl)
     {
         ActionURL editURL = new ActionURL(this.getClass(), container);
         editURL.addParameter("domainId", domain.getTypeId());
-        editURL.addParameter(ActionURL.Param.returnUrl, returnUrl);
+        if (StringUtils.isNotEmpty(returnUrl))
+            editURL.addParameter(ActionURL.Param.returnUrl, returnUrl);
         builder.append("<a href=\"").append(PageFlowUtil.filter(editURL.getLocalURIString())).append("\">");
         builder.append(PageFlowUtil.filter(container.getPath()));
         builder.append("</a><br>");

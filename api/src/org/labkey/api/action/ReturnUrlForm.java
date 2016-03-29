@@ -17,13 +17,12 @@
 package org.labkey.api.action;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.URLException;
-
-import java.net.URISyntaxException;
 
 
 /**
@@ -42,9 +41,9 @@ public class ReturnUrlForm
         return "<input type=\"hidden\" name=\"" + ActionURL.Param.returnUrl + "\" value=\"" + PageFlowUtil.filter(returnUrl) + "\">";
     }
 
-    public ReturnURLString getReturnUrl()
+    public String getReturnUrl()
     {
-        return _returnUrl;
+        return null == _returnUrl ? null : StringUtils.trimToNull(_returnUrl.toString());
     }
 
     public void setUrlhash(String urlhash)
@@ -57,7 +56,12 @@ public class ReturnUrlForm
         return this.urlhash;
     }
 
-    public void setReturnUrl(ReturnURLString returnUrl)
+    public void setReturnUrl(String s)
+    {
+        setReturnUrl(new ReturnURLString(s));
+    }
+
+    private void setReturnUrl(ReturnURLString returnUrl)
     {
         if (null == returnUrl || returnUrl.isEmpty())
         {
@@ -102,14 +106,10 @@ public class ReturnUrlForm
     @Nullable
     public URLHelper getReturnURLHelper()
     {
-        try
-        {
-            return (null == _returnUrl ? getDefaultReturnURLHelper() : new URLHelper(_returnUrl));
-        }
-        catch (URISyntaxException e)
-        {
-            throw new URLException(_returnUrl.getSource(), "returnUrl parameter", e);
-        }
+        URLHelper urlHelper = null;
+        if (null != _returnUrl)
+            urlHelper = _returnUrl.getURLHelper();
+        return null != urlHelper ? urlHelper : getDefaultReturnURLHelper();
     }
 
     @Nullable
@@ -118,7 +118,7 @@ public class ReturnUrlForm
         try
         {
             // 17526
-            return (null == _returnUrl ? null : new ActionURL(_returnUrl));
+            return null == _returnUrl ? null : _returnUrl.getActionURL();
         }
         catch (IllegalArgumentException e)
         {
@@ -170,7 +170,7 @@ public class ReturnUrlForm
     {
         if (getReturnUrl() != null)
         {
-            urlNeedingParameter.addParameter(ActionURL.Param.returnUrl, getReturnUrl());
+            urlNeedingParameter.addParameter(ActionURL.Param.returnUrl, getReturnUrl().toString());
         }
     }
 }

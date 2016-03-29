@@ -88,7 +88,7 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
         properties.put("supportsBackgroundUpload", Boolean.toString(provider.supportsBackgroundUpload()));
         if (form.getReturnUrl() != null)
         {
-            properties.put(ActionURL.Param.returnUrl.name(), form.getReturnUrl().getSource());
+            properties.put(ActionURL.Param.returnUrl.name(), form.getReturnUrl());
         }
 
         // hack for 4404 : Lookup picker performance is terrible when there are many containers

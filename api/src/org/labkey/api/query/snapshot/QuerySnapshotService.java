@@ -21,7 +21,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.security.User;
-import org.labkey.api.util.HString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -47,12 +46,6 @@ public class QuerySnapshotService
         // todo: add the default provider
         return _providers.get(schema);
     }
-
-	static public synchronized I get(HString schema)
-	{
-		// todo: add the default provider
-		return _providers.get(schema.getSource());
-	}
 
     static public synchronized void registerProvider(String schema, I provider)
     {

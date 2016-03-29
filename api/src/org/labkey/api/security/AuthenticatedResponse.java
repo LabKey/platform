@@ -16,8 +16,7 @@
 
 package org.labkey.api.security;
 
-import org.labkey.api.util.HString;
-import org.labkey.api.util.Taintable;
+import org.labkey.api.util.PageFlowUtil;
 
 import javax.servlet.http.HttpServletResponseWrapper;
 import javax.servlet.http.HttpServletResponse;
@@ -234,35 +233,25 @@ public class AuthenticatedResponse extends HttpServletResponseWrapper
         @Override
         public PrintWriter format(String format, Object... args)
         {
-            // CONSIDER: cache Formatter
-            HString h = HString.format(format, args);
-            return _writer.printf(h.toString());
+            return _writer.printf(PageFlowUtil.filter(String.format(format,args)));
         }
 
         @Override
         public PrintWriter format(Locale l, String format, Object... args)
         {
-            // CONSIDER: cache Formatter
-            HString h = HString.format(l, format, args);
-            return _writer.printf(h.toString());
+            return _writer.printf(PageFlowUtil.filter(String.format(l, format, args)));
         }
 
         @Override
         public PrintWriter append(CharSequence csq)
         {
-            if (csq instanceof Taintable)
-                return _writer.append(csq.toString());
-            else
-                return _writer.append(csq);
+            return _writer.append(csq);
         }
 
         @Override
         public PrintWriter append(CharSequence csq, int start, int end)
         {
-            if (csq instanceof Taintable)
-                return _writer.append(csq.toString(), start, end);
-            else
-                return _writer.append(csq, start, end);
+            return _writer.append(csq, start, end);
         }
 
         @Override

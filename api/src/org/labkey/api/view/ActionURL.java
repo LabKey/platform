@@ -21,7 +21,6 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.HString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
@@ -231,12 +230,6 @@ public class ActionURL extends URLHelper implements Cloneable
     }
 
     @Override
-    public ActionURL addParameter(String key, HString value)
-    {
-        return (ActionURL) super.addParameter(key, value);
-    }
-
-    @Override
     public ActionURL addParameter(String key, String value)
     {
         return (ActionURL) super.addParameter(key, value);
@@ -263,11 +256,6 @@ public class ActionURL extends URLHelper implements Cloneable
     }
 
     public ActionURL addParameter(Enum e, String value)
-    {
-        return addParameter(e.name(), value);
-    }
-
-    public ActionURL addParameter(Enum e, HString value)
     {
         return addParameter(e.name(), value);
     }
@@ -362,13 +350,6 @@ public class ActionURL extends URLHelper implements Cloneable
         {
             return null;
         }
-    }
-
-    public ActionURL(HString url)
-    {
-        this(url.getSource());
-        // UNDONE:
-        _tainted = url.isTainted();
     }
 
 

@@ -212,12 +212,6 @@ public class Button
             return this;
         }
 
-        public ButtonBuilder href(@NotNull HString href)
-        {
-            this.href = href.toString();
-            return this;
-        }
-
         public ButtonBuilder href(@NotNull ReturnURLString returnHref)
         {
             this.href = returnHref.toString();

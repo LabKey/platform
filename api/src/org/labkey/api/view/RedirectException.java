@@ -16,7 +16,6 @@
 package org.labkey.api.view;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.util.HString;
 import org.labkey.api.util.SkipMothershipLogging;
 import org.labkey.api.util.URLHelper;
 
@@ -36,11 +35,6 @@ public class RedirectException extends RuntimeException implements SkipMothershi
     public RedirectException(String url)
     {
         _url = url;
-    }
-
-    public RedirectException(HString url)
-    {
-        _url = url.getSource();
     }
 
     public String getURL()

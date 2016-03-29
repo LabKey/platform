@@ -26,7 +26,6 @@ import org.labkey.api.data.*;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportIdentifier;
-import org.labkey.api.util.HString;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -333,11 +332,6 @@ public class QuerySettings
     {
         _queryParameters.put(name,value);
     }
-
-	public void setSchemaName(HString schemaName)
-	{
-		_schemaName = schemaName.toString();
-	}
 
     public void setSchemaName(String schemaName)
     {
