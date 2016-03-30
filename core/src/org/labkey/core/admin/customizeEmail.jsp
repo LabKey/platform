@@ -50,7 +50,7 @@
 
 <labkey:form action="<%=h(buildURL(AdminController.CustomizeEmailAction.class))%>" method="post">
     <% if (bean.getReturnUrl() != null) { %>
-        <input type="hidden" name="returnUrl" value="<%= bean.getReturnUrl()%>" />
+        <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>" />
     <% } %>
     <table width="85%">
         <tr class="labkey-wp-header"><th colspan=2>Custom Emails</th></tr>
