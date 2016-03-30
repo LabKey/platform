@@ -278,7 +278,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
                         containers,
                         nullsFound,
                         insufficientPermissions,
-                        publishForm.getReturnUrl().toString(),
+                        publishForm.getReturnUrl(),
                         publishForm.getContainerFilterName()));
         }
     }
