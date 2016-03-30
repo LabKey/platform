@@ -93,12 +93,6 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
 
             if ("Property".equalsIgnoreCase(name))
                 return createPropertyColumn("Property");
-
-            if ("Parents".equalsIgnoreCase(name))
-                return createColumn("Parents", Column.LSID);
-
-            if ("Children".equalsIgnoreCase(name))
-                return createColumn("Children", Column.LSID);
         }
         return result;
     }
@@ -191,6 +185,13 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                     }
                 }, "Alias"));
                 return aliasCol;
+
+            case Inputs:
+                return ExpDataTableImpl.createLineageColumn(this, alias, true);
+
+            case Outputs:
+                return ExpDataTableImpl.createLineageColumn(this, alias, false);
+
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -371,6 +372,12 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             }
         }
 
+        ColumnInfo colInputs = addColumn(Column.Inputs);
+        addMethod("Inputs", new LineageMethod(getContainer(), colInputs, true));
+
+        ColumnInfo colOutputs = addColumn(Column.Outputs);
+        addMethod("Outputs", new LineageMethod(getContainer(), colOutputs, false));
+
         ActionURL detailsUrl = new ActionURL(ExperimentController.ShowMaterialAction.class, getContainer());
         DetailsURL url = new DetailsURL(detailsUrl, Collections.singletonMap("rowId", "RowId"));
         nameCol.setURL(url);
@@ -379,9 +386,6 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
 
         setDefaultVisibleColumns(defaultCols);
 
-        // NOTE: for some strange reason, a column must exist with the same name as the method
-        addMethod("Children", new LineageMethod(getContainer(), getColumn("Children"), false));
-        addMethod("Parents", new LineageMethod(getContainer(), getColumn("Parents"), true));
     }
 
     public Domain getDomain()

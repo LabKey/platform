@@ -50,7 +50,6 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentUrls;
-import org.labkey.api.exp.query.ExpExperimentTable;
 import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSchema;
@@ -362,11 +361,6 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         return result;
                     }
 
-                    @Override
-                    public StringExpression getURL(ColumnInfo parent)
-                    {
-                        return new DetailsURL(new ActionURL(ExperimentController.DetailsAction.class, getExpSchema().getContainer()), "rowId", FieldKey.fromParts(Column.RunGroups, ExpExperimentTable.Column.RowId));
-                    }
                 }, ExpRunGroupMapTable.Column.RunGroup.toString()));
                 return col;
             case Input:

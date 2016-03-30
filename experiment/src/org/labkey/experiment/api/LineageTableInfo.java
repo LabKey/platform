@@ -4,15 +4,23 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.VirtualTable;
+import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpLineageOptions;
+import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.query.DataClassUserSchema;
+import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.StringExpression;
 
 /**
  * User: kevink
@@ -20,13 +28,13 @@ import org.labkey.api.query.UserSchema;
  */
 public class LineageTableInfo extends VirtualTable
 {
-    private SQLFragment _lsids;
+    private @NotNull SQLFragment _lsids;
     private boolean _parents;
-    private Integer _depth;
-    private SQLFragment _expType;
-    private SQLFragment _cpasType;
+    private @Nullable Integer _depth;
+    private @Nullable String _expType;
+    private @Nullable String _cpasType;
 
-    public LineageTableInfo(String name, @NotNull UserSchema schema, SQLFragment lsids, boolean parents, @Nullable Integer depth, @Nullable SQLFragment expType, @Nullable SQLFragment cpasType)
+    public LineageTableInfo(String name, @NotNull UserSchema schema, @NotNull SQLFragment lsids, boolean parents, @Nullable Integer depth, @Nullable String expType, @Nullable String cpasType)
     {
         super(schema.getDbSchema(), name, schema);
         _lsids = lsids;
@@ -65,15 +73,7 @@ public class LineageTableInfo extends VirtualTable
 
         ColumnInfo parentLsid = new ColumnInfo(FieldKey.fromParts("parent_lsid"), this, JdbcType.VARCHAR);
         parentLsid.setSqlTypeName("lsidtype");
-        // TODO: parameterize the lookup target table depending on what SampleSet or DataClass we are interested in
-        parentLsid.setFk(new LookupForeignKey("lsid")
-        {
-            @Override
-            public TableInfo getLookupTableInfo()
-            {
-                return new NodesTableInfo(schema);
-            }
-        });
+        parentLsid.setFk(createLsidLookup(_expType, _cpasType));
         addColumn(parentLsid);
 
         ColumnInfo parentRowId = new ColumnInfo(FieldKey.fromParts("parent_rowId"), this, JdbcType.INTEGER);
@@ -99,20 +99,88 @@ public class LineageTableInfo extends VirtualTable
 
         ColumnInfo childLsid = new ColumnInfo(FieldKey.fromParts("child_lsid"), this, JdbcType.VARCHAR);
         childLsid.setSqlTypeName("lsidtype");
-        // TODO: parameterize the lookup target table depending on what SampleSet or DataClass we are interested in
-        childLsid.setFk(new LookupForeignKey("lsid")
-        {
-            @Override
-            public TableInfo getLookupTableInfo()
-            {
-                return new NodesTableInfo(schema);
-            }
-        });
+        childLsid.setFk(createLsidLookup(_expType, _cpasType));
         addColumn(childLsid);
 
         ColumnInfo childRowId = new ColumnInfo(FieldKey.fromParts("child_rowId"), this, JdbcType.INTEGER);
         addColumn(childRowId);
 
+    }
+
+    private ForeignKey createLsidLookup(String expType, String cpasType)
+    {
+        ForeignKey fk = null;
+        if (cpasType != null)
+            fk = createCpasTypeFK(cpasType);
+        else if (expType != null)
+            fk = createExpTypeFK(expType);
+
+        if (fk != null)
+            return fk;
+
+        return new LookupForeignKey("lsid") {
+            @Override
+            public TableInfo getLookupTableInfo() { return new NodesTableInfo(_userSchema); }
+        };
+    }
+
+    private ForeignKey createExpTypeFK(String expType)
+    {
+        switch (expType) {
+            case "Data":
+                return new QueryForeignKey("exp", _userSchema.getContainer(), null, _userSchema.getUser(), "Data", "LSID", "Name");
+            case "Material":
+                return new QueryForeignKey("exp", _userSchema.getContainer(), null, _userSchema.getUser(), "Materials", "LSID", "Name");
+            case "ExperimentRun":
+                return new QueryForeignKey("exp", _userSchema.getContainer(), null, _userSchema.getUser(), "Runs", "LSID", "Name");
+            default:
+                return null;
+        }
+    }
+
+    private ForeignKey createCpasTypeFK(String cpasType)
+    {
+        ExpSampleSet ss = ExperimentService.get().getSampleSet(cpasType);
+        if (ss != null)
+        {
+            return new LookupForeignKey("lsid", "Name")
+            {
+                @Override
+                public TableInfo getLookupTableInfo()
+                {
+                    SamplesSchema samplesSchema = new SamplesSchema(_userSchema.getUser(), _userSchema.getContainer());
+                    return samplesSchema.getSampleTable(ss);
+                }
+
+                @Override
+                public StringExpression getURL(ColumnInfo parent)
+                {
+                    return super.getURL(parent, true);
+                }
+            };
+        }
+
+        ExpDataClass dc = ExperimentService.get().getDataClass(cpasType);
+        if (dc != null)
+        {
+            return new LookupForeignKey("lsid", "Name")
+            {
+                @Override
+                public TableInfo getLookupTableInfo()
+                {
+                    DataClassUserSchema dcus = new DataClassUserSchema(_userSchema.getContainer(), _userSchema.getUser());
+                    return dcus.createTable(dc);
+                }
+
+                @Override
+                public StringExpression getURL(ColumnInfo parent)
+                {
+                    return super.getURL(parent, true);
+                }
+            };
+        }
+
+        return null;
     }
 
     @NotNull
@@ -124,13 +192,16 @@ public class LineageTableInfo extends VirtualTable
         options.setChildren(!_parents);
 
         boolean filtered =
-                (_expType != null && !isNULL(_expType)) ||
-                (_cpasType != null && !isNULL(_cpasType)) ||
+                !isNULL(_expType) ||
+                !isNULL(_cpasType) ||
                 (_depth != null && _depth != 0);
 
         SQLFragment tree = ExperimentServiceImpl.get().generateExperimentTreeSQL(_lsids, options);
 
+        String comment = String.format("<LineageTableInfo parents=%b, depth=%d, expType=%s, cpasType=%s>\n", _parents, _depth, _expType, _cpasType);
+
         SQLFragment sql = new SQLFragment();
+        sql.appendComment(comment, getSqlDialect());
         sql.append("(SELECT * FROM (");
         sql.append(tree);
         sql.append(") AS X\n");
@@ -140,28 +211,40 @@ public class LineageTableInfo extends VirtualTable
         // CONSIDER: Do this in the generateExperimentTreeSQL itself so the lineage.api looks the same
         sql.append("X.").append(_parents ? "parent_" : "child_").append("lsid <> X.self_lsid\n");
 
-        if (_expType != null && !isNULL(_expType))
-            sql.append("AND X.").append(_parents ? "parent_" : "child_").append("exptype = ").append(_expType).append("\n");
+        if (!isNULL(_expType))
+            sql.append("AND X.").append(_parents ? "parent_" : "child_").append("exptype = '").append(_expType).append("'\n");
 
-        if (_cpasType != null && !isNULL(_cpasType))
-            sql.append("AND X.").append(_parents ? "parent_" : "child_").append("cpastype = ").append(_cpasType).append("\n");
+        if (!isNULL(_cpasType))
+            sql.append("AND X.").append(_parents ? "parent_" : "child_").append("cpastype = '").append(_cpasType).append("'\n");
 
         if (_depth != null && _depth != 0)
             sql.append("AND X.depth ").append(_parents ? " > " : " < ").append(_depth).append("\n");
 
         sql.append(")\n");
+        sql.appendComment("</LineageTableInfo>\n", getSqlDialect());
 
         return sql;
     }
 
-    public static boolean isNULL(SQLFragment f)
+    public static boolean isNULL(String s)
     {
-        if (f.getParams().size() > 0)
-            return false;
-        String s = f.getSQL().trim();
+        if (s == null || s.length() == 0)
+            return true;
+
+        s = s.trim();
         if (s.equalsIgnoreCase("NULL"))
             return true;
         return false;
+    }
+
+    public static boolean isNULL(SQLFragment f)
+    {
+        if (f == null)
+            return true;
+
+        if (f.getParams().size() > 0)
+            return false;
+        return isNULL(f.getSQL());
     }
 
     /**

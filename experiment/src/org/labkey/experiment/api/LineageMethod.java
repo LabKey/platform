@@ -18,11 +18,12 @@ import org.labkey.api.query.snapshot.AbstractTableMethodInfo;
  * Date: 2/23/16
  *
  * Adds a table method to exp.Data or exp.Material tables.  For example:
- *   exp.Data.Parents(type, depth)
- *   exp.Data.Children(type, depth)
+ *   exp.Data.Inputs(type, depth)
+ *   exp.Data.Outputs(type, depth)
  *
  * Where:
  * - (optional) type is either one of 'ExperimentRun', 'Data', or 'Material' or is the cpastype lsid of the SampleSet or DataClass.
+ *   TODO: also support DataClass and SampleSet names
  *   CONSIDER: we could use use run.protocollsid as it's cpastype.
  * - (optional) depth is an integer >= 0.
  */
@@ -70,15 +71,15 @@ import org.labkey.api.query.snapshot.AbstractTableMethodInfo;
         lsids.append(")");
 
         SQLFragment[] fragments = getSQLFragments(arguments);
-        SQLFragment expType = null;
-        SQLFragment cpasType = null;
+        String expType = null;
+        String cpasType = null;
         if (fragments.length > 0 && isSimpleString(fragments[0]))
         {
             String type = toSimpleString(fragments[0]);
             if (type.equals("Data") || type.equals("Material") || type.equals("ExperimentRun"))
-                expType = fragments[0];
+                expType = type;
             else
-                cpasType = fragments[0];
+                cpasType = type;
         }
 
         Integer depth = null;

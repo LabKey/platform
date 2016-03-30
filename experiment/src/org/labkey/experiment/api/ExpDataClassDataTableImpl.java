@@ -224,6 +224,13 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                 aliasCol.setCalculated(true);
                 aliasCol.setRequired(false);
                 return aliasCol;
+
+            case Inputs:
+                return ExpDataTableImpl.createLineageColumn(this, alias, true);
+
+            case Outputs:
+                return ExpDataTableImpl.createLineageColumn(this, alias, false);
+
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -333,6 +340,12 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             if (isVisibleByDefault(col))
                 defaultVisible.add(FieldKey.fromParts(col.getName()));
         }
+
+        ColumnInfo colInputs = addColumn(Column.Inputs);
+        addMethod("Inputs", new LineageMethod(getContainer(), colInputs, true));
+
+        ColumnInfo colOutputs = addColumn(Column.Outputs);
+        addMethod("Outputs", new LineageMethod(getContainer(), colOutputs, false));
 
 
         ActionURL gridUrl = new ActionURL(ExperimentController.ShowDataClassAction.class, getContainer());

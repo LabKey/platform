@@ -136,9 +136,12 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
             }
         }
 
-        // NOTE: for some strange reason, a column must exist with the same name as the method
-        addMethod("Children", new LineageMethod(getContainer(), getColumn("Children"), false));
-        addMethod("Parents", new LineageMethod(getContainer(), getColumn("Parents"), true));
+        ColumnInfo colInputs = addColumn(Column.Inputs);
+        addMethod("Inputs", new LineageMethod(getContainer(), colInputs, true));
+
+        ColumnInfo colOutputs = addColumn(Column.Outputs);
+        addMethod("Outputs", new LineageMethod(getContainer(), colOutputs, false));
+
     }
 
     @Override
@@ -151,16 +154,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
     @Override
     protected ColumnInfo resolveColumn(String name)
     {
-        ColumnInfo result = super.resolveColumn(name);
-        if (result == null)
-        {
-            if ("Parents".equalsIgnoreCase(name))
-                return createColumn("Parents", Column.LSID);
-
-            if ("Children".equalsIgnoreCase(name))
-                return createColumn("Children", Column.LSID);
-        }
-        return result;
+        return super.resolveColumn(name);
     }
 
     public ColumnInfo createColumn(String alias, Column column)
@@ -399,6 +393,13 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
             }
             case Generated:
                 return wrapColumn(alias, _rootTable.getColumn("Generated"));
+
+            case Inputs:
+                return createLineageColumn(this, alias, true);
+
+            case Outputs:
+                return createLineageColumn(this, alias, true);
+
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -525,6 +526,19 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
                 "WHERE Exp.DataInput.DataId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId)");
         ColumnInfo ret = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
         return doAdd(ret);
+    }
+
+    public static ColumnInfo createLineageColumn(ExpTableImpl table, String alias, boolean inputs)
+    {
+        ColumnInfo ret = table.wrapColumn(alias, table.getRealTable().getColumn("LSID"));
+        ret.setFk(new LineageForeignKey(table, inputs));
+        ret.setUserEditable(false);
+        ret.setReadOnly(true);
+        ret.setShownInInsertView(false);
+        ret.setShownInUpdateView(false);
+        ret.setIsUnselectable(true);
+        ret.setHidden(true);
+        return ret;
     }
 
     private class ThumbnailDataLinkColumn extends ViewFileDataLinkColumn

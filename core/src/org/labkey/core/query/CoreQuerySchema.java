@@ -425,7 +425,8 @@ public class CoreQuerySchema extends UserSchema
                 ((LookupColumn)lookupColumn)._joinType = LookupColumn.JoinType.inner;
                 return super.createMultiValuedLookupColumn(lookupColumn, parent, childKey, junctionKey, fk);
             }
-        });        users.addColumn(groupsCol);
+        });
+        users.addColumn(groupsCol);
         List<FieldKey> visibleColumns = new ArrayList<>(users.getDefaultVisibleColumns());
         visibleColumns.add(groupsCol.getFieldKey());
         users.setDefaultVisibleColumns(visibleColumns);
