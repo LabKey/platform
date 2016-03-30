@@ -532,6 +532,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
     {
         ColumnInfo ret = table.wrapColumn(alias, table.getRealTable().getColumn("LSID"));
         ret.setFk(new LineageForeignKey(table, inputs));
+        ret.setCalculated(true);
         ret.setUserEditable(false);
         ret.setReadOnly(true);
         ret.setShownInInsertView(false);

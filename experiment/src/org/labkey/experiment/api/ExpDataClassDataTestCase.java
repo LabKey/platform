@@ -27,6 +27,7 @@ import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -424,6 +425,50 @@ public class ExpDataClassDataTestCase
         Assert.assertEquals(lineage.getDatas().size(), 2);
         Assert.assertTrue(lineage.getMaterials().contains(s1));
         Assert.assertTrue(lineage.getMaterials().contains(s2));
+
+        // Get lineage using query
+        String sql =
+                "SELECT\n" +
+                "  dc.Name,\n" +
+                "  dc.Inputs.Data.\"All\".Name AS InputsDataAllNames,\n" +
+                "  dc.Inputs.Data." + firstDataClassName + ".Name AS InputsDataFirstDataClassNames,\n" +
+                "  dc.Inputs.Materials.Samples.Name AS InputsMaterialSampleNames,\n" +
+                "  dc.Outputs.Data." + secondDataClassName + ".Name AS OutputsDataSecondDataClassNames\n" +
+                "FROM exp.data." + firstDataClassName + " AS dc\n" +
+                "ORDER BY dc.RowId\n";
+
+        try (Results rs = QueryService.get().selectResults(schema, sql, null, null, true, false))
+        {
+            Assert.assertTrue(rs.next());
+            Map<FieldKey, Object> bobMap = rs.getFieldKeyRowMap();
+            Assert.assertEquals("bob", bobMap.get(FieldKey.fromParts("Name")));
+            assertMultiValue(bobMap.get(FieldKey.fromParts("InputsMaterialSampleNames")), "S-1");
+
+            Assert.assertTrue(rs.next());
+            Map<FieldKey, Object> sallyMap = rs.getFieldKeyRowMap();
+            Assert.assertEquals("sally", sallyMap.get(FieldKey.fromParts("Name")));
+            assertMultiValue(sallyMap.get(FieldKey.fromParts("InputsDataAllNames")), "jimbo", "bob");
+            assertMultiValue(sallyMap.get(FieldKey.fromParts("InputsDataFirstDataClassNames")), "bob");
+            assertMultiValue(sallyMap.get(FieldKey.fromParts("InputsMaterialSampleNames")), "S-2", "S-1");
+
+            Assert.assertTrue(rs.next());
+            Map<FieldKey, Object> mikeMap = rs.getFieldKeyRowMap();
+            Assert.assertEquals("mike", mikeMap.get(FieldKey.fromParts("Name")));
+            assertMultiValue(mikeMap.get(FieldKey.fromParts("InputsDataAllNames")), "sally", "jimbo", "bob");
+            assertMultiValue(mikeMap.get(FieldKey.fromParts("InputsDataFirstDataClassNames")), "bob", "sally");
+            assertMultiValue(mikeMap.get(FieldKey.fromParts("InputsMaterialSampleNames")), "S-2", "S-1");
+
+            Assert.assertFalse(rs.next());
+        }
+    }
+
+    void assertMultiValue(Object value, String... expected)
+    {
+        Assert.assertNotNull(value);
+        String s = String.valueOf(value);
+
+        for (String e : expected)
+            Assert.assertTrue("Failed to find '" + e + "' in multivalue '" + s + "'", s.contains(e));
     }
 
     @Test
