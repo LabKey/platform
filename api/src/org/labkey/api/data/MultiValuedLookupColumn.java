@@ -17,7 +17,6 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.query.FieldKey;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -35,7 +34,7 @@ public class MultiValuedLookupColumn extends LookupColumn
     private final ForeignKey _rightFk;
     private final ColumnInfo _junctionKey;
 
-    public MultiValuedLookupColumn(FieldKey fieldKey, ColumnInfo parentPkColumn, ColumnInfo childKey, ColumnInfo junctionKey, ForeignKey fk, ColumnInfo display)
+    public MultiValuedLookupColumn(ColumnInfo parentPkColumn, ColumnInfo childKey, ColumnInfo junctionKey, ForeignKey fk, ColumnInfo display)
     {
         super(parentPkColumn, childKey, display);
         _display = display;
@@ -43,7 +42,6 @@ public class MultiValuedLookupColumn extends LookupColumn
         _junctionKey = junctionKey;
         copyAttributesFrom(display);
         copyURLFrom(display, parentPkColumn.getFieldKey(), null);
-        setFieldKey(fieldKey);
         setJdbcType(JdbcType.VARCHAR);
     }
 

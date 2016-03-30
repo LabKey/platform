@@ -37,5 +37,7 @@ public interface ExpDataClassDataTable extends ExpTable<ExpDataClassDataTable.Co
         Folder,
         Flag,
         Alias,
+        Inputs,
+        Outputs,
     }
 }

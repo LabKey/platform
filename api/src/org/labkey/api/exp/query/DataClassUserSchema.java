@@ -86,7 +86,7 @@ public class DataClassUserSchema extends AbstractExpSchema
         return createTable(dataClass);
     }
 
-    private ExpDataClassDataTable createTable(ExpDataClass dataClass)
+    public ExpDataClassDataTable createTable(ExpDataClass dataClass)
     {
         ExpDataClassDataTable ret = ExperimentService.get().createDataClassDataTable(dataClass.getName(), this, dataClass);
         if (_containerFilter != null)

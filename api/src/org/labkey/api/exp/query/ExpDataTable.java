@@ -48,6 +48,8 @@ public interface ExpDataTable extends ExpTable<ExpDataTable.Column>
         FileExtension,
         ViewOrDownload,
         Generated,
+        Inputs,
+        Outputs
     }
 
     void setExperiment(ExpExperiment experiment);

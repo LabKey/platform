@@ -161,7 +161,7 @@ public class MultiValuedForeignKey implements ForeignKey
     // Give subclasses a chance to alter these parameters before MVLC construction
     protected MultiValuedLookupColumn createMultiValuedLookupColumn(ColumnInfo lookupColumn, ColumnInfo parent, ColumnInfo childKey, ColumnInfo junctionKey, ForeignKey fk)
     {
-        return new MultiValuedLookupColumn(lookupColumn.getFieldKey(), parent, childKey, junctionKey, fk, lookupColumn);
+        return new MultiValuedLookupColumn(parent, childKey, junctionKey, fk, lookupColumn);
     }
 
 
@@ -183,7 +183,16 @@ public class MultiValuedForeignKey implements ForeignKey
     @Override
     public StringExpression getURL(ColumnInfo parent)
     {
-        return _fk.getURL(parent);
+        ColumnInfo junctionColumn = getJunctionColumn();
+        if (junctionColumn != null)
+        {
+            ForeignKey junctionFK = junctionColumn.getFk();
+            if (junctionFK != null)
+            {
+                return junctionFK.getURL(parent);
+            }
+        }
+        return null;
     }
 
     @Override

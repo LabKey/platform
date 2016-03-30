@@ -42,6 +42,8 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>
         Modified,
         ModifiedBy,
         Alias,
+        Inputs,
+        Outputs,
     }
 
     void populate(ExpSampleSet ss, boolean filterSampleSet);
