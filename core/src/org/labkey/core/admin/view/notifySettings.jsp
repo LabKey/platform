@@ -187,13 +187,13 @@
                                     type: '<%=h(bean.getType())%>',
                                     individualEmailOption: emailCombo.getValue(),
                                     dataRegionSelectionKey: '<%=h(bean.getDataRegionSelectionKey())%>',
-                                    returnUrl: '<%=bean.getReturnUrl()%>'
+                                    returnUrl: <%=q(bean.getReturnUrl())%>
                                 },
                                 success: function (response, opts)
                                 {
                                     var o = eval('var $=' + response.responseText + ';$;');
                                     if (o && o.success)
-                                        window.location = '<%=bean.getReturnUrl()%>';
+                                        window.location = <%=q(bean.getReturnUrl())%>;
                                     else
                                         Ext4.MessageBox.alert('Error', o.message);
                                 },
