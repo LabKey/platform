@@ -108,6 +108,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -593,11 +594,17 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             DataIteratorBuilder step2 = TableInsertDataIterator.create(DataIteratorBuilder.wrap(step0), ExperimentService.get().getTinfoData(), c, context);
             DataIteratorBuilder step3 = TableInsertDataIterator.create(step2, ExpDataClassDataTableImpl.this._dataClass.getTinfo(), c, context);
 
+            DataIteratorBuilder step4 = step3;
+            if (colNameMap.containsKey("flag") || colNameMap.containsKey("comment"))
+            {
+                step4 = new FlagDataIteratorBuilder(step3, context, _user);
+            }
+
             // Wire up derived parent/child data and materials
-            DataIteratorBuilder step4 = new DerivationDataIteratorBuilder(step3, _user);
+            DataIteratorBuilder step5 = new DerivationDataIteratorBuilder(step4, _user);
 
             // Hack: add the alias and lsid values back into the input so we can process them in the chained data iterator
-            DataIteratorBuilder step5 = step4;
+            DataIteratorBuilder step6 = step5;
             if (colNameMap.containsKey("alias"))
             {
                 SimpleTranslator st = new SimpleTranslator(step4.getDataIterator(context), context);
@@ -610,10 +617,89 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                         return input.get(colNameMap.get("alias"));
                     }
                 });
-                step5 = DataIteratorBuilder.wrap(st);
+                step6 = DataIteratorBuilder.wrap(st);
             }
 
-            return LoggingDataIterator.wrap(step5.getDataIterator(context));
+            return LoggingDataIterator.wrap(step6.getDataIterator(context));
+        }
+    }
+
+    private class FlagDataIteratorBuilder implements DataIteratorBuilder
+    {
+        private DataIteratorContext _context;
+        private final DataIteratorBuilder _in;
+        private final User _user;
+
+        FlagDataIteratorBuilder(@NotNull DataIteratorBuilder in, DataIteratorContext context, User user)
+        {
+            _context = context;
+            _in = in;
+            _user = user;
+        }
+
+        @Override
+        public DataIterator getDataIterator(DataIteratorContext context)
+        {
+            DataIterator pre = _in.getDataIterator(context);
+            return LoggingDataIterator.wrap(new FlagDataIterator(pre, context, _user));
+        }
+    }
+
+    private class FlagDataIterator extends WrapperDataIterator
+    {
+        final DataIteratorContext _context;
+        final User _user;
+        final Integer _lsidCol;
+        final Integer _flagCol;
+
+        protected FlagDataIterator(DataIterator di, DataIteratorContext context, User user)
+        {
+            super(di);
+            _context = context;
+            _user = user;
+
+            Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
+            _lsidCol = map.get("lsid");
+            _flagCol = map.containsKey("flag") ? map.get("flag") : map.get("comment");
+        }
+
+        private BatchValidationException getErrors()
+        {
+            return _context.getErrors();
+        }
+
+        @Override
+        public boolean next() throws BatchValidationException
+        {
+            boolean hasNext = super.next();
+
+            // skip processing if there are errors upstream
+            if (getErrors().hasErrors())
+                return hasNext;
+
+            if (_lsidCol != null && _flagCol != null)
+            {
+                Object lsidValue = get(_lsidCol);
+                Object flagValue = get(_flagCol);
+
+                if (lsidValue instanceof String)
+                {
+                    String lsid = (String)lsidValue;
+                    String flag = Objects.toString(flagValue, null);
+
+                    ExpData data = ExperimentService.get().getExpData(lsid);
+                    try
+                    {
+                        data.setComment(_user, flag);
+                    }
+                    catch (ValidationException e)
+                    {
+                        throw new BatchValidationException(e);
+                    }
+                }
+
+            }
+            return hasNext;
         }
     }
 
@@ -671,9 +757,12 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
         {
             boolean hasNext = super.next();
 
+            // skip processing if there are errors upstream
+            if (getErrors().hasErrors())
+                return hasNext;
+
             // For each iteration, collect the lsid and alias col values.
-            // Skip all processing if there are errors upstream
-            if (!getErrors().hasErrors() && _lsidCol != null && _aliasCol != null)
+            if (_lsidCol != null && _aliasCol != null)
             {
                 Object lsidValue = get(_lsidCol);
                 Object aliasValue = get(_aliasCol);
@@ -921,10 +1010,19 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             }
         }
 
+        private BatchValidationException getErrors()
+        {
+            return _context.getErrors();
+        }
+
         @Override
         public boolean next() throws BatchValidationException
         {
             boolean hasNext = super.next();
+
+            // skip processing if there are errors upstream
+            if (getErrors().hasErrors())
+                return hasNext;
 
             // For each iteration, collect the parent col values
             if (!_parentCols.isEmpty())
@@ -1112,6 +1210,16 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             TableInfo t = ExpDataClassDataTableImpl.this._dataClass.getTinfo();
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("LSID"), lsid);
             ret.putAll(Table.update(user, t, rowStripped, keys, filter, Level.DEBUG));
+
+            // update comment
+            if (row.containsKey("flag") || row.containsKey("comment"))
+            {
+                Object o = row.containsKey("flag") ? row.get("flag") : row.get("comment");
+                String flag = Objects.toString(o, null);
+
+                ExpData data = ExperimentService.get().getExpData(lsid);
+                data.setComment(user, flag);
+            }
 
             // handle attachments
             removePreviousAttachments(user, c, row, oldRow);
