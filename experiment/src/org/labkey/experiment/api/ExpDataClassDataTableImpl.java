@@ -688,13 +688,18 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                     String flag = Objects.toString(flagValue, null);
 
                     ExpData data = ExperimentService.get().getExpData(lsid);
-                    try
+
+                    // TODO: Temporary workaround for 26082 -- determine proper handling of null ExpData from valid lsid
+                    if (data != null)
                     {
-                        data.setComment(_user, flag);
-                    }
-                    catch (ValidationException e)
-                    {
-                        throw new BatchValidationException(e);
+                        try
+                        {
+                            data.setComment(_user, flag);
+                        }
+                        catch (ValidationException e)
+                        {
+                            throw new BatchValidationException(e);
+                        }
                     }
                 }
 
