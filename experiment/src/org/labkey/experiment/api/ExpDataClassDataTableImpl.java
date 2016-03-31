@@ -688,18 +688,13 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                     String flag = Objects.toString(flagValue, null);
 
                     ExpData data = ExperimentService.get().getExpData(lsid);
-
-                    // TODO: Temporary workaround for 26082 -- determine proper handling of null ExpData from valid lsid
-                    if (data != null)
+                    try
                     {
-                        try
-                        {
-                            data.setComment(_user, flag);
-                        }
-                        catch (ValidationException e)
-                        {
-                            throw new BatchValidationException(e);
-                        }
+                        data.setComment(_user, flag);
+                    }
+                    catch (ValidationException e)
+                    {
+                        throw new BatchValidationException(e);
                     }
                 }
 
@@ -1134,9 +1129,17 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
         public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum,Object> configParameters, Map<String, Object> extraScriptContext)
                 throws SQLException
         {
-            return _importRowsUsingETL(user, container, rows, null, getDataIteratorContext(errors, InsertOption.IMPORT, configParameters), extraScriptContext);
+            // Temporary work around for Issue 26082 -- use INSERT instead of IMPORT
+            return _importRowsUsingETL(user, container, rows, null, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
         }
 
+        @Override
+        public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext) throws SQLException
+        {
+            // Temporary work around for Issue 26082 -- use INSERT instead of IMPORT
+            context.setInsertOption(InsertOption.INSERT);
+            return super.loadRows(user, container, rows, context, extraScriptContext);
+        }
 
         @Override
         public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
