@@ -1428,8 +1428,7 @@ if (!LABKEY.DataRegions) {
 
     Proto.getQueryDetails = function(success, failure, scope) {
 
-        var additionalFields = {},
-            userFilter = [],
+        var userFilter = [],
             userSort = this.getUserSort(),
             userColumns = this.getParameter(this.name + COLUMNS_PREFIX),
             fields = [],
@@ -1443,12 +1442,12 @@ if (!LABKEY.DataRegions) {
             });
         });
 
-        $.each(userSort, function(i, sort) {
-            additionalFields[sort.fieldKey] = true;
+        $.each(userFilter, function(i, filter) {
+            fields.push(filter.fieldKey);
         });
 
-        $.each(additionalFields, function(i, fieldKey) {
-            fields.push(fieldKey);
+        $.each(userSort, function(i, sort) {
+            fields.push(sort.fieldKey);
         });
 
         LABKEY.Query.getQueryDetails({
@@ -1634,6 +1633,7 @@ if (!LABKEY.DataRegions) {
                     if ($.isFunction(callback)) {
                         callback.call(scope || this);
                     }
+                    LABKEY.Utils.signalWebDriverTest("dataRegionPanelHide");
                     $(this).trigger($.Event('afterpanelhide'), [this]);
                 }, this);
             }
@@ -1665,6 +1665,7 @@ if (!LABKEY.DataRegions) {
                 if ($.isFunction(callback)) {
                     callback.call(scope || this);
                 }
+                LABKEY.Utils.signalWebDriverTest("dataRegionPanelShow");
                 $(this).trigger($.Event('afterpanelshow'), [this]);
            }, this);
         }, this);
