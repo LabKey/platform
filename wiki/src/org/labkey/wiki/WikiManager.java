@@ -395,7 +395,7 @@ public class WikiManager implements WikiService
 
     public FormattedHtml formatWiki(Container c, Wiki wiki, WikiVersion wikiversion)
     {
-        String hrefPrefix = wiki.getWikiURL(WikiController.PageAction.class, null).toString();
+        String hrefPrefix = wiki.getWikiURL(WikiController.PageAction.class, "").toString();
         String attachPrefix = null;
 
         if (null != wiki.getEntityId())
