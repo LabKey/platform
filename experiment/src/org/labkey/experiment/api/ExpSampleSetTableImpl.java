@@ -78,7 +78,7 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
                 sql.add(Boolean.FALSE);
                 ExprColumn result = new ExprColumn(this, "Active", sql, JdbcType.BOOLEAN);
                 result.setFormat("Yes;No");
-                result.setDescription("Indicates if this sample set is current the active, or default, for this folder or project");
+                result.setDescription("Indicates if this sample set is currently the active, or default, for this folder or project");
                 return result;
             }
             case SampleCount:
