@@ -296,6 +296,7 @@ Click the Save button at any time to accept the current settings and continue.</
     <td class="labkey-form-label">Message HTML</td>
     <td><textarea id="ribbonMessageHtml" name="ribbonMessageHtml" cols="60" rows="3"><%=h(appProps.getRibbonMessageHtml())%></textarea></td>
 </tr>
+
 <tr>
     <td>&nbsp;</td>
 </tr>
@@ -313,6 +314,30 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
+    <td>&nbsp;</td>
+</tr>
+<tr>
+    <td colspan=2>HTTP security settings</td>
+</tr>
+<tr><td colspan=3 class=labkey-title-area-line></td></tr>
+<tr>
+    <td class="labkey-form-label">CSRF checking</td>
+    <td><select name="CSRFCheck">
+        <option value="POST" <%=selectedEq("POST",appProps.getCSRFCheck())%>>All POST requests (recommended)</option>
+        <option value="ADMINONLY" <%=selectedEq("ADMINONLY",appProps.getCSRFCheck())%>>Admin requests</option>
+    </select></td>
+</tr>
+<tr>
+    <td class="labkey-form-label">X-Frame-Options</td>
+    <td><select name="XFrameOptions">
+        <% String option = appProps.getXFrameOptions(); %>
+        <option value="DENY" <%=selectedEq("DENY",option)%>>DENY</option>
+        <option value="SAMEORIGIN" <%=selectedEq("SAMEORIGIN",option)%>>SAMEORIGIN</option>
+        <option value="ALLOW" <%=selectedEq("ALLOW",option)%>>Allow</option></select></td>
+</tr>
+
+
+    <tr>
     <td>&nbsp;</td>
 </tr>
 

@@ -1289,6 +1289,22 @@ public class AdminController extends SpringActionController
                 }
             }
 
+            String frameOptions = StringUtils.trimToEmpty(form.getXFrameOptions());
+            if (!frameOptions.equals("DENY") && !frameOptions.equals("SAMEORIGIN") && !frameOptions.equals("ALLOW"))
+            {
+                errors.reject(ERROR_MSG, "XFrameOptions must equal DENY, or SAMEORIGIN, or ALLOW");
+                return false;
+            }
+            props.setXFrameOptions(frameOptions);
+
+            String check = form.getCSRFCheck();
+            if (!check.equals("POST") && !check.equals("ADMINONLY"))
+            {
+                errors.reject(ERROR_MSG, "CSRFCheck must equal POST or ADMINONLY");
+                return false;
+            }
+            props.setCSRFCheck(check);
+
             props.save();
 
             //write an audit log event
@@ -1721,6 +1737,9 @@ public class AdminController extends SpringActionController
         private boolean _useContainerRelativeURL;
         private boolean _showSessionKeys;
 
+        private String _CSRFCheck;
+        private String _XFrameOptions;
+
         public void setDefaultDomain(String defaultDomain)
         {
             _defaultDomain = defaultDomain;
@@ -1989,6 +2008,26 @@ public class AdminController extends SpringActionController
         public void setShowSessionKeys(boolean showSessionKeys)
         {
             _showSessionKeys = showSessionKeys;
+        }
+
+        public String getCSRFCheck()
+        {
+            return _CSRFCheck;
+        }
+
+        public void setCSRFCheck(String CSRFCheck)
+        {
+            _CSRFCheck = CSRFCheck;
+        }
+
+        public String getXFrameOptions()
+        {
+            return _XFrameOptions;
+        }
+
+        public void setXFrameOptions(String XFrameOptions)
+        {
+            _XFrameOptions = XFrameOptions;
         }
     }
 
