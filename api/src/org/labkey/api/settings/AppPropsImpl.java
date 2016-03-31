@@ -18,6 +18,7 @@ package org.labkey.api.settings;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.SecurityManager;
@@ -85,6 +86,8 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     protected static final String SELF_REPORT_EXCEPTIONS = "selfReportExceptions";
     protected static final String USE_CONTAINER_RELATIVE_URL = "useContainerRelativeURL";
     protected static final String SHOW_SESSION_KEYS = "showSessionKeys";
+    protected static final String CSRF_CHECK = "CSRFCheck";
+    protected static final String X_FRAME_OPTIONS = "XFrameOption";
 
     protected static final String SITE_CONFIG_NAME = "SiteConfig";
 
@@ -499,5 +502,20 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     {
         String buildConfName = System.getProperty("teamcity.build.id");
         return StringUtils.isNotBlank(buildConfName);
+    }
+
+
+    /** return "POST" or "ADMINONLY" */
+    @Override
+    public String getCSRFCheck()
+    {
+        return lookupStringValue(CSRF_CHECK, "ADMINONLY");
+    }
+
+    /** return "SAMEORIGIN" or "DENY" or "ALLOW" */
+    @Override
+    public String getXFrameOptions()
+    {
+        return lookupStringValue(X_FRAME_OPTIONS, "SAMEORIGIN");
     }
 }

@@ -520,6 +520,11 @@ public class ExceptionUtil
             try
             {
                 response.reset();
+                // mostly to make security scanners happy
+                if (!"ALLOW".equals(AppProps.getInstance().getXFrameOptions()))
+                    response.setHeader("X-Frame-Options",AppProps.getInstance().getXFrameOptions());
+                response.setHeader("X-XSS-Protection",  "1; mode=block");
+                response.setHeader("X-Content-Type-Options","nosniff");
             }
             catch (IllegalStateException x)
             {
@@ -695,7 +700,6 @@ public class ExceptionUtil
         {
             try
             {
-                response.reset();
                 response.setContentType("text/html");
                 if (null == responseStatusMessage)
                     response.setStatus(responseStatus);

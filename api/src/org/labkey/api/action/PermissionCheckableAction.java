@@ -24,6 +24,7 @@ import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.view.ForbiddenProjectException;
 import org.labkey.api.view.NotFoundException;
@@ -187,13 +188,9 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         csrfChecking:
         {
             boolean requiresAdmin = permissionsRequired.contains(AdminPermission.class);
-
-            // this is default CSRF rule if there is not an explicit @CSRF annotation
-            //   currently all POSTS on admin action are validated
-            CSRF.Method csrfCheck = (requiresSiteAdmin || requiresAdmin) ? CSRF.Method.POST : CSRF.Method.NONE;
-
-            // A more aggressive option, check _all_ POST requests
-            // CSRF.Method csrfCheck = CSRF.Method.POST;
+            CSRF.Method csrfCheck = CSRF.Method.POST;
+            if ("ADMINONLY".equals(AppProps.getInstance().getCSRFCheck()))
+                csrfCheck = (requiresSiteAdmin || requiresAdmin) ? CSRF.Method.POST : CSRF.Method.NONE;
 
             if (actionClass.isAnnotationPresent(CSRF.class))
             {

@@ -199,4 +199,14 @@ public class WriteableAppProps extends AppPropsImpl
     {
         storeBooleanValue(SHOW_SESSION_KEYS, b);
     }
+
+    public void setXFrameOptions(String option)
+    {
+        storeStringValue(X_FRAME_OPTIONS, option);
+    }
+
+    public void setCSRFCheck(String check)
+    {
+        storeStringValue(CSRF_CHECK, check);
+    }
 }

@@ -100,6 +100,10 @@ public class AppProps
         boolean getUseContainerRelativeURL();
         boolean isShowSessionKeys();
         boolean isTeamCityEnvironment();
+
+        // configurable http security settings
+        String getCSRFCheck();
+        String getXFrameOptions();
     }
 
     public static final String EXPERIMENTAL_CONTAINER_RELATIVE_URL = "containerRelativeURL";

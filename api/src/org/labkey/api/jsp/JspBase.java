@@ -217,6 +217,12 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return new _HtmlString(selected ? " selected" : "");
     }
 
+    /** Returns " selected" (if a.equals(b)) */
+    public _HtmlString selectedEq(Object a, Object b)
+    {
+        return selected(null==a ? null==b : a.equals(b));
+    }
+
 
     /** Returns " disabled" (if true) or "" (false) */
     public _HtmlString disabled(boolean disabled)
