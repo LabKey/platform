@@ -67,32 +67,13 @@ public abstract class DownloadOutputView extends ROutputView
 
         if (file != null && file.exists() && (file.length() > 0))
         {
-            if (_parent.getEntityId() != null)
-            {
-                AttachmentFile form = new FileAttachmentFile(file);
-                AttachmentService.get().deleteAttachment(_parent, file.getName(), null);
-                AttachmentService.get().addAttachments(_parent, Collections.singletonList(form), getViewContext().getUser());
-
-                for (Attachment a : AttachmentService.get().getAttachments(_parent))
-                {
-                    if (file.getName().equals(a.getName()))
-                    {
-                        downloadUrl = PageFlowUtil.filter(a.getDownloadUrl(PageFlowUtil.urlProvider(ReportUrls.class).getDownloadClass()));
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                File newFile = moveToTemp(file, "RReportPdf");
-                // file hasn't been saved yet
-                String key = "temp:" + GUID.makeGUID();
-                getViewContext().getRequest().getSession(true).setAttribute(key, newFile);
-                downloadUrl = PageFlowUtil.urlProvider(ReportUrls.class).urlStreamFile(getViewContext().getContainer()).
-                        addParameters(PageFlowUtil.map("sessionKey", key, "deleteFile", "false", "attachment", "true")).getLocalURIString();
-            }
+            File newFile = moveToTemp(file, "RReportPdf");
+            // file hasn't been saved yet
+            String key = "temp:" + GUID.makeGUID();
+            getViewContext().getRequest().getSession(true).setAttribute(key, newFile);
+            downloadUrl = PageFlowUtil.urlProvider(ReportUrls.class).urlStreamFile(getViewContext().getContainer()).
+                    addParameters(PageFlowUtil.map("sessionKey", key, "deleteFile", "false", "attachment", "true")).getLocalURIString();
         }
-
         return downloadUrl;
     }
 
