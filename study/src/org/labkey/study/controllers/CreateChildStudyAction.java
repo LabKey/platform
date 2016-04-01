@@ -107,11 +107,9 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
         _destFolderCreated = c == null;
 
         // make sure the folder, if already existing doesn't already contain a study
-
         _dstContainer = ContainerManager.ensureContainer(form.getDstPath());
         if (_dstContainer != null)
         {
-            //Container
             Study study = StudyManager.getInstance().getStudy(_dstContainer);
             if (study != null)
             {

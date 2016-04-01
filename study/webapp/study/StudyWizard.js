@@ -66,42 +66,30 @@ LABKEY.study.openRepublishStudyWizard = function(snapshotId, availableContainerN
 
 // NOTE: consider wrapping in Ext.onReady
 LABKEY.study.openCreateStudyWizard = function(mode, studyName) {
-    // TODO: consider container scope (containerFilter: LABKEY.Query.containerFilter.allFolders)
-    LABKEY.Query.selectRows({
+    LABKEY.Query.executeSql({
         schemaName: 'study',
-        queryName: 'StudySnapshot',
-        columns: ['Created', 'CreatedBy/DisplayName', 'Destination', 'Settings'],
-        filterArray: [
-            LABKEY.Filter.create('type', mode)
-        ],
-        success: function (data) {
+        sql: 'SELECT s.Created, s.CreatedBy.DisplayName AS CreatedBy, s.Destination, '
+            + 'c.Name AS DestinationName, s.Settings FROM StudySnapshot s '
+            + 'LEFT JOIN core.Containers c ON s.Destination = c.EntityId WHERE s.Type=\'' + mode + '\'',
+        containerFilter: LABKEY.Query.containerFilter.allFolders,
+        success: function(data)
+        {
             var config = {
                 mode: mode,
                 studyName : studyName
             };
 
-            // Do some clean up of each row (fix keys)
-            Ext.each(data.rows, function(row) {
-                row.Destination = "";
-                if (row._labkeyurl_Destination)
-                {
-                    // NOTE: assume if _labkeyurl_Destination is set, then permissions are good to go
-                    var urlParts = row._labkeyurl_Destination.split('/');
-                    // NOTE: there should be a better way to do this but not seeing it in ext3
-                    row.Destination = Object.keys(Ext.urlDecode(urlParts[urlParts.length-2]))[0];
-                }
+            // If the lookup to get the destination folder name worked (i.e. user has permission to it), display that value
+            Ext.each(data.rows, function(row)
+            {
+                if (Ext.isString(row.DestinationName))
+                    row.Destination = row.DestinationName;
             });
 
-            // NOTE: time to handle destination rollup (StudySnapshotTable.java:70)
-            //var permissions = LABKEY.Security.getUserPermissions({
-            //    userId: LABKEY.Security.currentUser.id,
-                //success: function(userPermsInfo) {
-                //    var currentPermissions = userPermsInfo.container.effectivePermissions;
-                //    LABKEY.Security.hasEffectivePermission(currentPermissions, LABKEY.Security.effectivePermissions.read);
-                //}
-            //});
-
-            if (data.rowCount > 0) config.previousStudies = data.rows;
+            if (data.rowCount > 0)
+            {
+                config.previousStudies = data.rows;
+            }
 
             var wizard = new LABKEY.study.CreateStudyWizard(config);
             wizard.show();
@@ -397,7 +385,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             this.nextBtn.setText('Finish');
             this.nextBtn.setHandler(function(){this.onFinish();}, this);
         }
-        else if(this.currentStep == 0)
+        else if(this.steps[this.currentStep].name == 'General Setup')
         {
             this.nextBtn.setText('Next');
             this.nextBtn.setHandler(function(){
@@ -487,14 +475,14 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             columns: [
                 {dataIndex: 'Created', header: '&nbsp;Created', width: 100, sortable: true,
                  renderer: Ext.util.Format.dateRenderer(LABKEY.extDefaultDateFormat) },
-                {dataIndex: 'CreatedBy/DisplayName', header: '&nbsp;Created By', width: 100, sortable: true},
+                {dataIndex: 'CreatedBy', header: '&nbsp;Created By', width: 100, sortable: true},
                 {dataIndex: 'Destination', header: '&nbsp;Destination', width: 200, sortable: true},
                 {dataIndex: 'RowId', hidden: true},
                 {dataIndex: 'Settings', hidden: true}
             ],
             selModel: new Ext.grid.RowSelectionModel({singleSelect:true}),
             store: new Ext.data.JsonStore({
-                fields: ['Created', 'CreatedBy/DisplayName', 'Destination', 'RowId', 'Settings'],
+                fields: ['Created', 'CreatedBy', 'Destination', 'RowId', 'Settings'],
                 data: this.previousStudies,
                 sortInfo: {
                     field: 'Created',
