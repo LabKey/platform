@@ -11,7 +11,7 @@ public class SearchTestSimpleFS extends SearchTest
     @Test
     public void testSimpleFSDirectory()
     {
-        SearchAdminAPIHelper.setDirectoryType(SearchAdminAPIHelper.DirectoryType.SimpleFSDirectory);
+        SearchAdminAPIHelper.setDirectoryType(SearchAdminAPIHelper.DirectoryType.SimpleFSDirectory, getDriver());
         doCreateSteps();
         doVerifySteps();
     }

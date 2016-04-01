@@ -11,7 +11,7 @@ public class SearchTestMMap extends SearchTest
     @Test
     public void testMMapDirectorySearch()
     {
-        SearchAdminAPIHelper.setDirectoryType(SearchAdminAPIHelper.DirectoryType.MMapDirectory);
+        SearchAdminAPIHelper.setDirectoryType(SearchAdminAPIHelper.DirectoryType.MMapDirectory, getDriver());
         doCreateSteps();
         doVerifySteps();
     }

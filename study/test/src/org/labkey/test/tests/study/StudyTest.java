@@ -120,7 +120,7 @@ public class StudyTest extends StudyBaseTest
 
     protected void doCreateSteps()
     {
-        SearchAdminAPIHelper.pauseCrawler(); //necessary for the alternate ID testing
+        SearchAdminAPIHelper.pauseCrawler(getDriver()); //necessary for the alternate ID testing
         enableEmailRecorder();
 
         importStudy();

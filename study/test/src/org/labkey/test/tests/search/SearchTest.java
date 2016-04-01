@@ -89,7 +89,7 @@ public abstract class SearchTest extends StudyTest
     public void preTest()
     {
         _containerHelper.deleteProject(getProjectName(), false);
-        SearchAdminAPIHelper.pauseCrawler(); //necessary for the alternate ID testing
+        SearchAdminAPIHelper.pauseCrawler(getDriver()); //necessary for the alternate ID testing
         _searchHelper.initialize();
         enableEmailRecorder();
     }

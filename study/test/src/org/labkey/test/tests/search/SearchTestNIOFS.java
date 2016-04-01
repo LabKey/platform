@@ -11,7 +11,7 @@ public class SearchTestNIOFS extends SearchTest
     @Test
     public void testNIOFSDirectory()
     {
-        SearchAdminAPIHelper.setDirectoryType(SearchAdminAPIHelper.DirectoryType.NIOFSDirectory);
+        SearchAdminAPIHelper.setDirectoryType(SearchAdminAPIHelper.DirectoryType.NIOFSDirectory, getDriver());
         doCreateSteps();
         doVerifySteps();
     }
