@@ -62,6 +62,7 @@ import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.VirtualFile;
@@ -1484,6 +1485,8 @@ public class QueryServiceImpl extends QueryService
     @Override
     public UserSchema createSimpleUserSchema(String name, @Nullable String description, User user, Container container, DbSchema schema)
     {
+        if (null == schema)
+            throw new NotFoundException("DB Schema does not exist.");
         return new SimpleUserSchema(name, description, user, container, schema);
     }
 
