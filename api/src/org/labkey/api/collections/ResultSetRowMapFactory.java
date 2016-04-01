@@ -36,7 +36,7 @@ import java.util.Map;
 */
 public class ResultSetRowMapFactory extends RowMapFactory<Object> implements Serializable
 {
-    private boolean _convertBigDecimalToDouble = true;
+    private boolean _convertBigDecimalToDouble = false;
 
 
     public static ResultSetRowMapFactory create(ResultSet rs) throws SQLException
