@@ -723,6 +723,11 @@ public class DavController extends SpringActionController
                     getResponse().sendError(WebdavStatus.SC_UNAUTHORIZED, resourcePath);
                 }
             }
+            catch (ConfigurationException ex)
+            {
+                _log.error("Unexpected exception, might be related to server configuration problems", ex);
+                getResponse().sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR, ex);
+            }
             catch (DavException dex)
             {
                 setLastError(dex);
@@ -1707,6 +1712,10 @@ public class DavController extends SpringActionController
                 }
 
                 resourceWriter.sendData();
+            }
+            catch (ConfigurationException x)
+            {
+                throw x;
             }
             catch (IOException x)
             {
