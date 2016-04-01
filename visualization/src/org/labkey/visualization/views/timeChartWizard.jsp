@@ -83,101 +83,121 @@
         }
         else
         {
-            showTimeChartWizard({
-                reportId: <%=q(id != null ? id.toString() : "")%>,
+            Ext4.create('LABKEY.vis.TimeChartWizard', {
+                reportId: <%=q(id != null ? id.toString() : null)%>,
                 elementId: '<%=h(elementId)%>',
-                success: viewSavedChart,
-                failure: displayFailureException
-            });
-        }
-    });
-
-    function showTimeChartWizard(config)
-    {
-        // get the type information from the server
-        LABKEY.Query.Visualization.getTypes({
-            successCallback : function(types){
-                storeVisualizationTypes(types, config);
-            },
-            failureCallback : function(info, response, options) {
-                if (info.exception)
-                    displayFailureException(info);
-                else
-                    LABKEY.Utils.displayAjaxErrorResponse(response, options);
-            },
-            scope: this
-        });
-    }
-
-    var viewTypes = {};
-    function storeVisualizationTypes(types, config) {
-        // store the type information
-        for (var i=0; i < types.length; i++)
-        {
-            var type = types[i];
-            viewTypes[type.type] = type;
-        }
-
-        // see if the wizard is being accessed with a saved visualization referenced on the URL
-        if(LABKEY.Query.Visualization.getFromUrl(config)) {
-            // we have a saved chart being access, viewSavedChart will be called
-        }
-        else {
-            // no saved visualization to show, so just initialize the wizard without a pre-selected measure
-            initializeTimeChartPanel(config);
-        }
-    }
-
-    function viewSavedChart(result, response, options){
-        if(result.type == LABKEY.Query.Visualization.Type.TimeChart){
-            var saveReportInfo = {
-                name: result.name,
-                description: result.description,
-                queryName: result.queryName,
-                schemaName: result.schemaName,
-                shared: result.shared,
-                ownerId: result.ownerId,
-                createdBy: result.createdBy,
-                reportProps: result.reportProps,
-                thumbnailURL: result.thumbnailURL
-            };
-
-            initializeTimeChartPanel(response.initialConfig, result.visualizationConfig, saveReportInfo);
-        }
-        else {
-            Ext4.get('<%=h(elementId)%>').update("<span class='labkey-error'>The saved chart is not of type TimeChart</span>");
-        }
-    }
-
-    function displayFailureException(info)
-    {
-        Ext4.get('<%=h(elementId)%>').update("<span class='labkey-error'>" + info.exception + "</span>");
-    }
-
-    function initializeTimeChartPanel(config, chartInfo, saveReportInfo) {
-        // create a new chart panel and insert into the wizard
-        Ext4.create('Ext.panel.Panel', {
-            renderTo: config.elementId,
-            height: 650,
-            minWidth: 875,
-            resizable: false,
-            layout: 'border',
-            frame: false,
-            border: false,
-            items: [{
-                xtype: 'timechartpanel',
-                border: false,
-                region: 'center',
-                viewInfo: viewTypes['line'],
-                chartInfo: chartInfo,
-                saveReportInfo: saveReportInfo,
                 canEdit: <%=canEdit%>,
                 canShare: <%=canShare%>,
                 isDeveloper: <%=isDeveloper%>,
                 defaultNumberFormat: eval("<%=numberFormatFn%>"),
                 allowEditMode: <%=!getUser().isGuest() && form.allowToggleMode()%>,
                 editModeURL: <%=q(editUrl != null ? editUrl.toString() : null) %>
-            }]
-        });
-    }
+            });
+        }
+    });
+
+    Ext4.define('LABKEY.vis.TimeChartWizard', {
+        extend: 'Ext.container.Container',
+
+        initComponent: function()
+        {
+            this.callParent();
+
+            // get the type information from the server
+            this.viewTypesMap = {};
+            LABKEY.Query.Visualization.getTypes({
+                successCallback : this.storeVisualizationTypes,
+                failureCallback : function(info, response, options) {
+                    if (info.exception)
+                        this.displayFailureException(info);
+                    else
+                        LABKEY.Utils.displayAjaxErrorResponse(response, options);
+                },
+                scope: this
+            });
+        },
+
+        storeVisualizationTypes : function(types)
+        {
+            // store the type information
+            for (var i=0; i < types.length; i++)
+            {
+                var type = types[i];
+                this.viewTypesMap[type.type] = type;
+            }
+
+            if (this.reportId != null)
+            {
+                LABKEY.Query.Visualization.get({
+                    reportId: this.reportId,
+                    success: this.viewSavedChart,
+                    failure: function (response)
+                    {
+                        this.displayFailureException({exception: 'No time chart report found for reportId: ' + this.reportId});
+                    },
+                    scope: this
+                });
+            }
+            else
+            {
+                this.initializeTimeChartPanel();
+            }
+        },
+
+        viewSavedChart: function(result, response, options)
+        {
+            if (result.type == LABKEY.Query.Visualization.Type.TimeChart)
+            {
+                var saveReportInfo = {
+                    name: result.name,
+                    description: result.description,
+                    queryName: result.queryName,
+                    schemaName: result.schemaName,
+                    shared: result.shared,
+                    ownerId: result.ownerId,
+                    createdBy: result.createdBy,
+                    reportProps: result.reportProps,
+                    thumbnailURL: result.thumbnailURL
+                };
+
+                this.initializeTimeChartPanel(result.visualizationConfig, saveReportInfo);
+            }
+            else
+            {
+                Ext4.get(this.elementId).update("<span class='labkey-error'>The saved chart is not of type TimeChart</span>");
+            }
+        },
+
+        initializeTimeChartPanel: function(chartInfo, saveReportInfo)
+        {
+            // create a new chart panel and insert into the wizard
+            Ext4.create('Ext.panel.Panel', {
+                renderTo: this.elementId,
+                height: 650,
+                minWidth: 875,
+                resizable: false,
+                layout: 'border',
+                frame: false,
+                border: false,
+                items: [Ext4.create('LABKEY.vis.TimeChartPanel', {
+                    border: false,
+                    region: 'center',
+                    viewInfo: this.viewTypesMap['line'],
+                    chartInfo: chartInfo,
+                    saveReportInfo: saveReportInfo,
+                    canEdit: this.canEdit,
+                    canShare: this.canShare,
+                    isDeveloper: this.isDeveloper,
+                    defaultNumberFormat: this.defaultNumberFormat,
+                    allowEditMode: this.allowEditMode,
+                    editModeURL: this.editModeURL
+                })]
+            });
+        },
+
+        displayFailureException: function(info)
+        {
+            Ext4.get(this.elementId).update("<span class='labkey-error'>" + info.exception + "</span>");
+        }
+    });
 </script>
