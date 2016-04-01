@@ -107,6 +107,8 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     {
         if (_targetHasBeenSet)
             throw new ServletException("Import/Upload target has already been set.");
+        if (null == t)
+            throw new ServletException("TableInfo not found.");
         _target = t;
         _updateService = _target.getUpdateService();
         _targetHasBeenSet = true;
