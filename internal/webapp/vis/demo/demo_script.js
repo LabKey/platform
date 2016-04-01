@@ -892,6 +892,7 @@ var leveyJenningsPlot = LABKEY.vis.LeveyJenningsPlot({
         mean: 'mean',
         stdDev: 'stddev',
         xTickLabel: 'xaxislabel',
+        yAxisDomain: [57500,69500],
         showTrendLine: true,
         color: 'colorlabel',
         colorRange: ['red', 'blue', 'green', 'brown'],
