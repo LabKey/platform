@@ -17,6 +17,7 @@
 package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.study.StudyService;
 
 import java.util.Date;
@@ -135,7 +136,7 @@ public class Vial extends AbstractStudyCachable<Vial>
 
     public Double getVisitValue()
     {
-        return (Double)get("visitvalue");
+        return (Double)JdbcType.DOUBLE.convert(get("visitvalue"));
     }
 
     public Double getVolume()
