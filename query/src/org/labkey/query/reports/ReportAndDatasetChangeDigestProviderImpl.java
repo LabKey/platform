@@ -36,7 +36,6 @@ import org.labkey.query.reports.view.ReportAndDatasetChangeDigestEmailTemplate;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -45,6 +44,7 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 public final class ReportAndDatasetChangeDigestProviderImpl extends ReportAndDatasetChangeDigestProvider
 {
@@ -86,7 +86,7 @@ public final class ReportAndDatasetChangeDigestProviderImpl extends ReportAndDat
                             for (Map.Entry<Integer, List<NotificationInfo>> categoryEntry : providerReportInfosForContainer.entrySet())
                             {
                                 if (!allProvidersInfosByCategory.containsKey(categoryEntry.getKey()))
-                                    allProvidersInfosByCategory.put(categoryEntry.getKey(), new ArrayList<NotificationInfo>());
+                                    allProvidersInfosByCategory.put(categoryEntry.getKey(), new ArrayList<>());
                                 allProvidersInfosByCategory.get(categoryEntry.getKey()).addAll(categoryEntry.getValue());
                             }
                         }
@@ -119,9 +119,10 @@ public final class ReportAndDatasetChangeDigestProviderImpl extends ReportAndDat
                 EmailService.I emailService = EmailService.get();
                 List<EmailMessage> messages = new ArrayList<>();
 
-                SortedSet<Integer> allCategories = new TreeSet<>();     // In case we need ALL categories
-                for (ViewCategory viewCategory : ViewCategoryManager.getInstance().getAllCategories(container))
-                    allCategories.add(viewCategory.getRowId());
+                SortedSet<Integer> allCategories = ViewCategoryManager.getInstance().getAllCategories(container)
+                    .stream()
+                    .map(ViewCategory::getRowId)
+                    .collect(Collectors.toCollection(TreeSet::new));     // In case we need ALL categories
                 allCategories.add(ViewCategoryManager.UNCATEGORIZED_ROWID);
 
                 for (Map.Entry<Integer, SortedSet<Integer>> userEntry : categoriesByUser.entrySet())
@@ -139,9 +140,10 @@ public final class ReportAndDatasetChangeDigestProviderImpl extends ReportAndDat
                             Map<Integer, ViewCategory> viewCategoryMap = getViewCategoryMap(container);
                             Map<ViewCategory, List<NotificationInfo>> reportsForUser = new LinkedHashMap<>();
                             List<ViewCategory> viewCategories = getSortedViewCategories(viewCategoryMap);
-                            for (ViewCategory viewCategory : viewCategories)
-                                if (reportsForUserInitial.containsKey(viewCategory.getRowId()))
-                                    reportsForUser.put(viewCategory, sortNotificationInfoList(reportsForUserInitial.get(viewCategory.getRowId())));
+                            viewCategories
+                                .stream()
+                                .filter(viewCategory -> reportsForUserInitial.containsKey(viewCategory.getRowId()))
+                                .forEach(viewCategory -> reportsForUser.put(viewCategory, sortNotificationInfoList(reportsForUserInitial.get(viewCategory.getRowId()))));
 
                             ReportAndDatasetDigestForm form = new ReportAndDatasetDigestForm(user, container, reportsForUser);
                             messages.add(createDigestMessage(emailService, form));
@@ -221,8 +223,7 @@ public final class ReportAndDatasetChangeDigestProviderImpl extends ReportAndDat
     private List<ViewCategory> getSortedViewCategories(Map<Integer, ViewCategory> viewCategoryMap)
     {
         List<ViewCategory> sortedViewCategories = new ArrayList<>();
-        for (ViewCategory viewCategory : viewCategoryMap.values())
-            sortedViewCategories.add(viewCategory);
+        sortedViewCategories.addAll(viewCategoryMap.values());
         ViewCategoryManager.sortViewCategories(sortedViewCategories);
         return sortedViewCategories;
     }
@@ -230,16 +231,11 @@ public final class ReportAndDatasetChangeDigestProviderImpl extends ReportAndDat
     private List<NotificationInfo> sortNotificationInfoList(List<NotificationInfo> notificationInfos)
     {
         // It's ok to sort in place
-        Collections.sort(notificationInfos, new Comparator<NotificationInfo>()
-        {
-            @Override
-            public int compare(NotificationInfo o1, NotificationInfo o2)
-            {
-                int ret = o1.getDisplayOrder() - o2.getDisplayOrder();
-                if (0 == ret)
-                    ret = o1.getName().compareToIgnoreCase(o2.getName());
-                return ret;
-            }
+        Collections.sort(notificationInfos, (o1, o2) -> {
+            int ret = o1.getDisplayOrder() - o2.getDisplayOrder();
+            if (0 == ret)
+                ret = o1.getName().compareToIgnoreCase(o2.getName());
+            return ret;
         });
         return notificationInfos;
     }

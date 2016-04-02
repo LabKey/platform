@@ -471,7 +471,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                                 dataIteratorContext.setConfigParameters(config);
                             }
                             newRows = StudyManager.getInstance().importDatasetData(form.getViewContext().getUser(), dsDef,
-                                new TabLoader(sb, true), new CaseInsensitiveHashMap<String>(),
+                                new TabLoader(sb, true), new CaseInsensitiveHashMap<>(),
                                 dataIteratorContext,
                                 study.isDataspaceStudy() ? DatasetDefinition.CheckForDuplicates.never : DatasetDefinition.CheckForDuplicates.sourceOnly,
                                 null, null);
@@ -723,7 +723,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     {
         if (_coalesceMap.containsKey(sourceContainer))
             throw new IllegalStateException("Already coalescing for container " + sourceContainer.getPath());
-        _coalesceMap.put(sourceContainer, new HashMap<Container, List<QuerySnapshotDefinition>>());
+        _coalesceMap.put(sourceContainer, new HashMap<>());
     }
 
     public void resumeUpdates(User user, Container sourceContainer)

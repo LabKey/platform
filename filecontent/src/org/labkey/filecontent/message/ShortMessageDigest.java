@@ -15,7 +15,6 @@
  */
 package org.labkey.filecontent.message;
 
-import org.apache.commons.lang3.time.DateUtils;
 import org.labkey.api.message.digest.PeriodicMessageDigest;
 
 /**
@@ -38,6 +37,6 @@ public class ShortMessageDigest extends PeriodicMessageDigest
 
     private ShortMessageDigest()
     {
-        super("FifteenMinuteDigest", DateUtils.MILLIS_PER_MINUTE * 15);
+        super("FifteenMinuteDigest", 60 * 15);
     }
 }
