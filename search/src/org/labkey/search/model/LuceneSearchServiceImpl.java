@@ -55,6 +55,9 @@ import org.apache.poi.hpsf.NoPropertySetStreamException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.OfficeOpenXMLExtended;
+import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -105,7 +108,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -118,6 +120,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * User: adam
@@ -395,13 +398,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-    private static final Set<String> KNOWN_PROPERTIES = PageFlowUtil.set(
-            PROPERTY.categories.toString(), PROPERTY.title.toString(), PROPERTY.keywordsLo.toString(),
-            PROPERTY.keywordsMed.toString(), PROPERTY.keywordsHi.toString(), PROPERTY.identifiersHi.toString(),
-            PROPERTY.navtrail.toString(), PROPERTY.securableResourceId.toString());
-
-//    This should address #26015, however, it also seems to trip up the ranking checks in the junit test... so need to investigate that before committing
-//    private static final Set<String> KNOWN_PROPERTIES = Arrays.asList(PROPERTY.values()).stream().map(PROPERTY::toString).collect(Collectors.toSet());
+    // Custom property code path needs to ignore "known properties", the properties we handle by name. See #26015.
+    private static final Set<String> KNOWN_PROPERTIES = Stream.of(PROPERTY.values())
+        .map(PROPERTY::toString)
+        .collect(Collectors.toSet());
 
     @Override
     Map<?, ?> preprocess(String id, WebdavResource r, Throwable[] handledException)
@@ -789,8 +789,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
 
     // We were using StringField.TYPE_NOT_STORED for identifiers, but that resulted in exceptions with phrase queries,
-    // see #17174. This alternate approach indexes identifiers WITH postion information. There must be a way to index
-    // identifiers without postition info but exclude them from phrase queries, but it all makes my head hurt too much.
+    // see #17174. This alternate approach indexes identifiers WITH position information. There must be a way to index
+    // identifiers without position info but exclude them from phrase queries, but it all makes my head hurt too much.
     private final static FieldType INDEXED_IDENTIFIER = new FieldType();
 
     static
@@ -1004,24 +1004,46 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
     }
 
-    // TODO: Switch these to TikaCoreProperties.*, I guess
-    private static final String[] INTERESTING_PROP_NAMES = new String[] {
-        Metadata.TITLE,
-        Metadata.AUTHOR,
-        Metadata.KEYWORDS,
-        Metadata.COMMENTS,
-        Metadata.NOTES,
-        Metadata.COMPANY,
-        Metadata.PUBLISHER
-    };
+    private enum InterestingDocumentProperty
+    {
+        Title(TikaCoreProperties.TITLE),
+        Creator(TikaCoreProperties.CREATOR),
+        Keywords(TikaCoreProperties.KEYWORDS),
+        Comments(TikaCoreProperties.COMMENTS),
+        Description(TikaCoreProperties.DESCRIPTION),
+        Notes(OfficeOpenXMLExtended.NOTES),
+        Publisher(TikaCoreProperties.PUBLISHER)
+        {
+            @Nullable
+            @Override
+            String getValue(Metadata metadata)
+            {
+                String value = super.getValue(metadata);
 
-    public String getInterestingMetadataProperties(Metadata metadata)
+                return null != value ? value : metadata.get(OfficeOpenXMLExtended.COMPANY); // In a few sample documents, COMPANY was populated but PUBLISHER was not
+            }
+        };
+
+        private final Property _property;
+
+        InterestingDocumentProperty(Property property)
+        {
+            _property = property;
+        }
+
+        @Nullable String getValue(Metadata metadata)
+        {
+            return metadata.get(_property);
+        }
+    }
+
+    private String getInterestingMetadataProperties(Metadata metadata)
     {
         StringBuilder sb = new StringBuilder();
 
-        for (String key : INTERESTING_PROP_NAMES)
+        for (InterestingDocumentProperty property : InterestingDocumentProperty.values())
         {
-            String value = metadata.get(key);
+            String value = StringUtils.trimToNull(property.getValue(metadata));
 
             if (null != value)
             {
@@ -1566,7 +1588,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         @Test // Doesn't really test anything; just provides a convenient way to exercise all the standard analyzers.
         public void testAnalyzers() throws IOException
         {
-            analyze("casale WISP-R 123ABC this.doc running coding dance dancing danced");
+            analyze("casale WISP-R 123ABC this.doc running coding dance dancing danced DIAMOND ACCEPTOR FACTOR");
         }
 
         /**
