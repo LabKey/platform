@@ -42,6 +42,7 @@ public class DailyMessageDigest extends MessageDigest
     @Override
     protected Trigger getTrigger()
     {
+        // Every morning at 12:05AM
         return TriggerBuilder.newTrigger().withSchedule(CronScheduleBuilder.dailyAtHourAndMinute(0, 5)).build();
     }
 
