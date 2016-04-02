@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.api.security.SessionApiKeys" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     public void addClientDependencies(ClientDependencies dependencies)
@@ -33,7 +34,7 @@
     ReturnUrlForm form = ((JspView<ReturnUrlForm>) HttpView.currentView()).getModelBean();
     ActionURL alternativeURL = urlProvider(ProjectUrls.class).getBeginURL(getContainer());
     ActionURL returnURL = form.getReturnActionURL(alternativeURL);
-    String id = "session:" + getViewContext().getRequest().getSession().getId();
+    String id = SessionApiKeys.createApiKey(getViewContext().getRequest());
 %>
 This API key can be used to authorize client code accessing LabKey Server using one of the <%=helpLink("viewApis", "LabKey Client APIs")%>. Using an API key avoids
 copying and storing your credentials on the client machine. Also, all client API access is tied to the current browser session, which means the code runs under the
