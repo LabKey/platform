@@ -145,8 +145,8 @@ public final class ReportAndDatasetChangeDigestProviderImpl extends ReportAndDat
                                 .filter(viewCategory -> reportsForUserInitial.containsKey(viewCategory.getRowId()))
                                 .forEach(viewCategory -> reportsForUser.put(viewCategory, sortNotificationInfoList(reportsForUserInitial.get(viewCategory.getRowId()))));
 
-                            ReportAndDatasetDigestForm form = new ReportAndDatasetDigestForm(user, container, reportsForUser);
-                            messages.add(createDigestMessage(emailService, form));
+                            ReportAndDatasetDigestBean bean = new ReportAndDatasetDigestBean(user, container, reportsForUser);
+                            messages.add(createDigestMessage(emailService, bean));
                         }
                     }
                 }
@@ -162,7 +162,7 @@ public final class ReportAndDatasetChangeDigestProviderImpl extends ReportAndDat
         }
     }
 
-    private EmailMessage createDigestMessage(EmailService.I ems, ReportAndDatasetDigestForm form) throws Exception
+    private EmailMessage createDigestMessage(EmailService.I ems, ReportAndDatasetDigestBean form) throws Exception
     {
         ReportAndDatasetChangeDigestEmailTemplate template = EmailTemplateService.get().getEmailTemplate(ReportAndDatasetChangeDigestEmailTemplate.class);
         template.init(form.getContainer(), form.getReports());
@@ -175,13 +175,13 @@ public final class ReportAndDatasetChangeDigestProviderImpl extends ReportAndDat
         return msg;
     }
 
-    public static class ReportAndDatasetDigestForm
+    private static class ReportAndDatasetDigestBean
     {
         private final Map<ViewCategory, List<NotificationInfo>> _reports;
         private final User _user;
         private final Container _container;
 
-        public ReportAndDatasetDigestForm(User user, Container container, Map<ViewCategory, List<NotificationInfo>> reports)
+        private ReportAndDatasetDigestBean(User user, Container container, Map<ViewCategory, List<NotificationInfo>> reports)
         {
             _user = user;
             _container = container;
