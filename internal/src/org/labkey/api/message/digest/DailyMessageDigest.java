@@ -15,12 +15,12 @@
  */
 package org.labkey.api.message.digest;
 
-import org.apache.commons.lang3.time.DateUtils;
+import org.quartz.CronScheduleBuilder;
+import org.quartz.Trigger;
+import org.quartz.TriggerBuilder;
 
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Timer;
-import java.util.TimerTask;
 
 /**
  * User: klum
@@ -37,15 +37,12 @@ public class DailyMessageDigest extends MessageDigest
     }
 
     // Use only for testing
-    public DailyMessageDigest(){}
+    protected DailyMessageDigest(){}
 
     @Override
-    protected Timer createTimer(TimerTask task)
+    protected Trigger getTrigger()
     {
-        Timer timer = new Timer(getName(), true);
-        timer.scheduleAtFixedRate(task, getMidnight(new Date(), 1, 5), DateUtils.MILLIS_PER_DAY);  // 12:05AM tomorrow morning
-
-        return timer;
+        return TriggerBuilder.newTrigger().withSchedule(CronScheduleBuilder.dailyAtHourAndMinute(0, 5)).build();
     }
 
     @Override

@@ -17,15 +17,21 @@ package org.labkey.api.message.digest;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.ShutdownListener;
+import org.quartz.Job;
+import org.quartz.JobBuilder;
+import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.Trigger;
+import org.quartz.impl.StdSchedulerFactory;
 
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -36,6 +42,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public abstract class MessageDigest
 {
     private static final String LAST_KEY = "LastSuccessfulSend";
+    private static final String MESSAGE_DIGEST_KEY = "MessageDigest";
 
     private final List<Provider> _providers = new CopyOnWriteArrayList<>();
 
@@ -92,19 +99,18 @@ public abstract class MessageDigest
     public abstract String getName();
 
     /**
-     * Setup the initial timer for this digest, the interval at which this
-     * timer should fire should be set up as well.
+     * Returns a TriggerBuilder configured with the necessary schedule for this digest.
      */
-    protected abstract Timer createTimer(TimerTask task);
+    protected abstract Trigger getTrigger();
 
-    protected Date getLastSuccessful()
+    private Date getLastSuccessful()
     {
         Map<String, String> props = PropertyManager.getProperties(getName());
         String value = props.get(LAST_KEY);
         return null != value ? new Date(Long.parseLong(value)) : null;
     }
 
-    protected void setLastSuccessful(Date last)
+    private void setLastSuccessful(Date last)
     {
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(getName(), true);
         props.put(LAST_KEY, String.valueOf(last.getTime()));
@@ -113,53 +119,48 @@ public abstract class MessageDigest
 
     public void initializeTimer()
     {
-        MessageDigestTask timerTask = new MessageDigestTask(this);
-        ContextListener.addShutdownListener(timerTask);
-        timerTask.setTimer(createTimer(timerTask));
+        try
+        {
+            Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
+
+            // Get configured quartz Trigger from subclass
+            Trigger trigger = getTrigger();
+
+            // Quartz Job that sends the digest
+            JobDetail job = JobBuilder.newJob(MessageDigestJob.class).build();
+
+            // Add this MessageDigest instance to the Job context so the Job knows which digest to send
+            job.getJobDataMap().put(MESSAGE_DIGEST_KEY, this);
+
+            // Schedule trigger to execute the message digest job on the configured schedule
+            scheduler.scheduleJob(job, trigger);
+        }
+        catch (SchedulerException e)
+        {
+            throw new RuntimeException("Failed to schedule message digest job", e);
+        }
     }
 
-    private static class MessageDigestTask extends TimerTask implements ShutdownListener
+    @SuppressWarnings("WeakerAccess") // Must be public so Quartz can construct via reflection
+    public static class MessageDigestJob implements Job
     {
-        private MessageDigest _digest;
-        private Timer _timer;
-
-        public MessageDigestTask(MessageDigest digest)
+        public MessageDigestJob()
         {
-            _digest = digest;
         }
 
-        public void setTimer(Timer timer)
+        public void execute(JobExecutionContext context) throws JobExecutionException
         {
-            _timer = timer;
-        }
-
-        public void run()
-        {
-            _log.debug("Sending message digest");
-
             try
             {
-                _digest.sendMessageDigest();
+                JobDataMap map = context.getJobDetail().getJobDataMap();
+                MessageDigest digest = (MessageDigest)map.get(MESSAGE_DIGEST_KEY);
+                _log.debug("Sending message digest for " + digest.getName());
+                digest.sendMessageDigest();
             }
             catch(Exception e)
             {
                 ExceptionUtil.logExceptionToMothership(null, e);
             }
-        }
-
-        @Override
-        public String getName()
-        {
-            return "Message digest timer task (" + _digest.getClass().getSimpleName() + ")";
-        }
-
-        public void shutdownPre()
-        {
-            _timer.cancel();
-        }
-
-        public void shutdownStarted()
-        {
         }
     }
 }

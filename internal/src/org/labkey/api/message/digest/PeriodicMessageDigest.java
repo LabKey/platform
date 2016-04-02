@@ -15,10 +15,11 @@
  */
 package org.labkey.api.message.digest;
 
-import org.apache.commons.lang3.time.DateUtils;
-
-import java.util.Timer;
-import java.util.TimerTask;
+import org.quartz.DateBuilder;
+import org.quartz.DateBuilder.IntervalUnit;
+import org.quartz.SimpleScheduleBuilder;
+import org.quartz.Trigger;
+import org.quartz.TriggerBuilder;
 
 /**
  * User: klum
@@ -27,13 +28,13 @@ import java.util.TimerTask;
  */
 public class PeriodicMessageDigest extends MessageDigest
 {
-    private long _interval;
-    private String _name;
+    private final int _seconds;
+    private final String _name;
 
-    public PeriodicMessageDigest(String name, long interval)
+    public PeriodicMessageDigest(String name, int seconds)
     {
         _name = name;
-        _interval = interval;
+        _seconds = seconds;
     }
 
     @Override
@@ -43,11 +44,11 @@ public class PeriodicMessageDigest extends MessageDigest
     }
 
     @Override
-    protected Timer createTimer(TimerTask task)
+    protected Trigger getTrigger()
     {
-        Timer timer = new Timer(getName(), true);
-        timer.scheduleAtFixedRate(task, DateUtils.MILLIS_PER_MINUTE, _interval);
-
-        return timer;
+        return TriggerBuilder.newTrigger()
+            .withSchedule(SimpleScheduleBuilder.repeatSecondlyForever(_seconds))
+            .startAt(DateBuilder.futureDate(_seconds, IntervalUnit.SECOND))
+            .build();
     }
 }
