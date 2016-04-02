@@ -33,10 +33,9 @@ public class TokenAuthentication
 {
     private final static Map<String, User> _tokenMap = new ConcurrentHashMap<>();
 
-    // Generate a random token associated with this user/session.  We store the token in a map
-    // associated with the user.  Later, we will validate the token by checking the map and
-    // retrieving the user if it's valid.  We also create a TokenHolder and stick it in the session
-    // so our token expires at the same time the LabKey session expires.
+    // Generate a random token associated with this user/session. We store the token in a map associated with the user.
+    // Later, we will validate the token by checking the map and retrieving the user if it's valid. We also create a
+    // TokenHolder and stick it in the session so our token expires at the same time the LabKey session expires.
     public static String createToken(HttpServletRequest request, User user)
     {
         String token = GUID.makeHash();
@@ -59,7 +58,7 @@ public class TokenAuthentication
 
     private static class TokenHolder implements HttpSessionBindingListener
     {
-        String _token;
+        private final String _token;
 
         private TokenHolder(String token)
         {

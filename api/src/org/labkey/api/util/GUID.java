@@ -236,8 +236,6 @@ public class GUID implements Serializable, Parameter.JdbcParameterValue
     }
 
 
-    static String hashUniq = String.valueOf(rand.nextLong());
-
     /**
      * return an unpredictable unique string
      */
@@ -248,7 +246,7 @@ public class GUID implements Serializable, Parameter.JdbcParameterValue
 
     public static String makeHash(String addl)
     {
-        return Crypt.MD5.digest(makeGUID() + hashUniq + addl);
+        return Crypt.MD5.digest(makeGUID() + rand.nextLong() + addl);
     }
 
 
