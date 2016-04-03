@@ -2216,6 +2216,10 @@ public class PageFlowUtil
         if (userAgent.contains("bot") || userAgent.contains("crawler") || userAgent.contains("spider"))
             return true;
 
+        // Not a robot, but not a "real" user and known in some cases to issue many requests without reusing sessions
+        if (userAgent.contains("mathematica httpclient"))
+            return true;
+
         return false;
     }
 

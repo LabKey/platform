@@ -54,8 +54,7 @@ public interface Role extends Parameter.JdbcParameterValue
 
     /**
      * Returns a description of the role for display in a user interface.
-     * @return The role's description.
-     */
+     * @return The role's description.   */
     @NotNull
     String getDescription();
 
