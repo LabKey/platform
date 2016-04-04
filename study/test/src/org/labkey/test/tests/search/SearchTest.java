@@ -85,6 +85,8 @@ public abstract class SearchTest extends StudyTest
         return "SearchTest" + TRICKY_CHARACTERS_FOR_PROJECT_NAMES + " Project";
     }
 
+    public abstract SearchAdminAPIHelper.DirectoryType directoryType();
+
     @Before
     public void preTest()
     {
@@ -92,6 +94,14 @@ public abstract class SearchTest extends StudyTest
         SearchAdminAPIHelper.pauseCrawler(getDriver()); //necessary for the alternate ID testing
         _searchHelper.initialize();
         enableEmailRecorder();
+    }
+
+    @Test
+    public void testSearch()
+    {
+        SearchAdminAPIHelper.setDirectoryType(directoryType(), getDriver());
+        doCreateSteps();
+        doVerifySteps();
     }
 
     protected void doCreateSteps()

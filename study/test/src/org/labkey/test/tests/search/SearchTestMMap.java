@@ -1,18 +1,15 @@
 package org.labkey.test.tests.search;
 
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.labkey.test.categories.DailyA;
+import org.labkey.test.categories.Weekly;
 import org.labkey.test.util.search.SearchAdminAPIHelper;
 
-@Category({DailyA.class})
+@Category({Weekly.class})
 public class SearchTestMMap extends SearchTest
 {
-    @Test
-    public void testMMapDirectorySearch()
+    @Override
+    public SearchAdminAPIHelper.DirectoryType directoryType()
     {
-        SearchAdminAPIHelper.setDirectoryType(SearchAdminAPIHelper.DirectoryType.MMapDirectory, getDriver());
-        doCreateSteps();
-        doVerifySteps();
+        return SearchAdminAPIHelper.DirectoryType.MMapDirectory;
     }
 }
