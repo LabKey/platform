@@ -313,7 +313,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
     private DataIterator _toDataIterator(String debugName, List<Map<String, Object>> rows)
     {
-        // TODO probably can't assume all rows have all columsn
+        // TODO probably can't assume all rows have all columns
         // TODO can we assume that all rows refer to columns consistently? (not PTID and MouseId for the same column)
         // TODO optimize ArrayListMap?
         Set<String> colNames;
