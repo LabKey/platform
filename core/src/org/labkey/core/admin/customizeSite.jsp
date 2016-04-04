@@ -237,8 +237,8 @@ Click the Save button at any time to accept the current settings and continue.</
     <td><input type="text" name="sslPort" value="<%=appProps.getSSLPort()%>" size="6"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Show API session keys</td>
-    <td><labkey:checkbox id="showSessionKeys" name="showSessionKeys" checked="<%= appProps.isShowSessionKeys()%>" value="true"/></td>
+    <td class="labkey-form-label">Allow API session keys</td>
+    <td><labkey:checkbox id="allowSessionKeys" name="allowSessionKeys" checked="<%= appProps.isAllowSessionKeys()%>" value="true"/></td>
 </tr>
 
 <tr>

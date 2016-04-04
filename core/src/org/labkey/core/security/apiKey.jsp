@@ -17,11 +17,11 @@
 %>
 <%@ page import="org.labkey.api.action.ReturnUrlForm" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
+<%@ page import="org.labkey.api.security.SessionApiKeyManager" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.api.security.SessionApiKeys" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     public void addClientDependencies(ClientDependencies dependencies)
@@ -34,12 +34,12 @@
     ReturnUrlForm form = ((JspView<ReturnUrlForm>) HttpView.currentView()).getModelBean();
     ActionURL alternativeURL = urlProvider(ProjectUrls.class).getBeginURL(getContainer());
     ActionURL returnURL = form.getReturnActionURL(alternativeURL);
-    String id = SessionApiKeys.createApiKey(getViewContext().getRequest());
+    String id = SessionApiKeyManager.get().createKey(getViewContext().getRequest(), getUser());
 %>
 This API key can be used to authorize client code accessing LabKey Server using one of the <%=helpLink("viewApis", "LabKey Client APIs")%>. Using an API key avoids
 copying and storing your credentials on the client machine. Also, all client API access is tied to the current browser session, which means the code runs under the
-current context (e.g., your user, your authorizations, your declared terms of use and PHI level, your impersonation state, etc.). It also means the API key will
-likely lose authorization when the session expires, e.g., when you sign out via the browser or the server automatically times out your session.
+current context (e.g., your user, your authorizations, your declared terms of use and PHI level, your current impersonation state, etc.). It also means the API key
+will likely lose authorization when the session expires, e.g., when you sign out via the browser or the server automatically times out your session.
 <br/><br/>
 <input id="session-token" value="<%=h(id)%>" style="width: 300px;" readonly/>
 <%= button("Copy to clipboard").id("session-token-copy").attributes("data-clipboard-target=\"#session-token\"") %>

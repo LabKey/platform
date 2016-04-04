@@ -44,30 +44,13 @@ import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SimpleAction;
-import org.labkey.api.security.ActionNames;
-import org.labkey.api.security.AdminConsoleAction;
-import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.security.*;
 import org.labkey.api.security.AuthenticationManager.LinkFactory;
 import org.labkey.api.security.AuthenticationManager.LoginReturnProperties;
 import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
-import org.labkey.api.security.AuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
-import org.labkey.api.security.CSRF;
-import org.labkey.api.security.Group;
-import org.labkey.api.security.IgnoresTermsOfUse;
-import org.labkey.api.security.LoginUrls;
-import org.labkey.api.security.PasswordExpiration;
-import org.labkey.api.security.RequiresLogin;
-import org.labkey.api.security.RequiresNoPermission;
-import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityMessage;
-import org.labkey.api.security.TokenAuthentication;
-import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
-import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
-import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.WikiTermsOfUseProvider.TermsOfUseType;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
@@ -2324,7 +2307,7 @@ public class LoginController extends SpringActionController
                 return new HtmlView("Error: a valid returnUrl was not specified.");
             }
 
-            String token = TokenAuthentication.createToken(getViewContext().getRequest(), getUser());
+            String token = TokenAuthenticationManager.get().createKey(getViewContext().getRequest(), getUser());
             returnUrl.addParameter("labkeyToken", token);
             returnUrl.addParameter("labkeyEmail", getUser().getEmail());
 
@@ -2354,7 +2337,7 @@ public class LoginController extends SpringActionController
             }
             else
             {
-                user = TokenAuthentication.getUserForToken(form.getLabkeyToken());
+                user = TokenAuthenticationManager.get().getContext(form.getLabkeyToken());
 
                 if (null == user)
                     message = "Unknown token";
@@ -2397,7 +2380,7 @@ public class LoginController extends SpringActionController
         public ModelAndView getView(TokenAuthenticationForm form, BindException errors) throws Exception
         {
             if (null != form.getLabkeyToken())
-                TokenAuthentication.invalidateToken(form.getLabkeyToken());
+                TokenAuthenticationManager.get().invalidateKey(form.getLabkeyToken());
 
             URLHelper returnUrl = form.getValidReturnUrl();
 
@@ -2416,7 +2399,7 @@ public class LoginController extends SpringActionController
 
     public static class TokenAuthenticationForm extends ReturnUrlForm
     {
-        String _labkeyToken;
+        private String _labkeyToken;
 
         @Override
         public void setReturnUrl(String s)

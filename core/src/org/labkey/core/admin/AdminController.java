@@ -1233,7 +1233,7 @@ public class AdminController extends SpringActionController
             props.setUserRequestedAdminOnlyMode(form.isAdminOnlyMode());
 
             props.setUseContainerRelativeURL(form.getUseContainerRelativeURL());
-            props.setShowSessionKeys(form.isShowSessionKeys());
+            props.setAllowSessionKeys(form.isAllowSessionKeys());
 
             try
             {
@@ -1735,7 +1735,7 @@ public class AdminController extends SpringActionController
         private String _baseServerUrl;
         private String _callbackPassword;
         private boolean _useContainerRelativeURL;
-        private boolean _showSessionKeys;
+        private boolean _allowSessionKeys;
 
         private String _CSRFCheck;
         private String _XFrameOptions;
@@ -2000,14 +2000,14 @@ public class AdminController extends SpringActionController
             _useContainerRelativeURL = useContainerRelativeURL;
         }
 
-        public boolean isShowSessionKeys()
+        public boolean isAllowSessionKeys()
         {
-            return _showSessionKeys;
+            return _allowSessionKeys;
         }
 
-        public void setShowSessionKeys(boolean showSessionKeys)
+        public void setAllowSessionKeys(boolean allowSessionKeys)
         {
-            _showSessionKeys = showSessionKeys;
+            _allowSessionKeys = allowSessionKeys;
         }
 
         public String getCSRFCheck()

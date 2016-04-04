@@ -1900,7 +1900,7 @@ public class SecurityController extends SpringActionController
         @Override
         public ModelAndView getView(ReturnUrlForm form, BindException errors) throws Exception
         {
-            if (!AppProps.getInstance().isShowSessionKeys())
+            if (!AppProps.getInstance().isAllowSessionKeys())
                 throw new UnauthorizedException("Session API keys are not shown on this site. Contact a site administrator.");
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
