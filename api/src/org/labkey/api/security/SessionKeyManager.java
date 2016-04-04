@@ -60,12 +60,11 @@ abstract class SessionKeyManager<T>
 
             if (null == holder)
             {
-                Set<String> apiKeys = new HashSet<>();
-                holder = new KeyHolder(apiKeys);
+                holder = new KeyHolder();
                 session.setAttribute(getSessionAttributeName(), holder);
             }
 
-            holder.getKeys().add(apiKey);
+            holder.addKey(apiKey);
         }
 
         return apiKey;
@@ -81,14 +80,6 @@ abstract class SessionKeyManager<T>
         return context;
     }
 
-    private void invalidateKeys(Set<String> keys)
-    {
-        synchronized (SESSION_LOCK)
-        {
-            keys.forEach(this::invalidateKey);
-        }
-    }
-
     public void invalidateKey(String key)
     {
         KEY_MAP.remove(key);
@@ -101,22 +92,22 @@ abstract class SessionKeyManager<T>
             //noinspection unchecked
             KeyHolder holder = (KeyHolder) session.getAttribute(getSessionAttributeName());
 
-            return (null != holder && holder.getKeys().contains(key));
+            return (null != holder && holder.containsKey(key));
         }
     }
 
     private class KeyHolder implements HttpSessionBindingListener
     {
-        private final Set<String> _keys;
+        private final Set<String> _keys = new HashSet<>();
 
-        private KeyHolder(Set<String> keys)
+        private void addKey(String key)
         {
-            _keys = keys;
+            _keys.add(key);
         }
 
-        private Set<String> getKeys()
+        private boolean containsKey(String key)
         {
-            return _keys;
+            return _keys.contains(key);
         }
 
         public void valueBound(HttpSessionBindingEvent httpSessionBindingEvent)
@@ -126,7 +117,11 @@ abstract class SessionKeyManager<T>
 
         public void valueUnbound(HttpSessionBindingEvent httpSessionBindingEvent)
         {
-            invalidateKeys(_keys);
+            synchronized (SESSION_LOCK)
+            {
+                _keys.forEach(SessionKeyManager.this::invalidateKey);
+                _keys.clear();
+            }
         }
     }
 }
