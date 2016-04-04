@@ -10,41 +10,43 @@ Ext4.define('LABKEY.internal.ViewDesigner.button.PaperclipButton', {
 
     alias: 'widget.paperclip-button',
 
+    cls: 'labkey-folder-filter-paperclip',
+
     iconCls: 'labkey-paperclip',
     iconAlign: 'top',
     enableToggle: true,
 
-    initComponent : function () {
+    constructor : function(config) {
+        this.callParent([config]);
         this.addEvents('blur');
-        this.callParent();
     },
 
-    afterRender : function () {
+    afterRender : function() {
         this.callParent();
         this.updateToolTip();
     },
 
     // Called by ComponentDataView.renderItem when indexedProperty is false
     // When the record.urlParameter is true, the button is not pressed.
-    setValue : function (value) {
+    setValue : function(value) {
         this.toggle(!value, true);
         this.updateToolTip();
     },
 
     // Called by ComponentDataView.renderItem when indexedProperty is false
     // We need to invert the value so the record.urlParameter is true when the button is not pressed.
-    getValue : function () {
+    getValue : function() {
         return !this.pressed;
     },
 
     // 'blur' event needed by ComponentDataView to set the value after changing
-    toggleHandler : function (btn, state) {
+    toggleHandler : function(btn, state) {
         this.fireEvent('blur', this);
         this.updateToolTip();
     },
 
     // Called by ComponentDataView.renderItem when indexedProperty is true
-    setRecord : function (filterRecord, clauseIndex) {
+    setRecord : function(filterRecord, clauseIndex) {
         if (clauseIndex !== undefined)
         {
             this.record = filterRecord;
@@ -52,22 +54,21 @@ Ext4.define('LABKEY.internal.ViewDesigner.button.PaperclipButton', {
 
             var value = this.getRecordValue();
             this.setValue(value);
-            this.on('toggle', function (f, pressed) {
+            this.on('toggle', function(f, pressed) {
                 this.setRecordValue(!pressed);
             }, this);
         }
     },
 
-    getRecordValue : function () {
-        return this.record.get("items")[this.clauseIndex].urlParameter;
+    getRecordValue : function() {
+        return this.record.get('items')[this.clauseIndex].urlParameter;
     },
 
-    setRecordValue : function (value) {
-        this.record.get("items")[this.clauseIndex].urlParameter = value;
+    setRecordValue : function(value) {
+        this.record.get('items')[this.clauseIndex].urlParameter = value;
     },
 
-    getToolTipText : function ()
-    {
+    getToolTipText : function() {
         if (this.pressed) {
             return "This " + this.itemType + " will be saved with the view";
         }
@@ -76,9 +77,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.button.PaperclipButton', {
         }
     },
 
-    updateToolTip : function () {
-        var el = this.btnEl;
+    updateToolTip : function() {
         var msg = this.getToolTipText();
-        el.set({title: msg});
+        this.btnEl.set({title: msg});
     }
 });

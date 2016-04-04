@@ -8,41 +8,24 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
 
     extend: 'LABKEY.internal.ViewDesigner.tab.BaseTab',
 
-    constructor : function (config) {
+    cls: 'test-columns-tab',
 
-        this.customView = config.customView;
-        var fieldMetaStore = this.fieldMetaStore = config.fieldMetaStore;
+    baseTitle: 'Selected Fields',
 
-        this.columnStore = Ext4.create('Ext.data.Store', {
-            fields: ['name', 'fieldKey', 'title', 'aggregate'],
-            data: this.customView,
-            remoteSort: true,
-            proxy: {
-                type: 'memory',
-                reader: {
-                    type: 'json',
-                    root: 'columns',
-                    idProperty: function (json) {
-                        return json.fieldKey.toUpperCase();
-                    }
-                }
-            }
-        });
-
-        this.aggregateStore = this.createAggregateStore();
+    initComponent : function() {
 
         // Load aggregates from the customView.aggregates Array.
         // We use the columnStore to track aggregates since aggregates and columns are 1-to-1 at this time.
         // By adding the aggregate to the columnStore the columnsList can render it.
-        if (this.customView.aggregates)
-        {
-            for (var i = 0; i < this.customView.aggregates.length; i++)
-            {
+        if (!Ext4.isEmpty(this.customView.aggregates)) {
+
+            var columnStore = this.getColumnStore();
+            for (var i = 0; i < this.customView.aggregates.length; i++) {
                 var agg = this.customView.aggregates[i];
                 if (!agg.fieldKey && !agg.type) {
                     continue;
                 }
-                var columnRecord = this.columnStore.getById(agg.fieldKey.toUpperCase());
+                var columnRecord = columnStore.getById(agg.fieldKey.toUpperCase());
                 if (!columnRecord) {
                     continue;
                 }
@@ -51,124 +34,144 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
             }
         }
 
-        var aggregateStore = this.aggregateStore;
+        this.callParent();
+    },
 
-        config = Ext4.applyIf({
-            cls: "test-columns-tab",
-            layout: "fit",
-            items: [{
-                xtype: "panel",
-                cls: 'themed-panel2',
-                title: "Selected Fields",
-                border: false,
-                width: 200,
-                style: 'border-left-width: 1px',
-                layout: {
-                    type: "hbox",
-                    align: "stretch"
-                },
-                items: [{
-                    xtype: "dataview",
-                    itemId: "columnsList",
-                    cls: "labkey-customview-list",
-                    flex: 1,
-                    store: this.columnStore,
-                    emptyText: "No fields selected",
-                    deferEmptyText: false,
-                    multiSelect: false,
-                    height: 250,
-                    autoScroll: true,
-                    overItemCls: "x4-view-over",
-                    itemSelector: ".labkey-customview-item",
-                    tpl: new Ext4.XTemplate(
-                            '<tpl for=".">',
-                            '<table width="100%" cellspacing="0" cellpadding="0" class="labkey-customview-item labkey-customview-columns-item" fieldKey="{fieldKey:htmlEncode}">',
-                            '  <tr>',
-                            '    <td class="labkey-grab"></td>',
-                            '    <td><div class="item-caption">{[this.getFieldCaption(values)]}</div></td>',
-                            '    <td><div class="item-aggregate">{[this.getAggegateCaption(values)]}</div></td>',
+    getAggregateStore : function() {
+        if (!this.aggregateStore) {
+            this.aggregateStore = this.createAggregateStore();
+        }
 
-                            /* Clicking this will fire the onToolGear() function */
-                            '    <td width="15px" valign="top"><div class="labkey-tool labkey-tool-gear" title="Edit"></div></td>',
+        return this.aggregateStore;
+    },
 
-                            /* Clicking this will fire the onToolClose() function */
-                            '    <td width="15px" valign="top"><span class="labkey-tool labkey-tool-close" title="Remove column"></span></td>',
-                            '  </tr>',
-                            '</table>',
-                            '</tpl>',
-                            {
-                                getFieldCaption : function (values) {
-                                    if (values.title) {
-                                        return Ext4.htmlEncode(values.title);
-                                    }
-
-                                    var fieldKey = values.fieldKey;
-                                    var fieldMeta = fieldMetaStore.getById(fieldKey.toUpperCase());
-                                    if (fieldMeta) {
-                                        // caption is already htmlEncoded
-                                        if (fieldMeta.data.caption && fieldMeta.data.caption != "&nbsp;") {
-                                            return fieldMeta.data.caption;
-                                        }
-                                        return Ext4.htmlEncode(fieldMeta.data.name);
-                                    }
-                                    return Ext4.htmlEncode(values.name) + " <span class='labkey-error'>(not found)</span>";
-                                },
-
-                                getAggegateCaption : function (values) {
-                                    var fieldKey = values.fieldKey,
-                                        labels = [],
-                                        caption = '';
-
-                                    aggregateStore.each(function(rec) {
-                                        if (rec.get('fieldKey') === fieldKey) {
-                                            labels.push(rec.get('type'));
-                                        }
-                                    });
-
-                                    labels = Ext4.Array.unique(labels);
-
-                                    if (labels.length) {
-                                        caption = Ext4.htmlEncode(labels.join(','));
-                                    }
-
-                                    return caption;
-                                }
-                            }
-                    ),
-                    listeners: {
-                        scope: this,
-                        render: function(view) {
-                            this.addDataViewDragDrop(view, 'columnsTabView');
+    getColumnStore : function() {
+        if (!this.columnStore) {
+            this.columnStore = Ext4.create('Ext.data.Store', {
+                fields: ['name', 'fieldKey', 'title', 'aggregate'],
+                data: this.customView,
+                remoteSort: true,
+                proxy: {
+                    type: 'memory',
+                    reader: {
+                        type: 'json',
+                        root: 'columns',
+                        idProperty: function(json) {
+                            return json.fieldKey.toUpperCase();
                         }
                     }
-                }]
-            }]
-        }, config);
+                }
+            });
+        }
 
-        this.callParent([config]);
+        return this.columnStore;
+    },
+    
+    getList : function() {
+        if (!this.listItem) {
+
+            var me = this;
+
+            this.listItem = Ext4.create('Ext.view.View', {
+                cls: 'labkey-customview-list',
+                flex: 1,
+                store: this.getColumnStore(),
+                emptyText: 'No fields selected',
+                deferEmptyText: false,
+                multiSelect: false,
+                height: 250,
+                autoScroll: true,
+                overItemCls: 'x4-view-over',
+                itemSelector: '.labkey-customview-item',
+                tpl: new Ext4.XTemplate(
+                    '<tpl for=".">',
+                    '<table width="100%" cellspacing="0" cellpadding="0" class="labkey-customview-item labkey-customview-columns-item" fieldKey="{fieldKey:htmlEncode}">',
+                    '  <tr>',
+                    '    <td class="labkey-grab"></td>',
+                    '    <td><div class="item-caption">{[this.getFieldCaption(values)]}</div></td>',
+                    '    <td><div class="item-aggregate">{[this.getAggegateCaption(values)]}</div></td>',
+
+                    /* Clicking this will fire the onToolGear() function */
+                    '    <td width="15px" valign="top"><div class="labkey-tool labkey-tool-gear" title="Edit"></div></td>',
+
+                    /* Clicking this will fire the onToolClose() function */
+                    '    <td width="15px" valign="top"><span class="labkey-tool labkey-tool-close" title="Remove column"></span></td>',
+                    '  </tr>',
+                    '</table>',
+                    '</tpl>',
+                    {
+                        getFieldCaption : function(values) {
+                            if (values.title) {
+                                return Ext4.htmlEncode(values.title);
+                            }
+
+                            var fieldKey = values.fieldKey;
+                            var fieldMeta = me.fieldMetaStore.getById(fieldKey.toUpperCase());
+                            if (fieldMeta) {
+                                // caption is already htmlEncoded
+                                if (fieldMeta.data.caption && fieldMeta.data.caption != "&nbsp;") {
+                                    return fieldMeta.data.caption;
+                                }
+                                return Ext4.htmlEncode(fieldMeta.data.name);
+                            }
+                            return Ext4.htmlEncode(values.name) + " <span class='labkey-error'>(not found)</span>";
+                        },
+
+                        getAggegateCaption : function(values) {
+                            var fieldKey = values.fieldKey,
+                                    labels = [],
+                                    caption = '';
+
+                            me.aggregateStore.each(function(rec) {
+                                if (rec.get('fieldKey') === fieldKey) {
+                                    labels.push(rec.get('type'));
+                                }
+                            });
+
+                            labels = Ext4.Array.unique(labels);
+
+                            if (labels.length) {
+                                caption = Ext4.htmlEncode(labels.join(','));
+                            }
+
+                            return caption;
+                        }
+                    }
+                ),
+                listeners: {
+                    render: function(view) {
+                        this.addDataViewDragDrop(view, 'columnsTabView');
+                    },
+                    scope: this
+                }
+            });
+        }
+
+        return this.listItem;
     },
 
-    getList : function () {
-        return this.down('#columnsList');
-    },
+    createAggregateStore: function() {
 
-    createAggregateStore: function(){
-        var model = Ext4.define('Aggregate', {
-            extend: 'Ext.data.Model',
-            fields: [{name: 'fieldKey'}, {name: 'type'}, {name: 'label'} ],
-            idProperty: {name: 'id', convert: function(v, rec){
-                return rec.get('fieldKey').toUpperCase();
-            }}
-        });
+        var MODEL_CLASS = 'Aggregate';
+
+        if (!Ext4.ModelManager.isRegistered(MODEL_CLASS)) {
+            Ext4.define(MODEL_CLASS, {
+                extend: 'Ext.data.Model',
+                fields: [{name: 'fieldKey'}, {name: 'type'}, {name: 'label'} ],
+                idProperty: {name: 'id', convert: function(v, rec){
+                    return rec.get('fieldKey').toUpperCase();
+                }}
+            });
+        }
 
         return Ext4.create('Ext.data.Store', {
-            model: model,
+            model: MODEL_CLASS,
             remoteSort: true
         });
     },
 
-    onToolGear : function (index, item, e) {
-        var columnRecord = this.columnStore.getAt(index);
+    onToolGear : function(index) {
+        var columnRecord = this.getColumnStore().getAt(index);
         var fieldKey = columnRecord.data.fieldKey;
         var metadataRecord = this.fieldMetaStore.getById(fieldKey.toUpperCase());
 
@@ -251,9 +254,11 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
                         buttons: [{
                             text: 'Add Aggregate',
                             margin: 10,
-                            handler: function(btn){
+                            handler: function(btn) {
                                 var store = btn.up('grid').getStore();
-                                store.add({fieldKey: win.columnRecord.get('fieldKey')});
+                                store.add({
+                                    fieldKey: win.columnRecord.get('fieldKey')
+                                });
                             }
                         }]
                     }]
@@ -261,7 +266,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
                 buttonAlign: "center",
                 buttons: [{
                     text: "OK",
-                    handler: function () {
+                    handler: function() {
                         var title = win.down('#titleField').getValue();
                         title = title ? title.trim() : "";
                         win.columnRecord.set("title", !Ext4.isEmpty(title) ? title : undefined);
@@ -271,7 +276,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
                         var aggregateStoreCopy = win.down('grid').getStore();
 
                         //validate the records
-                        aggregateStoreCopy.each(function (rec) {
+                        aggregateStoreCopy.each(function(rec) {
                             if (!rec.get('type') && !rec.get('label')) {
                                 aggregateStoreCopy.remove(rec);
                             }
@@ -291,7 +296,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
                         aggregateStore.removeAll();
 
                         //then add to store
-                        aggregateStoreCopy.each(function(rec){
+                        aggregateStoreCopy.each(function(rec) {
                             aggregateStore.add({
                                 fieldKey: rec.get('fieldKey'),
                                 type: rec.get('type'),
@@ -304,18 +309,17 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
                     }
                 },{
                     text: "Cancel",
-                    handler: function () { win.hide(); }
+                    handler: function() { win.hide(); }
                 }],
 
-                initEditForm : function (columnRecord, metadataRecord)
-                {
+                initEditForm : function(columnRecord, metadataRecord) {
                     this.columnRecord = columnRecord;
                     this.metadataRecord = metadataRecord;
 
-                    this.setTitle("Edit column properties for '" + Ext4.util.Format.htmlEncode(this.columnRecord.get("fieldKey")) + "'");
+                    this.setTitle("Edit column properties for '" + Ext4.htmlEncode(this.columnRecord.get('fieldKey')) + "'");
                     this.down('#titleField').setValue(this.columnRecord.get("title"));
 
-                    //NOTE: we make a copy of the data so we can avoid commiting updates until the user clicks OK
+                    //NOTE: we make a copy of the data so we can avoid committing updates until the user clicks OK
                     aggregateStoreCopy.removeAll();
                     aggregateStore.each(function(rec){
                         if (rec.get('fieldKey') == this.columnRecord.get('fieldKey'))
@@ -342,7 +346,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
         this._editPropsWin.show();
     },
 
-    createDefaultRecordData : function (fieldKey) {
+    createDefaultRecordData : function(fieldKey) {
         var o = {};
 
         if (fieldKey) {
@@ -360,22 +364,14 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
         return o;
     },
 
-    setShowHiddenFields : function (showHidden) {
-    },
-
-    hasField : function (fieldKey) {
+    hasField : function(fieldKey) {
         // Find fieldKey using case-insensitive comparison
-        return this.columnStore.find("fieldKey", fieldKey, 0, false, false) != -1;
+        return this.getColumnStore().find("fieldKey", fieldKey, 0, false, false) != -1;
     },
 
-    revert : function () {
-        // XXX:
-    },
-
-    validate : function () {
-        if (this.columnStore.getCount() == 0)
-        {
-            alert("You must select at least one field to display in the grid.");
+    validate : function() {
+        if (this.getColumnStore().getCount() == 0) {
+            LABKEY.Utils.alert('Selection required', 'You must select at least one field to display in the grid.');
             return false;
 
             // XXX: check each fieldKey is selected only once
@@ -383,13 +379,17 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
         return true;
     },
 
-    save : function (edited, urlParameters) {
+    save : function(edited, urlParameters) {
         this.callParent([edited, urlParameters]);
 
         // move the aggregates out of the 'columns' list and into a separate 'aggregates' list
         edited.aggregates = [];
-        this.aggregateStore.each(function(rec){
-            edited.aggregates.push({fieldKey: rec.get('fieldKey'), type: rec.get('type'), label: rec.get('label')});
+        this.getAggregateStore().each(function(rec) {
+            edited.aggregates.push({
+                fieldKey: rec.get('fieldKey'),
+                type: rec.get('type'),
+                label: rec.get('label')
+            });
         }, this);
 
         for (var i = 0; i < edited.columns.length; i++) {

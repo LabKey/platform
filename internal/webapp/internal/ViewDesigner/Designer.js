@@ -638,7 +638,19 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                 layout: 'border',
                 border: false,
                 items: [
-                    this.getAvailableFieldsPanel(),
+                    {
+                        xtype: 'panel',
+                        region: 'west',
+                        cls: 'themed-panel2',
+                        title: 'Available Fields',
+                        flex: 1,
+                        border: false,
+                        split: true,
+                        minWidth: 220,
+                        maxWidth: 700,
+                        layout: 'fit',
+                        items: [this.fieldsTree]
+                    },
                     this.getInnerTabPanel(this.activeTab),
                     this.getBottomToolbarPanel()
                 ]
@@ -753,8 +765,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         return this.tabsDataView;
     },
 
-    updateTabText : function(store, name, text) {
-        var record = store.findRecord('name', name);
+    updateTabText : function(name, text) {
+        var record = this.getTabsStore().findRecord('name', name);
         if (record) {
             record.set('text', text);
         }
@@ -778,25 +790,6 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
 
     setActiveDesignerTab : function(tab) {
         this.getInnerTabPanel().setActiveTab(this.translateTabName(tab));
-    },
-
-    getAvailableFieldsPanel : function() {
-        if (!this.availableFieldsPanel) {
-            this.availableFieldsPanel = Ext4.create('Ext.panel.Panel', {
-                region: 'west',
-                cls: 'themed-panel2',
-                title: "Available Fields",
-                flex: 1,
-                border: false,
-                split: true,
-                minWidth: 220,
-                maxWidth: 700,
-                layout: 'fit',
-                items: [this.fieldsTree]
-            });
-        }
-
-        return this.availableFieldsPanel;
     },
 
     getInnerTabPanel : function(activeTab) {
@@ -831,7 +824,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                     xtype: 'box',
                     height: 0
                 }],
-                buttonAlign: "left",
+                buttonAlign: 'left',
                 dockedItems: [{
                     xtype: 'toolbar',
                     dock: 'bottom',

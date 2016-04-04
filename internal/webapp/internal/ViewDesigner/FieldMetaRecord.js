@@ -84,12 +84,6 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaRecord', {
             type: 'boolean',
             defaultValue: false
         }
-        //},{
-        //    name: 'qtip',
-        //    convert: function(v, rec) {
-        //        return rec.getToolTipHtml();
-        //    }
-        //}
     ],
 
     getToolTipHtml : function () {

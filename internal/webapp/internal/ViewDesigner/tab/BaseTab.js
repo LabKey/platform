@@ -7,39 +7,47 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.BaseTab', {
 
     extend: 'Ext.panel.Panel',
 
-    constructor : function (config) {
-        this.designer = config.designer;
-        this.unstyled = true;
+    layout: 'fit',
 
-        var mainPanel = config.items[0];
-        mainPanel.tools = [{
-            handler: function () {
-                this.designer.close();
-            },
-            scope: this
-        }];
+    baseTitle: '',
+
+    customView: undefined,
+
+    designer: undefined,
+
+    fieldMetaStore: undefined,
+
+    constructor : function(config) {
+
+        Ext4.apply(this, {
+            designer: config.designer,
+            customView: config.customView,
+            fieldMetaStore: config.fieldMetaStore
+        });
 
         this.callParent([config]);
 
         this.addEvents('beforetooltipshow', 'recordremoved');
     },
 
-    initComponent : function () {
-        this.callParent();
+    initComponent : function() {
 
+        this.items = this.getBaseItems();
+
+        this.callParent();
+        
         var list = this.getList();
 
-        list.on('selectionchange', this.onListSelectionChange, this);
         list.on('beforetooltipshow', this.onListBeforeToolTipShow, this);
         list.on('beforeitemclick', this.onListBeforeClick, this);
         list.on('render', function() {
             this.tooltip = Ext4.create('Ext.tip.ToolTip',{
                 renderTo: Ext4.getBody(),
                 target: this.getEl(),
-                delegate: ".item-caption",
+                delegate: '.item-caption',
                 trackMouse: true,
                 listeners: {
-                    beforeshow: function (qt) {
+                    beforeshow: function(qt) {
                         var el = Ext4.fly(qt.triggerElement).up(this.itemSelector);
                         if (!el)
                             return false;
@@ -54,7 +62,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.BaseTab', {
 
     setShowHiddenFields : Ext4.emptyFn,
 
-    isDirty : function () {
+    isDirty : function() {
         return false;
     },
 
@@ -62,7 +70,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.BaseTab', {
 
     validate : Ext4.emptyFn,
 
-    save : function (edited, urlParameters) {
+    save : function(edited, urlParameters) {
         var store = this.getList().getStore();
 
         var writer = Ext4.create('Ext.data.writer.Json', {
@@ -74,8 +82,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.BaseTab', {
         edited[root] = [];
         urlParameters[root] = [];
 
-        store.each(function (r) {
-            if (r.data.urlParameter) {
+        store.each(function(r) {
+            if (r.get('urlParameter')) {
                 urlParameters[root].push(writer.getRecordData(r, {action: 'create'}));
             }
             else {
@@ -85,23 +93,47 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.BaseTab', {
     },
 
     hasField : Ext4.emptyFn,
+    
+    getBaseItems : function() {
+        return [{
+            xtype: 'panel',
+            cls: 'themed-panel2',
+            title: this.baseTitle,
+            border: false,
+            style: {'border-left-width': '1px'},
+            layout: {
+                type: 'vbox',
+                align: 'stretch'
+            },
+            tools: [{
+                handler: function() {
+                    this.designer.close();
+                },
+                scope: this
+            }],
+            items: [this.getList()],
+            dockedItems: this.getSubDockedItems()
+        }];
+    },
+    
+    getSubDockedItems : function() {
+        return undefined;
+    },
 
     /** Get the listview for the tab. */
-    getList : Ext4.emptyFn,
+    getList : function() {
+        throw new Error(this.$className + ' must extend getList() and provide the ListView for this tab');
+    },
 
-    onListBeforeClick : function (list, record, item, index, e, eOpts) {
+    onListBeforeClick : function(list, record, item, index, e) {
         var node = list.getNode(index);
-        if (node)
-        {
+        if (node) {
             var target = e.getTarget();
-            if (target.className.indexOf("labkey-tool") > -1)
-            {
+            if (target.className.indexOf("labkey-tool") > -1) {
                 var classes = ("" + target.className).split(" ");
-                for (var j = 0; j < classes.length; j++)
-                {
+                for (var j = 0; j < classes.length; j++) {
                     var cls = classes[j].trim();
-                    if (cls.indexOf("labkey-tool-") == 0)
-                    {
+                    if (cls.indexOf("labkey-tool-") == 0) {
                         var toolName = cls.substring("labkey-tool-".length);
                         var fnName = "onTool" + toolName.charAt(0).toUpperCase() + toolName.substring(1);
                         if (this[fnName]) {
@@ -114,21 +146,19 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.BaseTab', {
         return true;
     },
 
-    onToolClose : function (index) {
+    onToolClose : function(index) {
         this.removeRecord(index);
         return false;
     },
 
 
-    getFieldMetaRecord : function (fieldKey) {
+    getFieldMetaRecord : function(fieldKey) {
         return this.fieldMetaStore.getById(fieldKey.toUpperCase());
     },
 
-    onListBeforeToolTipShow : function (list, qt, record)
-    {
-        if (record)
-        {
-            var fieldKey = record.data.fieldKey;
+    onListBeforeToolTipShow : function(list, qt, record) {
+        if (record) {
+            var fieldKey = record.get('fieldKey');
             var fieldMetaRecord = this.getFieldMetaRecord(fieldKey);
             var html;
             if (fieldMetaRecord) {
@@ -144,15 +174,12 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.BaseTab', {
         }
     },
 
-    onListSelectionChange : function (list, selections) {
-    },
-
     // subclasses may override this to provide a better default
-    createDefaultRecordData : function (fieldKey) {
+    createDefaultRecordData : function(fieldKey) {
         return {fieldKey: fieldKey};
     },
 
-    addRecord : function (fieldKey) {
+    addRecord : function(fieldKey) {
         var list = this.getList();
         var defaultData = this.createDefaultRecordData(fieldKey);
         var record = new list.store.model(defaultData);
@@ -169,29 +196,29 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.BaseTab', {
         return record;
     },
 
-    getRecordIndex : function (fieldKeyOrIndex) {
+    getRecordIndex : function(fieldKeyOrIndex) {
         var list = this.getList();
         var index = -1;
         if (Ext4.isNumber(fieldKeyOrIndex)) {
             index = fieldKeyOrIndex;
         }
         else {
-            index = list.store.find("fieldKey", fieldKeyOrIndex, 0, false, false);
+            index = list.store.find('fieldKey', fieldKeyOrIndex, 0, false, false);
         }
         return index;
     },
 
-    getRecord : function (fieldKeyOrIndex) {
+    getRecord : function(fieldKeyOrIndex) {
         var index = this.getRecordIndex(fieldKeyOrIndex);
         if (index > -1) {
-            return this.getList().store.getAt(index);
+            return this.getList().getStore().getAt(index);
         }
         return null;
     },
 
-    removeRecord : function (fieldKeyOrIndex) {
+    removeRecord : function(fieldKeyOrIndex) {
         var index = this.getRecordIndex(fieldKeyOrIndex),
-            store = this.getList().store,
+            store = this.getList().getStore(),
             record = store.getAt(index);
 
         if (record) {
