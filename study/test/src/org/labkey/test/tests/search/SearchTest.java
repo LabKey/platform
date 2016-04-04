@@ -106,12 +106,12 @@ public abstract class SearchTest extends StudyTest
         addSearchableFiles();
     }
 
-    String fullySearchableList = "List1";       //index both number and text colums
-    String textOnlySearchableList = "List2";    //index text columns only
-    String metaOnlySearchable = "MetaDataSet";  //index metadata only
-    String customizedIndexingList =  "CustomIndexing";  //index one text column but not another
-    String listToDelete = "List To Delete";
-    String listIndexAsWhole = "Indexed as one doc";
+    private static final String fullySearchableList = "List1";       //index both number and text columns
+    private static final String textOnlySearchableList = "List2";    //index text columns only
+    private static final String metaOnlySearchable = "MetaDataSet";  //index metadata only
+    private static final String customizedIndexingList =  "CustomIndexing";  //index one text column but not another
+    private static final String listToDelete = "List To Delete";
+    private static final String listIndexAsWhole = "Indexed as one doc";
 
     private void addSearchableLists()
     {

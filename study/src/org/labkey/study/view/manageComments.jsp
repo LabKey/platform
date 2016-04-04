@@ -85,7 +85,7 @@
                 saved as fields in datasets.
                 Each of the datasets can contain multiple fields, but only one field can
                 be designated to hold the comment text. Comment fields must be of type text or multi-line text.
-                Comments will appear automatically in colums for the specimen and vial views.
+                Comments will appear automatically in columns for the specimen and vial views.
             </td>
         </tr>
     </table>
