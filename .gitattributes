@@ -1174,8 +1174,10 @@ api/src/org/labkey/api/security/SecurityPolicy.java -text
 api/src/org/labkey/api/security/SecurityPolicyBean.java -text
 api/src/org/labkey/api/security/SecurityPolicyManager.java -text
 api/src/org/labkey/api/security/SecurityUrls.java -text
-api/src/org/labkey/api/security/SessionApiKeys.java -text
-api/src/org/labkey/api/security/TokenAuthentication.java -text
+api/src/org/labkey/api/security/SessionApiKeyManager.java -text
+api/src/org/labkey/api/security/SessionKeyManager.java -text
+api/src/org/labkey/api/security/SessionReplacingRequest.java -text
+api/src/org/labkey/api/security/TokenAuthenticationManager.java -text
 api/src/org/labkey/api/security/UserCache.java -text
 api/src/org/labkey/api/security/UserManager.java -text
 api/src/org/labkey/api/security/UserPrincipal.java -text

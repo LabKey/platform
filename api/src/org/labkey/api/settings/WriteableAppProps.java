@@ -195,9 +195,9 @@ public class WriteableAppProps extends AppPropsImpl
         storeBooleanValue(USE_CONTAINER_RELATIVE_URL, b);
     }
 
-    public void setShowSessionKeys(boolean b)
+    public void setAllowSessionKeys(boolean b)
     {
-        storeBooleanValue(SHOW_SESSION_KEYS, b);
+        storeBooleanValue(ALLOW_SESSION_KEYS, b);
     }
 
     public void setXFrameOptions(String option)

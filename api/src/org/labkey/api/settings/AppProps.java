@@ -98,7 +98,7 @@ public class AppProps
         String getWebappConfigurationFilename();
         String getAdministratorContactEmail();
         boolean getUseContainerRelativeURL();
-        boolean isShowSessionKeys();
+        boolean isAllowSessionKeys();
         boolean isTeamCityEnvironment();
 
         // configurable http security settings

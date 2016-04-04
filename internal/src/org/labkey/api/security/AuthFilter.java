@@ -35,6 +35,7 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Enumeration;
@@ -146,11 +147,27 @@ public class AuthFilter implements Filter
 
         if (null == user)
         {
+            // Handle session API key, if allowed, present, and valid
+            if (AppProps.getInstance().isAllowSessionKeys())
+            {
+                String apiKey = req.getHeader("apikey");
+
+                if (null != apiKey)
+                {
+                    HttpSession session = SessionApiKeyManager.get().getContext(apiKey);
+
+                    if (null != session)
+                    {
+                        req = new SessionReplacingRequest(req, session);
+                    }
+                }
+            }
+
             UnauthorizedImpersonationException e = null;
 
             try
             {
-                user = SecurityManager.getAuthenticatedUser((HttpServletRequest) request);
+                user = SecurityManager.getAuthenticatedUser(req);
             }
             catch (UnauthorizedImpersonationException uie)
             {

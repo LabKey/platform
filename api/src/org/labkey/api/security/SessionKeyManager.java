@@ -1,0 +1,132 @@
+/*
+ * Copyright (c) 2007-2013 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.labkey.api.security;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.GUID;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpSessionBindingEvent;
+import javax.servlet.http.HttpSessionBindingListener;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * User: adam
+ * Date: Aug 23, 2007
+ * Time: 2:08:17 PM
+ */
+abstract class SessionKeyManager<T>
+{
+    private final Map<String, T> KEY_MAP = new ConcurrentHashMap<>();
+    private final Object SESSION_LOCK = new Object();
+
+    abstract @NotNull String getSessionAttributeName();
+    abstract @Nullable String getKeyPrefix();
+    abstract T createContext(HttpSession session, User user);
+    abstract T validateContext(T context, String key);
+
+    // Generate a random key, associate it with subclass-provided context, and track the key in session to support
+    // invalidation. All keys expire at the same time the LabKey session expires (explicit logout or session timeout).
+    public String createKey(HttpServletRequest request, User user)
+    {
+        String prefix = getKeyPrefix();
+        String apiKey = (null != prefix ? prefix + ":" : "") + GUID.makeHash();
+        HttpSession session = request.getSession(true);
+        KEY_MAP.put(apiKey, createContext(session, user));
+
+        synchronized (SESSION_LOCK)
+        {
+            @SuppressWarnings("unchecked")
+            KeyHolder holder = (KeyHolder)session.getAttribute(getSessionAttributeName());
+
+            if (null == holder)
+            {
+                Set<String> apiKeys = new HashSet<>();
+                holder = new KeyHolder(apiKeys);
+                session.setAttribute(getSessionAttributeName(), holder);
+            }
+
+            holder.getKeys().add(apiKey);
+        }
+
+        return apiKey;
+    }
+
+    public @Nullable T getContext(String key)
+    {
+        T context = KEY_MAP.get(key);
+
+        if (null != context)
+            context = validateContext(context, key);
+
+        return context;
+    }
+
+    private void invalidateKeys(Set<String> keys)
+    {
+        synchronized (SESSION_LOCK)
+        {
+            keys.forEach(this::invalidateKey);
+        }
+    }
+
+    public void invalidateKey(String key)
+    {
+        KEY_MAP.remove(key);
+    }
+
+    boolean isKeyInSession(HttpSession session, String key)
+    {
+        synchronized (SESSION_LOCK)
+        {
+            //noinspection unchecked
+            KeyHolder holder = (KeyHolder) session.getAttribute(getSessionAttributeName());
+
+            return (null != holder && holder.getKeys().contains(key));
+        }
+    }
+
+    private class KeyHolder implements HttpSessionBindingListener
+    {
+        private final Set<String> _keys;
+
+        private KeyHolder(Set<String> keys)
+        {
+            _keys = keys;
+        }
+
+        private Set<String> getKeys()
+        {
+            return _keys;
+        }
+
+        public void valueBound(HttpSessionBindingEvent httpSessionBindingEvent)
+        {
+            // Do nothing
+        }
+
+        public void valueUnbound(HttpSessionBindingEvent httpSessionBindingEvent)
+        {
+            invalidateKeys(_keys);
+        }
+    }
+}

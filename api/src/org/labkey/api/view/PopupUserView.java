@@ -44,7 +44,7 @@ public class PopupUserView extends PopupMenuView
         myaccount.setId("__lk-usermenu-myaccount");
         tree.addChild(myaccount);
 
-        if (AppProps.getInstance().isShowSessionKeys())
+        if (AppProps.getInstance().isAllowSessionKeys())
         {
             NavTree apikey = new NavTree("API Key", PageFlowUtil.urlProvider(SecurityUrls.class).getApiKeyURL(currentURL));
             myaccount.setId("__lk-usermenu-apikey");
