@@ -16,7 +16,9 @@
 
 package org.labkey.api.gwt.client.ui;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -27,7 +29,7 @@ import java.util.Map;
 */
 public enum PropertyType
 {
-    // Treat expMultiLine the same as xsdString for lookup purposes, since it's really just a formatting distiction 
+    // Treat expMultiLine the same as xsdString for lookup purposes, since it's really just a formatting distinction
     expMultiLine("http://www.w3.org/2001/XMLSchema#multiLine", true, "Multi-Line Text", "String", "string"),
     xsdString("http://www.w3.org/2001/XMLSchema#string", true, "Text (String)", "String", "string"),
     xsdBoolean("http://www.w3.org/2001/XMLSchema#boolean", false, "Boolean", null, "boolean"),
@@ -147,5 +149,10 @@ public enum PropertyType
 
         synonyms.put("bool", xsdBoolean);
         synonyms.put("xsd:boolean", xsdBoolean);
+    }
+
+    public static List<PropertyType> getBaseTypes()
+    {
+        return Arrays.asList(xsdString, expMultiLine, xsdBoolean, xsdInt, xsdDouble, xsdDateTime);
     }
 }

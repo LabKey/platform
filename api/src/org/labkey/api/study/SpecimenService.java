@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -103,6 +104,10 @@ public class SpecimenService
         TableInfo getTableInfoSpecimenEvent(Container container);
 
         SpecimenTablesTemplate getSpecimenTablesTemplate();
+
+        Domain getSpecimenVialDomain(Container container, User user);
+
+        Domain getSpecimenEventDomain(Container container, User user);
     }
 
     public static void register(Service serviceImpl)
