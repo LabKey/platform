@@ -88,7 +88,8 @@
     <input type="hidden" name="isPasswordPrompt" value="true">
 </form>
 <% } else if (form.getIsVerifyRedirect()) {%>
-<p>We have sent a verification email to <%=h(currentEmail)%>. Please follow the link in the email to continue the email update process.</p>
+<p>We have sent a verification email to <%=h(currentEmail)%>. Please follow the link in the email to continue the email update process.
+    If you do not see the email in your inbox, please check your spam folder, and add the message sender to your address book if the email has been marked as spam.</p>
 <% } else if (form.getIsFromVerifiedLink())  { // only still set here when there are errors in verification link processing %>
 <p><%=formatMissedErrors("form")%></p>
 <% } else if (form.getIsVerified()) { %>
