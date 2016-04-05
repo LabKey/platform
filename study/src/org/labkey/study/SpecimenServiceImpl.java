@@ -28,6 +28,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -48,6 +49,7 @@ import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.DefaultSpecimenTablesTemplate;
 import org.labkey.study.model.Vial;
 import org.labkey.study.pipeline.SpecimenReloadJob;
+import org.labkey.study.query.SpecimenTablesProvider;
 
 import java.io.IOException;
 import java.sql.ResultSet;
@@ -370,5 +372,19 @@ public class SpecimenServiceImpl implements SpecimenService.Service
     public SpecimenTablesTemplate getSpecimenTablesTemplate()
     {
         return _specimenTablesTemplate;
+    }
+
+    @Override
+    public Domain getSpecimenVialDomain(Container container, User user)
+    {
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, null);
+        return specimenTablesProvider.getDomain("Vial", false);
+    }
+
+    @Override
+    public Domain getSpecimenEventDomain(Container container, User user)
+    {
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, null);
+        return specimenTablesProvider.getDomain("SpecimenEvent", false);
     }
 }
