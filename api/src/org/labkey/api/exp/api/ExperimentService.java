@@ -112,6 +112,9 @@ public class ExperimentService
         List<? extends ExpRun> getExpRunsForFilePathRoot(File filePathRoot);
         ExpRun createExperimentRun(Container container, String name);
 
+        List<String> getLsidsToIndex();
+        void addLsidToIndex(String lsid);
+        void clearLsidsToIndex();
         ExpData getExpData(int rowid);
         ExpData getExpData(String lsid);
         List<? extends ExpData> getExpDatas(int... rowid);

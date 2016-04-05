@@ -48,6 +48,7 @@ public interface ExpDataTable extends ExpTable<ExpDataTable.Column>
         FileExtension,
         ViewOrDownload,
         Generated,
+        LastIndexed,
         Inputs,
         Outputs
     }

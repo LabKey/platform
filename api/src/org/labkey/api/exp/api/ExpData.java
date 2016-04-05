@@ -66,4 +66,7 @@ public interface ExpData extends ExpProtocolOutput
 
     void importDataFile(PipelineJob job, XarSource xarSource) throws ExperimentException, SQLException;
 
+    /** @return the search document id for this material */
+    String getDocumentId();
+
 }
