@@ -30,7 +30,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
                     continue;
                 }
 
-                this.aggregateStore.add(agg);
+                this.getAggregateStore().add(agg);
             }
         }
 
@@ -108,21 +108,21 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
                             var fieldKey = values.fieldKey;
                             var fieldMeta = me.fieldMetaStore.getById(fieldKey.toUpperCase());
                             if (fieldMeta) {
-                                // caption is already htmlEncoded
-                                if (fieldMeta.data.caption && fieldMeta.data.caption != "&nbsp;") {
-                                    return fieldMeta.data.caption;
+                                var caption = fieldMeta.get('caption');
+                                if (caption && caption != '&nbsp;') {
+                                    return caption; // caption is already htmlEncoded
                                 }
-                                return Ext4.htmlEncode(fieldMeta.data.name);
+                                return Ext4.htmlEncode(fieldMeta.get('name'));
                             }
                             return Ext4.htmlEncode(values.name) + " <span class='labkey-error'>(not found)</span>";
                         },
 
                         getAggegateCaption : function(values) {
                             var fieldKey = values.fieldKey,
-                                    labels = [],
-                                    caption = '';
+                                labels = [],
+                                caption = '';
 
-                            me.aggregateStore.each(function(rec) {
+                            me.getAggregateStore().each(function(rec) {
                                 if (rec.get('fieldKey') === fieldKey) {
                                     labels.push(rec.get('type'));
                                 }
