@@ -60,7 +60,6 @@ Ext4.define('TreeFilter', {
         var me = this,
             tree = me.tree,
             matches = [],
-            viewNode,
             visibleNodes = [];
 
         tree.expandAll();                       // expand all nodes for the the following iterative routines
@@ -1280,7 +1279,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             cls    : 'data-window',
             draggable : false,
             modal  : true,
-            title  : record.data.name,
+            title  : Ext4.htmlEncode(record.get('name')),
             defaults: {
                 border: false, frame: false
             },
