@@ -620,7 +620,9 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                 step6 = DataIteratorBuilder.wrap(st);
             }
 
-            return LoggingDataIterator.wrap(step6.getDataIterator(context));
+            DataIteratorBuilder step7 = new SearchIndexIteratorBuilder(step6);
+
+            return LoggingDataIterator.wrap(step7.getDataIterator(context));
         }
     }
 
@@ -1099,6 +1101,75 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                 catch (ExperimentException e)
                 {
                     throw new RuntimeException(e);
+                }
+            }
+            return hasNext;
+        }
+    }
+
+    private class SearchIndexIteratorBuilder implements DataIteratorBuilder
+    {
+        final DataIteratorBuilder _pre;
+
+        SearchIndexIteratorBuilder(DataIteratorBuilder pre)
+        {
+            _pre = pre;
+        }
+
+        @Override
+        public DataIterator getDataIterator(DataIteratorContext context)
+        {
+            DataIterator pre = _pre.getDataIterator(context);
+            return LoggingDataIterator.wrap(new SearchIndexIterator(pre, context));
+        }
+    }
+
+    private class SearchIndexIterator extends WrapperDataIterator
+    {
+        final DataIteratorContext _context;
+        final Integer _lsidCol;
+
+        protected SearchIndexIterator(DataIterator di, DataIteratorContext context)
+        {
+            super(di);
+            _context = context;
+
+            Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
+            _lsidCol = map.get("lsid");
+
+            Runnable indexTask = () -> {
+                List<String> lsidsToIndex = ExperimentService.get().getLsidsToIndex();
+                for (String lsid : lsidsToIndex)
+                {
+                    SimpleFilter filter = new SimpleFilter(FieldKey.fromString("LSID"), lsid);
+                    List<Data> data = new TableSelector(ExperimentService.get().getTinfoData(), filter, null).getArrayList(Data.class);
+                    if (data.size() > 0)
+                    {
+                        ExpDataImpl expData = new ExpDataImpl(data.get(0));
+                        expData.index(null);
+                    }
+                }
+                ExperimentService.get().clearLsidsToIndex();
+            };
+            if (null != DbScope.getLabKeyScope() && null != DbScope.getLabKeyScope().getCurrentTransaction())
+            {
+                DbScope.getLabKeyScope().getCurrentTransaction().addCommitTask(indexTask, DbScope.CommitTaskOption.POSTCOMMIT);
+            }
+        }
+
+
+        @Override
+        public boolean next() throws BatchValidationException
+        {
+            boolean hasNext = super.next();
+
+            if (hasNext)
+            {
+                String lsid = (String) get(_lsidCol);
+
+                if (null != lsid)
+                {
+                    ExperimentService.get().addLsidToIndex(lsid);
                 }
             }
             return hasNext;

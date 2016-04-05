@@ -203,6 +203,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     protected Map<String, DataType> _dataTypes = new HashMap<>();
     protected Map<String, ProtocolImplementation> _protocolImplementations = new HashMap<>();
 
+    private static List<String> _lsidsToIndex = new ArrayList<>();
     private static final List<ExperimentListener> _listeners = new CopyOnWriteArrayList<>();
 
     private static final ReentrantLock XAR_IMPORT_LOCK = new ReentrantLock();
@@ -255,6 +256,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         ActionURL postURL = new ActionURL(ExperimentController.ExportRunsAction.class, container);
         return new JspView<>("/org/labkey/experiment/XARExportOptions.jsp", new ExperimentController.ExportBean(LSIDRelativizer.FOLDER_RELATIVE, XarExportType.BROWSER_DOWNLOAD, defaultFilenamePrefix + ".xar", new ExperimentController.ExportOptionsForm(), null, postURL));
     }
+
+    public List<String> getLsidsToIndex() { return _lsidsToIndex; }
+
+    public void addLsidToIndex(String lsid) { _lsidsToIndex.add(lsid); }
+
+    public void clearLsidsToIndex() { _lsidsToIndex.clear(); }
 
     public HttpView createFileExportView(Container container, String defaultFilenamePrefix)
     {
@@ -679,6 +686,23 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         if (!modifiedSQL.isEmpty())
             sql.append(" AND ").append(modifiedSQL);
         return ExpMaterialImpl.fromMaterials(new SqlSelector(getSchema(), sql).getArrayList(Material.class));
+    }
+
+    public List<ExpDataImpl> getIndexableData(Container container, @Nullable Date modifiedSince)
+    {
+        SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoData() + " WHERE Container = ? AND classId IS NOT NULL");
+        sql.add(container.getId());
+        SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoData(), modifiedSince, null).toSQLFragment(null, null);
+        if (!modifiedSQL.isEmpty())
+            sql.append(" AND ").append(modifiedSQL);
+        return ExpDataImpl.fromDatas(new SqlSelector(getSchema(), sql).getArrayList(Data.class));
+    }
+
+    public void setLastIndexed(int id, long ms)
+    {
+        new SqlExecutor(getSchema()).execute("UPDATE " + getTinfoData() + " SET LastIndexed = ? WHERE RowId = ?",
+                new Timestamp(ms), id);
+
     }
 
     private static final MaterialSource MISS_MARKER = new MaterialSource();
@@ -2573,6 +2597,16 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             SQLFragment dataSQL = new SQLFragment("DELETE FROM ").append(getTinfoData()).append(" WHERE RowId ");
             dialect.appendInClauseSql(dataSQL, selectedDataIds);
             executor.execute(dataSQL);
+
+            // Remove from search index
+            SearchService ss = ServiceRegistry.get(SearchService.class);
+            if (null != ss)
+            {
+                for (ExpDataImpl data : ExpDataImpl.fromDatas(datas))
+                {
+                    ss.deleteResource(data.getDocumentId());
+                }
+            }
 
             transaction.commit();
         }

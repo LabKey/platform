@@ -1,0 +1,3 @@
+
+
+ALTER TABLE exp.Data ADD LastIndexed DATETIME NULL;

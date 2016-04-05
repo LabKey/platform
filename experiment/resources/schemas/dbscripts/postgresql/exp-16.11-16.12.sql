@@ -1,0 +1,3 @@
+
+
+ALTER TABLE exp.Data ADD COLUMN LastIndexed TIMESTAMP NULL;

@@ -55,6 +55,7 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.ExpDataClassDataTestCase;
+import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.LogDataType;
@@ -101,7 +102,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     public double getVersion()
     {
-        return 16.11;
+        return 16.12;
     }
 
     protected void init()
@@ -337,6 +338,11 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 {
                     material.index(task);
                 }
+
+                for (ExpDataImpl data : ExperimentServiceImpl.get().getIndexableData(c, modifiedSince))
+                {
+                    data.index(task);
+                }
             }
         };
         task.addRunnable(r, SearchService.PRIORITY.bulk);
@@ -347,6 +353,10 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     {
         // Clear the last indexed time on all materials
         new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + ExperimentService.get().getTinfoMaterial() +
+                " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
+
+        // Clear the last indexed time on all data
+        new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + ExperimentService.get().getTinfoData() +
                 " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
     }
 }

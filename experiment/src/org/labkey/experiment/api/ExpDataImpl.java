@@ -17,8 +17,12 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
@@ -32,11 +36,17 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.webdav.SimpleDocumentResource;
+import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.File;
 import java.net.URI;
@@ -137,6 +147,7 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
                 Table.insert(user, dataClass.getTinfo(), map);
             }
         }
+        index(null);
     }
 
     public URI getDataFileURI()
@@ -303,5 +314,160 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
         {
             throw new XarFormatException(e);
         }
+    }
+
+    // Get all text strings from the data class for indexing
+    public List<String> getIndexValues()
+    {
+        ExpDataClassImpl dc = this.getDataClass();
+        List<String> values = null;
+        if (null != dc)
+        {
+            values = new ArrayList<>();
+            TableInfo t = dc.getTinfo();
+            SQLFragment sql = new SQLFragment("SELECT ");
+            boolean first = true;
+            for(ColumnInfo ci : t.getColumns())
+            {
+                if(ci.getJdbcType().toString().equals("VARCHAR"))
+                {
+                    // Don't index lsid's or sequences
+                    if(ci.getName().equals("lsid") || ci.getName().equals("sequence"))
+                        continue;
+
+                    if(!first)
+                        sql.append(", ");
+                    else
+                        first = false;
+
+                    sql.append(ci.getName());
+                }
+            }
+            if(!first)
+            {
+                sql.append(" FROM expdataclass.").append(t.getName()).append(" WHERE LSID = ?");
+                sql.add(getLSID());
+                Map<String, Object> indexes = new SqlSelector(t.getSchema(), sql).getMap();
+                for (Object o : indexes.values())
+                {
+                    if (null != o && o.getClass().equals(String.class))
+                        values.add((String) o);
+
+                }
+            }
+        }
+        return values;
+    }
+
+    public String getAlias()
+    {
+        String name = null;
+
+        TableInfo mapTi = ExperimentService.get().getTinfoDataAliasMap();
+        TableInfo ti = ExperimentService.get().getTinfoAlias();
+        SQLFragment sql = new SQLFragment("SELECT a.name FROM exp." + mapTi.getName() + " m JOIN exp." + ti.getName()
+                + " a ON m.alias = a.RowId WHERE m.lsid = ? ");
+        sql.add(getLSID());
+        Map<String, Object> aliasList =
+                new SqlSelector(mapTi.getSchema(), sql).getMap();
+
+        if(null != aliasList && aliasList.size() > 0)
+            name = (String)aliasList.get("name");
+
+        return name;
+    }
+
+    public String getDocumentId()
+    {
+        return "expData:" + new Path(getContainer().getId(), Integer.toString(getRowId()));
+    }
+
+    public static final SearchService.SearchCategory expDataCategory = new SearchService.SearchCategory("expData", "expData");
+
+    public void index(SearchService.IndexTask task)
+    {
+        if (task == null)
+        {
+            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            if (null == ss)
+                return;
+            task = ss.defaultTask();
+        }
+
+        Map<String, Object> props = new HashMap<>();
+        String keywords = "";
+        String identifiers = "";
+
+        //Add name to title
+        if(null != _object.getDescription())
+            keywords += _object.getDescription();
+
+        String title = _object.getName();
+
+        //Add alias in parenthesis in the title
+        String alias = this.getAlias();
+        if(null != alias)
+        {
+            title += " (" + alias + ")";
+        }
+
+        boolean first = true;
+        List<String> dataClassText = getIndexValues();
+        if(null != dataClassText)
+        {
+            for (String text : dataClassText)
+            {
+                if (text.contains("lsid"))
+                    continue;
+
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    identifiers += ", ";
+                }
+
+                identifiers += text;
+            }
+        }
+
+        if(null != this.getDataClass())
+        {
+            props.put(SearchService.PROPERTY.categories.toString(),
+                    new SearchService.SearchCategory(this.getDataClass().getName(), this.getDataClass().getDescription()).toString());
+        } else //TODO: Right now we don't index data without data classes but we may in the future
+        {
+            props.put(SearchService.PROPERTY.categories.toString(), expDataCategory.toString());
+        }
+        props.put(SearchService.PROPERTY.title.toString(), title);
+        props.put(SearchService.PROPERTY.identifiersMed.toString(), identifiers);
+        props.put(SearchService.PROPERTY.keywordsMed.toString(), keywords);   //Stemmed
+
+        ActionURL view = ExperimentController.ExperimentUrlsImpl.get().getDataDetailsURL(this);
+        view.setExtraPath(getContainer().getId());
+        String docId = getDocumentId();
+        final int id = this.getRowId();
+
+        String body = title + keywords;
+
+        //All identifiers (indexable text values) in parenthesis in the body
+        if(identifiers.length() > 0)
+        {
+            body += " (" + identifiers + ")";
+        }
+
+        SimpleDocumentResource r = new SimpleDocumentResource(new Path(docId), docId, getContainer().getId(),
+                "text/plain", body.getBytes(),
+                view, props){
+            @Override
+            public void setLastIndexed(long ms, long modified)
+            {
+                ExperimentServiceImpl.get().setLastIndexed(id, ms);
+            }
+        };
+
+        task.addResource(r, SearchService.PRIORITY.item);
     }
 }

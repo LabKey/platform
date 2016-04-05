@@ -105,6 +105,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         addColumn(Column.FileExtension);
         addColumn(Column.ViewOrDownload);
         addColumn(Column.Generated);
+        addColumn(Column.LastIndexed);
 
         List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts(Column.Name));
@@ -179,6 +180,8 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
                 return wrapColumn(alias, _rootTable.getColumn("Name"));
             case Description:
                 return wrapColumn(alias, _rootTable.getColumn("Description"));
+            case LastIndexed:
+                return wrapColumn(alias, _rootTable.getColumn("LastIndexed"));
             case DataClass:
             {
                 ColumnInfo c = wrapColumn(alias, _rootTable.getColumn("classId"));

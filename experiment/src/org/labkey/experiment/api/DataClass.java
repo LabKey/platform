@@ -26,6 +26,7 @@ public class DataClass extends IdentifiableEntity
     private String _description;
     private String _nameExpression;
     private Integer _materialSourceId;
+    private String _alias;
 
     public String getDescription()
     {
@@ -58,4 +59,13 @@ public class DataClass extends IdentifiableEntity
         _materialSourceId = materialSourceId;
     }
 
+    public String getAlias()
+    {
+        return _alias;
+    }
+
+    public void setAlias(String alias)
+    {
+        _alias = alias;
+    }
 }
