@@ -125,6 +125,49 @@ Ext4.override(Ext4.view.Table, {
 
     /**
      * @Override
+     * Sencha Issue: https://www.sencha.com/forum/showthread.php?296844-HTML-injection-attack-against-the-grid-row-s-TR-id-and-dataRecordId-attributes
+     * Version: 4.2.1
+     */
+    rowTpl: [
+        '{%',
+            'var dataRowCls = values.recordIndex === -1 ? "" : " ' + Ext4.baseCSSPrefix + 'grid-data-row";',
+        '%}',
+        '<tr role="row" {[values.rowId ? ("id=\\"" + this.encodeId(values.rowId) + "\\"") : ""]} ',
+            'data-boundView="{view.id}" ',
+            'data-recordId="{record.internalId:htmlEncode}" ',
+            'data-recordIndex="{recordIndex}" ',
+            'class="{[values.itemClasses.join(" ")]} {[values.rowClasses.join(" ")]}{[dataRowCls]}" ',
+            '{rowAttr:attributes} tabIndex="-1">',
+            '<tpl for="columns">' +
+                '{%',
+                    'parent.view.renderCell(values, parent.record, parent.recordIndex, xindex - 1, out, parent)',
+                '%}',
+            '</tpl>',
+        '</tr>',
+        {
+            encodeId: function(recordId) {
+                return Ext4.htmlEncode(recordId);
+            },
+            priority: 0
+        }
+    ],
+
+    // in addition to updating rowTpl, update direct setting of the attribute in the DOM
+    onIdChanged : function(store, rec, oldId, newId, oldInternalId) {
+        var me = this,
+            rowDom;
+
+        if (me.viewReady) {
+            rowDom = me.getNodeById(oldInternalId);
+            if (rowDom) {
+                rowDom.setAttribute('data-recordId', Ext4.htmlEncode(rec.internalId));
+                rowDom.id = me.getRowId(rec);
+            }
+        }
+    },
+
+    /**
+     * @Override
      * Sencha Issue: http://www.sencha.com/forum/showthread.php?269116-Ext-4.2.1.883-Sandbox-getRowStyleTableEl
      * Version: 4.2.1
      */
@@ -143,13 +186,13 @@ Ext4.override(Ext4.view.Table, {
      */
     renderRow: function(record, rowIdx, out) {
         var me = this,
-                isMetadataRecord = rowIdx === -1,
-                selModel = me.selModel,
-                rowValues = me.rowValues,
-                itemClasses = rowValues.itemClasses,
-                rowClasses = rowValues.rowClasses,
-                cls,
-                rowTpl = me.rowTpl;
+            isMetadataRecord = rowIdx === -1,
+            selModel = me.selModel,
+            rowValues = me.rowValues,
+            itemClasses = rowValues.itemClasses,
+            rowClasses = rowValues.rowClasses,
+            cls,
+            rowTpl = me.rowTpl;
 
         rowValues.record = record;
         rowValues.recordId = record.internalId;
