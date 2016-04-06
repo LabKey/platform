@@ -31,7 +31,6 @@ import org.labkey.api.util.JunitUtil;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Set;
@@ -44,32 +43,22 @@ import java.util.Set;
 public class DbSequenceManager
 {
     // This handler expects to always return a single integer value
-    private static final ResultSetHandler<Integer> INTEGER_RETURNING_RESULTSET_HANDLER = new ResultSetHandler<Integer>()
-    {
-        @Override
-        public Integer handle(ResultSet rs, Connection conn) throws SQLException
-        {
-            rs.next();
-            return rs.getInt(1);
-        }
+    private static final ResultSetHandler<Integer> INTEGER_RETURNING_RESULTSET_HANDLER = (rs, conn) -> {
+        rs.next();
+        return rs.getInt(1);
     };
 
     // Statement handler for the multiple statement case
-    private static final StatementHandler<Integer> INTEGER_RETURNING_STATEMENT_HANDLER = new StatementHandler<Integer>()
-    {
-        @Override
-        public Integer handle(PreparedStatement stmt, Connection conn) throws SQLException
+    private static final StatementHandler<Integer> INTEGER_RETURNING_STATEMENT_HANDLER = (stmt, conn) -> {
+        stmt.execute();
+
+        // Skip and close the first ResultSet
+        stmt.getMoreResults();
+
+        try (ResultSet rs = stmt.getResultSet())
         {
-            stmt.execute();
-
-            // Skip and close the first ResultSet
-            stmt.getMoreResults();
-
-            try (ResultSet rs = stmt.getResultSet())
-            {
-                rs.next();
-                return rs.getInt(1);
-            }
+            rs.next();
+            return rs.getInt(1);
         }
     };
 
@@ -420,15 +409,10 @@ public class DbSequenceManager
             final Set<Integer> duplicateValues = new ConcurrentHashSet<>();
             final long start = System.currentTimeMillis();
 
-            JunitUtil.createRaces(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    int next = _sequence.next();
-                    if (!values.add(next))
-                        duplicateValues.add(next);
-                }
+            JunitUtil.createRaces(() -> {
+                int next = _sequence.next();
+                if (!values.add(next))
+                    duplicateValues.add(next);
             }, threads, n, 60);
 
             final long elapsed = System.currentTimeMillis() - start;
@@ -461,19 +445,14 @@ public class DbSequenceManager
             final int threads = 5;
             final String name = "org.labkey.api.data.DbSequence.Test/" + GUID.makeGUID();
 
-            JunitUtil.createRaces(new Runnable()
-            {
-                @Override
-                public void run()
+            JunitUtil.createRaces(() -> {
+                try
                 {
-                    try
-                    {
-                        DbSequenceManager.ensure(JunitUtil.getTestContainer(), name, 0);
-                    }
-                    catch (Throwable t)
-                    {
-                        failures.add(t);
-                    }
+                    DbSequenceManager.ensure(JunitUtil.getTestContainer(), name, 0);
+                }
+                catch (Throwable t)
+                {
+                    failures.add(t);
                 }
             }, threads, 1, 60);
 

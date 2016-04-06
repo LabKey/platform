@@ -118,15 +118,10 @@ public class CaseInsensitiveHashMap<V> extends CaseInsensitiveMapWrapper<V> impl
 
             final Iterator<String> iter = keys.iterator();
 
-            JunitUtil.createRaces(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    Object test = map.get(iter.next());
+            JunitUtil.createRaces(() -> {
+                Object test = map.get(iter.next());
 
-                    Assert.assertEquals(value, test);
-                }
+                Assert.assertEquals(value, test);
             }, threads, races, 5);
         }
     }

@@ -227,19 +227,14 @@ public class NestedGroupsTest extends Assert
         // Attempt multiple simultaneous adds of the same member to the same group, see #14795. One of the five threads
         // should succeed and the others should fail, with either an InvalidGroupMemberShipException (which would
         // normally be displayed to the user) or a constraint violation (which is ignored).
-        JunitUtil.createRaces(new Runnable()
-        {
-            @Override
-            public void run()
+        JunitUtil.createRaces(() -> {
+            try
             {
-                try
-                {
-                    SecurityManager.addMember(divB, user);
-                }
-                catch (InvalidGroupMembershipException e)
-                {
-                    // This is expected
-                }
+                SecurityManager.addMember(divB, user);
+            }
+            catch (InvalidGroupMembershipException e)
+            {
+                // This is expected
             }
         }, 5, 1, 60);
         expected(divB, user);
