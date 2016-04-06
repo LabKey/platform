@@ -22,6 +22,7 @@ import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.ResultSetWrapper;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
@@ -98,7 +99,19 @@ public abstract class OracleDialect extends SimpleSqlDialect
     {
         // The Oracle JDBC driver throws a SQLException when calling DatabaseMetaData.getIndexInfo(), so need to avoid
         // calling it
-        return ti.getTableType() == DatabaseTableType.TABLE;
+        return ti.getTableType() == DatabaseTableType.TABLE && !isExternalTable(ti) ;
+    }
+
+    private boolean isExternalTable(TableInfo ti)
+    {
+        String owner = ti.getSchema().getName();
+        SQLFragment sqlFragment = new SQLFragment();
+        sqlFragment.append("select * from all_external_tables where owner = ? and table_name = ?");
+        sqlFragment.add(owner);
+        sqlFragment.add(ti.getName());
+
+        SqlSelector sqlSelector = new SqlSelector(ti.getSchema(), sqlFragment);
+        return sqlSelector.getRowCount() > 0;
     }
 
     @Override
