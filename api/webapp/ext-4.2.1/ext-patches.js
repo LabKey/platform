@@ -1,5 +1,8 @@
 /* Apply patches found for Ext 4.2.1 here */
 
+// Disable the dynamic class loader (docs mention this should be the default)
+Ext4.Loader.setConfig({ enabled: false });
+
 // Set USE_NATIVE_JSON so Ext4.decode and Ext4.encode use JSON.parse and JSON.stringify instead of eval
 Ext4.USE_NATIVE_JSON = true;
 
