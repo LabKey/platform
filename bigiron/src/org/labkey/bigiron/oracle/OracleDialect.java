@@ -48,7 +48,7 @@ import java.util.Set;
  * Date: 6/10/11
  * Time: 3:40 PM
  */
-public abstract class OracleDialect extends SimpleSqlDialect
+abstract class OracleDialect extends SimpleSqlDialect
 {
     @Override
     public String getProductName()
@@ -257,6 +257,16 @@ public abstract class OracleDialect extends SimpleSqlDialect
         return true;
     }
 
+    // Like SQL Server, EXISTS on Oracle can only be used in a WHERE or CASE. In addition, FROM <table> is required in every SELECT statement
+    // on Oracle, so add FROM DUAL, the Oracle dummy table: http://docs.oracle.com/cd/E11882_01/server.112/e41084/queries009.htm#SQLRF20036
+    @Override
+    public SQLFragment wrapExistsExpression(SQLFragment existsSQL)
+    {
+        // Note: "FROM DUAL" will only work when using EXISTS to return TRUE/FALSE, but Selector.exists() is the only code
+        // path that should be invoking this method on Oracle.
+        return new SQLFragment("CASE WHEN\n").append(existsSQL).append("\nTHEN 1 ELSE 0 END FROM DUAL");
+    }
+
     private class OracleColumnMetaDataReader extends ColumnMetaDataReader
     {
         private OracleColumnMetaDataReader(ResultSet rsCols)
@@ -338,7 +348,7 @@ public abstract class OracleDialect extends SimpleSqlDialect
 
     private static class OracleResultSetWrapper extends ResultSetWrapper
     {
-        public OracleResultSetWrapper(ResultSet rs)
+        OracleResultSetWrapper(ResultSet rs)
         {
             super(rs);
         }
