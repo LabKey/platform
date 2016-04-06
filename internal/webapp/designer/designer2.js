@@ -272,7 +272,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
 
         var footerBar = [{
                 text: "Delete",
-                tooltip: "Delete " + (this.customView.shared ? "shared" : "your") + " saved view",
+                tooltip: "Delete " + (this.customView.shared ? "shared" : "your") + " saved grid view",
                 tooltipType: "title",
                 disabled: !deleteEnabled,
                 handler: this.onDeleteClick,
@@ -284,7 +284,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
         {
             footerBar[footerBar.length] = {
                 text: "Revert",
-                tooltip: "Revert " + (this.customView.shared ? "shared" : "your") + " edited view",
+                tooltip: "Revert " + (this.customView.shared ? "shared" : "your") + " edited grid view",
                 tooltipType: "title",
                 // disabled for hidden, saved (non-session), customized (not new) default view, or uneditable views
                 disabled: !revertEnabled,
@@ -300,7 +300,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
         {
             footerBar[footerBar.length] = {
                 text: "View Grid",
-                tooltip: "Apply changes to the view and reshow grid",
+                tooltip: "Apply changes to the grid view and reshow grid",
                 tooltipType: "title",
                 handler: this.onApplyClick,
                 scope: this
@@ -370,20 +370,20 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
 
         // Show 'does not exist' message only for non-default views.
         if (this.customView.doesNotExist && this.viewName)
-            this.showMessage("Custom View '" + Ext.util.Format.htmlEncode(this.viewName) + "' not found.");
+            this.showMessage("Custom Grid View '" + Ext.util.Format.htmlEncode(this.viewName) + "' not found.");
     },
 
     onRender : function (ct, position) {
         LABKEY.DataRegion.ViewDesigner.superclass.onRender.call(this, ct, position);
         if (!this.canEdit())
         {
-            var msg = "This view is not editable, but you may save a new view with a different name.";
+            var msg = "This grid view is not editable, but you may save a new grid view with a different name.";
             // XXX: show this.editableErrors in a '?' help tooltip
             this.showMessage(msg);
         }
         else if (this.customView.session)
         {
-            this.showMessage("Editing an unsaved view.");
+            this.showMessage("Editing an unsaved grid view.");
         }
     },
 
@@ -714,7 +714,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
                 this.fireEvent("viewsave", this, savedViewsInfo, urlParameters);
             },
             failure: function (errorInfo) {
-                Ext.Msg.alert("Error saving view", errorInfo.exception);
+                Ext.Msg.alert("Error saving grid view", errorInfo.exception);
             },
             scope: this
         });
@@ -1729,7 +1729,7 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
 
             var fieldKey = filterRecord.data.fieldKey;
             if (!fieldKey) {
-                if (confirm("A fieldKey is required for each filter.\nContinue to save custom view with invalid filter?")) {
+                if (confirm("A fieldKey is required for each filter.\nContinue to save custom grid view with invalid filter?")) {
                     continue;
                 }
                 return false;
@@ -1737,7 +1737,7 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
 
             var fieldMetaRecord = this.fieldMetaStore.getById(fieldKey.toUpperCase());
             if (!fieldMetaRecord) {
-                if (confirm("Field not found for fieldKey '" + fieldKey + "'.\nContinue to save custom view with invalid filter?")) {
+                if (confirm("Field not found for fieldKey '" + fieldKey + "'.\nContinue to save custom grid view with invalid filter?")) {
                     continue;
                 }
                 return false;
@@ -1752,7 +1752,7 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
                 {
                     var filterType = LABKEY.Filter.getFilterTypeForURLSuffix(filterOp);
                     if (!filterType) {
-                        if (confirm("Filter operator '" + filterOp + "' isn't recognized.\nContinue to save custom view with invalid filter?")) {
+                        if (confirm("Filter operator '" + filterOp + "' isn't recognized.\nContinue to save custom grid view with invalid filter?")) {
                             continue OUTER_LOOP;
                         }
                         return false;
@@ -1760,7 +1760,7 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
 
                     var value = filterType.validate(items[j].value, jsonType, fieldKey);
                     if (value == undefined) {
-                        if (confirm("Continue to save custom view with invalid filter?")) {
+                        if (confirm("Continue to save custom grid view with invalid filter?")) {
                             continue OUTER_LOOP;
                         }
                         return false;
@@ -2185,9 +2185,9 @@ LABKEY.DataRegion.PaperclipButton = Ext.extend(Ext.Button, {
 
     getToolTipText : function () {
         if (this.pressed)
-            return "This " + this.itemType + " will be saved with the view";
+            return "This " + this.itemType + " will be saved with the grid view";
         else
-            return "This " + this.itemType + " will NOT be saved as part of the view";
+            return "This " + this.itemType + " will NOT be saved as part of the grid view";
     },
 
     updateToolTip : function () {
@@ -2685,14 +2685,14 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function(config) {
     });
 
     var disableSharedAndInherit = LABKEY.user.isGuest || hidden;
-    var newViewName = viewName || "New View";
+    var newViewName = viewName || "New Grid View";
     if (!canEdit && viewName)
         newViewName = viewName + " Copy";
 
     var warnedAboutMoving = false;
 
     var win = new Ext.Window({
-        title: "Save Custom View" + (viewName ? ": " + Ext.util.Format.htmlEncode(viewName) : ""),
+        title: "Save Custom Grid View" + (viewName ? ": " + Ext.util.Format.htmlEncode(viewName) : ""),
         cls: "extContainer",
         bodyStyle: "padding: 6px",
         modal: true,
@@ -2706,8 +2706,8 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function(config) {
             {
                 ref: "defaultNameField",
                 xtype: "radio",
-                fieldLabel: "View Name",
-                boxLabel: "Default view for this page",
+                fieldLabel: "Grid View Name",
+                boxLabel: "Default grid view for this page",
                 inputValue: "default",
                 name: "saveCustomView_namedView",
                 checked: canEdit && !viewName,
@@ -2744,7 +2744,7 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function(config) {
                         fieldLabel: "",
                         xtype: "textfield",
                         name: "saveCustomView_name",
-                        tooltip: "Name of the custom view",
+                        tooltip: "Name of the custom grid view",
                         tooltipType: "title",
                         msgTarget: "side",
                         allowBlank: false,
@@ -2755,7 +2755,7 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function(config) {
                         validator: function (value)
                         {
                             if ("default" === value.trim())
-                                return "The view name 'default' is not allowed";
+                                return "The grid view name 'default' is not allowed";
                             return true;
                         },
                         selectOnFocus: true,
@@ -2767,7 +2767,7 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function(config) {
             {
                 xtype: "box",
                 style: "padding-left: 122px; padding-bottom: 8px",
-                html: "<em>The " + (!config.canEdit ? "current" : "shadowed") + " view is not editable.<br>Please enter an alternate view name.</em>",
+                html: "<em>The " + (!config.canEdit ? "current" : "shadowed") + " grid view is not editable.<br>Please enter an alternate grid view name.</em>",
                 hidden: canEdit
             },
             {
@@ -2821,7 +2821,7 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function(config) {
                         if (!warnedAboutMoving && combobox.getValue() != config.containerPath)
                         {
                             warnedAboutMoving = true;
-                            Ext.Msg.alert("Moving a Saved View", "If you save, this view will be moved from '" + config.containerPath + "' to " + combobox.getValue());
+                            Ext.Msg.alert("Moving a Saved Grid View", "If you save, this grid view will be moved from '" + config.containerPath + "' to " + combobox.getValue());
                         }
                     }
                 }
@@ -2834,14 +2834,14 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function(config) {
                 {
                     if (!win.nameCompositeField.isValid())
                     {
-                        Ext.Msg.alert("Invalid view name", "The view name must be less than 50 characters long and not 'default'.");
+                        Ext.Msg.alert("Invalid grid view name", "The grid view name must be less than 50 characters long and not 'default'.");
                         return;
                     }
 
                     var nameField = win.nameCompositeField.items.get(1);
                     if (!canEdit && viewName == nameField.getValue())
                     {
-                        Ext.Msg.alert("Error saving", "This view is not editable.  You must save this view with an alternate name.");
+                        Ext.Msg.alert("Error saving", "This grid view is not editable.  You must save this grid view with an alternate name.");
                         return;
                     }
 

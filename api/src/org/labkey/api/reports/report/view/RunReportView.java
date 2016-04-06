@@ -36,7 +36,7 @@ public abstract class RunReportView extends TabStripView
     public static final String CACHE_PARAM = "cacheKey";
     public static final String MSG_PARAM = "msg";
 
-    public static final String TAB_VIEW = "View";
+    public static final String TAB_VIEW = "Chart";
     public static final String TAB_DATA = "Data";
 
     protected BindException _errors;

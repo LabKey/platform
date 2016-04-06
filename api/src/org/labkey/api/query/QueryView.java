@@ -832,6 +832,7 @@ public class QueryView extends WebPartView<Object>
         if (getSettings().getAllowChooseView())
         {
             bar.add(createViewButton(_itemFilter));
+            bar.add(createReportButton());
         }
 
         if (showExportButtons())
@@ -851,6 +852,7 @@ public class QueryView extends WebPartView<Object>
         if (getSettings().getAllowChooseView())
         {
             bar.add(createViewButton(_itemFilter));
+            bar.add(createReportButton());
             MenuButton chartButton = createChartButton();
             if (chartButton.getPopupMenu().getNavTree().getChildCount() > 0)
             {
@@ -858,18 +860,11 @@ public class QueryView extends WebPartView<Object>
             }
         }
 
-        if (showInsertNewButton() && canInsert())
+        if (canInsert() && (showInsertNewButton() || showImportDataButton()))
         {
-            ActionButton insertButton = createInsertButton();
+            ActionButton insertButton = createInsertMenuButton();
             if (insertButton != null)
                 bar.add(insertButton);
-        }
-
-        if (showImportDataButton() && canInsert())
-        {
-            ActionButton importButton = createImportButton();
-            if (importButton != null)
-                bar.add(importButton);
         }
 
 //        if (/* showUpdateButton() && */canUpdate())
@@ -977,6 +972,44 @@ public class QueryView extends WebPartView<Object>
                     "});"
         );
         return deleteAllRows;
+    }
+
+    public ActionButton createInsertMenuButton()
+    {
+        return createInsertMenuButton(null, null);
+    }
+
+    public ActionButton createInsertMenuButton(ActionURL overrideInsertUrl, ActionURL overrideImportUrl)
+    {
+        MenuButton button = new MenuButton("Insert");
+        boolean hasInsertNewOption = false;
+        boolean hasImportDataOption = false;
+
+        if (showInsertNewButton())
+        {
+            ActionURL urlInsert = overrideInsertUrl == null ? urlFor(QueryAction.insertQueryRow) : overrideInsertUrl;
+            if (urlInsert != null)
+            {
+                NavTree insertNew = new NavTree("Insert New", urlInsert);
+                insertNew.setId(getBaseMenuId() + ":Insert:InsertNew");
+                button.addMenuItem(insertNew);
+                hasInsertNewOption = true;
+            }
+        }
+
+        if (showImportDataButton())
+        {
+            ActionURL urlImport = overrideImportUrl == null ? urlFor(QueryAction.importData) : overrideImportUrl;
+            if (urlImport != null && urlImport != AbstractTableInfo.LINK_DISABLER_ACTION_URL)
+            {
+                NavTree importData = new NavTree("Import Data", urlImport);
+                importData.setId(getBaseMenuId() + ":Insert:Import");
+                button.addMenuItem(importData);
+                hasImportDataOption = true;
+            }
+        }
+
+        return hasInsertNewOption &&  hasImportDataOption? button : hasInsertNewOption ? createInsertButton() : hasImportDataOption ? createImportButton() : null;
     }
 
     public ActionButton createInsertButton()
@@ -1179,7 +1212,7 @@ public class QueryView extends WebPartView<Object>
         final boolean showingSelected = getShowRows() == ShowRows.SELECTED;
         final boolean showingUnselected = getShowRows() == ShowRows.UNSELECTED;
 
-        MenuButton pageSizeMenu = new MenuButton("Page Size", getBaseMenuId() + ".Menu.PageSize")
+        MenuButton pageSizeMenu = new MenuButton("Paging", getBaseMenuId() + ".Menu.PageSize")
         {
             @Override
             public void render(RenderContext ctx, Writer out) throws IOException
@@ -1265,20 +1298,37 @@ public class QueryView extends WebPartView<Object>
             current = (_customView != null) ? StringUtils.defaultString(_customView.getName(), "") : "";
 
         URLHelper target = urlChangeView();
-        NavTreeMenuButton button = new NavTreeMenuButton("Views");
+        NavTreeMenuButton button = new NavTreeMenuButton("Grid Views");
         NavTree menu = button.getNavTree();
-        menu.setId(getBaseMenuId() + ".Menu.Views");
+        menu.setId(getBaseMenuId() + ".Menu.GridViews");
 
         // existing views
         if (!getQueryDef().isTemporary())
         {
             addGridViews(button, target, current);
 
-            if (_showReports)
-                addReportViews(button);
-
             button.addSeparator();
         }
+        StringBuilder baseFilterItems = new StringBuilder();
+
+        if (getSettings().isAllowCustomizeView())
+            addCustomizeViewItems(button);
+        if (!getQueryDef().isTemporary())
+        {
+            addManageViewItems(button, PageFlowUtil.map("baseFilterItems", PageFlowUtil.encode(baseFilterItems.toString()),
+                    "schemaName", getSchema().getSchemaName(),
+                    "queryName", getSettings().getQueryName()));
+            addFilterItems(button);
+        }
+        return button;
+    }
+
+    public MenuButton createReportButton()
+    {
+        NavTreeMenuButton button = new NavTreeMenuButton("Reports");
+        NavTree menu = button.getNavTree();
+        menu.setId(getBaseMenuId() + ".Menu.Reports");
+
         StringBuilder baseFilterItems = new StringBuilder();
 
         if (!getQueryDef().isTemporary() && _report == null)
@@ -1312,18 +1362,12 @@ public class QueryView extends WebPartView<Object>
             {
                 if (viewItemFilter.accept(designer.getReportType(), designer.getLabel()))
                 {
-                    if (submenu == null)
-                    {
-                        submenu = menu.addChild("Create");
-                        submenu.setId(getBaseMenuId() + ":Views:Create");
-                    }
-
-                    NavTree item = new NavTree(designer.getLabel(), designer.getDesignerURL().getLocalURIString());
-                    item.setId(getBaseMenuId() + ":Views:Create:" + designer.getLabel());
+                     NavTree item = new NavTree("Create " + designer.getLabel(), designer.getDesignerURL().getLocalURIString());
+                    item.setId(getBaseMenuId() + ":Reports:Create:" + designer.getLabel());
                     item.setImageSrc(designer.getIconURL());
                     item.setImageCls(designer.getIconCls());
 
-                    submenu.addChild(item);
+                    menu.addChild(item);
                 }
 
                 // we want to keep track of the available report types that the base (built-in) item filter accepts
@@ -1336,15 +1380,13 @@ public class QueryView extends WebPartView<Object>
             }
         }
 
-        if (getSettings().isAllowCustomizeView())
-            addCustomizeViewItems(button);
+        // existing reports
         if (!getQueryDef().isTemporary())
         {
-            addManageViewItems(button, PageFlowUtil.map("baseFilterItems", PageFlowUtil.encode(baseFilterItems.toString()),
-                    "schemaName", getSchema().getSchemaName(),
-                    "queryName", getSettings().getQueryName()));
-            addFilterItems(button);
+            if (_showReports)
+                addReportViews(button);
         }
+
         return button;
     }
 
@@ -1444,7 +1486,7 @@ public class QueryView extends WebPartView<Object>
             if (null == url)
                 url = getSettings().getSortFilterURL();
             NavTree item;
-            String label = "Apply View Filter";
+            String label = "Apply Grid Filter";
             if (ignoreUserFilter())
             {
                 url.deleteParameter(param(QueryParam.ignoreFilter));
@@ -1456,7 +1498,7 @@ public class QueryView extends WebPartView<Object>
                 item = new NavTree(label, url.toString());
                 item.setSelected(true);
             }
-            item.setId(getBaseMenuId() + ":Views:" + label);
+            item.setId(getBaseMenuId() + ":GridViews:" + label);
             button.addMenuItem(item);
         }
 
@@ -1471,7 +1513,7 @@ public class QueryView extends WebPartView<Object>
         {
             button.addSeparator();
             NavTree containerFilterItem = new NavTree("Folder Filter");
-            containerFilterItem.setId(getBaseMenuId() + ":Views:Folder Filter");
+            containerFilterItem.setId(getBaseMenuId() + ":GridViews:Folder Filter");
             button.addMenuItem(containerFilterItem);
 
             ContainerFilterable table = (ContainerFilterable) t;
@@ -1488,7 +1530,7 @@ public class QueryView extends WebPartView<Object>
                 url.replaceParameter(propName, filterType.name());
                 NavTree filterItem = new NavTree(filterType.toString(), url);
 
-                filterItem.setId(getBaseMenuId() + ":Views:Folder Filter:" + filterType.toString());
+                filterItem.setId(getBaseMenuId() + ":GridViews:Folder Filter:" + filterType.toString());
 
                 if (selectedFilterType == filterType)
                 {
@@ -1559,7 +1601,7 @@ public class QueryView extends WebPartView<Object>
 
                 item = new NavTree(label, (String) null);
                 item.setScript(getChangeViewScript(""));
-                item.setId(getBaseMenuId() + ":Views:default");
+                item.setId(getBaseMenuId() + ":GridViews:default");
                 if ("".equals(currentView))
                     item.setStrong(true);
             }
@@ -1569,7 +1611,7 @@ public class QueryView extends WebPartView<Object>
 
                 item = new NavTree(label, (String) null);
                 item.setScript(getChangeViewScript(name));
-                item.setId(getBaseMenuId() + ":Views:view-" + PageFlowUtil.filter(name));
+                item.setId(getBaseMenuId() + ":GridViews:grid-" + PageFlowUtil.filter(name));
                 if (name.equals(currentView))
                     item.setStrong(true);
             }
@@ -1628,7 +1670,10 @@ public class QueryView extends WebPartView<Object>
             // Filter out reports that don't match what this view is supposed to show. This can prevent
             // reports that were created on the same schema and table/query from a different view from showing up on a
             // view that's doing magic to add additional filters, for example.
-            if (viewItemFilter.accept(report.getType(), null) && !report.getType().equals(TimeChartReport.TYPE) && !report.getType().equals(GenericChartReport.TYPE))
+            if (viewItemFilter.accept(report.getType(), null)
+                    && !report.getType().equals(TimeChartReport.TYPE)
+                    && !report.getType().equals(GenericChartReport.TYPE)
+                    && !(report instanceof ChartQueryReport))
             {
                 if (canViewReport(getUser(), getContainer(), report) && !report.getDescriptor().isHidden())
                 {
@@ -1664,7 +1709,7 @@ public class QueryView extends WebPartView<Object>
             {
                 String reportId = report.getDescriptor().getReportId().toString();
                 NavTree item = new NavTree(report.getDescriptor().getReportName(), (String) null);
-                item.setId(getBaseMenuId() + ":Views:" + PageFlowUtil.filter(report.getDescriptor().getReportName()));
+                item.setId(getBaseMenuId() + ":Reports:" + PageFlowUtil.filter(report.getDescriptor().getReportName()));
                 if (report.getDescriptor().getReportId().equals(getSettings().getReportId()))
                     item.setStrong(true);
                 item.setImageSrc(ReportUtil.getIconUrl(getContainer(), report));
@@ -1690,7 +1735,8 @@ public class QueryView extends WebPartView<Object>
             // Filter out reports that don't match what this view is supposed to show. This can prevent
             // reports that were created on the same schema and table/query from a different view from showing up on a
             // view that's doing magic to add additional filters, for example.
-            if (viewItemFilter.accept(report.getType(), null) && (report.getType().equals(TimeChartReport.TYPE) || report.getType().equals(GenericChartReport.TYPE)))
+            if (viewItemFilter.accept(report.getType(), null) &&
+                    (report.getType().equals(TimeChartReport.TYPE) || report.getType().equals(GenericChartReport.TYPE) || report instanceof ChartQueryReport))
             {
                 if (canViewReport(getUser(), getContainer(), report))
                 {
@@ -1760,8 +1806,8 @@ public class QueryView extends WebPartView<Object>
             ActionURL urlTableInfo = getSchema().urlFor(QueryAction.tableInfo);
             urlTableInfo.addParameter(QueryParam.queryName.toString(), getQueryDef().getName());
 
-            NavTree customizeView = new NavTree("Customize View");
-            customizeView.setId(getBaseMenuId() + ":Views:Customize View");
+            NavTree customizeView = new NavTree("Customize Grid");
+            customizeView.setId(getBaseMenuId() + ":GridViews:Customize Grid");
             customizeView.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getDataRegionName()) + "]" +
                     ".toggleShowCustomizeView();");
             button.addMenuItem(customizeView);
@@ -1773,7 +1819,7 @@ public class QueryView extends WebPartView<Object>
             if (provider != null)
             {
                 NavTree item = button.addMenuItem("Edit Snapshot", provider.getEditSnapshotURL(getSettings(), getViewContext()));
-                item.setId(getBaseMenuId() + ":Views:Edit Snapshot");
+                item.setId(getBaseMenuId() + ":GridViews:Edit Snapshot");
             }
         }
     }
@@ -1785,7 +1831,7 @@ public class QueryView extends WebPartView<Object>
             url.addParameter(entry.getKey(), entry.getValue());
 
         NavTree item = button.addMenuItem("Manage Views", url);
-        item.setId(getBaseMenuId() + ":Views:Manage Views");
+        item.setId(getBaseMenuId() + ":GridViews:Manage Views");
     }
 
     public String getDataRegionName()

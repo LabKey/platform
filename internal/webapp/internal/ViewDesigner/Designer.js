@@ -62,7 +62,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
             });
 
             var disableSharedAndInherit = LABKEY.user.isGuest || hidden;
-            var newViewName = viewName || "New View";
+            var newViewName = viewName || "New Grid View";
             if (!canEdit && viewName) {
                 newViewName = viewName + " Copy";
             }
@@ -70,7 +70,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
             var warnedAboutMoving = false;
 
             var win = Ext4.create('Ext.window.Window', {
-                title: "Save Custom View" + (viewName ? ": " + Ext4.htmlEncode(viewName) : ""),
+                title: "Save Custom Grid View" + (viewName ? ": " + Ext4.htmlEncode(viewName) : ""),
                 cls: "labkey-customview-save",
                 border: false,
                 autoShow: true,
@@ -83,8 +83,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                 items: [{
                     xtype: "radio",
                     itemId: "defaultNameField",
-                    fieldLabel: "View Name",
-                    boxLabel: "Default view for this page",
+                    fieldLabel: "Grid View Name",
+                    boxLabel: "Default grid view for this page",
                     inputValue: "default",
                     name: "saveCustomView_namedView",
                     checked: canEdit && !viewName,
@@ -125,7 +125,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                         itemId: "nameTextField",
                         fieldLabel: "",
                         name: "saveCustomView_name",
-                        tooltip: "Name of the custom view",
+                        tooltip: "Name of the custom grid view",
                         tooltipType: "title",
                         msgTarget: "side",
                         allowBlank: false,
@@ -135,7 +135,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                         autoCreate: {tag: 'input', type: 'text', size: '50'},
                         validator: function (value) {
                             if ("default" === value.trim()) {
-                                return "The view name 'default' is not allowed";
+                                return "The grid view name 'default' is not allowed";
                             }
                             return true;
                         },
@@ -146,7 +146,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                 },{
                     xtype: "box",
                     style: "padding-left: 122px; padding-bottom: 8px; font-style: italic;",
-                    html: "The " + (!config.canEdit ? "current" : "shadowed") + " view is not editable.<br>Please enter an alternate view name.",
+                    html: "The " + (!config.canEdit ? "current" : "shadowed") + " grid view is not editable.<br>Please enter an alternate name.",
                     hidden: canEdit
                 },{
                     // spacer
@@ -195,7 +195,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                             if (!warnedAboutMoving && combobox.getValue() != containerPath)
                             {
                                 warnedAboutMoving = true;
-                                Ext4.Msg.alert("Moving a Saved View", "If you save, this view will be moved from '" + containerPath + "' to " + combobox.getValue());
+                                Ext4.Msg.alert("Moving a Saved Grid View", "If you save, this grid view will be moved from '" + containerPath + "' to " + combobox.getValue());
                             }
                         }
                     }
@@ -206,12 +206,12 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                         var nameField = win.down('#nameFieldContainer').items.get(1);
                         if (!nameField.isValid())
                         {
-                            Ext4.Msg.alert("Invalid view name", "The view name must be less than 50 characters long and not 'default'.");
+                            Ext4.Msg.alert("Invalid grid view name", "The grid view name must be less than 50 characters long and not 'default'.");
                             return;
                         }
                         if (!canEdit && viewName == nameField.getValue())
                         {
-                            Ext4.Msg.alert("Error saving", "This view is not editable.  You must save this view with an alternate name.");
+                            Ext4.Msg.alert("Error saving", "This grid view is not editable.  You must save this grid view with an alternate name.");
                             return;
                         }
 
@@ -461,7 +461,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
 
         // Show 'does not exist' message only for non-default views.
         if (this.customView.doesNotExist && this.viewName) {
-            this.showMessage("Custom View '" + this.viewName + "' not found.");
+            this.showMessage("Custom Grid View '" + this.viewName + "' not found.");
         }
     },
 
@@ -672,7 +672,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
 
         var items = [{
             text: "Delete",
-            tooltip: "Delete " + (this.customView.shared ? "shared" : "your") + " saved view",
+            tooltip: "Delete " + (this.customView.shared ? "shared" : "your") + " saved grid view",
             tooltipType: "title",
             disabled: !deleteEnabled,
             handler: this.onDeleteClick,
@@ -683,7 +683,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         if (this.dataRegion) {
             items.push({
                 text: "Revert",
-                tooltip: "Revert " + (this.customView.shared ? "shared" : "your") + " edited view",
+                tooltip: "Revert " + (this.customView.shared ? "shared" : "your") + " edited grid view",
                 tooltipType: "title",
                 // disabled for hidden, saved (non-session), customized (not new) default view, or uneditable views
                 disabled: !revertEnabled,
@@ -698,7 +698,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         if (this.dataRegion) {
             items.push({
                 text: "View Grid",
-                tooltip: "Apply changes to the view and reshow grid",
+                tooltip: "Apply changes to the grid view and reshow grid",
                 tooltipType: "title",
                 handler: this.onApplyClick,
                 scope: this
@@ -844,12 +844,12 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
 
         if (!this.canEdit())
         {
-            var msg = "This view is not editable, but you may save a new view with a different name.";
+            var msg = "This grid view is not editable, but you may save a new grid view with a different name.";
             // XXX: show this.editableErrors in a '?' help tooltip
             this.showMessage(msg);
         }
         else if (this.customView.session) {
-            this.showMessage("Editing an unsaved view.");
+            this.showMessage("Editing an unsaved grid view.");
         }
     },
 
@@ -1202,7 +1202,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                 this.fireEvent("viewsave", this, savedViewsInfo, urlParameters);
             },
             failure: function (errorInfo) {
-                Ext4.Msg.alert("Error saving view", errorInfo.exception);
+                Ext4.Msg.alert("Error saving grid view", errorInfo.exception);
             },
             scope: this
         });

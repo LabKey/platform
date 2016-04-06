@@ -18,14 +18,14 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <table>
     <tr><td>
-        A JavaScript view contains code that runs in the viewing user's browser.  Your code can access the underlying
+        A JavaScript report contains code that runs in the viewing user's browser.  Your code can access the underlying
         data, transform it, and render any visualization of that data (e.g., a chart, grid, or summary report) to the
         page.
     </td></tr>
     <tr><td>&nbsp;</td></tr>
     <tr><td>
         Your code must define a render() function.  When a user views the report, LabKey calls this render() function,
-        passing a query config and a div element. Render your view's HTML to the div passed into the render() function.
+        passing a query config and a div element. Render your report's HTML to the div passed into the render() function.
     </td></tr>
     <tr><td>&nbsp;</td></tr>
     <tr><td>
@@ -42,7 +42,7 @@
     <tr><td>&nbsp;</td></tr>
     <tr><td>
         Your JavaScript code is wrapped in an anonymous function, which provides unique scoping for the functions and
-        variables you define; these identifiers will not conflict with identifiers in other JavaScript views rendered
+        variables you define; these identifiers will not conflict with identifiers in other JavaScript reports rendered
         on the same page.
     </td></tr>
 </table>

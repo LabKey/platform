@@ -31,8 +31,8 @@ public class FolderArchiveDataTypes
     public static final String EXPERIMENTS_AND_RUNS = "Experiments and runs";
     public static final String LISTS = "Lists";
     public static final String QUERIES = "Queries";
-    public static final String CUSTOM_VIEWS = "Custom Views";
-    public static final String REPORTS = "Reports";
+    public static final String GRID_VIEWS = "Grid Views";
+    public static final String REPORTS_AND_CHARTS = "Reports and Charts";
     public static final String EXTERNAL_SCHEMA_DEFINITIONS = "External schema definitions";
     public static final String WIKIS_AND_THEIR_ATTACHMENTS = "Wikis and their attachments";
     public static final String NOTIFICATIONS_SETTINGS = "Notification settings";

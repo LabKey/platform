@@ -88,7 +88,7 @@ public class RReport extends ExternalScriptEngineReport
 
     public String getTypeDescription()
     {
-        return "R View";
+        return "R Report";
     }
 
     public String getDescriptorType()

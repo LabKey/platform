@@ -59,7 +59,7 @@ public class CrosstabReport extends AbstractReport implements Report.ResultSetGe
 
     public String getTypeDescription()
     {
-        return "Crosstab View";
+        return "Crosstab Report";
     }
 
     public String getDescriptorType()

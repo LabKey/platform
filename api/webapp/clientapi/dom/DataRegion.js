@@ -1326,7 +1326,7 @@ if (!LABKEY.DataRegions) {
         if (this.view && this.view.session) {
             var msg;
             if (this.view.savable) {
-                msg = (this.viewName ? "The current view '<em>" + LABKEY.Utils.encodeHtml(this.viewName) + "</em>'" : "The current <em>&lt;default&gt;</em> view") + " is unsaved.";
+                msg = (this.viewName ? "The current grid view '<em>" + LABKEY.Utils.encodeHtml(this.viewName) + "</em>'" : "The current <em>&lt;default&gt;</em> grid view") + " is unsaved.";
                 msg += " &nbsp;";
                 msg += "<span class='labkey-button unsavedview-revert'>Revert</span>";
                 msg += "&nbsp;";
@@ -1335,7 +1335,7 @@ if (!LABKEY.DataRegions) {
                 msg += "<span class='labkey-button unsavedview-save'>Save</span>";
             }
             else {
-                msg = ("The current view has been customized.");
+                msg = ("The current grid view has been customized.");
                 msg += "&nbsp;";
                 msg += "<span class='labkey-button unsavedview-revert' title='Revert'>Revert</span>";
                 msg += "&nbsp;";

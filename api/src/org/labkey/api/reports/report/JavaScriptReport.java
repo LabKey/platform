@@ -48,7 +48,7 @@ public class JavaScriptReport extends ScriptReport
     @Override
     public String getTypeDescription()
     {
-        return "JavaScript View";
+        return "JavaScript Report";
     }
 
     @Override

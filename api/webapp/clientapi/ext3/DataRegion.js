@@ -159,7 +159,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                     var msg;
                     if (this.view.savable)
                     {
-                        msg = (this.viewName ? "The current view '<em>" + Ext.util.Format.htmlEncode(this.viewName) + "</em>'" : "The current <em>&lt;default&gt;</em> view") + " is unsaved.";
+                        msg = (this.viewName ? "The current grid view '<em>" + Ext.util.Format.htmlEncode(this.viewName) + "</em>'" : "The current <em>&lt;default&gt;</em> grid view") + " is unsaved.";
                         msg += " &nbsp;";
                         msg += "<span class='labkey-button unsavedview-revert'>Revert</span>";
                         msg += "&nbsp;";
@@ -169,7 +169,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                     }
                     else
                     {
-                        msg = ("The current view has been customized.");
+                        msg = ("The current grid view has been customized.");
                         msg += "&nbsp;";
                         msg += "<span class='labkey-button unsavedview-revert' title='Revert'>Revert</span>";
                         msg += "&nbsp;";

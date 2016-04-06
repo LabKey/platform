@@ -148,7 +148,7 @@ public class ReportDataRegion extends AbstractDataRegion
     protected void addViewMessage(StringBuilder headerMessage, RenderContext ctx) throws IOException
     {
         // the name of the report
-        headerMessage.append("<span class='labkey-strong'>View:</span>&nbsp;");
+        headerMessage.append("<span class='labkey-strong'>Name:</span>&nbsp;");
         headerMessage.append("<span style='padding:5px 10px 5px 0;'>");
         headerMessage.append(PageFlowUtil.filter(_report.getDescriptor().getReportName()));
         headerMessage.append("</span>&nbsp;");
