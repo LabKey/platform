@@ -92,7 +92,7 @@ public class ExternalReport extends AbstractReport
 
     public String getTypeDescription()
     {
-        return "Advanced View";
+        return "Advanced Report";
     }
 
     public @Nullable String getProgram()

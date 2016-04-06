@@ -76,13 +76,13 @@
     if (confirm)
     {
 %>
-        <td>There is already a view called: <i><%=report.getDescriptor().getReportName()%></i>.<br/>Overwrite the existing view?
+        <td>There is already a report called: <i><%=report.getDescriptor().getReportName()%></i>.<br/>Overwrite the existing report?
         <input type=hidden name=confirmed value=1>
         <input type=hidden name=label value="<%=bean.getLabel()%>">
 <%
     } else {
 %>
-        <td><b>Save View</b></td>
+        <td><b>Save Report</b></td>
         <td>Name:&nbsp;<input id="reportName" name="label" value="<%=h(bean.getLabel())%>">
         <input type=hidden name=srcURL value="<%=getActionURL().getLocalURIString()%>">
 <%
@@ -121,7 +121,7 @@
     if (context.hasPermission(AdminPermission.class)) {
 %>
         <tr>
-            <td><input type="checkbox" value="true" name="shareReport"<%=checked(bean.getShareReport())%>>Make this view available to all users.</td>
+            <td><input type="checkbox" value="true" name="shareReport"<%=checked(bean.getShareReport())%>>Make this report available to all users.</td>
             <td colspan=2>description:<textarea name="description" style="width: 100%;" rows="2"><%=StringUtils.trimToEmpty(bean.getDescription())%></textarea></td>
         </tr>
 <%

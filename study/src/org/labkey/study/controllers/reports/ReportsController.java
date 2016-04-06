@@ -341,8 +341,8 @@ public class ReportsController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            setHelpTopic("advancedView");
-            return _appendNavTrail(root, "External View Builder");
+            setHelpTopic("advancedReport");
+            return _appendNavTrail(root, "External Report Builder");
         }
     }
 
@@ -697,7 +697,7 @@ public class ReportsController extends BaseStudyController
             return _appendNavTrail(root, "Crosstab View Builder", datasetId, visitRowId);
 */
             setHelpTopic("crosstabReports");
-            return root.addChild("Crosstab View Builder");
+            return root.addChild("Crosstab Report Builder");
         }
     }
 
@@ -807,7 +807,7 @@ public class ReportsController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return _appendNavTrail(root, "Create Crosstab View");
+            return _appendNavTrail(root, "Create Crosstab Report");
         }
     }
 
@@ -1023,15 +1023,15 @@ public class ReportsController extends BaseStudyController
             if (confirm)
             {
                 out.write("<td>");
-                out.write("There is already a view called: <i>");
+                out.write("There is already a report called: <i>");
                 out.write(PageFlowUtil.filter(report.getDescriptor().getReportName()));
-                out.write("</i>.<br/>Overwrite the existing view?");
+                out.write("</i>.<br/>Overwrite the existing report?");
                 out.write("<input type=hidden name=confirmed value=1>");
                 out.write("<input type=hidden name=label value='");
             }
             else
             {
-                out.write("<td><b>Save View&nbsp;</b> Name:&nbsp;");
+                out.write("<td><b>Save Report&nbsp;</b> Name:&nbsp;");
                 out.write("<input name='label' value='");
             }
             out.write(PageFlowUtil.filter(report.getDescriptor().getReportName()));
@@ -1056,7 +1056,7 @@ public class ReportsController extends BaseStudyController
             Container c = getViewContext().getContainer();
             Study study = getStudyThrowIfNull(c);
             List<DatasetDefinition> defs = StudyManager.getInstance().getDatasetDefinitions(study);
-            out.write("<td>Add as Custom View For: ");
+            out.write("<td>Add as Custom Report For: ");
             out.write("<select name=\"showWithDataset\">");
             //out.write("<option value=\"0\">Views and Reports Web Part</option>");
             int showWithDataset = NumberUtils.toInt(report.getDescriptor().getProperty("showWithDataset"));

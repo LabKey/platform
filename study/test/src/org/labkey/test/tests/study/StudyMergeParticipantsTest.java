@@ -21,6 +21,7 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.DailyB;
 import org.labkey.test.tests.StudyBaseTest;
+import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 
 import java.io.File;
@@ -162,7 +163,7 @@ public class StudyMergeParticipantsTest extends StudyBaseTest
         selectOptionByValue(Locator.id("list_dataField"), SOURCE_COLUMN);
         clickButton("Save", "View Data");
         clickButton("View Data", "Import Data");
-        clickButton("Import Data");
+        DataRegionTable.findDataRegion(this).clickHeaderButton("Insert", "Import Data");
         setFormElement(Locator.name("text"), "participantId\tdate\t" + ALIAS_COLUMN + "\t" + SOURCE_COLUMN + "\n" + PTID_WITH_ALIAS + "\t1/3/2014\tabc123\t" + ALIAS_SOURCE_1);
         clickButton("Submit", "Dataset: " + ALIAS_DATASET + ", All Visits");
 

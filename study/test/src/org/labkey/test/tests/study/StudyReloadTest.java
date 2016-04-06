@@ -64,7 +64,7 @@ public class StudyReloadTest extends StudyBaseTest
 
     private void verifyProtectedColumn()
     {
-        clickButtonContainingText("Manage Dataset");
+        _extHelper.clickMenuButton(true, "Manage");
         clickButtonContainingText("Edit Definition");
         Locator.NameLocator ff_name1 = Locator.name("ff_name1");
         waitForElement(ff_name1);

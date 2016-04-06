@@ -229,7 +229,7 @@ public class StudyDataspaceTest extends StudyBaseTest
         assertEquals("Wrong Rows", expectedRows, actualRows);
 
         List<WebElement> buttons = visitTagMaps.getHeaderButtons();
-        Assert.assertFalse("Should not be able to 'Insert New' into VisitTagMap from dataspace project", getTexts(buttons).contains("INSERT NEW"));
+        Assert.assertFalse("Should not be able to 'Insert New' into VisitTagMap from dataspace project", getTexts(buttons).contains("Insert"));
 
 
         final List<String> STUDY5_VISIT_TAG_MAP_TAGS = Arrays.asList("First Vaccination", "Second Vaccination", "Follow Up", "Follow Up");
@@ -245,12 +245,15 @@ public class StudyDataspaceTest extends StudyBaseTest
 
         assertEquals("Wrong Visit Tag Map Rows in study folder", expectedRows, actualRows);
 
-        buttons = visitTagMaps.getHeaderButtons();
-        Assert.assertTrue("Should be able to 'Insert New' into VisitTagMap from dataspace study", getTexts(buttons).contains("INSERT NEW"));
+//        buttons = visitTagMaps.getHeaderButtons();
+//        Assert.assertTrue("Should be able to 'Insert New' into VisitTagMap from dataspace study", getTexts(buttons).contains("INSERT NEW"));
+        _extHelper.clickMenuButton("Insert");
+        assertTextPresent("Insert New", 1);
+        _extHelper.clickMenuButton("Insert");
 
         clickTab("Overview");
         _portalHelper.removeWebPart("VisitTagMap");
         _portalHelper.addQueryWebPart(VISIT_TAG_QWP_TITLE, "study", "VisitTag", null);
-        assertTextNotPresent("Insert New");
+        assertElementNotPresent(Locator.xpath("//a[@class='labkey-menu-button']//span[text()='Insert']"));
     }
 }

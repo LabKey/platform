@@ -98,9 +98,9 @@ public class ReportUIProvider extends DefaultReportUIProvider
             bean.setReportType(RReport.TYPE);
             bean.setRedirectUrl(context.getActionURL().getLocalURIString());
 
-            DesignerInfoImpl di = new DesignerInfoImpl(RReport.TYPE, "R View", null, ReportUtil.getScriptReportDesignerURL(context, bean),
+            DesignerInfoImpl di = new DesignerInfoImpl(RReport.TYPE, "R Report", null, ReportUtil.getScriptReportDesignerURL(context, bean),
                     _getIconPath(RReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(RReport.TYPE));
-            di.setId("create_rView");
+            di.setId("create_rReport");
             di.setDisabled(!ReportUtil.canCreateScript(context));
 
             designers.add(di);
@@ -164,7 +164,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
             RReportBean rBean = new RReportBean(settings);
             rBean.setReportType(RReport.TYPE);
             rBean.setRedirectUrl(returnUrl.getLocalURIString());
-            designers.add(new DesignerInfoImpl(RReport.TYPE, "R View", null, ReportUtil.getScriptReportDesignerURL(context, rBean),
+            designers.add(new DesignerInfoImpl(RReport.TYPE, "R Report", null, ReportUtil.getScriptReportDesignerURL(context, rBean),
                     _getIconPath(RReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(RReport.TYPE)));
         }
 
@@ -182,13 +182,13 @@ public class ReportUIProvider extends DefaultReportUIProvider
                 if (factory instanceof ExternalScriptEngineFactory)
                 {
                     bean.setReportType(ExternalScriptEngineReport.TYPE);
-                    designers.add(new DesignerInfoImpl(ExternalScriptEngineReport.TYPE, factory.getLanguageName() + " View", null,
+                    designers.add(new DesignerInfoImpl(ExternalScriptEngineReport.TYPE, factory.getLanguageName() + " Report", null,
                             ReportUtil.getScriptReportDesignerURL(context, bean), _getIconPath(ExternalScriptEngineReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(ExternalScriptEngineReport.TYPE)));
                 }
                 else
                 {
                     bean.setReportType(InternalScriptEngineReport.TYPE);
-                    designers.add(new DesignerInfoImpl(InternalScriptEngineReport.TYPE, factory.getLanguageName() + " View", null,
+                    designers.add(new DesignerInfoImpl(InternalScriptEngineReport.TYPE, factory.getLanguageName() + " Report", null,
                             ReportUtil.getScriptReportDesignerURL(context, bean), _getIconPath(InternalScriptEngineReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(InternalScriptEngineReport.TYPE)));
                 }
             }
@@ -209,7 +209,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
             bean.setRedirectUrl(returnUrl.getLocalURIString());
             bean.setScriptExtension(".js");
             bean.setReportType(JavaScriptReport.TYPE);
-            designers.add(new DesignerInfoImpl(JavaScriptReport.TYPE, "JavaScript View", "JavaScript View",
+            designers.add(new DesignerInfoImpl(JavaScriptReport.TYPE, "JavaScript Report", "JavaScript Report",
                     ReportUtil.getScriptReportDesignerURL(context, bean), _getIconPath(JavaScriptReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(JavaScriptReport.TYPE)));
         }
 

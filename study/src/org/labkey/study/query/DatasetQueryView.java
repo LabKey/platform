@@ -345,6 +345,7 @@ public class DatasetQueryView extends StudyQueryView
         {
             MenuButton button = createViewButton(getViewItemFilter());
             bar.add(button);
+            bar.add(createReportButton());
 
             MenuButton chartButton = createChartButton();
             if (chartButton.getPopupMenu().getNavTree().getChildCount() > 0)
@@ -380,6 +381,7 @@ public class DatasetQueryView extends StudyQueryView
     {
         bar.add(createFilterButton());
         bar.add(createViewButton(getItemFilter()));
+        bar.add(createReportButton());
         MenuButton chartButton = createChartButton();
         if (chartButton.getPopupMenu().getNavTree().getChildCount() > 0)
         {
@@ -407,15 +409,6 @@ public class DatasetQueryView extends StudyQueryView
                 isAssayDataset = false;
         }
 
-        if (!isSnapshot && canWrite && !isAssayDataset)
-        {
-            ActionButton insertButton = createInsertButton();
-            if (insertButton != null)
-            {
-                bar.add(insertButton);
-            }
-        }
-
         if (!isSnapshot)
         {
             if (!isAssayDataset) // admins always get the import and manage buttons
@@ -423,19 +416,20 @@ public class DatasetQueryView extends StudyQueryView
                 if (canWrite)
                 {
                     // manage dataset
-                    ActionButton manageButton = new ActionButton(new ActionURL(StudyController.DatasetDetailsAction.class, getContainer()).addParameter("id", _dataset.getDatasetId()), "Manage Dataset");
+                    ActionButton manageButton = new ActionButton(new ActionURL(StudyController.DatasetDetailsAction.class, getContainer()).addParameter("id", _dataset.getDatasetId()), "Manage");
                     manageButton.setDisplayModes(DataRegion.MODE_GRID);
                     manageButton.setActionType(ActionButton.Action.LINK);
                     manageButton.setDisplayPermission(InsertPermission.class);
                     bar.add(manageButton);
 
-                    // bulk import
+                    // insert menu button contain Insert New and Bulk import, or button for either option
                     ActionURL importURL = view.getTable().getImportDataURL(getContainer());
-                    if (importURL != null && importURL != AbstractTableInfo.LINK_DISABLER_ACTION_URL)
+                    ActionButton insertButton = createInsertMenuButton(null, importURL);
+                    if (insertButton != null)
                     {
-                        ActionButton uploadButton = new ActionButton(importURL, "Import Data", DataRegion.MODE_GRID, ActionButton.Action.LINK);
-                        uploadButton.setDisplayPermission(InsertPermission.class);
-                        bar.add(uploadButton);
+                        insertButton.setDisplayModes(DataRegion.MODE_GRID);
+                        insertButton.setDisplayPermission(InsertPermission.class);
+                        bar.add(insertButton);
                     }
                 }
 
@@ -503,7 +497,7 @@ public class DatasetQueryView extends StudyQueryView
 
         ActionURL url = new ActionURL(StudyController.ViewPreferencesAction.class, getContainer());
         url.addParameter("datasetId", _dataset.getDatasetId());
-        button.addMenuItem("Set Default View", url);
+        button.addMenuItem("Set Default", url);
 
         return button;
     }

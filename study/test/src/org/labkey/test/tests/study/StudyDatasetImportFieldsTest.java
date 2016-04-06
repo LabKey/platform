@@ -19,6 +19,7 @@ import org.junit.experimental.categories.Category;
 import org.labkey.test.Locator;
 import org.labkey.test.categories.DailyB;
 import org.labkey.test.tests.StudyBaseTest;
+import org.labkey.test.util.DataRegionTable;
 
 /**
  * User: tgaluhn
@@ -82,17 +83,17 @@ public class StudyDatasetImportFieldsTest extends StudyBaseTest
         clickButton("Save", 0);
         waitForElement(Locator.linkWithText("View Data"));
         click(Locator.linkWithText("View Data"));
-        waitForText("Insert New");
-        clickAndWait(Locator.linkWithText("Insert New"));
+        waitForText("Insert");
+        DataRegionTable.findDataRegion(this).clickHeaderButton("Insert", "Insert New");
         waitForElement(Locator.name("quf_ParticipantId"));
         setFormElement(Locator.name("quf_ParticipantId"), "47");
         setFormElement(Locator.name("quf_SequenceNum"), "47");
         setFormElement(Locator.name("quf_date"), "4/25/2014");
         setFormElement(Locator.name("quf_Test Field"), INITIAL_COL_VAL);
         clickButton("Submit", 0);
-        waitForText("Manage Dataset");
+        waitForText("Participant ID");
         assertTextPresent(INITIAL_COL_VAL);
-        click(Locator.linkWithText("Manage Dataset"));
+        _extHelper.clickMenuButton(true, "Manage");
         waitForText("Edit Definition");
         click(Locator.linkWithText("Edit Definition"));
         waitForText("Import Fields");

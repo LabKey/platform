@@ -339,12 +339,12 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
 
         if (form.getReports() != null)
         {
-            dataTypes.add(FolderArchiveDataTypes.REPORTS);
+            dataTypes.add(FolderArchiveDataTypes.REPORTS_AND_CHARTS);
         }
 
         if (form.getViews() != null)
         {
-            dataTypes.add(FolderArchiveDataTypes.CUSTOM_VIEWS);
+            dataTypes.add(FolderArchiveDataTypes.GRID_VIEWS);
         }
 
         if (form.getLists() != null)

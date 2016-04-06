@@ -641,7 +641,7 @@ public class StudyPublishTest extends StudyProtectedExportTest
         {
             for (String group : groups)
             {
-                _extHelper.clickMenuButton(true, "Mouse Groups", group);
+                _extHelper.clickMenuButton(true, "Groups", group);
                 DataRegionTable datasetTable = new DataRegionTable("Dataset", this);
                 unshiftedDates.addAll(datasetTable.getColumnDataAsText(UNSHIFTED_DATE_FIELD.getValue()));
                 preshiftedDates.addAll(datasetTable.getColumnDataAsText(SHIFTED_DATE_FIELD.getValue()));
@@ -879,7 +879,7 @@ public class StudyPublishTest extends StudyProtectedExportTest
     private void createTimeChart(String name, String[]... datasetMeasurePairs)
     {
         goToManageViews();
-        _extHelper.clickExtMenuButton(true, Locator.linkContainingText("Add Report"), "Time Chart");
+        _extHelper.clickExtMenuButton(true, Locator.linkContainingText("Add Chart"), "Time Chart");
 
         waitForElement(Ext4Helper.Locators.ext4Button("Choose a Measure"), WAIT_FOR_JAVASCRIPT);
         click(Ext4Helper.Locators.ext4Button("Choose a Measure"));
@@ -986,7 +986,7 @@ public class StudyPublishTest extends StudyProtectedExportTest
         clickAndWait(Locator.linkWithText("Manage Datasets"));
         clickAndWait(Locator.linkWithText(dataset));
         clickButton("View Data");
-        _customizeViewsHelper.createRView(name, shareView);
+        _customizeViewsHelper.createRReport(name, shareView);
     }
 
     private void createWiki(String name, String title)

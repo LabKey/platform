@@ -70,7 +70,7 @@ public class ListQueryView extends QueryView
         {
             ActionURL designURL = getList().urlShowDefinition();
             designURL.addReturnURL(getViewContext().getActionURL());
-            ActionButton btnUpload = new ActionButton("View Design", designURL);
+            ActionButton btnUpload = new ActionButton("Design", designURL);
             bar.add(btnUpload);
         }
         bar.add(super.createDeleteAllRowsButton());

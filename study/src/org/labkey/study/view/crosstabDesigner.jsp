@@ -41,7 +41,7 @@
 %>
 
 <labkey:form action="" method="post">
-    Design crosstab view.
+    Design crosstab report.
 
     <table>
         <tr>

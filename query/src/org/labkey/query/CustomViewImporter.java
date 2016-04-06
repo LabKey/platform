@@ -42,7 +42,7 @@ public class CustomViewImporter implements FolderImporter
 {
     public String getDataType()
     {
-        return FolderArchiveDataTypes.CUSTOM_VIEWS;
+        return FolderArchiveDataTypes.GRID_VIEWS;
     }
 
     public String getDescription()

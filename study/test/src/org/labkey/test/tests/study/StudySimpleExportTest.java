@@ -27,6 +27,7 @@ import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyB;
 import org.labkey.test.categories.FileBrowser;
 import org.labkey.test.tests.StudyBaseTest;
+import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.ListHelper;
 
@@ -133,7 +134,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         _listHelper.addField("Dataset Fields", "TestDate", "TestDate", ListHelper.ListColumnType.DateTime);
         clickButton("Save");
         clickButton("View Data");
-        clickButton("Import Data");
+        DataRegionTable.findDataRegion(this).clickHeaderButton("Insert", "Import Data");
         waitForElement(Locator.name("text"));
         setFormElement(Locator.name("text"), "ParticipantId\tSequenceNum\tTestInt\tTestDate\nPTID123\t1.0\t999\t2013-10-29");
         clickButton("Submit");
@@ -343,7 +344,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         log("Visit Properties: add dataset record using new visit");
         clickTab("Clinical and Assay Data");
         waitAndClickAndWait(Locator.linkWithText(TEST_DATASET_NAME));
-        clickButton("Import Data");
+        DataRegionTable.findDataRegion(this).clickHeaderButton("Insert", "Import Data");
         waitForElement(Locator.name("text"));
         setFormElement(Locator.name("text"), "ParticipantId\tSequenceNum\nPTID123\t" + visitSeqNumMin);
         clickButton("Submit");
@@ -750,8 +751,8 @@ public class StudySimpleExportTest extends StudyBaseTest
                 if (levelProp != null && !level.equalsIgnoreCase(levelProp.toString()))
                     continue;
                 
-                waitForText("Insert New");
-                clickButton("Insert New");
+                waitForText("Insert");
+                DataRegionTable.findDataRegion(this).clickHeaderButton("Insert", "Insert New");
 
                 populateFormData(row, "quf_");
                 clickButton("Submit");

@@ -210,7 +210,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         waitForText("Dataset Properties");
         clickButtonContainingText("View Data");
         waitForText("All data");
-        clickButtonContainingText("Import Data");
+        _extHelper.clickMenuButton("Insert", "Import Data");
         waitForText("Copy/paste text");
         setFormElement(Locator.xpath("//textarea"), header + tsv);
         clickButton("Submit", 0);
@@ -343,7 +343,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         dataregion = new DataRegionTable(regionName, this);
         assertEquals("Wrong number of rows after filter", 24, dataregion.getDataRowCount());
 
-        _extHelper.clickMenuButton(false, "Mouse Groups", "Create Mouse Group", "From All Mice");
+        _extHelper.clickMenuButton(false, "Groups", "Create Mouse Group", "From All Mice");
         final Locator.XPathLocator window = Ext4Helper.Locators.window("Define Mouse Group");
         final Locator.XPathLocator groupLabelInput = window.append(Locator.id("groupLabel-inputEl").notHidden());
         waitForElement(groupLabelInput);

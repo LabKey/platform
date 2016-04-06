@@ -198,7 +198,7 @@ public class ReportsController extends SpringActionController
     private static final MimeMap _mimeMap = new MimeMap();
 
     public static final String TAB_SOURCE = "source";
-    public static final String TAB_VIEW = "view";
+    public static final String TAB_VIEW = "report";
 
     public static class ReportUrlsImpl implements ReportUrls
     {

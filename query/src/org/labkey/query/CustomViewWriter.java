@@ -47,7 +47,7 @@ public class CustomViewWriter extends BaseFolderWriter
 
     public String getDataType()
     {
-        return FolderArchiveDataTypes.CUSTOM_VIEWS;
+        return FolderArchiveDataTypes.GRID_VIEWS;
     }
 
     @Override

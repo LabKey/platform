@@ -155,7 +155,7 @@ public class StudyExportTest extends StudyManualTest
         clickFolder(getFolderName());
         clickAndWait(Locator.linkWithText("47 datasets"));
         clickAndWait(Locator.linkWithText(DEMOGRAPHICS_DATASET));
-        _extHelper.clickMenuButton("Mouse Groups", "Cohorts", GROUP_2);
+        _extHelper.clickMenuButton("Groups", "Cohorts", GROUP_2);
         _extHelper.clickMenuButton("QC State", "All data");
         assertTextPresent(MODIFIED_PARTICIPANT);
 

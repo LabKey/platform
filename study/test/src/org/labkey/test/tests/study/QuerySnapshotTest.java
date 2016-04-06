@@ -140,7 +140,7 @@ public class QuerySnapshotTest extends StudyBaseTest
         log("test automatic updates by altering the source dataset");
         clickFolder(getStudyLabel());
         clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
-        clickButton("Insert New");
+        _extHelper.clickMenuButton("Insert", "Insert New");
         setFormElement(Locator.name("quf_MouseId"), "999121212");
         setFormElement(Locator.name("quf_DEMraco"), "Armenian");
 
@@ -152,7 +152,7 @@ public class QuerySnapshotTest extends StudyBaseTest
         waitForSnapshotUpdate("Armenian");
 
         log("delete the snapshot");
-        _extHelper.clickMenuButton("Views", "Edit Snapshot");
+        _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
         deleteSnapshot();
 
         // snapshot over a custom view
@@ -182,7 +182,7 @@ public class QuerySnapshotTest extends StudyBaseTest
         waitForSnapshotUpdate("Slovakian");
 
         log("delete the snapshot");
-        _extHelper.clickMenuButton("Views", "Edit Snapshot");
+        _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
         deleteSnapshot();
 
         // snapshot over a custom query
@@ -206,7 +206,7 @@ public class QuerySnapshotTest extends StudyBaseTest
 
         // edit snapshot then delete
         log("edit the snapshot");
-        _extHelper.clickMenuButton("Views", "Edit Snapshot");
+        _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
         checkCheckbox(Locator.xpath("//input[@type='radio' and @name='updateType' and not (@id)]"));
         clickButton("Save");
         assertTrue(isChecked(Locator.xpath("//input[@type='radio' and @name='updateType' and not (@id)]")));
@@ -217,7 +217,7 @@ public class QuerySnapshotTest extends StudyBaseTest
         waitForText(10000, "Dataset: Custom Query Snapshot");
 
         log("delete the snapshot");
-        _extHelper.clickMenuButton("Views", "Edit Snapshot");
+        _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
         deleteSnapshot();
 
         clickTab("Manage");
@@ -238,7 +238,7 @@ public class QuerySnapshotTest extends StudyBaseTest
         // verify refresh from both datasets
         clickFolder(FOLDER_1);
         clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
-        clickButton("Insert New");
+        _extHelper.clickMenuButton("Insert", "Insert New");
         setFormElement(Locator.name("quf_MouseId"), "999121212");
         setFormElement(Locator.name("quf_DEMsex"), "Unknown");
 
@@ -250,7 +250,7 @@ public class QuerySnapshotTest extends StudyBaseTest
         
         clickFolder(FOLDER_2);
         clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
-        clickButton("Insert New");
+        _extHelper.clickMenuButton("Insert", "Insert New");
         setFormElement(Locator.name("quf_MouseId"), "999151515");
         setFormElement(Locator.name("quf_DEMsexor"), "Undecided");
 
@@ -260,7 +260,7 @@ public class QuerySnapshotTest extends StudyBaseTest
         clickFolder(CROSS_STUDY_SNAPSHOT);
         waitForSnapshotUpdate("Undecided");
 
-        _extHelper.clickMenuButton("Views", "Edit Snapshot");
+        _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
         deleteSnapshot();
 
         clickFolder(getStudyLabel());
@@ -269,11 +269,11 @@ public class QuerySnapshotTest extends StudyBaseTest
         changeDatasetLabel(DEMOGRAPHICS_SNAPSHOT, "New Demographics");
         clickFolder(getStudyLabel());
         clickAndWait(Locator.linkWithText("New Demographics"));
-        _extHelper.clickMenuButton("Views", "Edit Snapshot");
+        _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
         changeDatasetName(DEMOGRAPHICS_SNAPSHOT, "New Dem");
         clickFolder(getStudyLabel());
         clickAndWait(Locator.linkWithText("New Demographics"));
-        _extHelper.clickMenuButton("Views", "Edit Snapshot");
+        _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
         deleteSnapshot();
     }
 
@@ -284,7 +284,7 @@ public class QuerySnapshotTest extends StudyBaseTest
 
     private void createQuerySnapshot(String snapshotName, boolean autoUpdate, boolean isDemographic, String keyField, int index)
     {
-        _extHelper.clickMenuButton("Views", "Create", "Query Snapshot");
+        _extHelper.clickMenuButton("Reports", "Create Query Snapshot");
 
         setFormElement(Locator.name("snapshotName"), snapshotName);
         if (autoUpdate)

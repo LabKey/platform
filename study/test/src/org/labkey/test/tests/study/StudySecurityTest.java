@@ -186,8 +186,9 @@ public class StudySecurityTest extends StudyBaseTest
             clickAndWait(Locator.linkWithText(dsName));
             assertTextPresent(dsName);
             assertElementPresent(Locator.linkWithText("edit"));
-            assertButtonPresent("Insert New");
-            assertButtonPresent("Import Data");
+            _extHelper.clickMenuButton(false, "Insert");
+            assertTextPresent("Insert New", "Import Data");
+            _extHelper.clickMenuButton(false, "Insert");
             clickFolder(getFolderName());
         }
 
@@ -198,8 +199,7 @@ public class StudySecurityTest extends StudyBaseTest
                 clickAndWait(Locator.linkWithText(dsName));
                 assertTextPresent(dsName);
                 assertElementNotPresent(Locator.linkWithText("edit"));
-                assertButtonNotPresent("Insert New");
-                assertButtonNotPresent("Import Data");
+                assertElementNotPresent(Locator.linkWithText("Insert"));
                 clickFolder(getFolderName());
             }
         }

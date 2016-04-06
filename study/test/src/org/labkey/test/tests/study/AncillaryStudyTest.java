@@ -208,7 +208,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         log("Insert rows into source dataset");
         clickFolder(getFolderName());
         clickAndWait(Locator.linkWithText(DATASETS[0]));
-        clickButton("Import Data");
+        DataRegionTable.findDataRegion(this).clickHeaderButton("Insert", "Import Data");
         setFormElement(Locator.name("text"), EXTRA_DATASET_ROWS);
         clickButton("Submit");
 
@@ -217,7 +217,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         _studyHelper.goToManageDatasets();
         clickAndWait(Locator.linkWithText(DATASETS[0]));
         clickButton("View Data");
-        _extHelper.clickMenuButton("Views", "Edit Snapshot");
+        _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
         clickButton("Update Snapshot", 0);
         assertAlert("Updating will replace all existing data with a new set of data. Continue?");
         DataRegionTable table = new DataRegionTable("Dataset", this);
@@ -238,7 +238,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         _studyHelper.goToManageDatasets();
         clickAndWait(Locator.linkWithText(DATASETS[0]));
         clickButton("View Data");
-        _extHelper.clickMenuButton("Views", "Edit Snapshot");
+        _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
         clickButton("Update Snapshot", 0);
         assertAlert("Updating will replace all existing data with a new set of data. Continue?");
         waitForElement(Locator.tagWithClass("table", "labkey-data-region"));
@@ -261,7 +261,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         _studyHelper.goToManageDatasets();
         clickAndWait(Locator.linkWithText(DATASETS[0]));
         clickButton("View Data");
-        _extHelper.clickMenuButton("Views", "Edit Snapshot");
+        _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
         clickButton("Update Snapshot", 0);
         assertAlert("Updating will replace all existing data with a new set of data. Continue?");
         waitForElement(Locator.tagWithClass("table", "labkey-data-region"));
@@ -314,7 +314,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         }
         clickAndWait(Locator.linkWithText(DEPENDENT_DATASETS[0]));
         assertTextNotPresent(UPDATED_DATASET_VAL);
-        _extHelper.clickMenuButton("Views", "Edit Snapshot");
+        _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
         prepForPageLoad();
         clickButton("Update Snapshot", 0);
         assertAlert("Updating will replace all existing data with a new set of data. Continue?");

@@ -44,7 +44,7 @@ public class ReportWriter extends BaseFolderWriter
 
     public String getDataType()
     {
-        return FolderArchiveDataTypes.REPORTS;
+        return FolderArchiveDataTypes.REPORTS_AND_CHARTS;
     }
 
     @Override

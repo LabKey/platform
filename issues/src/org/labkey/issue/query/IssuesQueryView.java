@@ -202,7 +202,7 @@ public class IssuesQueryView extends QueryView
                 addSep = false;
             }
             item = new NavTree(label, target.clone().replaceParameter(param(QueryParam.viewName), label).getLocalURIString());
-            item.setId("Views:" + PageFlowUtil.filter(label));
+            item.setId("GridViews:" + PageFlowUtil.filter(label));
             if (label.equals(currentView))
                 item.setStrong(true);
 

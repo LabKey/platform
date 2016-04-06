@@ -148,15 +148,15 @@ public class ReportQueryViewFactory
             MenuButton button = super.createViewButton(StudyReportUIProvider.getItemFilter());
             String id = getViewContext().getRequest().getParameter(DatasetDefinition.DATASETKEY);
             if (id != null)
-                button.addMenuItem("Set Default View", getViewContext().cloneActionURL().setAction(StudyController.ViewPreferencesAction.class));
+                button.addMenuItem("Set Default", getViewContext().cloneActionURL().setAction(StudyController.ViewPreferencesAction.class));
 
             return button;
         }
 
         public void addCustomizeViewItems(MenuButton button)
         {
-            NavTree customizeView = new NavTree("Customize View");
-            customizeView.setId(getBaseMenuId() + ":Views:Customize View");
+            NavTree customizeView = new NavTree("Customize Grid");
+            customizeView.setId(getBaseMenuId() + ":GridViews:Customize Grid");
             customizeView.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getDataRegionName()) + "]" +
                     ".toggleShowCustomizeView();");
 

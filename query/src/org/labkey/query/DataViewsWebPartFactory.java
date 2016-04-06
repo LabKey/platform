@@ -74,32 +74,41 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
         if (portalCtx.hasPermission(ReadPermission.class) && !portalCtx.getUser().isGuest())
         {
             NavTree reportMenu = new NavTree("Add Report");
+            NavTree chartMenu = new NavTree("Add Chart");
 
-            List<ReportService.DesignerInfo> designers = new ArrayList<>();
+            List<ReportService.DesignerInfo> reportDesigners = new ArrayList<>();
+            List<ReportService.DesignerInfo> chartDesigners = new ArrayList<>();
             for (ReportService.UIProvider provider : ReportService.get().getUIProviders())
-                designers.addAll(provider.getDesignerInfo(portalCtx));
+            {
+                for (ReportService.DesignerInfo designerInfo : provider.getDesignerInfo(portalCtx))
+                {
+                    if (designerInfo.getType() != ReportService.DesignerType.VISUALIZATION)
+                        reportDesigners.add(designerInfo);
+                    else
+                        chartDesigners.add(designerInfo);
+                }
+            }
 
-            Collections.sort(designers, new Comparator<ReportService.DesignerInfo>()
+            Comparator<ReportService.DesignerInfo> comparator = new Comparator<ReportService.DesignerInfo>()
             {
                 @Override
                 public int compare(ReportService.DesignerInfo o1, ReportService.DesignerInfo o2)
                 {
                     return o1.getLabel().compareTo(o2.getLabel());
                 }
-            });
+            };
+            Collections.sort(reportDesigners, comparator);
+            Collections.sort(chartDesigners, comparator);
 
-            for (ReportService.DesignerInfo info : designers)
-            {
-                URLHelper iconURL = info.getIconURL();
-                String iconCls = info.getIconCls();
-                NavTree item = new NavTree(info.getLabel(), info.getDesignerURL().getLocalURIString(), null != iconURL ? iconURL.getLocalURIString() : null, iconCls);
+            for (ReportService.DesignerInfo info : reportDesigners)
+                reportMenu.addChild(getItem(info));
+            for (ReportService.DesignerInfo info : chartDesigners)
+                chartMenu.addChild(getItem(info));
 
-                item.setId(info.getId());
-                item.setDisabled(info.isDisabled());
-
-                reportMenu.addChild(item);
-            }
-            menu.addChild(reportMenu);
+            if (reportDesigners.size() > 0)
+                menu.addChild(reportMenu);
+            if (chartDesigners.size() > 0)
+                menu.addChild(chartMenu);
         }
 
 
@@ -172,5 +181,17 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
         view.setNavMenu(menu);
 
         return view;
+    }
+
+    private NavTree getItem(ReportService.DesignerInfo info)
+    {
+        URLHelper iconURL = info.getIconURL();
+        String iconCls = info.getIconCls();
+        NavTree item = new NavTree(info.getLabel(), info.getDesignerURL().getLocalURIString(), null != iconURL ? iconURL.getLocalURIString() : null, iconCls);
+
+        item.setId(info.getId());
+        item.setDisabled(info.isDisabled());
+
+        return item;
     }
 }

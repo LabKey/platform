@@ -65,7 +65,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
         var panelId = Ext4.id();
 
         return {
-            title   : 'View',
+            title   : 'Report',
             html    : {
                 tag : 'div',
                 children : [
@@ -306,7 +306,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             defaults    : {xtype : 'checkbox', labelWidth : 12},
             items : [
                 {name : 'shareReport',
-                    boxLabel : 'Make this view available to all users',
+                    boxLabel : 'Make this report available to all users',
                     checked : this.reportConfig.shareReport,
                     listeners : {
                         scope: this,
@@ -320,12 +320,12 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                 {name : 'sourceTabVisible', boxLabel : 'Show source tab to all users', fieldLabel : ' ', checked : this.reportConfig.sourceTabVisible, disabled : !this.reportConfig.shareReport},
                 {name : 'inheritable',
                         hidden : !this.reportConfig.allowInherit,
-                        boxLabel : 'Make this view available in child folders&nbsp;' +
-                                '<span data-qtip="If this check box is selected, this view will be available in data grids of child folders where the schema and table are the same as this data grid."><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
+                        boxLabel : 'Make this report available in child folders&nbsp;' +
+                                '<span data-qtip="If this check box is selected, this report will be available in data grids of child folders where the schema and table are the same as this data grid."><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
                         checked : this.reportConfig.inheritable},
                 {name : 'runInBackground',
                     hidden : !this.reportConfig.supportsPipeline,
-                    boxLabel : 'Run this view in the background as a pipeline job',
+                    boxLabel : 'Run this report in the background as a pipeline job',
                     checked : this.reportConfig.runInBackground,
                     listeners : {
                         scope: this,
@@ -479,8 +479,8 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                 else
                 {
                     Ext4.MessageBox.show({
-                        title   : 'Save View',
-                        msg     : 'Please enter a view name:',
+                        title   : 'Save Report',
+                        msg     : 'Please enter a report name:',
                         buttons : Ext4.MessageBox.OKCANCEL,
                         fn      : function(btnId, name) {
                             if (btnId == 'ok')

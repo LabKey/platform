@@ -225,7 +225,7 @@ public class ParticipantGroupManager
             Container container = context.getContainer();
             User user = context.getUser();
             StudyImpl study = StudyManager.getInstance().getStudy(container);
-            MenuButton button = new MenuButton(study.getSubjectNounSingular() + " Groups");
+            MenuButton button = new MenuButton("Groups");
 
             Collection<ParticipantCategoryImpl> classes = getParticipantCategories(container, context.getUser());
 

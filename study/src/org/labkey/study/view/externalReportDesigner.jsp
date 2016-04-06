@@ -30,7 +30,7 @@
     ExternalReport report = bean.getExtReport();
 %>
 <labkey:form action="" method="GET">
-    Design external view. You can invoke any command line to generate the view. You can use the following
+    Design external report. You can invoke any command line to generate the report. You can use the following
     substitution strings in your command line to identify the source data file and the output file to be generated.
     <ul>
         <li><%=h(ExternalReport.DATA_FILE_SUBST)%> This is the file where the data will be provided in tab delimited format. LabKey Server will generate this file name.</li>

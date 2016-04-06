@@ -173,7 +173,7 @@ public class StudyTest extends StudyBaseTest
         waitAndClickAndWait(Locator.linkWithText("Quality Control Report"));
         waitAndClickAndWait(Locator.linkWithText("View Data"));
         // Add a new row to the dataset
-        waitAndClickAndWait(Locator.linkWithText("Insert New"));
+        DataRegionTable.findDataRegion(this).clickHeaderButton("Insert", "Insert New");
         setFormElement(Locator.name("quf_MouseId"), "888208905");
         setFormElement(Locator.name("quf_SequenceNum"), "1");
         setFormElement(Locator.name("quf_QCREP_ID"), "42");
@@ -330,7 +330,7 @@ public class StudyTest extends StudyBaseTest
             assertTextPresent("Dataset: DEM-1: Demographics, All Visits");
             clickAndWait(Locator.linkContainingText("Dataset:"));
 
-            _extHelper.clickMenuButton(false, SUBJECT_NOUN + " Groups", "Create " + SUBJECT_NOUN + " Group", "From Selected " + SUBJECT_NOUN_PLURAL);
+            _extHelper.clickMenuButton(false, "Groups", "Create " + SUBJECT_NOUN + " Group", "From Selected " + SUBJECT_NOUN_PLURAL);
             _extHelper.waitForExtDialog("Selection Error");
             assertTextPresent("At least one " + SUBJECT_NOUN + " must be selected");
             clickButtonContainingText("OK", 0);
@@ -344,7 +344,7 @@ public class StudyTest extends StudyBaseTest
 
         // verify the selected list of identifiers is passed to the participant group wizard
         String[] selectedIDs = new String[]{"999320016","999320518","999320529","999320541","999320533"};
-        _extHelper.clickMenuButton(false, SUBJECT_NOUN + " Groups", "Create " + SUBJECT_NOUN + " Group", "From Selected " + SUBJECT_NOUN_PLURAL);
+        _extHelper.clickMenuButton(false, "Groups", "Create " + SUBJECT_NOUN + " Group", "From Selected " + SUBJECT_NOUN_PLURAL);
         _extHelper.waitForExtDialog("Define " + SUBJECT_NOUN + " Group");
         verifySubjectIDsInWizard(selectedIDs);
 
@@ -354,8 +354,7 @@ public class StudyTest extends StudyBaseTest
 
         if(!isQuickTest())
         {
-            Locator menu = Locator.lkButton(SUBJECT_NOUN + " Groups");
-            _extHelper.clickExtMenuButton(menu, "Participant Group from Grid");
+            _extHelper.clickMenuButton("Groups", "Participant Group from Grid");
             waitForElement(Locator.paginationText(selectedIDs.length));
             assertTextPresent(selectedIDs);
         }
@@ -632,7 +631,7 @@ public class StudyTest extends StudyBaseTest
         assertTextPresent("unknown QC", "1234_B");
 
         // Issue 21234: Dataset import no longer merges rows during import
-        clickButton("Import Data");
+        DataRegionTable.findDataRegion(this).clickHeaderButton("Insert", "Import Data");
         _tsv = "mouseid\tsequencenum\tvisitdate\tSampleId\tDateField\tNumberField\tTextField\treplace\n" +
                 "999321234\t1\t1/1/2006\t1234_A\t2/1/2006\t5000\tnew text\tTRUE\n" +
                 "999321234\t1\t1/1/2006\t1234_B\t2/1/2006\t5000\tnew text\tTRUE\n";
@@ -670,7 +669,7 @@ public class StudyTest extends StudyBaseTest
         }
 
         // Test Bad Field Names -- #13607
-        clickButton("Manage Dataset");
+        clickButton("Manage");
         clickButton("Edit Definition");
         Locator.XPathLocator nameField = Locator.xpath("//input[starts-with(@name, 'ff_name')]");
         waitForElement(nameField);
@@ -698,7 +697,7 @@ public class StudyTest extends StudyBaseTest
         clickFolder(STUDY_NAME);
         clickAndWait(Locator.linkWithText("Alt ID mapping"));
         waitForElement(Locator.tagContainingText("div", "Contains up to one row of Alt ID mapping data for each "));
-        clickButton("Import Data");
+        DataRegionTable.findDataRegion(this).clickHeaderButton("Insert", "Import Data");
         waitForElement(Locator.tagWithText("div", "This is the Alias Dataset. You do not need to include information for the date column."));
 
         //the crawler should be paused (this is done in create) to verify
@@ -806,7 +805,7 @@ public class StudyTest extends StudyBaseTest
         _extHelper.clickMenuButton("Comments and QC", "Manage Mouse Comments");
 
         int datasetAuditEventCount = getDatasetAuditEventCount(); //inserting a new event should increase this by 1;
-        clickButton("Insert New");
+        DataRegionTable.findDataRegion(this).clickHeaderButton("Insert", "Insert New");
         setFormElement(Locator.name("quf_MouseId"), "999320812");
         setFormElement(Locator.name("quf_" + COMMENT_FIELD_NAME), "Mouse Comment");
         clickButton("Submit");
@@ -1119,11 +1118,11 @@ public class StudyTest extends StudyBaseTest
         // verify that cohorts are working
         assertTextPresent("999320016", "999320518");
 
-        _extHelper.clickMenuButton("Mouse Groups", "Cohorts", "Group 1");
+        DataRegionTable.findDataRegion(this).clickHeaderButton("Groups", "Cohorts", "Group 1");
         assertTextPresent("999320016");
         assertTextNotPresent("999320518");
 
-        _extHelper.clickMenuButton("Mouse Groups", "Cohorts", "Group 2");
+        DataRegionTable.findDataRegion(this).clickHeaderButton("Groups", "Cohorts", "Group 2");
         assertTextNotPresent("999320016");
         assertTextPresent("999320518");
 

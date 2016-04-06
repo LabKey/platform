@@ -24,6 +24,7 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyA;
 import org.labkey.test.pages.DesignerController.DesignerTester;
+import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.PortalHelper;
 
@@ -168,7 +169,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
         clickButton("Done");
 
         clickAndWait(Locator.linkWithText(LIST_NAME));
-        clickButton("Insert New");
+        DataRegionTable.findDataRegion(this).clickHeaderButton("Insert", "Insert New");
         setFormElement(Locator.name("quf_Key"), "1");
         setFormElement(Locator.name("quf_Value"), "One");
         submit();
@@ -225,7 +226,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
         clickButton("Save");
         waitForElement(Locator.lkButton("View Data"), WAIT_FOR_JAVASCRIPT);
         clickButton("View Data");
-        clickButton("Import Data");
+        DataRegionTable.findDataRegion(this).clickHeaderButton("Insert", "Import Data");
         _listHelper.submitTsvData("participantid\tDate\tValue\treplace\nP1\t2/1/2007\tHello\nPnew\t11/17/2007\tGoodbye");
 
         _customizeViewsHelper.openCustomizeViewPanel();
@@ -245,7 +246,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
         assertTextPresent("Day 16");
         clickAndWait(Locator.linkWithText(STUDY_FOLDER + " Study"));
         clickAndWait(Locator.linkWithText("Subjects"));
-        clickButton("Import Data");
+        DataRegionTable.findDataRegion(this).clickHeaderButton("Insert", "Import Data");
         _listHelper.submitTsvData("participantid\tDate\tCohort\tStartDate\nPnew\t11/7/2007\tPlacebo\t11/7/2007");
         clickAndWait(Locator.linkWithText(STUDY_FOLDER + " Study"));
         clickAndWait(Locator.linkWithText("Study Navigator"));
@@ -376,7 +377,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
 
     private void insertLookupRecord(String name, String label)
     {
-        clickButton("Insert New");
+        DataRegionTable.findDataRegion(this).clickHeaderButton("Insert", "Insert New");
         if (name != null) setFormElement(Locator.name("quf_Name"), name);
         if (label != null) setFormElement(Locator.name("quf_Label"), label);
         clickButton("Submit");

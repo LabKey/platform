@@ -3974,7 +3974,7 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            setHelpTopic(new HelpTopic("Set Default View"));
+            setHelpTopic(new HelpTopic("Set Default"));
 
             root.addChild(_study.getLabel(), new ActionURL(BeginAction.class, getContainer()));
 
@@ -3984,7 +3984,7 @@ public class StudyController extends BaseStudyController
             String label = _def.getLabel() != null ? _def.getLabel() : "" + _def.getDatasetId();
             root.addChild(new NavTree(label, datasetURL.getLocalURIString()));
 
-            root.addChild(new NavTree("View Preferences"));
+            root.addChild(new NavTree("Preferences"));
             return root;
         }
     }

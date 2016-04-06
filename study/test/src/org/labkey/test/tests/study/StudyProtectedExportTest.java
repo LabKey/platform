@@ -87,9 +87,9 @@ public class StudyProtectedExportTest extends StudyExportTest
         clickAndWait(Locator.linkContainingText("LLS-2"));
         DataRegionTable drt = new DataRegionTable( "Dataset", this);
         assertEquals("unexpected number of rows on initial viewing", 5, drt.getDataRowCount());
-        _extHelper.clickMenuButton("Mouse Groups", "Cohorts", "Group 1");
+        _extHelper.clickMenuButton("Groups", "Cohorts", "Group 1");
         assertEquals("unexpected number of rows for group 1", 3, drt.getDataRowCount());
-        _extHelper.clickMenuButton("Mouse Groups", "Cohorts", "Group 2");
+        _extHelper.clickMenuButton("Groups", "Cohorts", "Group 2");
         assertEquals("unexpected number of rows for cohort 2", 2, drt.getDataRowCount());
     }
 
@@ -189,7 +189,7 @@ public class StudyProtectedExportTest extends StudyExportTest
     private void setUpTrickyExport()
     {
         goToDatasetWithProtectedColum();
-        clickButton("Manage Dataset");
+        clickButton("Manage");
         clickButton("Edit Definition");
 
         waitAndClick(Locator.name("ff_label9"));

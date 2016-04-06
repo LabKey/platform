@@ -52,7 +52,7 @@ public class ReportImporter implements FolderImporter
     @Override
     public String getDataType()
     {
-        return FolderArchiveDataTypes.REPORTS;
+        return FolderArchiveDataTypes.REPORTS_AND_CHARTS;
     }
 
     public String getDescription()

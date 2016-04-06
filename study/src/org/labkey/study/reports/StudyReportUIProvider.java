@@ -123,10 +123,10 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
                 gridInfo.setDisabled(!context.hasPermission(AdminPermission.class));
                 designers.add(gridInfo);
 
-                DesignerInfoImpl crosstabInfo = new DesignerInfoImpl(StudyCrosstabReport.TYPE, "Crosstab View", null,
+                DesignerInfoImpl crosstabInfo = new DesignerInfoImpl(StudyCrosstabReport.TYPE, "Crosstab Report", null,
                         new ActionURL(ReportsController.CreateCrosstabReportAction.class, context.getContainer()),
                         _getIconPath(StudyCrosstabReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(StudyCrosstabReport.TYPE));
-                crosstabInfo.setId("create_crosstabView");
+                crosstabInfo.setId("create_crosstabReport");
                 designers.add(crosstabInfo);
 
 /*
@@ -182,7 +182,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         {
             // crosstab report
             crossTabURL.addParameter(ReportDescriptor.Prop.reportType, StudyCrosstabReport.TYPE);
-            designers.add(new DesignerInfoImpl(StudyCrosstabReport.TYPE, "Crosstab View", null, crossTabURL, _getIconPath(StudyCrosstabReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(StudyCrosstabReport.TYPE)));
+            designers.add(new DesignerInfoImpl(StudyCrosstabReport.TYPE, "Crosstab Report", null, crossTabURL, _getIconPath(StudyCrosstabReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(StudyCrosstabReport.TYPE)));
 
             // chart designer
             ChartDesignerBean chartBean = new ChartDesignerBean(settings);
@@ -201,7 +201,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
                 rBean.setReportType(StudyRReport.TYPE);
                 rBean.setRedirectUrl(returnUrl.getLocalURIString());
 
-                designers.add(new DesignerInfoImpl(StudyRReport.TYPE, "R View", null, ReportUtil.getRReportDesignerURL(context, rBean),
+                designers.add(new DesignerInfoImpl(StudyRReport.TYPE, "R Report", null, ReportUtil.getRReportDesignerURL(context, rBean),
                         _getIconPath(StudyRReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(StudyRReport.TYPE)));
             }
 
@@ -210,14 +210,14 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
             {
                 ActionURL buttonURL = context.getActionURL().clone();
                 buttonURL.setAction(ReportsController.ExternalReportAction.class);
-                designers.add(new DesignerInfoImpl(ExternalReport.TYPE, "Advanced View", "An External Command Report",
+                designers.add(new DesignerInfoImpl(ExternalReport.TYPE, "Advanced Report", "An External Command Report",
                         buttonURL, _getIconPath(ExternalReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(ExternalReport.TYPE)));
             }
         }
         else
         {
             crossTabURL.addParameter(ReportDescriptor.Prop.reportType, CrosstabReport.TYPE);
-            designers.add(new DesignerInfoImpl(CrosstabReport.TYPE, "Crosstab View", null, crossTabURL, _getIconPath(CrosstabReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(CrosstabReport.TYPE)));
+            designers.add(new DesignerInfoImpl(CrosstabReport.TYPE, "Crosstab Report", null, crossTabURL, _getIconPath(CrosstabReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(CrosstabReport.TYPE)));
         }
 
         return designers;

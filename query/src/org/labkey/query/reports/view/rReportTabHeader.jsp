@@ -46,7 +46,7 @@
                 <img src="<%=getWebappURL("_.gif")%>" height=1 width=5>
             </td>
             <td class=<%=ReportsController.TAB_SOURCE.equals(currentTab) ? "labkey-tab-selected" : "labkey-tab-inactive"%>><a <%=ReportsController.TAB_SOURCE.equals(currentTab) ? "" : "href=\"javascript:document.forms[0].submit()\""%>>Source&nbsp;</a></td>
-            <td class=<%=ReportsController.TAB_VIEW.equals(currentTab) ? "labkey-tab-selected" : "labkey-tab-inactive"%>><a <%=ReportsController.TAB_VIEW.equals(currentTab) ? "" : "href=\"javascript:document.forms[0].submit()\""%>>View&nbsp;</a></td>
+            <td class=<%=ReportsController.TAB_VIEW.equals(currentTab) ? "labkey-tab-selected" : "labkey-tab-inactive"%>><a <%=ReportsController.TAB_VIEW.equals(currentTab) ? "" : "href=\"javascript:document.forms[0].submit()\""%>>Report&nbsp;</a></td>
             <td class="labkey-tab-space" style="text-align:right;" width=100%>
                 <img src="<%=getWebappURL("_.gif")%>" height=1 width=5>
             </td>

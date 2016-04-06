@@ -18,6 +18,7 @@ package org.labkey.test.tests.study;
 
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
+import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.StudyHelper;
 
@@ -255,7 +256,7 @@ public abstract class StudyManualTest extends StudyTest
         clickButton("Save");
         waitForElement(Locator.lkButton("View Data"), WAIT_FOR_JAVASCRIPT);
         clickButton("View Data");
-        clickButton("Import Data");
+        DataRegionTable.findDataRegion(this).clickHeaderButton("Insert", "Import Data");
 
         String errorRow = "\tbadvisitd\t1/1/2006\t\ttext\t";
         setFormElement(Locator.name("text"), _tsv + "\n" + errorRow);
