@@ -321,7 +321,7 @@ LABKEY.Utils = new function(impl, $) {
     };
 
     //private
-    impl.loadAjaxContent = function(response, targetEl, success, scope){
+    impl.loadAjaxContent = function(response, targetEl, success, scope, useReplace) {
         var json = LABKEY.Utils.decode(response.responseText);
         if (!json)
             return;
@@ -357,7 +357,12 @@ LABKEY.Utils = new function(impl, $) {
                     targetEl = $('#'+targetEl);
                 }
 
-                targetEl.html(json.html); // execute scripts...so bad
+                if (useReplace === true) {
+                    targetEl.replaceWith(json.html);
+                }
+                else {
+                    targetEl.html(json.html); // execute scripts...so bad
+                }
 
                 if (LABKEY.Utils.isFunction(success)) {
                     success.call(scope || window);

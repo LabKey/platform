@@ -2466,10 +2466,45 @@ if (!LABKEY.DataRegions) {
             delete params.sql;
         }
 
-        var renderTo = region.renderTo || region.name;
+        /**
+         * The target jQuery element that will be either written to or replaced
+         */
+        var target;
 
-        if (!renderTo) {
+        /**
+         * Flag used to determine if we should replace target element (default) or write to the target contents
+         * (used during QWP render for example)
+         * @type {boolean}
+         */
+        var useReplace = true;
+
+        /**
+         * The string identifier for where the region will render. Mainly used to display useful messaging upon failure.
+         * @type {string}
+         */
+        var renderEl;
+
+        if (region.renderTo) {
+            useReplace = false;
+            renderEl = region.renderTo;
+            target = $('#' + region.renderTo);
+        }
+        else if (!region.domId) {
             throw '"renderTo" must be specified either upon construction or when calling render()';
+        }
+        else {
+            renderEl = region.domId;
+            target = $('#' + region.domId);
+
+            // attempt to find the correct node to render to...
+            var form = _getFormSelector(region);
+            if (form.length && form.parent('div').length) {
+                target = form.parent('div');
+            }
+            else {
+                // next best render target
+                throw 'unable to find a good target element. Perhaps this region is not using the standard renderer?'
+            }
         }
 
         LABKEY.Ajax.request({
@@ -2480,19 +2515,7 @@ if (!LABKEY.DataRegions) {
             jsonData: jsonData,
             success: function(response) {
 
-                //var target;
-                //if (LABKEY.Utils.isString(this.renderTo)) {
-                //    target = this.renderTo;
-                //}
-                //else {
-                //    target = this.renderTo.id;
-                //}
-
-                var target = $('#' + renderTo);
-
-                if (target.length > 0) {
-
-                    //this.unmask();
+                if (target.length) {
 
                     this.destroy();
 
@@ -2511,7 +2534,7 @@ if (!LABKEY.DataRegions) {
                         this.RENDER_LOCK = true;
                         $(this).trigger('render', this);
                         this.RENDER_LOCK = false;
-                    }, this);
+                    }, this, useReplace);
                 }
                 else {
                     // not finding element considered a failure
@@ -2519,24 +2542,27 @@ if (!LABKEY.DataRegions) {
                         this._failure.call(this.scope || this, response /* json */, response, undefined /* options */, target);
                     }
                     else if (!this.suppressRenderErrors) {
-                        LABKEY.Utils.alert('Rendering Error', 'The element "' + renderTo + '" does not exist in the document. You may need to specify "renderTo".');
+                        LABKEY.Utils.alert('Rendering Error', 'The element "' + renderEl + '" does not exist in the document. You may need to specify "renderTo".');
                     }
                 }
             },
             failure: LABKEY.Utils.getCallbackWrapper(function(json, response, options) {
 
-                var target = $('#' + renderTo);
-
-                if (target.length > 0) {
+                if (target.length) {
                     if ($.isFunction(this._failure)) {
                         this._failure.call(this.scope || this, json, response, options);
                     }
                     else if (this.errorType === 'html') {
-                        target.html('<div class="labkey-error">' + LABKEY.Utils.encodeHtml(json.exception) + '</div>');
+                        if (useReplace) {
+                            target.replaceWith('<div class="labkey-error">' + LABKEY.Utils.encodeHtml(json.exception) + '</div>');
+                        }
+                        else {
+                            target.html('<div class="labkey-error">' + LABKEY.Utils.encodeHtml(json.exception) + '</div>');
+                        }
                     }
                 }
                 else if (!this.suppressRenderErrors) {
-                    LABKEY.Utils.alert('Rendering Error', 'The element "' + renderTo + '" does not exist in the document. You may need to specify "renderTo".');
+                    LABKEY.Utils.alert('Rendering Error', 'The element "' + renderEl + '" does not exist in the document. You may need to specify "renderTo".');
                 }
             }, region, true),
             scope: region
