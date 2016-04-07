@@ -214,6 +214,9 @@ public interface CustomViewInfo
     /** Get the webapp relative image URL. */
     @Nullable String getCustomIconUrl();
 
+    /** Get the CSS font icon. */
+    @Nullable String getCustomIconCls();
+
     /** Get the list of columns in the custom view. */
     @NotNull List<FieldKey> getColumns();
 

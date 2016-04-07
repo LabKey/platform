@@ -144,7 +144,7 @@ public abstract class GenericChartReport extends AbstractReport
             @Override
             public String getIconCls()
             {
-                return null;
+                return "fa fa-sliders fa-rotate-90";
             }
         };
         public abstract String getId();

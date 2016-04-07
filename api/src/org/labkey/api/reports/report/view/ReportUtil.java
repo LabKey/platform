@@ -221,7 +221,12 @@ public class ReportUtil
         }
     }
 
-    private static @Nullable URLHelper getDynamicImageUrl(Container c, Report r, ImageType type)
+    public static String getIconCls(Report r)
+    {
+        return ReportService.get().getIconCls(r);
+    }
+
+    public static @Nullable URLHelper getDynamicImageUrl(Container c, Report r, ImageType type)
     {
         String prefix = type.getPropertyNamePrefix();
         String imageType = (String) ReportPropsManager.get().getPropertyValue(r.getEntityId(), c, prefix + "Type");

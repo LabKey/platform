@@ -26,7 +26,9 @@ import org.labkey.api.view.ActionURL;
 
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: klum
@@ -56,6 +58,7 @@ public class DefaultViewInfo implements DataViewInfo
     private ActionURL _detailsUrl;
 
     private URLHelper _iconUrl;
+    private String _iconCls;
     private ViewCategory _category;
     private boolean _visible = true;
     private boolean _shared = true;
@@ -226,6 +229,16 @@ public class DefaultViewInfo implements DataViewInfo
     public void setIconUrl(URLHelper iconUrl)
     {
         _iconUrl = iconUrl;
+    }
+
+    public String getIconCls()
+    {
+        return _iconCls;
+    }
+
+    public void setIconCls(String iconCls)
+    {
+        _iconCls = iconCls;
     }
 
     public ViewCategory getCategory()

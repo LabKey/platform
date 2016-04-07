@@ -48,6 +48,8 @@ public interface DataViewInfo
     @Nullable
     URLHelper getIconUrl();             // the server relative path to the display icon
     @Nullable
+    String getIconCls();                // css code for font icon
+    @Nullable
     ViewCategory getCategory();         // an optional view category
 
     @Nullable String getSchemaName();

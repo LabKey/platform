@@ -121,6 +121,7 @@ public class ReportService
         Report createFromQueryString(String queryString) throws Exception;
 
         @NotNull String getIconPath(Report report);
+        @Nullable String getIconCls(Report report);
 
         /**
          * Imports a serialized report into the database using the specified user and container
@@ -191,6 +192,12 @@ public class ReportService
          * Returns null if this UIProvider does not support this report.
          */
         @Nullable String getIconPath(Report report);
+
+        /**
+         * Returns simple path to browser accessible font icon in the webapp, e.g., "fa fa-table".
+         * Returns null if this UIProvider does not support this report.
+         */
+        @Nullable String getIconCls(Report report);
     }
 
     public interface ItemFilter

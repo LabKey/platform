@@ -197,6 +197,8 @@ public class DataViewService
 
         if (info.getIconUrl() != null)
             o.put("icon", info.getIconUrl().getLocalURIString());
+        if (info.getIconCls() != null)
+            o.put("iconCls", info.getIconCls() + " icon-content");
 
         ViewCategory vc = info.getCategory();
         if (vc == null)
