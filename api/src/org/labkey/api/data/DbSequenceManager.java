@@ -111,7 +111,7 @@ public class DbSequenceManager
         insertSql.add(id);
         insertSql.add(0);
 
-        tinfo.getSqlDialect().appendSelectAutoIncrement(insertSql, "RowId");
+        tinfo.getSqlDialect().addReselect(insertSql, tinfo.getColumn("RowId"));
 
         try
         {
@@ -199,7 +199,7 @@ public class DbSequenceManager
         sql.add(sequence.getRowId());
 
         // Reselect the current value
-        tinfo.getSqlDialect().addReselect(sql, "Value");
+        tinfo.getSqlDialect().addReselect(sql, tinfo.getColumn("Value"));
 
         // Add locking appropriate to this dialect
         addLocks(tinfo, sql);

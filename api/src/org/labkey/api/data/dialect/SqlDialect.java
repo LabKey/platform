@@ -452,28 +452,23 @@ public abstract class SqlDialect
     // Note: SQLFragment and StringBuilder both implement Appendable
     public abstract void appendStatement(Appendable sql, String statement);
 
-    // Note: SQLFragment and StringBuilder both implement Appendable
-    // TODO: Convert to take ColumnInfo instead
-    public abstract void appendSelectAutoIncrement(Appendable sql, String columnName, @Nullable String variable);
-
-    // Use ColumnInfo version instead
-    @Deprecated
-    public void appendSelectAutoIncrement(Appendable sql, String columnName)
-    {
-        appendSelectAutoIncrement(sql, columnName, null);
-    }
-
-    public void appendSelectAutoIncrement(Appendable sql, ColumnInfo column)
-    {
-        appendSelectAutoIncrement(sql, column.getSelectName(), null);
-    }
-
-    // TODO: Switch appendSelectAutoIncrement usages to this
     public abstract void addReselect(SQLFragment sql, String columnName, @Nullable String variable);
 
-    public void addReselect(SQLFragment sql, String columnName)
+    public void addReselect(SQLFragment sql, ColumnInfo column)
+    {
+        addReselect(sql, column.getSelectName(), null);
+    }
+
+    public abstract void addReselect(StringBuilder sql, String columnName, @Nullable String variable);
+
+    public void addReselect(StringBuilder sql, String columnName)
     {
         addReselect(sql, columnName, null);
+    }
+
+    public void addReselect(StringBuilder sql, ColumnInfo column)
+    {
+        addReselect(sql, column.getSelectName(), null);
     }
 
     // Could be INSERT, UPDATE, or DELETE statement

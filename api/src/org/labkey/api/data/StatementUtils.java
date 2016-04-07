@@ -678,7 +678,7 @@ public class StatementUtils
                     rowIdVar = _dialect.isPostgreSQL() ? "_$rowid$_" : "@_rowid_";
                     sqlfDeclare.append("DECLARE ").append(rowIdVar).append(" INT;\n");
                 }
-                _dialect.appendSelectAutoIncrement(sqlfInsertInto, autoIncrementColumn.getSelectName(), rowIdVar);
+                _dialect.addReselect(sqlfInsertInto, autoIncrementColumn.getSelectName(), rowIdVar);
             }
         }
 

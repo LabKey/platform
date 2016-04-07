@@ -47,9 +47,9 @@ public class SQLFragment implements Appendable, CharSequence
     List<Object> params;          // TODO: Should be List<?>
     private final List<Object> tempTokens = new ArrayList<>();      // Hold refs to ensure they're not GC'd
 
-    Map<Object,CTE> commonTableExpressionsMap = null;
+    private Map<Object,CTE> commonTableExpressionsMap = null;
 
-    class CTE
+    private class CTE
     {
         CTE(@NotNull String name, SQLFragment sqlf)
         {
@@ -221,7 +221,7 @@ public class SQLFragment implements Appendable, CharSequence
      }
 
 
-    final static Object[] EMPTY_ARRAY = new Object[0];
+    private final static Object[] EMPTY_ARRAY = new Object[0];
 
     public Object[] getParamsArray()
     {
@@ -511,7 +511,7 @@ public class SQLFragment implements Appendable, CharSequence
         }
     }
 
-    public void addTempToken(Object tempToken)
+    void addTempToken(Object tempToken)
     {
         tempTokens.add(tempToken);
     }

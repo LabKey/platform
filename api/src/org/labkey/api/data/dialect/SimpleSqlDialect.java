@@ -166,13 +166,13 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public void appendSelectAutoIncrement(Appendable sql, String columnName, @Nullable String variable)
+    public void addReselect(SQLFragment sql, String columnName, @Nullable String variable)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
 
     @Override
-    public void addReselect(SQLFragment sql, String columnName, @Nullable String variable)
+    public void addReselect(StringBuilder sql, String columnName, @Nullable String variable)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
