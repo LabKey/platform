@@ -2460,8 +2460,6 @@ public class SpecimenImporter
 
         for (SpecimenColumn col : getVialCols(info.getAvailableColumns()))
             insertSelectSql.append(prefix).append("VialList.").append(col.getLegalDbColumnName(_dialect));
-        if (!seenVisitValue)
-            insertSelectSql.append(prefix).append("VialList.").append(VISIT_VALUE.getDbColumnName());
 
         insertSelectSql.append(" FROM (").append(getVialListFromTempTableSql(info, false, seenVisitValue)).append(") VialList");
 
@@ -2892,7 +2890,9 @@ public class SpecimenImporter
             });
             pump.run();
             if (dix.getErrors().hasErrors())
-                throw dix.getErrors().getLastRowError();
+            {
+                throw new ValidationException(dix.getErrors().getLastRowError().getMessage() + " (File: " + file.getTableType().getName() + ")");
+            }
             rowCount = pump.getRowCount();
 
             info(tableName + ": Replaced all data with " + rowCount + " new rows.");
