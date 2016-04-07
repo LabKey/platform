@@ -361,6 +361,7 @@ public class StudyExportTest extends StudyManualTest
         // check to see that data in the specimen archive was merged correctly:
         clickFolder(getFolderName());
         clickAndWait(Locator.linkContainingText("By Individual Vial"));
+        waitForText("Paging");
         _extHelper.clickMenuButton("Paging", "Show All");
         assertTextPresent("DRT000XX-01");
         clickAndWait(Locator.linkWithText("Search"));
@@ -433,7 +434,7 @@ public class StudyExportTest extends StudyManualTest
         assertTextPresent("2001-11-11");
 
         log("Test adding a row to a dataset");
-        clickButton("Insert New");
+        DataRegionTable.findDataRegion(this).clickHeaderButton("Insert", "Insert New");
         clickButton("Submit");
         assertTextPresent("This field is required");
         setFormElement(Locator.name("quf_MouseId"), TEST_ADD_ENTRY);
