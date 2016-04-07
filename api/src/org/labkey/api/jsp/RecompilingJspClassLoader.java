@@ -110,6 +110,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
                     cp.addDirectory(getTomcatLib());
                     cp.addDirectory(getWebInfLib());
                     cp.addDirectory(getWebInfClasses());
+                    cp.addDirectory(getModulesApiLib());
 
                     // Compile the .jsp file
                     JspC jasper = new JspC();
@@ -268,6 +269,10 @@ public class RecompilingJspClassLoader extends JspClassLoader
         return new File(tomcat, "lib");
     }
 
+    private String getModulesApiLib()
+    {
+        return AppProps.getInstance().getProjectRoot() + "/build/modules-api";
+    }
 
     private String getWebInfLib()
     {
