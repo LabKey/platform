@@ -4,6 +4,7 @@
         <script path="dataview/DataViewPropertiesPanel.js"/>
         <script path="dataview/DataViewsPanel.css"/>
         <script path="dataview/DataViewsPanel.js"/>
+        <script path="dataview/FaTreeColumn.js"/>
     </library>
     <dependencies>
         <dependency path="clientapi/ext4" />

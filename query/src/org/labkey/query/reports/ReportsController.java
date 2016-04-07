@@ -3229,6 +3229,7 @@ public class ReportsController extends SpringActionController
                 viewJson.put("name", view.getName());
                 viewJson.put("leaf", true);
                 viewJson.put("icon", view.getIconUrl().getLocalURIString());
+                viewJson.put("iconCls", view.getIconCls());
                 children.put(viewJson);
             }
 

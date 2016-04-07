@@ -1556,6 +1556,7 @@ query/webapp/dataview/DataViewPropertiesPanel.js -text
 query/webapp/dataview/DataViewUtil.js -text
 query/webapp/dataview/DataViewsPanel.css -text
 query/webapp/dataview/DataViewsPanel.js -text
+query/webapp/dataview/FaTreeColumn.js -text
 query/webapp/dataview/ManageNotifications.js -text
 query/webapp/dataviews.lib.xml -text
 query/webapp/query/ExportTablePanel.js -text

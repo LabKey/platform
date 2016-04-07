@@ -116,4 +116,21 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
         }
         return super.getIconPath(report);
     }
+
+    public String getIconCls(Report report)
+    {
+        String type = report.getType();
+
+        if (TimeChartReport.TYPE.equals(type))
+            return "fa fa-line-chart";
+        if (GenericChartReport.TYPE.equals(type))
+        {
+            GenericChartReport.RenderType renderType = ((GenericChartReport)report).getRenderType();
+
+            if (renderType != null)
+                return renderType.getIconCls();
+        }
+
+        return super.getIconCls(report);
+    }
 }

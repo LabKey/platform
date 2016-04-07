@@ -183,6 +183,9 @@ public class ModuleCustomViewInfo implements CustomViewInfo
         return _customViewDef.getCustomIconUrl();
     }
 
+    @Override
+    public String getCustomIconCls() { return null; }
+
     @NotNull
     @Override
     public List<FieldKey> getColumns()

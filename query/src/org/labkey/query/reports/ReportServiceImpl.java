@@ -878,8 +878,39 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             }
         }
 
-        // No UIPRovider claimed this report type... so fall-back on blank image
+        // No UIProvider claimed this report type... so fall-back on blank image
         return "/_.gif";
+    }
+
+    public @Nullable String getIconCls(Report report)
+    {
+        if (report != null)
+        {
+            String reportType = report.getType();
+
+            UIProvider claimingProvider = _typeToProviderMap.get(reportType);
+
+            if (null != claimingProvider)
+            {
+                String iconClass = claimingProvider.getIconCls(report);  // may be null if report does not support CSS icons
+
+                return iconClass;
+            }
+
+            for (UIProvider provider : _uiProviders)
+            {
+                String iconClass = provider.getIconCls(report);
+
+                if (iconClass != null)
+                {
+                    _typeToProviderMap.put(reportType, provider);
+                    return iconClass;
+                }
+            }
+        }
+
+        // No report provider claimed this, so don't return an icon (we should always have an image icon to fall back on anyway)
+        return null;
     }
 
     private static final Report[] EMPTY_REPORT_ARRAY = new Report[0];

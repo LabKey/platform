@@ -120,6 +120,7 @@ public class DatasetViewProvider implements DataViewProvider
                         view.setType("Dataset");
                         view.setDescription(ds.getDescription());
                         view.setIconUrl(new ResourceURL("/reports/grid.gif"));
+                        view.setIconCls("fa fa-table");
                         view.setVisible(ds.isShowByDefault());
 
                         ActionURL runUrl = new ActionURL(StudyController.DefaultDatasetReportAction.class, container).addParameter("datasetId", ds.getDatasetId());

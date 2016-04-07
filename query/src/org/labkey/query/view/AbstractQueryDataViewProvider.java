@@ -115,6 +115,7 @@ public abstract class AbstractQueryDataViewProvider implements DataViewProvider
             if (!StringUtils.isEmpty(view.getCustomIconUrl()))
             {
                 info.setIconUrl(new ResourceURL(view.getCustomIconUrl()));
+                info.setIconCls(view.getCustomIconCls());
             }
 
             // Always return link to a static image for now. See ReportViewProvider for an example of a dynamic thumbnail provider.

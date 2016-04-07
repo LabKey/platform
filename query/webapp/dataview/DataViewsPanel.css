@@ -178,3 +178,6 @@ div.icon img
     border-top-width: 0 !important;
 }
 
+.dataview-icon {
+    vertical-align: 0px;   /* reset alignment */
+}

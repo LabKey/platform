@@ -276,7 +276,17 @@ public class ReportUIProvider extends DefaultReportUIProvider
         {
             if (report instanceof AttachmentReport)
             {
-                 return null;
+                Container c = ContainerManager.getForId(report.getContainerId());
+                AttachmentReport attachmentReport = (AttachmentReport)report;
+                String filename = attachmentReport.getFilePath();
+
+                if (null == filename)
+                {
+                    Attachment attachment = attachmentReport.getLatestVersion();
+                    filename = attachment == null ? null : attachment.getName();
+                }
+
+                return Attachment.getFileIconFontCls(StringUtils.trimToEmpty(filename));
             }
 
             if (report instanceof LinkReport)
@@ -300,7 +310,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
             return _getIconCls(report.getType());
         }
 
-        return super.getIconPath(report);
+        return super.getIconCls(report);
     }
 
 

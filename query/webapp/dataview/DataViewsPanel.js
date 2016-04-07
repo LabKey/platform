@@ -554,7 +554,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             hidden   : !this.manageView,
             scope    : this
         },{
-            xtype    : 'treecolumn',
+            xtype    : 'fatreecolumn',
             text     : 'Name',
             flex     : 1,
             dataIndex: 'name',
@@ -600,7 +600,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 sortable : false,
                 tpl      : '<tpl if="detailsUrl">' +
                                 '<a data-qtip="Click to navigate to the Detail View" href="{detailsUrl}">' +
-                                    '<img data-qtip="Details" height="16px" width="16px" src="' + LABKEY.ActionURL.getContextPath() + '/reports/details.png" alt="Details...">' +
+                                    '<span class="fa fa-list-ul" alt="Details..."></span>' +
                                 '</a>' +
                             '</tpl>',
                 scope    : this
@@ -621,17 +621,17 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         if (visibleColumns['Status'] && visibleColumns['Status'].checked) {
             var statusTpl = '<tpl if="status == \'Draft\'">' +
-                    '<img data-qtip="Draft" height="16px" width="16px" src="' + LABKEY.ActionURL.getContextPath() + '/reports/icon_draft.png" alt="Draft">' +
+                    '<span class="fa fa-pencil-square"</span>' +
                     '</tpl>' +
                     '<tpl if="status == \'Final\'">' +
-                    '<img data-qtip="Final" height="16px" width="16px" src="' + LABKEY.ActionURL.getContextPath() + '/reports/icon_final.png" alt="Final">' +
+                    '<span class="fa fa-check-square"</span>' +
                     '</tpl>' +
                     '<tpl if="status == \'Locked\'">' +
-                    '<img data-qtip="Locked" height="16px" width="16px" src="' + LABKEY.ActionURL.getContextPath() + '/reports/icon_locked.png" alt="Locked">' +
+                    '<span class="fa fa-lock"</span>' +
                     '</tpl>' +
                     '<tpl if="status == \'Unlocked\'">' +
-                    '<img data-qtip="Unlocked" height="16px" width="16px" src="' + LABKEY.ActionURL.getContextPath() + '/reports/icon_unlocked.png" alt="Unlocked">' +
-                    '</tpl>';
+                    '<span class="fa fa-unlock-alt"</span>' +
+                    '</tpl>'
 
             _columns.push({
                 xtype    : 'templatecolumn',

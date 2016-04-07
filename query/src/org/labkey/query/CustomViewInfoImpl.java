@@ -241,6 +241,11 @@ public class CustomViewInfoImpl implements CustomViewInfo
         return isShared() ? "/reports/grid.gif" : "/reports/icon_private_view.png";
     }
 
+    public String getCustomIconCls()
+    {
+        return "fa fa-table";  // don't bother to use isShared(), we don't change the font icon for private views because stacking icons looks bad in fonts
+    }
+
     public boolean hasFilterOrSort()
     {
         return StringUtils.trimToNull(_cstmView.getFilter()) != null;
