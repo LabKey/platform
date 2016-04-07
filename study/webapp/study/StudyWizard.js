@@ -211,7 +211,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 success : function(response) {
                     var allWriters = Ext.decode(response.responseText).writers;
 
-                    var folderWritersToExclude = ['Custom Views', 'Lists', 'Notification Settings', 'Queries', 'Reports', 'Study', 'Experiments and runs'];
+                    var folderWritersToExclude = ['Grid Views', 'Lists', 'Notification Settings', 'Queries', 'Reports and Charts', 'Study', 'Experiments and runs'];
                     var studyWritersToExclude = ['Assay Datasets', 'Categories', 'CRF Datasets', 'Participant Groups', 'QC State Settings', 'Specimens', 'Visit Map'];
                     this.studyWriters = [];
                     this.folderWriters = [];
