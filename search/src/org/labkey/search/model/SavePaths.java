@@ -187,16 +187,16 @@ public class SavePaths implements DavCrawler.SavePaths
             // where
             insert.add(valueParent);
             insert.add(valueName);
-            db.getSqlDialect().appendSelectAutoIncrement(insert, id);
+            db.getSqlDialect().addReselect(insert, id);
 
             Integer ident = new SqlSelector(getSearchSchema(),insert).getObject(Integer.class);
             if (null == ident)
                 return getId(path);
             return ident;
         }
-        catch (RuntimeSQLException|DuplicateKeyException x)
+        catch (DuplicateKeyException | RuntimeSQLException x)
         {
-            if (x instanceof DuplicateKeyException || (x instanceof RuntimeSQLException && ((RuntimeSQLException)x).isConstraintException()))
+            if (x instanceof DuplicateKeyException || ((RuntimeSQLException) x).isConstraintException())
             {
                 return getId(path);
             }

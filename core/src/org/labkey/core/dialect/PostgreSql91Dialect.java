@@ -71,7 +71,7 @@ import java.util.regex.Pattern;
  */
 
 // Dialect specifics for PostgreSQL
-public class PostgreSql91Dialect extends SqlDialect
+class PostgreSql91Dialect extends SqlDialect
 {
     private final Map<String, Integer> _domainScaleMap = new ConcurrentHashMap<>();
     private final AtomicBoolean _arraySortFunctionExists = new AtomicBoolean(false);
@@ -254,24 +254,19 @@ public class PostgreSql91Dialect extends SqlDialect
 
 
     @Override
-    public void appendSelectAutoIncrement(Appendable sql, String columnName, @Nullable String variable)
+    public void addReselect(SQLFragment sql, String columnName, @Nullable String variable)
     {
-        try
-        {
-            sql.append("\nRETURNING ").append(columnName);
-            if (null != variable)
-                sql.append(" INTO ").append(variable);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
+        sql.append("\nRETURNING ").append(columnName);
+        if (null != variable)
+            sql.append(" INTO ").append(variable);
     }
 
     @Override
-    public void addReselect(SQLFragment sql, String columnName, @Nullable String variable)
+    public void addReselect(StringBuilder sql, String columnName, @Nullable String variable)
     {
-        appendSelectAutoIncrement(sql, columnName, variable);
+        sql.append("\nRETURNING ").append(columnName);
+        if (null != variable)
+            sql.append(" INTO ").append(variable);
     }
 
     @Override

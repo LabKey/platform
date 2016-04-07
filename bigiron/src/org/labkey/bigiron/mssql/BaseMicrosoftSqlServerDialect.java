@@ -82,7 +82,7 @@ import java.util.regex.Pattern;
  */
 
 // Dialect specifics for Microsoft SQL Server
-public abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
+abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 {
     private static final Logger LOG = Logger.getLogger(BaseMicrosoftSqlServerDialect.class);
 
@@ -129,7 +129,7 @@ public abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     private final InClauseGenerator _defaultGenerator = new InlineInClauseGenerator(this);
     private final TableResolver _tableResolver;
 
-    public BaseMicrosoftSqlServerDialect(TableResolver tableResolver)
+    BaseMicrosoftSqlServerDialect(TableResolver tableResolver)
     {
         _tableResolver = tableResolver;
     }
@@ -337,45 +337,128 @@ public abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
 
-    @Override
-    public void appendSelectAutoIncrement(Appendable sql, String columnName, @Nullable String variable)
-    {
-        if (null == variable)
-            appendStatement(sql, "SELECT @@IDENTITY");
-        else
-            appendStatement(sql, "SELECT " + variable + "=@@IDENTITY");
-    }
+    private enum ReselectType {INSERT, UPDATE, OTHER}
 
+    private ReselectType getReselectType(String sql)
+    {
+        String trimmed = sql.trim();
+
+        if (StringUtils.startsWith(trimmed, ReselectType.INSERT.name()))
+            return ReselectType.INSERT;
+        else if (StringUtils.startsWith(trimmed, ReselectType.UPDATE.name()))
+            return ReselectType.UPDATE;
+        else
+            return ReselectType.OTHER;
+    }
 
     @Override
     public void addReselect(SQLFragment sql, String columnName, @Nullable String variable)
     {
-        String trimmed = sql.getRawSQL().trim();
+        ReselectType type = getReselectType(sql.getRawSQL());
 
-        if (StringUtils.startsWithIgnoreCase(trimmed, "INSERT") || StringUtils.startsWithIgnoreCase(trimmed, "UPDATE"))
+        if (type == ReselectType.OTHER)
+            throw new IllegalStateException("Can re-select only from INSERT or UPDATE statement");
+
+        StringBuilder outputSql = new StringBuilder("OUTPUT INSERTED.");
+        outputSql.append(columnName);
+
+        if (null != variable)
         {
-            StringBuilder outputSql = new StringBuilder("OUTPUT INSERTED.");
-            outputSql.append(columnName);
-            outputSql.append(" ");
+            outputSql.append(" INTO ");
+            outputSql.append(variable);
+        }
 
-            if (null != variable)
+        int start;
+        int end;
+
+        if (type == ReselectType.INSERT)
+        {
+            start = sql.indexOf(")");
+
+            if (-1 == start)
+                throw new IllegalStateException("Unable to insert OUTPUT clause");
+
+            end = start;
+
+            do
             {
-                outputSql.append("INTO ");
-                outputSql.append(variable);
-                outputSql.append(" ");
+                end++;
             }
-
-            int idx = StringUtils.indexOfIgnoreCase(sql, "WHERE");
-
-            if (idx > -1)
-                sql.insert(idx, outputSql.toString());
-            else
-                sql.append(outputSql);
+            while (Character.isWhitespace(sql.charAt(end)));
         }
         else
         {
-            throw new IllegalStateException("Can re-select only from INSERT or UPDATE statement");
+            end = sql.indexOf("WHERE");
+
+            if (-1 == end)
+                throw new IllegalStateException("Unable to insert OUTPUT clause");
+
+            start = end;
+
+            do
+            {
+                start--;
+            }
+            while (Character.isWhitespace(sql.charAt(start)));
         }
+
+        outputSql.append(sql.subSequence(start + 1, end));
+        sql.insert(end, outputSql.toString());
+    }
+
+    @Override
+    public void addReselect(StringBuilder sql, String columnName, @Nullable String variable)
+    {
+        ReselectType type = getReselectType(sql.toString());
+
+        if (type == ReselectType.OTHER)
+            throw new IllegalStateException("Can re-select only from INSERT or UPDATE statement");
+
+        StringBuilder outputSql = new StringBuilder("OUTPUT INSERTED.");
+        outputSql.append(columnName);
+
+        if (null != variable)
+        {
+            outputSql.append(" INTO ");
+            outputSql.append(variable);
+        }
+
+        int start;
+        int end;
+
+        if (type == ReselectType.INSERT)
+        {
+            start = sql.indexOf(")");
+
+            if (-1 == start)
+                throw new IllegalStateException("Unable to insert OUTPUT clause");
+
+            end = start;
+
+            do
+            {
+                end++;
+            }
+            while (Character.isWhitespace(sql.charAt(end)));
+        }
+        else
+        {
+            end = sql.indexOf("WHERE");
+
+            if (-1 == end)
+                throw new IllegalStateException("Unable to insert OUTPUT clause");
+
+            start = end;
+
+            do
+            {
+                start--;
+            }
+            while (Character.isWhitespace(sql.charAt(start)));
+        }
+
+        outputSql.append(sql.subSequence(start + 1, end));
+        sql.insert(end, outputSql.toString());
     }
 
     @Override
@@ -873,7 +956,7 @@ public abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         jdbc:jtds:sqlserver://host/database;SelectMethod=cursor
     */
 
-    public static class JtdsJdbcHelper implements JdbcHelper
+    private static class JtdsJdbcHelper implements JdbcHelper
     {
         @Override
         public String getDatabase(String url) throws ServletException
