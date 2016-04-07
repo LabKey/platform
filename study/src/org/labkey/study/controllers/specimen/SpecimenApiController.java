@@ -41,6 +41,7 @@ import java.sql.SQLException;
  * Time: 11:57:24 AM
  */
 
+@SuppressWarnings("UnusedDeclaration")
 public class SpecimenApiController extends BaseStudyController
 {
     private static final DefaultActionResolver _resolver = new DefaultActionResolver(SpecimenApiController.class);
@@ -319,8 +320,16 @@ public class SpecimenApiController extends BaseStudyController
             List<Map<String, Object>> vialList;
             if (form.getRowIds() != null && form.getRowIds().length > 0)
             {
-                List<Vial> vials = SpecimenManager.getInstance().getVials(container, form.getViewContext().getUser(), form.getRowIds());
-                vialList = getSpecimenListResponse(vials);
+                try
+                {
+                    List<Vial> vials = SpecimenManager.getInstance().getVials(container, form.getViewContext().getUser(), form.getRowIds());
+                    vialList = getSpecimenListResponse(vials);
+                }
+                catch (SpecimenManager.SpecimenRequestException e)
+                {
+                    errors.reject(ERROR_MSG, e.getMessage());
+                    vialList = Collections.emptyList();
+                }
             }
             else
                 vialList = Collections.emptyList();
@@ -331,7 +340,7 @@ public class SpecimenApiController extends BaseStudyController
 
     public static class VialRequestForm extends RequestIdForm
     {
-        public static enum IdTypes
+        public enum IdTypes
         {
             GlobalUniqueId,
             SpecimenHash,

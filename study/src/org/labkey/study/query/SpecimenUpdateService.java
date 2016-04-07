@@ -127,6 +127,11 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             errors.addRowError(e);
             throw errors;
         }
+        catch (SpecimenManager.SpecimenRequestException e)
+        {
+            errors.addRowError(new ValidationException(e.getMessage()));
+            throw errors;
+        }
         catch (IOException e)
         {
             throw new IllegalStateException(e.getMessage());
@@ -348,6 +353,11 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         catch (ValidationException e)
         {
             errors.addRowError(e);
+            throw errors;
+        }
+        catch (SpecimenManager.SpecimenRequestException e)
+        {
+            errors.addRowError(new ValidationException(e.getMessage()));
             throw errors;
         }
 

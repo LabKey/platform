@@ -18,7 +18,6 @@ package org.labkey.study;
 
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.collections15.comparators.ComparableComparator;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -1451,7 +1450,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
                     throw new IllegalStateException("Mismatched containers.");
 
                 if (!vial.isAvailable())
-                    throw new SpecimenRequestException();
+                    throw new SpecimenRequestException("Vial unavailable.");
             }
 
             for (Vial vial : vials)
@@ -1490,12 +1489,20 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         filter.addInClause(FieldKey.fromParts("RowId"), vialRowIds);
         List<Vial> vials = getVials(container, user, filter);
         if (vials.size() != vialRowIds.size())
-            throw new IllegalStateException("One or more specimen RowIds had no matching specimen.");
+            throw new SpecimenRequestException("One or more specimen RowIds had no matching specimen.");
         return vials;
     }
 
-    public static class SpecimenRequestException extends Exception
+    public static class SpecimenRequestException extends RuntimeException
     {
+        public SpecimenRequestException()
+        {
+        }
+
+        public SpecimenRequestException(String message)
+        {
+            super(message);
+        }
     }
 
     public List<Vial> getVials(Container container, User user, String[] globalUniqueIds) throws SpecimenRequestException
@@ -1507,7 +1514,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         filter.addInClause(FieldKey.fromParts("GlobalUniqueId"), ids);
         List<Vial> vials = getVials(container, user, filter);
         if (vials == null || vials.size() != ids.size())
-            throw new SpecimenRequestException();       // an id has no matching specimen, let caller determine what to report
+            throw new SpecimenRequestException("Vial not found.");       // an id has no matching specimen, let caller determine what to report
         return vials;
     }
 
@@ -3048,7 +3055,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     {
         Set<String> keySet = _groupedValueAllowedColumnMap.keySet();
         String[] allowedColumns = keySet.toArray(new String[keySet.size()]);
-        Arrays.sort(allowedColumns, new ComparableComparator<String>());
+        Arrays.sort(allowedColumns, new ComparableComparator<>());
         return allowedColumns;
     }
 
@@ -3275,7 +3282,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             {
                 GroupedValueFilter groupedValueFilter = new GroupedValueFilter();
                 groupedValueFilter.setViewColumnName(groupedResults.viewName);
-                groupedValueFilter.setFilterValueName(null != groupedResults.labelValue ? groupedResults.labelValue.toString() : null);
+                groupedValueFilter.setFilterValueName(null != groupedResults.labelValue ? groupedResults.labelValue : null);
                 List<GroupedValueFilter> groupedValueFiltersCopy = new ArrayList<>(groupedValueFilters); // Need copy because can't share across members of groupedResultsMap
                 groupedValueFiltersCopy.add(groupedValueFilter);
                 Map<String, Object> nextLevelGroup = buildGroupedValue(childGroupResultsMap, container, groupedValueFiltersCopy);

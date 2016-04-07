@@ -202,6 +202,7 @@ import java.util.TreeMap;
  * Date: Dec 20, 2007
  * Time: 11:08:31 AM
  */
+@SuppressWarnings("UnusedDeclaration")
 public class SpecimenController extends BaseStudyController
 {
     private static final Logger _log = Logger.getLogger(SpecimenController.class);
@@ -744,7 +745,7 @@ public class SpecimenController extends BaseStudyController
             throw new UnauthorizedException();
     }
 
-    public static interface HiddenFormInputGenerator
+    public interface HiddenFormInputGenerator
     {
         String getHiddenFormInputs(ViewContext ctx);
     }
@@ -1208,7 +1209,7 @@ public class SpecimenController extends BaseStudyController
                 grid.setButtons(Collections.singletonList((DisplayElement) insertButton));
             }
             else
-                grid.setButtons(Collections.<DisplayElement>emptyList());
+                grid.setButtons(Collections.emptyList());
             JspView<ViewRequestsHeaderBean> header = new JspView<>("/org/labkey/study/view/specimen/viewRequestsHeader.jsp",
                     new ViewRequestsHeaderBean(getViewContext(), grid));
 
@@ -1418,9 +1419,7 @@ public class SpecimenController extends BaseStudyController
                 }
             }
 
-            if (errors.hasErrors())
-                return false;
-            return true;
+            return !errors.hasErrors();
         }
 
         public ActionURL getSuccessURL(ManageRequestStatusForm manageRequestForm)
@@ -1847,7 +1846,7 @@ public class SpecimenController extends BaseStudyController
             ActionURL modifiedReturnURL = null;
             if (createSampleRequestForm.isExtendedRequestUrl())
             {
-                return getExtendedRequestURL(_specimenRequest.getRowId(), modifiedReturnURL != null ? modifiedReturnURL.getLocalURIString() : null);
+                return getExtendedRequestURL(_specimenRequest.getRowId(), null);
             }
             if (createSampleRequestForm.getReturnUrl() != null)
             {
@@ -2344,9 +2343,7 @@ public class SpecimenController extends BaseStudyController
                 return false;
             }
 
-            if (errors.hasErrors())
-                return false;
-            return true;
+            return !errors.hasErrors();
         }
 
         public ActionURL getSuccessURL(ManageRequirementForm manageRequirementForm)
@@ -2720,9 +2717,7 @@ public class SpecimenController extends BaseStudyController
                 errors.addError(new ObjectError("Specimen Request", new String[] {"NullError"}, null, "Only requests containing specimens can be submitted."));
             }
 
-            if (errors.hasErrors())
-                return false;
-            return true;
+            return !errors.hasErrors();
         }
 
         public ActionURL getSuccessURL(IdForm idForm)
@@ -2886,9 +2881,7 @@ public class SpecimenController extends BaseStudyController
                 }
             }
 
-            if (errors.hasErrors())
-                return false;
-            return true;
+            return !errors.hasErrors();
         }
 
         public ActionURL getSuccessURL(EmailSpecimenListForm emailSpecimenListForm)
@@ -3068,13 +3061,13 @@ public class SpecimenController extends BaseStudyController
 
     public static class LabSpecimenListsBean
     {
-        public static enum Type
+        public enum Type
         {
             PROVIDING("Providing"),
             ORIGINATING("Originating");
 
             private String _display;
-            private Type(String display)
+            Type(String display)
             {
                 _display = display;
             }
@@ -3450,7 +3443,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    private static enum CommentsConflictResolution
+    private enum CommentsConflictResolution
     {
         SKIP,
         APPEND,
@@ -3651,7 +3644,7 @@ public class SpecimenController extends BaseStudyController
                     if (ptid != null && v != null)
                     {
                         if (!pvMap.containsKey(ptid))
-                            pvMap.put(ptid, new HashMap<String, Long>());
+                            pvMap.put(ptid, new HashMap<>());
                         pvMap.get(ptid).put(v.getDisplayString(), vial.getRowId());
                     }
                 }
@@ -3748,8 +3741,15 @@ public class SpecimenController extends BaseStudyController
                 int[] rowId = specimenCommentsForm.getRowId();
                 if (rowId != null && rowId.length > 0)
                 {
-                    List<Vial> vials = SpecimenManager.getInstance().getVials(getContainer(), getUser(), rowId);
-                    selectedVials = new ArrayList<>(vials);
+                    try
+                    {
+                        List<Vial> vials = SpecimenManager.getInstance().getVials(getContainer(), getUser(), rowId);
+                        selectedVials = new ArrayList<>(vials);
+                    }
+                    catch (SpecimenManager.SpecimenRequestException e)
+                    {
+                        errors.reject(ERROR_MSG, e.getMessage());
+                    }
                 }
                 if (selectedVials == null || selectedVials.size() == 0)
                     return new HtmlView("No vials selected.  " + PageFlowUtil.textLink("back", "javascript:back()"));
@@ -5077,7 +5077,7 @@ public class SpecimenController extends BaseStudyController
                     form.setParticipantVisitCommentProperty(study.getParticipantVisitCommentProperty());
                 }
             }
-            StudyJspView<Object> view = new StudyJspView<Object>(study, "manageComments.jsp", form, errors);
+            StudyJspView<Object> view = new StudyJspView<>(study, "manageComments.jsp", form, errors);
             view.setTitle("Comment Configuration");
 
             return view;
