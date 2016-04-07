@@ -60,6 +60,8 @@ public class SpecimenDesignerMainPanel extends AbstractDesignerMainPanel impleme
     private HandlerRegistration _closeHandlerManager;
     private boolean _showing = false;
 
+    private static final String COMMENTS = "Comments";                   // Reserved field name for Vial and Speciman
+
     public SpecimenDesignerMainPanel(RootPanel rootPanel)
     {
         super(rootPanel);
@@ -185,6 +187,8 @@ public class SpecimenDesignerMainPanel extends AbstractDesignerMainPanel impleme
                     optionalSpecimenFields.add(prop);
                     if (prop.getName().contains(" "))
                         errors.add("Name '" + prop.getName() + "' should not contain spaces.");
+                    else if (COMMENTS.equalsIgnoreCase(prop.getName()))
+                        errors.add("Field name 'Comments' is reserved and may not be used in the Specimen or Vial table.");
                 }
             }
         }
@@ -205,6 +209,8 @@ public class SpecimenDesignerMainPanel extends AbstractDesignerMainPanel impleme
                     optionalVialFields.add(prop);
                     if (prop.getName().contains(" "))
                         errors.add("Name '" + prop.getName() + "' should not contain spaces.");
+                    else if (COMMENTS.equalsIgnoreCase(prop.getName()))
+                        errors.add("Field name 'Comments' is reserved and may not be used in the Specimen or Vial table.");
                 }
             }
         }
