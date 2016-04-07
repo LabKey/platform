@@ -11,10 +11,9 @@ download lucene-x.x.x-src.tgz
 - navigate to c:\temp, select "analysis", "core" and "queryparser", right click all three, "Send To..." Compressed (zipped) folder
 - rename the new zip file to lucene-x.x.x-src.zip and copy it to /labkey/server/modules/search/lib
 - open lucene-x.x.x-src.zip
-  - navigate into "/analysis"
-  - delete all directories except "common"
+  - delete all "/analysis/*" directories except "common"
   - delete directory "/analysis/common/src/test"
   - delete directory "/core/src/test"
   - delete directory "/queryparser/src/test"
 
-update /search/resources/credits/jars.txt with new version numbers
+update /search/resources/credits/jars.txt with new jar names & version numbers. Update search module dependencies in IntelliJ.
