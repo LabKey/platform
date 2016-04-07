@@ -15,10 +15,11 @@
  */
 package org.labkey.api.search;
 
-        import org.jetbrains.annotations.NotNull;
-        import org.jetbrains.annotations.Nullable;
-        import org.labkey.api.view.NavTree;
-        import org.labkey.api.view.ViewContext;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ViewContext;
 
 /**
  * User: adam
@@ -27,23 +28,58 @@ package org.labkey.api.search;
  */
 public interface SearchResultTemplate
 {
-    public @Nullable String getName();
+    @Nullable String getName();
 
-    // Return null for default behavior (using "category" parameter on the URL) or return a space-separated list of category names to override
-    public @Nullable String getCategories();
+    /**
+     * Return null for default behavior (using "category" parameter on the URL) or return a space-separated list of category names to override.
+     */
+    @Nullable String getCategories();
 
-    // Return null for default behavior (using search scope on the URL) or return a search scope to override
-    public @Nullable SearchScope getSearchScope();
+    /**
+     * Return null for default behavior (using search scope on the URL) or return a search scope to override.
+     */
+    @Nullable SearchScope getSearchScope();
 
-    public @NotNull String getResultName();
+    @NotNull String getResultNameSingular();
 
-    public boolean includeNavigationLinks();
+    @NotNull String getResultNamePlural();
 
-    public boolean includeAdvanceUI();
+    boolean includeNavigationLinks();
 
-    public @Nullable String getExtraHtml(ViewContext ctx);
+    boolean includeAdvanceUI();
 
-    public String reviseQuery(ViewContext ctx, String q);
+    @Nullable String getExtraHtml(ViewContext ctx);
 
-    public NavTree appendNavTrail(NavTree root, ViewContext ctx, @NotNull SearchScope scope, @Nullable String category);
+    @Nullable String getHiddenInputsHtml(ViewContext ctx);
+
+    String reviseQuery(ViewContext ctx, String q);
+
+    default NavTree appendNavTrail(NavTree root, ViewContext ctx, @NotNull SearchScope scope, @Nullable String category)
+    {
+        Container c = ctx.getContainer();
+        String title = "Search";
+
+        switch (scope)
+        {
+            case All:
+                title += " site";
+                break;
+            case Project:
+                title += " project '" + c.getProject().getName() + "'";
+                break;
+            case Folder:
+            case FolderAndSubfolders:
+                title += " folder '";
+                if ("".equals(c.getName()))
+                    title += "root'";
+                else
+                    title += c.getName() + "'";
+                break;
+        }
+
+        if (null != category)
+            title += " for " + category.replaceAll(" ", "s, ") + "s";
+
+        return root.addChild(title);
+    }
 }
