@@ -49,7 +49,7 @@ public abstract class SimpleViewAction<FORM> extends BaseViewAction<FORM> implem
     public ModelAndView handleRequest() throws Exception
     {
         BindException errors;
-        try (Timing t = MiniProfiler.step("bind"))
+        try (Timing ignored = MiniProfiler.step("bind"))
         {
             if (null == getCommandClass())
                 errors = new NullSafeBindException(new Object(), "command");
@@ -64,7 +64,7 @@ public abstract class SimpleViewAction<FORM> extends BaseViewAction<FORM> implem
         }
 
         FORM form;
-        try (Timing t = MiniProfiler.step("validate"))
+        try (Timing ignored = MiniProfiler.step("validate"))
         {
             form = (FORM) errors.getTarget();
             validate(form, errors);
@@ -72,7 +72,7 @@ public abstract class SimpleViewAction<FORM> extends BaseViewAction<FORM> implem
 
         ModelAndView v;
 
-        try (Timing t = MiniProfiler.step("createView"))
+        try (Timing ignored = MiniProfiler.step("createView"))
         {
             if (_print)
                 v = getPrintView(form, errors);
@@ -84,7 +84,7 @@ public abstract class SimpleViewAction<FORM> extends BaseViewAction<FORM> implem
     }
 
 
-    public static void validateUnicodePropertyValues(PropertyValues pvs) throws ServletException
+    private static void validateUnicodePropertyValues(PropertyValues pvs) throws ServletException
     {
         for (PropertyValue pv : pvs.getPropertyValues())
         {
