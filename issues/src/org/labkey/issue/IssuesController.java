@@ -36,13 +36,32 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.admin.notification.Notification;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.*;
+import org.labkey.api.data.AttachmentParentEntity;
+import org.labkey.api.data.BeanViewForm;
+import org.labkey.api.data.ColumnHeaderType;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.TSVGridWriter;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.issues.IssuesUrls;
 import org.labkey.api.query.FieldKey;
@@ -2430,9 +2449,16 @@ public class IssuesController extends SpringActionController
 
         @NotNull
         @Override
-        public String getResultName()
+        public String getResultNameSingular()
         {
             return "issue";
+        }
+
+        @NotNull
+        @Override
+        public String getResultNamePlural()
+        {
+            return "issues";
         }
 
         @Override
@@ -2456,7 +2482,7 @@ public class IssuesController extends SpringActionController
             {
                 String status = ctx.getActionURL().getParameter("status");
                 ActionURL statusResearchURL = ctx.cloneActionURL().deleteParameter("status");
-                statusResearchURL.addParameter("_dc", (int)Math.round(1000 * Math.random()));
+                statusResearchURL.replaceParameter("_dc", String.valueOf((int)Math.round(1000 * Math.random())));
 
                 StringBuilder html = new StringBuilder("<table width=100% cellpadding=\"0\" cellspacing=\"0\"><tr>\n");
                 html.append("<td class=\"labkey-search-filter\">&nbsp;");
@@ -2473,6 +2499,19 @@ public class IssuesController extends SpringActionController
             {
                 return null;
             }
+        }
+
+        @Nullable
+        @Override
+        public String getHiddenInputsHtml(ViewContext ctx)
+        {
+            String status = ctx.getActionURL().getParameter("status");
+            if (status != null)
+            {
+                return "<input type='hidden' id='search-type' name='status' value='" + PageFlowUtil.filter(status) + "'>";
+            }
+
+            return null;
         }
 
         public String reviseQuery(ViewContext ctx, String q)

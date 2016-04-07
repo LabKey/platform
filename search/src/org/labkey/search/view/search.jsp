@@ -130,12 +130,11 @@
         <input type="hidden" id="hidden-template" name="template" value="<%=form.getTemplate()%>"><%
     }
 
-    if (null != getActionURL().getParameter("status"))
-    {
-        %>
-        <input type="hidden" id="search-type" name="status" value="<%=getActionURL().getParameter("status")%>"><%
-    }   %>
+    String hiddenInputs = template.getHiddenInputsHtml(ctx);
+    if (hiddenInputs != null)
+        out.write(hiddenInputs);
 
+    %>
         </td></tr>
     </table>
 </form>
@@ -197,7 +196,7 @@
                    <a href="<%=h(searchConfig.getSecondarySearchURL(c, queryString))%>"><%
                    }
 
-                   out.print(getResultsSummary(secondaryResult.totalHits, searchConfig.getSecondaryDescription(c), template.getResultName(), "click to view"));
+                   out.print(getResultsSummary(secondaryResult.totalHits, searchConfig.getSecondaryDescription(c), template.getResultNameSingular(), template.getResultNamePlural(), "click to view"));
 
                    if (secondaryResult.totalHits > 0)
                    { %>
@@ -206,7 +205,7 @@
                </td></tr><%
                }
                %>
-               <tr><td align=left><%=getResultsSummary(primaryHits, includesSecondarySearch ? searchConfig.getPrimaryDescription(c) : null, template.getResultName(), includesSecondarySearch ? "shown below" : null)%></td><%
+               <tr><td align=left><%=getResultsSummary(primaryHits, includesSecondarySearch ? searchConfig.getPrimaryDescription(c) : null, template.getResultNameSingular(), template.getResultNamePlural(), includesSecondarySearch ? "shown below" : null)%></td><%
 
             if (hitsPerPage < primaryHits)
             {
@@ -214,7 +213,7 @@
             }
             else if (primaryHits > 0)
             {
-                %><td align=right>Displaying all <%=h(template.getResultName())%>s</td><%
+                %><td align=right>Displaying all <%=h(template.getResultNamePlural())%></td><%
             }
             %></tr></table><br>
             <%
@@ -466,7 +465,7 @@ NavTree getDocumentContext(Container c, SearchService.SearchHit hit)
 }
 
 
-String getResultsSummary(int totalHits, @Nullable String description, @NotNull String resultName, @Nullable String nonZeroInstruction)
+String getResultsSummary(int totalHits, @Nullable String description, @NotNull String resultName, @NotNull String resultNamePlural, @Nullable String nonZeroInstruction)
 {
     StringBuilder sb = new StringBuilder("Found ");
     sb.append(Formats.commaf0.format(totalHits));
@@ -477,10 +476,12 @@ String getResultsSummary(int totalHits, @Nullable String description, @NotNull S
         sb.append(h(description));
     }
 
-    sb.append(" ").append(h(resultName));
+    sb.append(" ");
 
-    if (totalHits != 1)
-        sb.append("s");
+    if (totalHits <= 1)
+        sb.append(h(resultName));
+    else
+        sb.append(h(resultNamePlural));
 
     if (null != nonZeroInstruction && totalHits > 0)
     {
@@ -572,7 +573,7 @@ String normalizeHref(Container c, Path contextPath, String href)
     var init = function() {
 
         var header = {
-            html : <%=PageFlowUtil.jsString("<span>Categories" + helpPopup("Categories", "Choosing one or more categories will refine your search to only those data types. For example, if you select 'Files' you will see only files and attachments in your " + h(template.getResultName()) + ".") + "</span>")%>
+            html : <%=PageFlowUtil.jsString("<span>Categories" + helpPopup("Categories", "Choosing one or more categories will refine your search to only those data types. For example, if you select 'Files' you will see only files and attachments in your " + h(template.getResultNameSingular()) + ".") + "</span>")%>
         };
 
         var categories = {

@@ -16,6 +16,8 @@
 
 package org.labkey.experiment.api;
 
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SQLFragment;
@@ -36,15 +38,21 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.search.SearchResultTemplate;
+import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
@@ -52,13 +60,17 @@ import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements ExpData
 {
+    public static final SearchService.SearchCategory expDataCategory = new SearchService.SearchCategory("data", "ExpData");
+
 
     /**
      * Temporary mapping until experiment.xml contains the mime type
@@ -317,25 +329,26 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
     }
 
     // Get all text strings from the data class for indexing
+    @NotNull
     public List<String> getIndexValues()
     {
         ExpDataClassImpl dc = this.getDataClass();
-        List<String> values = null;
+        List<String> values = Collections.emptyList();
         if (null != dc)
         {
             values = new ArrayList<>();
             TableInfo t = dc.getTinfo();
             SQLFragment sql = new SQLFragment("SELECT ");
             boolean first = true;
-            for(ColumnInfo ci : t.getColumns())
+            for (ColumnInfo ci : t.getColumns())
             {
-                if(ci.getJdbcType().toString().equals("VARCHAR"))
+                if (ci.getJdbcType().toString().equals("VARCHAR"))
                 {
                     // Don't index lsid's or sequences
-                    if(ci.getName().equals("lsid") || ci.getName().equals("sequence"))
+                    if (ci.getName().equals("lsid") || ci.getName().equals("sequence"))
                         continue;
 
-                    if(!first)
+                    if (!first)
                         sql.append(", ");
                     else
                         first = false;
@@ -343,46 +356,43 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
                     sql.append(ci.getName());
                 }
             }
-            if(!first)
+            if (!first)
             {
                 sql.append(" FROM expdataclass.").append(t.getName()).append(" WHERE LSID = ?");
                 sql.add(getLSID());
                 Map<String, Object> indexes = new SqlSelector(t.getSchema(), sql).getMap();
-                for (Object o : indexes.values())
+                if (indexes != null)
                 {
-                    if (null != o && o.getClass().equals(String.class))
-                        values.add((String) o);
-
+                    for (Object o : indexes.values())
+                    {
+                        if (null != o && o instanceof String)
+                            values.add((String) o);
+                    }
                 }
             }
         }
         return values;
     }
 
-    public String getAlias()
+    @NotNull
+    public Collection<String> getAliases()
     {
-        String name = null;
-
         TableInfo mapTi = ExperimentService.get().getTinfoDataAliasMap();
         TableInfo ti = ExperimentService.get().getTinfoAlias();
-        SQLFragment sql = new SQLFragment("SELECT a.name FROM exp." + mapTi.getName() + " m JOIN exp." + ti.getName()
-                + " a ON m.alias = a.RowId WHERE m.lsid = ? ");
+        SQLFragment sql = new SQLFragment()
+                .append("SELECT a.name FROM ").append(mapTi, "m")
+                .append(" JOIN ").append(ti, "a")
+                .append(" ON m.alias = a.RowId WHERE m.lsid = ? ");
         sql.add(getLSID());
-        Map<String, Object> aliasList =
-                new SqlSelector(mapTi.getSchema(), sql).getMap();
-
-        if(null != aliasList && aliasList.size() > 0)
-            name = (String)aliasList.get("name");
-
-        return name;
+        ArrayList<String> aliases = new SqlSelector(mapTi.getSchema(), sql).getArrayList(String.class);
+        return Collections.unmodifiableList(aliases);
     }
 
     public String getDocumentId()
     {
-        return "expData:" + new Path(getContainer().getId(), Integer.toString(getRowId()));
+        // CONSIDER: use lsid so we can crack it later?  Include dataClassId?
+        return "data:" + new Path(getContainer().getId(), Integer.toString(getRowId()));
     }
-
-    public static final SearchService.SearchCategory expDataCategory = new SearchService.SearchCategory("expData", "expData");
 
     public void index(SearchService.IndexTask task)
     {
@@ -395,79 +405,245 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
         }
 
         Map<String, Object> props = new HashMap<>();
-        String keywords = "";
-        String identifiers = "";
+        StringBuilder keywords = new StringBuilder();
+        StringBuilder identifiers = new StringBuilder();
 
-        //Add name to title
-        if(null != _object.getDescription())
-            keywords += _object.getDescription();
+        // Add name to title
+        if (null != getDescription())
+            keywords.append(getDescription());
 
-        String title = _object.getName();
+        StringBuilder title = new StringBuilder(getName());
 
-        //Add alias in parenthesis in the title
-        String alias = this.getAlias();
-        if(null != alias)
+        // Add aliases in parenthesis in the title
+        Collection<String> aliases = this.getAliases();
+        if (!aliases.isEmpty())
         {
-            title += " (" + alias + ")";
+            title.append(" (").append(StringUtils.join(aliases, ", ")).append(")");
         }
 
         boolean first = true;
         List<String> dataClassText = getIndexValues();
-        if(null != dataClassText)
+        for (String text : dataClassText)
         {
-            for (String text : dataClassText)
-            {
-                if (text.contains("lsid"))
-                    continue;
+            if (text.contains("lsid"))
+                continue;
 
-                if (first)
-                {
-                    first = false;
-                }
-                else
-                {
-                    identifiers += ", ";
-                }
+            if (first)
+                first = false;
+            else
+                identifiers.append(", ");
 
-                identifiers += text;
-            }
+            identifiers.append(text);
         }
 
-        if(null != this.getDataClass())
+        ExpDataClass dc = this.getDataClass();
+        if (null != dc)
         {
             props.put(SearchService.PROPERTY.categories.toString(),
-                    new SearchService.SearchCategory(this.getDataClass().getName(), this.getDataClass().getDescription()).toString());
-        } else //TODO: Right now we don't index data without data classes but we may in the future
+                    expDataCategory.toString() + " " +
+                    // TODO: I don't think we can add new categories dynamically like this
+                    new SearchService.SearchCategory(dc.getName(), dc.getDescription()).toString());
+
+            ActionURL show = new ActionURL(ExperimentController.ShowDataClassAction.class,getContainer()).addParameter("rowId", dc.getRowId());
+            NavTree t = new NavTree(dc.getName(), show);
+            String nav = NavTree.toJS(Collections.singleton(t), null, false).toString();
+            props.put(SearchService.PROPERTY.navtrail.toString(), nav);
+
+            props.put(DataSearchResultTemplate.PROPERTY, dc.getName());
+        }
+        else
         {
+            // TODO: Right now we don't index data without data classes but we may in the future
             props.put(SearchService.PROPERTY.categories.toString(), expDataCategory.toString());
         }
-        props.put(SearchService.PROPERTY.title.toString(), title);
-        props.put(SearchService.PROPERTY.identifiersMed.toString(), identifiers);
-        props.put(SearchService.PROPERTY.keywordsMed.toString(), keywords);   //Stemmed
+        props.put(SearchService.PROPERTY.title.toString(), title.toString());
+        // NOTE: All string values are added as keywords so they will be stemmed.
+        // The search query will always be stemmed so we may not find literal identifiers.
+        props.put(SearchService.PROPERTY.keywordsMed.toString(), keywords.toString() + " " + identifiers.toString());
 
         ActionURL view = ExperimentController.ExperimentUrlsImpl.get().getDataDetailsURL(this);
         view.setExtraPath(getContainer().getId());
         String docId = getDocumentId();
-        final int id = this.getRowId();
+        final int id = getRowId();
 
-        String body = title + keywords;
+        StringBuilder body = new StringBuilder(title).append(" ").append(keywords);
 
-        //All identifiers (indexable text values) in parenthesis in the body
-        if(identifiers.length() > 0)
-        {
-            body += " (" + identifiers + ")";
-        }
+        // All identifiers (indexable text values) in the body
+        if (identifiers.length() > 0)
+            body.append("\n").append(identifiers);
 
-        SimpleDocumentResource r = new SimpleDocumentResource(new Path(docId), docId, getContainer().getId(),
-                "text/plain", body.getBytes(),
-                view, props){
+        SimpleDocumentResource r = new SimpleDocumentResource(
+                new Path(docId),
+                docId,
+                getContainer().getId(),
+                "text/plain",
+                body.toString().getBytes(),
+                view, props) {
             @Override
             public void setLastIndexed(long ms, long modified)
             {
-                ExperimentServiceImpl.get().setLastIndexed(id, ms);
+                ExperimentServiceImpl.get().setDataLastIndexed(id, ms);
             }
         };
 
         task.addResource(r, SearchService.PRIORITY.item);
+    }
+
+    public static class DataSearchResultTemplate implements SearchResultTemplate
+    {
+        public static final String NAME = "data";
+        public static final String PROPERTY = "dataclass";
+
+        @Nullable
+        @Override
+        public String getName()
+        {
+            return NAME;
+        }
+
+        @Nullable
+        @Override
+        public String getCategories()
+        {
+            return expDataCategory.getName();
+        }
+
+        @Nullable
+        @Override
+        public SearchScope getSearchScope()
+        {
+            return SearchScope.FolderAndSubfolders;
+        }
+
+        @NotNull
+        @Override
+        public String getResultNameSingular()
+        {
+            if (HttpView.hasCurrentView())
+            {
+                ViewContext ctx = HttpView.currentContext();
+                String dataclass = ctx.getActionURL().getParameter(PROPERTY);
+                if (dataclass != null)
+                {
+                    ExpDataClass dc = ExperimentService.get().getDataClass(ctx.getContainer(), ctx.getUser(), dataclass);
+                    if (dc != null)
+                        return dc.getName();
+                }
+            }
+
+            return "data";
+        }
+
+        @NotNull
+        @Override
+        public String getResultNamePlural()
+        {
+            return getResultNameSingular();
+        }
+
+        @Override
+        public boolean includeNavigationLinks()
+        {
+            return true;
+        }
+
+        @Override
+        public boolean includeAdvanceUI()
+        {
+            return false;
+        }
+
+        @Nullable
+        @Override
+        public String getExtraHtml(ViewContext ctx)
+        {
+            String q = ctx.getActionURL().getParameter("q");
+
+            if (StringUtils.isNotBlank(q))
+            {
+                String dataclass = ctx.getActionURL().getParameter(PROPERTY);
+                ActionURL url = ctx.cloneActionURL().deleteParameter(PROPERTY);
+                url.replaceParameter("_dc", String.valueOf((int)Math.round(1000 * Math.random())));
+
+                StringBuilder html = new StringBuilder();
+                html.append("<div class=\"labkey-search-filter\">");
+
+                appendParam(html, null, dataclass, "All", false, url);
+                for (ExpDataClass dc : ExperimentService.get().getDataClasses(ctx.getContainer(), ctx.getUser(), true))
+                {
+                    appendParam(html, dc.getName(), dataclass, dc.getName(), true, url);
+                }
+
+                html.append("</div>");
+                return html.toString();
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        private void appendParam(StringBuilder sb, @Nullable String dataclass, @Nullable String current, @NotNull String label, boolean addParam, ActionURL url)
+        {
+            sb.append("<span>");
+
+            if (!Objects.equals(dataclass, current))
+            {
+                sb.append("<a href=\"");
+
+                if (addParam)
+                    url = url.clone().addParameter(PROPERTY, dataclass);
+
+                sb.append(PageFlowUtil.filter(url));
+                sb.append("\">");
+                sb.append(PageFlowUtil.filter(label));
+                sb.append("</a>");
+            }
+            else
+            {
+                sb.append(label);
+            }
+
+            sb.append("</span> ");
+        }
+
+        @Nullable
+        @Override
+        public String getHiddenInputsHtml(ViewContext ctx)
+        {
+            String dataclass = ctx.getActionURL().getParameter(PROPERTY);
+            if (dataclass != null)
+            {
+                return "<input type='hidden' id='search-type' name='" + PROPERTY + "' value='" + PageFlowUtil.filter(dataclass) + "'>";
+            }
+
+            return null;
+        }
+
+
+        @Override
+        public String reviseQuery(ViewContext ctx, String q)
+        {
+            String dataclass = ctx.getActionURL().getParameter(PROPERTY);
+
+            if (null != dataclass)
+                return "+(" + q + ") +" + PROPERTY + ":" + dataclass;
+            else
+                return q;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root, ViewContext ctx, @NotNull SearchScope scope, @Nullable String category)
+        {
+            NavTree tree = SearchResultTemplate.super.appendNavTrail(root, ctx, scope, category);
+
+            String dataclass = ctx.getActionURL().getParameter(PROPERTY);
+            if (dataclass != null)
+            {
+                String text = tree.getText();
+                tree.setText(text + " - " + dataclass);
+            }
+            return tree;
+        }
     }
 }

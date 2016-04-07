@@ -160,6 +160,7 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
                 }
             }
         }
+        ExperimentServiceImpl.get().indexDataClass(this);
     }
 
     @Override

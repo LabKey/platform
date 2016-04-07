@@ -229,6 +229,24 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
         }
 
         @Override
+        protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException
+        {
+            Integer rowId = (Integer)keys[0];
+            if (rowId == null)
+                throw new IllegalStateException();
+
+            ExpDataClass dc = ExperimentService.get().getDataClass(rowId);
+            if (dc == null)
+                throw new NotFoundException("DataClass not found");
+
+            Map<String, Object> ret = super._update(user, c, row, oldRow, keys);
+
+            ExperimentServiceImpl.get().indexDataClass(dc);
+
+            return ret;
+        }
+
+        @Override
         protected void _delete(Container c, Map<String, Object> row) throws InvalidKeyException
         {
             Integer rowId = (Integer)row.get("rowId");

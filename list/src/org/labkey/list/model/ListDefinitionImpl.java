@@ -390,7 +390,7 @@ public class ListDefinitionImpl implements ListDefinition
             processSqlException(e.getSQLException());
             throw e;
         }
-//        ListManager.get().indexList(_def);
+        ListManager.get().indexList(_def);
     }
 
     private void ensureKey()

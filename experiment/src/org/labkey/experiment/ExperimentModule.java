@@ -197,6 +197,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         {
 //            ss.addSearchCategory(OntologyManager.conceptCategory);
             ss.addSearchCategory(ExpMaterialImpl.searchCategory);
+            ss.addSearchCategory(ExpDataImpl.expDataCategory);
+            ss.addSearchResultTemplate(new ExpDataImpl.DataSearchResultTemplate());
             ss.addDocumentProvider(this);
         }
 

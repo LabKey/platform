@@ -17,10 +17,8 @@ package org.labkey.search.view;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.Container;
 import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchScope;
-import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
 /**
@@ -50,9 +48,16 @@ public class DefaultSearchResultTemplate implements SearchResultTemplate
 
     @NotNull
     @Override
-    public String getResultName()
+    public String getResultNameSingular()
     {
         return "result";
+    }
+
+    @NotNull
+    @Override
+    public String getResultNamePlural()
+    {
+        return "results";
     }
 
     @Override
@@ -73,39 +78,17 @@ public class DefaultSearchResultTemplate implements SearchResultTemplate
         return null;
     }
 
+    @Nullable
+    @Override
+    public String getHiddenInputsHtml(ViewContext ctx)
+    {
+        return null;
+    }
+
     @Override
     public String reviseQuery(ViewContext ctx, String q)
     {
         return q;
     }
 
-    @Override
-    public NavTree appendNavTrail(NavTree root, ViewContext ctx, @NotNull SearchScope scope, @Nullable String category)
-    {
-        Container c = ctx.getContainer();
-        String title = "Search";
-
-        switch (scope)
-        {
-            case All:
-                title += " site";
-                break;
-            case Project:
-                title += " project '" + c.getProject().getName() + "'";
-                break;
-            case Folder:
-            case FolderAndSubfolders:
-                title += " folder '";
-                if ("".equals(c.getName()))
-                    title += "root'";
-                else
-                    title += c.getName() + "'";
-                break;
-        }
-
-        if (null != category)
-            title += " for " + category.replaceAll(" ", "s, ") + "s";
-
-        return root.addChild(title);
-    }
 }

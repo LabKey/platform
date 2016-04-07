@@ -384,4 +384,14 @@ public abstract class ListDomainKind extends AbstractDomainKind
             throw new NotFoundException(e.getMessage());
         }
     }
+
+    @Override
+    public void invalidate(Domain domain)
+    {
+        super.invalidate(domain);
+
+        ListDefinition list = ListService.get().getList(domain);
+        if (list != null)
+            ListManager.get().indexList(list);
+    }
 }

@@ -18,7 +18,6 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -38,7 +37,6 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -181,8 +179,7 @@ public class ExpMaterialImpl extends AbstractProtocolOutputImpl<Material> implem
                         @Override
                         public void setLastIndexed(long ms, long modified)
                         {
-                            new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + ExperimentService.get().getTinfoMaterial() + " SET LastIndexed = ? WHERE RowId = ?",
-                                    new Timestamp(ms), getRowId());
+                            ExperimentServiceImpl.get().setMaterialLastIndexed(getRowId(), ms);
                         }
                     };
                     r.getMutableProperties().put(SearchService.PROPERTY.title.toString(), "Sample - " + getName());

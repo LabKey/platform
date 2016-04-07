@@ -82,9 +82,11 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -1128,6 +1130,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
     {
         final DataIteratorContext _context;
         final Integer _lsidCol;
+        final ArrayList<String> _lsids;
 
         protected SearchIndexIterator(DataIterator di, DataIteratorContext context)
         {
@@ -1136,27 +1139,21 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
             _lsidCol = map.get("lsid");
+            _lsids = new ArrayList<>(100);
 
-            Runnable indexTask = () -> {
-                List<String> lsidsToIndex = ExperimentService.get().getLsidsToIndex();
-                for (String lsid : lsidsToIndex)
-                {
-                    SimpleFilter filter = new SimpleFilter(FieldKey.fromString("LSID"), lsid);
-                    List<Data> data = new TableSelector(ExperimentService.get().getTinfoData(), filter, null).getArrayList(Data.class);
-                    if (data.size() > 0)
-                    {
-                        ExpDataImpl expData = new ExpDataImpl(data.get(0));
-                        expData.index(null);
-                    }
-                }
-                ExperimentService.get().clearLsidsToIndex();
-            };
             if (null != DbScope.getLabKeyScope() && null != DbScope.getLabKeyScope().getCurrentTransaction())
             {
+                Runnable indexTask = () -> {
+                    List<ExpDataImpl> datas = ExperimentServiceImpl.get().getExpDatasByLSID(_lsids);
+                    if (datas != null)
+                    {
+                        for (ExpDataImpl data : datas)
+                            data.index(null);
+                    }
+                };
                 DbScope.getLabKeyScope().getCurrentTransaction().addCommitTask(indexTask, DbScope.CommitTaskOption.POSTCOMMIT);
             }
         }
-
 
         @Override
         public boolean next() throws BatchValidationException
@@ -1166,11 +1163,8 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             if (hasNext)
             {
                 String lsid = (String) get(_lsidCol);
-
                 if (null != lsid)
-                {
-                    ExperimentService.get().addLsidToIndex(lsid);
-                }
+                    _lsids.add(lsid);
             }
             return hasNext;
         }
@@ -1291,19 +1285,31 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             ret.putAll(Table.update(user, t, rowStripped, keys, filter, Level.DEBUG));
 
             // update comment
+            ExpDataImpl data = null;
             if (row.containsKey("flag") || row.containsKey("comment"))
             {
                 Object o = row.containsKey("flag") ? row.get("flag") : row.get("comment");
                 String flag = Objects.toString(o, null);
 
-                ExpData data = ExperimentService.get().getExpData(lsid);
+                data = ExperimentServiceImpl.get().getExpData(lsid);
                 data.setComment(user, flag);
             }
+
+            // TODO: update aliases
 
             // handle attachments
             removePreviousAttachments(user, c, row, oldRow);
             ret.putAll(attachments);
             addAttachments(user, c, ret, lsid);
+
+            // search index
+            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            if (ss != null)
+            {
+                if (data == null)
+                    data = ExperimentServiceImpl.get().getExpData(lsid);
+                data.index(null);
+            }
 
             return ret;
         }

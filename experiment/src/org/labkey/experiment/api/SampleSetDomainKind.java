@@ -182,4 +182,14 @@ public class SampleSetDomainKind extends AbstractDomainKind
         UserSchema schema = new SamplesSchema(user, container);
         return schema.getTable(name);
     }
+
+    @Override
+    public void invalidate(Domain domain)
+    {
+        super.invalidate(domain);
+
+        ExpSampleSet ss = ExperimentService.get().getSampleSet(domain.getTypeURI());
+        if (ss != null)
+            ExperimentServiceImpl.get().indexSampleSet(ss);
+    }
 }
