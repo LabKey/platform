@@ -190,6 +190,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
+
 public class ExperimentServiceImpl implements ExperimentService.Interface
 {
     private DatabaseCache<MaterialSource> materialSourceCache;
@@ -203,7 +205,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     protected Map<String, DataType> _dataTypes = new HashMap<>();
     protected Map<String, ProtocolImplementation> _protocolImplementations = new HashMap<>();
 
-    private static List<String> _lsidsToIndex = new ArrayList<>();
     private static final List<ExperimentListener> _listeners = new CopyOnWriteArrayList<>();
 
     private static final ReentrantLock XAR_IMPORT_LOCK = new ReentrantLock();
@@ -256,12 +257,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         ActionURL postURL = new ActionURL(ExperimentController.ExportRunsAction.class, container);
         return new JspView<>("/org/labkey/experiment/XARExportOptions.jsp", new ExperimentController.ExportBean(LSIDRelativizer.FOLDER_RELATIVE, XarExportType.BROWSER_DOWNLOAD, defaultFilenamePrefix + ".xar", new ExperimentController.ExportOptionsForm(), null, postURL));
     }
-
-    public List<String> getLsidsToIndex() { return _lsidsToIndex; }
-
-    public void addLsidToIndex(String lsid) { _lsidsToIndex.add(lsid); }
-
-    public void clearLsidsToIndex() { _lsidsToIndex.clear(); }
 
     public HttpView createFileExportView(Container container, String defaultFilenamePrefix)
     {
@@ -698,12 +693,89 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return ExpDataImpl.fromDatas(new SqlSelector(getSchema(), sql).getArrayList(Data.class));
     }
 
-    public void setLastIndexed(int id, long ms)
+    public void setDataLastIndexed(int rowId, long ms)
     {
-        new SqlExecutor(getSchema()).execute("UPDATE " + getTinfoData() + " SET LastIndexed = ? WHERE RowId = ?",
-                new Timestamp(ms), id);
-
+        setLastIndexed(getTinfoData(), rowId, ms);
     }
+
+    public void setMaterialLastIndexed(int rowId, long ms)
+    {
+        setLastIndexed(getTinfoMaterial(), rowId, ms);
+    }
+
+    private void setLastIndexed(TableInfo table, int rowId, long ms)
+    {
+        new SqlExecutor(getSchema()).execute("UPDATE " + table + " SET LastIndexed = ? WHERE RowId = ?",
+                new Timestamp(ms), rowId);
+    }
+
+    public void indexDataClass(ExpDataClass dataClass)
+    {
+        SearchService ss = ServiceRegistry.get(SearchService.class);
+        if (ss == null)
+            return;
+
+        SearchService.IndexTask task = ss.defaultTask();
+
+        Domain d = dataClass.getDomain();
+        if (d == null)
+            throw new IllegalStateException("No domain for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
+
+        TableInfo table = ((ExpDataClassImpl)dataClass).getTinfo();
+        if (table == null)
+            throw new IllegalStateException("No table for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
+
+        Runnable r = () -> {
+            // Index all ExpData that have never been indexed OR where either the ExpDataClass definition or ExpData itself has changed since last indexed
+            SQLFragment sql = new SQLFragment()
+                    .append("SELECT * FROM ").append(getTinfoData(), "d")
+                    .append(", ").append(table, "t")
+                    .append(" WHERE t.lsid = d.lsid")
+                    .append(" AND d.classId = ?").add(dataClass.getRowId())
+                    .append(" AND (d.lastIndexed IS NULL OR d.lastIndexed < ? OR (d.modified IS NOT NULL AND d.lastIndexed < d.modified))")
+                    .add(dataClass.getModified());
+
+            new SqlSelector(table.getSchema().getScope(), sql).forEachBatch(batch -> {
+                for (Data data : batch)
+                {
+                    ExpDataImpl impl = new ExpDataImpl(data);
+                    impl.index(task);
+                }
+            }, Data.class, 1000);
+        };
+
+        task.addRunnable(r, SearchService.PRIORITY.bulk);
+    }
+
+    public void indexSampleSet(ExpSampleSet sampleSet)
+    {
+        SearchService ss = ServiceRegistry.get(SearchService.class);
+        if (ss == null)
+            return;
+
+        SearchService.IndexTask task = ss.defaultTask();
+
+        Runnable r = () -> {
+            // Index all ExpMaterial that have never been indexed OR where either the ExpSampleSet definition or ExpMaterial itself has changed since last indexed
+            SQLFragment sql = new SQLFragment("SELECT * FROM ")
+                    .append(getTinfoMaterial(), "m")
+                    .append(" WHERE m.LSID NOT LIKE '%:").append(StudyService.SPECIMEN_NAMESPACE_PREFIX).append("%'")
+                    .append(" AND m.cpasType = ?").add(sampleSet.getLSID())
+                    .append(" AND (m.lastIndexed IS NULL OR m.lastIndexed < ? OR (m.modified IS NOT NULL AND m.lastIndexed < m.modified))")
+                    .add(sampleSet.getModified());
+
+            new SqlSelector(getSchema().getScope(), sql).forEachBatch(batch -> {
+                for (Material m : batch)
+                {
+                    ExpMaterialImpl impl = new ExpMaterialImpl(m);
+                    impl.index(task);
+                }
+            }, Material.class, 1000);
+        };
+
+        task.addRunnable(r, SearchService.PRIORITY.bulk);
+    }
+
 
     private static final MaterialSource MISS_MARKER = new MaterialSource();
 
@@ -1246,11 +1318,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     {
         Domain d = dataClass.getDomain();
         if (d == null)
-            throw new IllegalStateException("No domain for MaterialTypeSet '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
+            throw new IllegalStateException("No domain for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
 
         TableInfo table = ((ExpDataClassImpl)dataClass).getTinfo();
         if (table == null)
-            throw new IllegalStateException("No table for MaterialTypeSet '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
+            throw new IllegalStateException("No table for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
 
         SQLFragment sql = new SQLFragment()
                 .append("SELECT * FROM ").append(getTinfoData(), "d")
