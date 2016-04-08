@@ -50,8 +50,6 @@ public interface ExpDataClass extends ExpObject
 
     Domain getDomain();
 
-    void setDomain(Domain d);
-
     String getDescription();
 
     String getNameExpression();
