@@ -246,13 +246,4 @@ public class DataClassDomainKind extends AbstractDomainKind
         return schema.getTable(name);
     }
 
-    @Override
-    public void invalidate(Domain domain)
-    {
-        super.invalidate(domain);
-
-        ExpDataClass dc = ExperimentService.get().getDataClass(domain.getTypeURI());
-        if (dc != null)
-            ExperimentServiceImpl.get().indexDataClass(dc);
-    }
 }
