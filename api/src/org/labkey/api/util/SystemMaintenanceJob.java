@@ -70,7 +70,6 @@ public class SystemMaintenanceJob implements org.quartz.Job, Callable<String>
     // Determine the tasks to run and queue them up in the pipeline. This method may throw exceptions.
     public String call()
     {
-        final String jobGuid;
         Set<String> disabledTasks = SystemMaintenance.getProperties().getDisabledTasks();
         Collection<MaintenanceTask> tasksToRun = new LinkedList<>();
 
@@ -98,6 +97,14 @@ public class SystemMaintenanceJob implements org.quartz.Job, Callable<String>
         Container c = ContainerManager.getRoot();
         ViewBackgroundInfo vbi = new ViewBackgroundInfo(c, _user, null);
         PipeRoot root = PipelineService.get().findPipelineRoot(c);
+
+        if (null == root)
+            throw new ConfigurationException("Invalid pipeline configuration at the root container");
+
+        if (root.isValid())
+            throw new ConfigurationException("Invalid pipeline configuration at the root container: " + root.getRootPath().getPath());
+
+        final String jobGuid;
 
         try
         {

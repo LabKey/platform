@@ -33,7 +33,7 @@ class MaintenancePipelineJob extends PipelineJob
 {
     private final Collection<MaintenanceTask> _tasks;
 
-    public MaintenancePipelineJob(ViewBackgroundInfo info, PipeRoot pipeRoot, Collection<MaintenanceTask> tasks)
+    MaintenancePipelineJob(ViewBackgroundInfo info, PipeRoot pipeRoot, Collection<MaintenanceTask> tasks)
     {
         super(null, info, pipeRoot);
         setLogFile(new File(pipeRoot.getRootPath(), FileUtil.makeFileNameWithTimestamp("system_maintenance", "log")));
