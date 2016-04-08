@@ -131,6 +131,12 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
         return _domain;
     }
 
+    @Override
+    public void setDomain(Domain d)
+    {
+        _domain = d;
+    }
+
     @Nullable
     @Override
     public ActionURL detailsURL()
