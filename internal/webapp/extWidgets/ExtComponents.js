@@ -14,6 +14,7 @@ Ext4.namespace('LABKEY.ext4');
  * @cfg {Boolean} mvEnabled Specifies whether this field is missing-value enabled.  Defaults to false.
  * @cfg {String} initialValue The initial value for this field.  Must match a LABKEY filter URL suffix (ie. eq, in, startswith, etc.)
  * @cfg {Boolean} includeHasAnyValue
+ * @cfg {Boolean} useLongDisplayText True to use the longDisplayText for the combo display value. Defaults to false.
  */
 Ext4.define('LABKEY.ext.OperatorCombo', {
     extend: 'Ext.form.field.ComboBox',
@@ -21,7 +22,8 @@ Ext4.define('LABKEY.ext.OperatorCombo', {
     config: {
         mvEnabled: false,
         jsonType: 'string',
-        includeHasAnyValue: false
+        includeHasAnyValue: false,
+        useLongDisplayText: false
     },
     initComponent: function(config){
         this.initConfig();
@@ -36,7 +38,7 @@ Ext4.define('LABKEY.ext.OperatorCombo', {
             ,typeAhead: false
             ,queryMode: 'local'
             ,editable: false
-            ,store: this.getStore()
+            ,store: this.createStore()
             ,plugins: ['combo-autowidth']
             ,expandToFitContent: true
         });
@@ -44,21 +46,32 @@ Ext4.define('LABKEY.ext.OperatorCombo', {
         this.callParent(arguments);
     },
 
-    getStore: function () {
+    createStore: function () {
+        var options = this.getStoreOptions();
+        return Ext4.create('Ext.data.ArrayStore', {fields: ['value', 'text'], data: options });
+    },
+
+    getStoreOptions: function () {
         var found = false;
         var options = [];
+
         Ext4.each(LABKEY.Filter.getFilterTypesForType(this.jsonType, this.mvEnabled), function (filterType) {
             if (this.value && this.value == filterType.getURLSuffix())
                 found = true;
+
             if (filterType.getURLSuffix())
-                options.push([filterType.getURLSuffix(), filterType.getDisplayText()]);
-        });
+            {
+                var displayText = this.useLongDisplayText ? filterType.getLongDisplayText() : filterType.getDisplayText();
+                options.push([filterType.getURLSuffix(), displayText]);
+            }
+        }, this);
 
         if (!found) {
             for (var key in LABKEY.Filter.Types) {
                 var filterType = LABKEY.Filter.Types[key];
                 if (filterType.getURLSuffix() == this.value) {
-                    options.unshift([filterType.getURLSuffix(), filterType.getDisplayText()]);
+                    var displayText = this.useLongDisplayText ? filterType.getLongDisplayText() : filterType.getDisplayText();
+                    options.unshift([filterType.getURLSuffix(), displayText]);
                     break;
                 }
             }
@@ -68,7 +81,12 @@ Ext4.define('LABKEY.ext.OperatorCombo', {
             options.unshift([null, this.emptyText || 'Has Any Value']);
         }
 
-        return Ext4.create('Ext.data.ArrayStore', {fields: ['value', 'text'], data: options });
+        return options;
+    },
+
+    changeJsonType: function(newJsonType) {
+        this.jsonType = newJsonType;
+        this.bindStore(this.createStore());
     }
 });
 
