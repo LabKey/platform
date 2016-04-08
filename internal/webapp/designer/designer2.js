@@ -595,14 +595,14 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
         }
     },
 
-    onDeleteClick : function (btn, e) {
+    onDeleteClick : function () {
         if (this.dataRegion)
             this.dataRegion.deleteCustomView();
         else
             this._deleteCustomView(true);
     },
 
-    onRevertClick : function (btn, e) {
+    onRevertClick : function () {
         if (this.dataRegion)
             this.dataRegion.revertCustomView();
         else
@@ -610,14 +610,15 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
     },
 
     // If designer isn't attached to a DataRegion, delete the view and reload the page.  Only call when no grid is present.
-    _deleteCustomView : function (complete)
-    {
-        Ext.Ajax.request({
-            url: LABKEY.ActionURL.buildURL("query", "deleteView", this.containerPath),
-            jsonData: {schemaName: this.schemaName, queryName: this.queryName, viewName: this.viewName, complete: complete},
-            method: "POST",
-            scope: this,
-            success: function() { window.location.reload() }
+    _deleteCustomView : function (complete) {
+        LABKEY.Query.deleteQueryView({
+            schemaName: this.schemaName,
+            queryName: this.queryName,
+            viewName: this.viewName,
+            revert: !complete,
+            success: function() {
+                window.location.reload();
+            }
         });
     },
 

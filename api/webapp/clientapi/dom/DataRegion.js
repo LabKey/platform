@@ -1401,31 +1401,6 @@ if (!LABKEY.DataRegions) {
         _setParameters(this, paramValPairs, skipPrefixes);
     };
 
-    Proto.revertCustomView = function() {
-        _revertCustomView(this);
-    };
-
-    Proto.deleteCustomView = function() {
-        var title = "Delete " +
-                (this.view && this.view.shared ? "shared " : "your ") +
-                (this.view && this.view.session ? "unsaved" : "") + "view";
-
-        var msg = "Are you sure you want to delete the ";
-        msg += (this.viewName ? " '<em>" + LABKEY.Utils.encodeHtml(this.viewName) + "</em>'" : "default");
-        msg += " saved view";
-
-        if (this.view && this.view.containerPath && this.containerPath != LABKEY.ActionURL.getContainer()) {
-            msg += " from '" + this.view.containerPath + "'";
-        }
-        msg += "?";
-        // Assume that customize view is already present -- along with Ext
-        Ext.Msg.confirm(title, msg, function (btnId) {
-            if (btnId == "yes") {
-                _deleteCustomView(this, true, "Deleting view...");
-            }
-        }, this);
-    };
-
     Proto.getQueryDetails = function(success, failure, scope) {
 
         var userFilter = [],
@@ -1535,6 +1510,15 @@ if (!LABKEY.DataRegions) {
                     this.customizeView.on('viewsave', function(designer, savedViewsInfo, urlParameters) {
                         _onViewSave.apply(this, [this, designer, savedViewsInfo, urlParameters]);
                     }, this);
+
+                    this.customizeView.on({
+                        beforedeleteview: function(cv, revert) {
+                            _beforeViewDelete(region, revert);
+                        },
+                        deleteview: function(cv, success, json) {
+                            _onViewDelete(region, success, json);
+                        }
+                    });
 
                     var first = true;
 
@@ -2058,52 +2042,58 @@ if (!LABKEY.DataRegions) {
         return region;
     };
 
-    var _deleteCustomView = function(region, complete, message) {
-        var timerId = setTimeout(function() {
-            timerId = 0;
-            region.showLoadingMessage(message);
-        }, 500);
+    var _deleteTimer;
 
-        var json = {
+    var _beforeViewDelete = function(region, revert) {
+        var _deleteTimer = setTimeout(function() {
+            _deleteTimer = 0;
+            region.showLoadingMessage(revert ? 'Reverting view...' : 'Deleting view...');
+        }, 500);
+    };
+
+    var _onViewDelete = function(region, success, json) {
+        if (_deleteTimer) {
+            clearTimeout(_deleteTimer);
+        }
+
+        if (success) {
+            region.removeMessage.call(region, 'customizeview');
+            region.showSuccessMessage.call(region);
+
+            // change view to either a shadowed view or the default view
+            var config = { type: 'view' };
+            if (json.viewName) {
+                config.viewName = json.viewName;
+            }
+            region.changeView.call(region, config);
+        }
+        else {
+            region.removeMessage.call(region, 'customizeview');
+            region.showErrorMessage.call(region, json.exception);
+        }
+    };
+
+    // The view can be reverted without ViewDesigner present
+    var _revertCustomView = function(region) {
+        _beforeViewDelete(region, true);
+
+        var config = {
             schemaName: region.schemaName,
             queryName: region.queryName,
-            complete: complete
+            revert: true,
+            success: function(json) {
+                _onViewDelete(region, true /* success */, json);
+            },
+            failure: function(json) {
+                _onViewDelete(region, false /* success */, json);
+            }
         };
 
         if (region.viewName) {
-            json.viewName = region.viewName;
+            config.viewName = region.viewName;
         }
 
-        LABKEY.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('query', 'deleteView.api', region.containerPath),
-            jsonData: json,
-            method: 'POST',
-            success: LABKEY.Utils.getCallbackWrapper(function(json) {
-
-                if (timerId > 0) {
-                    clearTimeout(timerId);
-                }
-
-                region.removeMessage.call(region, 'customizeview');
-                region.showSuccessMessage.call(region);
-                // change view to either a shadowed view or the default view
-                var config = { type: 'view' };
-                if (json.viewName) {
-                    config.viewName = json.viewName;
-                }
-                region.changeView.call(region, config);
-            }, region),
-            failure: LABKEY.Utils.getCallbackWrapper(function(json) {
-
-                if (timerId > 0) {
-                    clearTimeout(timerId);
-                }
-
-                region.removeMessage.call(region, 'customizeview');
-                region.showErrorMessage.call(region, json.exception);
-            }, region, true),
-            scope: region
-        });
+        LABKEY.Query.deleteQueryView(config);
     };
 
     var _getAllRowSelectors = function(region) {
@@ -2275,10 +2265,6 @@ if (!LABKEY.DataRegions) {
 
     var _removeParameters = function(region, skipPrefixes /* optional */) {
         return _setParameters(region, null, skipPrefixes);
-    };
-
-    var _revertCustomView = function(region) {
-        _deleteCustomView(region, false, 'Reverting view...');
     };
 
     var _resolveFieldKey = function(region, fieldKey) {

@@ -2133,26 +2133,25 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                     this.showLoadingMessage(message);
                 }.defer(500, this);
 
-                Ext.Ajax.request({
-                    url: LABKEY.ActionURL.buildURL("query", "deleteView", this.containerPath),
-                    jsonData: {schemaName: this.schemaName, queryName: this.queryName, viewName: this.viewName, complete: complete},
-                    method: "POST",
-                    scope: this,
-                    success: LABKEY.Utils.getCallbackWrapper(function (json, response, options)
-                    {
+                LABKEY.Query.deleteQueryView({
+                    schemaName: this.schemaName,
+                    queryName: this.queryName,
+                    viewName: this.viewName,
+                    revert: !complete,
+                    success: function(json) {
                         if (timerId > 0)
                             clearTimeout(timerId);
                         this.showSuccessMessage();
                         // change view to either a shadowed view or the default view
                         var viewName = json.viewName;
                         this.changeView({type: 'view', viewName: viewName});
-                    }, this),
-                    failure: LABKEY.Utils.getCallbackWrapper(function (json, response, options)
-                    {
+                    },
+                    failure: function(json) {
                         if (timerId > 0)
                             clearTimeout(timerId);
                         this.showErrorMessage(json.exception);
-                    }, this, true)
+                    },
+                    scope: this
                 });
             },
 

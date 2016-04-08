@@ -106,7 +106,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                         inputValue: "named",
                         name: "saveCustomView_namedView",
                         checked: !canEdit || viewName,
-                        handler: function (radio, value) {
+                        handler: function(radio, value) {
                             // nameFieldContainer.items will be populated after initComponent
                             var nameFieldContainer = win.down('#nameFieldContainer');
                             if (nameFieldContainer.items.get) {
@@ -133,7 +133,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                         maxLength: 50,
                         width: 280,
                         autoCreate: {tag: 'input', type: 'text', size: '50'},
-                        validator: function (value) {
+                        validator: function(value) {
                             if ("default" === value.trim()) {
                                 return "The grid view name 'default' is not allowed";
                             }
@@ -170,7 +170,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                     disabled: disableSharedAndInherit || !containerFilterable,
                     hidden: !containerFilterable,
                     listeners: {
-                        check: function (checkbox, checked) {
+                        check: function(checkbox, checked) {
                             Ext4.ComponentMgr.get("saveCustomView_targetContainer").setDisabled(!checked);
                         }
                     }
@@ -191,7 +191,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                     hidden: !containerFilterable,
                     disabled: disableSharedAndInherit || !containerFilterable || !inherit,
                     listeners: {
-                        select: function (combobox) {
+                        select: function(combobox) {
                             if (!warnedAboutMoving && combobox.getValue() != containerPath)
                             {
                                 warnedAboutMoving = true;
@@ -202,7 +202,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                 }],
                 buttons: [{
                     text: "Save",
-                    handler: function () {
+                    handler: function() {
                         var nameField = win.down('#nameFieldContainer').items.get(1);
                         if (!nameField.isValid())
                         {
@@ -250,7 +250,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                     scope: this
                 },{
                     text: "Cancel",
-                    handler: function () {
+                    handler: function() {
                         win.close();
                     }
                 }]
@@ -457,7 +457,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
 
         this.callParent([config]);
 
-        this.addEvents('beforesaveview', 'viewsave');
+        this.addEvents('beforesaveview', 'viewsave', 'beforedeleteview', 'deleteview');
 
         // Show 'does not exist' message only for non-default views.
         if (this.customView.doesNotExist && this.viewName) {
@@ -671,9 +671,9 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         var revertEnabled = canEdit && (this.customView.session || (!this.customView.name && !this.customView.doesNotExist));
 
         var items = [{
-            text: "Delete",
-            tooltip: "Delete " + (this.customView.shared ? "shared" : "your") + " saved grid view",
-            tooltipType: "title",
+            text: 'Delete',
+            tooltip: 'Delete ' + (this.customView.shared ? 'shared' : 'your') + ' saved grid view',
+            tooltipType: 'title',
             disabled: !deleteEnabled,
             handler: this.onDeleteClick,
             scope: this
@@ -839,7 +839,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         return this.bottomToolbarPanel;
     },
 
-    onRender : function (ct, position) {
+    onRender : function(ct, position) {
         this.callParent([ct, position]);
 
         if (!this.canEdit())
@@ -853,7 +853,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         }
     },
 
-    beforeDestroy : function () {
+    beforeDestroy : function() {
         this.callParent();
 
         if (this.columnsTab) {
@@ -876,7 +876,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
     },
 
     // tab may be true, tab index, tab name, or the tab instance.
-    translateTabName : function (tab) {
+    translateTabName : function(tab) {
         if (tab === null || tab === undefined || Ext4.isBoolean(tab)) {
             return 0;
         }
@@ -893,11 +893,11 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         return tab;
     },
 
-    canEdit : function () {
+    canEdit : function() {
         return this.getEditableErrors().length == 0;
     },
 
-    getEditableErrors : function () {
+    getEditableErrors : function() {
         if (!this.editableErrors) {
             this.editableErrors = LABKEY.DataRegion.getCustomViewEditableErrors(this.customView);
         }
@@ -924,7 +924,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         // return undefined;
     },
 
-    showMessage : function (msg) {
+    showMessage : function(msg) {
         // XXX: support multiple messages
         var m = this.getMessageBox();
         if (m && m.getEl()) {
@@ -932,14 +932,14 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                 + Ext4.htmlEncode(msg) + "</span>");
             m.show();
             m.getEl().slideIn();
-            m.getEl().on('click', function () { this.hideMessage(); }, this, {single: true});
+            m.getEl().on('click', function() { this.hideMessage(); }, this, {single: true});
         }
         else {
-            this.on('afterrender', function () { this.showMessage(msg); }, this, {single: true});
+            this.on('afterrender', function() { this.showMessage(msg); }, this, {single: true});
         }
     },
 
-    hideMessage : function () {
+    hideMessage : function() {
         var m = this.getMessageBox();
         if (m) {
             m.update('');
@@ -947,11 +947,11 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         }
     },
 
-    getDesignerTabs : function () {
+    getDesignerTabs : function() {
         return [this.columnsTab, this.filterTab, this.sortTab];
     },
 
-    getActiveDesignerTab : function () {
+    getActiveDesignerTab : function() {
         var tab = this.getInnerTabPanel().getActiveTab();
         if (tab instanceof LABKEY.internal.ViewDesigner.tab.BaseTab) {
             return tab;
@@ -990,7 +990,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
 
     },
 
-    setShowHiddenFields : function (showHidden) {
+    setShowHiddenFields : function(showHidden) {
         this.showHiddenFields = showHidden;
 
         this.showHideNodes();
@@ -1005,28 +1005,28 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         }
     },
 
-    hasField : function (fieldKey) {
+    hasField : function(fieldKey) {
         var tab = this.getActiveDesignerTab();
         if (tab) {
             return tab.hasField(fieldKey);
         }
     },
 
-    addRecord : function (fieldKey) {
+    addRecord : function(fieldKey) {
         var tab = this.getActiveDesignerTab();
         if (tab) {
             return tab.addRecord(fieldKey);
         }
     },
 
-    removeRecord : function (fieldKey) {
+    removeRecord : function(fieldKey) {
         var tab = this.getActiveDesignerTab();
         if (tab) {
             return tab.removeRecord(fieldKey);
         }
     },
 
-    onCheckChange : function (node, checked) {
+    onCheckChange : function(node, checked) {
         if (checked) {
             //console.log('add:', '\'' + node.get('fieldKey') + '\'');
             this.addRecord(node.get('fieldKey'));
@@ -1037,7 +1037,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         }
     },
 
-    onTabChange : function () {
+    onTabChange : function() {
         this.configureChecked();
     },
 
@@ -1076,33 +1076,70 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         }
     },
 
-    onDeleteClick : function (btn, e) {
+    onDeleteClick : function() {
         if (this.dataRegion) {
-            this.dataRegion.deleteCustomView();
+            var view = this.customView;
+
+            // build title
+            var title = 'Delete';
+            if (view) {
+                title += ' ' + (view.shared ? 'shared' : 'your');
+                title += ' ' + (view.session ? 'unsaved' : '');
+            }
+            title += ' view';
+
+            // build msg
+            var msg = 'Are you sure you want to delete the';
+            if (view) {
+                if (view.default === true) {
+                    msg += ' default';
+                }
+                else {
+                    msg += ' \'<em>' + Ext4.htmlEncode(view.label ? view.label : view.name) + '</em>\'';
+                }
+            }
+            msg += ' saved view';
+
+            if (view) {
+                if (view.containerPath && view.containerPath !== LABKEY.ActionURL.getContainer()) {
+                    msg += ' from \'' + view.containerPath + '\'';
+                }
+            }
+            msg += '?';
+
+            Ext4.Msg.confirm(title, msg, function(btn) {
+                if (btn === 'yes') {
+                    this._deleteCustomView(true /* isDelete */);
+                }
+            }, this);
         }
         else {
-            this._deleteCustomView(true);
+            this._deleteCustomView(true /* isDelete */, true /* reload */);
         }
     },
 
-    onRevertClick : function (btn, e) {
-        if (this.dataRegion) {
-            this.dataRegion.revertCustomView();
-        }
-        else {
-            this._deleteCustomView(false);
-        }
+    onRevertClick : function() {
+        this._deleteCustomView(false /* isDelete */, true /* reload */);
     },
 
-    // If designer isn't attached to a DataRegion, delete the view and reload the page.  Only call when no grid is present.
-    _deleteCustomView : function (complete)
-    {
-        Ext4.Ajax.request({
-            url: LABKEY.ActionURL.buildURL("query", "deleteView", this.containerPath),
-            jsonData: {schemaName: this.schemaName, queryName: this.queryName, viewName: this.viewName, complete: complete},
-            method: "POST",
-            scope: this,
-            success: function() { window.location.reload() }
+    _deleteCustomView : function(isDelete, reload) {
+        this.fireEvent('beforedeleteview', this, !isDelete);
+
+        LABKEY.Query.deleteQueryView({
+            schemaName: this.schemaName,
+            queryName: this.queryName,
+            viewName: this.viewName,
+            revert: !isDelete,
+            success: function(json) {
+                this.fireEvent('deleteview', true /* success */, json);
+                if (reload === true) {
+                    window.location.reload();
+                }
+            },
+            failure: function(json) {
+                this.fireEvent('deleteview', false /* success */, json);
+            },
+            scope: this
         });
     },
 
@@ -1123,8 +1160,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
             allowableContainerFilters: this.allowableContainerFilters,
             targetContainers: this.query.targetContainers,
             canEdit: this.getEditableErrors().length == 0,
-            success: function (win, o) {
-                this.save(o, function () {
+            success: function(win, o) {
+                this.save(o, function() {
                     win.close();
                     this.setVisible(false);
                 }, this);
@@ -1135,7 +1172,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         LABKEY.internal.ViewDesigner.Designer.saveCustomizeViewPrompt(config);
     },
 
-    revert : function () {
+    revert : function() {
         var tabs = this.getDesignerTabs();
         for (var i = 0; i < tabs.length; i++)
         {
@@ -1146,7 +1183,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         }
     },
 
-    validate : function () {
+    validate : function() {
         var tabs = this.getDesignerTabs();
         for (var i = 0; i < tabs.length; i++)
         {
@@ -1184,32 +1221,26 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
 
             Ext4.apply(edited, properties);
 
-            this.doSave(edited, urlParameters, callback, scope);
+            LABKEY.Query.saveQueryViews({
+                containerPath: this.containerPath,
+                schemaName: this.schemaName,
+                queryName: this.queryName,
+                views: [ edited ],
+                success: function(savedViewsInfo) {
+                    if (Ext4.isFunction(callback)) {
+                        callback.call(scope || this, savedViewsInfo, urlParameters);
+                    }
+                    this.fireEvent('viewsave', this, savedViewsInfo, urlParameters);
+                },
+                failure: function(errorInfo) {
+                    Ext4.Msg.alert('Error saving grid view', errorInfo.exception);
+                },
+                scope: this
+            });
         }
     },
 
-    // private
-    doSave : function(edited, urlParameters, callback, scope)
-    {
-        LABKEY.Query.saveQueryViews({
-            containerPath: this.containerPath,
-            schemaName: this.schemaName,
-            queryName: this.queryName,
-            views: [ edited ],
-            success: function (savedViewsInfo) {
-                if (callback)
-                    callback.call(scope || this, savedViewsInfo, urlParameters);
-                this.fireEvent("viewsave", this, savedViewsInfo, urlParameters);
-            },
-            failure: function (errorInfo) {
-                Ext4.Msg.alert("Error saving grid view", errorInfo.exception);
-            },
-            scope: this
-        });
-    },
-
-    close : function()
-    {
+    close : function() {
         if (this.dataRegion) {
             this.dataRegion.hideCustomizeView(true);
         }
@@ -1218,5 +1249,4 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
             this.getEl().remove();
         }
     }
-
 });
