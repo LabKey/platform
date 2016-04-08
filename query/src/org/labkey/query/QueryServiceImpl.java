@@ -936,6 +936,9 @@ public class QueryServiceImpl extends QueryService
     private QueryDefinition createTempQueryDefinition(User user, Container container, String schemaName, String queryName, @NotNull SessionQuery query)
     {
         QueryDefinition qdef = QueryService.get().createQueryDef(user, container, schemaName, queryName);
+        if (null == query || null == qdef)
+            throw new IllegalStateException("Expected a QueryDefinition object.");
+
         qdef.setSql(query.sql);
         if (query.metadata != null)
             qdef.setMetadataXml(query.metadata);
