@@ -392,7 +392,7 @@ public class AssayTest extends AbstractAssayTest
         click(Locator.xpath("//input[@value='textAreaDataProvider']"));
         setFormElement(Locator.id("TextAreaDataCollector.textArea"), TEST_RUN1_DATA3);
         clickButton("Save and Import Another Run");
-        assertTextPresent("There are errors in the uploaded data: " + TEST_ASSAY_DATA_PROP_NAME + "6 is required. ");
+        assertTextPresent("Missing value for required property: " + TEST_ASSAY_DATA_PROP_NAME + "6");
 
         click(Locator.xpath("//input[@value='textAreaDataProvider']"));
         setFormElement(Locator.id("TextAreaDataCollector.textArea"), TEST_RUN1_DATA4);
