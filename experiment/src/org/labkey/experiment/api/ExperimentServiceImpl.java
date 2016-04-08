@@ -1288,7 +1288,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         if (dataClass == null)
             return null;
 
-        return new ExpDataClassImpl(dataClass);
+        ExpDataClassImpl expDataClass = new ExpDataClassImpl(dataClass);
+        expDataClass.setDomain(PropertyService.get().getDomain(dataClass.getContainer(), lsid));
+        return expDataClass;
     }
 
     @Override
