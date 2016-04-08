@@ -478,7 +478,7 @@ String getResultsSummary(int totalHits, @Nullable String description, @NotNull S
 
     sb.append(" ");
 
-    if (totalHits <= 1)
+    if (totalHits == 1)
         sb.append(h(resultName));
     else
         sb.append(h(resultNamePlural));
