@@ -38,6 +38,7 @@ public class ButtonBar extends DisplayElement
     }
 
     private List<DisplayElement> _elementList = new ArrayList<>();
+    private List<String> _missingOriginalCaptions = new ArrayList<>();
     private Style _style = Style.toolbar;
     // It's possible to have multiple button bar configs, as in the case of a tableinfo-level config
     // that's partially overridden by a
@@ -96,6 +97,11 @@ public class ButtonBar extends DisplayElement
     public List<DisplayElement> getList()
     {
         return _elementList;
+    }
+
+    public List<String> getMissingOriginalCaptions()
+    {
+        return _missingOriginalCaptions;
     }
 
     public void lock()
@@ -234,7 +240,13 @@ public class ButtonBar extends DisplayElement
             {
                 DisplayElement elem = item.createButton(ctx, originalButtons);
                 if (null == elem)
+                {
+                    if (item instanceof BuiltInButtonConfig)
+                    {
+                        _missingOriginalCaptions.add(((BuiltInButtonConfig) item).getOriginalCaption());
+                    }
                     continue;
+                }
 
                 if (item.getInsertAfter() != null || item.getInsertBefore() != null || item.getInsertPosition() != null)
                     mergedItems.add(new Pair<>(item, elem));

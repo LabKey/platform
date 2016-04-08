@@ -58,6 +58,11 @@ public class BuiltInButtonConfig implements ButtonConfig
         _caption = caption;
     }
 
+    public String getOriginalCaption()
+    {
+        return _originalCaption;
+    }
+
     public String getInsertAfter()
     {
         return _insertAfter;
