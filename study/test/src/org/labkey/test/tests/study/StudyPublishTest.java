@@ -1147,7 +1147,7 @@ public class StudyPublishTest extends StudyProtectedExportTest
         verifyDataRegion(colsToCheck);
 
         // change the container filter to include subfolders
-        _extHelper.clickMenuButton("Views", "Folder Filter", "Current folder and subfolders");
+        _extHelper.clickMenuButton("Grid Views", "Folder Filter", "Current folder and subfolders");
         colsToCheck.put("Destination", new String[]{"PublishedStudy", "PublishedToProject", "PublishedNonAnon", "PublishedSubStudy"});
         colsToCheck.put("Refresh", new String[]{"true", "false", "false", "false"});
 
@@ -1191,7 +1191,7 @@ public class StudyPublishTest extends StudyProtectedExportTest
 
         // change the container filter to include subfolders the impersonated user should not be able to see the
         // study published from the sub folder because they don't have admin permissions to the subfolder
-        _extHelper.clickMenuButton("Views", "Folder Filter", "Current folder and subfolders");
+        _extHelper.clickMenuButton("Grid Views", "Folder Filter", "Current folder and subfolders");
         verifyDataRegion(colsToCheck);
 
         stopImpersonating();
@@ -1213,7 +1213,7 @@ public class StudyPublishTest extends StudyProtectedExportTest
         colsToCheck.put("Refresh", new String[0]);
         verifyDataRegion(colsToCheck);
 
-        _extHelper.clickMenuButton("Views", "Folder Filter", "Current folder and subfolders");
+        _extHelper.clickMenuButton("Grid Views", "Folder Filter", "Current folder and subfolders");
         colsToCheck.put("Destination", new String[]{"PublishedSubStudy"});
         colsToCheck.put("Refresh", new String[]{"false"});
         verifyDataRegion(colsToCheck);
