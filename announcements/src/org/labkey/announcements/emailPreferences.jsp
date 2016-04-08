@@ -15,10 +15,11 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.announcements.model.AnnouncementManager" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController" %>
+<%@ page import="org.labkey.api.announcements.EmailOption" %>
 <%@ page extends="org.labkey.announcements.EmailPreferencesPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+
 <script type="text/javascript">
     function toggleOptions()
     {
@@ -39,17 +40,17 @@
 <b><%=h(message)%></b>
 <labkey:form action="<%=h(buildURL(AnnouncementsController.EmailPreferencesAction.class))%>" method="post">
     <br>Send email notifications for these <%=h(conversationName)%>s<br>
-    <input type="radio" value="<%=AnnouncementManager.EmailOption.NONE.getValue()%>" name="emailPreference"<%=checked(emailPreference == AnnouncementManager.EmailOption.NONE.getValue())%>>
+    <input type="radio" value="<%=EmailOption.MESSAGES_NONE.getValue()%>" name="emailPreference"<%=checked(emailPreference == EmailOption.MESSAGES_NONE.getValue())%>>
     <b>None</b> - Don't send me any email for this message board<br>
-    <input type="radio" value="<%=AnnouncementManager.EmailOption.MINE.getValue()%>" name="emailPreference"<%=checked(emailPreference == AnnouncementManager.EmailOption.MINE.getValue())%>>
+    <input type="radio" value="<%=EmailOption.MESSAGES_MINE.getValue()%>" name="emailPreference"<%=checked(emailPreference == EmailOption.MESSAGES_MINE.getValue())%>>
     <b>Mine</b> - Send me email for posts to my <%=h(conversationName)%>s (I've posted to the <%=h(conversationName)%><% if (hasMemberList) { %> or I'm on its member list<% } %>)<br>
-    <input type="radio" value="<%=AnnouncementManager.EmailOption.ALL.getValue()%>" name="emailPreference"<%=checked(emailPreference == AnnouncementManager.EmailOption.ALL.getValue())%>>
+    <input type="radio" value="<%=EmailOption.MESSAGES_ALL.getValue()%>" name="emailPreference"<%=checked(emailPreference == EmailOption.MESSAGES_ALL.getValue())%>>
     <b>All</b> - Send me email for all posts<br>
 
     <br>Notification type<br>
-    <input type="radio" value="0" name="notificationType"<%=checked(notificationType == 0)%>>
+    <input type="radio" value="<%=EmailOption.MESSAGES_NO_DAILY_DIGEST.getValue()%>" name="notificationType"<%=checked(notificationType == EmailOption.MESSAGES_NO_DAILY_DIGEST.getValue())%>>
     <b>Individual</b> - send a separate email after each post<br>
-    <input type="radio" value="<%=AnnouncementManager.EmailOption.NOTIFICATION_TYPE_DIGEST%>" name="notificationType"<%=checked(notificationType == AnnouncementManager.EmailOption.NOTIFICATION_TYPE_DIGEST)%>>
+    <input type="radio" value="<%=EmailOption.MESSAGES_DAILY_DIGEST.getValue()%>" name="notificationType"<%=checked(notificationType == EmailOption.MESSAGES_DAILY_DIGEST.getValue())%>>
     <b>Daily Digest</b> - send one email each day that summarizes all posts<br>
 
    <br><input type=checkbox id="resetFolderDefault" name="resetFolderDefault" onclick="toggleOptions();"><b> Reset</b> - Reset to folder default setting<br>

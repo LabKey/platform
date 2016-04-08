@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.files.FileContentEmailPref" %>
 <%@ page import="org.labkey.api.files.FileUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
@@ -29,11 +28,12 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.audit.provider.FileSystemAuditProvider" %>
+<%@ page import="org.labkey.api.announcements.EmailOption" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     org.labkey.filecontent.message.FileContentDigestProvider.FileDigestForm form = ((JspView<org.labkey.filecontent.message.FileContentDigestProvider.FileDigestForm>)HttpView.currentView()).getModelBean();
-    int pref = FileContentEmailPref.FOLDER_DEFAULT;//NumberUtils.stringToInt(EmailService.get().getEmailPref(user, c, new FileContentEmailPref()), -1);
+    EmailOption pref = EmailOption.NOT_SET;//NumberUtils.stringToInt(EmailService.get().getEmailPref(user, c, new FileContentEmailPref()), -1);
 
     ActionURL emailPrefs = PageFlowUtil.urlProvider(FileUrls.class).urlFileEmailPreference(form.getContainer());
     ActionURL fileBrowser = PageFlowUtil.urlProvider(FileUrls.class).urlBegin(form.getContainer());
@@ -88,8 +88,8 @@
         <tr><td>You have received this email because <%
             switch(pref)
             {
-                case FileContentEmailPref.FOLDER_DEFAULT:
-                case FileContentEmailPref.INDIVIDUAL: %>
+                case NOT_SET:
+                case FILES_INDIVIDUAL: %>
                 you are signed up to receive notifications about updates to files at <a href="<%=h(fileBrowser.getURIString())%>"><%= h(form.getContainer().getPath()) %></a>.
                 If you no longer wish to receive these notifications you can <a href="<%=h(emailPrefs.getURIString())%>">change your email preferences</a>. <%
                 break;

@@ -26,6 +26,7 @@ import org.labkey.announcements.AnnouncementsController;
 import org.labkey.announcements.config.AnnouncementEmailConfig;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
+import org.labkey.api.announcements.EmailOption;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
@@ -104,45 +105,7 @@ public class AnnouncementManager
     private static final CommSchema _comm = CommSchema.getInstance();
     private static final CoreSchema _core = CoreSchema.getInstance();
 
-    public enum EmailOption
-    {
-        NONE(0),
-        ALL(1),
-        MINE(2), // Only threads I've posted to or where I'm on the member list
-        NOT_SET(-1);
-
-        public static final int PREFERENCE_MASK = 255;
-        public static final int NOTIFICATION_TYPE_DIGEST = 256; // If this bit is set, send daily digest instead of individual email for each post
-
-        private final int value;
-
-        private static final Map<Integer, EmailOption> map = new HashMap<>();
-
-        static
-        {
-            for (EmailOption option : EmailOption.values())
-            {
-                map.put(option.value, option);
-            }
-        }
-
-        EmailOption(int value)
-        {
-            this.value = value;
-        }
-
-        public int getValue()
-        {
-            return this.value;
-        }
-
-        public static Boolean isValid(int intValue)
-        {
-            return map.containsKey(intValue & PREFERENCE_MASK);
-        }
-    }
-
-    public static EmailOption EMAIL_DEFAULT_OPTION = EmailOption.MINE;
+    public static EmailOption EMAIL_DEFAULT_OPTION = EmailOption.MESSAGES_MINE;
 
     private AnnouncementManager()
     {
@@ -612,7 +575,7 @@ public class AnnouncementManager
         if (EmailOption.isValid(option))
             return option;
         else
-            return EmailOption.NONE.getValue();
+            return EmailOption.MESSAGES_NONE.getValue();
     }
 
     private static final String MESSAGE_BOARD_SETTINGS = "messageBoardSettings";

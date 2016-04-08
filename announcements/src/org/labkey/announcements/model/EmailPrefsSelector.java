@@ -19,6 +19,7 @@ package org.labkey.announcements.model;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.announcements.AnnouncementsController;
 import org.labkey.api.announcements.DiscussionService;
+import org.labkey.api.announcements.EmailOption;
 import org.labkey.api.data.Container;
 import org.labkey.api.message.settings.MessageConfigService.UserPreference;
 import org.labkey.api.security.User;
@@ -89,7 +90,7 @@ public abstract class EmailPrefsSelector
     // Anything but NONE... override this to filter out other prefs
     protected boolean includeEmailPref(UserPreference ep)
     {
-        return AnnouncementManager.EmailOption.NONE.getValue() != ep.getEmailOptionId();
+        return EmailOption.MESSAGES_NONE.getValue() != ep.getEmailOptionId();
     }
 
 
@@ -115,9 +116,9 @@ public abstract class EmailPrefsSelector
             return false;
 
         DiscussionService.Settings settings = AnnouncementsController.getSettings(_c);
-        int emailPreference = up.getEmailOptionId() & AnnouncementManager.EmailOption.PREFERENCE_MASK;
+        int emailPreference = up.getEmailOptionId();
 
-        if (AnnouncementManager.EmailOption.MINE.getValue() == emailPreference)
+        if (EmailOption.MESSAGES_MINE.getValue() == emailPreference)
         {
             // Skip if preference is MINE and this is a new message  TODO: notify message creator?
             if (null == ann)
@@ -135,7 +136,7 @@ public abstract class EmailPrefsSelector
         else
         {
             // Shouldn't be here if preference is NONE
-            assert AnnouncementManager.EmailOption.NONE.getValue() != emailPreference;
+            assert EmailOption.MESSAGES_NONE.getValue() != emailPreference;
         }
 
         Permissions perm = AnnouncementsController.getPermissions(_c, user, settings);

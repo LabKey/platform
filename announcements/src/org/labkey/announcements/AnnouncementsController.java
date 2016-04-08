@@ -47,6 +47,7 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.announcements.DiscussionService.Settings;
+import org.labkey.api.announcements.EmailOption;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentParent;
@@ -1155,7 +1156,8 @@ public class AnnouncementsController extends SpringActionController
             // that a bunch of users are about to be emailed.
             int defaultEmailOption = AnnouncementManager.getDefaultEmailOption(c);
 
-            if (AnnouncementManager.EmailOption.ALL.getValue() == (defaultEmailOption & AnnouncementManager.EmailOption.PREFERENCE_MASK))
+            if ((EmailOption.MESSAGES_ALL.getValue() == defaultEmailOption)
+                    || (EmailOption.MESSAGES_ALL_DAILY_DIGEST.getValue() == defaultEmailOption))
             {
                 bean.emailUsers = new IndividualEmailPrefsSelector(c).getNotificationUsers(latestPost).size() + new DailyDigestEmailPrefsSelector(c).getNotificationUsers(latestPost).size();
             }
@@ -1514,7 +1516,7 @@ public class AnnouncementsController extends SpringActionController
 
             int emailOption = getEmailOptionIncludingInherited(c, user, form.getSrcIdentifier());
 
-            form.setEmailOption(emailOption);
+            form.setEmailOptionsOnPage(emailOption);
 
             setHelpTopic("createMessage");
             JspView view = new JspView("/org/labkey/announcements/emailPreferences.jsp");
@@ -1539,10 +1541,19 @@ public class AnnouncementsController extends SpringActionController
 
         public boolean handlePost(EmailOptionsForm form, BindException errors) throws Exception
         {
-            int emailOption = form.getResetFolderDefault() ? -1 : form.getEmailOption();
+            int emailOption = form.getResetFolderDefault() ? -1 : form.getEmailOption(errors);
             AnnouncementManager.saveEmailPreference(getUser(), getContainer(), emailOption, form.getSrcIdentifier());
 
             _message = "Setting changed successfully.";
+
+            // TODO: display why the user had their preferences reset if it happened, and potentially other errors someday, with code like this
+            /*if(errors.hasErrors())
+            {
+                for (ObjectError error : errors.getAllErrors())
+                {
+                    _message = _message + " " + error.getDefaultMessage();
+                }
+            }*/
 
             return true;
         }
@@ -1565,13 +1576,13 @@ public class AnnouncementsController extends SpringActionController
     private static int getEmailOptionIncludingInherited(Container c, User user, String srcIdentifier)
     {
         int emailOption = AnnouncementManager.getUserEmailOption(c, user, srcIdentifier);
-        if (emailOption == AnnouncementManager.EmailOption.NOT_SET.getValue())
+        if (emailOption == EmailOption.NOT_SET.getValue())
         {
             if (!srcIdentifier.equals(c.getId()))
             {
                 emailOption = AnnouncementManager.getUserEmailOption(c, user, c.getId());
             }
-            if (emailOption == AnnouncementManager.EmailOption.NOT_SET.getValue())
+            if (emailOption == EmailOption.NOT_SET.getValue())
             {
                 emailOption = AnnouncementManager.getDefaultEmailOption(c);
             }
@@ -1997,28 +2008,86 @@ public class AnnouncementsController extends SpringActionController
 
     public static class EmailOptionsForm extends ViewForm
     {
-        private int _emailPreference = AnnouncementManager.EmailOption.NONE.getValue();
-        private int _notificationType = 0;
+        private int _emailPreference = EmailOption.MESSAGES_NONE.getValue();
+        private int _notificationType = EmailOption.MESSAGES_NO_DAILY_DIGEST.getValue();
         private String _srcIdentifier;
         private String _srcUrl = null;
         private boolean _resetFolderDefault = false;
 
-        // Email option is a single int that contains the conversation preference AND a bit for digest vs. individual
+        // Email option is a single int that contains the conversation preference AND choice for digest vs. individual
         // This method splits them apart
-        public void setEmailOption(int emailOption)
+
+        public void setEmailOptionsOnPage(int emailOptionInt) throws IllegalStateException
         {
-            _emailPreference = emailOption & AnnouncementManager.EmailOption.PREFERENCE_MASK;
-            _notificationType = emailOption & AnnouncementManager.EmailOption.NOTIFICATION_TYPE_DIGEST;
+            EmailOption emailOption = EmailOption.intToEmailOptionMap.get(emailOptionInt);
+
+            switch(emailOption)
+            {
+                case NOT_SET:
+                case MESSAGES_NONE:
+                    _emailPreference = EmailOption.MESSAGES_NONE.getValue();
+                    _notificationType = EmailOption.MESSAGES_NO_DAILY_DIGEST.getValue();
+                break;
+                case MESSAGES_MINE:
+                    _emailPreference = EmailOption.MESSAGES_MINE.getValue();
+                    _notificationType = EmailOption.MESSAGES_NO_DAILY_DIGEST.getValue();
+                break;
+                case MESSAGES_ALL:
+                    _emailPreference = EmailOption.MESSAGES_ALL.getValue();
+                    _notificationType = EmailOption.MESSAGES_NO_DAILY_DIGEST.getValue();
+                break;
+                case MESSAGES_MINE_DAILY_DIGEST:
+                    _emailPreference = EmailOption.MESSAGES_MINE.getValue();
+                    _notificationType = EmailOption.MESSAGES_DAILY_DIGEST.getValue();
+                break;
+                case MESSAGES_ALL_DAILY_DIGEST:
+                    _emailPreference = EmailOption.MESSAGES_ALL.getValue();
+                    _notificationType = EmailOption.MESSAGES_DAILY_DIGEST.getValue();
+                break;
+                default:  // should never happen
+                    throw new IllegalStateException("emailOption is set to an invalid value.");
+            }
         }
 
-        public int getEmailOption()
-        {
-            // Form allows "no email" + "daily digest" -- change this to "no email" + "individual" since they are equivalent
-            // and we don't want to deal with the former option in the database, with foreign keys, on the admin pages, etc. 
-            if (_emailPreference == AnnouncementManager.EmailOption.NONE.getValue())
-                _notificationType = 0;
+        // Email option is a single int that contains the conversation preference AND choice for digest vs. individual
+        // This method puts them together
 
-            return _emailPreference | _notificationType;
+        public int getEmailOption(BindException errors) throws IllegalStateException
+        {
+            if (_emailPreference == EmailOption.MESSAGES_NONE.getValue())
+            {
+                // Form allows "no email" + "daily digest" -- always return "no email" + "individual" since they are equivalent
+                // and we don't want to deal with the former option in the database, with foreign keys, on the admin pages, etc.
+                errors.reject(ERROR_MSG, "None + Daily Digest is not allowed, and was converted to None + Individual.");
+
+                return EmailOption.MESSAGES_NONE.getValue();
+            }
+            else if (_emailPreference == EmailOption.MESSAGES_MINE.getValue())
+            {
+                if (_notificationType == EmailOption.MESSAGES_NO_DAILY_DIGEST.getValue())
+                {
+                    return EmailOption.MESSAGES_MINE.getValue();
+                }
+                else  // daily digest specified, so combine values
+                {
+                    return EmailOption.MESSAGES_MINE_DAILY_DIGEST.getValue();
+                }
+            }
+            else if (_emailPreference == EmailOption.MESSAGES_ALL.getValue())
+            {
+                if (_notificationType == EmailOption.MESSAGES_NO_DAILY_DIGEST.getValue())
+                {
+                    return EmailOption.MESSAGES_ALL.getValue();
+                }
+                else  // daily digest specified, so combine values
+                {
+                    return EmailOption.MESSAGES_ALL_DAILY_DIGEST.getValue();
+                }
+            }
+            else  // should never happen
+            {
+                throw new IllegalStateException("_emailPreference and _notificationType are set to an invalid combination.");
+            }
         }
 
         public int getEmailPreference()
@@ -2607,9 +2676,29 @@ public class AnnouncementsController extends SpringActionController
                         int emailOption = getEmailOptionIncludingInherited(c, getViewContext().getUser(), ann.lookupSrcIdentifer());
 
                         // Or if they're subscribed because they've posted to this thread already
-                        // Remember the emailOption is a bitmask, so don't use simple equality checks
-                        boolean forumSubscription = (emailOption & AnnouncementManager.EmailOption.ALL.getValue()) != 0 ||
-                            ((emailOption & AnnouncementManager.EmailOption.MINE.getValue()) != 0 && ann.getAuthors().contains(getViewContext().getUser()));
+                        // Remember the emailOption is a bitmask, so lodon't use simple equality checks
+                        boolean forumSubscription;
+                        if ((emailOption == EmailOption.MESSAGES_ALL.getValue())
+                                || (emailOption == EmailOption.MESSAGES_ALL_DAILY_DIGEST.getValue()))
+                        {
+                            forumSubscription = true;
+                        }
+                        else if ((emailOption == EmailOption.MESSAGES_MINE.getValue())
+                                || (emailOption == EmailOption.MESSAGES_MINE_DAILY_DIGEST.getValue()))
+                        {
+                            if (ann.getAuthors().contains(getViewContext().getUser()))
+                            {
+                                forumSubscription = true;
+                            }
+                            else
+                            {
+                                forumSubscription = false;
+                            }
+                        }
+                        else
+                        {
+                            forumSubscription = false;
+                        }
                         
                         if (forumSubscription)
                         {
