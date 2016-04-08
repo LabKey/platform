@@ -49,7 +49,7 @@ LABKEY.Query = new function(impl, $) {
     /**
      * Execute arbitrary LabKey SQL and export the results to Excel or TSV. After this method is
      * called, the user will be prompted to accept a file from the server, and most browsers will allow
-     * the user to either save it or open it in an apporpriate application.
+     * the user to either save it or open it in an appropriate application.
      * For more information, see the
      * <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=labkeySql">
      * LabKey SQL Reference</a>.

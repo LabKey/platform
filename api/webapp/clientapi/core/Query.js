@@ -902,6 +902,47 @@ LABKEY.Query = new function()
         },
 
         /**
+         * Delete a query view.
+         * @param config An object that contains the following configuration parameters
+         * @param {String} config.schemaName The name of the schema.
+         * @param {String} config.queryName the name of the query.
+         * @param {String} [config.viewName] the name of the view. If a viewName is not specified, the default view will be deleted/reverted.
+         * @param {boolean} [config.revert] Optionally, the view can be reverted instead of deleted. Defaults to false.
+         */
+        deleteQueryView : function(config) {
+            if (!config) {
+                throw 'You must specify a configuration!'
+            }
+            if (!config.schemaName) {
+                throw 'You must specify a schemaName!'
+            }
+            if (!config.queryName) {
+                throw 'You must specify a queryName!'
+            }
+
+            var params = {
+                schemaName: config.schemaName,
+                queryName: config.queryName
+            };
+
+            if (config.viewName) {
+                params.viewName = config.viewName;
+            }
+
+            if (config.revert !== undefined) {
+                params.complete = config.revert !== true;
+            }
+
+            return LABKEY.Ajax.request({
+                url: LABKEY.ActionURL.buildURL('query', 'deleteView.api', config.containerPath),
+                method: 'POST',
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
+                jsonData: params
+            });
+        },
+
+        /**
          * Build and return an object suitable for passing to the
          * <a href = "http://www.extjs.com/deploy/dev/docs/?class=Ext.Ajax">Ext.Ajax</a> 'params' configuration property.
          * @param {string} schemaName Name of a schema defined within the current container.  See also: <a class="link"
@@ -1175,7 +1216,7 @@ LABKEY.Query = new function()
          * @param {String} config.queryName The name of the query.
          * @param {String} config.views The updated view definitions.
          * @param {function} config.success The function to call when the function finishes successfully.
-         * This function will be called with the ssame parameters as getQueryViews.successCallback.
+         * This function will be called with the same parameters as getQueryViews.successCallback.
          * @param {function} [config.failure] The function to call if this function encounters an error.
          * This function will be called with the following parameters:
          * <ul>
