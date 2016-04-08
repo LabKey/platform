@@ -253,9 +253,6 @@ public class DataClassDomainKind extends AbstractDomainKind
 
         ExpDataClass dc = ExperimentService.get().getDataClass(domain.getTypeURI());
         if (dc != null)
-        {
-            dc.setDomain(domain);
             ExperimentServiceImpl.get().indexDataClass(dc);
-        }
     }
 }

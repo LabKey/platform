@@ -439,11 +439,6 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
         ExpDataClass dc = this.getDataClass();
         if (null != dc)
         {
-            props.put(SearchService.PROPERTY.categories.toString(),
-                    expDataCategory.toString() + " " +
-                    // TODO: I don't think we can add new categories dynamically like this
-                    new SearchService.SearchCategory(dc.getName(), dc.getDescription()).toString());
-
             ActionURL show = new ActionURL(ExperimentController.ShowDataClassAction.class,getContainer()).addParameter("rowId", dc.getRowId());
             NavTree t = new NavTree(dc.getName(), show);
             String nav = NavTree.toJS(Collections.singleton(t), null, false).toString();
@@ -451,11 +446,8 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
 
             props.put(DataSearchResultTemplate.PROPERTY, dc.getName());
         }
-        else
-        {
-            // TODO: Right now we don't index data without data classes but we may in the future
-            props.put(SearchService.PROPERTY.categories.toString(), expDataCategory.toString());
-        }
+
+        props.put(SearchService.PROPERTY.categories.toString(), expDataCategory.toString());
         props.put(SearchService.PROPERTY.title.toString(), title.toString());
         // NOTE: All string values are added as keywords so they will be stemmed.
         // The search query will always be stemmed so we may not find literal identifiers.
