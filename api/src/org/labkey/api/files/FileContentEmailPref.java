@@ -15,6 +15,7 @@
  */
 package org.labkey.api.files;
 
+import org.labkey.api.announcements.EmailOption;
 import org.labkey.api.notification.EmailPref;
 
 /**
@@ -24,11 +25,6 @@ import org.labkey.api.notification.EmailPref;
  */
 public class FileContentEmailPref extends EmailPref
 {
-    public static final int FOLDER_DEFAULT = -1;
-    public static final int NONE = 512;
-    public static final int INDIVIDUAL = 513;
-    public static final int DAILY_DIGEST = 514;
-
     @Override
     public String getId()
     {
@@ -38,7 +34,7 @@ public class FileContentEmailPref extends EmailPref
     @Override
     public String getDefaultValue()
     {
-        return String.valueOf(FOLDER_DEFAULT);
+        return String.valueOf(EmailOption.NOT_SET);
     }
 
     @Override

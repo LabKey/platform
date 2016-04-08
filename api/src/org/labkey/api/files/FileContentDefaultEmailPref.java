@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 package org.labkey.api.files;
+import org.labkey.api.announcements.EmailOption;
 
 /**
  * User: klum
@@ -31,7 +32,7 @@ public class FileContentDefaultEmailPref extends FileContentEmailPref
     @Override
     public String getDefaultValue()
     {
-        return String.valueOf(NONE);
+        return String.valueOf(EmailOption.FILES_NONE);
     }
 
     @Override
