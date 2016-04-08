@@ -33,6 +33,8 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.validator.ColumnValidator;
+import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.MvFieldWrapper;
@@ -51,6 +53,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
+import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.DataLoaderSettings;
@@ -503,9 +506,13 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         Map<ExpSampleSet, Set<Integer>> sampleIdsBySampleSet = new LinkedHashMap<>();
 
         List<? extends DomainProperty> columns = dataDomain.getProperties();
+        Map<DomainProperty, List<ColumnValidator>> validatorMap = new HashMap<>();
 
         for (DomainProperty pd : columns)
         {
+            // initialize the DomainProperty validator map
+            validatorMap.put(pd, ColumnValidators.create(null, pd));
+
             if (pd.getName().equalsIgnoreCase(AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME) &&
                     pd.getPropertyDescriptor().getPropertyType() == PropertyType.STRING)
             {
@@ -552,7 +559,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         boolean resolveMaterials = specimenPD != null || visitPD != null || datePD != null || targetStudyPD != null;
 
-        Set<String> missingValues = new HashSet<>();
         Set<String> wrongTypes = new HashSet<>();
 
         StringBuilder errorSB = new StringBuilder();
@@ -564,6 +570,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         // We want to share canonical casing between data rows, or we end up with an extra Map instance for each
         // data row which can add up quickly
         CaseInsensitiveHashMap<Object> caseMapping = new CaseInsensitiveHashMap<>();
+        ValidatorContext validatorContext = new ValidatorContext(container, user);
 
         for (ListIterator<Map<String, Object>> iter = rawData.listIterator(); iter.hasNext();)
         {
@@ -588,6 +595,18 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             for (DomainProperty pd : columns)
             {
                 Object o = map.get(pd.getName());
+
+                // validate the data value
+                if (validatorMap.containsKey(pd))
+                {
+                    for (ColumnValidator validator : validatorMap.get(pd))
+                    {
+                        String error = validator.validate(1, o, validatorContext);
+                        if (error != null)
+                            errorSB.append(error).append('.');
+                    }
+                }
+
                 if (participantPD == pd)
                 {
                     participantID = o instanceof String ? (String)o : null;
@@ -674,12 +693,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     }
                 }
 
-                if (pd.isRequired() && valueMissing && !missingValues.contains(pd.getName()))
-                {
-                    missingValues.add(pd.getName());
-                    errorSB.append(pd.getName()).append(" is required. ");
-                }
-                else if (!valueMissing && o == ERROR_VALUE && !wrongTypes.contains(pd.getName()))
+                if (!valueMissing && o == ERROR_VALUE && !wrongTypes.contains(pd.getName()))
                 {
                     wrongTypes.add(pd.getName());
                     errorSB.append(pd.getName()).append(" must be of type ");
@@ -694,6 +708,11 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 ExpSampleSet byIdSS = sampleIdSampleSets.get(pd);
                 if (byIdSS != null && o instanceof Integer)
                     sampleIdsBySampleSet.get(byIdSS).add((Integer)o);
+            }
+
+            if (errorSB.length() != 0)
+            {
+                throw new ValidationException("There are errors in the uploaded data: " + errorSB.toString());
             }
 
             ParticipantVisit participantVisit = resolver.resolve(specimenID, participantID, visitID, date, targetStudy);
@@ -729,11 +748,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         // Resolve samples for each SampleSet
         resolveSampleNames(container, user, sampleNameSampleSets, sampleNamesBySampleSet, materialInputs);
         resolveSampleIds(sampleIdSampleSets, sampleIdsBySampleSet, materialInputs);
-
-        if (errorSB.length() != 0)
-        {
-            throw new ValidationException("There are errors in the uploaded data: " + errorSB.toString());
-        }
 
         return materialInputs;
     }
