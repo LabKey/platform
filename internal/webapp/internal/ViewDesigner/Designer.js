@@ -1077,49 +1077,49 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
     },
 
     onDeleteClick : function() {
-        if (this.dataRegion) {
-            var view = this.customView;
-
-            // build title
-            var title = 'Delete';
-            if (view) {
-                title += ' ' + (view.shared ? 'shared' : 'your');
-                title += ' ' + (view.session ? 'unsaved' : '');
-            }
-            title += ' view';
-
-            // build msg
-            var msg = 'Are you sure you want to delete the';
-            if (view) {
-                if (view.default === true) {
-                    msg += ' default';
-                }
-                else {
-                    msg += ' \'<em>' + Ext4.htmlEncode(view.label ? view.label : view.name) + '</em>\'';
-                }
-            }
-            msg += ' saved view';
-
-            if (view) {
-                if (view.containerPath && view.containerPath !== LABKEY.ActionURL.getContainer()) {
-                    msg += ' from \'' + view.containerPath + '\'';
-                }
-            }
-            msg += '?';
-
-            Ext4.Msg.confirm(title, msg, function(btn) {
-                if (btn === 'yes') {
-                    this._deleteCustomView(true /* isDelete */);
-                }
-            }, this);
-        }
-        else {
-            this._deleteCustomView(true /* isDelete */, true /* reload */);
-        }
+        // TODO: Just delete the view -- figure out why YUI cant compile this
+        this._deleteCustomView(true, true);
+        //if (this.dataRegion) {
+        //    var view = this.customView;
+        //
+        //    // build title
+        //    var title = 'Delete';
+        //    if (view) {
+        //        title += (view.shared ? ' shared' : ' your');
+        //        title += (view.session ? ' unsaved' : '');
+        //    }
+        //    title += ' view';
+        //
+        //    // build msg
+        //    var msg = 'Are you sure you want to delete the';
+        //    if (view) {
+        //        if (view.default === true) {
+        //            msg += ' default';
+        //        }
+        //        else {
+        //            msg += " '<em>" + Ext4.htmlEncode(view.label) + "</em>'";
+        //        }
+        //    }
+        //    msg += ' saved view';
+        //
+        //    if (view && view.containerPath && view.containerPath != LABKEY.ActionURL.getContainer()) {
+        //        msg += " from '" + view.containerPath + "'";
+        //    }
+        //    msg += '?';
+        //
+        //    Ext4.Msg.confirm(title, msg, function(btn) {
+        //        if (btn === 'yes') {
+        //            this._deleteCustomView(true);
+        //        }
+        //    }, this);
+        //}
+        //else {
+        //    this._deleteCustomView(true, true);
+        //}
     },
 
     onRevertClick : function() {
-        this._deleteCustomView(false /* isDelete */, true /* reload */);
+        this._deleteCustomView(false, true);
     },
 
     _deleteCustomView : function(isDelete, reload) {
