@@ -62,7 +62,7 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
         User selectedUser = userSelector.getObject(user.getUserId(), User.class);
         assertEquals(user, selectedUser);
 
-        // TableSelector to test a copule exception scenarios
+        // TableSelector to test a couple exception scenarios
         TableSelector moduleSelector = new TableSelector(CoreSchema.getInstance().getTableInfoModules());
         moduleSelector.setLogLevel(Level.OFF);      // Suppress auto-logging since we're intentionally causing SQLExceptions
 
@@ -121,7 +121,7 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
         testColumnList(new TableSelector(ti, Collections.singleton(ti.getColumn("Email")), null, null), true);
     }
 
-    public void testColumnList(TableSelector selector, boolean stable) throws SQLException
+    private void testColumnList(TableSelector selector, boolean stable) throws SQLException
     {
         // The following methods should succeed with both stable and unstable ordered column lists
 
@@ -227,9 +227,26 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
         {
             assertFalse("Expected getResults() to succeed with stable column ordering", stable);
         }
+
+        try
+        {
+            MutableInt forEachResultsCount = new MutableInt(0);
+            selector.forEachResults(results -> {
+                assertEquals(columnCount, results.getFieldIndexMap().size());
+                assertEquals(columnCount, results.getFieldKeyRowMap().size());
+                assertEquals(columnCount, results.getFieldMap().size());
+                forEachResultsCount.increment();
+            });
+            assertEquals(count, forEachResultsCount.intValue());
+            assertTrue("Expected getResults() to fail with unstable column ordering", stable);
+        }
+        catch (IllegalStateException e)
+        {
+            assertFalse("Expected getResults() to succeed with stable column ordering", stable);
+        }
     }
 
-    public <K> void testTableSelector(TableInfo table, Class<K> clazz) throws SQLException
+    private <K> void testTableSelector(TableInfo table, Class<K> clazz) throws SQLException
     {
         TableSelector selector = new TableSelector(table);
 

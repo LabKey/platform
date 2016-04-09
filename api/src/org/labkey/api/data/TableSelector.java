@@ -41,7 +41,7 @@ import java.util.Set;
 
 public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFactory, TableSelector>
 {
-    public static final Set<String> ALL_COLUMNS = Collections.unmodifiableSet(Collections.<String>emptySet());
+    public static final Set<String> ALL_COLUMNS = Collections.unmodifiableSet(Collections.emptySet());
 
     private static final Logger LOG = Logger.getLogger(TableSelector.class);
 
@@ -229,6 +229,21 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     {
         ensureStableColumnOrder("forEach(ForEachBlock<ResultSet> block)");
         super.forEach(block, factory);
+    }
+
+    public void forEachResults(ForEachBlock<Results> block)
+    {
+        ensureStableColumnOrder("forEachResults(ForEachBlock<Results> block)");
+
+        // Same pattern as getStandardResultSetFactory(), but gives us a reference to the sql factory which we need for the column list
+        TableSqlFactory sqlFactory = getSqlFactory(false);
+        handleResultSet(new ExecutingResultSetFactory(sqlFactory), (rs, conn) -> {
+            Results results = new ResultsImpl(rs, sqlFactory.getSelectedColumns());
+            while (results.next())
+                block.exec(results);
+
+            return null;
+        });
     }
 
     private void ensureStableColumnOrder(String methodDescription)
