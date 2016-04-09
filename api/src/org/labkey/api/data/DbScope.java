@@ -311,7 +311,7 @@ public class DbScope
 
             try
             {
-                _dialect = SqlDialectManager.getFromMetaData(dbmd, true);
+                _dialect = SqlDialectManager.getFromMetaData(dbmd, true, isPrimaryDataSource(dsName));
                 MemTracker.getInstance().remove(_dialect);
             }
             finally
@@ -1092,6 +1092,11 @@ public class DbScope
         }
     }
 
+    /** @return true if this is the name of the primary database for LabKey Server (labkeyDataSource or cpasDataSource */
+    public static boolean isPrimaryDataSource(String dsName)
+    {
+        return ModuleLoader.LABKEY_DATA_SOURCE.equalsIgnoreCase(dsName) || ModuleLoader.CPAS_DATA_SOURCE.equalsIgnoreCase(dsName);
+    }
 
     // Ensure we can connect to the specified datasource. If the connection fails with a "database doesn't exist" exception
     // then attempt to create the database. Return true if the database existed, false if it was just created. Throw if some
@@ -1141,7 +1146,7 @@ public class DbScope
             {
                 if (dialect.isNoDatabaseException(e))
                 {
-                    createDataBase(dialect, props.getUrl(), props.getUsername(), props.getPassword());
+                    createDataBase(dialect, props.getUrl(), props.getUsername(), props.getPassword(), isPrimaryDataSource(dsName));
                     return false;   // Successfully created database
                 }
                 else
@@ -1174,7 +1179,7 @@ public class DbScope
     }
 
 
-    public static void createDataBase(SqlDialect dialect, String url, String username, String password) throws ServletException
+    public static void createDataBase(SqlDialect dialect, String url, String username, String password, boolean primaryDataSource) throws ServletException
     {
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -1190,7 +1195,7 @@ public class DbScope
         {
             conn = DriverManager.getConnection(masterUrl, username, password);
             // Get version-specific dialect; don't log version warnings.
-            dialect = SqlDialectManager.getFromMetaData(conn.getMetaData(), false);
+            dialect = SqlDialectManager.getFromMetaData(conn.getMetaData(), false, primaryDataSource);
             createSql = dialect.getCreateDatabaseSql(dbName);
             stmt = conn.prepareStatement(createSql);
             stmt.execute();

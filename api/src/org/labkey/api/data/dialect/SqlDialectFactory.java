@@ -23,15 +23,17 @@ import java.util.Collection;
 /*
 * User: adam
 * Date: Nov 26, 2010
-* Time: 8:52:56 PM
 */
 public interface SqlDialectFactory
 {
     @Nullable SqlDialect createFromDriverClassName(String driverClassName);
 
-    // Returns null if this factory is not responsible for the specified database server.  Otherwise, if the version is
-    // supported, returns the matching implementation; if the version is not supported, throws DatabaseNotSupportedException.
-    @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException;
+    /**
+     * Returns null if this factory is not responsible for the specified database server.  Otherwise, if the version is
+     * supported, returns the matching implementation; if the version is not supported, throws DatabaseNotSupportedException.
+     * @param primaryDataSource whether the data source is the primary LabKey Server database, or an external/seconday database
+     */
+    @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings, boolean primaryDataSource) throws DatabaseNotSupportedException;
 
     // These tests must be safe to invoke when LabKey Server can't connect to any datasources matching the dialect and
     // even when the JDBC driver isn't present.

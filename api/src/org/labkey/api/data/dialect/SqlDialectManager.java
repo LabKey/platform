@@ -45,6 +45,7 @@ public class SqlDialectManager
     /**
      * Getting the SqlDialect from the datasource properties won't return the version-specific dialect -- use
      * getFromMetaData() if possible.
+     * @throws SqlDialectNotSupportedException if database is not supported
      */
     public static @NotNull SqlDialect getFromDriverClassname(String dsName, String driverClassName) throws ServletException
     {
@@ -60,18 +61,24 @@ public class SqlDialectManager
     }
 
 
-    // Will throw if database is not supported
-    public static @NotNull SqlDialect getFromMetaData(DatabaseMetaData md, boolean logWarnings) throws SQLException, SqlDialectNotSupportedException, DatabaseNotSupportedException
+    /**
+     * @throws SqlDialectNotSupportedException if database is not supported
+     * @param primaryDataSource whether the data source is the primary LabKey Server database, or an external/seconday database
+     */
+    public static @NotNull SqlDialect getFromMetaData(DatabaseMetaData md, boolean logWarnings, boolean primaryDataSource) throws SQLException, SqlDialectNotSupportedException, DatabaseNotSupportedException
     {
-        return getFromProductName(md.getDatabaseProductName(), md.getDatabaseProductVersion(), md.getDriverVersion(), logWarnings);
+        return getFromProductName(md.getDatabaseProductName(), md.getDatabaseProductVersion(), md.getDriverVersion(), logWarnings, primaryDataSource);
     }
 
-    // Will throw if database is not supported
-    public static @NotNull SqlDialect getFromProductName(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws SqlDialectNotSupportedException, DatabaseNotSupportedException
+    /**
+     * @throws SqlDialectNotSupportedException if database is not supported
+     * @param primaryDataSource whether the data source is the primary LabKey Server database, or an external/seconday database
+     */
+    public static @NotNull SqlDialect getFromProductName(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings, boolean primaryDataSource) throws SqlDialectNotSupportedException, DatabaseNotSupportedException
     {
         for (SqlDialectFactory factory : _factories)
         {
-            SqlDialect dialect = factory.createFromProductNameAndVersion(dataBaseProductName, databaseProductVersion, jdbcDriverVersion, logWarnings);
+            SqlDialect dialect = factory.createFromProductNameAndVersion(dataBaseProductName, databaseProductVersion, jdbcDriverVersion, logWarnings, primaryDataSource);
 
             if (null != dialect)
                 return dialect;

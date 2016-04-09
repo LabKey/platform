@@ -138,6 +138,8 @@ public class ModuleLoader implements Filter
     public static final String MODULE_NAME_REGEX = "\\w+";
 
     public static final String PRODUCTION_BUILD_TYPE = "Production";
+    public static final String LABKEY_DATA_SOURCE = "labkeyDataSource";
+    public static final String CPAS_DATA_SOURCE = "cpasDataSource";
 
     private static ModuleLoader _instance = null;
     private static Throwable _startupFailure = null;
@@ -888,7 +890,7 @@ public class ModuleLoader implements Filter
         {
             // Ensure that the labkeyDataSource (or cpasDataSource, for old installations) exists in
             // labkey.xml / cpas.xml and create the associated database if it doesn't already exist.
-            labkeyDsName = ensureDatabase("labkeyDataSource", "cpasDataSource");
+            labkeyDsName = ensureDatabase(LABKEY_DATA_SOURCE, CPAS_DATA_SOURCE);
 
             InitialContext ctx = new InitialContext();
             Context envCtx = (Context) ctx.lookup("java:comp/env");
@@ -970,7 +972,7 @@ public class ModuleLoader implements Filter
                         String password = (String)reference.get("password").getContent();
                         String username = (String)reference.get("username").getContent();
 
-                        DbScope.createDataBase(dialect, url, username, password);
+                        DbScope.createDataBase(dialect, url, username, password, DbScope.isPrimaryDataSource(dsName));
                     }
                     catch (Exception e2)
                     {

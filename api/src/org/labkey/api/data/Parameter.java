@@ -317,7 +317,7 @@ public class Parameter implements AutoCloseable
                 Object[] array = (Object[]) value;
 
                 // Convert to a JDBC array
-                SqlDialect dialect = SqlDialectManager.getFromMetaData(_stmt.getConnection().getMetaData(), true);
+                SqlDialect dialect = SqlDialectManager.getFromMetaData(_stmt.getConnection().getMetaData(), true, false);
                 String typeName = dialect.getJDBCArrayType(array[0]);
                 final Array jdbcArray = _stmt.getConnection().createArrayOf(typeName, array);
                 // Set up to close it

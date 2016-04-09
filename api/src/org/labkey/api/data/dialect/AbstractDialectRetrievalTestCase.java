@@ -55,7 +55,7 @@ public abstract class AbstractDialectRetrievalTestCase extends Assert
 
             try
             {
-                SqlDialect dialect = SqlDialectManager.getFromProductName(databaseName, majorVersion + "." + minorVersion, jdbcDriverVersion, false);
+                SqlDialect dialect = SqlDialectManager.getFromProductName(databaseName, majorVersion + "." + minorVersion, jdbcDriverVersion, false, false);
                 assertNotNull(description + " returned " + dialect.getClass().getSimpleName() + "; expected failure", expectedDialectClass);
                 assertEquals(description, expectedDialectClass, dialect.getClass());
             }
