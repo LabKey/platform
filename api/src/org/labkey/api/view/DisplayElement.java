@@ -15,15 +15,15 @@
  */
 package org.labkey.api.view;
 
-import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.DataRegion;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringExpressionFactory;
 import org.springframework.web.servlet.View;
 
 import javax.servlet.http.HttpServletRequest;
@@ -31,9 +31,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.HashSet;
 
 /**
  * An element that can be displayed within a page. Handles showing/hiding based
@@ -128,8 +128,8 @@ public abstract class DisplayElement implements View, Cloneable
     public void setCaption(String caption)
     {
         checkLocked();
-        _caption = StringExpressionFactory.create(caption);
-        assert _caption.toString().equals(caption) : "Caption expression '" + _caption.toString() + "' doesn't match caption '" + caption + "'";
+        _caption = caption == null ? null : StringExpressionFactory.create(caption);
+        assert (_caption == null && caption == null) || (_caption != null && _caption.toString().equals(caption)) : "Caption expression '" + _caption.toString() + "' doesn't match caption '" + caption + "'";
     }
 
 
