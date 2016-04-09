@@ -55,7 +55,7 @@ public class OracleDialectFactory implements SqlDialectFactory
     private final static String POST_VERSION_CLAUSE = "-";
 
     @Override
-    public SqlDialect createFromProductNameAndVersion(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException
+    public SqlDialect createFromProductNameAndVersion(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings, boolean primaryDataSource) throws DatabaseNotSupportedException
     {
         if (!dataBaseProductName.equals(getProductName()))
             return null;
@@ -116,13 +116,13 @@ public class OracleDialectFactory implements SqlDialectFactory
         {
             OracleDialectFactory factory = new OracleDialectFactory();
             assertEquals(Oracle11gR1Dialect.class, factory.createFromProductNameAndVersion("Oracle", "Oracle Database 11g Enterprise Edition Release 11.1.0.2.0 - 64bit Production\n" +
-                    "With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options", null, false).getClass());
+                    "With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options", null, false, false).getClass());
             assertEquals(Oracle11gR2Dialect.class, factory.createFromProductNameAndVersion("Oracle", "Oracle Database 11g Enterprise Edition Release 11.2.0.2.0 - 64bit Production\n" +
-                    "With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options", null, false).getClass());
+                    "With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options", null, false, false).getClass());
             assertEquals(Oracle11gR2Dialect.class, factory.createFromProductNameAndVersion("Oracle", "Oracle Database 11g Enterprise Edition Release 11.3.0.2.0 - 64bit Production\n" +
-                    "With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options", null, false).getClass());
+                    "With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options", null, false, false).getClass());
             assertEquals(Oracle12cDialect.class, factory.createFromProductNameAndVersion("Oracle", "Oracle Database 12c Enterprise Edition Release 12.1.0.2.0 - 64bit Production\n" +
-                    "With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options", null, false).getClass());
+                    "With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options", null, false, false).getClass());
         }
 
         @Test
