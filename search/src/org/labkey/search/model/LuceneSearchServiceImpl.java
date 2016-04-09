@@ -40,7 +40,7 @@ import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.Filter;
+import org.apache.lucene.search.BoostQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
@@ -130,14 +130,16 @@ import java.util.stream.Stream;
 public class LuceneSearchServiceImpl extends AbstractSearchService
 {
     private static final Logger _log = Logger.getLogger(LuceneSearchServiceImpl.class);
-    private static final MultiPhaseCPUTimer<SEARCH_PHASE> TIMER = new MultiPhaseCPUTimer<>(SEARCH_PHASE.class, SEARCH_PHASE.values());
 
     // Changes to _index are rare (only when admin changes the index path), but we want any changes to be visible to
     // other threads immediately. Initialize to Noop class to prevent rare NPE (e.g., system maintenance runs before index
     // is initialized).
     private volatile WritableIndexManager _indexManager = new NoopWritableIndex("the indexer has not been started yet", _log);
 
-    private static ExternalIndexManager _externalIndexManager;
+    private ExternalIndexManager _externalIndexManager;
+
+    private final MultiPhaseCPUTimer<SEARCH_PHASE> TIMER = new MultiPhaseCPUTimer<>(SEARCH_PHASE.class, SEARCH_PHASE.values());
+    private final Analyzer _standardAnalyzer = ExternalAnalyzer.EnglishAnalyzer.getAnalyzer();
 
     enum FIELD_NAME
     {
@@ -540,9 +542,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
                     body = handler.toString();
 
-                    String extractedTitle = metadata.get(Metadata.TITLE);
                     if (StringUtils.isBlank(title))
-                        title = extractedTitle;
+                        title = metadata.get(TikaCoreProperties.TITLE);
+
                     keywordsMed = keywordsMed + getInterestingMetadataProperties(metadata);
                 }
 
@@ -831,7 +833,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
 
     // parse the document of the resource, not that parse() and accept() should agree on what is parsable
-    void parse(WebdavResource r, FileStream fs, InputStream is, ContentHandler handler, Metadata metadata) throws IOException, SAXException, TikaException
+    private void parse(WebdavResource r, FileStream fs, InputStream is, ContentHandler handler, Metadata metadata) throws IOException, SAXException, TikaException
     {
         if (!is.markSupported())
             is = new BufferedInputStream(is);
@@ -911,7 +913,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-    DocumentParser detectParser(WebdavResource r, InputStream in)
+    private DocumentParser detectParser(WebdavResource r, InputStream in)
     {
         InputStream is = in;
         try
@@ -1208,14 +1210,14 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-    public SearchHit find(String id) throws IOException
+    SearchHit find(String id) throws IOException
     {
         IndexSearcher searcher = _indexManager.getSearcher();
 
         try
         {
             TermQuery query = new TermQuery(new Term(FIELD_NAME.uniqueId.toString(), id));
-            TopDocs topDocs = searcher.search(query, null, 1);
+            TopDocs topDocs = searcher.search(query, 1);
             SearchResult result = createSearchResult(0, 1, topDocs, searcher);
             if (result.hits.size() != 1)
                 return null;
@@ -1269,14 +1271,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             iTimer.setPhase(SEARCH_PHASE.createQuery);
 
-            Query query;
-            Analyzer analyzer = null;
+            BooleanQuery.Builder queryBuilder = new BooleanQuery.Builder();
 
             try
             {
-                analyzer = getAnalyzer();
-                QueryParser queryParser = new MultiFieldQueryParser(standardFields, analyzer, boosts);
-                query = queryParser.parse(queryString);
+                QueryParser queryParser = new MultiFieldQueryParser(standardFields, getAnalyzer(), boosts);
+                queryBuilder.add(queryParser.parse(queryString), BooleanClause.Occur.MUST);
+
             }
             catch (ParseException x)
             {
@@ -1320,40 +1321,31 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             {
                 throw new IOException(SearchUtils.getStandardPrefix(queryString) + x.getMessage());
             }
-            finally
-            {
-                if (null != analyzer)
-                    analyzer.close();
-            }
 
             if (null != categories)
             {
-                BooleanQuery bq = new BooleanQuery();
-                bq.add(query, BooleanClause.Occur.MUST);
                 Iterator itr = categories.iterator();
 
                 if (requireCategories)
                 {
-                    BooleanQuery requiresBQ = new BooleanQuery();
+                    BooleanQuery.Builder categoryBuilder = new BooleanQuery.Builder();
 
                     while (itr.hasNext())
                     {
                         Query categoryQuery = new TermQuery(new Term(SearchService.PROPERTY.categories.toString(), itr.next().toString().toLowerCase()));
-                        requiresBQ.add(categoryQuery, BooleanClause.Occur.SHOULD);
+                        categoryBuilder.add(categoryQuery, BooleanClause.Occur.SHOULD);
                     }
 
-                    bq.add(requiresBQ, BooleanClause.Occur.MUST);
+                    queryBuilder.add(categoryBuilder.build(), BooleanClause.Occur.MUST);
                 }
                 else
                 {
                     while (itr.hasNext())
                     {
                         Query categoryQuery = new TermQuery(new Term(SearchService.PROPERTY.categories.toString(), itr.next().toString().toLowerCase()));
-                        categoryQuery.setBoost(3.0f);
-                        bq.add(categoryQuery, BooleanClause.Occur.SHOULD);
+                        queryBuilder.add(new BoostQuery(categoryQuery, 3.0f), BooleanClause.Occur.SHOULD);
                     }
                 }
-                query = bq;
             }
 
             IndexSearcher searcher = _indexManager.getSearcher();
@@ -1361,16 +1353,21 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             try
             {
                 iTimer.setPhase(SEARCH_PHASE.buildSecurityFilter);
-                Filter securityFilter = user.isSearchUser() ? null : new SecurityFilter(user, scope.getRoot(current), current, scope.isRecursive(), iTimer);
+
+                if (!user.isSearchUser())
+                {
+                    Query securityFilter = new SecurityQuery(user, scope.getRoot(current), current, scope.isRecursive(), iTimer);
+                    queryBuilder.add(securityFilter, BooleanClause.Occur.MUST);
+                }
 
                 iTimer.setPhase(SEARCH_PHASE.search);
-
+                Query query = queryBuilder.build();
                 TopDocs topDocs;
 
                 if (null == sort)
-                    topDocs = searcher.search(query, securityFilter, hitsToRetrieve);
+                    topDocs = searcher.search(query, hitsToRetrieve);
                 else
-                    topDocs = searcher.search(query, securityFilter, hitsToRetrieve, new Sort(new SortField(sort, SortField.Type.STRING)));
+                    topDocs = searcher.search(query, hitsToRetrieve, new Sort(new SortField(sort, SortField.Type.STRING)));
 
                 iTimer.setPhase(SEARCH_PHASE.processHits);
                 return createSearchResult(offset, hitsToRetrieve, topDocs, searcher);
@@ -1479,6 +1476,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     protected void shutDown()
     {
         closeIndex();
+        _standardAnalyzer.close();
 
         try
         {
@@ -1568,24 +1566,23 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-    // Due to https://issues.apache.org/jira/browse/LUCENE-3841, we construct a new Analyzer every time. This has been
-    // fixed in Lucene 3.6, which we now use, so we could switch to a static instance of the Analyzer now.
-    protected Analyzer getAnalyzer()
+    // https://issues.apache.org/jira/browse/LUCENE-3841 was fixed long ago so we can use a shared instance
+    private Analyzer getAnalyzer()
     {
-        return ExternalAnalyzer.EnglishAnalyzer.getAnalyzer();
+        return _standardAnalyzer;
     }
 
 
     public static class TestCase extends Assert
     {
-        private final int DOC_COUNT = 6;  // TODO: Make static, once test development is complete
+        private static final int DOC_COUNT = 6;
 
         private final Container _c = JunitUtil.getTestContainer();
         private final SearchCategory _category = new SearchCategory("SearchTest", "Just a test");
         private final SearchService _ss = ServiceRegistry.get(SearchService.class);
         private final CountDownLatch _latch = new CountDownLatch(DOC_COUNT);
 
-        @Test // Doesn't really test anything; just provides a convenient way to exercise all the standard analyzers.
+        @Test // Doesn't really test anything; just provides a convenient way to log output from some standard analyzers.
         public void testAnalyzers() throws IOException
         {
             analyze("casale WISP-R 123ABC this.doc running coding dance dancing danced DIAMOND ACCEPTOR FACTOR");

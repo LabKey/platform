@@ -20,11 +20,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.index.LeafReader;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.SortedDocValues;
-import org.apache.lucene.search.DocIdSet;
-import org.apache.lucene.search.Filter;
-import org.apache.lucene.util.BitDocIdSet;
-import org.apache.lucene.util.BitSet;
-import org.apache.lucene.util.Bits;
+import org.apache.lucene.search.ConstantScoreScorer;
+import org.apache.lucene.search.ConstantScoreWeight;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.Scorer;
+import org.apache.lucene.search.Weight;
+import org.apache.lucene.util.BitSetIterator;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.FixedBitSet;
 import org.jetbrains.annotations.NotNull;
@@ -49,14 +51,14 @@ import java.util.List;
 * Date: Dec 16, 2009
 * Time: 1:36:39 PM
 */
-class SecurityFilter extends Filter
+class SecurityQuery extends Query
 {
     private final User _user;
     private final HashMap<String, Container> _containerIds;
     private final HashMap<String, Boolean> _securableResourceIds = new HashMap<>();
     private final MultiPhaseCPUTimer.InvocationTimer<SearchService.SEARCH_PHASE> _iTimer;
 
-    SecurityFilter(User user, Container searchRoot, Container currentContainer, boolean recursive, MultiPhaseCPUTimer.InvocationTimer<SearchService.SEARCH_PHASE> iTimer)
+    SecurityQuery(User user, Container searchRoot, Container currentContainer, boolean recursive, MultiPhaseCPUTimer.InvocationTimer<SearchService.SEARCH_PHASE> iTimer)
     {
         _user = user;
         _iTimer = iTimer;
@@ -91,66 +93,69 @@ class SecurityFilter extends Filter
 
 
     @Override
-    public DocIdSet getDocIdSet(LeafReaderContext context, Bits acceptDocs) throws IOException
+    public Weight createWeight(IndexSearcher searcher, boolean needsScores) throws IOException
     {
-        SearchService.SEARCH_PHASE currentPhase = _iTimer.getCurrentPhase();
-        _iTimer.setPhase(SearchService.SEARCH_PHASE.applySecurityFilter);
-
-        LeafReader reader = context.reader();
-        int max = reader.maxDoc();
-        BitSet bits = new FixedBitSet(max);
-
-        SortedDocValues containerDocValues = reader.getSortedDocValues(FIELD_NAME.container.name());
-        SortedDocValues resourceDocValues = reader.getSortedDocValues(FIELD_NAME.resourceId.name());
-        BytesRef bytesRef;
-
-        try
+        return new ConstantScoreWeight(this)
         {
-            for (int i = 0; i < max; i++)
+            @Override
+            public Scorer scorer(LeafReaderContext context) throws IOException
             {
-                // Must check acceptDocs to filter out documents that are deleted or previously filtered.
-                // This is not really documented, but it looks like null == acceptDocs means accept everything (no deleted/filtered docs).
-                if (null != acceptDocs && !acceptDocs.get(i))
-                    continue;
+                SearchService.SEARCH_PHASE currentPhase = _iTimer.getCurrentPhase();
+                _iTimer.setPhase(SearchService.SEARCH_PHASE.applySecurityFilter);
 
-                bytesRef = containerDocValues.get(i);
-                String containerId = StringUtils.trimToNull(bytesRef.utf8ToString());
+                LeafReader reader = context.reader();
+                int maxDoc = reader.maxDoc();
+                FixedBitSet bits = new FixedBitSet(maxDoc);
 
-                if (!_containerIds.containsKey(containerId))
-                    continue;
+                SortedDocValues containerDocValues = reader.getSortedDocValues(FIELD_NAME.container.name());
+                SortedDocValues resourceDocValues = reader.getSortedDocValues(FIELD_NAME.resourceId.name());
+                BytesRef bytesRef;
 
-                // Can be null, if no documents have a resource ID (e.g., shortly after bootstrap)
-                if (null != resourceDocValues)
+                try
                 {
-                    bytesRef = resourceDocValues.get(i);
-                    String resourceId = StringUtils.trimToNull(bytesRef.utf8ToString());
-
-                    if (null != resourceId && !resourceId.equals(containerId))
+                    for (int i = 0; i < maxDoc; i++)
                     {
-                        if (!_containerIds.containsKey(resourceId))
-                        {
-                            Boolean canRead = _securableResourceIds.get(resourceId);
-                            if (null == canRead)
-                            {
-                                SecurableResource sr = new _SecurableResource(resourceId, _containerIds.get(containerId));
-                                SecurityPolicy p = SecurityPolicyManager.getPolicy(sr);
-                                canRead = p.hasPermission(_user, ReadPermission.class);
-                                _securableResourceIds.put(resourceId, canRead);
-                            }
-                            if (!canRead)
-                                continue;
-                        }
-                    }
-                }
+                        bytesRef = containerDocValues.get(i);
+                        String containerId = StringUtils.trimToNull(bytesRef.utf8ToString());
 
-                bits.set(i);
+                        if (!_containerIds.containsKey(containerId))
+                            continue;
+
+                        // Can be null, if no documents have a resource ID (e.g., shortly after bootstrap)
+                        if (null != resourceDocValues)
+                        {
+                            bytesRef = resourceDocValues.get(i);
+                            String resourceId = StringUtils.trimToNull(bytesRef.utf8ToString());
+
+                            if (null != resourceId && !resourceId.equals(containerId))
+                            {
+                                if (!_containerIds.containsKey(resourceId))
+                                {
+                                    Boolean canRead = _securableResourceIds.get(resourceId);
+                                    if (null == canRead)
+                                    {
+                                        SecurableResource sr = new _SecurableResource(resourceId, _containerIds.get(containerId));
+                                        SecurityPolicy p = SecurityPolicyManager.getPolicy(sr);
+                                        canRead = p.hasPermission(_user, ReadPermission.class);
+                                        _securableResourceIds.put(resourceId, canRead);
+                                    }
+                                    if (!canRead)
+                                        continue;
+                                }
+                            }
+                        }
+
+                        bits.set(i);
+                    }
+
+                    return new ConstantScoreScorer(this, score(), new BitSetIterator(bits, bits.approximateCardinality()));
+                }
+                finally
+                {
+                    _iTimer.setPhase(currentPhase);
+                }
             }
-            return new BitDocIdSet(bits);
-        }
-        finally
-        {
-            _iTimer.setPhase(currentPhase);
-        }
+        };
     }
 
     @Override
@@ -160,7 +165,7 @@ class SecurityFilter extends Filter
     }
 
 
-    static class _SecurableResource implements SecurableResource
+    private static class _SecurableResource implements SecurableResource
     {
         private final String _id;
         private final Container _container;
