@@ -119,12 +119,12 @@
                         if (view.getIconCls() != null)
                         {
                         %>
-                        <span class="<%= h(view.getIconCls())%>" alt=""</span>
+                        <span class="<%= h(view.getIconCls())%>"></span>
                         <%
                         } else if (view.getIconUrl() != null)
                         {
                         %>
-                        <img src="<%= h(view.getIconUrl())%>" alt="">
+                        <img src="<%= h(view.getIconUrl())%>" alt="report_icon" height="16" width="16">
                         <%
                         }
                         %>
