@@ -6448,7 +6448,6 @@ api/webapp/gtheme/img/lkbtn.png -text
 api/webapp/gtheme/img/lkbtn2.png -text
 api/webapp/gtheme/img/rct.png -text
 api/webapp/gtheme/img/rdr.png -text
-api/webapp/report/Rlogo.jpg -text
 api/webapp/report/report.jpg -text
 internal/gwtsrc/org/labkey/api/gwt/Internal.gwt.xml -text
 internal/gwtsrc/org/labkey/api/gwt/client/AbstractDesignerMainPanel.java -text

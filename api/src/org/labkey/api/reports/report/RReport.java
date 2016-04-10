@@ -611,7 +611,7 @@ public class RReport extends ExternalScriptEngineReport
     @Override
     public String getStaticThumbnailPath()
     {
-        return "/report/RLogo.jpg";
+        return "/reports/r_logo.svg";
     }
 
     @Override
