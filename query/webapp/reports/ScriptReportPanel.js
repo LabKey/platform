@@ -6,23 +6,34 @@
 
 Ext4.define('LABKEY.ext4.ScriptReportPanel', {
 
-    extend : 'Ext.tab.Panel',
+    extend: 'Ext.tab.Panel',
 
-    constructor : function(config){
+    border: false,
 
-        Ext4.applyIf(config, {
-            border  : false,
-            frame   : false,
-            sourceAndHelp : true
-        });
-        Ext4.QuickTips.init();
+    frame: false,
 
-        this.callParent([config]);
- },
+    sourceAndHelp: true,
+
+    /**
+     * {boolean} reportConfig properties will be html decoded upon construction
+     */
+    htmlEncodedProps: false,
 
     initComponent : function() {
 
+        Ext4.QuickTips.init();
+
         this.reportConfig.script = this.script;
+
+        if (this.htmlEncodedProps) {
+            Ext4.apply(this.reportConfig, {
+                dataRegionName: Ext4.htmlDecode(this.reportConfig.dataRegionName),
+                schemaName: Ext4.htmlDecode(this.reportConfig.schemaName),
+                queryName: Ext4.htmlDecode(this.reportConfig.queryName),
+                viewName: Ext4.htmlDecode(this.reportConfig.viewName)
+            });
+        }
+
         this.items = [this.createViewPanel()];
 
         if (this.reportConfig.schemaName && this.reportConfig.queryName) {
@@ -512,7 +523,6 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             bodyPadding : 10,
             fieldDefaults  : {
                 labelWidth : 100,
-                //width      : 325,
                 style      : 'padding: 4px 0',
                 labelSeparator : ''
             },
@@ -559,10 +569,6 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                 }
             }
         }
-/*
-        url = addIncludeScripts(url);
-        url = addRunInBackground(url);
-*/
 
         return url;
     },
