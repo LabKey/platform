@@ -1103,7 +1103,7 @@ table.labkey-show-borders
     border-left: 0;
     border-right: solid 1px #DDDDDD;
     border-bottom: solid 1px #DDDDDD;
-    /* Part of a hack for IE 7 and below since IE gives precendence to table borders over cell borders */
+    /* Part of a hack for IE 7 and below since IE gives precedence to table borders over cell borders */
     *border: solid 1px #DDDDDD;
 }
 
@@ -1557,7 +1557,7 @@ table.labkey-main
 /* The top panel with the title and logo */
 #headerpanel
 {
-    padding: 0px;
+    padding: 0;
     background-color: #FFFFFF;
 }
 
@@ -1642,7 +1642,7 @@ table.labkey-main-search img:hover {
 
 .lk-input input {
     border-radius: 2px;
-    box-shadow: 0 0 0 black, inset 0px 3px 3px #EEE;
+    box-shadow: 0 0 0 black, inset 0 3px 3px #EEE;
     border: 1px solid #BFBFBF;
     height: 25px;
     width : 303px;
@@ -1765,10 +1765,6 @@ table.labkey-expandable-nav
     padding: 0;
 }
 
-.labkey-expandable-nav tr
-{
-}
-
 /* expandable nav in dropdown custom menu */
 
 #menuBarFolder_menu .labkey-expandable-nav
@@ -1785,8 +1781,6 @@ table.labkey-expandable-nav
     background-color: #fff;
 	width: 180px;
 }
-
-
 
 /* The top of the project area where there are tabs, the crumb trail, and the project title */
 .labkey-proj-nav-panel
@@ -1814,10 +1808,6 @@ table.labkey-expandable-nav
     vertical-align: top;
 }
 
-
-
-
-
 /* The cell that contains the expand/collapse image */
 /* are we sure about this - side nav and study seem to be using labkey-nav-tree-node et al below */
 td.labkey-expand-collapse-area
@@ -1840,11 +1830,6 @@ td.labkey-expand-collapse-area img {
 	margin-right: 3px;
 }
 
-
-
-
-
-
 /* The table that contains all the expandable nodes in the expandable menus */
 /* this is what sidenav and Pages are using - kc 07-29-11 */
 table.labkey-nav-tree
@@ -1856,9 +1841,6 @@ span.labkey-nav-tree-selected
 {
     font-weight:bold;
 }
-
-
-
 
 /* Each line of the expandable nav menus */
 /* this is what sidenav, Pages, and Study are using - kc 07-29-11 */
@@ -1910,7 +1892,7 @@ a.nav-tree-selected
 /* The expandable nav rows sometimes have a total like in the Study module */
 td.labkey-nav-tree-total
 {
-    padding: 0em;
+    padding: 0;
     padding-top: 0.3em;
     vertical-align: top;
 }
@@ -2037,10 +2019,6 @@ th.labkey-wp-title-left a:hover {
 	text-decoration: none;
 }
 
-/*th.labkey-wp-title-left img, .labkey-wp-title img {*/
-	/*margin-top: 4px;*/
-/*}*/
-
 /* This is used for the right side of the wp header and often contains buttons */
 th.labkey-wp-title-right, td.labkey-wp-title-right {
     text-align:  right;
@@ -2112,7 +2090,7 @@ span.labkey-wp-icon-button-inactive:hover {
 a.no-arrow {
     background: none !important;
     padding-right: 2px !important;
-    padding-top: 0px !important;
+    padding-top: 0 !important;
     margin: 0;
 }
 
@@ -2192,10 +2170,6 @@ table.labkey-protocol-applications td
 
 /* Flow */
 
-.labkey-flow-graph
-{
-}
-
 a.labkey-selected-link
 {
     cursor:default;
@@ -2233,8 +2207,6 @@ table.labkey-prot-annots td, table.labkey-prot-annots th
     padding: 10px;
 }
 
-/* Query */
-
 /* Study */
 
 table.labkey-study-expandable-nav
@@ -2245,8 +2217,8 @@ table.labkey-study-expandable-nav
 
 .labkey-study-expandable-nav td, .labkey-study-expandable-nav th
 {
-    padding-top: 0em;
-    padding-bottom: 0em;
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
 .labkey-study-expandable-nav .labkey-nav-tree-node
@@ -2454,15 +2426,6 @@ table.labkey-r-tsvout
     border: solid 1px #AAAAAA;
 }
 
-.gwt-BorderedPanel {
-}
-
-.gwt-Button {
-}
-
-.gwt-Canvas {
-}
-
 .gwt-CheckBox {
   font-size: 8pt;
 }
@@ -2484,12 +2447,6 @@ table.labkey-r-tsvout
   cursor: default;
 }
 
-.gwt-FileUpload {
-}
-
-.gwt-Frame {
-}
-
 .gwt-HorizontalSplitter .Bar {
   width: 8px;
   background-color: #89A1B4;
@@ -2507,7 +2464,7 @@ table.labkey-r-tsvout
 }
 
 .gwt-MenuBar .gwt-MenuItem {
-  padding: 1px 4px 1px 4px;
+  padding: 1px 4px;
   font-size: 8pt;
   cursor: default;
 }
@@ -2552,9 +2509,6 @@ table.labkey-r-tsvout
 	opacity: 0.5;
 }
 
-.gwt-Tree {
-}
-
 .gwt-Tree .gwt-TreeItem {
   font-size: 8pt;
 }
@@ -2563,19 +2517,13 @@ table.labkey-r-tsvout
   font-weight:bold;
 }
 
-.gwt-StackPanel {
-}
-
 .gwt-StackPanel .gwt-StackPanelItem {
   background-color: #E7EFF4;
   cursor: pointer;
 }
 
-.gwt-StackPanel .gwt-StackPanelItem-selected {
-}
-
 .gwt-ButtonBar {
-    padding: 4px 0px;
+    padding: 4px 0;
 }
 
 /* Create Chart View */
@@ -3347,8 +3295,8 @@ span.button-icon {
 }
 
 #folderBar_menu {
-    padding-right: 0px;
-    padding-left: 0px;
+    padding-right: 0;
+    padding-left: 0;
     left: 59px !important;
 }
 
@@ -3456,7 +3404,7 @@ div.headermenu {
     background-color: #126495;
     padding: 6px 13px 6px 6px;
     font-size: 95%;
-    right: 0px;
+    right: 0;
 }
 
 div.dialog-headermenu,
@@ -3504,7 +3452,7 @@ div.headermenu a.labkey-menu-text-link img {
     z-index: 1;
     left: 12px;
     color: darkgrey;
-    width: 0px;
+    width: 0;
 }
 
 #headerSearchInput-inputEl {
@@ -3534,6 +3482,20 @@ div.headermenu a.labkey-menu-text-link img {
     list-style: none;
 }
 
+/* NOTE: This selector is Firefox only */
+.x4-gecko .x4-menu-item-active .x4-menu-item-icon
+{
+    top: 4px !important; /* was 3px, adjusted to be the same as the non-active state */
+    left: 3px !important; /* was 2px, adjusted to be the same as the non-active state */
+}
+
+/* account for adding of highlight border */
+.x4-gecko .x4-menu-item-active .x4-menu-item-arrow
+{
+    top: 4px;
+    right: 3px;
+}
+
 .x4-menu-item-text
 {
     zoom: normal;
@@ -3548,16 +3510,9 @@ div.headermenu a.labkey-menu-text-link img {
     background-image: url(./_images/arrow_right.png) !important;
 }
 
-/* account for adding of highlight border */
-.x4-menu-item-active .x4-menu-item-arrow
-{
-    top: 3px;
-    right: 2px;
-}
-
 .x4-menu-item-icon.fa
 {
-    margin-top: 3px;
+    margin: 2px;
 }
 
 /* dont allow the up down arrows to show as disabled until bug 24434 has been fixed */
@@ -3623,7 +3578,7 @@ div.facet_header .x4-panel-header-text
 .x4-message-box .x4-window-body,
 .x4-toolbar-footer {
     background-color: #ffffff;
-    margin-top: 0px;
+    margin-top: 0;
 }
 
 .x4-form-checkbox,
