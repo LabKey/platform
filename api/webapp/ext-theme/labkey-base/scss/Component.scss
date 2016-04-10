@@ -144,3 +144,37 @@ $tab-color: $text-color;
 
 $tabbar-base-color: transparent;  //no background behind tabs
 $tabbar-border-color: transparent; //no background around tabbar
+
+// NOTE: The following adjustment was made manually to the ext-all/ext-all-debug.css directly,
+// should be incorporated in the next scss build. This patch fixes icons from "jumping" within the
+// menus due to the active state border being applied on hover. Formerly, ExtJS accounted for this
+// by swapping padding 1px for border 1px, however, with inline icons this strategy still results in "jumping".
+/*
+.x4-menu-item {
+  padding: 1px;
+  cursor: pointer;
+}
+
+became:
+
+.x4-menu-item {
+  padding: 1px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+Then the active state was update from:
+
+.x4-menu-item-active {
+   ...
+   padding: 0;
+}
+
+became:
+
+.x4-menu-item-active {
+   ...
+   // padding: 0; removed
+}
+
+*/
