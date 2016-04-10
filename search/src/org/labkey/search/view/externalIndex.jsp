@@ -24,7 +24,7 @@
 <%@ page import="org.labkey.search.SearchController.ClearExternalIndexAction" %>
 <%@ page import="org.labkey.search.SearchController.PermissionsAction" %>
 <%@ page import="org.labkey.search.SearchController.SwapExternalIndexAction" %>
-<%@ page import="org.labkey.search.model.ExternalAnalyzer" %>
+<%@ page import="org.labkey.search.model.LuceneAnalyzer" %>
 <%@ page import="org.labkey.search.model.ExternalIndexProperties" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -58,7 +58,7 @@ if (null != ss)
                 <select name="externalIndexAnalyzer"><%
                     String currentAnalyzer = props.getExternalIndexAnalyzer();
 
-                    for (ExternalAnalyzer a : ExternalAnalyzer.values())
+                    for (LuceneAnalyzer a : LuceneAnalyzer.values())
                     { %>
                         <option<%=selected(a.toString().equals(currentAnalyzer))%>><%=h(a.toString())%></option><%
                     }

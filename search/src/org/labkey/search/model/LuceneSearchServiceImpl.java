@@ -24,7 +24,6 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.FieldType;
 import org.apache.lucene.document.SortedDocValuesField;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
@@ -32,7 +31,6 @@ import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexFormatTooNewException;
 import org.apache.lucene.index.IndexFormatTooOldException;
-import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.index.IndexUpgrader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
@@ -65,6 +63,7 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
@@ -119,7 +118,6 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -139,25 +137,29 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     private ExternalIndexManager _externalIndexManager;
 
     private final MultiPhaseCPUTimer<SEARCH_PHASE> TIMER = new MultiPhaseCPUTimer<>(SEARCH_PHASE.class, SEARCH_PHASE.values());
-    private final Analyzer _standardAnalyzer = ExternalAnalyzer.EnglishAnalyzer.getAnalyzer();
+    private final Analyzer _standardAnalyzer = LuceneAnalyzer.LabKeyAnalyzer.getAnalyzer();
 
     enum FIELD_NAME
     {
-        title,            // Used to be the "search" title (equivalent to keywordsMed), now the display title
-        body,
+        // Use these for english language terms that should be analyzed (stemmed)
 
-        // Use keywords for english language terms that should be analyzed (stemmed)
+        body,             // Most content goes here
 
         keywordsLo,       // Same weighting as body terms
         keywordsMed,      // Weighted twice the body terms... e.g., terms in the title, subject, or other summary
         keywordsHi,       // Weighted twice the medium keywords... these terms will dominate the search results, so probably not a good idea
 
-        // Use identifiers for terms that should NOT be stemmed, like identifiers and folder names. These are case-insensitive.
+        // Use these for terms that should NOT be stemmed, like identifiers, folder names, and people names. These are case-insensitive.
 
-        identifiersLo,    // Same weighting as body terms... perhaps use this for folder path parts?
+        identifiersLo,    // Same weighting as body terms... used for folder path parts
         identifiersMed,   // Weighted twice the lo identifiers
-        identifiersHi,    // Weighted twice the medium identifiers (e.g., unique ids like PTIDs, sample IDs, etc.)... be careful, these will dominate the search results (e.g., unique ids like PTIDs, sample IDs, etc.)
+        identifiersHi,    // Weighted twice the medium identifiers (e.g., unique ids like PTIDs, sample IDs, etc.)... be careful, these will dominate the search results
 
+        searchCategories, // Used for special filtering, but analyzed like an identifier
+
+        // The following are all stored, but not indexed.
+
+        title,            // This is just the display title. keywordsMed is used to index title/subject terms.
         summary,
         url,
         container,        // Used in two places: stored field in documents (used for low volume purposes, delete and results display) and field in doc values (for high volume security filtering)
@@ -330,7 +332,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         if (props.hasExternalIndex())
         {
             File externalIndexFile = new File(props.getExternalIndexPath());
-            Analyzer analyzer = ExternalAnalyzer.valueOf(props.getExternalIndexAnalyzer()).getAnalyzer();
+            Analyzer analyzer = LuceneAnalyzer.valueOf(props.getExternalIndexAnalyzer()).getAnalyzer();
 
             if (externalIndexFile.exists())
                 _externalIndexManager = ExternalIndexManager.get(externalIndexFile, analyzer);
@@ -401,9 +403,20 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
 
     // Custom property code path needs to ignore "known properties", the properties we handle by name. See #26015.
-    private static final Set<String> KNOWN_PROPERTIES = Stream.of(PROPERTY.values())
-        .map(PROPERTY::toString)
-        .collect(Collectors.toSet());
+    private static final Set<String> KNOWN_PROPERTIES = Sets.newCaseInsensitiveHashSet();
+
+    static
+    {
+        // Ignore all the SearchServer.PROPERTY values
+        Stream.of(PROPERTY.values())
+            .map(PROPERTY::toString)
+            .forEach(KNOWN_PROPERTIES::add);
+
+        // Ignore all the LuceneSearchServiceImpl.FIELD_NAME values
+        Stream.of(FIELD_NAME.values())
+            .map(FIELD_NAME::toString)
+            .forEach(KNOWN_PROPERTIES::add);
+    }
 
     @Override
     Map<?, ?> preprocess(String id, WebdavResource r, Throwable[] handledException)
@@ -441,9 +454,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             
             Map<String, ?> props = r.getProperties();
             assert null != props;
-
-            String categories = (String)props.get(PROPERTY.categories.toString());
-            assert null != categories;
 
             String body = null;
             String title = (String)props.get(PROPERTY.title.toString());
@@ -580,28 +590,24 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             doc.add(new SortedDocValuesField(FIELD_NAME.container.toString(), new BytesRef(r.getContainerId())));
 
-            // === Index without analyzing, don't store ===
-
-            // TODO: We're implementing a ghetto analyzer here... we really should create a PerFieldAnalyzerWrapper
-            // that uses Snowball for text fields and a whitespace, lowercase analyzer for fields that contain multiple
-            // terms that we don't want to stem. Custom properties could even specify an analyzer preference. This new
-            // Analyzer should then be used at both index and search time.
-
-            // Split the category string by whitespace, index each without stemming
-            for (String category : categories.split("\\s+"))
-                doc.add(new Field(PROPERTY.categories.toString(), category.toLowerCase(), StringField.TYPE_NOT_STORED));
-
-            addIdentifiers(doc, props, PROPERTY.identifiersLo, FIELD_NAME.identifiersLo, identifiersLo);
-            addIdentifiers(doc, props, PROPERTY.identifiersMed, FIELD_NAME.identifiersMed, null);
-            addIdentifiers(doc, props, PROPERTY.identifiersHi, FIELD_NAME.identifiersHi, null);
-
             // === Index and analyze, don't store ===
+
+            // We're using the LabKeyAnalyzer, which is a PerFieldAnalyzerWrapper that ensures categories and identifier fields
+            // are not stemmed but all other fields are. This analyzer is used at search time as well to ensure consistency.
+            // At the moment, custom fields can't specify an analyzer preference, but we could add this at some point.
+
+            assert StringUtils.isNotEmpty((String)props.get(PROPERTY.categories.toString()));
+
+            addTerms(doc, props, PROPERTY.categories, FIELD_NAME.searchCategories, null);
+            addTerms(doc, props, PROPERTY.identifiersLo, FIELD_NAME.identifiersLo, identifiersLo);
+            addTerms(doc, props, PROPERTY.identifiersMed, FIELD_NAME.identifiersMed, null);
+            addTerms(doc, props, PROPERTY.identifiersHi, FIELD_NAME.identifiersHi, null);
 
             doc.add(new TextField(FIELD_NAME.body.toString(), body, Field.Store.NO));
 
-            addKeywords(doc, props, PROPERTY.keywordsLo, FIELD_NAME.keywordsLo, null);
-            addKeywords(doc, props, PROPERTY.keywordsMed, FIELD_NAME.keywordsMed, keywordsMed);
-            addKeywords(doc, props, PROPERTY.keywordsHi, FIELD_NAME.keywordsHi, null);
+            addTerms(doc, props, PROPERTY.keywordsLo, FIELD_NAME.keywordsLo, null);
+            addTerms(doc, props, PROPERTY.keywordsMed, FIELD_NAME.keywordsMed, keywordsMed);
+            addTerms(doc, props, PROPERTY.keywordsHi, FIELD_NAME.keywordsHi, null);
 
             // === Don't index, store ===
 
@@ -639,8 +645,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         catch (NoClassDefFoundError err)
         {
             Throwable cause = err.getCause();
-            // Suppress stack trace, etc., if Bouncy Castle isn't present.  Use cause since ClassNotFoundException's
-            // message is consistent across JVMs; NoClassDefFoundError's is not.  Note: This shouldn't happen any more
+            // Suppress stack trace, etc., if Bouncy Castle isn't present. Use cause since ClassNotFoundException's
+            // message is consistent across JVMs; NoClassDefFoundError's is not. Note: This shouldn't happen any more
             // since Bouncy Castle ships with Tika as of 0.7.
             if (cause != null && cause instanceof ClassNotFoundException && cause.getMessage().equals("org.bouncycastle.cms.CMSException"))
                 _log.warn("Can't read encrypted document \"" + id + "\".  You must install the Bouncy Castle encryption libraries to index this document.  Refer to the LabKey Software documentation for instructions.");
@@ -790,37 +796,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-    // We were using StringField.TYPE_NOT_STORED for identifiers, but that resulted in exceptions with phrase queries,
-    // see #17174. This alternate approach indexes identifiers WITH position information. There must be a way to index
-    // identifiers without position info but exclude them from phrase queries, but it all makes my head hurt too much.
-    private final static FieldType INDEXED_IDENTIFIER = new FieldType();
-
-    static
+    private void addTerms(Document doc, Map<String, ?> props, PROPERTY property, FIELD_NAME fieldName, @Nullable String computedTerms)
     {
-        INDEXED_IDENTIFIER.setOmitNorms(true);
-        INDEXED_IDENTIFIER.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS);
-        INDEXED_IDENTIFIER.setTokenized(false);
-    }
+        String documentTerms = (String)props.get(property.toString());
+        String terms = (null == computedTerms ? "" : computedTerms + " ") + (null == documentTerms ? "" : documentTerms);
 
-    private void addIdentifiers(Document doc, Map<String, ?> props, PROPERTY property, FIELD_NAME fieldName, @Nullable String standardIdentifiers)
-    {
-        String documentIdentifiers = (String)props.get(property.toString());
-        String identifiers = (StringUtils.isEmpty(standardIdentifiers) ? "" : standardIdentifiers + " ") + (null == documentIdentifiers ? "" : documentIdentifiers);
-
-        // Split the identifiers string by whitespace, index each without stemming
-        if (!identifiers.isEmpty())
-            for (String identifier : identifiers.split(("\\s+")))
-                doc.add(new Field(fieldName.toString(), identifier.toLowerCase(), INDEXED_IDENTIFIER));
-    }
-
-
-    private void addKeywords(Document doc, Map<String, ?> props, PROPERTY property, FIELD_NAME fieldName, @Nullable String standardKeywords)
-    {
-        String documentKeywords = (String)props.get(property.toString());
-        String keywords = (null == standardKeywords ? "" : standardKeywords + " ") + (null == documentKeywords ? "" : documentKeywords);
-
-        if (!keywords.isEmpty())
-            doc.add(new TextField(fieldName.toString(), keywords, Field.Store.NO));
+        if (!terms.isEmpty())
+            doc.add(new TextField(fieldName.toString(), terms, Field.Store.NO));
     }
 
 
@@ -945,7 +927,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-    static final AutoDetectParser _parser = new AutoDetectParser();
+    private static final AutoDetectParser _parser = new AutoDetectParser();
 
     private Parser getParser()
     {
@@ -1336,7 +1318,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                         categoryBuilder.add(categoryQuery, BooleanClause.Occur.SHOULD);
                     }
 
-                    queryBuilder.add(categoryBuilder.build(), BooleanClause.Occur.MUST);
+                    queryBuilder.add(categoryBuilder.build(), BooleanClause.Occur.FILTER);
                 }
                 else
                 {
@@ -1357,7 +1339,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 if (!user.isSearchUser())
                 {
                     Query securityFilter = new SecurityQuery(user, scope.getRoot(current), current, scope.isRecursive(), iTimer);
-                    queryBuilder.add(securityFilter, BooleanClause.Occur.MUST);
+                    queryBuilder.add(securityFilter, BooleanClause.Occur.FILTER);
                 }
 
                 iTimer.setPhase(SEARCH_PHASE.search);
@@ -1384,8 +1366,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-    private SearchResult createSearchResult(int offset, int hitsToRetrieve, TopDocs topDocs, IndexSearcher searcher)
-            throws IOException
+    private SearchResult createSearchResult(int offset, int hitsToRetrieve, TopDocs topDocs, IndexSearcher searcher) throws IOException
     {
         ScoreDoc[] hits = topDocs.scoreDocs;
 
@@ -1582,31 +1563,49 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         private final SearchService _ss = ServiceRegistry.get(SearchService.class);
         private final CountDownLatch _latch = new CountDownLatch(DOC_COUNT);
 
-        @Test // Doesn't really test anything; just provides a convenient way to log output from some standard analyzers.
+        @Test
         public void testAnalyzers() throws IOException
         {
-            analyze("casale WISP-R 123ABC this.doc running coding dance dancing danced DIAMOND ACCEPTOR FACTOR");
+            String originalText = "casale WISP-R 123ABC this.doc running coding dance dancing danced DIAMOND ACCEPTOR FACTOR";
+
+            String simpleResult = "[casale, wisp, r, abc, this, doc, running, coding, dance, dancing, danced, diamond, acceptor, factor]";
+            String keywordResult = "[" + originalText + "]";
+            String englishResult = "[casal, wisp, r, 123abc, this.doc, run, code, danc, danc, danc, diamond, acceptor, factor]";
+            String identifierResult = "[casale, wisp-r, 123abc, this.doc, running, coding, dance, dancing, danced, diamond, acceptor, factor]";
+
+            analyze(LuceneAnalyzer.SimpleAnalyzer, originalText, simpleResult, FIELD_NAME.body.name(), FIELD_NAME.identifiersLo.name());
+            analyze(LuceneAnalyzer.KeywordAnalyzer, originalText, keywordResult, FIELD_NAME.body.name(), FIELD_NAME.identifiersLo.name());
+            analyze(LuceneAnalyzer.EnglishAnalyzer, originalText, englishResult, FIELD_NAME.body.name(), FIELD_NAME.identifiersLo.name());
+            analyze(LuceneAnalyzer.IdentifierAnalyzer, originalText, identifierResult, FIELD_NAME.body.name(), FIELD_NAME.identifiersLo.name());
+            analyze(LuceneAnalyzer.LabKeyAnalyzer, originalText, englishResult, FIELD_NAME.body.name(), FIELD_NAME.keywordsLo.name(), FIELD_NAME.keywordsMed.name(), FIELD_NAME.keywordsHi.name(), "foo");
+            analyze(LuceneAnalyzer.LabKeyAnalyzer, originalText, identifierResult, FIELD_NAME.searchCategories.name(), FIELD_NAME.identifiersLo.name(), FIELD_NAME.identifiersMed.name(), FIELD_NAME.identifiersHi.name());
         }
 
         /**
          *  Analyzes text with all ExternalAnalyzers and logs the results
          */
-        private void analyze(String text) throws IOException
+        private void analyze(LuceneAnalyzer luceneAnalyzer, String text, String expectedResult, String... fieldNames) throws IOException
         {
-            for (ExternalAnalyzer analyzer : ExternalAnalyzer.values())
+            Analyzer analyzer = luceneAnalyzer.getAnalyzer();
+
+            for (String fieldName : fieldNames)
             {
                 List<String> result = new LinkedList<>();
 
-                try (TokenStream stream = analyzer.getAnalyzer().tokenStream("foo", text))
+                try (TokenStream stream = analyzer.tokenStream(fieldName, text))
                 {
                     stream.reset();
 
                     while (stream.incrementToken())
                         result.add(stream.getAttribute(CharTermAttribute.class).toString());
+
+                    stream.end();
                 }
 
-                _log.info(analyzer.name() + ": " + result);
+                assertEquals(expectedResult, result.toString());
             }
+
+            analyzer.close();
         }
 
         @Test
@@ -1663,10 +1662,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             test("345MNO", 1);
             test("678pqr", 1);
 
-            // TODO: These three tests should return six documents, but we currently have an analyzer mismatch - identifiers are not stemmed but queries always are. See #26028
-            test("running", 3, "Test keywordsHi", "Test keywordsMed", "Test keywordsLo");
-            test("coding", 3, "Test keywordsHi", "Test keywordsMed", "Test keywordsLo");
-            test("dancing", 3, "Test keywordsHi", "Test keywordsMed", "Test keywordsLo");
+            // These should hit both stemmed and non-stemmed fields
+            test("running", 6);
+            test("coding", 6);
+            test("DANCING", 6);
 
             impl.deleteIndexedContainer(_c.getId());
         }

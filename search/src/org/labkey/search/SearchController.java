@@ -69,7 +69,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.search.audit.SearchAuditProvider;
 import org.labkey.search.model.AbstractSearchService;
-import org.labkey.search.model.ExternalAnalyzer;
+import org.labkey.search.model.LuceneAnalyzer;
 import org.labkey.search.model.ExternalIndexProperties;
 import org.labkey.search.model.IndexInspector;
 import org.labkey.search.model.LuceneSearchServiceImpl;
@@ -496,7 +496,7 @@ public class SearchController extends SpringActionController
 
             try
             {
-                ExternalAnalyzer.valueOf(props.getExternalIndexAnalyzer());
+                LuceneAnalyzer.valueOf(props.getExternalIndexAnalyzer());
             }
             catch (IllegalArgumentException e)
             {
