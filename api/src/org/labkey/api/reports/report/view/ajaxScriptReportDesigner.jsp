@@ -110,10 +110,11 @@
     // TODO, add an action to get this information
     Map<String, Object> reportConfig = new HashMap<>();
 
-    reportConfig.put("schemaName", bean.getSchemaName());
-    reportConfig.put("queryName", bean.getQueryName());
-    reportConfig.put("viewName", bean.getViewName());
-    reportConfig.put("dataRegionName", StringUtils.defaultString(bean.getDataRegionName(), QueryView.DATAREGIONNAME_DEFAULT));
+    // Since we are writing to the JS object via HTML these user-defined props need to be escaped
+    reportConfig.put("schemaName", h(bean.getSchemaName()));
+    reportConfig.put("queryName", h(bean.getQueryName()));
+    reportConfig.put("viewName", h(bean.getViewName()));
+    reportConfig.put("dataRegionName", h(StringUtils.defaultString(bean.getDataRegionName(), QueryView.DATAREGIONNAME_DEFAULT)));
     reportConfig.put("reportType", bean.getReportType());
     reportConfig.put("reportId", bean.getReportId() != null ? bean.getReportId().toString() : null);
     reportConfig.put("shareReport", bean.isShareReport());
@@ -167,7 +168,8 @@
                 redirectUrl     : <%=q(bean.getRedirectUrl())%>,
                 sharedScripts   : <%=text(jsonMapper.writeValueAsString(sharedScripts))%>,
                 reportConfig    : <%=text(jsonMapper.writeValueAsString(reportConfig))%>,
-                script          : <%=q(StringUtils.trimToEmpty(bean.getScript()))%>
+                script          : <%=q(StringUtils.trimToEmpty(bean.getScript()))%>,
+                htmlEncodedProps: true
             });
 
             var _LOCK = false; // prevents recursive panel adjustments
@@ -188,7 +190,7 @@
 
             Ext4.EventManager.onWindowResize(_resize);
         });
-    };
+    }
 </script>
 
 <labkey:scriptDependency callback="createScriptReportPanel" scope="this"/>
