@@ -1618,7 +1618,7 @@ query/webapp/reports/paging_arrow_prev.gif -text
 query/webapp/reports/participantReport.png -text
 query/webapp/reports/pdf.png -text
 query/webapp/reports/presentation.png -text
-query/webapp/reports/r.gif -text
+query/webapp/reports/r_logo.svg -text
 query/webapp/reports/rowExpander.js -text
 query/webapp/reports/spreadsheet.png -text
 query/webapp/reports/unknown.png -text

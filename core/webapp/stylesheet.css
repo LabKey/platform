@@ -959,42 +959,6 @@ table.labkey-admin-console
     vertical-align: top;
 }
 
-/* Used for the customize view page for data regions */
-table.labkey-customize-view
-{
-    border-spacing: 0; *border-collapse: collapse;
-    padding: 0;
-}
-
-.labkey-customize-view table, .labkey-customize-view th
-{
-    padding: 0;
-}
-
-.labkey-customize-view table
-{
-    border-spacing: 0;
-	*border-collapse: collapse;
-}
-
-table.labkey-customize-view td,
-table.labkey-customize-view a,
-table.labkey-customize-view .labkey-tab a:hover
-{
-    background: #FFFFFF;
-}
-
-table.labkey-customize-view .labkey-help-pop-up
-{
-    background: transparent;
-}
-
-table.labkey-customize-view td.labkey-tab-space,
-table.labkey-customize-view td.labkey-tab-space a
-{
-    background: transparent;
-}
-
 /* Data Region */
 
 /* There are some odd styles that are used so that the data
@@ -3508,6 +3472,11 @@ div.headermenu a.labkey-menu-text-link img {
     right: 3px;
     height: 14px;
     background-image: url(./_images/arrow_right.png) !important;
+}
+
+.x4-menu-item-icon
+{
+    background-size: 16px 16px;
 }
 
 .x4-menu-item-icon.fa

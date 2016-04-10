@@ -268,13 +268,6 @@ span.labkey-button:active
     border: 5px solid #<%= webpart %>;
 }
 
-table.labkey-customize-view td,
-table.labkey-customize-view a,
-table.labkey-customize-view .labkey-tab a:hover
-{
-    background: #<%= second %>;
-}
-
 table.labkey-data-region
 {
     background-color: #<%= second %>;

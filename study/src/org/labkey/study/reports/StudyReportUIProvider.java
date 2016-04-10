@@ -59,7 +59,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
 
     static
     {
-        _typeToIconMap.put(StudyRReport.TYPE, "/reports/r.gif");
+        _typeToIconMap.put(StudyRReport.TYPE, "/reports/r_logo.svg");
         _typeToIconMap.put(ChartReportView.TYPE, "/reports/chart.gif");
         _typeToIconMap.put(StudyQueryReport.TYPE, "/reports/grid.gif");
         _typeToIconMap.put(StudyChartQueryReport.TYPE, "/reports/chart.gif");
@@ -71,7 +71,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         _typeToIconMap.put(EnrollmentReport.TYPE, "/reports/enrollment.png");
 
         // font icons - some report image icons dont have corresponding font icon replacements yet
-//      _typeToIconClsMap.put(StudyRReport.TYPE, "/reports/r.gif");
+//      _typeToIconClsMap.put(StudyRReport.TYPE, "/reports/r_logo.svg");
         _typeToIconClsMap.put(ChartReportView.TYPE, "fa fa-bar-chart");
         _typeToIconClsMap.put(StudyQueryReport.TYPE, "fa fa-table");
         _typeToIconClsMap.put(StudyChartQueryReport.TYPE, "fa fa-bar-chart");
