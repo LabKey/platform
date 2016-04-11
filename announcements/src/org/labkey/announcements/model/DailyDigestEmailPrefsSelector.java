@@ -16,6 +16,7 @@
 
 package org.labkey.announcements.model;
 
+import org.labkey.api.announcements.EmailOption;
 import org.labkey.api.data.Container;
 import org.labkey.api.message.settings.MessageConfigService.UserPreference;
 
@@ -35,6 +36,8 @@ public class DailyDigestEmailPrefsSelector extends EmailPrefsSelector
     @Override
     protected boolean includeEmailPref(UserPreference up)
     {
-        return super.includeEmailPref(up) && (up.getEmailOptionId() != 0);
+        return super.includeEmailPref(up) &&
+                ((up.getEmailOptionId().equals(EmailOption.MESSAGES_ALL_DAILY_DIGEST.getValue()))
+                        || (up.getEmailOptionId().equals(EmailOption.MESSAGES_MINE_DAILY_DIGEST.getValue())));
     }
 }
