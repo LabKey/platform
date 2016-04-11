@@ -320,10 +320,7 @@ public class StorageProvisioner
         DomainKind kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
 
-        // should be in a transaction with propertydescriptor changes
-        assert scope.isTransactionActive();
-
-        String tableName = domain.getStorageTableName();
+        assert scope.isTransactionActive() : "should be in a transaction with propertydescriptor changes";
 
         Set<String> base = Sets.newCaseInsensitiveHashSet();
         for (PropertyStorageSpec s : kind.getBaseProperties())
