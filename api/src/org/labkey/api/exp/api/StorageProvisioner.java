@@ -326,6 +326,11 @@ public class StorageProvisioner
         for (PropertyStorageSpec s : kind.getBaseProperties())
             base.add(s.getName());
 
+        if (domain.getStorageTableName() == null)
+        {
+            throw new IllegalStateException("No storage table name set for domain: " + domain.getTypeURI());
+        }
+
         TableChange change = new TableChange(domain, ChangeType.DropColumns);
 
         for (DomainProperty prop : properties)
