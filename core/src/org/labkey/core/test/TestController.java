@@ -20,6 +20,8 @@ import org.labkey.api.action.FormArrayList;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
@@ -94,6 +96,8 @@ public class TestController extends SpringActionController
         {
             // Add code here
 
+            DbSchema test = DbSchema.get("test", DbSchemaType.Module);
+            test.getTable("TestDomains").getColumns();
             return null;
         }
 

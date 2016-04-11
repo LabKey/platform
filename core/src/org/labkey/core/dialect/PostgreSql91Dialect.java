@@ -780,7 +780,8 @@ class PostgreSql91Dialect extends SqlDialect
 
     private String getDomainKey(String schemaName, String domainName)
     {
-        return ("public".equals(schemaName) ? "" : schemaName + ".") + domainName;
+        // Domain names are now returned from column metadata fully qualified and quoted, so save them that way. See #26149.
+        return ("public".equals(schemaName) ? domainName : "\"" + schemaName + "\".\"" + domainName + "\"");
     }
 
 
@@ -1562,14 +1563,14 @@ class PostgreSql91Dialect extends SqlDialect
 
         private int getDomainScale(String domainName) throws SQLException
         {
-            DbSchema schema = _table.getSchema();
-            Integer scale = getDomainScale(schema, domainName);
+            Integer scale = _domainScaleMap.get(domainName);
 
             if (null == scale)
             {
                 // Some domain wasn't there when we initialized the datasource, so reload now. This will happen at bootstrap.
+                DbSchema schema = _table.getSchema();
                 initializeUserDefinedTypes(schema.getScope());
-                scale = getDomainScale(schema, domainName);
+                scale = _domainScaleMap.get(domainName);
 
                 // If scale is still null, then we have a problem. We've seen occasional exception reports showing this,
                 // but haven't had the information to track it down... so log additional info.
@@ -1586,6 +1587,9 @@ class PostgreSql91Dialect extends SqlDialect
         }
 
         // Domain could be defined in the current schema or in the "public" schema
+        // This is the old way... apparently PostgreSQL changed behavior at some point, where column meta data shifted from
+        // returning unqualified domain names to fully qualified domain names. See #26149.
+        // TODO: Delete this once we're sure we don't need to resurrect the old way for older versions of PostgreSQL
         private Integer getDomainScale(DbSchema schema, String domainName)
         {
             // Check the schema first
