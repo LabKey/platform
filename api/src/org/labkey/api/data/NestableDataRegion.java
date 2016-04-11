@@ -59,6 +59,23 @@ public class NestableDataRegion extends AbstractNestableDataRegion
     }
 
     @Override
+    public DisplayColumn getDisplayColumn(String name)
+    {
+        DisplayColumn result = super.getDisplayColumn(name);
+        if (result == null)
+        {
+            for (DisplayColumn col : _allColumns)
+            {
+                if (name.equalsIgnoreCase(col.getName()))
+                {
+                    return col;
+                }
+            }
+        }
+        return result;
+    }
+
+    @Override
     protected void renderTableRow(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int rowIndex) throws SQLException, IOException
     {
         super.renderTableRow(ctx, out, showRecordSelectors, renderers, rowIndex);
