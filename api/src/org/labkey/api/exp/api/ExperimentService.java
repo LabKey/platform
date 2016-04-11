@@ -411,7 +411,7 @@ public class ExperimentService
         /**
          * Provides access to an object that should be locked before inserting protocols. Locking when doing
          * experiment run insertion has turned out to be problematic and deadlock prone. It's more pragmatic to have
-         * the occassional import fail with a SQLException due to duplicate insertions compared with deadlocking the
+         * the occasional import fail with a SQLException due to duplicate insertions compared with deadlocking the
          * whole server.
          *
          * @return lock object on which to synchronize

@@ -64,7 +64,7 @@ public abstract class AbstractParticipantVisitResolver implements ParticipantVis
     /**
      * Looks up the specimen information, caching results to be used for future lookups as needed. Defers to subclasses
      * to do the actual resolution.
-     * The target study is considered on a row by row basis.  The target study from the result domain has the highest precendence followed by the run or batch domain.
+     * The target study is considered on a row by row basis. The target study from the result domain has the highest precedence followed by the run or batch domain.
      */
     @NotNull
     public final ParticipantVisit resolve(String specimenID, String participantID, Double visitID, Date date, Container resultDomainTargetStudy) throws ExperimentException
