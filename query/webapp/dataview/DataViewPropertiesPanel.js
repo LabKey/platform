@@ -371,7 +371,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
             imagesItems.push({
                 xtype      : 'displayfield',
                 fieldLabel : 'Icon',
-                value      : '<div class="icon"><img src="' + this.data.icon + '"/></div>',
+                value      : ((this.data.iconCls !== null) ? '<span class="' + this.data.iconCls + '"></span>' : '<div class="icon"><img src="' + this.data.icon + '"/></div>'),
                 readOnly   : true,
                 labelWidth : 120,
                 width      : 400

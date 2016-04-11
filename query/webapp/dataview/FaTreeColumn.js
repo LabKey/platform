@@ -25,6 +25,8 @@ Ext4.define('Labkey.dataview.FaTreeColumn', {
         '</tpl>',
         '<tpl if="!iconCls"><img src="{blankUrl}"<tpl else><span</tpl>',
             ' class="{childCls} {baseIconCls} ',
+            // NOTE: the following line is where CSS class tree-icon-leaf was removed from the default template,
+            // because it would display the default icon on top of the font icon
             '<tpl if="!leaf">{baseIconCls}-parent</tpl> {iconCls} dataview-icon" ',
             '<tpl if="!iconCls">style="background-image:url({icon})"/><tpl else>></span></tpl>',
         '<tpl if="href">',

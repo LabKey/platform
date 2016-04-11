@@ -230,7 +230,7 @@ public class ReportViewProvider implements DataViewProvider
 
                 // This is the small icon
                 info.setIconUrl(ReportUtil.getIconUrl(c, r));
-                // TODO: This is kind of an ugly check to see if an icon is not dynamically set, it ought to be made better eventually
+                // TODO: This is kind of an ugly check, should break out first part of getDynamicImageUrl() into separate existence check
                 if(ReportUtil.getDynamicImageUrl(c, r, ImageType.Small) == null)
                 {
                     info.setIconCls(ReportUtil.getIconCls(r));
