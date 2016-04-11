@@ -103,6 +103,13 @@ public enum CompareType
             {
                 return new DateEqCompareClause(fieldKey, toDatePart(asDate(value)));
             }
+
+            @Override
+            public boolean meetsCriteria(Object value, Object[] paramVals)
+            {
+                CompareClause clause = createFilterClause(FieldKey.fromParts("unused"), paramVals.length > 0 ? paramVals[0] : null);
+                return clause.meetsCriteria(value);
+            }
         },
 
     NEQ("Does Not Equal", "neq", "NOT_EQUAL", true, " <> ?", OperatorType.NEQ)
@@ -124,6 +131,13 @@ public enum CompareType
             public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
             {
                 return new DateNeqCompareClause(fieldKey, toDatePart(asDate(value)));
+            }
+
+            @Override
+            public boolean meetsCriteria(Object value, Object[] paramVals)
+            {
+                CompareClause clause = createFilterClause(FieldKey.fromParts("unused"), paramVals.length > 0 ? paramVals[0] : null);
+                return clause.meetsCriteria(value);
             }
         },
 
@@ -164,6 +178,13 @@ public enum CompareType
             {
                 return new DateGtCompareClause(fieldKey, toDatePart(asDate(value)));
             }
+
+            @Override
+            public boolean meetsCriteria(Object value, Object[] paramVals)
+            {
+                CompareClause clause = createFilterClause(FieldKey.fromParts("unused"), paramVals.length > 0 ? paramVals[0] : null);
+                return clause.meetsCriteria(value);
+            }
         },
 
     LT("Is Less Than", "lt", "LESS_THAN", true, " < ?", OperatorType.LT)
@@ -188,6 +209,13 @@ public enum CompareType
             public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
             {
                 return new DateLtCompareClause(fieldKey, toDatePart(asDate(value)));
+            }
+
+            @Override
+            public boolean meetsCriteria(Object value, Object[] paramVals)
+            {
+                CompareClause clause = createFilterClause(FieldKey.fromParts("unused"), paramVals.length > 0 ? paramVals[0] : null);
+                return clause.meetsCriteria(value);
             }
         },
 
@@ -214,6 +242,13 @@ public enum CompareType
             {
                 return new DateGteCompareClause(fieldKey, toDatePart(asDate(value)));
             }
+
+            @Override
+            public boolean meetsCriteria(Object value, Object[] paramVals)
+            {
+                CompareClause clause = createFilterClause(FieldKey.fromParts("unused"), paramVals.length > 0 ? paramVals[0] : null);
+                return clause.meetsCriteria(value);
+            }
         },
 
     LTE("Is Less Than or Equal To", "lte", "LESS_THAN_OR_EQUAL", true, " <= ?", OperatorType.LTE)
@@ -238,6 +273,13 @@ public enum CompareType
             public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
             {
                 return new DateLteCompareClause(fieldKey, toDatePart(asDate(value)));
+            }
+
+            @Override
+            public boolean meetsCriteria(Object value, Object[] paramVals)
+            {
+                CompareClause clause = createFilterClause(FieldKey.fromParts("unused"), paramVals.length > 0 ? paramVals[0] : null);
+                return clause.meetsCriteria(value);
             }
         },
 
@@ -309,7 +351,7 @@ public enum CompareType
                     List<String> values = new ArrayList<>();
                     if (value != null && !value.toString().trim().equals(""))
                     {
-                        values.addAll(parseParams(value));
+                        values.addAll(parseParams(value, getValueSeparator()));
                     }
                     return new SimpleFilter.ContainsOneOfClause(fieldKey, values, true, false);
                 }
@@ -318,7 +360,14 @@ public enum CompareType
             @Override
             public boolean meetsCriteria(Object value, Object[] paramVals)
             {
-                throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.ContainsOneOfClause.class);
+                FilterClause clause = createFilterClause(FieldKey.fromParts("unused"), Arrays.asList(paramVals));
+                return clause.meetsCriteria(value);
+            }
+
+            @Override
+            public String getValueSeparator()
+            {
+                return SimpleFilter.InClause.SEPARATOR;
             }
         },
     CONTAINS_NONE_OF("Does Not Contain Any Of (example usage: a;b;c)", "containsnoneof", "CONTAINS_NONE_OF", true, null, OperatorType.CONTAINSNONEOF)
@@ -332,7 +381,7 @@ public enum CompareType
                 }
                 else
                 {
-                    Set<String> values = parseParams(value);
+                    Set<String> values = parseParams(value, getValueSeparator());
 
                     return new SimpleFilter.ContainsOneOfClause(fieldKey, values, false, true);
                 }
@@ -341,7 +390,14 @@ public enum CompareType
             @Override
             public boolean meetsCriteria(Object value, Object[] paramVals)
             {
-                throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.ContainsOneOfClause.class);
+                FilterClause clause = createFilterClause(FieldKey.fromParts("unused"), Arrays.asList(paramVals));
+                return !clause.meetsCriteria(value);
+            }
+
+            @Override
+            public String getValueSeparator()
+            {
+                return SimpleFilter.InClause.SEPARATOR;
             }
         },
 
@@ -365,7 +421,7 @@ public enum CompareType
                         }
                         else
                         {
-                            values.addAll(parseParams(value));
+                            values.addAll(parseParams(value, getValueSeparator()));
                         }
                     }
                     return new SimpleFilter.InClause(fieldKey, values, true);
@@ -375,7 +431,14 @@ public enum CompareType
             @Override
             public boolean meetsCriteria(Object value, Object[] paramVals)
             {
-                throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
+                FilterClause clause = new SimpleFilter.InClause(FieldKey.fromParts("unused"), Arrays.asList(paramVals));
+                return clause.meetsCriteria(value);
+            }
+
+            @Override
+            public String getValueSeparator()
+            {
+                return SimpleFilter.InClause.SEPARATOR;
             }
         },
     NOT_IN("Does Not Equal Any Of (example usage: a;b;c)", "notin", "NOT_IN", true, null, OperatorType.NOTIN)
@@ -398,7 +461,7 @@ public enum CompareType
                         }
                         else
                         {
-                            values.addAll(parseParams(value));
+                            values.addAll(parseParams(value, getValueSeparator()));
                         }
                     }
                     return new SimpleFilter.InClause(fieldKey, values, true, true);
@@ -408,7 +471,14 @@ public enum CompareType
             @Override
             public boolean meetsCriteria(Object value, Object[] paramVals)
             {
-                throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
+                FilterClause clause = new SimpleFilter.InClause(FieldKey.fromParts("unused"), Arrays.asList(paramVals));
+                return !clause.meetsCriteria(value);
+            }
+
+            @Override
+            public String getValueSeparator()
+            {
+                return SimpleFilter.InClause.SEPARATOR;
             }
         },
     IN_NS("Equals One Of A Member Of A Named Set", "inns", "IN", true, null, OperatorType.IN)
@@ -461,7 +531,7 @@ public enum CompareType
                 else
                 {
                     String s = Objects.toString(value, "");
-                    String[] values = s.split(BetweenClause.SEPARATOR);
+                    String[] values = s.split(getValueSeparator());
                     if (values.length != 2)
                         throw new IllegalArgumentException("Between filter on '" + fieldKey + "' column requires exactly two parameter values separated by comma instead of '" + value.toString() + "'");
 
@@ -477,6 +547,12 @@ public enum CompareType
                         GTE.createFilterClause(fieldKey, paramVals[0]),
                         LTE.createFilterClause(fieldKey, paramVals[1]));
                 return clause.meetsCriteria(value);
+            }
+
+            @Override
+            public String getValueSeparator()
+            {
+                return BetweenClause.SEPARATOR;
             }
         },
     NOT_BETWEEN("Not Between", "notbetween", "NOT_BETWEEN", true, " NOT BETWEEN ? AND ?", OperatorType.NOTBETWEEN)
@@ -495,7 +571,7 @@ public enum CompareType
                 else
                 {
                     String s = Objects.toString(value, "");
-                    String[] values = s.split(BetweenClause.SEPARATOR);
+                    String[] values = s.split(getValueSeparator());
                     if (values.length != 2)
                         throw new IllegalArgumentException("Not between filter on '" + fieldKey + "' column requires exactly two parameter values separated by comma instead of '" + value.toString() + "'");
 
@@ -511,6 +587,12 @@ public enum CompareType
                         LT.createFilterClause(fieldKey, paramVals[0]),
                         GT.createFilterClause(fieldKey, paramVals[1]));
                 return clause.meetsCriteria(value);
+            }
+
+            @Override
+            public String getValueSeparator()
+            {
+                return BetweenClause.SEPARATOR;
             }
         },
 
@@ -643,6 +725,7 @@ public enum CompareType
     private boolean _dataValueRequired;
     private String _sql;
     private String _scriptName;
+    private String _valueSeparator;
 
     CompareType(String displayValue, String[] urlKeys, boolean dataValueRequired, String sql, String scriptName, OperatorType.Enum xmlType)
     {
@@ -708,12 +791,12 @@ public enum CompareType
         return types;
     }
 
-    private static Set<String> parseParams(Object value)
+    private static Set<String> parseParams(Object value, String separator)
     {
         Set<String> values = new LinkedHashSet<>();
         if (value != null && !value.toString().trim().equals(""))
         {
-            String[] st = value.toString().split(";", -1);
+            String[] st = value.toString().split(separator, -1);
             Collections.addAll(values, st);
         }
         return values;
@@ -787,6 +870,11 @@ public enum CompareType
     public String getScriptName()
     {
         return _scriptName;
+    }
+
+    public String getValueSeparator()
+    {
+        return _valueSeparator;
     }
 
     public boolean meetsCriteria(Object value, Object[] paramVals)

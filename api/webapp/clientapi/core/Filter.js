@@ -172,13 +172,13 @@ LABKEY.Filter = new function()
         else if (type == "boolean")
         {
             var upperVal = value.toUpperCase();
-            if (upperVal == "TRUE" || value == "1" || upperVal == "Y" || upperVal == "ON" || upperVal == "T")
+            if (upperVal == "TRUE" || value == "1" || upperVal == "YES" || upperVal == "Y" || upperVal == "ON" || upperVal == "T")
                 return "1";
-            if (upperVal == "FALSE" || value == "0" || upperVal == "N" || upperVal == "OFF" || upperVal == "F")
+            if (upperVal == "FALSE" || value == "0" || upperVal == "NO" || upperVal == "N" || upperVal == "OFF" || upperVal == "F")
                 return "0";
             else
             {
-                alert(value + " is not a valid boolean for field '" + colName + "'. Try true,false; yes,no; on,off; or 1,0.");
+                alert(value + " is not a valid boolean for field '" + colName + "'. Try true,false; yes,no; y,n; on,off; or 1,0.");
                 return undefined;
             }
         }
