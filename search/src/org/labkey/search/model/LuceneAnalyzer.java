@@ -74,7 +74,7 @@ public enum LuceneAnalyzer
         }},
 
     // A hybrid analyzer that uses a non-stemming analyzer for categories and identifier fields and a stemming
-    // English analyzer for all other fields. This is our standard analyzer that's optimized for our use case.
+    // English analyzer for all other fields. This is our standard analyzer that's optimized for our usage.
     LabKeyAnalyzer {
         @Override
         Analyzer getAnalyzer()

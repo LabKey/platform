@@ -141,7 +141,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     enum FIELD_NAME
     {
-        // Use these for english language terms that should be analyzed (stemmed)
+        // Use these for english language text that should be stemmed
 
         body,             // Most content goes here
 
@@ -149,7 +149,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         keywordsMed,      // Weighted twice the body terms... e.g., terms in the title, subject, or other summary
         keywordsHi,       // Weighted twice the medium keywords... these terms will dominate the search results, so probably not a good idea
 
-        // Use these for terms that should NOT be stemmed, like identifiers, folder names, and people names. These are case-insensitive.
+        // Use these for terms that should NOT be stemmed, like identifiers, folder names, and people names
 
         identifiersLo,    // Same weighting as body terms... used for folder path parts
         identifiersMed,   // Weighted twice the lo identifiers
@@ -157,7 +157,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
         searchCategories, // Used for special filtering, but analyzed like an identifier
 
-        // The following are all stored, but not indexed.
+        // The following are all stored, but not indexed
 
         title,            // This is just the display title. keywordsMed is used to index title/subject terms.
         summary,
@@ -988,6 +988,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
     }
 
+    @SuppressWarnings("unused")
     private enum InterestingDocumentProperty
     {
         Title(TikaCoreProperties.TITLE),
@@ -1259,7 +1260,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             {
                 QueryParser queryParser = new MultiFieldQueryParser(standardFields, getAnalyzer(), boosts);
                 queryBuilder.add(queryParser.parse(queryString), BooleanClause.Occur.MUST);
-
             }
             catch (ParseException x)
             {
