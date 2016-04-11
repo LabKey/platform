@@ -5133,7 +5133,7 @@ Ext.EventManager = function(){
             (DOC.readyState == COMPLETE && checkStyleSheets()) ||
                 DOC.addEventListener(DOMCONTENTLOADED, OperaDOMContentLoaded, false);
 
-        }else if (Ext.isWebKit){
+        }else if (Ext.isWebKit || Ext.isGecko){ // LABKEY: || Ext.isGecko
             
             checkReadyState();
         }

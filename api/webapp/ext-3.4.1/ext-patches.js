@@ -238,3 +238,9 @@ if (Ext.isIE7 || Ext.isIE8) {
 // added in ext-all.js as well.
 // - while(element !== body) {
 // + while(element !== body && element !== null) {
+
+// Fix for Firefox not getting to a ready state with popup render
+// initDocRedy() in ext-all-debug.js line #5136
+// added in ext-all.js as well
+// - }else if (Ext.isWebKit){
+// + }else if (Ext.isWebKit || Ext.isGecko){
