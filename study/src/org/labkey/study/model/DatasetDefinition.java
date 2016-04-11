@@ -684,7 +684,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         if (null == getTypeURI())
             return null;
 
-        // TODO: Why a transaction here? Remove it!
+        // Use a transaction to ensure that we acquire the lock and check out the DB connection from the pool in a
+        // consistent order to avoid deadlock
         try (DbScope.Transaction t = StudySchema.getInstance().getSchema().getScope().ensureTransaction(_lock))
         {
             Domain d = ensureDomain();
