@@ -51,7 +51,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Location;
-import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudySnapshotType;
 import org.labkey.api.study.TimepointType;
@@ -1238,7 +1237,11 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             }
             else
             {
-                startCal.setTime(getStartDate());
+                Date studyStartDate = getStartDate();
+                if (studyStartDate != null)
+                {
+                    startCal.setTime(getStartDate());
+                }
             }
             Calendar timepointCal = new GregorianCalendar();
             timepointCal.setTime(date);
