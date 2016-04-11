@@ -331,7 +331,7 @@ Click the Save button at any time to accept the current settings and continue.</
     <td class="labkey-form-label">X-Frame-Options</td>
     <td><select name="XFrameOptions">
         <% String option = appProps.getXFrameOptions(); %>
-        <option value="DENY" <%=selectedEq("DENY",option)%>>DENY</option>
+        <%-- BREAKS GWT <option value="DENY" <%=selectedEq("DENY",option)%>>DENY</option> --%>
         <option value="SAMEORIGIN" <%=selectedEq("SAMEORIGIN",option)%>>SAMEORIGIN</option>
         <option value="ALLOW" <%=selectedEq("ALLOW",option)%>>Allow</option></select></td>
 </tr>
