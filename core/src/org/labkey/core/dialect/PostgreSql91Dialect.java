@@ -1567,11 +1567,11 @@ class PostgreSql91Dialect extends SqlDialect
 
             if (null == scale)
             {
-                // Some domain wasn't there when we initialized the datasource, so reload now.  This will happpen at bootstrap.
+                // Some domain wasn't there when we initialized the datasource, so reload now. This will happen at bootstrap.
                 initializeUserDefinedTypes(schema.getScope());
                 scale = getDomainScale(schema, domainName);
 
-                // If scale is still null, then we have a problem. We've seen occassional exception reports showing this,
+                // If scale is still null, then we have a problem. We've seen occasional exception reports showing this,
                 // but haven't had the information to track it down... so log additional info.
                 if (null == scale)
                 {

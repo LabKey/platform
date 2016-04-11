@@ -1601,7 +1601,7 @@ public class SqlParser
         }
 
         @Test
-        public void testPrecendence() throws SQLException
+        public void testPrecedence() throws SQLException
         {
             // ^ is higher precedence than |
             assertEquals(1, evalInt("(1^1)|1"));

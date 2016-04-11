@@ -1075,7 +1075,7 @@ table.labkey-show-borders
 in the table tag.  They are necessary so that the borders take precedence correctly when they collapse */
 .labkey-has-row-totals td, .labkey-has-col-totals td
 {
-    /* Again, IE 7 and below gives precendence to table borders over cell borders, also it doesn't do
+    /* Again, IE 7 and below gives precedence to table borders over cell borders, also it doesn't do
     column or row borders, but it does do correct precedence for cells
      (top and left over bottom and right) so we can use cell borders */
     *border: solid 1px #DDDDDD;
