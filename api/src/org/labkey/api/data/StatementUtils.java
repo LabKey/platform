@@ -67,20 +67,20 @@ public class StatementUtils
     public static String OWNEROBJECTID = "exp$object$ownerobjectid";
 
     // configuration parameters
-    Operation _operation = Operation.insert;
-    SqlDialect _dialect;
-    TableInfo _table;
-    Set<String> _keyColumnNames = null;       // override the primary key of _table
-    Set<String> _skipColumnNames = null;
-    Set<String> _dontUpdateColumnNames = null;
-    boolean _updateBuiltInColumns = false;      // default to false, this should usually be handled by StandardETL
-    boolean _selectIds = false;
-    boolean _allowUpdateAutoIncrement = false;
-    boolean _allowInsertByLookupDisplayValue = false;
+    private Operation _operation = Operation.insert;
+    private SqlDialect _dialect;
+    private TableInfo _table;
+    private Set<String> _keyColumnNames = null;       // override the primary key of _table
+    private Set<String> _skipColumnNames = null;
+    private Set<String> _dontUpdateColumnNames = null;
+    private boolean _updateBuiltInColumns = false;      // default to false, this should usually be handled by StandardETL
+    private boolean _selectIds = false;
+    private boolean _allowUpdateAutoIncrement = false;
+    private boolean _allowInsertByLookupDisplayValue = false;
 
     // variable/parameter tracking helpers
-    boolean useVariables = false;
-    final Map<String, Object> _constants = new CaseInsensitiveHashMap<>();
+    private boolean useVariables = false;
+    private final Map<String, Object> _constants = new CaseInsensitiveHashMap<>();
     final Map<String, ParameterHolder> parameters = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
 
 
@@ -88,16 +88,16 @@ public class StatementUtils
     // builder style methods
     //
 
-    public StatementUtils(@NotNull Operation op, @NotNull TableInfo table)
+    private StatementUtils(@NotNull Operation op, @NotNull TableInfo table)
     {
-        this._operation = op;
-        this._dialect = table.getSqlDialect();
-        this._table = table;
+        _operation = op;
+        _dialect = table.getSqlDialect();
+        _table = table;
     }
 
     public StatementUtils dialect(SqlDialect dialect)
     {
-        this._dialect = dialect;
+        _dialect = dialect;
         return this;
     }
 
@@ -109,7 +109,7 @@ public class StatementUtils
 
     public StatementUtils constants(@NotNull Map<String,Object> constants)
     {
-        this._constants.putAll(constants);
+        _constants.putAll(constants);
         return this;
     }
 
@@ -125,25 +125,25 @@ public class StatementUtils
         return this;
     }
 
-    public StatementUtils noupdate(Set<String> noupdate)
+    private StatementUtils noupdate(Set<String> noupdate)
     {
         _dontUpdateColumnNames = noupdate;
         return this;
     }
 
-    public StatementUtils updateBuiltinColumns(boolean b)
+    private StatementUtils updateBuiltinColumns(boolean b)
     {
-        this._updateBuiltInColumns = b;
+        _updateBuiltInColumns = b;
         return this;
     }
 
-    public StatementUtils selectIds(boolean b)
+    private StatementUtils selectIds(boolean b)
     {
         _selectIds = b;
         return this;
     }
 
-    public StatementUtils allowSetAutoIncrement(boolean b)
+    private StatementUtils allowSetAutoIncrement(boolean b)
     {
         _allowUpdateAutoIncrement = b;
         return this;
@@ -384,19 +384,19 @@ public class StatementUtils
 
         if (Operation.merge == _operation)
         {
-            if (!this._dialect.isPostgreSQL() && !this._dialect.isSqlServer())
+            if (!_dialect.isPostgreSQL() && !_dialect.isSqlServer())
                 throw new IllegalArgumentException("Merge is only supported/tested on postgres and sql server");
         }
 
         useVariables = Operation.merge == _operation; //  && dialect.isPostgreSQL();
-        String ifTHEN = this._dialect.isSqlServer() ? " BEGIN " : " THEN ";
-        String ifEND = this._dialect.isSqlServer() ? " END " : " END IF ";
+        String ifTHEN = _dialect.isSqlServer() ? " BEGIN " : " THEN ";
+        String ifEND = _dialect.isSqlServer() ? " END " : " END IF ";
 
         if (null != c)
         {
             assert null == _constants.get("container") || c.getId().equals(_constants.get("container"));
             if (null == _constants.get("container"))
-                _constants.put("container",c.getId());
+                _constants.put("container", c.getId());
         }
 
         String objectURIColumnName = updatable.getObjectUriType() == UpdateableTableInfo.ObjectUriType.schemaColumn
@@ -411,7 +411,7 @@ public class StatementUtils
 
         String objectIdVar = null;
         String rowIdVar = null;
-        String setKeyword = this._dialect.isPostgreSQL() ? "" : "SET ";
+        String setKeyword = _dialect.isPostgreSQL() ? "" : "SET ";
 
         //
         // Keys for UPDATE or MERGE
@@ -846,9 +846,10 @@ public class StatementUtils
         if (!useVariables)
         {
             SQLFragment script = new SQLFragment();
-            for (SQLFragment f : Arrays.asList(sqlfDeclare, sqlfInsertObject, sqlfSelectObject, sqlfDelete, sqlfUpdate, sqlfInsertInto, sqlfObjectProperty, sqlfSelectIds))
-                if (null != f && !f.isEmpty())
-                    script.append(f);
+            Arrays.asList(sqlfDeclare, sqlfInsertObject, sqlfSelectObject, sqlfDelete, sqlfUpdate, sqlfInsertInto, sqlfObjectProperty, sqlfSelectIds)
+                .stream()
+                .filter(f -> null != f && !f.isEmpty())
+                .forEach(script::append);
             ret = new Parameter.ParameterMap(table.getSchema().getScope(), conn, script, remap);
         }
         else if (_dialect.isSqlServer())
@@ -873,9 +874,10 @@ public class StatementUtils
                 sqlfDeclare.append(";\n");
             }
             SQLFragment script = new SQLFragment();
-            for (SQLFragment f : Arrays.asList(sqlfDeclare, sqlfInsertObject, sqlfSelectObject, sqlfDelete, sqlfUpdate, sqlfInsertInto, sqlfObjectProperty, sqlfSelectIds))
-                if (null != f && !f.isEmpty())
-                    script.append(f);
+            Arrays.asList(sqlfDeclare, sqlfInsertObject, sqlfSelectObject, sqlfDelete, sqlfUpdate, sqlfInsertInto, sqlfObjectProperty, sqlfSelectIds)
+                .stream()
+                .filter(f -> null != f && !f.isEmpty())
+                .forEach(script::append);
             _log.debug(script.toDebugString());
             ret = new Parameter.ParameterMap(table.getSchema().getScope(), conn, script, remap);
         }
@@ -933,12 +935,11 @@ public class StatementUtils
             fn.append(sqlfDeclare);
 
             fn.append("BEGIN\n");
-            fn.append("-- " + _operation.name() + "\n");
-            for (SQLFragment f : Arrays.asList(sqlfInsertObject, sqlfSelectObject, sqlfDelete, sqlfUpdate, sqlfInsertInto, sqlfObjectProperty))
-            {
-                if (null != f && !f.isEmpty())
-                    fn.append(f);
-            }
+            fn.append("-- ").append(_operation.name()).append("\n");
+            Arrays.asList(sqlfInsertObject, sqlfSelectObject, sqlfDelete, sqlfUpdate, sqlfInsertInto, sqlfObjectProperty)
+                .stream()
+                .filter(f -> null != f && !f.isEmpty())
+                .forEach(fn::append);
             if (null == sqlfSelectIds)
             {
                 fn.append(new SQLFragment("RETURN;\n"));
@@ -954,8 +955,7 @@ public class StatementUtils
             new SqlExecutor(table.getSchema()).execute(fn);
             ret = new Parameter.ParameterMap(table.getSchema().getScope(), conn, call, updatable.remapSchemaColumns());
             ret.setDebugSql(fn.getSQL() + "--\n" + call.toDebugString());
-            ret.onClose(new Runnable() { @Override public void run()
-            {
+            ret.onClose(() -> {
                 try
                 {
                     new SqlExecutor(ExperimentService.get().getSchema()).execute(drop);
@@ -964,7 +964,7 @@ public class StatementUtils
                 {
                     _log.error("Error dropping temp function.", x);
                 }
-            }});
+            });
         }
 
         if (_selectIds)
@@ -1003,7 +1003,7 @@ public class StatementUtils
     }
 
 
-    void toLiteral(SQLFragment f, Object value)
+    private void toLiteral(SQLFragment f, Object value)
     {
         if (null == value)
         {
