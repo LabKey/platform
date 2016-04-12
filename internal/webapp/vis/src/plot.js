@@ -503,6 +503,11 @@ boxPlot.render();
                     curDomain.push(tempDomain[i]);
                 }
             }
+
+            if (scale.sortFn) {
+                curDomain.sort(scale.sortFn);
+            }
+
             return curDomain;
         } else {
             tempDomain = getContinuousDomain(aesName, userScale, data, acc, errorAes);

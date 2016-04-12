@@ -60,9 +60,17 @@ public interface AuthenticationProvider
     interface ResetPasswordProvider extends AuthenticationProvider
     {
         /**
+         * Returns the base url (excluding verification, email and extra params) for AddUsersAction or ResetPasswordApiAction
          * @param isAddUser true for adding user, otherwise for resetting pw for existing user
          */
         ActionURL getAPIVerificationURL(Container c, boolean isAddUser);
+
+        /**
+         * Allow module to send custom email for ResetPasswordApiAction.
+         * @param user the user requesting password reset
+         * @param isAdminCopy true for sending admin a copy of reset password email
+         */
+        @Nullable SecurityMessage getAPIResetPasswordMessage(User user, boolean isAdminCopy) throws Exception;
 
     }
 

@@ -241,7 +241,11 @@ var discreteScatter = new LABKEY.vis.Plot({
     },
     scales: {
         x: {
-            scaleType: 'discrete'
+            scaleType: 'discrete',
+            domain: ['Alien / Martian'],
+            sortFn: function(a, b) {
+                return a.localeCompare(b);
+            }
         },
         yLeft: {
 //            scaleType: 'discrete',

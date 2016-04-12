@@ -2374,6 +2374,26 @@ public class SecurityManager
 
     public static SecurityMessage getResetMessage(boolean isAdminCopy) throws Exception
     {
+        return getResetMessage(isAdminCopy, null, null);
+    }
+
+    public static SecurityMessage getResetMessage(boolean isAdminCopy, User user, String provider) throws Exception
+    {
+        if (provider != null)
+        {
+            ResetPasswordProvider resetProvider = AuthenticationManager.getResetPasswordProvider(provider);
+            if (resetProvider != null)
+            {
+                SecurityMessage sm = resetProvider.getAPIResetPasswordMessage(user, isAdminCopy);
+                if (sm != null)
+                    return sm;
+            }
+        }
+        return getDefaultResetMessage(isAdminCopy);
+    }
+
+    private static SecurityMessage getDefaultResetMessage(boolean isAdminCopy) throws Exception
+    {
         SecurityMessage sm = new SecurityMessage();
         Class<? extends PasswordResetEmailTemplate> templateClass = isAdminCopy ? PasswordResetAdminEmailTemplate.class : PasswordResetEmailTemplate.class;
         EmailTemplate et = EmailTemplateService.get().getEmailTemplate(templateClass);
