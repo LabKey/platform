@@ -674,11 +674,10 @@ public class StatementUtils
                 }
                 selectAutoIncrement = true;
                 if (null != objectIdVar)
-                {
-                    rowIdVar = _dialect.isPostgreSQL() ? "_$rowid$_" : "@_rowid_";
-                    sqlfDeclare.append("DECLARE ").append(rowIdVar).append(" INT;\n");
-                }
-                _dialect.addReselect(sqlfInsertInto, autoIncrementColumn.getSelectName(), rowIdVar);
+                    rowIdVar = "_rowid_";
+                rowIdVar = _dialect.addReselect(sqlfInsertInto, autoIncrementColumn.getSelectName(), rowIdVar);
+                if (null != objectIdVar)
+                    sqlfDeclare.append("DECLARE ").append(rowIdVar).append(" INT;\n");  // TODO: Move this into addReselect()?
             }
         }
 

@@ -166,7 +166,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public void addReselect(SQLFragment sql, String columnName, @Nullable String variable)
+    public String addReselect(SQLFragment sql, String columnName, @Nullable String proposedVariable)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }

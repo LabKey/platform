@@ -452,16 +452,29 @@ public abstract class SqlDialect
     // Note: SQLFragment and StringBuilder both implement Appendable
     public abstract void appendStatement(Appendable sql, String statement);
 
-    public abstract void addReselect(SQLFragment sql, String columnName, @Nullable String variable);
+    /**
+     * Adds dialect-specific SQL that re-selects a value (e.g., from an auto-increment column) at INSERT or UPDATE time,
+     * returning it either as a result set (proposedVariable = null) or into a SQL variable (proposedVariable = not null).
+     * Limitations: Can only select an INTEGER value from a single column where a single row has been inserted or updated.
+     * In the future, we may enhance support for other scenarios, but that's not needed yet.
+     *
+     * @param sql And INSERT or UPDATE statement that needs re-selecting
+     * @param columnName Column from which to reselect
+     * @param proposedVariable Null to return a result set via code; Not null to select the value into a SQL variable
+     * @return If proposedVariable is not null then actual variable used in the SQL. Otherwise null. Callers using
+     * proposedVariable must use the returned variable name in subsequent code, since it may differ from what was
+     * proposed.
+     */
+    public abstract String addReselect(SQLFragment sql, String columnName, @Nullable String proposedVariable);
 
     public void addReselect(SQLFragment sql, ColumnInfo column)
     {
         addReselect(sql, column.getSelectName(), null);
     }
 
-    // A convenience method for old code paths that don't use SQLFragment. Instead of a nearly identical implementation
-    // to support StringBuilder, stick the contents in a SQLFragment, pass it to addReselect(), and replace the contents
-    // of the StringBuilder with the new SQL.
+    // A convenience method for old code paths that don't use SQLFragment. Instead of a nearly identical implementation to
+    // support StringBuilder, stick the contents into a SQLFragment, pass it to addReselect(), and replace the contents of
+    // the StringBuilder with the new SQL.
     @Deprecated // Move usages to SQLFragment
     public void addReselect(StringBuilder sql, String columnName)
     {
