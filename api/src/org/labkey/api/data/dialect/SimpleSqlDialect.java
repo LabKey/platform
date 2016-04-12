@@ -172,12 +172,6 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public void addReselect(StringBuilder sql, String columnName, @Nullable String variable)
-    {
-        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
-    }
-
-    @Override
     public String execute(DbSchema schema, String procedureName, String parameters)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");

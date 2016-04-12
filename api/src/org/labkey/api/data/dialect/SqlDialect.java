@@ -459,17 +459,18 @@ public abstract class SqlDialect
         addReselect(sql, column.getSelectName(), null);
     }
 
-    public abstract void addReselect(StringBuilder sql, String columnName, @Nullable String variable);
-
+    // A convenience method for old code paths that don't use SQLFragment. Instead of a nearly identical implementation
+    // to support StringBuilder, stick the contents in a SQLFragment, pass it to addReselect(), and replace the contents
+    // of the StringBuilder with the new SQL.
+    @Deprecated // Move usages to SQLFragment
     public void addReselect(StringBuilder sql, String columnName)
     {
-        addReselect(sql, columnName, null);
-    }
-
-    public void addReselect(StringBuilder sql, ColumnInfo column)
-    {
-        addReselect(sql, column.getSelectName(), null);
-    }
+        SQLFragment fragment = new SQLFragment(sql);
+        addReselect(fragment, columnName, null);
+        assert fragment.getParams().isEmpty();
+        sql.setLength(0);
+        sql.append(fragment.getSQL());
+    };
 
     // Could be INSERT, UPDATE, or DELETE statement
     public abstract @Nullable ResultSet executeWithResults(@NotNull PreparedStatement stmt) throws SQLException;

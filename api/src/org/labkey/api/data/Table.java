@@ -226,7 +226,7 @@ public class Table
     }
 
 
-    public static void batchExecute1String(DbSchema schema, String sql, Iterable<String> paramList) throws SQLException
+    static void batchExecute1String(DbSchema schema, String sql, Iterable<String> paramList) throws SQLException
     {
         Connection conn = schema.getScope().getConnection();
         PreparedStatement stmt = null;
@@ -654,9 +654,9 @@ public class Table
 
         // _executeTriggers(table, fields);
 
+        SQLFragment insertSQL = new SQLFragment();
         StringBuilder columnSQL = new StringBuilder();
         StringBuilder valueSQL = new StringBuilder();
-        ArrayList<Object> parameters = new ArrayList<>();
         ColumnInfo autoIncColumn = null;
         ColumnInfo versionColumn = null;
         String comma = "";
@@ -711,9 +711,9 @@ public class Table
 
                 valueSQL.append('?');
                 if (value instanceof Parameter.JdbcParameterValue)
-                    parameters.add(value);
+                    insertSQL.add(value);
                 else
-                    parameters.add(new Parameter.TypedValue(value, column.getJdbcType()));
+                    insertSQL.add(new Parameter.TypedValue(value, column.getJdbcType()));
             }
             comma = ", ";
         }
@@ -724,7 +724,7 @@ public class Table
             throw new IllegalArgumentException("Table.insert called with no column data. table=" + table + " object=" + String.valueOf(fieldsIn));
         }
 
-        StringBuilder insertSQL = new StringBuilder("INSERT INTO ");
+        insertSQL.append("INSERT INTO ");
         insertSQL.append(table.getSelectName());
         insertSQL.append("\n\t(");
         insertSQL.append(columnSQL);
@@ -751,7 +751,7 @@ public class Table
         try (Parameter.ParameterList jdbcParameters = new Parameter.ParameterList())
         {
             conn = schema.getScope().getConnection();
-            stmt = prepareStatement(conn, insertSQL.toString(), parameters, jdbcParameters);
+            stmt = prepareStatement(conn, insertSQL.getSQL(), insertSQL.getParams(), jdbcParameters);
 
             if (null == autoIncColumn)
             {
@@ -781,7 +781,7 @@ public class Table
         }
         catch(SQLException e)
         {
-            logException(new SQLFragment(insertSQL, parameters), conn, e, Level.WARN);
+            logException(insertSQL, conn, e, Level.WARN);
             throw new RuntimeSQLException(e);
         }
         finally
