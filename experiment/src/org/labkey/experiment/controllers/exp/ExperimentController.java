@@ -189,9 +189,9 @@ import org.labkey.experiment.CustomPropertiesView;
 import org.labkey.experiment.DataClassWebPart;
 import org.labkey.experiment.DerivedSamplePropertyHelper;
 import org.labkey.experiment.DotGraph;
+import org.labkey.experiment.ExpDataFileListener;
 import org.labkey.experiment.ExperimentRunDisplayColumn;
 import org.labkey.experiment.ExperimentRunGraph;
-import org.labkey.experiment.ExpDataFileListener;
 import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.LineageGraphDisplayColumn;
 import org.labkey.experiment.MoveRunsBean;
@@ -1736,7 +1736,8 @@ public class ExperimentController extends SpringActionController
 
             DataRegion dr = new DataRegion();
             dr.setTable(table);
-            dr.addColumns(table.getColumns());
+            List<ColumnInfo> cols = table.getColumns().stream().filter(ColumnInfo::isShownInDetailsView).collect(Collectors.toList());
+            dr.addColumns(cols);
             dr.removeColumns("RowId", "Created", "CreatedBy", "Modified", "ModifiedBy", "DataFileUrl", "Run", "LSID", "CpasType", "SourceApplicationId", "Folder", "Generated");
             dr.addDisplayColumn(new ExperimentRunDisplayColumn(run, "Source Experiment Run"));
             dr.addDisplayColumn(new ProtocolDisplayColumn(sourceProtocol, "Source Protocol"));

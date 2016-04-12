@@ -38,6 +38,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
@@ -97,6 +98,13 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
     public String getDescription()
     {
         return _object.getDescription();
+    }
+
+    @Override
+    public void setComment(User user, String comment) throws ValidationException
+    {
+        super.setComment(user, comment);
+        index(null);
     }
 
     @Nullable
@@ -344,8 +352,8 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
             {
                 if (ci.getJdbcType().toString().equals("VARCHAR"))
                 {
-                    // Don't index lsid's or sequences
-                    if (ci.getName().equals("lsid") || ci.getName().equals("sequence"))
+                    // Don't index lsid's
+                    if (ci.getName().equals("lsid"))
                         continue;
 
                     if (!first)
@@ -390,8 +398,11 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
 
     public String getDocumentId()
     {
-        // CONSIDER: use lsid so we can crack it later?  Include dataClassId?
-        return "data:" + new Path(getContainer().getId(), Integer.toString(getRowId()));
+        String dataClassName = "-";
+        ExpDataClass dc = getDataClass();
+        if (dc != null)
+            dataClassName = dc.getName();
+        return "data:" + new Path(getContainer().getId(), dataClassName, Integer.toString(getRowId()));
     }
 
     public void index(SearchService.IndexTask task)
@@ -411,6 +422,10 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
         // Add name to title
         if (null != getDescription())
             keywords.append(getDescription());
+
+        String comment = getComment();
+        if (comment != null)
+            keywords.append(" ").append(comment);
 
         StringBuilder title = new StringBuilder(getName());
 
@@ -449,9 +464,8 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
 
         props.put(SearchService.PROPERTY.categories.toString(), expDataCategory.toString());
         props.put(SearchService.PROPERTY.title.toString(), title.toString());
-        // NOTE: All string values are added as keywords so they will be stemmed.
-        // The search query will always be stemmed so we may not find literal identifiers.
-        props.put(SearchService.PROPERTY.keywordsMed.toString(), keywords.toString() + " " + identifiers.toString());
+        props.put(SearchService.PROPERTY.identifiersMed.toString(), identifiers.toString());
+        props.put(SearchService.PROPERTY.keywordsMed.toString(), keywords.toString());
 
         ActionURL view = ExperimentController.ExperimentUrlsImpl.get().getDataDetailsURL(this);
         view.setExtraPath(getContainer().getId());
@@ -462,7 +476,12 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
 
         // All identifiers (indexable text values) in the body
         if (identifiers.length() > 0)
-            body.append("\n").append(identifiers);
+        {
+            if (identifiers.length() > 100)
+                body.append("\n").append(identifiers.substring(0, 100)).append("...");
+            else
+                body.append("\n").append(identifiers);
+        }
 
         SimpleDocumentResource r = new SimpleDocumentResource(
                 new Path(docId),

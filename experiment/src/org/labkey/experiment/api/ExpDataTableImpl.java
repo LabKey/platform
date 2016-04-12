@@ -538,6 +538,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         ret.setCalculated(true);
         ret.setUserEditable(false);
         ret.setReadOnly(true);
+        ret.setShownInDetailsView(false);
         ret.setShownInInsertView(false);
         ret.setShownInUpdateView(false);
         ret.setIsUnselectable(true);
