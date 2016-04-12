@@ -16,6 +16,7 @@ Ext.define('LABKEY.app.model.OlapExplorer', {
         {name : 'level'},
         {name : 'levelUniqueName'},
         {name : 'ordinal', type: 'int', defaultValue: -1},
+        {name : 'lvlDepth', type: 'int', defaultValue: 0},
         {name : 'uniqueName'},
         {name : 'isGroup', type : 'boolean'},
         {name : 'collapsed', type : 'boolean'},
@@ -320,12 +321,21 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
             sortStrategy = sortLevel.sortStrategy;
         }
 
-        // skip (All)
+        // use (All) as root
+        var rootPosition = pos[0][0];
+        var nodeName = rootPosition.uniqueName.replace(rootPosition.name, '').replace('.[]', '');
+        var rootNode = Ext.create('LABKEY.app.util.OlapExplorerNode', {data: {uniqueName: nodeName, lvlDepth: 0}});
+        var allRecordTree = Ext.create('LABKEY.app.util.OlapExplorerTree', rootNode);
+
+        var groupOnly = true;
+
         for (var x=1; x < pos.length; x++) {
-            subPosition = pos[x][0];
+           subPosition = pos[x][0];
 
             // Subjects should not be listed so do not roll up
-            if ((!this.showEmpty && baseResult.cells[x][0].value === 0) || (subPosition.level.name === this.subjectName)) {
+            if ((!this.showEmpty && baseResult.cells[x][0].value === 0)
+                || (subPosition.level.name === this.subjectName)
+                || subPosition.name == '#null') {
                 continue;
             }
 
@@ -344,6 +354,7 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
                 hierarchy: hierarchy.getUniqueName(),
                 isGroup: isGroup,
                 level: subPosition.name,
+                lvlDepth: (subPosition.uniqueName.match(/\].\[/g) || []).length,
                 ordinal: subPosition.ordinal,
                 levelUniqueName: subPosition.level.uniqueName,
                 collapsed: activeGroup && pos.length > 15 ? true : false,
@@ -362,7 +373,6 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
                 if (!customGroups[target.level]) {
                     customGroups[target.level] = [];
                 }
-                groupRecords.push(instance);
             }
             else {
                 instance.set('level', activeGroup);
@@ -370,8 +380,10 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
                     customGroups[activeGroup] = [];
                 }
                 customGroups[activeGroup].push(instance);
-                childRecords.push(instance);
+                groupOnly = false;
             }
+
+            allRecordTree.add(instance);
 
             var collapse = this.checkCollapse(instance.data);
             instance.set('collapsed', collapse);
@@ -381,20 +393,21 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
             }
         }
 
-        var groupOnly = true;
-        for (var i=0; i < childRecords.length; i++) {
-            if (!childRecords[i].get('isGroup')) {
-                groupOnly = false;
-                break;
-            }
-        }
+        var allRecords = allRecordTree.getAllRecords();
+        var allInstances = [];
+        Ext.each(allRecords, function(rec){
+            allInstances.push(rec.record);
+        }, this);
+
 
         if (groupOnly) {
             max = 0;
             this.removeAll();
         }
         else {
-            this.loadRecords(this._applySort(sortStrategy, groupRecords, childRecords, customGroups));
+            //this.loadRecords(this._applySort(sortStrategy, groupRecords, childRecords, customGroups));
+            //TODO sort
+            this.loadRecords(allInstances);
         }
 
         this.customGroups = customGroups;
@@ -960,5 +973,66 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
         this.showEmpty = !this.showEmpty;
         this.loadStore();
         return this.showEmpty;
+    }
+});
+
+Ext.define('LABKEY.app.util.OlapExplorerTree', {
+    root: null,
+    constructor: function(root) {
+        if (root) {
+            this.root = root;
+        }
+    },
+    add: function(data) {
+        var child = new LABKEY.app.util.OlapExplorerNode(data),
+            parent = this.findParent(this.root, child);
+
+        if (parent) {
+            parent.childrenNodes.push(child);
+            child.parent = parent;
+        } else {
+            console.log('Parent node not found.');
+        }
+    },
+    findParent : function(currentNode, newChild) {
+        if (currentNode.isDirectParentOf(newChild)) {
+            return currentNode;
+        }
+        for (var i = 0, length = currentNode.childrenNodes.length; i < length; i++) {
+            var found = this.findParent(currentNode.childrenNodes[i], newChild);
+            if (found) {
+                return found;
+            }
+        }
+        return null;
+    },
+    getAllRecords: function() {
+        return this.preOrderTraversal(this.root, [], true);
+    },
+    preOrderTraversal: function(currentNode, results, isRoot) {
+        if (!isRoot) {
+            results.push(currentNode);
+        }
+        for (var i = 0, length = currentNode.childrenNodes.length; i < length; i++) {
+            this.preOrderTraversal(currentNode.childrenNodes[i], results, false);
+        }
+        return results;
+    }
+});
+
+Ext.define('LABKEY.app.util.OlapExplorerNode', {
+    record: null,
+    parent: null,
+    childrenNodes: [],
+
+    constructor: function(data) {
+        if (data) {
+            this.record = data;
+            this.parent = null;
+            this.childrenNodes = [];
+        }
+    },
+    isDirectParentOf: function(node) {
+        return node.record.data.lvlDepth - this.record.data.lvlDepth == 1 && node.record.data.uniqueName.indexOf(this.record.data.uniqueName) > -1;
     }
 });
