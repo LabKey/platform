@@ -262,14 +262,6 @@ class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
-    public void addReselect(StringBuilder sql, String columnName, @Nullable String variable)
-    {
-        sql.append("\nRETURNING ").append(columnName);
-        if (null != variable)
-            sql.append(" INTO ").append(variable);
-    }
-
-    @Override
     public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
     {
         if (params.size() >= TEMPTABLE_GENERATOR_MINSIZE)

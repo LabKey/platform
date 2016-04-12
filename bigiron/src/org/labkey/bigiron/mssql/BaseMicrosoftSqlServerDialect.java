@@ -407,61 +407,6 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     @Override
-    public void addReselect(StringBuilder sql, String columnName, @Nullable String variable)
-    {
-        ReselectType type = getReselectType(sql.toString());
-
-        if (type == ReselectType.OTHER)
-            throw new IllegalStateException("Can re-select only from INSERT or UPDATE statement");
-
-        StringBuilder outputSql = new StringBuilder("OUTPUT INSERTED.");
-        outputSql.append(columnName);
-
-        if (null != variable)
-        {
-            outputSql.append(" INTO ");
-            outputSql.append(variable);
-        }
-
-        int start;
-        int end;
-
-        if (type == ReselectType.INSERT)
-        {
-            start = sql.indexOf(")");
-
-            if (-1 == start)
-                throw new IllegalStateException("Unable to insert OUTPUT clause");
-
-            end = start;
-
-            do
-            {
-                end++;
-            }
-            while (Character.isWhitespace(sql.charAt(end)));
-        }
-        else
-        {
-            end = sql.indexOf("WHERE");
-
-            if (-1 == end)
-                throw new IllegalStateException("Unable to insert OUTPUT clause");
-
-            start = end;
-
-            do
-            {
-                start--;
-            }
-            while (Character.isWhitespace(sql.charAt(start)));
-        }
-
-        outputSql.append(sql.subSequence(start + 1, end));
-        sql.insert(end, outputSql.toString());
-    }
-
-    @Override
     public @Nullable ResultSet executeWithResults(@NotNull PreparedStatement stmt) throws SQLException
     {
         return stmt.executeQuery();
