@@ -66,12 +66,11 @@ LABKEY.study.openRepublishStudyWizard = function(snapshotId, availableContainerN
 
 // NOTE: consider wrapping in Ext.onReady
 LABKEY.study.openCreateStudyWizard = function(mode, studyName) {
-    LABKEY.Query.executeSql({
+    LABKEY.Query.selectRows({
         schemaName: 'study',
-        sql: 'SELECT s.Created, s.CreatedBy.DisplayName AS CreatedBy, s.Destination, '
-            + 'c.Name AS DestinationName, s.Settings FROM StudySnapshot s '
-            + 'LEFT JOIN core.Containers c ON s.Destination = c.EntityId WHERE s.Type=\'' + mode + '\'',
-        containerFilter: LABKEY.Query.containerFilter.allFolders,
+        queryName: 'StudySnapshot',
+        columns: 'Created,CreatedBy/DisplayName,Destination,Settings',
+        filterArray: [LABKEY.Filter.create('Type', mode)],
         success: function(data)
         {
             var config = {
@@ -79,20 +78,47 @@ LABKEY.study.openCreateStudyWizard = function(mode, studyName) {
                 studyName : studyName
             };
 
-            // If the lookup to get the destination folder name worked (i.e. user has permission to it), display that value
-            Ext.each(data.rows, function(row)
-            {
-                if (Ext.isString(row.DestinationName))
-                    row.Destination = row.DestinationName;
-            });
-
             if (data.rowCount > 0)
             {
-                config.previousStudies = data.rows;
-            }
+                // Issue 25834: check if the user has permission to the destination folder and show the name if possible
+                var containerIds = [];
+                Ext.each(data.rows, function(row)
+                {
+                    if (row.Destination != null)
+                        containerIds.push(row.Destination);
+                });
 
-            var wizard = new LABKEY.study.CreateStudyWizard(config);
-            wizard.show();
+                LABKEY.Security.getContainers({
+                    container: containerIds,
+                    includeEffectivePermissions: false,
+                    success: function(info)
+                    {
+                        // only keep track of the id->name mapping for containers the user has permissions to
+                        var containerNameMap = {};
+                        Ext.each(info.containers, function(container)
+                        {
+                            if (container.userPermissions > 0)
+                                containerNameMap[container.id] = container.name;
+                        });
+
+                        // populate the previous studies, mapping the container name where applicable
+                        config.previousStudies = [];
+                        Ext.each(data.rows, function(row)
+                        {
+                            row.Destination = containerNameMap[row.Destination] || null;
+                            config.previousStudies.push(row);
+                        });
+
+                        var wizard = new LABKEY.study.CreateStudyWizard(config);
+                        wizard.show();
+                    }
+                });
+            }
+            else
+            {
+                var wizard = new LABKEY.study.CreateStudyWizard(config);
+                wizard.show();
+            }
         }
     });
 };
@@ -475,14 +501,14 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             columns: [
                 {dataIndex: 'Created', header: '&nbsp;Created', width: 100, sortable: true,
                  renderer: Ext.util.Format.dateRenderer(LABKEY.extDefaultDateFormat) },
-                {dataIndex: 'CreatedBy', header: '&nbsp;Created By', width: 100, sortable: true},
+                {dataIndex: 'CreatedBy/DisplayName', header: '&nbsp;Created By', width: 100, sortable: true},
                 {dataIndex: 'Destination', header: '&nbsp;Destination', width: 200, sortable: true},
                 {dataIndex: 'RowId', hidden: true},
                 {dataIndex: 'Settings', hidden: true}
             ],
             selModel: new Ext.grid.RowSelectionModel({singleSelect:true}),
             store: new Ext.data.JsonStore({
-                fields: ['Created', 'CreatedBy', 'Destination', 'RowId', 'Settings'],
+                fields: ['Created', 'CreatedBy/DisplayName', 'Destination', 'RowId', 'Settings'],
                 data: this.previousStudies,
                 sortInfo: {
                     field: 'Created',
