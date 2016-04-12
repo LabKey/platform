@@ -80,24 +80,26 @@ public class ListDefinitionImpl implements ListDefinition
     private boolean _new;
     // If set to a collection of IDs, we'll attempt to use them (in succession) as the list ID on insert
     private Collection<Integer> _preferredListIds = Collections.emptyList();
-    private ListDef _defOld;
     private Domain _domain;
 
-    ListDef _def;
+    ListDef.ListDefBuilder _def;
+
 
     public ListDefinitionImpl(ListDef def)
     {
-        _def = def;
+        _def = new ListDef.ListDefBuilder(def);
     }
+
 
     public ListDefinitionImpl(Container container, String name, KeyType keyType)
     {
         _new = true;
-        _def = new ListDef();
-        _def.setContainer(container.getId());
-        _def.setName(name);
-        _def.setEntityId(makeGUID());
-        _def.setKeyType(keyType.toString());
+        ListDef.ListDefBuilder builder = new ListDef.ListDefBuilder();
+        builder.setContainer(container.getId());
+        builder.setName(name);
+        builder.setEntityId(makeGUID());
+        builder.setKeyType(keyType.toString());
+        _def = builder;
         Lsid lsid = ListDomainKind.generateDomainURI(name, container, keyType);
         _domain = PropertyService.get().createDomain(container, lsid.toString(), name);
     }
@@ -366,15 +368,16 @@ public class ListDefinitionImpl implements ListDefinition
                 _domain.save(user);
 
                 _def.setDomainId(_domain.getTypeId());
-                _def = ListManager.get().insert(user, _def, _preferredListIds);
+                ListDef inserted = ListManager.get().insert(user, _def, _preferredListIds);
+                _def = new ListDef.ListDefBuilder(inserted);
                 _new = false;
 
                 ListManager.get().addAuditEvent(this, user, String.format("The list %s was created", _def.getName()));
             }
             else
             {
-                _def = ListManager.get().update(user, _def);
-                _defOld = null;
+                ListDef updated = ListManager.get().update(user, _def);
+                _def = new ListDef.ListDefBuilder(updated);
                 ListManager.get().addAuditEvent(this, user, String.format("The definition of the list %s was modified", _def.getName()));
             }
 
@@ -507,7 +510,7 @@ public class ListDefinitionImpl implements ListDefinition
                 ((ListQueryUpdateService)qus).deleteRelatedListData(user, getContainer());
 
             // then delete the list itself
-            Table.delete(ListManager.get().getListMetadataTable(), new Object[] {getContainer(), getListId()});
+            ListManager.get().deleteListDef(getContainer(), getListId());
             Domain domain = getDomain();
             domain.delete(user);
 
@@ -704,19 +707,9 @@ public class ListDefinitionImpl implements ListDefinition
         return ret;
     }
 
-    private ListDef edit()
+    private ListDef.ListDefBuilder edit()
     {
-        if (_new)
-        {
-            return _def;
-        }
-        if (_defOld == null)
-        {
-            _defOld = _def;
-            _def = _defOld.clone();
-        }
         return _def;
-
     }
 
     @Override

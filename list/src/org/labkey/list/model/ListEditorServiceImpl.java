@@ -223,31 +223,33 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
     }
 
 
-    private void update(ListDef def, GWTList gwt)
+    private ListDef update(ListDef def, GWTList gwt)
     {
-        def.setName(gwt.getName());
-        def.setAllowDelete(gwt.getAllowDelete());
-        def.setAllowExport(gwt.getAllowExport());
-        def.setAllowUpload(gwt.getAllowUpload());
+        ListDef.ListDefBuilder builder = new ListDef.ListDefBuilder(def);
+        builder.setName(gwt.getName());
+        builder.setAllowDelete(gwt.getAllowDelete());
+        builder.setAllowExport(gwt.getAllowExport());
+        builder.setAllowUpload(gwt.getAllowUpload());
 
-        def.setEntireListIndex(gwt.getEntireListIndex());
-        def.setEntireListIndexSetting(gwt.getEntireListIndexSetting());
-        def.setEntireListTitleSetting(gwt.getEntireListTitleSetting());
-        def.setEntireListTitleTemplate(gwt.getEntireListTitleTemplate());
-        def.setEntireListBodySetting(gwt.getEntireListBodySetting());
-        def.setEntireListBodyTemplate(gwt.getEntireListBodyTemplate());
+        builder.setEntireListIndex(gwt.getEntireListIndex());
+        builder.setEntireListIndexSetting(gwt.getEntireListIndexSetting());
+        builder.setEntireListTitleSetting(gwt.getEntireListTitleSetting());
+        builder.setEntireListTitleTemplate(gwt.getEntireListTitleTemplate());
+        builder.setEntireListBodySetting(gwt.getEntireListBodySetting());
+        builder.setEntireListBodyTemplate(gwt.getEntireListBodyTemplate());
 
-        def.setEachItemIndex(gwt.getEachItemIndex());
-        def.setEachItemTitleSetting(gwt.getEachItemTitleSetting());
-        def.setEachItemTitleTemplate(gwt.getEachItemTitleTemplate());
-        def.setEachItemBodySetting(gwt.getEachItemBodySetting());
-        def.setEachItemBodyTemplate(gwt.getEachItemBodyTemplate());
+        builder.setEachItemIndex(gwt.getEachItemIndex());
+        builder.setEachItemTitleSetting(gwt.getEachItemTitleSetting());
+        builder.setEachItemTitleTemplate(gwt.getEachItemTitleTemplate());
+        builder.setEachItemBodySetting(gwt.getEachItemBodySetting());
+        builder.setEachItemBodyTemplate(gwt.getEachItemBodyTemplate());
 
-        def.setDescription(gwt.getDescription());
-        def.setDiscussionSetting(gwt.getDiscussionSetting());
-        def.setKeyName(gwt.getKeyPropertyName());
-        def.setKeyType(gwt.getKeyPropertyType());
-        def.setTitleColumn(gwt.getTitleField());
+        builder.setDescription(gwt.getDescription());
+        builder.setDiscussionSetting(gwt.getDiscussionSetting());
+        builder.setKeyName(gwt.getKeyPropertyName());
+        builder.setKeyType(gwt.getKeyPropertyType());
+        builder.setTitleColumn(gwt.getTitleField());
+        return builder.build();
     }
 
 
@@ -338,7 +340,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
             }
 
             boolean changedName = !def.getName().equals(list.getName());
-            update(def, list);
+            def = update(def, list);
             try
             {
                 ListManager.get().update(getUser(), def);

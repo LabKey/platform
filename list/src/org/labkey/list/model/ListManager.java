@@ -26,25 +26,12 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.cache.BlockingStringKeyCache;
+import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ConditionalFormat;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DbSequence;
-import org.labkey.api.data.DbSequenceManager;
-import org.labkey.api.data.PkFilter;
-import org.labkey.api.data.Results;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.DomainURIFactory;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
@@ -94,6 +81,20 @@ public class ListManager implements SearchService.DocumentProvider
     public static final String LIST_AUDIT_EVENT = "ListAuditEvent";
     public static final String LISTID_FIELD_NAME = "listId";
 
+
+    Cache<String, List<ListDef>> _listDefCache = new BlockingStringKeyCache<>(new DatabaseCache<>(CoreSchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "listdef cache"), new ListDefCacheLoader()) ;
+
+    class ListDefCacheLoader implements CacheLoader<String,List<ListDef>>
+    {
+        @Override
+        public List<ListDef> load(String entityId, @Nullable Object argument)
+        {
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), entityId);
+            ArrayList<ListDef> ownLists = new TableSelector(getListMetadataTable(), filter, null).getArrayList(ListDef.class);
+            return Collections.unmodifiableList(ownLists);
+        }
+    }
+
     public static ListManager get()
     {
         return INSTANCE;
@@ -111,9 +112,7 @@ public class ListManager implements SearchService.DocumentProvider
 
     public Collection<ListDef> getLists(Container container)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), container.getEntityId());
-        Collection<ListDef> ownLists = new TableSelector(getListMetadataTable(), filter, null).getCollection(ListDef.class);
-
+        List<ListDef> ownLists = _listDefCache.get(container.getId());
         return getAllScopedLists(ownLists, container);
     }
 
@@ -123,8 +122,7 @@ public class ListManager implements SearchService.DocumentProvider
         // In future, may add additional ways to cross-folder scope lists
         if (container.getType() == Container.TYPE.workbook)
         {
-            SimpleFilter parentFilter = new SimpleFilter(FieldKey.fromParts("Container"), container.getParent().getEntityId());
-            Collection<ListDef> parentLists = new TableSelector(getListMetadataTable(), parentFilter, null).getCollection(ListDef.class);
+            List<ListDef> parentLists = _listDefCache.get(container.getParent().getId());
             if (ownLists.size() > 0 && parentLists.size() > 0)
             {
                 Map<String, ListDef> listDefMap = new CaseInsensitiveHashMap<>();
@@ -179,7 +177,7 @@ public class ListManager implements SearchService.DocumentProvider
 
         TableInfo tinfo = getListMetadataTable();
         DbSequence sequence = DbSequenceManager.get(c, LIST_SEQUENCE_NAME);
-        ListDef ret = def.clone();
+        ListDef.ListDefBuilder builder = new ListDef.ListDefBuilder(def);
 
         for (Integer preferredListId : preferredListIds)
         {
@@ -188,17 +186,20 @@ public class ListManager implements SearchService.DocumentProvider
             // Need to check proactively... unfortunately, calling insert and handling the constraint violation will cancel the current transaction
             if (!new TableSelector(getListMetadataTable().getColumn("ListId"), filter, null).exists())
             {
-                def.setListId(preferredListId);
-                ret = Table.insert(user, tinfo, def);
+                builder.setListId(preferredListId);
+                ListDef ret = Table.insert(user, tinfo, builder.build());
+                _listDefCache.remove(c.getId());
                 sequence.ensureMinimum(preferredListId);  // Ensure sequence is at or above the preferred ID we just used
-                return def;
+                return ret;
             }
         }
 
         // If none of the preferred IDs is available then use the next sequence value
-        ret.setListId(sequence.next());
+        builder.setListId(sequence.next());
 
-        return Table.insert(user, tinfo, ret);
+        ListDef ret = Table.insert(user, tinfo, builder.build());
+        _listDefCache.remove(c.getId());
+        return ret;
     }
 
 
@@ -216,6 +217,7 @@ public class ListManager implements SearchService.DocumentProvider
         {
             ListDef old = getList(c, def.getListId());
             ret = Table.update(user, getListMetadataTable(), def, new Object[]{c, def.getListId()});
+            _listDefCache.remove(c.getId());
             if (!old.getName().equals(ret.getName()))
             {
                 QueryChangeListener.QueryPropertyChange change = new QueryChangeListener.QueryPropertyChange<>(
@@ -228,12 +230,29 @@ public class ListManager implements SearchService.DocumentProvider
                 QueryService.get().fireQueryChanged(user, c, null, new SchemaKey(null, ListQuerySchema.NAME),
                         QueryChangeListener.QueryProperty.Name, Collections.singleton(change));
             }
-
             transaction.commit();
         }
 
         return ret;
     }
+
+
+    // CONSIDER: move "list delete" from  ListDefinitionImpl.delete() implementation to ListManager for consistency
+    void deleteListDef(Container c, int listid)
+    {
+        DbScope scope = getListMetadataSchema().getScope();
+        assert scope.isTransactionActive();
+        try
+        {
+            Table.delete(ListManager.get().getListMetadataTable(), new Object[]{c, listid});
+        }
+        catch (Table.OptimisticConflictException x)
+        {
+            // ok
+        }
+        _listDefCache.remove(c.getId());
+    }
+
 
     public static final SearchService.SearchCategory listCategory = new SearchService.SearchCategory("list", "List");
 
