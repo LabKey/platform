@@ -352,7 +352,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     @Override
-    public void addReselect(SQLFragment sql, String columnName, @Nullable String variable)
+    public String addReselect(SQLFragment sql, String columnName, @Nullable String proposedVariable)
     {
         ReselectType type = getReselectType(sql.getRawSQL());
 
@@ -362,10 +362,11 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         StringBuilder outputSql = new StringBuilder("OUTPUT INSERTED.");
         outputSql.append(columnName);
 
-        if (null != variable)
+        // SQL Server OUTPUT ... INTO syntax requires a table variable, since, in theory, you could insert/update multiple
+        // rows and select multiple columns. We don't support that, however.
+        if (null != proposedVariable)
         {
-            outputSql.append(" INTO ");
-            outputSql.append(variable);
+            outputSql.append(" INTO @TableVar");
         }
 
         int start;
@@ -404,6 +405,19 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
         outputSql.append(sql.subSequence(start + 1, end));
         sql.insert(end, outputSql.toString());
+
+        String ret = null;
+
+        if (null != proposedVariable)
+        {
+            sql.insert(0, "DECLARE @TableVar TABLE(" + proposedVariable + " INTEGER);\n");
+            ret = "@" + proposedVariable;
+
+            // Note: Assume one row and one column for now
+            sql.append(";\nSELECT TOP 1 ").append(ret).append(" = ").append(proposedVariable).append(" FROM @TableVar;");
+        }
+
+        return ret;
     }
 
     @Override

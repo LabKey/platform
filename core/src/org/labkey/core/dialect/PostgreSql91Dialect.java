@@ -254,11 +254,13 @@ class PostgreSql91Dialect extends SqlDialect
 
 
     @Override
-    public void addReselect(SQLFragment sql, String columnName, @Nullable String variable)
+    public String addReselect(SQLFragment sql, String columnName, @Nullable String proposedVariable)
     {
         sql.append("\nRETURNING ").append(columnName);
-        if (null != variable)
-            sql.append(" INTO ").append(variable);
+        if (null != proposedVariable)
+            sql.append(" INTO ").append(proposedVariable);
+
+        return proposedVariable;
     }
 
     @Override
