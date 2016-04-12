@@ -187,6 +187,59 @@ Ext.define('LABKEY.app.store.OlapExplorer2', {
 
 });
 
+Ext.define('LABKEY.app.view.OlapExplorer2', {
+    extend: 'LABKEY.app.view.OlapExplorer',
+    alias : 'widget.olapexplorerview2',
+    initTemplate : function() {
+
+        var barTpl = this.getBarTemplate();
+        var countTpl = this.getCountTemplate();
+
+        //
+        // This template is meant to be bound to a set of LABKEY.app.model.OlapExplorer instances
+        //
+        this.tpl = new Ext.XTemplate(
+                '<div class="', this.baseChartCls, '">',
+                '<div class="', this.baseGroupCls, '">',
+                '<tpl for=".">',
+                '<tpl if="isGroup === true">',
+                '<div class="saeparent">',
+                '<div class="saecollapse {#}-collapse" id="{#}-collapse">',
+                '<p><tpl if="collapsed === true">+<tpl else>-</tpl></p>',
+                '</div>',
+                '<div class="', this.barCls, ' large">',
+                '<span class="', this.barLabelCls, '">{label:htmlEncode}',
+                (this.ordinal ? '&nbsp;({ordinal:htmlEncode})' : ''),
+                '</span>',
+                '{[ this.renderCount(values) ]}',
+                '{[ this.renderBars(values) ]}',
+                '</div>',
+                '</div>',
+                '<tpl else>',
+                '<div class="', this.barCls, ' small<tpl if="collapsed === true"> barcollapse</tpl>',
+                '<tpl if="level.length &gt; 0"><tpl if="lvlDepth  &gt; 1"> saelevel{lvlDepth} </tpl> saelevel </tpl>">',
+                '<span class="', this.barLabelCls, '">{label:htmlEncode}',
+                (this.ordinal ? '&nbsp;({ordinal:htmlEncode})' : ''),
+                '</span>',
+                '{[ this.renderCount(values) ]}',
+                '{[ this.renderBars(values) ]}',
+                '</div>',
+                '</tpl>',
+                '</tpl>',
+                '</div>',
+                '</div>',
+                {
+                    renderBars : function(values) {
+                        return barTpl.apply(values);
+                    },
+                    renderCount : function(values) {
+                        return countTpl.apply(values);
+                    }
+                }
+        );
+    }
+});
+
 Ext.define('LABKEY.app.util.OlapExplorerTree', {
     root: null,
     constructor: function(root) {
@@ -247,7 +300,7 @@ Ext.define('LABKEY.app.util.OlapExplorerNode', {
         }
     },
     isDirectParentOf: function(node) {
-        return node.record.data.lvlDepth - this.record.data.lvlDepth == 1 && node.record.data.uniqueName.indexOf(this.record.data.uniqueName) > -1;
+        return node.record.data.lvlDepth - this.record.data.lvlDepth == 1 && node.record.data.uniqueName.indexOf(this.record.data.uniqueName) == 0;
     }
 });
 
