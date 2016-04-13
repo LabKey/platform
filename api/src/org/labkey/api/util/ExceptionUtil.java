@@ -521,10 +521,13 @@ public class ExceptionUtil
             {
                 response.reset();
                 // mostly to make security scanners happy
-                if (!"ALLOW".equals(AppProps.getInstance().getXFrameOptions()))
-                    response.setHeader("X-Frame-Options",AppProps.getInstance().getXFrameOptions());
-                response.setHeader("X-XSS-Protection",  "1; mode=block");
-                response.setHeader("X-Content-Type-Options","nosniff");
+                if (ModuleLoader.getInstance().isStartupComplete())
+                {
+                    if (!"ALLOW".equals(AppProps.getInstance().getXFrameOptions()))
+                        response.setHeader("X-Frame-Options", AppProps.getInstance().getXFrameOptions());
+                    response.setHeader("X-XSS-Protection", "1; mode=block");
+                    response.setHeader("X-Content-Type-Options", "nosniff");
+                }
             }
             catch (IllegalStateException x)
             {
