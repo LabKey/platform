@@ -10,6 +10,8 @@ public class ExpLineageOptions
     private int _depth;
     private boolean _parents = true;
     private boolean _children = true;
+    private String _expType;
+    private String _cpasType;
 
     public int getDepth()
     {
@@ -69,5 +71,25 @@ public class ExpLineageOptions
     public void setChildren(boolean children)
     {
         _children = children;
+    }
+
+    public String getExpType()
+    {
+        return _expType;
+    }
+
+    public void setExpType(String expType)
+    {
+        _expType = expType;
+    }
+
+    public String getCpasType()
+    {
+        return _cpasType;
+    }
+
+    public void setCpasType(String cpasType)
+    {
+        _cpasType = cpasType;
     }
 }
