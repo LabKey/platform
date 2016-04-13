@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
@@ -53,6 +54,7 @@ public class SchemaColumnMetaData
     private String _titleColumn = null;
     private boolean _hasDefaultTitleColumn = true;
     private Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> _indices = Collections.emptyMap();
+    private static Logger _log = Logger.getLogger(SchemaColumnMetaData.class);
 
     protected SchemaColumnMetaData(SchemaTableInfo tinfo) throws SQLException
     {
@@ -282,7 +284,9 @@ public class SchemaColumnMetaData
 
     protected void addColumn(ColumnInfo column)
     {
-        assert getColumn(column.getName()) == null : "Duplicate column " + column.getName() + " on table " + _tinfo.getName();
+        if(getColumn(column.getName()) != null)
+            _log.warn("Duplicate column '" + column.getName() + "' on table '" + _tinfo.getName() + "'");
+
         _columns.add(column);
 //        assert !column.isAliasSet();       // TODO: Investigate -- had to comment this out since ExprColumn() sets alias
         assert null == column.getFieldKey().getParent();

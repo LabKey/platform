@@ -18,6 +18,7 @@ package org.labkey.api.query;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -71,6 +72,7 @@ public class SimpleUserSchema extends UserSchema
     // CaseInsensitiveTreeSet preserves case of the table names (from XML), unlike CaseInsensitiveHashSet
     private final Set<String> _available = new CaseInsensitiveTreeSet();
     protected Set<String> _visible;
+    private static Logger _log = Logger.getLogger(SimpleUserSchema.class);
 
     public SimpleUserSchema(String name, @Nullable String description, User user, Container container, DbSchema dbschema)
     {
@@ -233,6 +235,11 @@ public class SimpleUserSchema extends UserSchema
 
         protected boolean acceptColumn(ColumnInfo col)
         {
+            if(getColumn(col.getName()) != null)
+            {
+                _log.warn("'" + col.getName() + "' column already exists in '" + col.getParentTable() + "' table. Duplicate column won't be displayed.");
+                return false;
+            }
             return true;
         }
 
