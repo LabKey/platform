@@ -190,11 +190,10 @@ public class LineageTableInfo extends VirtualTable
         ExpLineageOptions options = new ExpLineageOptions();
         options.setParents(_parents);
         options.setChildren(!_parents);
-
-        boolean filtered =
-                !isNULL(_expType) ||
-                !isNULL(_cpasType) ||
-                (_depth != null && _depth != 0);
+        options.setCpasType(_cpasType);
+        options.setExpType(_expType);
+        if (_depth != null)
+            options.setDepth(_depth);
 
         SQLFragment tree = ExperimentServiceImpl.get().generateExperimentTreeSQL(_lsids, options);
 
@@ -202,49 +201,10 @@ public class LineageTableInfo extends VirtualTable
 
         SQLFragment sql = new SQLFragment();
         sql.appendComment(comment, getSqlDialect());
-        sql.append("(SELECT * FROM (");
         sql.append(tree);
-        sql.append(") AS X\n");
-        sql.append("WHERE\n");
-
-        // Remove any rows that match self_lsid from the results.
-        // CONSIDER: Do this in the generateExperimentTreeSQL itself so the lineage.api looks the same
-        sql.append("X.").append(_parents ? "parent_" : "child_").append("lsid <> X.self_lsid\n");
-
-        if (!isNULL(_expType))
-            sql.append("AND X.").append(_parents ? "parent_" : "child_").append("exptype = '").append(_expType).append("'\n");
-
-        if (!isNULL(_cpasType))
-            sql.append("AND X.").append(_parents ? "parent_" : "child_").append("cpastype = '").append(_cpasType).append("'\n");
-
-        if (_depth != null && _depth != 0)
-            sql.append("AND X.depth ").append(_parents ? " > " : " < ").append(_depth).append("\n");
-
-        sql.append(")\n");
         sql.appendComment("</LineageTableInfo>\n", getSqlDialect());
 
         return sql;
-    }
-
-    public static boolean isNULL(String s)
-    {
-        if (s == null || s.length() == 0)
-            return true;
-
-        s = s.trim();
-        if (s.equalsIgnoreCase("NULL"))
-            return true;
-        return false;
-    }
-
-    public static boolean isNULL(SQLFragment f)
-    {
-        if (f == null)
-            return true;
-
-        if (f.getParams().size() > 0)
-            return false;
-        return isNULL(f.getSQL());
     }
 
     /**

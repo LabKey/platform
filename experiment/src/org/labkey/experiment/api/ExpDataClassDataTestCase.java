@@ -398,7 +398,7 @@ public class ExpDataClassDataTestCase
 
         // Verify lineage
         ExpLineageOptions options = new ExpLineageOptions();
-        options.setDepth(1);
+        options.setDepth(2);
         options.setParents(true);
         options.setChildren(false);
 
@@ -426,7 +426,7 @@ public class ExpDataClassDataTestCase
         Assert.assertTrue(lineage.getMaterials().contains(s1));
         Assert.assertTrue(lineage.getMaterials().contains(s2));
 
-        // TODO: Unfortunately, SqlServer doesn't like having the lineage CTE directly embedded within the LineageTableInfo getFromSql()
+        // TODO: Issue 26107: Unfortunately, SqlServer doesn't like having the lineage CTE directly embedded within the LineageTableInfo getFromSql()
         if (ExperimentService.get().getSchema().getSqlDialect().isPostgreSQL())
         {
             // Get lineage using query

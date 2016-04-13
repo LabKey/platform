@@ -719,11 +719,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         Domain d = dataClass.getDomain();
         if (d == null)
-            throw new IllegalStateException("No domain for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
+            return; // Domain may be null if the DataClass has been deleted
 
         TableInfo table = ((ExpDataClassImpl)dataClass).getTinfo();
         if (table == null)
-            throw new IllegalStateException("No table for DataClass '" + dataClass.getName() + "' in container '" + dataClass.getContainer().getPath() + "'");
+            return;
 
         Runnable r = () -> {
             // Index all ExpData that have never been indexed OR where either the ExpDataClass definition or ExpData itself has changed since last indexed
@@ -1646,6 +1646,24 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return Pair.of(lineage.getDatas(), lineage.getMaterials());
     }
 
+    public Set<ExpMaterial> getRelatedChildSamples(ExpData start)
+    {
+        ExpLineageOptions options = new ExpLineageOptions();
+        options.setParents(false);
+
+        ExpLineage lineage = getLineage(start, options);
+        return lineage.findRelatedChildSamples();
+    }
+
+    public Set<ExpData> getNearestParentDatas(ExpMaterial start)
+    {
+        ExpLineageOptions options = new ExpLineageOptions();
+        options.setChildren(false);
+
+        ExpLineage lineage = getLineage(start, options);
+        return lineage.findNearestParentDatas();
+    }
+
 
     static final String exp_graph_pgsql;
     static final String exp_graph_mssql;
@@ -1693,12 +1711,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     {
         if (isUnknownMaterial(start))
             return new ExpLineage(start);
-        List<ExpRun> runsToInvestigate = collectRunsToInvestigate(start, options);
 
-        if (runsToInvestigate.isEmpty())
-            return new ExpLineage(start);
-
-        SQLFragment sqlf = generateExperimentTreeSQL(runsToInvestigate, options);
+        SQLFragment sqlf = generateExperimentTreeSQL(Collections.singletonList(start), options);
         Set<Integer> dataids = new HashSet<>();
         Set<Integer> materialids = new HashSet<>();
         Set<Integer> runids = new HashSet<>();
@@ -1759,9 +1773,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     }
 
 
-    public SQLFragment generateExperimentTreeSQL(List<ExpRun> runs, ExpLineageOptions options)
+    public SQLFragment generateExperimentTreeSQL(List<? extends ExpObject> objects, ExpLineageOptions options)
     {
-        List<String> lsids = runs.stream().map((r)->r.getLSID()).collect(Collectors.toList());
+        List<String> lsids = objects.stream().map((o)->o.getLSID()).collect(Collectors.toList());
         String comma="";
         SQLFragment sqlf = new SQLFragment();
         for (String lsid : lsids)
@@ -1779,16 +1793,39 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         SQLFragment sqlf = new SQLFragment(sourceSQL.replace("${LSIDS}", lsidsFrag.getRawSQL()), lsidsFrag.getParams());
         boolean up = options.isParents();
         boolean down = options.isChildren();
+        boolean includeSelf = false;
 
         if (up || down)
         {
             if (up)
             {
                 sqlf.append("\nSELECT * FROM _GraphParents");
+                String and = "\nWHERE ";
+
+                if (!includeSelf)
+                {
+                    sqlf.append(and).append("parent_lsid <> self_lsid");
+                    and = "\nAND ";
+                }
+
+                if (options.getExpType() != null && !"NULL".equalsIgnoreCase(options.getExpType()))
+                {
+                    sqlf.append(and).append("parent_exptype = ?\n");
+                    sqlf.add(options.getExpType());
+                    and = "\nAND ";
+                }
+
+                if (options.getCpasType() != null && !"NULL".equalsIgnoreCase(options.getCpasType()))
+                {
+                    sqlf.append(and).append("parent_cpastype = ?\n");
+                    sqlf.add(options.getCpasType());
+                    and = "\nAND ";
+                }
 
                 if (options.getDepth() > 0)
                 {
-                    sqlf.append("\nWHERE depth >= ").append(0 - options.getDepth());
+                    sqlf.append(and).append("depth >= ").append(0 - options.getDepth());
+                    and = "\nAND ";
                 }
             }
 
@@ -1800,10 +1837,32 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             if (down)
             {
                 sqlf.append("\nSELECT * FROM _GraphChildren");
+                String and = "\nWHERE ";
+
+                if (!includeSelf)
+                {
+                    sqlf.append(and).append("child_lsid <> self_lsid");
+                    and = "\nAND ";
+                }
+
+                if (options.getExpType() != null && !"NULL".equalsIgnoreCase(options.getExpType()))
+                {
+                    sqlf.append(and).append("child_exptype = ?\n");
+                    sqlf.add(options.getExpType());
+                    and = "\nAND ";
+                }
+
+                if (options.getCpasType() != null && !"NULL".equalsIgnoreCase(options.getCpasType()))
+                {
+                    sqlf.append(and).append("child_cpastype = ?\n");
+                    sqlf.add(options.getCpasType());
+                    and = "\nAND ";
+                }
 
                 if (options.getDepth() > 0)
                 {
-                    sqlf.append("\nWHERE depth <= ").append(options.getDepth());
+                    sqlf.append(and).append("depth <= ").append(options.getDepth());
+                    and = "\nAND ";
                 }
             }
         }
@@ -3138,7 +3197,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         SchemaKey samplesSchema = SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME);
         QueryService.get().fireQueryDeleted(user, c, null, samplesSchema, Collections.singleton(source.getName()));
 
-        SchemaKey expMaterialsSchema = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.NestedSchemas.materials.toString());
+        SchemaKey expMaterialsSchema = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, materials.toString());
         QueryService.get().fireQueryDeleted(user, c, null, expMaterialsSchema, Collections.singleton(source.getName()));
     }
 
