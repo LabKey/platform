@@ -44,6 +44,8 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.DomainNotFoundException;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.search.SearchService;
@@ -61,6 +63,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.JunitUtil;
@@ -148,6 +151,9 @@ public class IssueManager
 
     private static final String CAT_COMMENT_SORT = "issueCommentSort";
     public static final String PICK_LIST_NAME = "pickListColumns";
+
+    // temporary experimental feature for multi-milestone issues work
+    public static final String NEW_ISSUES_EXPERIMENTAL_FEATURE = "issues-experimental-feature";
 
     private IssueManager()
     {
@@ -1085,7 +1091,7 @@ public class IssueManager
         ASSIGNED_TO_CACHE.clear(); //Lazy uncache: uncache ALL the containers for updated values in case any folder is inheriting its Admin settings.
     }
 
-    public static void purgeContainer(Container c)
+    public static void purgeContainer(Container c, User user)
     {
         try (DbScope.Transaction transaction = _issuesSchema.getSchema().getScope().ensureTransaction())
         {
@@ -1102,6 +1108,15 @@ public class IssueManager
             ContainerUtil.purgeTable(_issuesSchema.getTableInfoEmailPrefs(), c, null);
             ContainerUtil.purgeTable(_issuesSchema.getTableInfoCustomColumns(), c, null);
 
+            if (AppProps.getInstance().isExperimentalFeatureEnabled(IssueManager.NEW_ISSUES_EXPERIMENTAL_FEATURE))
+            {
+                for (IssueDef issueDef : IssueManager.getIssueDefs(c))
+                {
+                    TableInfo tableInfo = issueDef.createTable(user);
+                    ContainerUtil.purgeTable(tableInfo, c, null);
+                }
+                ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssueDef(), c, null);
+            }
             transaction.commit();
         }
     }
@@ -1372,13 +1387,87 @@ public class IssueManager
         };
     }
 
-
     public static class IssueSummaryView extends JspView
     {
         IssueSummaryView(Issue issue)
         {
             super("/org/labkey/issue/view/searchSummary.jsp", issue);
         }
+    }
+
+    public static List<IssueDef> getIssueDefs(Container container)
+    {
+        List<IssueDef> classes = new TableSelector(IssuesSchema.getInstance().getTableInfoIssueDef(), SimpleFilter.createContainerFilter(container), null).getArrayList(IssueDef.class);
+
+        return classes;
+    }
+
+    public static IssueDef getIssueDef(int rowId, Container container)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("RowId"), rowId);
+
+        return new TableSelector(IssuesSchema.getInstance().getTableInfoIssueDef(), filter, null).getObject(IssueDef.class);
+    }
+
+    public static void deleteIssueDef(int rowId, Container c, User user) throws DomainNotFoundException
+    {
+        IssueDef def = getIssueDef(rowId, c);
+        if (def == null)
+            throw new IllegalArgumentException("Can't find IssueDef with rowId " + rowId);
+
+        Domain d = def.getDomain(user);
+        if (d == null)
+            throw new IllegalArgumentException("Unable to find the domain for this IssueDef");
+
+        try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
+        {
+            TableInfo issueDefTable = IssuesSchema.getInstance().getTableInfoIssueDef();
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Name"), def.getName());
+
+            deleteIssueRecords(def, c, user);
+            Table.delete(IssuesSchema.getInstance().getTableInfoIssueDef(), rowId);
+
+            // if there are no other containers referencing this domain, then it's safe to delete
+            if (new TableSelector(issueDefTable, filter, null).getRowCount() == 0)
+            {
+                d.delete(user);
+            }
+            transaction.commit();
+        }
+    }
+
+    /**
+     * Delete all records from the issues provisioned table and the issues hard
+     * table for the specified folder.
+     */
+    private static int deleteIssueRecords(IssueDef issueDef, Container c, User user)
+    {
+        assert IssuesSchema.getInstance().getSchema().getScope().isTransactionActive();
+
+        // todo clean up attachments
+
+        // todo clean up comments
+
+        // todo clean up related fields?
+
+        // delete records from the issue table
+        TableInfo issueDefTable = issueDef.createTable(user);
+
+        SQLFragment deleteIssuesSQL = new SQLFragment("DELETE FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
+                append(" WHERE EntityId IN (SELECT EntityId FROM ").append(issueDefTable, "").
+                append(" WHERE Container = ?)");
+        deleteIssuesSQL.add(c);
+        int count = new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(deleteIssuesSQL);
+
+        // delete records from the provisioned table
+        SQLFragment deleteProvisionedSQL = new SQLFragment("DELETE FROM ").append(issueDefTable, "").
+                append(" WHERE Container = ?");
+        deleteProvisionedSQL.add(c);
+        int count2 = new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(deleteProvisionedSQL);
+
+        assert count == count2;
+        return count;
     }
 
 

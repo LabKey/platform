@@ -16,6 +16,8 @@
 
 package org.labkey.issue.query;
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.QuerySettings;
@@ -28,11 +30,17 @@ import org.labkey.api.security.User;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.issues.IssuesSchema;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.ViewContext;
+import org.labkey.issue.model.IssueDef;
+import org.labkey.issue.model.IssueManager;
 import org.springframework.validation.BindException;
 
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.Collections;
+import java.util.stream.Collectors;
 
 public class IssuesQuerySchema extends UserSchema 
 {
@@ -68,6 +76,14 @@ public class IssuesQuerySchema extends UserSchema
             {
                 return new CommentsTable(schema);
             }
+        },
+        IssueLists
+        {
+            @Override
+            public TableInfo createTable(IssuesQuerySchema schema)
+            {
+                return new IssuesListsTable(schema);
+            }
         };
 
         public abstract TableInfo createTable(IssuesQuerySchema schema);
@@ -81,6 +97,11 @@ public class IssuesQuerySchema extends UserSchema
 
         visibleTableNames = Collections.unmodifiableSet(
                 Sets.newCaseInsensitiveHashSet(TableType.Issues.toString(), TableType.Comments.toString()));
+    }
+
+    static public Set<String> getReservedTableNames()
+    {
+        return tableNames;
     }
 
     static public void register(final Module module)
@@ -107,13 +128,29 @@ public class IssuesQuerySchema extends UserSchema
 
     public Set<String> getTableNames()
     {
-        return tableNames;
+        Set<String> names = new HashSet<>();
+
+        names.addAll(tableNames);
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(IssueManager.NEW_ISSUES_EXPERIMENTAL_FEATURE))
+        {
+            names.add(TableType.IssueLists.name());
+            names.addAll(IssueManager.getIssueDefs(getContainer()).stream().map(IssueDef::getName).collect(Collectors.toList()));
+        }
+        return names;
     }
 
     @Override
     public Set<String> getVisibleTableNames()
     {
-        return visibleTableNames;
+        Set<String> names = new HashSet<>();
+
+        names.addAll(visibleTableNames);
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(IssueManager.NEW_ISSUES_EXPERIMENTAL_FEATURE))
+        {
+            names.add(TableType.IssueLists.name());
+            names.addAll(IssueManager.getIssueDefs(getContainer()).stream().map(IssueDef::getName).collect(Collectors.toList()));
+        }
+        return names;
     }
 
     public TableInfo createTable(String name)
@@ -133,6 +170,15 @@ public class IssuesQuerySchema extends UserSchema
             if (tableType != null)
             {
                 return tableType.createTable(this);
+            }
+
+            if (AppProps.getInstance().isExperimentalFeatureEnabled(IssueManager.NEW_ISSUES_EXPERIMENTAL_FEATURE))
+            {
+                TableInfo issueTable = getIssueTable(name);
+                if (issueTable != null)
+                {
+                    return issueTable;
+                }
             }
         }
         return null;
@@ -169,8 +215,35 @@ public class IssuesQuerySchema extends UserSchema
             }
             if (queryType != null)
                 return queryType.createView(context, this, settings, errors);
+
+            // check for an issue definition
+            IssueDef def =  getIssueDefs().get(queryName);
+            if (def != null)
+            {
+                return new NewIssuesQueryView(def, context, this, settings, errors);
+            }
         }
 
         return super.createView(context, settings, errors);
+    }
+
+    @Nullable
+    protected TableInfo getIssueTable(String name)
+    {
+        IssueDef issueDef = getIssueDefs().get(name);
+        if (issueDef == null)
+            return null;
+
+        return new NewIssuesTable(this, issueDef);
+    }
+
+    private Map<String, IssueDef> getIssueDefs()
+    {
+        Map<String, IssueDef> map = new CaseInsensitiveTreeMap<>();
+        for (IssueDef def : IssueManager.getIssueDefs(getContainer()))
+        {
+            map.put(def.getName(), def);
+        }
+        return map;
     }
 }

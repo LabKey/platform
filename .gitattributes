@@ -963,6 +963,7 @@ issues/resources/queries/issues/Issues/open.qview.xml -text
 issues/resources/queries/issues/Issues/resolved.qview.xml -text
 issues/resources/schemas/dbscripts/postgresql/issues-0.00-13.10.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-14.10-14.20.sql -text
+issues/resources/schemas/dbscripts/postgresql/issues-16.10-16.11.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-10.30.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-11.30.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-12.30-13.10.sql -text
@@ -970,6 +971,7 @@ issues/resources/schemas/dbscripts/postgresql/obsolete/issues-14.10-14.11.sql -t
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-14.11-14.12.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-0.00-13.10.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-14.10-14.20.sql -text
+issues/resources/schemas/dbscripts/sqlserver/issues-16.10-16.11.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-0.00-10.30.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-0.00-11.30.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-12.30-13.10.sql -text
@@ -985,13 +987,18 @@ issues/src/org/labkey/issue/IssuesModule.java -text
 issues/src/org/labkey/issue/IssuesWebPartFactory.java -text
 issues/src/org/labkey/issue/model/ColumnConfigurationCache.java -text
 issues/src/org/labkey/issue/model/Issue.java -text
+issues/src/org/labkey/issue/model/IssueDef.java -text
 issues/src/org/labkey/issue/model/IssueManager.java -text
 issues/src/org/labkey/issue/model/IssuePage.java -text
 issues/src/org/labkey/issue/model/KeywordManager.java -text
 issues/src/org/labkey/issue/query/CommentsTable.java -text
+issues/src/org/labkey/issue/query/IssueDefDomainKind.java -text
+issues/src/org/labkey/issue/query/IssuesListsTable.java -text
 issues/src/org/labkey/issue/query/IssuesQuerySchema.java -text
 issues/src/org/labkey/issue/query/IssuesQueryView.java -text
 issues/src/org/labkey/issue/query/IssuesTable.java -text
+issues/src/org/labkey/issue/query/NewIssuesQueryView.java -text
+issues/src/org/labkey/issue/query/NewIssuesTable.java -text
 issues/src/org/labkey/issue/view/detailList.jsp -text
 issues/src/org/labkey/issue/view/detailView.jsp -text
 issues/src/org/labkey/issue/view/emailPreferences.jsp -text

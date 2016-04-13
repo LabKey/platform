@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014 LabKey Corporation
+ * Copyright (c) 2016 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,22 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.issue;
+CREATE SCHEMA IssueDef;
 
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.User;
-import org.labkey.issue.model.IssueManager;
+CREATE TABLE issues.IssueDef
+(
+    RowId SERIAL NOT NULL,
+    Name VARCHAR(200) NOT NULL,
 
-/**
- * User: adam
- * Date: Nov 5, 2008
- * Time: 3:30:34 PM
- */
-public class IssueContainerListener extends ContainerManager.AbstractContainerListener
-{
-    public void containerDeleted(Container c, User user)
-    {
-        IssueManager.purgeContainer(c, user);
-    }
-}
+    Container ENTITYID NOT NULL,
+    Created TIMESTAMP,
+    Modified TIMESTAMP,
+    CreatedBy INTEGER,
+    ModifiedBy INTEGER,
+
+    CONSTRAINT PK_IssueDef PRIMARY KEY (RowId),
+    CONSTRAINT UQ_IssueDef_Container_Name UNIQUE (Name, Container)
+);

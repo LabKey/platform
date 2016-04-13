@@ -19,15 +19,22 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
@@ -37,6 +44,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.issue.model.IssueManager;
+import org.labkey.issue.query.IssueDefDomainKind;
 import org.labkey.issue.query.IssuesQuerySchema;
 
 import java.util.ArrayList;
@@ -62,7 +70,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
 
     public double getVersion()
     {
-        return 16.10;
+        return 16.11;
     }
 
     protected void init()
@@ -71,6 +79,9 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
         IssuesQuerySchema.register(this);
 
         EmailTemplateService.get().registerTemplate(IssueUpdateEmailTemplate.class);
+
+        PropertyService.get().registerDomainKind(new IssueDefDomainKind());
+        AdminConsole.addExperimentalFeatureFlag(IssueManager.NEW_ISSUES_EXPERIMENTAL_FEATURE, "New Issues List", "Enables storage of issue list data in provisioned tables", true);
     }
 
     @NotNull
@@ -89,6 +100,25 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
                 return result;
             }
         });
+
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(IssueManager.NEW_ISSUES_EXPERIMENTAL_FEATURE))
+        {
+            result.add(new AlwaysAvailableWebPartFactory("Issue Definitions")
+            {
+                @Override
+                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+                {
+                    UserSchema schema = QueryService.get().getUserSchema(portalCtx.getUser(), portalCtx.getContainer(), IssuesQuerySchema.SCHEMA_NAME);
+                    QuerySettings settings = schema.getSettings(portalCtx, IssuesQuerySchema.TableType.IssueLists.name(), IssuesQuerySchema.TableType.IssueLists.name());
+
+                    QueryView view = schema.createView(portalCtx, settings, null);
+                    view.setFrame(WebPartView.FrameType.PORTAL);
+                    view.setTitle("Issue Definitions");
+
+                    return view;
+                }
+            });
+        }
         return result;
     }
 
