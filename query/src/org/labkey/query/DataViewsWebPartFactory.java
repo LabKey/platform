@@ -105,9 +105,9 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
             for (ReportService.DesignerInfo info : chartDesigners)
                 chartMenu.addChild(getItem(info));
 
-            if (reportDesigners.size() > 0)
+            if (!reportDesigners.isEmpty())
                 menu.addChild(reportMenu);
-            if (chartDesigners.size() > 0)
+            if (!chartDesigners.isEmpty())
                 menu.addChild(chartMenu);
         }
 
