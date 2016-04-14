@@ -46,7 +46,7 @@ import java.util.Set;
  * User: jeckels
  * Date: Jun 21, 2012
  */
-public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps.Interface
+class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps.Interface
 {
     private volatile String _contextPathStr;
     private volatile Path _contextPath = null;
@@ -54,42 +54,41 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     private volatile String _enlistmentId = null;
     private volatile String _initialRequestBaseServerUrl = null;
 
-    protected static final String LOOK_AND_FEEL_REVISION = "logoRevision";
-    protected static final String DEFAULT_DOMAIN_PROP = "defaultDomain";
-    protected static final String BASE_SERVER_URL_PROP = "baseServerURL";
-    protected static final String DEFAULT_LSID_AUTHORITY_PROP = "defaultLsidAuthority";
-    protected static final String PIPELINE_TOOLS_DIR_PROP = "pipelineToolsDirectory";
-    protected static final String SSL_REQUIRED = "sslRequired";
-    protected static final String SSL_PORT = "sslPort";
-    protected static final String USER_REQUESTED_ADMIN_ONLY_MODE = "adminOnlyMode";
-    protected static final String ADMIN_ONLY_MESSAGE = "adminOnlyMessage";
-    protected static final String SHOW_RIBBON_MESSAGE = "showRibbonMessage";
-    protected static final String RIBBON_MESSAGE = "ribbonMessage";
-    protected static final String EXCEPTION_REPORTING_LEVEL = "exceptionReportingLevel";
-    protected static final String USAGE_REPORTING_LEVEL = "usageReportingLevel";
-    protected static final String ADMINISTRATOR_CONTACT_EMAIL = "administratorContactEmail";
-    protected static final String SERVER_GUID = "serverGUID";
-    protected static final String SERVER_GUID_XML_PARAMETER_NAME = "org.labkey.mothership." + SERVER_GUID;
-    protected static final String BLAST_SERVER_BASE_URL_PROP = "BLASTBaseURL";
-    protected static final String MEMORY_USAGE_DUMP_INTERVAL = "memoryUsageDumpInterval";
-    protected static final String NETWORK_DRIVE_LETTER = "networkDriveLetter";
-    protected static final String NETWORK_DRIVE_PATH = "networkDrivePath";
-    protected static final String NETWORK_DRIVE_USER = "networkDriveUser";
-    protected static final String NETWORK_DRIVE_PASSWORD = "networkDrivePassword";
-    protected static final String MAIL_RECORDER_ENABLED = "mailRecorderEnabled";
-    protected static final String EXPERIMENTAL_FEATURE_PREFIX = "experimentalFeature.";
-    protected static final String WEB_ROOT = "webRoot";
-    protected static final String MAX_BLOB_SIZE = "maxBLOBSize";
-    protected static final String EXT3_REQUIRED = "ext3Required";
-    protected static final String EXT3API_REQUIRED = "ext3APIRequired";
-    protected static final String SELF_REPORT_EXCEPTIONS = "selfReportExceptions";
-    protected static final String USE_CONTAINER_RELATIVE_URL = "useContainerRelativeURL";
-    protected static final String ALLOW_SESSION_KEYS = "allowSessionKeys";
-    protected static final String CSRF_CHECK = "CSRFCheck";
-    protected static final String X_FRAME_OPTIONS = "XFrameOption";
+    static final String LOOK_AND_FEEL_REVISION = "logoRevision";
+    static final String DEFAULT_DOMAIN_PROP = "defaultDomain";
+    static final String BASE_SERVER_URL_PROP = "baseServerURL";
+    static final String DEFAULT_LSID_AUTHORITY_PROP = "defaultLsidAuthority";
+    static final String PIPELINE_TOOLS_DIR_PROP = "pipelineToolsDirectory";
+    static final String SSL_REQUIRED = "sslRequired";
+    static final String SSL_PORT = "sslPort";
+    static final String USER_REQUESTED_ADMIN_ONLY_MODE = "adminOnlyMode";
+    static final String ADMIN_ONLY_MESSAGE = "adminOnlyMessage";
+    static final String SHOW_RIBBON_MESSAGE = "showRibbonMessage";
+    static final String RIBBON_MESSAGE = "ribbonMessage";
+    static final String EXCEPTION_REPORTING_LEVEL = "exceptionReportingLevel";
+    static final String USAGE_REPORTING_LEVEL = "usageReportingLevel";
+    static final String ADMINISTRATOR_CONTACT_EMAIL = "administratorContactEmail";
+    static final String BLAST_SERVER_BASE_URL_PROP = "BLASTBaseURL";
+    static final String MEMORY_USAGE_DUMP_INTERVAL = "memoryUsageDumpInterval";
+    static final String NETWORK_DRIVE_LETTER = "networkDriveLetter";
+    static final String NETWORK_DRIVE_PATH = "networkDrivePath";
+    static final String NETWORK_DRIVE_USER = "networkDriveUser";
+    static final String NETWORK_DRIVE_PASSWORD = "networkDrivePassword";
+    static final String MAIL_RECORDER_ENABLED = "mailRecorderEnabled";
+    static final String EXPERIMENTAL_FEATURE_PREFIX = "experimentalFeature.";
+    static final String WEB_ROOT = "webRoot";
+    static final String MAX_BLOB_SIZE = "maxBLOBSize";
+    static final String EXT3_REQUIRED = "ext3Required";
+    static final String EXT3API_REQUIRED = "ext3APIRequired";
+    static final String SELF_REPORT_EXCEPTIONS = "selfReportExceptions";
+    static final String USE_CONTAINER_RELATIVE_URL = "useContainerRelativeURL";
+    static final String ALLOW_SESSION_KEYS = "allowSessionKeys";
+    static final String CSRF_CHECK = "CSRFCheck";
+    static final String X_FRAME_OPTIONS = "XFrameOption";
 
-    protected static final String SITE_CONFIG_NAME = "SiteConfig";
-
+    private static final String SERVER_GUID = "serverGUID";
+    private static final String SERVER_GUID_XML_PARAMETER_NAME = "org.labkey.mothership." + SERVER_GUID;
+    private static final String SITE_CONFIG_NAME = "SiteConfig";
     private static final String SERVER_SESSION_GUID = GUID.makeGUID();
 
     protected String getType()
@@ -158,7 +157,7 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     }
 
 
-    public void validateBaseServerUrl(String baseServerUrl) throws URISyntaxException
+    void validateBaseServerUrl(String baseServerUrl) throws URISyntaxException
     {
         BaseServerProperties.validate(baseServerUrl);
     }
@@ -173,29 +172,34 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
         return null != _initialRequestBaseServerUrl || null != lookupStringValue(BASE_SERVER_URL_PROP, null);
     }
 
+    private static final Object BASE_SERVER_URL_LOCK = new Object();
+
     public String getBaseServerUrl()
     {
-        String baseServerUrl = lookupStringValue(BASE_SERVER_URL_PROP, null);
-
-        if (null == baseServerUrl)
+        synchronized (BASE_SERVER_URL_LOCK)
         {
-            try
-            {
-                BaseServerProperties.validate(_initialRequestBaseServerUrl);
+            String baseServerUrl = lookupStringValue(BASE_SERVER_URL_PROP, null);
 
-                WriteableAppProps writeable = AppProps.getWriteableInstance();
-                writeable.storeStringValue(BASE_SERVER_URL_PROP, _initialRequestBaseServerUrl);
-                writeable.save();
-
-                baseServerUrl = _initialRequestBaseServerUrl;
-            }
-            catch (URISyntaxException e)
+            if (null == baseServerUrl)
             {
-                throw new RuntimeException("Invalid initial request URL", e);
+                try
+                {
+                    BaseServerProperties.validate(_initialRequestBaseServerUrl);
+
+                    WriteableAppProps writeable = AppProps.getWriteableInstance();
+                    writeable.storeStringValue(BASE_SERVER_URL_PROP, _initialRequestBaseServerUrl);
+                    writeable.save();
+
+                    baseServerUrl = _initialRequestBaseServerUrl;
+                }
+                catch (URISyntaxException e)
+                {
+                    throw new RuntimeException("Invalid initial request URL", e);
+                }
             }
+
+            return baseServerUrl;
         }
-
-        return baseServerUrl;
     }
 
     public String getDefaultDomain()
@@ -212,6 +216,7 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
 
     public ActionURL getHomePageActionURL()
     {
+        //noinspection ConstantConditions
         return PageFlowUtil.urlProvider(ProjectUrls.class).getHomeURL();
     }
 
@@ -253,6 +258,7 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
 
     public String getPipelineToolsDirectory()
     {
+        @SuppressWarnings("ConstantConditions")
         File webappDir = new File(ModuleLoader.getServletContext().getRealPath(""));
         File binDir = new File(webappDir.getParentFile(), "bin");
 
