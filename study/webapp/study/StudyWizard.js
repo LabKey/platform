@@ -328,8 +328,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             specimens: {value: 'Specimens', currentStep: false},
             studyProps: {value: 'Study Objects', currentStep: false},
             lists: {value: 'Lists', currentStep: false},
-            views: {value: 'Views', currentStep: false},
-            reports: {value: 'Reports', currentStep: false},
+            views: {value: 'Grid Views', currentStep: false},
+            reports: {value: 'Reports and Charts', currentStep: false},
             folderProps: {value: 'Folder Objects', currentStep: false},
             publishOptions: {value: 'Publish Options', currentStep: false}
         };
@@ -1262,9 +1262,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
     getViewsPanel: function(){
         this.selectedViews = [];
         var items = [];
-        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Views'}) +
+        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Grid Views'}) +
                 Ext.DomHelper.markup({tag:'div', html:'&nbsp;'}) +
-                Ext.DomHelper.markup({tag:'div', html:'Choose the views you would like to publish:'}) +
+                Ext.DomHelper.markup({tag:'div', html:'Choose the grid views you would like to publish:'}) +
                 Ext.DomHelper.markup({tag:'div', html:'&nbsp;'});
 
         items.push({xtype:'displayfield', html: txt});
@@ -1353,7 +1353,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         var panel = new Ext.Panel({
             border: false,
-            name: "Views",
+            name: "Grid Views",
             layout: 'vbox',
             layoutConfig: {
                 align: 'stretch',
@@ -1496,9 +1496,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         
         var items = [];
 
-        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Reports'}) +
+        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Reports and Charts'}) +
                 Ext.DomHelper.markup({tag:'div', html:'&nbsp;'}) +
-                Ext.DomHelper.markup({tag:'div', html:'Choose the reports you would like to publish:'}) +
+                Ext.DomHelper.markup({tag:'div', html:'Choose the reports and charts you would like to publish:'}) +
                 Ext.DomHelper.markup({tag:'div', html:'&nbsp;'});
 
         items.push({xtype:'displayfield', html: txt});
@@ -1597,7 +1597,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         var panel = new Ext.Panel({
             border: false,
-            name: "Reports",
+            name: "Reports and Charts",
             layout: 'vbox',
             layoutConfig: {
                 align: 'stretch',

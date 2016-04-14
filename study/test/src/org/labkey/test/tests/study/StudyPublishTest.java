@@ -748,8 +748,8 @@ public class StudyPublishTest extends StudyProtectedExportTest
         }
         clickButton("Next", 0);
 
-        // Wizard page 8 : Views
-        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Views']"));
+        // Wizard page 8 : Grid Views
+        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Grid Views']"));
         waitForElement(Locator.css(".studyWizardViewList"));
         assertTextNotPresent(R_VIEW_UNSHARED);
         for (String view : views)
@@ -758,8 +758,8 @@ public class StudyPublishTest extends StudyProtectedExportTest
         }
         clickButton("Next", 0);
 
-        // Wizard Page 9 : Reports
-        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Reports']"));
+        // Wizard Page 9 : Reports and Charts
+        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Reports and Charts']"));
         waitForElement(Locator.css(".studyWizardReportList"));
         waitForElement(Locator.css(".studyWizardReportList .x-grid3-col-1")); // Make sure grid is filled in
         for (String report : reports)
@@ -848,14 +848,14 @@ public class StudyPublishTest extends StudyProtectedExportTest
         verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.studyWizardListList, "CustomIndexing", "Indexed as one doc", "List To Delete", "List1");
         clickButton("Next", 0);
 
-        // Wizard page 8 : Views
-        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Views']"));
+        // Wizard page 8 : Grid Views
+        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Grid Views']"));
         waitForElement(Locator.css(".studyWizardViewList"));
         verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.studyWizardViewList, "Shared Custom View");
         clickButton("Next", 0);
 
-        // Wizard Page 9 : Reports
-        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Reports']"));
+        // Wizard Page 9 : Reports and Reports
+        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Reports and Reports']"));
         waitForElement(Locator.css(".studyWizardReportList"));
         waitForElement(Locator.css(".studyWizardReportList .x-grid3-col-1")); // Make sure grid is filled in
         verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.studyWizardReportList, "Shared Mouse Report", "Shared Time Chart");
