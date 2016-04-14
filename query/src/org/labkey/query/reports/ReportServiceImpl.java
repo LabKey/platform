@@ -1148,7 +1148,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             {
                 return ReportCache.getReports(category.lookupContainer())
                     .stream()
-                    .filter(report -> report.getDescriptor().getCategory().equals(category))
+                    .filter(report -> category.equals(report.getDescriptor().getCategory()))
                     .collect(Collectors.toList());
             }
             return Collections.emptyList();
