@@ -110,10 +110,14 @@ public class DisplayColumnGroup
         }
         out.write("  }\n");
         out.write("}\n");
-        out.write("var e = document.getElementsByName('" + getColumns().get(0).getFormFieldName(ctx) + "')[0];\n");
-        out.write("e.onchange=" + groupName + "Updated;\n");
-        out.write("e.onkeyup=" + groupName + "Updated;\n");
-        out.write("\n");
+        // Do this in an onReady() in case other elements are being manipulated in an onReady() as well and won't be
+        // present immediately, like a LABKEY.element.AutoCompletionField which swaps in an <input> into the DOM
+        // as part of its initialization
+        out.write("Ext4.onReady(function() {\n");
+        out.write("  var e = document.getElementsByName('" + getColumns().get(0).getFormFieldName(ctx) + "')[0];\n");
+        out.write("  e.onchange=" + groupName + "Updated;\n");
+        out.write("  e.onkeyup=" + groupName + "Updated;\n");
+        out.write("});\n");
     }
 
     public void writeCopyableOnChangeHandler(RenderContext ctx, Writer out) throws IOException

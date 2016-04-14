@@ -200,6 +200,9 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
             this.element.value = this.element.value.substring(0, newlineIndex + 1) + newValue;
         else
             this.element.value = newValue;
+        // Fire the event to let listeners know that something changed
+        if (this.element.onchange)
+            this.element.onchange();
         this.hideCompletionDiv();
     },
 
