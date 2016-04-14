@@ -93,20 +93,21 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     private DetailsURL _updateURL;
     private DetailsURL _detailsURL;
     private ButtonBarConfig _buttonBarConfig;
-    protected AggregateRowConfig _aggregateRowConfig;
+    private AggregateRowConfig _aggregateRowConfig;
     private boolean _hidden;
-    protected String _importMsg;
-    protected List<Pair<String, StringExpression>> _importTemplates;
+    private String _importMsg;
+    private List<Pair<String, StringExpression>> _importTemplates;
 
     // Column-related
     private TableType _xmlTable = null;
     private SchemaColumnMetaData _columnMetaData = null;
-    protected boolean _autoLoadMetaData = true;      // TODO: Remove this? DatasetSchemaTableInfo is the only user of this.
     private final Object _columnLock = new Object();
     private String _versionColumnName = null;
     private List<FieldKey> _defaultVisibleColumns = null;
     private AuditBehaviorType _auditBehaviorType = AuditBehaviorType.NONE;
     private FieldKey _auditRowPk;
+
+    protected boolean _autoLoadMetaData = true;      // TODO: Remove this? DatasetSchemaTableInfo is the only user of this.
 
     public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableName, String metaDataName, String selectName)
     {
@@ -371,9 +372,9 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     }
 
 
-    protected long _selectListTimeout = TimeUnit.MINUTES.toMillis(1);
+    private long _selectListTimeout = TimeUnit.MINUTES.toMillis(1);
 
-    protected long getSelectListTimeout()
+    private long getSelectListTimeout()
     {
         return _selectListTimeout;
     }
@@ -395,7 +396,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     }
 
 
-    protected SchemaColumnMetaData getColumnMetaData()
+    private SchemaColumnMetaData getColumnMetaData()
     {
         synchronized (_columnLock)
         {
