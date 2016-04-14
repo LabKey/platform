@@ -423,6 +423,11 @@ public enum JdbcType
             throw new ConversionException("Expected decimal value", x);
         }
 
+        if (converter == null)
+        {
+            throw new ConversionException("Unable to find converter for data class " + this.cls + ", unable to convert value: " + s);
+        }
+
         // CONSIDER: convert may return default values instead of ConversionException
         return converter.convert(cls, s);
     }
