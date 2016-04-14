@@ -22,8 +22,10 @@ import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyB;
+import org.labkey.test.util.DataRegionExportHelper;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
+import org.labkey.test.util.TextSearcher;
 
 import java.io.File;
 import java.util.Arrays;
@@ -492,10 +494,12 @@ public class CohortTest extends BaseWebDriverTest
         clickAndWait(Locator.linkWithText("Test Results"));
 
         setCohortFilter("Positive", AdvancedCohortType.CURRENT);
-        addUrlParameter("exportAsWebPage=true");
-        clickExportToText();
-        assertTextNotPresent("Infected4");
-        getDriver().navigate().back();
+        DataRegionTable list = new DataRegionTable("query", this);
+        DataRegionExportHelper helper = new DataRegionExportHelper(list);
+        File expFile = helper.exportText(DataRegionExportHelper.TextSeparator.TAB);
+        String tsv = TestFileUtils.getFileContents(expFile);
+        TextSearcher tsvSearcher = new TextSearcher(() -> tsv).setSearchTransformer(t -> t);
+        assertTextNotPresent(tsvSearcher, "Infected4");
     }
 
     @LogMethod
