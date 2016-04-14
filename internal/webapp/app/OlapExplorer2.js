@@ -4,6 +4,7 @@
 Ext.define('LABKEY.app.store.OlapExplorer2', {
     extend: 'LABKEY.app.store.OlapExplorer',
     alternateClassName: 'LABKEY.olapStore2',
+    allRecordTree: null,
     statics: {
         /**
          * These sort functions assume sorting an Array of LABKEY.app.model.OlapExplorer2 nodes
@@ -81,7 +82,7 @@ Ext.define('LABKEY.app.store.OlapExplorer2', {
         var rootPosition = pos[0][0];
         var nodeName = rootPosition.uniqueName.replace(rootPosition.name, '').replace('.[]', '');
         var rootNode = Ext.create('LABKEY.app.util.OlapExplorerNode', {data: {uniqueName: nodeName, lvlDepth: 0}});
-        var allRecordTree = Ext.create('LABKEY.app.util.OlapExplorerTree', rootNode);
+        this.allRecordTree = Ext.create('LABKEY.app.util.OlapExplorerTree', rootNode);
 
         var groupOnly = true;
 
@@ -139,7 +140,7 @@ Ext.define('LABKEY.app.store.OlapExplorer2', {
                 groupOnly = false;
             }
 
-            allRecordTree.add(instance, sortFn);
+            this.allRecordTree.add(instance, sortFn);
 
             var collapse = this.checkCollapse(instance.data);
             instance.set('collapsed', collapse);
@@ -149,7 +150,7 @@ Ext.define('LABKEY.app.store.OlapExplorer2', {
             }
         }
 
-        var allRecords = allRecordTree.getAllRecords();
+        var allRecords = this.allRecordTree.getAllRecords();
         var allInstances = [];
         Ext.each(allRecords, function(rec){
             allInstances.push(rec.record);
@@ -249,7 +250,9 @@ Ext.define('LABKEY.app.util.OlapExplorerTree', {
     },
     add: function(data, sortFn) {
         var child = new LABKEY.app.util.OlapExplorerNode(data),
-                parent = this.findParent(this.root, child);
+                parent = this.findNode(this.root, child, function(node, newChild){
+                    return node.isDirectParentOf(newChild);
+                });
 
         if (parent) {
             parent.childrenNodes.push(child);
@@ -261,12 +264,11 @@ Ext.define('LABKEY.app.util.OlapExplorerTree', {
             console.log('Parent node not found.');
         }
     },
-    findParent : function(currentNode, newChild) {
-        if (currentNode.isDirectParentOf(newChild)) {
+    findNode: function(currentNode, uniqueName, matchFn) {
+        if (matchFn.call(this, currentNode, uniqueName))
             return currentNode;
-        }
         for (var i = 0, length = currentNode.childrenNodes.length; i < length; i++) {
-            var found = this.findParent(currentNode.childrenNodes[i], newChild);
+            var found = this.findNode(currentNode.childrenNodes[i], uniqueName, matchFn);
             if (found) {
                 return found;
             }
@@ -282,6 +284,38 @@ Ext.define('LABKEY.app.util.OlapExplorerTree', {
         }
         for (var i = 0, length = currentNode.childrenNodes.length; i < length; i++) {
             this.preOrderTraversal(currentNode.childrenNodes[i], results, false);
+        }
+        return results;
+    },
+    /**
+     * Get all descendant groups for a ancestor, excluding the line that's directly related to the disownedDescendant
+     * @param {string} ancestor The uniqueName of the ancestor node
+     * @param {string} disownedDescendant The uniqueName of the descendant node whose line will be pruned
+     * @returns {string[]} an array of uniqueNames/members after the pruning
+     */
+    dissolve: function(ancestor, disownedDescendant) {
+        var ancestorNode = this.findNode(this.root, ancestor, function(node, uniqueName){
+            return node.record.data.uniqueName === uniqueName;
+        });
+        if (ancestorNode) {
+            return this.getDescendantGroups(ancestorNode, disownedDescendant, [], true)
+        } else {
+            console.log('Ancestor node not found.');
+        }
+    },
+    getDescendantGroups: function(currentNode, disownedDescendant, results, isRoot) {
+        if (disownedDescendant === currentNode.record.data.uniqueName) {
+            return results;
+        }
+        if (disownedDescendant.indexOf(currentNode.record.data.uniqueName) == 0) {
+            for (var i = 0, length = currentNode.childrenNodes.length; i < length; i++) {
+                this.getDescendantGroups(currentNode.childrenNodes[i], disownedDescendant, results, false);
+            }
+        }
+        else {
+            if (!isRoot) {
+                results.push({uniqueName: currentNode.record.data.uniqueName});
+            }
         }
         return results;
     }
