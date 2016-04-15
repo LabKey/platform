@@ -187,7 +187,7 @@ public class SequenceVisitManager extends VisitManager
         SQLFragment sqlSelect = new SQLFragment();
         sqlSelect.append("SELECT DISTINCT ParticipantId, SequenceNum, ParticipantSequenceNum FROM ");
         sqlSelect.append(tableStudyData.getParticipantSequenceNumSQL("SD"));
-        sqlSelect.append(" WHERE Container = ?");
+        sqlSelect.append(" WHERE Container = ? AND ParticipantId IS NOT NULL and SequenceNum IS NOT NULL AND ParticipantSequenceNum IS NOT NULL");
         sqlSelect.add(container);
         if (null != potentiallyAddedParticipants && !potentiallyAddedParticipants.isEmpty() && potentiallyAddedParticipants.size() < 450)
         {
