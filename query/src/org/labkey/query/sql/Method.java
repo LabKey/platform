@@ -162,7 +162,19 @@ public abstract class Method
             }
         });
         labkeyMethod.put("hour", new JdbcMethod("hour", JdbcType.INTEGER, 1, 1));
-        labkeyMethod.put("ifnull", new JdbcMethod("ifnull", JdbcType.OTHER, 2, 2));
+        labkeyMethod.put("ifnull", new JdbcMethod("ifnull", JdbcType.OTHER, 2, 2){
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new JdbcMethodInfoImpl(_name, _jdbcType){
+                    @Override
+                    public JdbcType getJdbcType(JdbcType[] args)
+                    {
+                        return JdbcType.promote(args[0],args[1]);
+                    }
+                };
+            }
+        }) ;
         labkeyMethod.put("isequal", new Method("isequal", JdbcType.BOOLEAN, 2, 2){
             @Override
             public MethodInfo getMethodInfo()
