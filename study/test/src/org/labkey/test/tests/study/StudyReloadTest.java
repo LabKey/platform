@@ -45,7 +45,7 @@ public class StudyReloadTest extends StudyBaseTest
         reloadStudyFromZip(new File(TestFileUtils.getSampledataPath(), "/studyreload/edited.zip"));
         pushLocation();
         //query validation should have been run by default
-        click(Locator.xpath("//a[.='COMPLETE']"));
+        clickAndWait(Locator.linkWithText("COMPLETE"));
         checkQueryValidationInLog(true);
         popLocation();
         clickFolder(getFolderName());
@@ -58,7 +58,7 @@ public class StudyReloadTest extends StudyBaseTest
 
         //verify skipping query validation during reload
         reloadStudyFromZip(new File(TestFileUtils.getSampledataPath(), "/studyreload/edited.zip"), false, 3);
-        click(Locator.xpath("//a[.='COMPLETE']"));
+        clickAndWait(Locator.linkWithText("COMPLETE"));
         checkQueryValidationInLog(false);
     }
 
