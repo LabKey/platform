@@ -16,7 +16,6 @@ Ext.define('LABKEY.app.model.OlapExplorer', {
         {name : 'level'},
         {name : 'levelUniqueName'},
         {name : 'ordinal', type: 'int', defaultValue: -1},
-        {name : 'lvlDepth', type: 'int', defaultValue: 0},
         {name : 'uniqueName'},
         {name : 'isGroup', type : 'boolean'},
         {name : 'collapsed', type : 'boolean'},

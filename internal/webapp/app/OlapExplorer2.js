@@ -1,6 +1,16 @@
 /**
  * A new implementation of OlapExplorer that support multiple level using tree as underlying data structure
  */
+Ext.define('LABKEY.app.model.OlapExplorer2', {
+
+    extend: 'LABKEY.app.model.OlapExplorer',
+
+    fields: [
+        {name : 'lvlDepth', type: 'int', defaultValue: 0},
+        {name : 'isSelected', type : 'boolean', defaultValue: false}
+    ]
+});
+
 Ext.define('LABKEY.app.store.OlapExplorer2', {
     extend: 'LABKEY.app.store.OlapExplorer',
     alternateClassName: 'LABKEY.olapStore2',
@@ -116,14 +126,15 @@ Ext.define('LABKEY.app.store.OlapExplorer2', {
                 levelUniqueName: subPosition.level.uniqueName,
                 collapsed: activeGroup && pos.length > 15 ? true : false,
                 btnShown: false,
-                hasSelect: response.useSelection === true
+                hasSelect: response.useSelection === true,
+                isSelected: this.isRecordSelected(subPosition.uniqueName)
             };
 
             if (response.useSelection) {
                 target.subcount = this._calculateSubcount(selectionResult, target.uniqueName);
             }
 
-            var instance = Ext.create('LABKEY.app.model.OlapExplorer', target);
+            var instance = Ext.create('LABKEY.app.model.OlapExplorer2', target);
 
             if (target.isGroup) {
                 groupTarget = instance;
@@ -184,6 +195,57 @@ Ext.define('LABKEY.app.store.OlapExplorer2', {
             default:
                 return false;
         }
+    },
+    /**
+     * Determine if a level is considered selected based on current active selections.
+     * This is intended to be override by subclass to provide a concrete implementation.
+     * @param uniqueName
+     * @returns {boolean}
+     */
+    isRecordSelected : function(uniqueName) {
+        return false;
+    },
+    onLoadSelection : function(cellset, mdx, x) {
+        var me = this;
+        if (x.mflight === me.mflight) {
+
+            var ssf = mdx._filter['stateSelectionFilter'];
+            var hsf = mdx._filter['hoverSelectionFilter'];
+
+            if ((!ssf || ssf.length == 0) && (!hsf || hsf.length == 0)) {
+                me.clearSelection();
+            }
+            else {
+                this.suspendEvents(true);
+                me.queryBy(function(rec) {
+                    rec.set({
+                        subcount: this._calculateSubcount(cellset, rec.get('uniqueName')),
+                        hasSelect: true,
+                        isSelected: this.isRecordSelected(rec.get('uniqueName'))
+                    });
+                    return true;
+                }, this);
+                this.resumeEvents();
+            }
+
+            this.fireEvent('subselect', this);
+        }
+    },
+
+    clearSelection : function() {
+        if (this.enableSelection) {
+            this.suspendEvents(true);
+            this.queryBy(function(rec) {
+                rec.set({
+                    subcount: 0,
+                    hasSelect: false,
+                    isSelected: false
+                });
+                return true;
+            }, this);
+            this.resumeEvents();
+            this.fireEvent('subselect', this);
+        }
     }
 
 });
@@ -197,7 +259,7 @@ Ext.define('LABKEY.app.view.OlapExplorer2', {
         var countTpl = this.getCountTemplate();
 
         //
-        // This template is meant to be bound to a set of LABKEY.app.model.OlapExplorer instances
+        // This template is meant to be bound to a set of LABKEY.app.model.OlapExplorer2 instances
         //
         this.tpl = new Ext.XTemplate(
                 '<div class="', this.baseChartCls, '">',
@@ -235,6 +297,42 @@ Ext.define('LABKEY.app.view.OlapExplorer2', {
                     },
                     renderCount : function(values) {
                         return countTpl.apply(values);
+                    }
+                }
+        );
+    },
+    getBarTemplate : function() {
+        return new Ext.XTemplate(
+                '<span class="{[ this.rowSelectedCls(values) ]} index {[ this.doAnimate() ]}" style="width: {[ this.calcWidth(values) ]}%"></span>',
+                '<span class="{[ this.rowSelectedCls(values) ]} index-selected inactive {[ this.doAnimate() ]}" style="width: {[ this.calcSubWidth(values) ]}%"></span>',
+                {
+                    doAnimate : function() {
+                        return LABKEY.app.view.OlapExplorer.APPLY_ANIMATE === true ? 'animator' : '';
+                    },
+                    calcWidth : function(v) {
+                        return (v.count / v.maxcount) * 100;
+                    },
+                    rowSelectedCls : function(v) {
+                        if (v.isSelected) {
+                            return 'saelevel-selected';
+                        }
+                        return '';
+                    },
+                    calcSubWidth : function(v) {
+                        var ps = (v.subcount / v.count);
+                        var pt = (v.count / v.maxcount);
+                        var pts;
+
+                        if (isNaN(ps)) {
+                            pts = 0;
+                        }
+                        else if (ps >= 1) {
+                            pts = pt;
+                        }
+                        else {
+                            pts = ps*pt;
+                        }
+                        return pts * 100;
                     }
                 }
         );
