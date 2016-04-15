@@ -159,14 +159,14 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         cte.append(")\n");
 
         String tableName = alias + "$m";
-        ret.addCommonTableExpression(cte.toString(), tableName, cte);
+        String token = ret.addCommonTableExpression(cte.toString(), tableName, cte);
 
         // join with core.modules
         ret.append("(SELECT m.name, m.installedversion, m.classname, m.schemas");
         ret.append(",").append(tableName).append(".*");
         ret.append("\n");
         ret.append("FROM ").append(getFromTable().getFromSQL("m")).append("\n");
-        ret.append("INNER JOIN ").append(tableName).append(" ON m.name = ").append(tableName).append(".ModuleName\n");
+        ret.append("INNER JOIN ").append(token).append(" ").append(tableName).append(" ON m.name = ").append(tableName).append(".ModuleName\n");
         // CONSIDER: LEFT OUTER JOIN to include rows from core.modules for modules not currently installed
 
         // WHERE
