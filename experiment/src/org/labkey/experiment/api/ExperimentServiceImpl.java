@@ -1712,7 +1712,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         if (isUnknownMaterial(start))
             return new ExpLineage(start);
 
-        SQLFragment sqlf = generateExperimentTreeSQL(Collections.singletonList(start), options);
+        List<ExpRun> runsToInvestigate = collectRunsToInvestigate(start, options);
+
+        if (runsToInvestigate.isEmpty())
+            return new ExpLineage(start);
+
+        SQLFragment sqlf = generateExperimentTreeSQL(runsToInvestigate, options);
         Set<Integer> dataids = new HashSet<>();
         Set<Integer> materialids = new HashSet<>();
         Set<Integer> runids = new HashSet<>();
