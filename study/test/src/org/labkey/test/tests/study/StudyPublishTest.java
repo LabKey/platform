@@ -854,8 +854,8 @@ public class StudyPublishTest extends StudyProtectedExportTest
         verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.studyWizardViewList, "Shared Custom View");
         clickButton("Next", 0);
 
-        // Wizard Page 9 : Reports and Reports
-        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Reports and Reports']"));
+        // Wizard Page 9 : Reports and Charts
+        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Reports and Charts']"));
         waitForElement(Locator.css(".studyWizardReportList"));
         waitForElement(Locator.css(".studyWizardReportList .x-grid3-col-1")); // Make sure grid is filled in
         verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.studyWizardReportList, "Shared Mouse Report", "Shared Time Chart");
