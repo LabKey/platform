@@ -102,6 +102,9 @@ public class ExpLineage
 
     private Set<ExpMaterial> findRelatedChildSamples(ExpProtocolOutput seed, Map<String, ExpObject> nodes, Map<String, Pair<Set<Edge>, Set<Edge>>> edges)
     {
+        if (edges.size() == 0)
+            return Collections.emptySet();
+
         // walk from start through edges looking for all sample children, ignoring data children
         Set<ExpMaterial> materials = new HashSet<>();
         Queue<ExpObject> stack = new LinkedList<>();
@@ -144,6 +147,9 @@ public class ExpLineage
 
     private Set<ExpData> findNearestParentDatas(ExpProtocolOutput seed, Map<String, ExpObject> nodes, Map<String, Pair<Set<Edge>, Set<Edge>>> edges)
     {
+        if (edges.size() == 0)
+            return Collections.emptySet();
+
         // walk from start through edges looking for all sample children, stopping at first datas found
         Set<ExpData> datas = new HashSet<>();
         Queue<ExpObject> stack = new LinkedList<>();
@@ -154,7 +160,7 @@ public class ExpLineage
             String lsid = curr.getLSID();
 
             // Gather sample parents
-            Set<ExpLineage.Edge> parentEdges = edges.get(lsid).first;
+            Set<ExpLineage.Edge> parentEdges = edges.containsKey(lsid) ? edges.get(lsid).first : Collections.emptySet();
             for (ExpLineage.Edge edge : parentEdges)
             {
                 String parentLsid = edge.parent;
