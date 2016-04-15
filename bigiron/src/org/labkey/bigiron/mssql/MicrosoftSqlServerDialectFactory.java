@@ -95,7 +95,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
         // - http://www.sqlteam.com/article/sql-server-versions
         // - http://sqlserverbuilds.blogspot.se/
 
-        // We support only 2012 and higher as the primary data source, or 2008R2 as an external data source
+        // We support only 2012 and higher as the primary data source, or 2008/2008R2 as an external data source
         if (version >= 100)
         {
             if (version >= 130)
@@ -155,10 +155,10 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
             badProductName("sqlserver", 1.0, 14.0, "");
 
             // < 10.5 should result in bad version error
-            badVersion("Microsoft SQL Server", 0.0, 10.5, null);
+            badVersion("Microsoft SQL Server", 0.0, 10.0, null);
 
-            // >= 10.5 and < 11.0 should result in MicrosoftSqlServer2008R2Dialect
-            good("Microsoft SQL Server", 10.5, 11.0, "", MicrosoftSqlServer2008R2Dialect.class);
+            // >= 10.0 and < 11.0 should result in MicrosoftSqlServer2008R2Dialect
+            good("Microsoft SQL Server", 10.0, 11.0, "", MicrosoftSqlServer2008R2Dialect.class);
 
             // >= 11.0 and < 12.0 should result in MicrosoftSqlServer2012Dialect
             good("Microsoft SQL Server", 11.0, 12.0, "", MicrosoftSqlServer2012Dialect.class);
