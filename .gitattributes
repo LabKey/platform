@@ -6675,6 +6675,8 @@ internal/src/org/labkey/api/query/SimpleQueryUpdateService.java -text
 internal/src/org/labkey/api/query/SimpleTableDomainKind.java -text
 internal/src/org/labkey/api/query/SimpleUserSchema.java -text
 internal/src/org/labkey/api/query/TempQuerySettings.java -text
+internal/src/org/labkey/api/reports/BaseRedirectReport.java -text
+internal/src/org/labkey/api/reports/LinkReport.java -text
 internal/src/org/labkey/api/rss/RSSFeed.java -text
 internal/src/org/labkey/api/rss/RSSService.java -text
 internal/src/org/labkey/api/rss/RSSServiceImpl.java -text
