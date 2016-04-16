@@ -86,7 +86,7 @@ import org.labkey.query.olap.rolap.RolapTestCase;
 import org.labkey.query.olap.rolap.RolapTestSchema;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.reports.AttachmentReport;
-import org.labkey.query.reports.LinkReport;
+import org.labkey.api.reports.LinkReport;
 import org.labkey.query.reports.ReportAndDatasetChangeDigestProviderImpl;
 import org.labkey.query.reports.ReportImporter;
 import org.labkey.query.reports.ReportNotificationInfoProvider;

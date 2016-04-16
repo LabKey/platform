@@ -45,7 +45,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewContext;
 import org.labkey.query.reports.AttachmentReport;
-import org.labkey.query.reports.LinkReport;
+import org.labkey.api.reports.LinkReport;
 import org.labkey.query.reports.ReportsController;
 
 import javax.script.ScriptEngineFactory;
