@@ -377,13 +377,13 @@ public class ExpGeneratorHelper
 
     static private Lsid createOutputProtocolLSID(Lsid parentProtocolLSID)
     {
-        Lsid result = new Lsid(parentProtocolLSID.toString());
-        result.setObjectId(parentProtocolLSID.getObjectId() + ".Output");
+        Lsid result = new Lsid.LsidBuilder(parentProtocolLSID).setObjectId(parentProtocolLSID.getObjectId() + ".Output").build();
         return result;
     }
 
-    static private ExpProtocol ensureProtocol(PipelineJob job, Map<String, ExpProtocol> protocolCache, List<String> protocolSequence, Lsid lsid, String description)
+    static private ExpProtocol ensureProtocol(PipelineJob job, Map<String, ExpProtocol> protocolCache, List<String> protocolSequence, Lsid lsidIn, String description)
     {
+        Lsid.LsidBuilder lsid = new Lsid.LsidBuilder(lsidIn);
         int version = 1;
         while (true)
         {
@@ -406,7 +406,7 @@ public class ExpGeneratorHelper
             else
             {
                 // Don't have a matching one, so create a brand new one with the next version number
-                return createProtocol(job, protocolCache, protocolSequence, lsid, description);
+                return createProtocol(job, protocolCache, protocolSequence, lsid.build(), description);
             }
         }
     }

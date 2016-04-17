@@ -663,7 +663,7 @@ public class XarReader extends AbstractXarImporter
                 {
                     //make the lsid unique and retry
                     String suffix = Long.toString(Math.round(Math.random() * 100));
-                    pRunLSID.setObjectId(pRunLSID.getObjectId() + "." + suffix);
+                    pRunLSID = new Lsid.LsidBuilder(pRunLSID).setObjectId(pRunLSID.getObjectId() + "." + suffix).build();
                     run = ExperimentServiceImpl.get().getExperimentRun(pRunLSID.toString());
                 }
             }

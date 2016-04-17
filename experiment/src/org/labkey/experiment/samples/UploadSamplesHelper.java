@@ -350,13 +350,12 @@ public class UploadSamplesHelper
 
                 UploadMaterialSetForm.InsertUpdateChoice insertUpdate = _form.getInsertUpdateChoiceEnum();
                 ListIterator<Map<String, Object>> li = maps.listIterator();
+                Lsid.LsidBuilder builder = new Lsid.LsidBuilder(_materialSource.getMaterialLSIDPrefix() + "ToBeReplaced");
                 while (li.hasNext())
                 {
                     Map<String, Object> map = li.next();
                     String name = decideName(map, idColPropertyURIs);
-                    Lsid l = new Lsid(_materialSource.getMaterialLSIDPrefix() + "ToBeReplaced");
-                    l.setObjectId(name);
-                    String lsid = l.toString();
+                    String lsid = builder.setObjectId(name).toString();
                     ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
 
                     if (material == null)
@@ -936,9 +935,7 @@ public class UploadSamplesHelper
         public String beforeImportObject(Map<String, Object> map) throws SQLException
         {
             String name = decideName(map, _idCols);
-            Lsid l = new Lsid(_source.getMaterialLSIDPrefix() + "ToBeReplaced");
-            l.setObjectId(name);
-            String lsid = l.toString();
+            String lsid = new Lsid.LsidBuilder(_source.getMaterialLSIDPrefix() + "ToBeReplaced").setObjectId(name).toString();
 
             ExpMaterialImpl material;
             if (!_reusedMaterialLSIDs.contains(lsid))

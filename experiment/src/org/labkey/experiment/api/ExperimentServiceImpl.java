@@ -485,7 +485,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 path = uri.toString();
             }
 
-            Lsid lsid = new Lsid(LsidUtils.resolveLsidFromTemplate(AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION, source.getXarContext(), "Data", new AutoFileLSIDReplacer(path, source.getXarContext().getContainer(), source)));
+            Lsid.LsidBuilder lsid = new Lsid.LsidBuilder(LsidUtils.resolveLsidFromTemplate(AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION, source.getXarContext(), "Data", new AutoFileLSIDReplacer(path, source.getXarContext().getContainer(), source)));
             int version = 1;
             do
             {
@@ -628,7 +628,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 }
                 else
                 {
-                    Lsid lsid = new Lsid(sampleSet.getMaterialLSIDPrefix() + "test");
+                    Lsid.LsidBuilder lsid = new Lsid.LsidBuilder(sampleSet.getMaterialLSIDPrefix() + "test");
                     lsid.setObjectId(name);
                     String materialLsid = lsid.toString();
 

@@ -26,6 +26,7 @@ import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.ExperimentRunTypeSource;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.DefaultExperimentDataHandler;
 import org.labkey.api.exp.api.ExperimentService;
@@ -314,7 +315,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     public Set<Class> getUnitTests()
     {
-        return new HashSet<Class>(Arrays.asList(
+        return new HashSet<>(Arrays.asList(
+            Lsid.TestCase.class,
             LSIDRelativizer.TestCase.class,
             LsidUtils.TestCase.class));
     }

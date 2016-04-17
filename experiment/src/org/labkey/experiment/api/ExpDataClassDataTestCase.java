@@ -348,12 +348,12 @@ public class ExpDataClassDataTestCase
         // Create a SampleSet and some samples
         final ExpSampleSet ss = ExperimentService.get().createSampleSet(c, user, "Samples", null, props, Collections.emptyList(), 0, -1, -1, -1);
         final ExpMaterial s1 = ExperimentService.get().createExpMaterial(c,
-                new Lsid(ss.getMaterialLSIDPrefix() + "ToBeReplaced").setObjectId("S-1").toString(), "S-1");
+                new Lsid.LsidBuilder(ss.getMaterialLSIDPrefix() + "ToBeReplaced").setObjectId("S-1").toString(), "S-1");
         s1.setCpasType(ss.getLSID());
         s1.save(user);
 
         final ExpMaterial s2 = ExperimentService.get().createExpMaterial(c,
-                new Lsid(ss.getMaterialLSIDPrefix() + "ToBeReplaced").setObjectId("S-2").toString(), "S-2");
+                new Lsid.LsidBuilder(ss.getMaterialLSIDPrefix() + "ToBeReplaced").setObjectId("S-2").toString(), "S-2");
         s2.setCpasType(ss.getLSID());
         s2.save(user);
 
