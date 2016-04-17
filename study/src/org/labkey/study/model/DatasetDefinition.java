@@ -430,7 +430,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         {
             ViewCategory category = ViewCategoryManager.getInstance().getCategory(getDefinitionContainer(), _categoryId);
             if (category != null)
-                _category = category.getLabel();
+                _category = ViewCategoryManager.getInstance().encode(category);
         }
     }
 
