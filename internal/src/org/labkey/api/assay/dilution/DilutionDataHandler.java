@@ -545,11 +545,12 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
     public Lsid getDataRowLSID(ExpData data, String wellGroupName, Map<PropertyDescriptor, Object> sampleProperties)
     {
-        Lsid dataRowLsid = new Lsid(data.getLSID());
+        Lsid.LsidBuilder dataRowLsid = new Lsid.LsidBuilder(data.getLSID());
         dataRowLsid.setNamespacePrefix(_dataRowLsidPrefix);
         dataRowLsid.setObjectId(dataRowLsid.getObjectId() + "-" + wellGroupName);
-        return dataRowLsid;
+        return dataRowLsid.build();
     }
+
 
     protected ObjectProperty getResultObjectProperty(Container container, ExpProtocol protocol, String objectURI,
                                                    String propertyName, Object value, PropertyType type, String format)

@@ -207,7 +207,7 @@ public class PlateBasedRunCreator<ProviderType extends AbstractPlateBasedAssayPr
                     sampleSet.setName("Input Samples: " + context.getProtocol().getName());
                     sampleSet.setLSID(domainURI);
 
-                    Lsid sampleSetLSID = new Lsid(domainURI);
+                    Lsid.LsidBuilder sampleSetLSID = new Lsid.LsidBuilder(domainURI);
                     sampleSetLSID.setNamespacePrefix("Sample");
                     sampleSetLSID.setNamespaceSuffix(context.getProtocol().getContainer().getRowId() + "." + context.getProtocol().getName());
                     sampleSetLSID.setObjectId("");
@@ -217,7 +217,7 @@ public class PlateBasedRunCreator<ProviderType extends AbstractPlateBasedAssayPr
                     sampleSet.save(context.getUser());
                 }
 
-                Lsid derivedLsid = new Lsid(sampleSet.getMaterialLSIDPrefix() + "OBJECT");
+                Lsid.LsidBuilder derivedLsid = new Lsid.LsidBuilder(sampleSet.getMaterialLSIDPrefix() + "OBJECT");
                 derivedLsid.setObjectId(derivedLsid.getObjectId() + "-" + key + "-" + ms);
                 int index = 0;
 
@@ -230,7 +230,7 @@ public class PlateBasedRunCreator<ProviderType extends AbstractPlateBasedAssayPr
                 String baseObjectId = derivedLsid.getObjectId();
                 while(ExperimentService.get().getExpMaterial(derivedLsid.toString()) != null)
                     derivedLsid.setObjectId(baseObjectId + "-" + ++index);
-                ExpMaterial derivedMaterial = ExperimentService.get().createExpMaterial(context.getContainer(), derivedLsid);
+                ExpMaterial derivedMaterial = ExperimentService.get().createExpMaterial(context.getContainer(), derivedLsid.build());
                 derivedMaterial.setCpasType(sampleSet.getLSID());
                 Map<ExpMaterial, String> originalMaterialSet = Collections.singletonMap(originalMaterial, null);
                 Map<ExpMaterial, String> derivedMaterialSet = Collections.singletonMap(derivedMaterial, "PreparedMaterial");

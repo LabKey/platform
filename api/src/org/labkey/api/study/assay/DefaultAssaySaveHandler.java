@@ -613,7 +613,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
         String materialLsid;
         if (sampleSet != null)
         {
-            Lsid lsid = new Lsid(sampleSet.getMaterialLSIDPrefix() + "test");
+            Lsid.LsidBuilder lsid = new Lsid.LsidBuilder(sampleSet.getMaterialLSIDPrefix() + "test");
             lsid.setObjectId(materialName);
             materialLsid = lsid.toString();
         }

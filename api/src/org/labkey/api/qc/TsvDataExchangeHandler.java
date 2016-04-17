@@ -712,13 +712,14 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             dataType = TsvDataHandler.RELATED_TRANSFORM_FILE_DATA_TYPE;
 
         // Wire up the script's inputs
+        Lsid.LsidBuilder builder = new Lsid.LsidBuilder(ExpData.DEFAULT_CPAS_TYPE,"");
         for (File dataFile : inputDataFiles)
         {
             ExpData data = ExperimentService.get().getExpDataByURL(dataFile, context.getContainer());
             if (data == null)
             {
                 data = ExperimentService.get().createData(context.getContainer(), dataType, dataFile.getName());
-                data.setLSID(new Lsid(ExpData.DEFAULT_CPAS_TYPE, GUID.makeGUID()));
+                data.setLSID(builder.setObjectId(GUID.makeGUID()).build());
                 data.setDataFileURI(dataFile.toURI());
                 data.save(context.getUser());
             }

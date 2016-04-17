@@ -303,7 +303,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
             }
 
             name = makeThawListName(schemaName, queryName, container);
-            Lsid lsid = new Lsid(NAMESPACE_PREFIX, LIST_NAMESPACE_SUFFIX + ".Folder-" + context.getContainer().getRowId(),
+            Lsid.LsidBuilder lsid = new Lsid.LsidBuilder(NAMESPACE_PREFIX, LIST_NAMESPACE_SUFFIX + ".Folder-" + context.getContainer().getRowId(),
                     schemaName + "." + queryName);
             lsid.setVersion(container.getPath());
             dataLSID = lsid.toString();
