@@ -230,12 +230,13 @@ public class SequenceVisitManager extends VisitManager
         SQLFragment sqlSelect = new SQLFragment();
         sqlSelect.append("SELECT DISTINCT ParticipantId, SequenceNum, ParticipantSequenceNum FROM ");
         sqlSelect.append(tableStudyData.getParticipantSequenceNumSQL("SD"));
+        sqlSelect.append("\nWHERE  ParticipantId IS NOT NULL and SequenceNum IS NOT NULL AND ParticipantSequenceNum IS NOT NULL");
         sqlSelect.append("\nEXCEPT\n");
         sqlSelect.append("SELECT DISTINCT ParticipantId, SequenceNum, ParticipantSequenceNum FROM ").append(tableParticipantVisit.getFromSQL("PV")).append(" WHERE Container=CAST(? AS ").append(d.getGuidType()).append(")\n");
         sqlSelect.add(container);
 
         SQLFragment sqlInsertParticipantVisit = new SQLFragment();
-        sqlInsertParticipantVisit.appendComment("<SequenceVisitManager.updateParticipantVisitTableAfterInsert>", schema.getSqlDialect());
+        sqlInsertParticipantVisit.appendComment("<SequenceVisitManager.updateParticipantVisitTable>", schema.getSqlDialect());
         sqlInsertParticipantVisit.append("INSERT INTO ").append(tableParticipantVisit.getSelectName());
         sqlInsertParticipantVisit.append(" (Container, ParticipantId, SequenceNum, ParticipantSequenceNum)\n");
         sqlInsertParticipantVisit.append("SELECT CAST(? AS " + d.getGuidType() +"), ParticipantId, SequenceNum, ParticipantSequenceNum\n");
@@ -243,7 +244,7 @@ public class SequenceVisitManager extends VisitManager
         sqlInsertParticipantVisit.append("FROM (");
         sqlInsertParticipantVisit.append(sqlSelect);
         sqlInsertParticipantVisit.append(") _");
-        sqlInsertParticipantVisit.appendComment("/<SequenceVisitManager.updateParticipantVisitTableAfterInsert>", schema.getSqlDialect());
+        sqlInsertParticipantVisit.appendComment("/<SequenceVisitManager.updateParticipantVisitTable>", schema.getSqlDialect());
         SqlExecutor executor = new SqlExecutor(schema);
         executor.execute(sqlInsertParticipantVisit);
 
