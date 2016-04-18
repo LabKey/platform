@@ -30,6 +30,7 @@ import org.labkey.api.study.Visit;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.study.AssayFolderType;
@@ -111,7 +112,7 @@ public abstract class BaseStudyController extends SpringActionController
         if (null == study)
         {
             // We expected to find a study
-            throw new IllegalStateException("No study found.");
+            throw new NotFoundException("No study found.");
         }
         return study;
     }
