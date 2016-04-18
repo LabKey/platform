@@ -457,14 +457,13 @@ public class FrameFactoryClassic implements ViewService.FrameFactory
 
                 out.println("</th>");
                 out.println("</tr>");
-
-                out.print("<tr id=\"WebPartView" + System.identityHashCode(this) + "\" ");
-                if (config._collapsed && config._isCollapsible)
-                    out.print("style=\"display: none\"");
-                out.println(">");
-
-                out.print("<td colspan=2 class=\"" + (null==config._className?"":config._className) + " labkey-wp-body\">");
             }
+            out.print("<tr id=\"WebPartView" + System.identityHashCode(this) + "\" ");
+            if (config._collapsed && config._isCollapsible)
+                out.print("style=\"display: none\"");
+            out.println(">");
+
+            out.print("<td colspan=2 class=\"" + (null==config._className?"":config._className) + " labkey-wp-body\">");
         }
 
 
