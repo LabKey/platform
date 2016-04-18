@@ -70,7 +70,7 @@ public class AppProps
         int getServerPort();
         String getScheme();
         String getServerName();
-        void initializeFromRequest(HttpServletRequest request);
+        void ensureBaseServerUrl(HttpServletRequest request);
         void setContextPath(String contextPath);
 
         String getDefaultDomain();

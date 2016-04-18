@@ -52,7 +52,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps.In
     private volatile Path _contextPath = null;
     private volatile String _projectRoot = null;
     private volatile String _enlistmentId = null;
-    private volatile String _initialRequestBaseServerUrl = null;
 
     static final String LOOK_AND_FEEL_REVISION = "logoRevision";
     static final String DEFAULT_DOMAIN_PROP = "defaultDomain";
@@ -148,12 +147,27 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps.In
         return getBaseServerProperties().getServerName();
     }
 
-    public void initializeFromRequest(HttpServletRequest request)
+    // Save the current request URL if the base server URL property is not set
+    public void ensureBaseServerUrl(HttpServletRequest request)
     {
-        assert null == _initialRequestBaseServerUrl;
+        String baseServerUrl = getBaseServerUrl();
 
-        // Stash this away just in case we need it.
-        _initialRequestBaseServerUrl = URLHelper.getBaseServer(request.getScheme(), request.getServerName(), request.getServerPort()).toString();
+        if (null == baseServerUrl)
+        {
+            try
+            {
+                String initialRequestBaseServerUrl = URLHelper.getBaseServer(request.getScheme(), request.getServerName(), request.getServerPort()).toString();
+                BaseServerProperties.validate(initialRequestBaseServerUrl);
+
+                WriteableAppProps writeable = AppProps.getWriteableInstance();
+                writeable.storeStringValue(BASE_SERVER_URL_PROP, initialRequestBaseServerUrl);
+                writeable.save();
+            }
+            catch (URISyntaxException e)
+            {
+                throw new RuntimeException("Invalid initial request URL", e);
+            }
+        }
     }
 
 
@@ -169,37 +183,12 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps.In
 
     public boolean isSetBaseServerUrl()
     {
-        return null != _initialRequestBaseServerUrl || null != lookupStringValue(BASE_SERVER_URL_PROP, null);
+        return null != getBaseServerUrl();
     }
-
-    private static final Object BASE_SERVER_URL_LOCK = new Object();
 
     public String getBaseServerUrl()
     {
-        synchronized (BASE_SERVER_URL_LOCK)
-        {
-            String baseServerUrl = lookupStringValue(BASE_SERVER_URL_PROP, null);
-
-            if (null == baseServerUrl)
-            {
-                try
-                {
-                    BaseServerProperties.validate(_initialRequestBaseServerUrl);
-
-                    WriteableAppProps writeable = AppProps.getWriteableInstance();
-                    writeable.storeStringValue(BASE_SERVER_URL_PROP, _initialRequestBaseServerUrl);
-                    writeable.save();
-
-                    baseServerUrl = _initialRequestBaseServerUrl;
-                }
-                catch (URISyntaxException e)
-                {
-                    throw new RuntimeException("Invalid initial request URL", e);
-                }
-            }
-
-            return baseServerUrl;
-        }
+        return lookupStringValue(BASE_SERVER_URL_PROP, null);
     }
 
     public String getDefaultDomain()

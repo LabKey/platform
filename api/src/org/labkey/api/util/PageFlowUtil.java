@@ -137,7 +137,7 @@ import java.util.zip.InflaterInputStream;
 
 public class PageFlowUtil
 {
-    public enum TransformFormat
+    private enum TransformFormat
     {
         html,
         xml
@@ -151,9 +151,8 @@ public class PageFlowUtil
     /**
      * Default parser class.
      */
-    protected static final String DEFAULT_PARSER_NAME = "org.apache.xerces.parsers.SAXParser";
-
-    static public final String NONPRINTING_ALTCHAR = "~";
+    private static final String DEFAULT_PARSER_NAME = "org.apache.xerces.parsers.SAXParser";
+    private static final String NONPRINTING_ALTCHAR = "~";
 
     static public String filterXML(String s)
     {
@@ -373,7 +372,7 @@ public class PageFlowUtil
     }
 
     //used to output strings from Java in Groovy script.
-    static public String groovyString(String s)
+    private static String groovyString(String s)
     {
         //replace single backslash
         s = s.replaceAll("\\\\", "\\\\\\\\");
@@ -382,7 +381,7 @@ public class PageFlowUtil
         return s;
     }
 
-    static List<Pair<String, String>> _emptyPairList = Collections.emptyList();
+    private static final List<Pair<String, String>> _emptyPairList = Collections.emptyList();
 
     public static List<Pair<String, String>> fromQueryString(String query)
     {
@@ -2013,7 +2012,8 @@ public class PageFlowUtil
         }
 
         json.put("tours", getTourJson(container));
-        json.put("serverName", StringUtils.isNotEmpty(appProps.getServerName()) ? appProps.getServerName() : "Labkey Server");
+        String serverName = appProps.getServerName();
+        json.put("serverName", StringUtils.isNotEmpty(serverName) ? serverName : "Labkey Server");
         json.put("versionString", appProps.getLabKeyVersionString());
 
         if (request != null)

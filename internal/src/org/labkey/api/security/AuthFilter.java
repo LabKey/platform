@@ -238,7 +238,7 @@ public class AuthFilter implements Filter
             if (_firstRequestHandled)
                 return;
 
-            AppProps.getInstance().initializeFromRequest(request);
+            AppProps.getInstance().ensureBaseServerUrl(request);
             ModuleLoader.getInstance().attemptStartBackgroundThreads();
             _firstRequestHandled = true;
         }
