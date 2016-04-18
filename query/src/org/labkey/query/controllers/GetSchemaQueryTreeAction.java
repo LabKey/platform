@@ -118,13 +118,8 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                     JSONArray builtIn = new JSONArray();
 
                     //get built-in queries
-                    List<String> queryNames = new ArrayList<>(uschema.getVisibleTableNames());
-                    Collections.sort(queryNames, new Comparator<String>(){
-                        public int compare(String name1, String name2)
-                        {
-                            return name1.compareToIgnoreCase(name2);
-                        }
-                    });
+                    List<String> queryNames = new ArrayList<>(form.isShowHidden() ? uschema.getTableNames() : uschema.getVisibleTableNames());
+                    Collections.sort(queryNames, String::compareToIgnoreCase);
 
                     int addedQueryCount = 0;
                     for (int i = 0; i < queryNames.size() && addedQueryCount < MAX_TABLES_TO_LIST; i++)
@@ -153,12 +148,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                     //get user-defined queries
                     Map<String, QueryDefinition> queryDefMap = uschema.getQueryDefs();
                     queryNames = new ArrayList<>(queryDefMap.keySet());
-                    Collections.sort(queryNames, new Comparator<String>(){
-                        public int compare(String name1, String name2)
-                        {
-                            return name1.compareToIgnoreCase(name2);
-                        }
-                    });
+                    Collections.sort(queryNames, String::compareToIgnoreCase);
 
                     addedQueryCount = 0;
                     for (int i = 0; i < queryNames.size() && addedQueryCount < MAX_TABLES_TO_LIST; i++)
