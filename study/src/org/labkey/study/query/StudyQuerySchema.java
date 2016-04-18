@@ -16,6 +16,7 @@
 
 package org.labkey.study.query;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
@@ -31,8 +32,10 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.User;
@@ -79,6 +82,7 @@ import org.labkey.study.visualization.StudyVisualizationProvider;
 import org.labkey.study.writer.AbstractContext;
 import org.springframework.validation.BindException;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -92,6 +96,8 @@ import java.util.TreeMap;
 
 public class StudyQuerySchema extends UserSchema
 {
+    public static final boolean useSubSchemas_PROTOTYPE = false;
+
     public static final String SCHEMA_NAME = "study";
     public static final String SCHEMA_DESCRIPTION = "Contains all data related to the study, including subjects, cohorts, visits, datasets, specimens, etc.";
     public static final String SIMPLE_SPECIMEN_TABLE_NAME = "SimpleSpecimen";
@@ -150,6 +156,7 @@ public class StudyQuerySchema extends UserSchema
 
     private ParticipantGroup _sessionParticipantGroup;
 
+
     public StudyQuerySchema(@NotNull StudyImpl study, User user, boolean mustCheckPermissions)
     {
         this(study, study.getContainer(), user, mustCheckPermissions);
@@ -182,6 +189,32 @@ public class StudyQuerySchema extends UserSchema
         return new StudyQuerySchema(null, c, u, true);
     }
 
+    @Override
+    public Set<String> getSchemaNames()
+    {
+        LinkedHashSet<String> names = new LinkedHashSet<>(super.getSchemaNames());
+        names.addAll(getSubSchemaNames());
+        return names;
+    }
+
+    protected Set<String> getSubSchemaNames()
+    {
+        if (useSubSchemas_PROTOTYPE)
+            return new LinkedHashSet<>(Arrays.asList("Datasets","Design","Specimens"));
+        return Collections.emptySet();
+    }
+
+    @Override
+    public QuerySchema getSchema(String name)
+    {
+        if (StringUtils.equalsIgnoreCase("Datasets",name))
+            return new DatasetSchema(this);
+        if (StringUtils.equalsIgnoreCase("Design",name))
+            return new DesignSchema(this);
+        if (StringUtils.equalsIgnoreCase("Specimens",name))
+            return new SpecimenSchema(this);
+        return super.getSchema(name);
+    }
 
     private DbSchema getStudyDesignSchema()
     {
@@ -239,19 +272,11 @@ public class StudyQuerySchema extends UserSchema
 
 
     @Override
-    public Set<String> getVisibleTableNames()
-    {
-        return getTableNames(true);
-    }
-
-    @Override
     public Set<String> getTableNames()
     {
-        return getTableNames(false);
-    }
+        if (useSubSchemas_PROTOTYPE)
+            return Collections.emptySet();
 
-    private Set<String> getTableNames(boolean visible)
-    {
         if (_tableNames == null)
         {
             Set<String> names = new LinkedHashSet<>();
@@ -1154,5 +1179,230 @@ public class StudyQuerySchema extends UserSchema
     public static boolean isDataspaceFolderTable(String tableName)
     {
         return _dataspaceFolderLevelTables.contains(tableName);
+    }
+
+
+
+
+    private class DatasetSchema extends StudyQuerySchema
+    {
+        final StudyQuerySchema _parentSchema;
+
+        DatasetSchema(StudyQuerySchema parent)
+        {
+            super(parent.getStudy(), parent.getUser(), parent._mustCheckPermissions);
+            this._name = "Datasets";
+            this._path = new SchemaKey(parent.getSchemaPath(),this._name);
+            _parentSchema = parent;
+            _description = "Contains all collected data related to the study (except specimens), including subjects, cohort assignments, datasets, etc.";
+            setSessionParticipantGroup(parent.getSessionParticipantGroup());
+        }
+
+        @Override
+        public Set<String> getSubSchemaNames()
+        {
+            return Collections.emptySet();
+        }
+
+        @Override
+        public QuerySchema getSchema(String name)
+        {
+            return _parentSchema.getSchema(name);
+        }
+
+        @Override
+        public Set<String> getTableNames()
+        {
+            if (null == _tableNames)
+            {
+                Set<String> names = new LinkedHashSet<>();
+                if (_study != null)
+                {
+                    StudyService.Service studyService = StudyService.get();
+                    if (null == studyService)
+                        throw new IllegalStateException("No StudyService!");
+
+                    names.add(STUDY_DATA_TABLE_NAME);
+                    names.add(studyService.getSubjectTableName(getContainer()));
+
+                    names.add(studyService.getSubjectGroupMapTableName(getContainer()));
+
+                    User user = getUser();
+                    for (DatasetDefinition dsd : _study.getDatasets())
+                    {
+                        boolean canRead = dsd.canRead(user);
+                        if (dsd.getName() == null || !canRead)
+                            continue;
+                        names.add(dsd.getName());
+                    }
+                }
+
+                _tableNames = Collections.unmodifiableSet(names);
+            }
+            return _tableNames;
+        }
+    }
+
+    private class SpecimenSchema extends StudyQuerySchema
+    {
+        final StudyQuerySchema _parentSchema;
+
+        SpecimenSchema(StudyQuerySchema parent)
+        {
+            super(parent.getStudy(), parent.getUser(), parent._mustCheckPermissions);
+            this._name = "Specimens";
+            this._path = new SchemaKey(parent.getSchemaPath(),this._name);
+            _parentSchema = parent;
+            _description = "Specimen repository";
+            setSessionParticipantGroup(parent.getSessionParticipantGroup());
+        }
+
+        @Override
+        public Set<String> getSubSchemaNames()
+        {
+            return Collections.emptySet();
+        }
+
+        @Override
+        public QuerySchema getSchema(String name)
+        {
+            return _parentSchema.getSchema(name);
+        }
+
+        @Override
+        public Set<String> getTableNames()
+        {
+            if (_tableNames == null)
+            {
+                Set<String> names = new LinkedHashSet<>();
+
+                if (_study != null)
+                {
+                    StudyService.Service studyService = StudyService.get();
+                    if (null == studyService)
+                        throw new IllegalStateException("No StudyService!");
+
+                    names.add(LOCATION_TABLE_NAME);
+                    names.add(SPECIMEN_EVENT_TABLE_NAME);
+                    names.add(SPECIMEN_DETAIL_TABLE_NAME);
+                    names.add(SPECIMEN_SUMMARY_TABLE_NAME);
+                    names.add("SpecimenVialCount");
+                    names.add(SIMPLE_SPECIMEN_TABLE_NAME);
+                    names.add("SpecimenRequest");
+                    names.add("SpecimenRequestStatus");
+                    names.add("VialRequest");
+                    names.add(SPECIMEN_ADDITIVE_TABLE_NAME);
+                    names.add(SPECIMEN_DERIVATIVE_TABLE_NAME);
+                    names.add(SPECIMEN_PRIMARY_TYPE_TABLE_NAME);
+                    names.add("SpecimenComment");
+
+                    // CONSIDER: show under queries instead of tables?
+                    // specimen report pivots
+                    names.add(SpecimenPivotByPrimaryType.PIVOT_BY_PRIMARY_TYPE);
+                    names.add(SpecimenPivotByDerivativeType.PIVOT_BY_DERIVATIVE_TYPE);
+                    names.add(SpecimenPivotByRequestingLocation.PIVOT_BY_REQUESTING_LOCATION);
+
+                    names.add(LOCATION_SPECIMEN_LIST_TABLE_NAME);
+                }
+                _tableNames = Collections.unmodifiableSet(names);
+            }
+
+            return _tableNames;
+        }
+    }
+
+
+    private class DesignSchema extends StudyQuerySchema
+    {
+        final StudyQuerySchema _parentSchema;
+
+        DesignSchema(StudyQuerySchema parent)
+        {
+            super(parent.getStudy(), parent.getUser(), parent._mustCheckPermissions);
+            this._name = "Design";
+            this._path = new SchemaKey(parent.getSchemaPath(),this._name);
+            _parentSchema = parent;
+            _description = "Contains all study design";
+            setSessionParticipantGroup(parent.getSessionParticipantGroup());
+        }
+
+        @Override
+        public Set<String> getSubSchemaNames()
+        {
+            return Collections.emptySet();
+        }
+
+        @Override
+        public QuerySchema getSchema(String name)
+        {
+            return _parentSchema.getSchema(name);
+        }
+
+        @Override
+        public Set<String> getTableNames()
+        {
+            if (_tableNames == null)
+            {
+                Set<String> names = new LinkedHashSet<>();
+
+                // Always add StudyProperties and study designer lookup tables, even if we have no study
+                names.add(PROPERTIES_TABLE_NAME);
+                names.add(STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME);
+                names.add(STUDY_DESIGN_GENES_TABLE_NAME);
+                names.add(STUDY_DESIGN_ROUTES_TABLE_NAME);
+                names.add(STUDY_DESIGN_SUB_TYPES_TABLE_NAME);
+                names.add(STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME);
+                names.add(STUDY_DESIGN_UNITS_TABLE_NAME);
+                names.add(STUDY_DESIGN_ASSAYS_TABLE_NAME);
+                names.add(STUDY_DESIGN_LABS_TABLE_NAME);
+
+                if (_study != null)
+                {
+                    StudyService.Service studyService = StudyService.get();
+                    if (null == studyService)
+                        throw new IllegalStateException("No StudyService!");
+
+                    // All these require studies defined
+                    if (_study.getTimepointType() != TimepointType.CONTINUOUS)
+                        names.add(VISIT_TABLE_NAME);
+
+                    if (_study.getTimepointType() != TimepointType.CONTINUOUS)
+                        names.add(studyService.getSubjectVisitTableName(getContainer()));
+
+                    names.add("DataSets");
+                    names.add(DatasetColumnsTable.NAME);
+
+                    // Only show cohorts if the user has permission
+                    if (StudyManager.getInstance().showCohorts(getContainer(), getUser()))
+                        names.add("Cohort");
+
+                    names.add("QCState");
+
+                    // Subject category/group tables:
+                    names.add(studyService.getSubjectCategoryTableName(getContainer()));
+                    names.add(studyService.getSubjectGroupTableName(getContainer()));
+                    names.add(PARTICIPANT_GROUP_COHORT_UNION_TABLE_NAME);
+
+                    // assay schedule tables
+                    names.add(ASSAY_SPECIMEN_TABLE_NAME);
+                    names.add(ASSAY_SPECIMEN_VISIT_TABLE_NAME);
+
+                    // study designs
+                    names.add(PRODUCT_TABLE_NAME);
+                    names.add(PRODUCT_ANTIGEN_TABLE_NAME);
+                    names.add(TREATMENT_PRODUCT_MAP_TABLE_NAME);
+                    names.add(TREATMENT_TABLE_NAME);
+                    names.add(TREATMENT_VISIT_MAP_TABLE_NAME);
+
+                    names.add(OBJECTIVE_TABLE_NAME);
+                    names.add(PERSONNEL_TABLE_NAME);
+                    names.add(VISIT_TAG_TABLE_NAME);
+                    names.add(VISIT_TAG_MAP_TABLE_NAME);
+                    names.add(STUDY_SNAPSHOT_TABLE_NAME);
+                }
+                _tableNames = Collections.unmodifiableSet(names);            }
+
+            return _tableNames;
+        }
     }
 }
