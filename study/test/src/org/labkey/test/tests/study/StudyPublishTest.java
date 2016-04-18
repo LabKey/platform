@@ -17,7 +17,6 @@ package org.labkey.test.tests.study;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.experimental.categories.Category;
@@ -82,9 +81,9 @@ public class StudyPublishTest extends StudyProtectedExportTest
 
     private final String[] DATASETS = {"RCB-1: Reactogenicity-Baseline", "RCM-1: Reactogenicity-Early Assessment", "RCE-1: Reactogenicity-Day 0", "RCH-1: Reactogenicity-Day 1", "RCF-1: Reactogenicity-Day 2", "RCT-1: Reactogenicity-Day 3", "CPS-1: Screening Chemistry Panel", "DEM-1: Demographics"};
     private final String REPORT_DATASET = "RCB-1: Reactogenicity-Baseline";
-    private final String UNPUBLISHED_REPORT_DATASET = "AE-1:(VTN) AE Log";
+    private final String UNPUBLISHED_REPORT_DATASET = "AE-1";
     private final String DATE_SHIFT_DATASET_LABEL = "CPS-1: Screening Chemistry Panel";
-    private final String DATE_SHIFT_DATASET = "CPS-1 (" + DATE_SHIFT_DATASET_LABEL + ")";
+    private final String DATE_SHIFT_DATASET = "CPS-1";
     private final String DATE_SHIFT_REQUIRED_VISIT = "101";
     private final ImmutablePair<String, String> UNSHIFTED_DATE_FIELD = new ImmutablePair<>("CPSdt", "Initial Spec Collect Date");
     private final ImmutablePair<String, String> SHIFTED_DATE_FIELD = new ImmutablePair<>("CPScredt", "2a.Alt Creat Coll Date");
