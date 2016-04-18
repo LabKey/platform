@@ -62,7 +62,7 @@ public class StudyDatasetReloadTest extends StudyBaseTest
         clickFolder(getFolderName());
         clickAndWait(Locator.linkContainingText("DEM: Demographics"));
         _extHelper.clickMenuButton(true, "Manage");
-        assertTextPresent("StaffCode", "DoubleNum");
+        waitForText("StaffCode", "DoubleNum");
         assertElementPresent(Locator.tagWithText("td", "Staff Code").append("/../td/input[last()][@checked]"));     // MV
         assertElementPresent(Locator.tagWithText("td", "VisitDay").append("/../td/input[last()][not(@checked)]"));  // MV
 
