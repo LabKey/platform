@@ -62,6 +62,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.writer.PrintWriters;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.ParticipantIdImportHelper;
 import org.labkey.study.model.SequenceNumImportHelper;
@@ -73,6 +74,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.io.StringReader;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -84,6 +86,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 /*
@@ -218,18 +221,37 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
 
             ExcelLoader loader = new ExcelLoader(input, true);
             loader.setInferTypes(false);
-            List<Map<String, Object>> inputRows = loader.load();
-            List<Map<String, Object>> outputRows = transformRows(inputRows);
-
-            if (outputRows.size() > 0)
-                info("After removing duplicates, there are " + outputRows.size() + " rows of data");
-            else
-                error("There are no rows of data");
 
             // Create a ZIP archive with the appropriate TSVs
             try (ZipOutputStream zOut = new ZipOutputStream(new FileOutputStream(output)))
             {
-                writeTSV(zOut, outputRows, "specimens");
+                // Add a new file to the ZIP
+                zOut.putNextEntry(new ZipEntry("specimens.tsv"));
+                PrintWriter writer = PrintWriters.getPrintWriter(zOut);
+                final SpecimenTransformTSVWriter tsvWriter = new SpecimenTransformTSVWriter(Collections.emptyList());;
+                tsvWriter.setFileHeader(Collections.singletonList("# " + "specimens"));
+                tsvWriter.setPrintWriter(writer);
+                try
+                {
+                    loader.load()
+                        .stream()
+                        .filter(MapFilter.getMapFilter(this))
+                        .map(MapTransformer.getMapTransformer(this, getLabIds(), getPrimaryIds(), getDerivativeIds()))
+                        .forEach(outputRow -> {
+                            // lazily init the tsv writer and write out each row as we transform it to avoid running out of heap for large repositories
+                            tsvWriter.writeRow(outputRow);
+                        });
+                }
+                finally
+                {
+                    writer.flush();
+                    zOut.closeEntry();
+                }
+
+                if (tsvWriter.getRowCount() > 0)
+                    info("After removing duplicates, there are " + tsvWriter.getRowCount() + " rows of data");
+                else
+                    throw new PipelineJobException("There are no rows of data");
 
                 writeLabs(_labIds, zOut);
                 writePrimaries(_primaryIds, zOut);
