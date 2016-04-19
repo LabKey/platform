@@ -46,6 +46,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.controllers.specimen.AutoCompleteAction;
 import org.labkey.study.importer.SimpleSpecimenImporter;
+import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.model.DefaultSpecimenTablesTemplate;
 import org.labkey.study.model.Vial;
 import org.labkey.study.pipeline.SpecimenReloadJob;
@@ -58,6 +59,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -386,5 +388,16 @@ public class SpecimenServiceImpl implements SpecimenService.Service
     {
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, null);
         return specimenTablesProvider.getDomain("SpecimenEvent", false);
+    }
+
+    @Override
+    public Map<String, String> getSpecimenImporterTsvColumnMap()
+    {
+        Map<String, String> colNameMap = new HashMap<>();
+        for (SpecimenImporter.SpecimenColumn specimenColumn : SpecimenImporter.BASE_SPECIMEN_COLUMNS)
+        {
+            colNameMap.put(specimenColumn.getDbColumnName(), specimenColumn.getTsvColumnName());
+        }
+        return colNameMap;
     }
 }

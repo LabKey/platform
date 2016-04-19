@@ -908,7 +908,7 @@ public class SpecimenImporter
     private static final SpecimenColumn GLOBAL_UNIQUE_ID, LAB_ID, SHIP_DATE, STORAGE_DATE, LAB_RECEIPT_DATE, DRAW_TIMESTAMP;
     private static final SpecimenColumn VISIT_VALUE;
 
-    private static final Collection<SpecimenColumn> BASE_SPECIMEN_COLUMNS = Arrays.asList(
+    public static final Collection<SpecimenColumn> BASE_SPECIMEN_COLUMNS = Arrays.asList(
             new SpecimenColumn(EVENT_ID_COL, "ExternalId", "BIGINT NOT NULL", TargetTable.SPECIMEN_EVENTS, true),
             new SpecimenColumn("record_source", "RecordSource", "VARCHAR(20)", TargetTable.SPECIMEN_EVENTS),
             GLOBAL_UNIQUE_ID = new SpecimenColumn(GLOBAL_UNIQUE_ID_TSV_COL, "GlobalUniqueId", "VARCHAR(50)", true, TargetTable.VIALS, true),
