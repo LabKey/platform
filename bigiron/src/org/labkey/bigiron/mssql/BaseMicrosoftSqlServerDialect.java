@@ -438,7 +438,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     {
         if (maxRows != Table.ALL_ROWS)
         {
-            String sql = frag.getCompareSQL();
+            String sql = frag.getRawSQL();
             if (!sql.substring(0, 6).equalsIgnoreCase("SELECT"))
                 throw new IllegalArgumentException("ERROR: Limit SQL doesn't start with SELECT: " + sql);
 

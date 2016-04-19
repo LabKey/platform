@@ -830,7 +830,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 StatementDataIterator.TestCase.class,
                 Encryption.TestCase.class,
                 NotificationServiceImpl.TestCase.class,
-                JspTemplate.TestCase.class
+                JspTemplate.TestCase.class,
+                SQLFragment.TestCase.class
         ));
 
         testClasses.addAll(SqlDialectManager.getAllJUnitTests());

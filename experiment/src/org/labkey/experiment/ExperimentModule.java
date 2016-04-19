@@ -308,7 +308,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         return new HashSet<Class>(Arrays.asList(
                 OntologyManager.TestCase.class,
                 DomainPropertyImpl.TestCase.class,
-                ExpDataClassDataTestCase.class));
+                ExpDataClassDataTestCase.class,
+                ExperimentServiceImpl.TestCase.class));
     }
 
     @NotNull

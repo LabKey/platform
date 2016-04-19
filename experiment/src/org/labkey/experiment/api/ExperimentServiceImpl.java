@@ -24,6 +24,8 @@ import org.apache.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
@@ -142,6 +144,7 @@ import org.labkey.api.study.assay.AssayTableMetadata;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
@@ -1665,16 +1668,17 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     }
 
 
-    static final String exp_graph_pgsql;
-    static final String exp_graph_mssql;
+    static final String exp_graph_sql;
 
     static
     {
         try
         {
-            String exp_graph_sql = IOUtils.toString(ExperimentServiceImpl.class.getResourceAsStream("ExperimentRunGraph.sql"), "UTF-8");
-            exp_graph_pgsql = StringUtils.replace(exp_graph_sql, "/*RECURSIVE*/", "RECURSIVE");
-            exp_graph_mssql = StringUtils.replace(exp_graph_sql, " VARCHAR(", " NVARCHAR(");
+            String sql = IOUtils.toString(ExperimentServiceImpl.class.getResourceAsStream("ExperimentRunGraph.sql"), "UTF-8");
+            if (DbSchema.get("exp", DbSchemaType.Module).getSqlDialect().isPostgreSQL())
+                exp_graph_sql = StringUtils.replace(StringUtils.replace(sql, "$RECURSIVE$", "RECURSIVE"), "$VARCHAR$", "VARCHAR");
+            else
+                exp_graph_sql = StringUtils.replace(StringUtils.replace(StringUtils.replace(sql, "$RECURSIVE$", ""), "$VARCHAR$", "NVARCHAR"), "||", "+");
         }
         catch (IOException x)
         {
@@ -1792,10 +1796,61 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     }
 
 
+    /* return <ParentsQuery,ChildrenQuery> */
+    private Pair<String,String> getRunGraphCommonTableExpressions(SQLFragment ret, SqlDialect d, SQLFragment lsidsFrag)
+    {
+        String sourceSQL = exp_graph_sql;
+
+        Map<String,String> map = new HashMap<>();
+
+        String[] strs = StringUtils.splitByWholeSeparator(sourceSQL,"/* CTE */");
+        for (int i=1 ; i<strs.length ; i++)
+        {
+            String s = strs[i].trim();
+            int as = s.indexOf(" AS");
+            String name = s.substring(0,as).trim();
+            String select = s.substring(as+3).trim();
+            if (select.endsWith(","))
+                select = select.substring(0,select.length()-1).trim();
+            if (select.endsWith(")"))
+                select = select.substring(0,select.length()-1).trim();
+            if (select.startsWith("("))
+                select = select.substring(1).trim();
+            if (name.equals("$SEED$"))
+                select = select.replace("$LSIDS$", lsidsFrag.getRawSQL());
+            map.put(name, select);
+        }
+
+        String nodesSelect = map.get("$NODES$");
+        String nodesToken  = ret.addCommonTableExpression(nodesSelect, "org_lk_exp_NODES", new SQLFragment(nodesSelect));
+
+        String seedSelect = map.get("$SEED$");
+        seedSelect = StringUtils.replace(seedSelect, "$NODES$", nodesToken);
+        SQLFragment seedSqlfSelect = new SQLFragment(seedSelect,lsidsFrag.getParams());
+        String seedToken = ret.addCommonTableExpression(JdbcUtil.format(seedSqlfSelect), "org_lk_exp_SEED", seedSqlfSelect);
+
+        String edgesSelect = map.get("$EDGES$");
+        String edgesToken  = ret.addCommonTableExpression(edgesSelect, "org_lk_exp_EDGES", new SQLFragment(edgesSelect));
+
+        boolean recursive = getExpSchema().getSqlDialect().isPostgreSQL();
+        String parentsSelect = map.get("$PARENTS$");
+        parentsSelect = StringUtils.replace(parentsSelect, "$SEED$", seedToken);
+        parentsSelect = StringUtils.replace(parentsSelect, "$EDGES$", edgesToken);
+        String parentsToken = ret.addCommonTableExpression(parentsSelect, "org_lk_exp_PARENTS", new SQLFragment(parentsSelect), recursive);
+
+        String childrenSelect = map.get("$CHILDREN$");
+        childrenSelect = StringUtils.replace(childrenSelect, "$SEED$", seedToken);
+        childrenSelect = StringUtils.replace(childrenSelect, "$EDGES$", edgesToken);
+        String childrenToken = ret.addCommonTableExpression(childrenSelect, "org_lk_exp_CHILDREN", new SQLFragment(childrenSelect), recursive);
+
+        return new Pair<>(parentsToken,childrenToken);
+    }
+
+
     public SQLFragment generateExperimentTreeSQL(SQLFragment lsidsFrag, ExpLineageOptions options)
     {
-        String sourceSQL = getExpSchema().getSqlDialect().isPostgreSQL() ? exp_graph_pgsql : exp_graph_mssql;
-        SQLFragment sqlf = new SQLFragment(sourceSQL.replace("${LSIDS}", lsidsFrag.getRawSQL()), lsidsFrag.getParams());
+        SQLFragment sqlf = new SQLFragment();
+        Pair<String,String> tokens = getRunGraphCommonTableExpressions(sqlf, getExpSchema().getSqlDialect(), lsidsFrag);
         boolean up = options.isParents();
         boolean down = options.isChildren();
         boolean includeSelf = false;
@@ -1804,7 +1859,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             if (up)
             {
-                sqlf.append("\nSELECT * FROM _GraphParents");
+                sqlf.append("\nSELECT * FROM " + tokens.first);
                 String and = "\nWHERE ";
 
                 if (!includeSelf)
@@ -1841,7 +1896,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             if (down)
             {
-                sqlf.append("\nSELECT * FROM _GraphChildren");
+                sqlf.append("\nSELECT * FROM " + tokens.second);
                 String and = "\nWHERE ";
 
                 if (!includeSelf)
@@ -2106,7 +2161,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     /**
      * @param lsid Full lsid we're looking for.
-     * @return Object type for this lsid. Hmm should we reutnr a class
+     * @return Object type for this lsid. Hmm should we return a class
      */
     public LsidType findType(Lsid lsid)
     {
@@ -2302,7 +2357,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             matSource = createSampleSet();
             matSource.setLSID(getDefaultSampleSetLsid());
             matSource.setName(DEFAULT_MATERIAL_SOURCE_NAME);
-            matSource.setMaterialLSIDPrefix(new Lsid("Sample", DEFAULT_MATERIAL_SOURCE_NAME).toString() + "#");
+            matSource.setMaterialLSIDPrefix(new Lsid.LsidBuilder("Sample", DEFAULT_MATERIAL_SOURCE_NAME).toString() + "#");
             matSource.setContainer(ContainerManager.getSharedContainer());
             matSource.save(null);
         }
@@ -2369,12 +2424,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public Lsid getSampleSetLsid(String sourceName, Container container)
     {
-        return new Lsid(generateLSID(container, ExpSampleSet.class, sourceName));
+        return Lsid.parse(generateLSID(container, ExpSampleSet.class, sourceName));
     }
 
     public Lsid getDataClassLsid(String name, Container container)
     {
-        return new Lsid(generateLSID(container, ExpDataClass.class, name));
+        return Lsid.parse(generateLSID(container, ExpDataClass.class, name));
     }
 
     // TODO: @NotNull Collection<Integer> selectedRunIds
@@ -2984,7 +3039,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public String getDefaultSampleSetLsid()
     {
-        return new Lsid("SampleSource", "Default").toString();
+        return new Lsid.LsidBuilder("SampleSource", "Default").toString();
     }
 
 
@@ -3308,7 +3363,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         for (String lsidStr : lsids)
         {
-            Lsid lsid = new Lsid(lsidStr);
+            Lsid lsid = Lsid.parse(lsidStr);
 
             AttachmentParentEntity parent = new AttachmentParentEntity();
             parent.setContainer(container.getId());
@@ -3960,14 +4015,14 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             throw new IllegalArgumentException("Expected to be called for a protocol with three steps, but found " + childProtocols.size());
         }
+        Lsid.LsidBuilder builder = new Lsid.LsidBuilder(ExpProtocol.ApplicationType.ProtocolApplication.name(),"");
         for (ExpProtocol childProtocol : childProtocols)
         {
             if (childProtocol.getApplicationType() == ExpProtocol.ApplicationType.ProtocolApplication)
             {
                 ExpProtocolApplicationImpl result = new ExpProtocolApplicationImpl(new ProtocolApplication());
                 result.setProtocol(childProtocol);
-                Lsid lsid = new Lsid(ExpProtocol.ApplicationType.ProtocolApplication.name(), GUID.makeGUID());
-                result.setLSID(lsid);
+                result.setLSID(builder.setObjectId(GUID.makeGUID()).build());
                 result.setActionSequence(SIMPLE_PROTOCOL_EXTRA_STEP_SEQUENCE);
                 result.setRun(run);
                 result.setName(name);
@@ -4593,7 +4648,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         source.setLSID(lsid.toString());
         source.setName(name);
         source.setDescription(description);
-        source.setMaterialLSIDPrefix(new Lsid("Sample", String.valueOf(c.getRowId()) + "." + PageFlowUtil.encode(name), "").toString());
+        source.setMaterialLSIDPrefix(new Lsid.LsidBuilder("Sample", String.valueOf(c.getRowId()) + "." + PageFlowUtil.encode(name), "").toString());
         source.setContainer(c);
 
         if (hasNameProperty)
@@ -4951,5 +5006,34 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public void addExperimentListener(ExperimentListener listener)
     {
         _listeners.add(listener);
+    }
+
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testRecursiveSql()
+        {
+            ExperimentServiceImpl impl = new ExperimentServiceImpl();
+
+            // just test if syntactically correct
+            SQLFragment sqlf = impl.generateExperimentTreeSQL(new SQLFragment("?", GUID.makeGUID()), new ExpLineageOptions());
+            //System.out.println(sqlf.toDebugString());
+            assertFalse(new SqlSelector(impl.getExpSchema().getScope(), sqlf).exists());
+
+
+            SQLFragment sqlfA = impl.generateExperimentTreeSQL(new SQLFragment("?", 'A' + GUID.makeGUID()), new ExpLineageOptions());
+            SQLFragment sqlfB = impl.generateExperimentTreeSQL(new SQLFragment("?", 'B' + GUID.makeGUID()), new ExpLineageOptions());
+            SQLFragment union = new SQLFragment();
+
+            union.append("(\n");
+            union.append(sqlfA);
+            union.append("\n) UNION (\n");
+            union.append(sqlfB);
+            union.append("\n)");
+
+            //System.out.println(union.toDebugString());
+            assertFalse(new SqlSelector(impl.getExpSchema().getScope(), union).exists());
+        }
     }
 }
