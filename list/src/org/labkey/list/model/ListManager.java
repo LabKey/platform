@@ -77,6 +77,7 @@ public class ListManager implements SearchService.DocumentProvider
     private static final Logger LOG = Logger.getLogger(ListManager.class);
     private static final String LIST_SEQUENCE_NAME = "org.labkey.list.Lists";
     private static final ListManager INSTANCE = new ListManager();
+    private static final int SINGLE_LIST_MAX_SIZE_FOR_INDEX = 1000000000;      // 1 MB max
 
     public static final String LIST_AUDIT_EVENT = "ListAuditEvent";
     public static final String LISTID_FIELD_NAME = "listId";
@@ -581,12 +582,14 @@ public class ListManager implements SearchService.DocumentProvider
                 StringBuilder data = new StringBuilder();
 
                 // All columns, all rows, no filters, no sorts
-                try (Results results = new TableSelector(ti).setForDisplay(true).getResults())
+                try (Results results = new TableSelector(ti).setForDisplay(true).getResults(false))        // don't cache
                 {
                     while (results.next())
                     {
                         Map<FieldKey, Object> map = results.getFieldKeyRowMap();
                         data.append(template.eval(map)).append("\n");
+                        if (SINGLE_LIST_MAX_SIZE_FOR_INDEX <= data.length())
+                            break;
                     }
                 }
                 catch (SQLException e)
