@@ -233,14 +233,12 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
                 tsvWriter.setPrintWriter(writer);
                 try
                 {
-                    loader.load()
-                        .stream()
-                        .filter(MapFilter.getMapFilter(this))
-                        .map(MapTransformer.getMapTransformer(this, getLabIds(), getPrimaryIds(), getDerivativeIds()))
-                        .forEach(outputRow -> {
-                            // lazily init the tsv writer and write out each row as we transform it to avoid running out of heap for large repositories
-                            tsvWriter.writeRow(outputRow);
-                        });
+                    loader.forEach(row -> {
+                        if (MapFilter.getMapFilter(this).test(row))
+                        {
+                            tsvWriter.writeRow(MapTransformer.getMapTransformer(this, getLabIds(), getPrimaryIds(), getDerivativeIds()).apply(row));
+                        }
+                    });
                 }
                 finally
                 {
