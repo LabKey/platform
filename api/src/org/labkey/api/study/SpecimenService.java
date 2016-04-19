@@ -108,6 +108,8 @@ public class SpecimenService
         Domain getSpecimenVialDomain(Container container, User user);
 
         Domain getSpecimenEventDomain(Container container, User user);
+
+        Map<String, String> getSpecimenImporterTsvColumnMap();
     }
 
     public static void register(Service serviceImpl)
