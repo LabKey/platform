@@ -30,10 +30,12 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -72,34 +74,41 @@ public abstract class AbstractSpecimenTransformTask
     protected abstract  Map<String,Integer> getPrimaryIds();
     protected abstract  Map<String,Integer> getDerivativeIds();
     protected abstract  Map<String,Integer> getAdditiveIds();
+    private int rowIndex = 0;
+    private Set<String> hashes = new HashSet<>();
 
     protected List<Map<String, Object>> transformRows(List<Map<String, Object>> inputRows) throws IOException
     {
-        List<Map<String, Object>> outputRows = new ArrayList<>(inputRows.size());
-        Set<String> hashes = new HashSet<>();
-        int rowIndex = 0;
+        return inputRows
+            .stream()
+            .filter(MapFilter.getMapFilter(this))
+            .map(MapTransformer.getMapTransformer(this, getLabIds(), getPrimaryIds(), getDerivativeIds()))
+            .collect(Collectors.toList());
+    }
 
-        // Crank through all of the input rows
-        for (Iterator<Map<String, Object>> iter = inputRows.iterator(); iter.hasNext(); )
+    protected interface MapFilter extends Predicate<Map<String, Object>>
+    {
+        static MapFilter getMapFilter(AbstractSpecimenTransformTask task)
         {
-            Map<String, Object> inputRow = iter.next();
-            // Remove it from the input list immediately to make it eligible for garbage collection
-            // once we're done processing it
-            iter.remove();
-            rowIndex++;
-
-            // Check if it's a duplicate row
-            if (hashes.add(hashRow(inputRow)))
-            {
-                Map<String, Object> outputRow = transformRow(inputRow, rowIndex, getLabIds(), getPrimaryIds(), getDerivativeIds());
-                if (outputRow != null)
+            return row -> {
+                try
                 {
-                    outputRows.add(outputRow);
+                    return task.hashes.add(task.hashRow(row));
                 }
-            }
+                catch (IOException e)
+                {
+                    return true;    // Keep row
+                }
+            };
         }
+    }
 
-        return outputRows;
+    protected interface MapTransformer extends UnaryOperator<Map<String, Object>>
+    {
+        static MapTransformer getMapTransformer(AbstractSpecimenTransformTask task, Map<String, Integer> labIds, Map<String, Integer> primaryIds, Map<String, Integer> derivativeIds)
+        {
+            return row -> task.transformRow(row, task.rowIndex++, labIds, primaryIds, derivativeIds);
+        }
     }
 
     /** Write out an empty additives.tsv, since we aren't using them */
@@ -237,6 +246,34 @@ public abstract class AbstractSpecimenTransformTask
         {
             writer.flush();
             zOut.closeEntry();
+        }
+    }
+
+    protected static class SpecimenTransformTSVWriter extends TSVMapWriter
+    {
+        private int _rowCount;
+        public SpecimenTransformTSVWriter(Iterable<Map<String, Object>> rows)
+        {
+            super(new ArrayList<>(), rows);     // start with empty column list
+        }
+
+        @Override
+        public void writeRow(Map<String, Object> row)
+        {
+            if (_rowCount == 0)
+            {
+                writeFileHeader();
+                setColumns(row.keySet());
+                writeColumnHeaders();
+
+            }
+            super.writeRow(row);
+            _rowCount++;
+        }
+
+        public int getRowCount()
+        {
+            return _rowCount;
         }
     }
 

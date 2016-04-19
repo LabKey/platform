@@ -107,6 +107,13 @@ public class TSVMapWriter extends TSVWriter
         writeLine(values);
     }
 
+    protected void setColumns(Collection<String> columns)
+    {
+        if (null != _columns && _columns.isEmpty())
+            _columns.addAll(columns);
+
+    }
+
     public static class Tests extends Assert
     {
         @Test
