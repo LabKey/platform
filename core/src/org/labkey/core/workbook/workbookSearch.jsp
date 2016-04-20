@@ -26,28 +26,14 @@
 <table><tr>
 <td>
 <labkey:form method="GET" action="<%=new ActionURL(CoreController.LookupWorkbookAction.class, container)%>">
-    Jump To Workbook: <input type="text" id="wbsearch-id" name="id" size="10" value=""/>
+    Jump To Workbook: <input type="text" placeholder="Enter ID" id="wbsearch-id" name="id" size="10" value=""/>
     <%= button("Go").submit(true) %>
 </labkey:form>
 </td><td style="padding-left:20px;">
 <labkey:form method="GET" action='<%=new ActionURL("search", "search", container)%>'>
-    Search Workbooks: <input type="text" id="wbtextsearch-id" name="q" size="40" value=""/>
+    Search Workbooks: <input type="text" placeholder="Enter Text" id="wbtextsearch-id" name="q" size="40" value=""/>
     <input type="hidden" name="container" value="<%=h(container.getId())%>"/>
     <input type="hidden" name="includeSubfolders" value="1"/>
     <%= button("Search").submit(true) %>
 </labkey:form>
 </td></tr></table>
-<script type="text/javascript">
-    Ext.onReady(function(){
-        new Ext.form.TextField({
-            applyTo: 'wbsearch-id',
-            emptyText: 'Enter ID'
-        });
-
-        new Ext.form.TextField({
-            applyTo: 'wbtextsearch-id',
-            emptyText: 'Enter Text'
-        });
-
-    });
-</script>
