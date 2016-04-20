@@ -53,8 +53,12 @@ public class CacheManager
 
     public static final long DEFAULT_TIMEOUT = HOUR;
 
-    // Swap providers here (if we ever implement another cache provider)
-    private static final CacheProvider PROVIDER = EhCacheProvider.getInstance();
+    // Set useCache = false to completely disable all caching... and slow your server to a near halt. Possibly useful for
+    // reproducing CacheLoader re-entrancy problems, but not much else.
+    private static final boolean useCache = true;
+    @SuppressWarnings("ConstantConditions")
+    private static final CacheProvider PROVIDER = useCache ? EhCacheProvider.getInstance() : new NoopCacheProvider();
+
     private static final List<TrackingCache> KNOWN_CACHES = new LinkedList<>();
 
     private static final List<CacheListener> LISTENERS = new CopyOnWriteArrayList<>();

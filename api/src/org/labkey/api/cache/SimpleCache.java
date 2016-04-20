@@ -37,7 +37,8 @@ public interface SimpleCache<K, V>
 
     void remove(K key);
 
-    /** Removes every element in the cache where filter.accept(K key) evaluates to true.
+    /**
+     * Removes every element in the cache where filter.accept(K key) evaluates to true.
      * Returns the number of elements that were removed.
      */
     int removeUsingFilter(Filter<K> filter);
