@@ -174,9 +174,9 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                                     combo.setValue(s.getAt(rec));
                                 }
                             }
-                            combo.addClass('category-loaded-marker');
                             categoryStoreLoaded = true;
                             this.isValid();
+                            LABKEY.Utils.signalWebDriverTest('category-loaded');
                         }, this, {single: true});
 
                     },
