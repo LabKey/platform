@@ -143,15 +143,19 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
 
         if (getType() == ChartType.TIME_VISITBASED)
         {
-            for (String s : Arrays.asList("Visit/Visit","Visit/Visit/DisplayOrder","Visit/Visit/Label"))
+            for (String s : Arrays.asList("Visit/Visit","Visit/Visit/DisplayOrder","Visit/Visit/SequenceNumMin","Visit/Visit/Label"))
             {
-                VisualizationSourceColumn col = columnAliases.get(subjectColumnName + s).iterator().next();
-                sql.append(", ");
-                sql.append(queryAlias);
-                sql.append(".");
-                sql.append(col.getSQLAlias());
-                if (null != col.getLabel())
-                    sql.append(" @title='").append(StringUtils.replace(col.getLabel(), "'", "''")).append("'");
+                Set<VisualizationSourceColumn> cols = columnAliases.get(subjectColumnName + s);
+                if (cols != null)
+                {
+                    VisualizationSourceColumn col = cols.iterator().next();
+                    sql.append(", ");
+                    sql.append(queryAlias);
+                    sql.append(".");
+                    sql.append(col.getSQLAlias());
+                    if (null != col.getLabel())
+                        sql.append(" @title='").append(StringUtils.replace(col.getLabel(), "'", "''")).append("'");
+                }
             }
         }
     }
