@@ -1745,9 +1745,13 @@ public class ModuleLoader implements Filter
         return null != details ? details.getType() : null;
     }
 
-    /*  Use data source qualified name (e.g., core or external.myschema)  */
+    /**
+     *  Use data source qualified name (e.g., core or external.myschema)
+     */
     private @Nullable SchemaDetails getSchemaDetails(String fullyQualifiedSchemaName)
     {
+        // Note: Do not reference any DbSchemas (directly or indirectly) in this method. We may be in the midst of loading
+        // a DbSchema and don't want to cause CacheLoader re-entrancy. See #26037.
         synchronized(_schemaNameToSchemaDetails)
         {
             if (_schemaNameToSchemaDetails.isEmpty())
@@ -1763,19 +1767,16 @@ public class ModuleLoader implements Filter
                     }
 
                     // Now register the special "labkey" schema we create in each module data source and associate it with the core module
-                    if (module instanceof DefaultModule && ((DefaultModule)module).hasScripts())
+                    Set<String> moduleDataSourceNames = getModuleDataSourceNames(module);
+
+                    for (String moduleDataSourceName : moduleDataSourceNames)
                     {
-                        Set<String> moduleDataSourceNames = getModuleDataSourceNames(module);
+                        DbScope scope = DbScope.getDbScope(moduleDataSourceName);
 
-                        for (String moduleDataSourceName : moduleDataSourceNames)
+                        if (null != scope && scope.getSqlDialect().canExecuteUpgradeScripts())
                         {
-                            DbScope scope = DbScope.getDbScope(moduleDataSourceName);
-
-                            if (null != scope && scope.getSqlDialect().canExecuteUpgradeScripts())
-                            {
-                                String labkeySchemaName = DbSchema.getDisplayName(scope, "labkey");
-                                _schemaNameToSchemaDetails.put(labkeySchemaName, new SchemaDetails(getCoreModule(), DbSchemaType.Module));
-                            }
+                            String labkeySchemaName = DbSchema.getDisplayName(scope, "labkey");
+                            _schemaNameToSchemaDetails.put(labkeySchemaName, new SchemaDetails(getCoreModule(), DbSchemaType.Module));
                         }
                     }
                 }
