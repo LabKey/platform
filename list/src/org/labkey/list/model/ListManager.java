@@ -582,20 +582,10 @@ public class ListManager implements SearchService.DocumentProvider
                 StringBuilder data = new StringBuilder();
 
                 // All columns, all rows, no filters, no sorts
-                try (Results results = new TableSelector(ti).setForDisplay(true).getResults(false))        // don't cache
-                {
-                    while (results.next())
-                    {
-                        Map<FieldKey, Object> map = results.getFieldKeyRowMap();
-                        data.append(template.eval(map)).append("\n");
-                        if (SINGLE_LIST_MAX_SIZE_FOR_INDEX <= data.length())
-                            break;
-                    }
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeSQLException(e);
-                }
+                new TableSelector(ti).setForDisplay(true).forEachResults(results -> {
+                    if (SINGLE_LIST_MAX_SIZE_FOR_INDEX > data.length())
+                        data.append(template.eval(results.getFieldKeyRowMap())).append("\n");
+                });
 
                 body.append(sep);
                 body.append(data);
