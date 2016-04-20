@@ -48,6 +48,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.visualization.VisualizationProvider;
@@ -175,8 +176,10 @@ public class StudyQuerySchema extends UserSchema
     }
 
 
-    public static StudyQuerySchema createSchema(@NotNull StudyImpl study, User user, boolean mustCheckPermissions)
+    public static StudyQuerySchema createSchema(StudyImpl study, User user, boolean mustCheckPermissions)
     {
+        if (null == study)
+            throw new NotFoundException("Study not found.");
         if (study.isDataspaceStudy())
             return new DataspaceQuerySchema(study, user, mustCheckPermissions);
         else
