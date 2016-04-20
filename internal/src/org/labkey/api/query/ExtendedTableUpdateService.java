@@ -51,9 +51,10 @@ public class ExtendedTableUpdateService extends SimpleQueryUpdateService
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         Map<String, Object> row = super.getRow(user, container, keys);
-        Map<String, Object> extendedRow = _baseTableUpdateService.getRow(user, container, keys);
-
-        row.putAll(extendedRow);
+        if (null != row)
+        {
+            row.putAll(_baseTableUpdateService.getRow(user, container, keys));
+        }
         return row;
     }
 
