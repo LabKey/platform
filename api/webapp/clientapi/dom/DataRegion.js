@@ -577,6 +577,12 @@ if (!LABKEY.DataRegions) {
         var me = this,
             form = _getFormSelector(this);
 
+        if (form && form.length) {
+            // backwards compatibility -- some references use this directly
+            // if you're looking to use this internally to the region use _getFormSelector() instead
+            this.form = form[0];
+        }
+
         if (form && this.showRecordSelectors) {
             _onSelectionChange(this);
         }
@@ -830,7 +836,7 @@ if (!LABKEY.DataRegions) {
      * @param config A configuration object with the following properties:
      * @param {Array} config.ids Array of primary key ids for each row to select/unselect.
      * @param {Boolean} config.checked If true, the ids will be selected, otherwise unselected.
-     * @param {Function} config.success The function to be called upon success of the request.
+     * @param {Function} [config.success] The function to be called upon success of the request.
      * The callback will be passed the following parameters:
      * <ul>
      * <li><b>data:</b> an object with the property 'count' to indicate the updated selection count.
@@ -1014,6 +1020,9 @@ if (!LABKEY.DataRegions) {
         if (!this.msgbox) {
             this.msgbox = new MessageArea(this);
             this.msgbox.on('rendermsg', function(evt, msgArea, parts) { _onRenderMessageArea(this, parts); }, this);
+        }
+        else {
+            this.msgbox.bindRegion(this);
         }
 
         //-- WHILE EXPERIMENTAL
@@ -3315,7 +3324,7 @@ if (!LABKEY.DataRegions) {
      * @constructor
      */
     var MessageArea = function(dataRegion, messages) {
-        this.parentSel = '#' + dataRegion.domId + '-msgbox';
+        this.bindRegion(dataRegion);
 
         if (messages) {
             this.setMessages(messages);
@@ -3323,6 +3332,10 @@ if (!LABKEY.DataRegions) {
     };
 
     var MsgProto = MessageArea.prototype;
+
+    MsgProto.bindRegion = function(region) {
+        this.parentSel = '#' + region.domId + '-msgbox';
+    };
 
     MsgProto.toJSON = function() {
         return this.parts;
@@ -3577,12 +3590,12 @@ if (!LABKEY.DataRegions) {
  */
 LABKEY.QueryWebPart2.standardButtons = {
     query: 'query',
-    views: 'views',
+    views: 'data grids',
     insertNew: 'insert new',
     deleteRows: 'delete',
     exportRows: 'export',
     print: 'print',
-    pageSize: 'page size'
+    pageSize: 'paging'
 };
 
 LABKEY.AggregateTypes = {

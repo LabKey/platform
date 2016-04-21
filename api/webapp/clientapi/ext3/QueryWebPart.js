@@ -947,12 +947,12 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
  */
 LABKEY.QueryWebPart.standardButtons = {
     query: 'query',
-    views: 'views',
+    views: 'data grids',
     insertNew: 'insert new',
     deleteRows: 'delete',
     exportRows: 'export',
     print: 'print',
-    pageSize: 'page size'
+    pageSize: 'paging'
 };
 
 
