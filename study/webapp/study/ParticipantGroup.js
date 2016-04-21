@@ -514,36 +514,37 @@ Ext4.define('Study.window.ParticipantGroup', {
 
     /**
      * Assumes the presence of a rendered QueryWebPart.
-     * Ext 3.4 is required and should be checked before calling this method.
      */
-    _getSelectedDemoParticipants : function(queryName, showStr) {
+    _getSelectedDemoParticipants : function(queryName, showRows) {
 
-        var ptidCategoryPanel = this.getComponent('simplePanel');
-        var myFilters = Ext.ComponentMgr.get(this.dataRegionName).getUserFilterArray();
-        var mySelectionKey = Ext.ComponentMgr.get(this.dataRegionName).selectionKey;
+        var filterArray = LABKEY.DataRegions[this.dataRegionName].getUserFilterArray();
+        var selectionKey = LABKEY.DataRegions[this.dataRegionName].selectionKey;
 
         LABKEY.Query.selectRows({
-            schemaName : 'study',
-            queryName : queryName,
-            selectionKey : mySelectionKey,
-            showRows : showStr,
-            filterArray : myFilters,
-            columns : this.subject.columnName,
-            success : function(data) {
+            schemaName: 'study',
+            queryName: queryName,
+            selectionKey: selectionKey,
+            showRows: showRows,
+            filterArray: filterArray,
+            columns: this.subject.columnName,
+            success: function(data) {
 
-                var classPanelValues = ptidCategoryPanel.getValues();
-                var tempIds = classPanelValues['participantIdentifiers'];
+                var ptidCategoryPanel = this.getComponent('simplePanel');
+                var tempIds = ptidCategoryPanel.getValues()['participantIdentifiers'];
+                var tempIdsArray = tempIds.split(',');
+                var col = this.subject.nounColumnName;
+                var value;
 
-                var tempIdsArray = tempIds.split(",");
-                for (var i = 0; i < tempIdsArray.length; i++){
+                for (var i = 0; i < tempIdsArray.length; i++) {
                     tempIdsArray[i] = tempIdsArray[i].trim();
                 }
 
                 //append the selected ids to the current list
-                for(i = 0; i < data.rows.length; i++){
-                    if (tempIdsArray.indexOf(data.rows[i][this.subject.nounColumnName]) == -1){
-                        tempIds += (tempIds.length > 0 ? ", " : "") + data.rows[i][this.subject.nounColumnName];
-                        tempIdsArray.push(data.rows[i][this.subject.nounColumnName]);
+                for (i = 0; i < data.rows.length; i++) {
+                    value = data.rows[i][col];
+                    if (tempIdsArray.indexOf(value) == -1) {
+                        tempIds += (tempIds.length ? ', ' : '') + value;
+                        tempIdsArray.push(value);
                     }
                 }
 
