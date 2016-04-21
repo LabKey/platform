@@ -27,7 +27,6 @@ import org.labkey.list.model.ListQuerySchema;
 public class ListQueryForm extends QueryForm
 {
     private ListDefinition _def;
-    private boolean _exportAsWebPage = false;
 
     public ListQueryForm()
     {
@@ -77,15 +76,5 @@ public class ListQueryForm extends QueryForm
     public ListDefinition getList()
     {
         return _def;
-    }
-
-    public boolean isExportAsWebPage()
-    {
-        return _exportAsWebPage;
-    }
-
-    public void setExportAsWebPage(boolean exportAsWebPage)
-    {
-        _exportAsWebPage = exportAsWebPage;
     }
 }

@@ -576,9 +576,9 @@ public class ExperimentController extends SpringActionController
                 }
 
                 @Override
-                public PanelButton createExportButton(boolean exportAsWebPage)
+                public PanelButton createExportButton()
                 {
-                    PanelButton result = super.createExportButton(exportAsWebPage);
+                    PanelButton result = super.createExportButton();
                     ActionURL url = new ActionURL(ExportSampleSetAction.class, getContainer());
                     url.addParameter("sampleSetId", _source.getRowId());
                     result.addSubPanel("XAR", new JspView<>("/org/labkey/experiment/controllers/exp/exportSampleSetAsXar.jsp", url));
@@ -2197,16 +2197,8 @@ public class ExperimentController extends SpringActionController
                 String filename = filenamePrefix + "." + delimType.extension;
                 String newlineChar = rootObject.getString("newlineChar") != null ? rootObject.getString("newlineChar") : "\n";
 
-                String exportAsWebPage = StringUtils.trimToNull(rootObject.getString("exportAsWebPage"));
-                if(exportAsWebPage != null && !"false".equalsIgnoreCase(exportAsWebPage))
-                {
-                    response.setHeader("Content-disposition", "inline; filename=\"" + filename + "\"");
-                }
-                else
-                {
-                    PageFlowUtil.prepareResponseForFile(response, Collections.<String, String>emptyMap(), filename, true);
-                    response.setContentType(delimType.contentType);
-                }
+                PageFlowUtil.prepareResponseForFile(response, Collections.<String, String>emptyMap(), filename, true);
+                response.setContentType(delimType.contentType);
 
                 //NOTE: we could also have used TSVWriter; however, this is in use elsewhere and we dont need a custom subclass
                 CSVWriter writer = new CSVWriter(response.getWriter(), delimType.delim, quoteType.quoteChar, newlineChar);

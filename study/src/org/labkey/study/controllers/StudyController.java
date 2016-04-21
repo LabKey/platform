@@ -2651,7 +2651,7 @@ public class StudyController extends BaseStudyController
                             NumberUtils.toInt(protocolId), NumberUtils.toInt(recordCount)) {
 
                         @Override
-                        protected void populateButtonBar(DataView view, ButtonBar bar, boolean exportAsWebPage)
+                        protected void populateButtonBar(DataView view, ButtonBar bar)
                         {
                             bar.add(deleteRows);
                         }

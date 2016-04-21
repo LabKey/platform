@@ -107,7 +107,7 @@ public class PipelineQueryView extends QueryView
     }
 
     @Override
-    protected void populateButtonBar(DataView view, ButtonBar bar, boolean exportAsWebPage)
+    protected void populateButtonBar(DataView view, ButtonBar bar)
     {
         if (_buttonOption != PipelineService.PipelineButtonOption.Assay)
         {
@@ -123,7 +123,7 @@ public class PipelineQueryView extends QueryView
         if (_buttonOption != PipelineService.PipelineButtonOption.Minimal)
         {
             // Add the view, export, etc buttons
-            super.populateButtonBar(view, bar, exportAsWebPage);
+            super.populateButtonBar(view, bar);
         }
 
         if (_buttonOption != PipelineService.PipelineButtonOption.Assay)

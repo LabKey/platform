@@ -162,7 +162,6 @@ public class TableWriter
 
                 // Write data
                 TSVGridWriter tsv = view.getTsvWriter();
-                tsv.setExportAsWebPage(false);
                 tsv.setDelimiterCharacter(TSVWriter.DELIM.TAB);
                 tsv.setQuoteCharacter(TSVWriter.QUOTE.DOUBLE);
                 if (header != null)

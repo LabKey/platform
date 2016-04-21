@@ -18,7 +18,6 @@ package org.labkey.list.view;
 
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.DataRegion;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.query.QuerySettings;
@@ -31,13 +30,11 @@ import org.springframework.validation.BindException;
 public class ListQueryView extends QueryView
 {
     private final ListDefinition _list;
-    private final boolean _exportAsWebPage;
 
     public ListQueryView(ListDefinition def, ListQuerySchema schema, QuerySettings settings, BindException errors)
     {
         super(schema, settings, errors);
         _list = def;
-        _exportAsWebPage = false;
         init();
     }
 
@@ -45,7 +42,6 @@ public class ListQueryView extends QueryView
     {
         super(form, errors);
         _list = form.getList();
-        _exportAsWebPage = form.isExportAsWebPage();
         init();
     }
 
@@ -64,7 +60,7 @@ public class ListQueryView extends QueryView
 
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
-        super.populateButtonBar(view, bar, _exportAsWebPage);
+        super.populateButtonBar(view, bar);
 
         if (getViewContext().hasPermission(DesignListPermission.class))
         {

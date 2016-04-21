@@ -60,12 +60,8 @@
             String downloadURLPrefix =  buildURL(SpecimenController.DownloadSpecimenListAction.class) + "id=" + bean.getSpecimenRequest().getRowId() +
                     "&destSiteId=" + bean.getSpecimenRequest().getDestinationSiteId() +
                     "&listType=" + bean.getType().toString() +
-                    "&sourceSiteId=" + location.getRowId();
-
-            if (bean.isExportAsWebPage())
-                downloadURLPrefix += "&exportAsWebPage=true&export=";
-            else
-                downloadURLPrefix += "&export=";
+                    "&sourceSiteId=" + location.getRowId() +
+                    "&export=";
     %>
     <tr class="<%=getShadeRowClass(rowCount++ % 2 == 0) %>" valign="top">
         <td><%= h(location.getDisplayName()) %></td>

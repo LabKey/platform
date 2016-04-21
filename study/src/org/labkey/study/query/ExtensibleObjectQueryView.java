@@ -64,7 +64,7 @@ public class ExtensibleObjectQueryView extends QueryView
 
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
-        bar.add(createExportButton(false));
+        bar.add(createExportButton());
     }
 
     public boolean allowEditing()

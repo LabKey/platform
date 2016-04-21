@@ -133,7 +133,7 @@ public class ListManagerSchema extends UserSchema
                     bar.add(createReportButton());
                     bar.add(createCreateNewListButton());
                     bar.add(createDeleteButton());
-                    bar.add(super.createExportButton(false));
+                    bar.add(super.createExportButton());
 //  TODO: Might be nice to add these, but these start making the grid very wide...
 //                    bar.add(super.createPrintButton());
 //                    bar.add(super.createPageSizeMenuButton());

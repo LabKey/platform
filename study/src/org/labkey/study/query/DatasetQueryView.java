@@ -22,7 +22,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.QueryViewAction;
-import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
@@ -377,7 +376,7 @@ public class DatasetQueryView extends StudyQueryView
     }
 
     @Override
-    protected void populateButtonBar(DataView view, ButtonBar bar, boolean exportAsWebPage)
+    protected void populateButtonBar(DataView view, ButtonBar bar)
     {
         bar.add(createFilterButton());
         bar.add(createViewButton(getItemFilter()));
@@ -393,7 +392,7 @@ public class DatasetQueryView extends StudyQueryView
         if (StudyManager.getInstance().showQCStates(getContainer()))
             bar.add(createQCStateButton(_qcStateSet));
 
-        bar.add(createExportButton(false));
+        bar.add(createExportButton());
         bar.add(createPageSizeMenuButton());
 
         User user = getUser();

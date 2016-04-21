@@ -19,7 +19,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -81,7 +80,7 @@ public class LocationQueryView extends QueryView
             bar.add(deleteAllUnused);
         }
 
-        ActionButton b = createExportButton(false);
+        ActionButton b = createExportButton();
         if (null != b)
             bar.add(b);
         b = createPrintButton();

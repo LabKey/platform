@@ -2249,28 +2249,12 @@ public class AdminController extends SpringActionController
         }
     }
 
-    public static class ExportActionsForm
-    {
-        private boolean _asWebPage = false;
-
-        public boolean isAsWebPage()
-        {
-            return _asWebPage;
-        }
-
-        public void setAsWebPage(boolean asWebPage)
-        {
-            _asWebPage = asWebPage;
-        }
-    }
-
     @AdminConsoleAction
-    public class ExportActionsAction extends ExportAction<ExportActionsForm>
+    public class ExportActionsAction extends ExportAction<Object>
     {
-        public void export(ExportActionsForm form, HttpServletResponse response, BindException errors) throws Exception
+        public void export(Object form, HttpServletResponse response, BindException errors) throws Exception
         {
             ActionsTsvWriter writer = new ActionsTsvWriter();
-            writer.setExportAsWebPage(form.isAsWebPage());
             writer.write(response);
         }
     }
@@ -2411,7 +2395,6 @@ public class AdminController extends SpringActionController
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
             QueryProfiler.QueryStatTsvWriter writer = new QueryProfiler.QueryStatTsvWriter();
-//            writer.setExportAsWebPage(form.isAsWebPage());
             writer.write(response);
         }
     }
