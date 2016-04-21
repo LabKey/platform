@@ -818,11 +818,6 @@ public class QueryView extends WebPartView<Object>
         _showRecordSelectors = showRecordSelectors;
     }
 
-    protected void populateButtonBar(DataView view, ButtonBar bar)
-    {
-        populateButtonBar(view, bar, false);
-    }
-
     protected void populateReportButtonBar(ButtonBar bar)
     {
         MenuButton queryButton = createQueryPickerButton("Query");
@@ -843,7 +838,7 @@ public class QueryView extends WebPartView<Object>
         }
     }
 
-    protected void populateButtonBar(DataView view, ButtonBar bar, boolean exportAsWebPage)
+    protected void populateButtonBar(DataView view, ButtonBar bar)
     {
         MenuButton queryButton = createQueryPickerButton("Query");
         queryButton.setVisible(getSettings().getAllowChooseQuery());
@@ -883,7 +878,7 @@ public class QueryView extends WebPartView<Object>
 
         if (showExportButtons())
         {
-            PanelButton b = createExportButton(exportAsWebPage);
+            PanelButton b = createExportButton();
             if (null != b && b.hasSubPanels())
             {
                 // Issue 24530: Add record selectors for exporting selected items.  Assumes that all export panels support selection.
@@ -1147,7 +1142,7 @@ public class QueryView extends WebPartView<Object>
 
     }
 
-    public PanelButton createExportButton(boolean exportAsWebPage)
+    public PanelButton createExportButton()
     {
         PanelButton exportButton = new PanelButton("Export", getDataRegionName(), 132);
         ActionURL exportRowsXlsURL = urlFor(QueryAction.exportRowsExcel);
@@ -1170,9 +1165,6 @@ public class QueryView extends WebPartView<Object>
         ActionURL tsvURL = urlFor(QueryAction.exportRowsTsv);
         if (tsvURL != null)
         {
-            if (exportAsWebPage)
-                tsvURL.replaceParameter("exportAsWebPage", "true");
-
             TextExportOptionsBean textBean = new TextExportOptionsBean(getDataRegionName(), getExportRegionName(), getSettings().getSelectionKey(), getColumnHeaderType(), tsvURL);
             exportButton.addSubPanel("Text", new JspView<>("/org/labkey/api/query/textExportOptions.jsp", textBean));
         }
@@ -2393,26 +2385,25 @@ public class QueryView extends WebPartView<Object>
 
     public void exportToTsv(HttpServletResponse response) throws IOException
     {
-        exportToTsv(response, false, TSVWriter.DELIM.TAB, TSVWriter.QUOTE.DOUBLE, getColumnHeaderType());
+        exportToTsv(response, TSVWriter.DELIM.TAB, TSVWriter.QUOTE.DOUBLE, getColumnHeaderType());
     }
 
-    public void exportToTsv(final HttpServletResponse response, final boolean isExportAsWebPage, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote, ColumnHeaderType headerType) throws IOException
+    public void exportToTsv(final HttpServletResponse response, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote, ColumnHeaderType headerType) throws IOException
     {
         _exportView = true;
         TableInfo table = getTable();
 
         if (table != null)
         {
-            int rowCount = doExport(response, isExportAsWebPage, delim, quote, headerType);
+            int rowCount = doExport(response, delim, quote, headerType);
             logAuditEvent("Exported to TSV", rowCount);
         }
     }
 
 
-    private int doExport(HttpServletResponse response, boolean isExportAsWebPage, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote, ColumnHeaderType headerType) throws IOException
+    private int doExport(HttpServletResponse response, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote, ColumnHeaderType headerType) throws IOException
     {
         TSVGridWriter tsv = getTsvWriter(headerType);
-        tsv.setExportAsWebPage(isExportAsWebPage);
         tsv.setDelimiterCharacter(delim);
         tsv.setQuoteCharacter(quote);
         tsv.write(response);

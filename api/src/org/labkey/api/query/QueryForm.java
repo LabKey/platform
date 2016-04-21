@@ -56,7 +56,6 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     private String _viewName;
     private CustomView _customView;
     private QuerySettings _querySettings;
-    private boolean _exportAsWebPage = false;
     private String _queryViewActionURL;
     private String _dataRegionName = QueryView.DATAREGIONNAME_DEFAULT;
 
@@ -334,16 +333,6 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
             ret.replaceParameter(QueryParam.viewName.toString(), _customView.getName());
         }
         return ret;
-    }
-
-    public boolean isExportAsWebPage()
-    {
-        return _exportAsWebPage;
-    }
-
-    public void setExportAsWebPage(boolean exportAsWebPage)
-    {
-        _exportAsWebPage = exportAsWebPage;
     }
 
     public void setViewName(String name)

@@ -40,7 +40,6 @@ public abstract class TextWriter implements AutoCloseable
     // TODO: Would be nice to remove this
     private ServletOutputStream _outputStream = null;
     protected PrintWriter _pw = null;
-    private boolean _exportAsWebPage = false;
 
     protected abstract String getFilename();
     protected abstract void write();
@@ -65,16 +64,6 @@ public abstract class TextWriter implements AutoCloseable
         return _pw;
     }
 
-
-    public boolean isExportAsWebPage()
-    {
-        return _exportAsWebPage;
-    }
-
-    public void setExportAsWebPage(boolean exportAsWebPage)
-    {
-        _exportAsWebPage = exportAsWebPage;
-    }
 
     // Prepare the writer to write to the file system
     public void prepare(File file) throws IOException
@@ -104,18 +93,9 @@ public abstract class TextWriter implements AutoCloseable
         if (noindex)
             response.setHeader("X-Robots-Tag", "noindex");
 
-        // Specify attachment and foil caching
-        if (_exportAsWebPage)
-        {
-            response.setContentType("text/plain; charset=UTF-8");
-            response.setHeader("Content-disposition", "inline; filename=\"" + getFilename() + "\"");
-        }
-        else
-        {
-            // Set the content-type so the browser knows which application to launch
-            response.setContentType(getContentType());
-            response.setHeader("Content-disposition", "attachment; filename=\"" + getFilename() + "\"");
-        }
+        // Set the content-type so the browser knows which application to launch
+        response.setContentType(getContentType());
+        response.setHeader("Content-disposition", "attachment; filename=\"" + getFilename() + "\"");
 
         // Get the outputstream of the servlet (BTW, always get the outputstream AFTER you've
         // set the content-disposition and content-type)

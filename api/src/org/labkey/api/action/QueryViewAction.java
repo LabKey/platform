@@ -82,7 +82,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         }
         else if (QueryAction.exportRowsTsv.name().equals(form.getExportType()))
         {
-            createInitializedQueryView(form, errors, true, form.getExportRegion()).exportToTsv(getViewContext().getResponse(), form.isExportAsWebPage(), form.getDelim(), form.getQuote(), form.getHeaderType());
+            createInitializedQueryView(form, errors, true, form.getExportRegion()).exportToTsv(getViewContext().getResponse(), form.getDelim(), form.getQuote(), form.getHeaderType());
             return null;
         }
         else if (QueryView.EXCEL_WEB_QUERY_EXPORT_TYPE.equals(form.getExportType()))
@@ -147,7 +147,6 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
     public static class QueryExportForm extends QueryForm
     {
         private String _exportType;
-        private boolean _exportAsWebPage;
         private TSVWriter.DELIM _delim;
         private TSVWriter.QUOTE _quote;
         private ColumnHeaderType _headerType;
@@ -174,16 +173,6 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         public void setExportType(String exportType)
         {
             _exportType = exportType;
-        }
-
-        public boolean isExportAsWebPage()
-        {
-            return _exportAsWebPage;
-        }
-
-        public void setExportAsWebPage(boolean exportAsWebPage)
-        {
-            _exportAsWebPage = exportAsWebPage;
         }
 
         public String getExportRegion()

@@ -263,9 +263,9 @@ public class ExperimentRunListView extends QueryView
     }
 
     @Override
-    public PanelButton createExportButton(boolean exportAsWebPage)
+    public PanelButton createExportButton()
     {
-        PanelButton result = super.createExportButton(exportAsWebPage);
+        PanelButton result = super.createExportButton();
         String defaultFilenamePrefix = "Exported " + (getTitle() == null ? "Runs" : getTitle());
 
         HttpView filesView = ExperimentService.get().createFileExportView(getContainer(), defaultFilenamePrefix);
