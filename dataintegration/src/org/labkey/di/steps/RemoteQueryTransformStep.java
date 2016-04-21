@@ -16,6 +16,7 @@
 package org.labkey.di.steps;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.ColumnInfo;
@@ -35,6 +36,7 @@ import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformTaskFactory;
 import org.labkey.remoteapi.CommandException;
 import org.labkey.remoteapi.Connection;
+import org.labkey.remoteapi.GuestCredentialsProvider;
 import org.labkey.remoteapi.RemoteConnections;
 import org.labkey.remoteapi.SelectRowsStreamHack;
 import org.labkey.remoteapi.query.SelectRowsCommand;
@@ -49,7 +51,6 @@ import java.util.Map;
  */
 public class RemoteQueryTransformStep extends SimpleQueryTransformStep
 {
-
     public RemoteQueryTransformStep(TransformTaskFactory f, PipelineJob job, SimpleQueryTransformStepMeta meta, TransformJobContext context)
     {
         super(f, job, meta, context);
@@ -113,11 +114,24 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
         }
     }
 
-    static DataIteratorBuilder selectFromSource(String schemaName, String queryName, String url, String user, String password, String container)
+    // Variant that takes valid, non-null credentials
+    private static DataIteratorBuilder selectFromSource(String schemaName, String queryName, String url, @NotNull String user, @NotNull String password, String container)
+            throws IOException, CommandException
+    {
+        return selectFromSource(new Connection(url, user, password), schemaName, queryName, container);
+    }
+
+    // Version that connects as guest; for testing purposes only
+    private static DataIteratorBuilder selectFromSource(String schemaName, String queryName, String url, String container)
+            throws IOException, CommandException
+    {
+        return selectFromSource(new Connection(url, new GuestCredentialsProvider()), schemaName, queryName, container);
+    }
+
+    private static DataIteratorBuilder selectFromSource(Connection cn, String schemaName, String queryName, String container)
             throws IOException, CommandException
     {
         // connect to the remote server and retrieve an input stream
-        Connection cn = new Connection(url, user, password);
         final SelectRowsCommand cmd = new SelectRowsCommand(schemaName, queryName);
 
         return SelectRowsStreamHack.go(cn, container, cmd);
@@ -132,7 +146,7 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
             // We use the home container since we won't need to authenticate the user.
             String url = AppProps.getInstance().getBaseServerUrl() + AppProps.getInstance().getContextPath();
             Container home = ContainerManager.getHomeContainer();
-            DataIteratorBuilder b = selectFromSource("core", "Containers", url, null, null, home.getPath());
+            DataIteratorBuilder b = selectFromSource("core", "Containers", url, home.getPath());
 
             DataIteratorContext context = new DataIteratorContext();
             try (DataIterator iter = b.getDataIterator(context))
