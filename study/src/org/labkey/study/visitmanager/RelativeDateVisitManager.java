@@ -199,9 +199,17 @@ public class RelativeDateVisitManager extends VisitManager
                 .append("=").append(tableParticipantVisit.getColumn("ParticipantId").getValueSql(tableParticipantVisitSelectName))
                 .append(" AND ").append(tableParticipant.getColumn("Container").getValueSql(tableParticipantSelectName))
                 .append("=").append(tableParticipantVisit.getColumn("Container").getValueSql(tableParticipantVisitSelectName)).append(")");
+
+        SQLFragment sqlVisitDate = new SQLFragment("CAST(VisitDate AS DATE)");
+        if (schema.getSqlDialect().isPostgreSQL())
+        {
+            sqlVisitDate.append("::TIMESTAMP");
+        }
+        sqlStartDate = new SQLFragment("CAST(").append(sqlStartDate).append(" AS DATE)");
+
         SQLFragment sqlUpdateDays = new SQLFragment("UPDATE ");
         sqlUpdateDays.append(tableParticipantVisitSelectName).append(" SET Day = CASE WHEN SequenceNum=? THEN 0 ELSE ")
-                .append(schema.getSqlDialect().getDateDiff(Calendar.DATE, new SQLFragment("VisitDate"), sqlStartDate))
+                .append(schema.getSqlDialect().getDateDiff(Calendar.DATE, sqlVisitDate, sqlStartDate))
                 .append(" END WHERE Container=? AND NOT VisitDate IS NULL");
         sqlUpdateDays.add(VisitImpl.DEMOGRAPHICS_VISIT);
         sqlUpdateDays.add(container);
