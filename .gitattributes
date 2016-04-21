@@ -978,6 +978,8 @@ issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-12.30-13.10.sql -te
 issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-14.10-14.11.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-14.11-14.12.sql -text
 issues/src/org/labkey/issue/ColumnType.java -text
+issues/src/org/labkey/issue/ColumnTypeEnum.java -text
+issues/src/org/labkey/issue/CustomColumnConfiguration.java -text
 issues/src/org/labkey/issue/IssueContainerListener.java -text
 issues/src/org/labkey/issue/IssueGroupListener.java -text
 issues/src/org/labkey/issue/IssueUpdateEmailTemplate.java -text
@@ -985,7 +987,10 @@ issues/src/org/labkey/issue/IssueUserListener.java -text
 issues/src/org/labkey/issue/IssuesListView.java -text
 issues/src/org/labkey/issue/IssuesModule.java -text
 issues/src/org/labkey/issue/IssuesWebPartFactory.java -text
+issues/src/org/labkey/issue/actions/IssueUpdateAction.java -text
+issues/src/org/labkey/issue/actions/NewUpdateAction.java -text
 issues/src/org/labkey/issue/model/ColumnConfigurationCache.java -text
+issues/src/org/labkey/issue/model/CustomColumn.java -text
 issues/src/org/labkey/issue/model/Issue.java -text
 issues/src/org/labkey/issue/model/IssueDef.java -text
 issues/src/org/labkey/issue/model/IssueManager.java -text
@@ -1005,6 +1010,7 @@ issues/src/org/labkey/issue/view/emailPreferences.jsp -text
 issues/src/org/labkey/issue/view/issuesCustomize.jsp -text
 issues/src/org/labkey/issue/view/keywordAdmin.jsp -text
 issues/src/org/labkey/issue/view/list.jsp -text
+issues/src/org/labkey/issue/view/newUpdateView.jsp -text
 issues/src/org/labkey/issue/view/rss.jsp -text
 issues/src/org/labkey/issue/view/searchSummary.jsp -text
 issues/src/org/labkey/issue/view/summaryWebpart.jsp -text

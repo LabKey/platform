@@ -112,10 +112,11 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
+import org.labkey.issue.actions.NewUpdateAction;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
-import org.labkey.issue.model.IssueManager.CustomColumn;
-import org.labkey.issue.model.IssueManager.CustomColumnConfiguration;
+import org.labkey.issue.model.CustomColumn;
+import org.labkey.issue.model.IssueManager.CustomColumnConfigurationImpl;
 import org.labkey.issue.model.IssueManager.EntryTypeNames;
 import org.labkey.issue.model.IssuePage;
 import org.labkey.issue.model.KeywordManager;
@@ -156,7 +157,10 @@ public class IssuesController extends SpringActionController
 {
     private static final Logger _log = Logger.getLogger(IssuesController.class);
     private static final String helpTopic = "issues";
-    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(IssuesController.class);
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
+            IssuesController.class,
+            NewUpdateAction.class);
+
     private static final int MAX_STRING_FIELD_LENGTH = 200;
 
     public IssuesController() throws Exception
@@ -634,18 +638,18 @@ public class IssuesController extends SpringActionController
 
     private Issue setNewIssueDefaults(Issue issue) throws SQLException, ServletException
     {
-        Map<ColumnType, String> defaults = IssueManager.getAllDefaults(getContainer());
+        Map<ColumnTypeEnum, String> defaults = IssueManager.getAllDefaults(getContainer());
 
-        ColumnType.AREA.setDefaultValue(issue, defaults);
-        ColumnType.TYPE.setDefaultValue(issue, defaults);
-        ColumnType.MILESTONE.setDefaultValue(issue, defaults);
-        ColumnType.PRIORITY.setDefaultValue(issue, defaults);
+        ColumnTypeEnum.AREA.setDefaultValue(issue, defaults);
+        ColumnTypeEnum.TYPE.setDefaultValue(issue, defaults);
+        ColumnTypeEnum.MILESTONE.setDefaultValue(issue, defaults);
+        ColumnTypeEnum.PRIORITY.setDefaultValue(issue, defaults);
 
         CustomColumnConfiguration config = getCustomColumnConfiguration();
 
         // For each of the string configurable columns,
         // only set the default if the column is currently configured as a pick list
-        for (ColumnType stringColumn : ColumnType.getCustomStringColumns())
+        for (ColumnTypeEnum stringColumn : ColumnTypeEnum.getCustomStringColumns())
         {
             if (config.hasPickList(stringColumn.getColumnName()))
             {
@@ -1041,7 +1045,7 @@ public class IssuesController extends SpringActionController
         // Add all the enabled custom fields
         for (CustomColumn cc : ccc.getCustomColumns())
         {
-            ColumnType type = ColumnType.forName(cc.getName());
+            ColumnTypeEnum type = ColumnTypeEnum.forName(cc.getName());
 
             if (null != type && type.isCustom())
                 editable.add(cc.getName());
@@ -1081,9 +1085,9 @@ public class IssuesController extends SpringActionController
 
             if (_issue.getResolution() == null || _issue.getResolution().isEmpty())
             {
-                Map<ColumnType, String> defaults = IssueManager.getAllDefaults(getContainer());
+                Map<ColumnTypeEnum, String> defaults = IssueManager.getAllDefaults(getContainer());
 
-                String resolution = defaults.get(ColumnType.RESOLUTION);
+                String resolution = defaults.get(ColumnTypeEnum.RESOLUTION);
 
                 if (resolution != null && !resolution.isEmpty() && form.get("resolution") == null)
                 {
@@ -1758,7 +1762,7 @@ public class IssuesController extends SpringActionController
         @Override
         public void validateCommand(AdminForm form, Errors errors)
         {
-            _type = ColumnType.forOrdinal(form.getType());
+            _type = ColumnTypeEnum.forOrdinal(form.getType());
             String keyword = form.getKeyword();
 
             if (null == _type)
@@ -1771,7 +1775,7 @@ public class IssuesController extends SpringActionController
             }
             else
             {
-                if (ColumnType.PRIORITY == _type)
+                if (ColumnTypeEnum.PRIORITY == _type)
                 {
                     try
                     {
@@ -1824,7 +1828,7 @@ public class IssuesController extends SpringActionController
     {
         public boolean handlePost(AdminForm form, BindException errors) throws Exception
         {
-            KeywordManager.deleteKeyword(getContainer(), ColumnType.forOrdinal(form.getType()), form.getKeyword());
+            KeywordManager.deleteKeyword(getContainer(), ColumnTypeEnum.forOrdinal(form.getType()), form.getKeyword());
             return true;
         }
     }
@@ -1834,7 +1838,7 @@ public class IssuesController extends SpringActionController
     {
         public boolean handlePost(AdminForm form, BindException errors) throws Exception
         {
-            KeywordManager.setKeywordDefault(getContainer(), ColumnType.forOrdinal(form.getType()), form.getKeyword());
+            KeywordManager.setKeywordDefault(getContainer(), ColumnTypeEnum.forOrdinal(form.getType()), form.getKeyword());
             return true;
         }
     }
@@ -1844,7 +1848,7 @@ public class IssuesController extends SpringActionController
     {
         public boolean handlePost(AdminForm form, BindException errors) throws Exception
         {
-            KeywordManager.clearKeywordDefault(getContainer(), ColumnType.forOrdinal(form.getType()));
+            KeywordManager.clearKeywordDefault(getContainer(), ColumnTypeEnum.forOrdinal(form.getType()));
             return true;
         }
     }
@@ -2025,7 +2029,7 @@ public class IssuesController extends SpringActionController
 
             checkPickLists(form, errors);
             
-            CustomColumnConfiguration ccc = new CustomColumnConfiguration(getViewContext());
+            CustomColumnConfiguration ccc = new CustomColumnConfigurationImpl(getViewContext());
             String defaultCols[] = {"Milestone", "Area", "Type", "Priority", "Resolution", "Related", "Status"};
 
             Map<String, String> captions = ccc.getColumnCaptions(); //All of the custom captions
@@ -2196,7 +2200,7 @@ public class IssuesController extends SpringActionController
                 newRequiredFields.add(required.toLowerCase());
             }
 
-            CustomColumnConfiguration newColumnConfiguration = new CustomColumnConfiguration(getViewContext());
+            CustomColumnConfiguration newColumnConfiguration = new CustomColumnConfigurationImpl(getViewContext());
             CustomColumnConfiguration oldColumnConfiguration = getCustomColumnConfiguration();
 
             for (String required : form.getRequiredFields())
@@ -2206,7 +2210,7 @@ public class IssuesController extends SpringActionController
                  * selected (in the new picklist, but not old), then we remove it from the required fields. This way you
                  * don't have a required field with no keywords.
                  */
-                ColumnType type = ColumnType.forName(required.toString());
+                ColumnTypeEnum type = ColumnTypeEnum.forName(required.toString());
 
                 if (null != type && type.isCustomString() && KeywordManager.getKeywords(getContainer(), type).isEmpty())
                 {
@@ -2236,7 +2240,7 @@ public class IssuesController extends SpringActionController
                 IssueManager.saveRelatedIssuesList(getContainer(), form.getRelatedIssuesList());
             }
 
-            CustomColumnConfiguration nccc = new CustomColumnConfiguration(getViewContext());
+            CustomColumnConfiguration nccc = new CustomColumnConfigurationImpl(getViewContext());
             IssueManager.saveCustomColumnConfiguration(getContainer(), nccc);
 
             IssueManager.saveAssignedToGroup(getContainer(), _group);
@@ -2663,7 +2667,7 @@ public class IssuesController extends SpringActionController
         }
     }
 
-    private static class ChangeSummary
+    public static class ChangeSummary
     {
         private Issue.Comment _comment;
         private String _textChanges;
@@ -2692,7 +2696,7 @@ public class IssuesController extends SpringActionController
         }
     }
 
-    static ChangeSummary createChangeSummary(Issue issue, Issue previous, @Nullable Issue duplicateOf, User user, Class<? extends Controller> action, String comment, CustomColumnConfiguration ccc, User currentUser)
+    static public ChangeSummary createChangeSummary(Issue issue, Issue previous, @Nullable Issue duplicateOf, User user, Class<? extends Controller> action, String comment, CustomColumnConfiguration ccc, User currentUser)
     {
         StringBuilder sbHTMLChanges = new StringBuilder();
         StringBuilder sbTextChanges = new StringBuilder();
@@ -2835,16 +2839,16 @@ public class IssuesController extends SpringActionController
 
             //add/set keywords after its established whether custom fields are inherited or not.
             KeywordAdminView keywordView = new KeywordAdminView(c, ccc);
-            keywordView.addKeywordPicker(ColumnType.TYPE);
-            keywordView.addKeywordPicker(ColumnType.AREA);
-            keywordView.addKeywordPicker(ColumnType.PRIORITY);
-            keywordView.addKeywordPicker(ColumnType.MILESTONE);
-            keywordView.addKeywordPicker(ColumnType.RESOLUTION);
-            keywordView.addKeywordPicker(ColumnType.STRING1);
-            keywordView.addKeywordPicker(ColumnType.STRING2);
-            keywordView.addKeywordPicker(ColumnType.STRING3);
-            keywordView.addKeywordPicker(ColumnType.STRING4);
-            keywordView.addKeywordPicker(ColumnType.STRING5);
+            keywordView.addKeywordPicker(ColumnTypeEnum.TYPE);
+            keywordView.addKeywordPicker(ColumnTypeEnum.AREA);
+            keywordView.addKeywordPicker(ColumnTypeEnum.PRIORITY);
+            keywordView.addKeywordPicker(ColumnTypeEnum.MILESTONE);
+            keywordView.addKeywordPicker(ColumnTypeEnum.RESOLUTION);
+            keywordView.addKeywordPicker(ColumnTypeEnum.STRING1);
+            keywordView.addKeywordPicker(ColumnTypeEnum.STRING2);
+            keywordView.addKeywordPicker(ColumnTypeEnum.STRING3);
+            keywordView.addKeywordPicker(ColumnTypeEnum.STRING4);
+            keywordView.addKeywordPicker(ColumnTypeEnum.STRING5);
 
             bean.keywordView = keywordView;
 
@@ -3111,7 +3115,7 @@ public class IssuesController extends SpringActionController
             _ccc = ccc;
         }
 
-        private void addKeywordPicker(ColumnType type)
+        private void addKeywordPicker(ColumnTypeEnum type)
         {
             String columnName = type.getColumnName();
 
@@ -3131,10 +3135,10 @@ public class IssuesController extends SpringActionController
     public static class KeywordPicker
     {
         public String name;
-        public ColumnType type;
+        public ColumnTypeEnum type;
         public Collection<Keyword> keywords;
 
-        KeywordPicker(Container c, String name, ColumnType type)
+        KeywordPicker(Container c, String name, ColumnTypeEnum type)
         {
             this.name = name;
             this.type = type;

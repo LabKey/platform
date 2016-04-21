@@ -25,8 +25,8 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.FieldKey;
-import org.labkey.issue.model.IssueManager.CustomColumn;
-import org.labkey.issue.model.IssueManager.CustomColumnConfiguration;
+import org.labkey.issue.CustomColumnConfiguration;
+import org.labkey.issue.model.IssueManager.CustomColumnConfigurationImpl;
 
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -49,13 +49,13 @@ public class ColumnConfigurationCache
             new TableSelector(IssuesSchema.getInstance().getTableInfoCustomColumns(), filter, null).forEach(
                 new Selector.ForEachBlock<CustomColumn>() {
                     @Override
-                    public void exec(IssueManager.CustomColumn cc) throws SQLException
+                    public void exec(CustomColumn cc) throws SQLException
                     {
                         map.put(cc.getName(), cc);
                     }
-                }, IssueManager.CustomColumn.class);
+                }, CustomColumn.class);
 
-            return new CustomColumnConfiguration(map, c);
+            return new CustomColumnConfigurationImpl(map, c);
         }
     });
 

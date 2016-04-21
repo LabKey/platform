@@ -42,10 +42,10 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
+import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.model.IssueManager;
-import org.labkey.issue.model.IssueManager.CustomColumn;
-import org.labkey.issue.model.IssueManager.CustomColumnConfiguration;
+import org.labkey.issue.model.CustomColumn;
 import org.labkey.issue.model.IssueManager.EntryTypeNames;
 
 import java.io.IOException;

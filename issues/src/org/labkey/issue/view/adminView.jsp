@@ -30,19 +30,20 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.issue.ColumnType" %>
+<%@ page import="org.labkey.issue.ColumnTypeEnum" %>
 <%@ page import="org.labkey.issue.IssueUpdateEmailTemplate" %>
 <%@ page import="org.labkey.issue.IssuesController.AdminBean" %>
 <%@ page import="org.labkey.issue.IssuesController.ConfigureIssuesAction" %>
 <%@ page import="org.labkey.issue.IssuesController.ConfigureIssuesForm" %>
 <%@ page import="org.labkey.issue.IssuesController.ListAction" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
-<%@ page import="org.labkey.issue.model.IssueManager.CustomColumn" %>
-<%@ page import="org.labkey.issue.model.IssueManager.CustomColumnConfiguration" %>
+<%@ page import="org.labkey.issue.model.CustomColumn" %>
+<%@ page import="org.labkey.issue.model.IssueManager.CustomColumnConfigurationImpl" %>
 <%@ page import="org.labkey.issue.model.KeywordManager" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.issue.CustomColumnConfiguration" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -474,7 +475,7 @@
 
     public boolean hasKeywords(Container c, ColumnInfo col)
     {
-        ColumnType type = ColumnType.forName(col.getColumnName());
+        ColumnTypeEnum type = ColumnTypeEnum.forName(col.getColumnName());
         return (null == type || KeywordManager.getKeywords(c, type).size() > 0);
     }
 
@@ -488,7 +489,7 @@
             return true;
         }
 
-        ColumnType type = ColumnType.forName(name);
+        ColumnTypeEnum type = ColumnTypeEnum.forName(name);
 
         // If the column is Type, Area, Priority, or Milestone also return true
         // this way if they don't have keywords they are also greyed out.

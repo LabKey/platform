@@ -33,9 +33,9 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.issue.ColumnType;
+import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.IssuesController.DownloadAction;
-import org.labkey.issue.model.IssueManager.CustomColumnConfiguration;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -129,6 +129,11 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     public void setCustomColumnConfiguration(CustomColumnConfiguration ccc)
     {
         _ccc = ccc;
+    }
+
+    public CustomColumnConfiguration getCustomColumnConfiguration()
+    {
+        return _ccc;
     }
 
     public Set<String> getEditable()

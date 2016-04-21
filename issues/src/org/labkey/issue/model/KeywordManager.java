@@ -30,6 +30,7 @@ import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.issue.ColumnType;
+import org.labkey.issue.CustomColumnConfiguration;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -56,7 +57,7 @@ public class KeywordManager
         if (inheritFrom != null)
         {
             String colName = type.getColumnName();
-            IssueManager.CustomColumnConfiguration ccc = IssueManager.getCustomColumnConfiguration(c);
+            CustomColumnConfiguration ccc = IssueManager.getCustomColumnConfiguration(c);
             String caption = ccc.getCaption(colName);
             if(StringUtils.isNotEmpty(caption) && ((type.isCustom() && !isCurrentColumnInherited(c, type)))) //if custom type is not inherited
                 return getKeywordsFromCache(c, type);
@@ -211,8 +212,8 @@ public class KeywordManager
     private static boolean isCurrentColumnInherited(Container c, ColumnType type)
     {
         String colName = type.getColumnName();
-        IssueManager.CustomColumnConfiguration ccc = IssueManager.getCustomColumnConfiguration(c);
-        IssueManager.CustomColumn customColumn = ccc.getCustomColumn(colName);
+        CustomColumnConfiguration ccc = IssueManager.getCustomColumnConfiguration(c);
+        CustomColumn customColumn = ccc.getCustomColumn(colName);
         return customColumn.isInherited();
     }
 

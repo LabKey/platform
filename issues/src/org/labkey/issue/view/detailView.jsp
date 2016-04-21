@@ -25,7 +25,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.issue.ColumnType" %>
+<%@ page import="org.labkey.issue.ColumnTypeEnum" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
 <%@ page import="org.labkey.issue.IssuesController.CloseAction" %>
 <%@ page import="org.labkey.issue.IssuesController.EmailPrefsAction" %>
@@ -166,7 +166,7 @@
             <tr><td class="labkey-form-label">Status</td><td><%=h(issue.getStatus())%></td></tr>
             <tr><td class="labkey-form-label">Assigned&nbsp;To</td><td><%=h(issue.getAssignedToName(user))%></td></tr>
 <%
-    for (ColumnType type : Arrays.asList(ColumnType.TYPE, ColumnType.AREA, ColumnType.PRIORITY, ColumnType.MILESTONE))
+    for (ColumnTypeEnum type : Arrays.asList(ColumnTypeEnum.TYPE, ColumnTypeEnum.AREA, ColumnTypeEnum.PRIORITY, ColumnTypeEnum.MILESTONE))
     {
         if (bean.hasKeywords(type) || type.getValue(issue) != null)
         {
@@ -179,7 +179,7 @@
             <tr><td class="labkey-form-label"><%=text(bean.getLabel("Opened", false))%></td><td nowrap="true"><%=bean.writeDate(issue.getCreated())%> by <%=h(issue.getCreatedByName(user))%></td></tr>
             <tr><td class="labkey-form-label">Changed</td><td nowrap="true"><%=h(bean.writeDate(issue.getModified()))%> by <%=h(issue.getModifiedByName(user))%></td></tr>
             <tr><td class="labkey-form-label"><%=text(bean.getLabel("Resolved", false))%></td><td nowrap="true"><%=h(bean.writeDate(issue.getResolved()))%><%=text(issue.getResolvedBy() != null ? " by " : "")%> <%=h(issue.getResolvedByName(user))%></td></tr>
-            <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnType.RESOLUTION, false))%></td><td><%=h(issue.getResolution())%></td></tr><%
+            <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnTypeEnum.RESOLUTION, false))%></td><td><%=h(issue.getResolution())%></td></tr><%
             if (bean.isEditable("resolution") || !"open".equals(issue.getStatus()) && null != issue.getDuplicate())
             {
                 %><tr><td class="labkey-form-label">Duplicate</td><td>
@@ -196,11 +196,11 @@
             }
             if (!issue.getRelatedIssues().isEmpty())
             {
-                %><tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnType.RELATED, false))%></td><td><%=bean.renderRelatedIssues(issue.getRelatedIssues())%></td></tr><%
+                %><tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnTypeEnum.RELATED, false))%></td><td><%=bean.renderRelatedIssues(issue.getRelatedIssues())%></td></tr><%
             }
 %>
-            <%=bean.writeCustomColumn(ColumnType.INT1, 10, false)%>
-            <%=bean.writeCustomColumn(ColumnType.INT2, 10, false)%>
+            <%=bean.writeCustomColumn(ColumnTypeEnum.INT1, 10, false)%>
+            <%=bean.writeCustomColumn(ColumnTypeEnum.INT2, 10, false)%>
         </table></td>
         <td valign="top" width="33%"><table>
             <tr><td class="labkey-form-label">Closed</td><td nowrap="true"><%=h(bean.writeDate(issue.getClosed()))%><%= issue.getClosedBy() != null ? " by " : "" %><%=h(issue.getClosedByName(user))%></td></tr>
@@ -210,11 +210,11 @@
                 {
                     %><tr><td class="labkey-form-label">Notify</td><td><%=bean.getNotifyList()%></td></tr><%
             }
-            %><%=bean.writeCustomColumn(ColumnType.STRING1, 30, false)%>
-            <%=bean.writeCustomColumn(ColumnType.STRING2, 30, false)%>
-            <%=bean.writeCustomColumn(ColumnType.STRING3, 30, false)%>
-            <%=bean.writeCustomColumn(ColumnType.STRING4, 30, false)%>
-            <%=bean.writeCustomColumn(ColumnType.STRING5, 30, false)%>
+            %><%=bean.writeCustomColumn(ColumnTypeEnum.STRING1, 30, false)%>
+            <%=bean.writeCustomColumn(ColumnTypeEnum.STRING2, 30, false)%>
+            <%=bean.writeCustomColumn(ColumnTypeEnum.STRING3, 30, false)%>
+            <%=bean.writeCustomColumn(ColumnTypeEnum.STRING4, 30, false)%>
+            <%=bean.writeCustomColumn(ColumnTypeEnum.STRING5, 30, false)%>
         </table></td>
     </tr>
 </table>

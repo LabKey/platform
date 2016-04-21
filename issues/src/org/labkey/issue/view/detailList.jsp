@@ -25,7 +25,7 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.issue.ColumnType" %>
+<%@ page import="org.labkey.issue.ColumnTypeEnum" %>
 <%@ page import="org.labkey.issue.model.IssuePage" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
 <%@ page import="org.labkey.issue.model.Issue" %>
@@ -99,9 +99,9 @@
 <%
             }
 %>
-            <%=text(bean.writeCustomColumn(ColumnType.INT1, 10, false))%>
-            <%=text(bean.writeCustomColumn(ColumnType.INT2, 10, false))%>
-            <%=text(bean.writeCustomColumn(ColumnType.STRING1, 10, false))%>
+            <%=text(bean.writeCustomColumn(ColumnTypeEnum.INT1, 10, false))%>
+            <%=text(bean.writeCustomColumn(ColumnTypeEnum.INT2, 10, false))%>
+            <%=text(bean.writeCustomColumn(ColumnTypeEnum.STRING1, 10, false))%>
         </table></td>
         <td valign="top" width="33%"><table>
             <tr><td class="labkey-form-label">Changed&nbsp;By</td><td><%=h(issue.getModifiedByName(user))%></td></tr>
@@ -109,10 +109,10 @@
             <tr><td class="labkey-form-label">Closed&nbsp;By</td><td><%=h(issue.getClosedByName(user))%></td></tr>
             <tr><td class="labkey-form-label">Closed</td><td><%=h(bean.writeDate(issue.getClosed()))%></td></tr>
 
-            <%=text(bean.writeCustomColumn(ColumnType.STRING2, 20, false))%>
-            <%=text(bean.writeCustomColumn(ColumnType.STRING3, 20, false))%>
-            <%=text(bean.writeCustomColumn(ColumnType.STRING4, 20, false))%>
-            <%=text(bean.writeCustomColumn(ColumnType.STRING5, 20, false))%>
+            <%=text(bean.writeCustomColumn(ColumnTypeEnum.STRING2, 20, false))%>
+            <%=text(bean.writeCustomColumn(ColumnTypeEnum.STRING3, 20, false))%>
+            <%=text(bean.writeCustomColumn(ColumnTypeEnum.STRING4, 20, false))%>
+            <%=text(bean.writeCustomColumn(ColumnTypeEnum.STRING5, 20, false))%>
         </table></td>
     </tr>
 </table>

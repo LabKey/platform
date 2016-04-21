@@ -393,7 +393,7 @@ public class NewIssuesTable extends FilteredTable<IssuesQuerySchema> implements 
             DataIteratorBuilder step2 = TableInsertDataIterator.create(DataIteratorBuilder.wrap(step0), IssuesSchema.getInstance().getTableInfoIssues(), c, context);
             DataIteratorBuilder step3 = TableInsertDataIterator.create(step2, _issueDef.createTable(getUserSchema().getUser()), c, context);
 
-            // todo support for comments, related fields, notify list, and any other special columns
+            // todo support for comments, attachments, related fields, and any other special columns
 
             return LoggingDataIterator.wrap(step3.getDataIterator(context));
         }

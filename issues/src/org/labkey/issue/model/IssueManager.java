@@ -23,9 +23,13 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.ResultSetRowMapFactory;
+import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -47,7 +51,11 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.issues.IssuesSchema;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchService.IndexTask;
 import org.labkey.api.security.Group;
@@ -78,8 +86,10 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.webdav.AbstractDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
-import org.labkey.issue.ColumnType;
+import org.labkey.issue.ColumnTypeEnum;
+import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.IssuesController;
+import org.labkey.issue.query.IssuesQuerySchema;
 
 import javax.servlet.ServletException;
 import java.io.ByteArrayOutputStream;
@@ -275,6 +285,10 @@ public class IssueManager
         return false;
     }
 
+    /**
+     * Replace this method with newSaveIssue when data migration is performed
+     */
+    @Deprecated
     public static void saveIssue(User user, Container c, Issue issue) throws SQLException
     {
         if (issue.assignedTo == null)
@@ -296,6 +310,49 @@ public class IssueManager
         indexIssue(null, issue);
     }
 
+    public static void newSaveIssue(User user, Container container, Issue issue) throws SQLException
+    {
+        if (issue.assignedTo == null)
+            issue.assignedTo = 0;
+
+        IssueDef issueDef = getIssueDef(issue);
+        if (issueDef != null)
+        {
+            try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
+            {
+                UserSchema userSchema = QueryService.get().getUserSchema(user, container, IssuesQuerySchema.SCHEMA_NAME);
+                TableInfo table = userSchema.getTable(issueDef.getName());
+                QueryUpdateService qus = table.getUpdateService();
+                Map<String, Object> row = new CaseInsensitiveHashMap<>();
+
+                ObjectFactory factory = ObjectFactory.Registry.getFactory(Issue.class);
+                factory.toMap(issue, row);
+                BatchValidationException batchErrors = new BatchValidationException();
+
+                if (issue.issueId == 0)
+                {
+                    issue.beforeInsert(user, container.getId());
+                    qus.insertRows(user, container, Collections.singletonList(row), batchErrors, null, null);
+                }
+                else
+                {
+                    issue.beforeUpdate(user);
+                    qus.updateRows(user, container, Collections.singletonList(row), Collections.singletonList(row) , null, null);
+                }
+
+                saveComments(user, issue);
+                //saveRelatedIssues(user, issue);
+
+                indexIssue(null, issue);
+
+                transaction.commit();
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+    }
 
     protected static void saveComments(User user, Issue issue) throws SQLException
     {
@@ -335,9 +392,9 @@ public class IssueManager
     }
 
 
-    public static Map<ColumnType, String> getAllDefaults(Container container) throws SQLException
+    public static Map<ColumnTypeEnum, String> getAllDefaults(Container container) throws SQLException
     {
-        final Map<ColumnType, String> defaults = new HashMap<>();
+        final Map<ColumnTypeEnum, String> defaults = new HashMap<>();
         SimpleFilter filter = SimpleFilter.createContainerFilter(container).addCondition(FieldKey.fromParts("Default"), true);
         Selector selector = new TableSelector(_issuesSchema.getTableInfoIssueKeywords(), PageFlowUtil.set("Type", "Keyword", "Container", "Default"), filter, null);
 
@@ -345,12 +402,12 @@ public class IssueManager
             @Override
             public void exec(ResultSet rs) throws SQLException
             {
-                ColumnType type = ColumnType.forOrdinal(rs.getInt("Type"));
+                ColumnTypeEnum type = ColumnTypeEnum.forOrdinal(rs.getInt("Type"));
 
                 assert null != type;
 
                 if (null != type)
-                    defaults.put(type,rs.getString("Keyword"));
+                    defaults.put(type, rs.getString("Keyword"));
             }
         });
 
@@ -364,103 +421,12 @@ public class IssueManager
     }
 
 
-    public static class CustomColumn
-    {
-        private Container _container;
-        private String _name;
-        private String _caption;
-        private boolean _pickList;
-        private Class<? extends Permission> _permissionClass;
-        private boolean _inherited;
-
-        // Used via reflection by data access layer
-        @SuppressWarnings({"UnusedDeclaration"})
-        public CustomColumn()
-        {
-        }
-
-        public CustomColumn(Container container, String name, String caption, boolean pickList, Class<? extends Permission> permissionClass)
-        {
-            setContainer(container);
-            setName(name);
-            setCaption(caption);
-            setPickList(pickList);
-            setPermission(permissionClass);
-        }
-
-        public Container getContainer()
-        {
-            return _container;
-        }
-
-        public void setContainer(Container container)
-        {
-            _container = container;
-        }
-
-        public String getName()
-        {
-            return _name;
-        }
-
-        public void setName(String name)
-        {
-            assert name.equals(name.toLowerCase());
-            _name = name;
-        }
-
-        public String getCaption()
-        {
-            return _caption;
-        }
-
-        public void setCaption(String caption)
-        {
-            _caption = caption;
-        }
-
-        public boolean isPickList()
-        {
-            return _pickList;
-        }
-
-        public void setPickList(boolean pickList)
-        {
-            _pickList = pickList;
-        }
-
-        public Class<? extends Permission> getPermission()
-        {
-            return _permissionClass;
-        }
-
-        public void setPermission(Class<? extends Permission> permissionClass)
-        {
-            _permissionClass = permissionClass;
-        }
-
-        public boolean hasPermission(User user)
-        {
-            return _container.hasPermission(user, _permissionClass);
-        }
-
-        public void setInherited(boolean isInherited)
-        {
-            _inherited = isInherited ;
-        }
-
-        public boolean isInherited()
-        {
-            return _inherited;
-        }
-    }
-
     static class CustomColumnMap extends LinkedHashMap<String, CustomColumn>
     {
         private CustomColumnMap(Map<String, CustomColumn> map)
         {
             // Copy the map ensuring the canonical order specified by COLUMN_NAMES
-            for (String name : CustomColumnConfiguration.COLUMN_NAMES)
+            for (String name : CustomColumnConfigurationImpl.COLUMN_NAMES)
             {
                 CustomColumn cc = map.get(name);
 
@@ -493,16 +459,15 @@ public class IssueManager
     }
 
 
-    public static class CustomColumnConfiguration
+    public static class CustomColumnConfigurationImpl implements CustomColumnConfiguration
     {
         private static final String[] COLUMN_NAMES = {"type", "area", "priority", "milestone", "resolution", "related", "int1", "int2", "string1", "string2", "string3", "string4", "string5"};
 
         private final CustomColumnMap _map;
 
         // Values are being loaded from the database
-        public CustomColumnConfiguration(@NotNull Map<String, CustomColumn> map, Container c)
+        public CustomColumnConfigurationImpl(@NotNull Map<String, CustomColumn> map, Container c)
         {
-
             Container inheritFrom = getInheritFromContainer(c); //get the container from which c inherited it's admin settings from
 
 
@@ -527,9 +492,9 @@ public class IssueManager
                     //For example: user inherits 'Type Options' in the Keyword section, and 'Type' under
                     // 'Custom Column' is enabled, allowing to add a custom field value for 'Type' will
                     // modify 'Type Options' to '<User defined Type name> Options' (in the Keyword section).
-                    if(colName != null && (colName.equals(ColumnType.TYPE) || colName.equals(ColumnType.AREA)
-                            || colName.equals(ColumnType.PRIORITY) || colName.equals(ColumnType.MILESTONE)
-                            || colName.equals(ColumnType.RESOLUTION) || colName.equals(ColumnType.RELATED)))
+                    if(colName != null && (colName.equals(ColumnTypeEnum.TYPE) || colName.equals(ColumnTypeEnum.AREA)
+                            || colName.equals(ColumnTypeEnum.PRIORITY) || colName.equals(ColumnTypeEnum.MILESTONE)
+                            || colName.equals(ColumnTypeEnum.RESOLUTION) || colName.equals(ColumnTypeEnum.RELATED)))
                     {
                         iter.remove();
                     }
@@ -549,7 +514,7 @@ public class IssueManager
         }
 
         // Values are being posted from the admin page
-        public CustomColumnConfiguration(ViewContext context)
+        public CustomColumnConfigurationImpl(ViewContext context)
         {
             Container c = context.getContainer();
             Map<String, Object> map = context.getExtendedProperties();
@@ -611,17 +576,20 @@ public class IssueManager
             _map = new CustomColumnMap(ccMap);
         }
 
+        @Override
         public CustomColumn getCustomColumn(String name)
         {
             return _map.get(name);
         }
 
+        @Override
         @Deprecated
         public Collection<CustomColumn> getCustomColumns()
         {
             return _map.values();
         }
 
+        @Override
         public Collection<CustomColumn> getCustomColumns(User user)
         {
             List<CustomColumn> list = new LinkedList<>();
@@ -633,12 +601,14 @@ public class IssueManager
             return list;
         }
 
+        @Override
         @Deprecated
         public boolean shouldDisplay(String name)
         {
             return _map.containsKey(name);
         }
 
+        @Override
         public boolean shouldDisplay(User user, String name)
         {
             CustomColumn cc = getCustomColumn(name);
@@ -646,6 +616,7 @@ public class IssueManager
             return null != cc && cc.getContainer().hasPermission(user, cc.getPermission());
         }
 
+        @Override
         public boolean hasPickList(String name)
         {
             CustomColumn cc = getCustomColumn(name);
@@ -653,6 +624,7 @@ public class IssueManager
             return null != cc && cc.isPickList();
         }
 
+        @Override
         public @Nullable String getCaption(String name)
         {
             CustomColumn cc = getCustomColumn(name);
@@ -661,6 +633,7 @@ public class IssueManager
         }
 
         // TODO: If we need this, then pre-compute it
+        @Override
         public Map<String, String> getColumnCaptions()
         {
             Map<String, String> map = new HashMap<>();
@@ -1444,16 +1417,51 @@ public class IssueManager
     private static int deleteIssueRecords(IssueDef issueDef, Container c, User user)
     {
         assert IssuesSchema.getInstance().getSchema().getScope().isTransactionActive();
-
-        // todo clean up attachments
-
-        // todo clean up comments
-
-        // todo clean up related fields?
-
-        // delete records from the issue table
         TableInfo issueDefTable = issueDef.createTable(user);
 
+        List<AttachmentParent> attachmentParents = new ArrayList<>();
+
+        // get the list of comments for all issues being deleted (these are the attachment parents)
+        SQLFragment commentsSQL = new SQLFragment("SELECT IC.EntityId FROM ").append(IssuesSchema.getInstance().getTableInfoComments(), "IC").
+                append(" WHERE IC.issueId IN (SELECT issueId FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "issues").
+                append(" WHERE EntityId IN (SELECT EntityId FROM ").append(issueDefTable, "").
+                append(" WHERE Container = ?))");
+        commentsSQL.add(c);
+        new SqlSelector(IssuesSchema.getInstance().getSchema(), commentsSQL).forEach(entityId -> {
+
+            AttachmentParentEntity parent = new AttachmentParentEntity();
+            parent.setContainer(c.getId());
+            parent.setEntityId(entityId);
+
+            attachmentParents.add(parent);
+        }, String.class);
+
+        AttachmentService.get().deleteAttachments(attachmentParents);
+
+        // clean up comments
+        SQLFragment deleteCommentsSQL = new SQLFragment("DELETE FROM ").append(IssuesSchema.getInstance().getTableInfoComments(), "IC").
+                append(" WHERE IC.issueId IN (SELECT issueId FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
+                append(" WHERE EntityId IN (SELECT EntityId FROM ").append(issueDefTable, "").
+                append(" WHERE Container = ?))");
+        deleteCommentsSQL.add(c);
+        new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(deleteCommentsSQL);
+
+        // clean up related issues
+        SQLFragment deleteRelatedSQL = new SQLFragment("DELETE FROM ").append(IssuesSchema.getInstance().getTableInfoRelatedIssues(), "RI").
+                append(" WHERE RI.issueId IN (SELECT issueId FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
+                append(" WHERE EntityId IN (SELECT EntityId FROM ").append(issueDefTable, "").
+                append(" WHERE Container = ?))");
+        deleteRelatedSQL.addAll(c);
+        new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(deleteRelatedSQL);
+
+        deleteRelatedSQL = new SQLFragment("DELETE FROM ").append(IssuesSchema.getInstance().getTableInfoRelatedIssues(), "RI").
+                append(" WHERE RI.relatedIssueId IN (SELECT issueId FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
+                append(" WHERE EntityId IN (SELECT EntityId FROM ").append(issueDefTable, "").
+                append(" WHERE Container = ?))");
+        deleteRelatedSQL.addAll(c);
+        new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(deleteRelatedSQL);
+
+        // delete records from the issue table
         SQLFragment deleteIssuesSQL = new SQLFragment("DELETE FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
                 append(" WHERE EntityId IN (SELECT EntityId FROM ").append(issueDefTable, "").
                 append(" WHERE Container = ?)");
@@ -1470,6 +1478,18 @@ public class IssueManager
         return count;
     }
 
+    /**
+     * Temporary hack, will need a direct way to associate an issue record with its issue definition
+     */
+    @Nullable
+    public static IssueDef getIssueDef(Issue issue)
+    {
+        for (IssueDef def : getIssueDefs(ContainerManager.getForId(issue.getContainerId())))
+        {
+            return def;
+        }
+        return null;
+    }
 
     public static WebdavResource resolve(String id)
     {

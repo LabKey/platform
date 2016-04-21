@@ -24,7 +24,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.issue.ColumnType" %>
+<%@ page import="org.labkey.issue.ColumnTypeEnum" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
 <%@ page import="org.labkey.issue.model.Issue" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
@@ -67,8 +67,8 @@
         cancelURL = IssuesController.issueURL(c, IssuesController.ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true");
     }
 
-    List<ColumnType> extraOptions = new ArrayList<>();
-    for (ColumnType type : Arrays.asList(ColumnType.TYPE, ColumnType.AREA, ColumnType.PRIORITY, ColumnType.MILESTONE))
+    List<ColumnTypeEnum> extraOptions = new ArrayList<>();
+    for (ColumnTypeEnum type : Arrays.asList(ColumnTypeEnum.TYPE, ColumnTypeEnum.AREA, ColumnTypeEnum.PRIORITY, ColumnTypeEnum.MILESTONE))
     {
         if (bean.hasKeywords(type))
         {
@@ -158,7 +158,7 @@
                         <tr><td class="labkey-form-label"><%=text(bean.getLabel("Opened", true))%></td><td nowrap="true"><%=h(bean.writeDate(issue.getCreated()))%> by <%=h(issue.getCreatedByName(user))%></td></tr>
                         <tr><td class="labkey-form-label">Changed</td><td nowrap="true"><%=h(bean.writeDate(issue.getModified()))%> by <%=h(issue.getModifiedByName(user))%></td></tr>
                         <tr><td class="labkey-form-label"><%=text(bean.getLabel("Resolved", true))%></td><td nowrap="true"><%=h(bean.writeDate(issue.getResolved()))%><%=text(issue.getResolvedBy() != null ? " by " : "")%> <%=h(issue.getResolvedByName(user))%></td></tr>
-                        <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnType.RESOLUTION, true))%></td><td><%=text(bean.writeSelect(ColumnType.RESOLUTION, 2))%></td></tr>
+                        <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnTypeEnum.RESOLUTION, true))%></td><td><%=text(bean.writeSelect(ColumnTypeEnum.RESOLUTION, 2))%></td></tr>
         <% if (bean.isEditable("resolution") || !"open".equals(issue.getStatus())) { %>
                         <tr><td class="labkey-form-label">Duplicate</td><td>
                         <% if (bean.isEditable("duplicate")) {
@@ -215,16 +215,16 @@
                         %>
                         </td></tr>
         <% } %>
-                        <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnType.RELATED, false))%></td><td>
+                        <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnTypeEnum.RELATED, false))%></td><td>
                         <%=text(bean.writeInput("related", issue.getRelated() == null ? null : issue.getRelated(), "id=related tabindex=\"2\""))%>
 
                         <script type="text/javascript">
                             Ext4.EventManager.on(document.getElementsByName('related')[0], 'keypress', filterCommaSepNumber);
                         </script>
 
-                        <%=text(bean.writeCustomColumn(ColumnType.INT1, 2, true))%>
-                        <%=text(bean.writeCustomColumn(ColumnType.INT2, 2, true))%>
-                        <%=text(bean.writeCustomColumn(ColumnType.STRING1, 2, true))%>
+                        <%=text(bean.writeCustomColumn(ColumnTypeEnum.INT1, 2, true))%>
+                        <%=text(bean.writeCustomColumn(ColumnTypeEnum.INT2, 2, true))%>
+                        <%=text(bean.writeCustomColumn(ColumnTypeEnum.STRING1, 2, true))%>
                     </table>
                 </td>
                 <td valign="top" rowspan="<%=h(rowSpan)%>"><table style="width: 100%;">
@@ -262,15 +262,15 @@
     <%
                 }
     %>
-                    <%=text(bean.writeCustomColumn(ColumnType.STRING2, 3, true))%>
-                    <%=text(bean.writeCustomColumn(ColumnType.STRING3, 3, true))%>
-                    <%=text(bean.writeCustomColumn(ColumnType.STRING4, 3, true))%>
-                    <%=text(bean.writeCustomColumn(ColumnType.STRING5, 3, true))%>
+                    <%=text(bean.writeCustomColumn(ColumnTypeEnum.STRING2, 3, true))%>
+                    <%=text(bean.writeCustomColumn(ColumnTypeEnum.STRING3, 3, true))%>
+                    <%=text(bean.writeCustomColumn(ColumnTypeEnum.STRING4, 3, true))%>
+                    <%=text(bean.writeCustomColumn(ColumnTypeEnum.STRING5, 3, true))%>
                 </table></td>
             </tr>
         <tr><td class="labkey-form-label"><%=text(bean.getLabel("AssignedTo", true))%></td><td><%=bean.writeSelect("assignedTo", String.valueOf(issue.getAssignedTo()), issue.getAssignedToName(user), bean.getUserOptions(), 1)%></td></tr>
         <%
-            for (ColumnType type : extraOptions)
+            for (ColumnTypeEnum type : extraOptions)
             {
                     %><tr><td class="labkey-form-label"><%=text(bean.getLabel(type, true))%></td><td><%=text(bean.writeSelect(type, 1))%></td></tr><%
             }
