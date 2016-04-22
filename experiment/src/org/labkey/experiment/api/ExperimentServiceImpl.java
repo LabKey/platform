@@ -1559,8 +1559,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted = null;
         assert null != (oldAndBusted = getChildrenOldAndBusted(start));
-        assert oldAndBusted.first.equals(newHotness.first);
-        assert oldAndBusted.second.equals(newHotness.second);
+        assert oldAndBusted.first.equals(newHotness.first) : "old lineage doesn't match new lineage.\nold set: " + oldAndBusted.first + "\nnew set: " + newHotness.first;
+        assert oldAndBusted.second.equals(newHotness.second) : "old lineage doesn't match new lineage.\nold set: " + oldAndBusted.second + "\nnew set: " + newHotness.second;
 
         return newHotness;
     }
