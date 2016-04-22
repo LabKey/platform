@@ -5051,6 +5051,13 @@ public class StudyManager
             number.setRangeURI(PropertyType.DOUBLE.getTypeUri());
             number.addValidator(pvLessThan100);
 
+            if (type.equals(DatasetType.DEMOGRAPHIC))
+            {
+                DomainProperty startDate = domain.addProperty();
+                startDate.setName("StartDate");
+                startDate.setPropertyURI(domain.getTypeURI() + "#" + startDate.getName());
+                startDate.setRangeURI(PropertyType.DATE_TIME.getTypeUri());
+            }
             // save
             domain.save(_context.getUser());
 
@@ -5086,6 +5093,7 @@ public class StudyManager
                 createStudy();
                 _testImportDatasetData(_studyDateBased);
                 _testDatsetUpdateService(_studyDateBased);
+                _testDaysSinceStartCalculation(_studyDateBased);
                 _testImportDemographicDatasetData(_studyDateBased);
                 _testImportDemographicDatasetData(_studyVisitBased);
                 _testImportDatasetData(_studyVisitBased);
@@ -5557,6 +5565,68 @@ public class StudyManager
                     assertTrue(rs.next());
                     if ("A2".equals(rs.getString("SubjectId")))
                         assertEquals(study.getStartDate(), new java.util.Date(rs.getTimestamp("date").getTime()));
+                }
+            }
+        }
+
+        /**
+         * Test calculation of timepoints for date based studies. Regression test for issue : 25987
+         */
+        private void _testDaysSinceStartCalculation(Study study) throws Throwable
+        {
+            StudyQuerySchema ss = StudyQuerySchema.createSchema((StudyImpl) study, _context.getUser(), false);
+            Dataset dem = createDataset(study, "Dem", true);
+            Dataset ds = createDataset(study, "DS", false);
+
+            TableInfo tableInfo = ss.getTable(ds.getName());
+            QueryUpdateService qus = tableInfo.getUpdateService();
+
+            Date Feb1 = new Date(DateUtil.parseISODateTime("2016-02-01"));
+            List rows = new ArrayList();
+            List<String> errors = new ArrayList<>();
+
+            TimepointType time = study.getTimepointType();
+
+            Map<String, Integer> validValues = new HashMap<>();
+            validValues.put("A1", 0);
+            validValues.put("A2", 1);
+
+            if (time == TimepointType.DATE)
+            {
+                // insert rows with a startDate
+                rows.clear();
+                errors.clear();
+                rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Feb1, "Measure", "Test"+(++counterRow), "Value", 1.0, "StartDate", Feb1));
+                rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A2", "Date", Feb1, "Measure", "Test"+(++counterRow), "Value", 1.0, "StartDate", Feb1));
+                _import(dem, rows, errors);
+                if (errors.size() != 0)
+                    fail(errors.get(0));
+                assertEquals(0, errors.size());
+
+                // insert rows with a datetime
+                rows.clear();
+                BatchValidationException qusErrors = new BatchValidationException();
+                rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", "2016-02-01 13:00", "Measure", "Test"+(++counterRow), "Value", 1.0));
+                rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A2", "Date", "2016-02-02 10:00", "Measure", "Test"+(++counterRow), "Value", 1.0));
+
+                List<Map<String,Object>> ret = qus.insertRows(_context.getUser(), study.getContainer(), rows, qusErrors, null, null);
+                String msg = qusErrors.getRowErrors().size() > 0 ? qusErrors.getRowErrors().get(0).toString() : "no message";
+                assertFalse(msg, qusErrors.hasErrors());
+
+                try (ResultSet rs = new TableSelector(tableInfo).getResultSet())
+                {
+                    while (rs.next())
+                    {
+                        assertEquals((int)validValues.get(rs.getString("SubjectId")), rs.getInt("Day"));
+                    }
+                }
+
+                // clean up
+                try (Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction())
+                {
+                    dem.delete(_context.getUser());
+                    ds.delete(_context.getUser());
+                    transaction.commit();
                 }
             }
         }
