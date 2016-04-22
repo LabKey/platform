@@ -27,7 +27,7 @@ import java.sql.Types;
 public abstract class ColumnMetaDataReader
 {
     protected final ResultSet _rsCols;
-    protected String _nameKey, _sqlTypeKey, _sqlTypeNameKey, _scaleKey, _nullableKey, _postionKey;
+    protected String _nameKey, _sqlTypeKey, _sqlTypeNameKey, _scaleKey, _nullableKey, _postionKey, _generatedKey;
 
     public ColumnMetaDataReader(ResultSet rsCols)
     {
@@ -93,4 +93,13 @@ public abstract class ColumnMetaDataReader
     {
         return null;
     }
+
+    public boolean isGeneratedColumn() throws SQLException
+    {
+        if (_generatedKey != null)
+            return "YES".equals(_rsCols.getString(_generatedKey));
+
+        return false;
+    }
+
 }

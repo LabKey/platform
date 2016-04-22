@@ -110,6 +110,10 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
             if (null == index && null != col.getJdbcDefaultValue())
                 _skipColumnNames.add(col.getName());
 
+            // Don't add calculated columns (CONSIDER: what about readOnly and !userEditable columns?)
+            if (null == index && col.isCalculated())
+                _skipColumnNames.add(col.getName());
+
             //record autoincrement key column so we can add if need to reselect
             if (col.isAutoIncrement() && !context.supportsAutoIncrementKey())
             {

@@ -1550,6 +1550,9 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                     col.nullable = reader.isNullable();
                     col.jdbcDefaultValue = reader.getDefault();
 
+                    // isCalculated is typically an query-level ExprColumn, but in this case we have a real calculated column in the database
+                    col.setCalculated(reader.isGeneratedColumn());
+
                     inferMetadata(col);
 
     /*
@@ -1676,7 +1679,12 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         String colName = col.getName();
         DbSchema schema = col.getParentTable().getSchema();
 
-        if(col.isAutoIncrement)
+        if (col.metaDataName.startsWith("_"))
+        {
+            col.setHidden(true);
+        }
+
+        if (col.isAutoIncrement || col.isCalculated())
         {
             col.setUserEditable(false);
             col.setShownInInsertView(false);

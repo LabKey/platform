@@ -74,6 +74,8 @@ public abstract class SqlDialect
     public static final String GUID_TYPE = "ENTITYID";
     protected static final int MAX_VARCHAR_SIZE = 4000;  //Any length over this will be set to nvarchar(max)/text
 
+    public static final String CUSTOM_UNIQUE_ERROR_MESSAGE = "Constraint violation: cannot insert duplicate value for column";
+
     private int _databaseVersion = 0;
     private String _productVersion = "0";
     private DialectStringHandler _stringHandler = null;
@@ -717,12 +719,18 @@ public abstract class SqlDialect
     // Create comma-separated list of legal identifiers
     public String makeLegalIdentifiers(String[] names)
     {
-        String sep = "";
+        return makeLegalIdentifiers(names, ", ");
+    }
+
+    // Create list of legal identifiers
+    public String makeLegalIdentifiers(String[] names, String sep)
+    {
+        String s = "";
         StringBuilder sb = new StringBuilder();
         for (String name : names)
         {
-            sb.append(sep).append(makeLegalIdentifier(name));
-            sep = ", ";
+            sb.append(s).append(makeLegalIdentifier(name));
+            s = sep;
         }
         return sb.toString();
     }

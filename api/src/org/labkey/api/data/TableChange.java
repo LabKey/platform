@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.PropertyStorageSpec.Index;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
@@ -25,7 +26,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * User: newton
@@ -173,6 +176,26 @@ public class TableChange
     public void setForeignKeys(Collection<PropertyStorageSpec.ForeignKey> foreignKeys)
     {
         _foreignKeys = foreignKeys;
+    }
+
+    public final List<PropertyStorageSpec> toSpecs(Collection<String> columnNames)
+    {
+        final Domain domain = _domain;
+        final DomainKind kind = _domain.getDomainKind();
+
+        Map<String, PropertyStorageSpec> specs = new CaseInsensitiveHashMap<>();
+        kind.getBaseProperties().forEach(p -> specs.put(p.getName(), p));
+        domain.getProperties().forEach(dp -> specs.put(dp.getName(), kind.getPropertySpec(dp.getPropertyDescriptor(), domain)));
+
+        return columnNames
+                .stream()
+                .map(s -> {
+                    PropertyStorageSpec spec = specs.get(s);
+                    if (spec == null)
+                        throw new IllegalArgumentException("Column '" + s + "' not found for use in index");
+                    return spec;
+                })
+                .collect(Collectors.toList());
     }
 
     public enum ChangeType

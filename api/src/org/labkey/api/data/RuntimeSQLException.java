@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import com.google.gwt.user.client.rpc.IsSerializable;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.dialect.SqlDialect;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;
@@ -113,7 +114,9 @@ public class RuntimeSQLException extends RuntimeException implements Serializabl
     {
         String sqlState = x.getSQLState();
         return null != sqlState && (sqlState.equals("23000") || sqlState.equals("23505") || sqlState.equals("23503") ||
-         /* TODO: Remove this... OptimisticConflictException gets created with SQLState 25000, which seems wrong (should be 23000?) */ sqlState.equals("25000"));
+         /* TODO: Remove this... OptimisticConflictException gets created with SQLState 25000, which seems wrong (should be 23000?) */ sqlState.equals("25000")) ||
+                // Detect errors thrown by trigger used in large column unique constraint
+                x.getMessage().startsWith(SqlDialect.CUSTOM_UNIQUE_ERROR_MESSAGE);
     }
 
     public boolean isNullValueException() { return isNullValueException(getSQLException()); }
