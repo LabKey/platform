@@ -1526,6 +1526,11 @@ class PostgreSql91Dialect extends SqlDialect
             _scaleKey = "COLUMN_SIZE";
             _nullableKey = "NULLABLE";
             _postionKey = "ORDINAL_POSITION";
+
+            // Postgres JDBC driver doesn't include "IS_GENERATED" yet
+            // https://github.com/pgjdbc/pgjdbc/issues/285
+            // http://postgresql.nabble.com/Reading-schema-information-td5850903.html
+            _generatedKey = null;
         }
 
         @Override

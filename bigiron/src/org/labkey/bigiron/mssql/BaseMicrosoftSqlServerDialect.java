@@ -73,6 +73,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 
 /**
@@ -85,6 +86,9 @@ import java.util.regex.Pattern;
 abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 {
     private static final Logger LOG = Logger.getLogger(BaseMicrosoftSqlServerDialect.class);
+
+    // SQLServer limits maximum index key size of 900 bytes
+    private static final int MAX_INDEX_SIZE = 900;
 
     private volatile boolean _groupConcatInstalled = false;
     private volatile Edition _edition = Edition.Unknown;
@@ -1106,11 +1110,151 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     {
         for (PropertyStorageSpec.Index index : change.getIndexedColumns())
         {
-            statements.add(String.format("CREATE %s INDEX %s ON %s (%s)",
-                    index.isUnique ? "UNIQUE" : "",
-                    nameIndex(change.getTableName(), index.columnNames),
-                    makeTableIdentifier(change),
-                    makeLegalIdentifiers(index.columnNames)));
+            if (index.columnNames.length > 16)
+                throw new IllegalArgumentException("Maximum number of columns in an index is 16");
+
+            // If the set of columns is larger than 900 bytes, creating an index will succeed, but fail when trying to insert
+            List<PropertyStorageSpec> specs = change.toSpecs(Arrays.asList(index.columnNames));
+            long bytes = specs.stream().collect(Collectors.summingLong(this::columnStorageSize));
+
+            if (bytes < MAX_INDEX_SIZE)
+            {
+                statements.add(String.format("CREATE %s INDEX %s ON %s (%s)",
+                        index.isUnique ? "UNIQUE" : "",
+                        nameIndex(change.getTableName(), index.columnNames),
+                        makeTableIdentifier(change),
+                        makeLegalIdentifiers(index.columnNames)));
+            }
+            else
+            {
+                if (index.columnNames.length > 1)
+                    throw new IllegalArgumentException("Large indexes currently only supported for a single string column");
+
+                final String columnName = index.columnNames[0];
+                final PropertyStorageSpec spec = specs.get(0);
+                if (spec == null || !spec.getJdbcType().isText())
+                    throw new IllegalArgumentException("Large indexes currently only supported for a single string column");
+
+                final String legalColumnName = makeLegalIdentifier(columnName);
+                final String hashedColumn = makeLegalIdentifier("_hashed_" + columnName);
+                final String tableName = makeTableIdentifier(change);
+
+                // Create computed hash column
+                // NOTE: Unfortunately, HASHBYTES is limited to 8000 bytes on SqlServer versions < 2016 so get the initial 4000 characters (nvarchars are 2 bytes each)
+                // HASHBYTES is typed as varbinary(8000) but SHA2_512 always returns 64-bytes.  The cast is added to remove the "900-byte" limit warning when creating the index over the column.
+                statements.add(String.format("ALTER TABLE %s\n" +
+                        "ADD %s AS CAST(HASHBYTES('SHA2_512', LOWER(LEFT(%s, 4000))) AS binary(64)) PERSISTED",
+                        tableName,
+                        hashedColumn,
+                        legalColumnName));
+
+                // Add a index over the computed hash column
+                statements.add(String.format("CREATE INDEX %s ON %s (%s)",
+                        nameIndex(change.getTableName(), new String[] { columnName }),
+                        tableName,
+                        hashedColumn));
+
+                // Create trigger to enforce uniqueness using the hashed column index
+                statements.add(String.format(
+                        "CREATE TRIGGER %s ON %s\n" +
+                        "FOR INSERT, UPDATE AS\n" +
+                        "BEGIN\n" +
+                        "  IF EXISTS (\n" +
+                        "    SELECT 1 FROM %s x\n" +
+                        "    INNER JOIN INSERTED i\n" +
+                        "    ON  x.%s = HASHBYTES('SHA2_512', LOWER(LEFT(i.%s, 4000)))\n" +
+                        "    AND x.%s = i.%s\n" +
+                        "    GROUP BY x.%s\n" +
+                        "    HAVING COUNT(*) > 1\n" +
+                        "  )\n" +
+                        "  BEGIN\n" +
+                        "    RAISERROR(N'" + CUSTOM_UNIQUE_ERROR_MESSAGE  + " ''%s'' on table ''%s''.', 16, 123)\n" +
+                        "  END\n" +
+                        "END\n",
+                        nameTrigger(change.getTableName(), new String[] { columnName }),
+                        tableName,
+                        tableName,
+                        // ON  x.%s = HASHBYTES('SHA2_512', %s)
+                        hashedColumn, legalColumnName,
+                        // AND x.%s = i.%s
+                        legalColumnName, legalColumnName,
+                        // GROUP BY x.%s
+                        legalColumnName,
+                        // RAISERROR message
+                        legalColumnName, tableName
+                ));
+            }
+        }
+    }
+
+    // Returns the column storage size in bytes
+    // https://technet.microsoft.com/en-us/library/ms187752.aspx
+    private int columnStorageSize(PropertyStorageSpec spec)
+    {
+        JdbcType jdbcType = spec.getJdbcType();
+        Integer size = spec.getSize();
+        switch (jdbcType)
+        {
+            case BIGINT:
+                return 8;
+            case BINARY:
+                return size;
+            case BOOLEAN:
+                return 1;
+            case CHAR:
+                return 2 * size; /* NCHAR is two bytes */
+            case DECIMAL:
+//                if (size < 10) return 5;
+//                if (size < 20) return 9;
+//                if (size < 29) return 13;
+//                if (size < 39) return 17;
+//                throw new IllegalArgumentException("precision must be < 38");
+                // We provision FLOAT(15,4) columns
+                return 9;
+            case DOUBLE:
+                if (size != null && size < 25)
+                    return 4;
+                else
+                    return 8;
+            case INTEGER:
+                return 4;
+            case LONGVARBINARY:
+                return 2^31 - 1;
+            case LONGVARCHAR:
+                return 2^31 - 1;
+            case REAL:
+                return 4;
+            case SMALLINT:
+                return 2;
+            case DATE:
+                // date is 3 bytes, but we actually create datetime instead, which is 8 bytes
+                return 8;
+            case TIME:
+                // time is 5 bytes, but we actually create datetime instead, which is 8 bytes
+                return 8;
+            case TIMESTAMP:
+                // timestamp is 8 bytes, but we actually create datetime instead, which is 8 bytes
+                return 8;
+            case TINYINT:
+                return 1;
+            case VARBINARY:
+                if (size > 8000)
+                    return 2^31-1;
+                return size;
+            case VARCHAR:
+                if (spec.isEntityId())
+                    return 36; /* GUID */
+
+                if (size > SqlDialect.MAX_VARCHAR_SIZE)
+                    return Integer.MAX_VALUE; /* 2^31-1 */
+                else
+                    return size * 2; /* NVARCHAR is two bytes */
+            case GUID:
+                return 36;
+            case NULL:
+            case OTHER:
+            default:
+                return 0;
         }
     }
 
@@ -1125,10 +1269,39 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     {
         for (PropertyStorageSpec.Index index : change.getIndexedColumns())
         {
-            statements.add(String.format("DROP INDEX %s ON %s",
-                    nameIndex(change.getTableName(), index.columnNames),
-                    makeTableIdentifier(change)
-                    ));
+            // If the set of columns is larger than 900 bytes, creating an index will succeed, but fail when trying to insert
+            List<PropertyStorageSpec> specs = change.toSpecs(Arrays.asList(index.columnNames));
+            int bytes = specs.stream().collect(Collectors.summingInt(this::columnStorageSize));
+
+            if (bytes < MAX_INDEX_SIZE)
+            {
+                statements.add(String.format("DROP INDEX %s ON %s",
+                        nameIndex(change.getTableName(), index.columnNames),
+                        makeTableIdentifier(change)
+                ));
+            }
+            else
+            {
+                if (index.columnNames.length > 1)
+                    throw new IllegalArgumentException("Large indexes currently only supported for a single string column");
+
+                final String columnName = index.columnNames[0];
+                final String hashedColumn = makeLegalIdentifier("_hashed_" + columnName);
+                final String tableName = makeTableIdentifier(change);
+
+                statements.add(String.format("DROP TRIGGER %s.%s",
+                        change.getSchemaName(),
+                        nameTrigger(change.getTableName(), new String[] { columnName })));
+
+                statements.add(String.format("DROP INDEX %s ON %s",
+                        nameIndex(change.getTableName(), index.columnNames),
+                        tableName
+                ));
+
+                statements.add(String.format("ALTER TABLE %s DROP COLUMN %s",
+                        tableName,
+                        hashedColumn));
+            }
         }
     }
 
@@ -1141,6 +1314,11 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     private String nameIndex(String tableName, String[] indexedColumns)
     {
         return AliasManager.makeLegalName(tableName + '_' + StringUtils.join(indexedColumns, "_"), this);
+    }
+
+    private String nameTrigger(String tableName, String[] indexedColumns)
+    {
+        return AliasManager.makeLegalName("TR_" + tableName + '_' + StringUtils.join(indexedColumns, "_"), this);
     }
 
     private List<String> getRenameColumnsStatements(TableChange change)
@@ -1342,6 +1520,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             _scaleKey = "COLUMN_SIZE";
             _nullableKey = "NULLABLE";
             _postionKey = "ORDINAL_POSITION";
+            _generatedKey = "IS_GENERATED";
         }
 
         @Override
@@ -1659,7 +1838,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             "        REMARKS             = convert(varchar(254),NULL),\n" +
             "        COLUMN_DEF          = convert(nvarchar(4000), object_definition(ColumnProperty(c.object_id, c.name, 'default'))),\n" +
             "        ORDINAL_POSITION    = ROW_NUMBER() OVER (ORDER BY c.column_id),\n" +
-            "        IS_NULLABLE         = CASE WHEN c.is_nullable = 1 THEN 'YES' ELSE 'NO' END\n" +
+            "        IS_NULLABLE         = CASE WHEN c.is_nullable = 1 THEN 'YES' ELSE 'NO' END,\n" +
+            "        IS_GENERATED        = CASE WHEN c.is_computed = 1 THEN 'YES' ELSE 'NO' END\n" +
             "    FROM\n" +
             "        sys.all_columns c inner join\n" +
             "        sys.all_objects o on\n" +

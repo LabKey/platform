@@ -178,6 +178,7 @@ public class MySqlDialect extends SimpleSqlDialect
             _scaleKey = "COLUMN_SIZE";
             _nullableKey = "NULLABLE";
             _postionKey = "ORDINAL_POSITION";
+            _generatedKey = "IS_GENERATEDCOLUMN";
         }
 
         @Override

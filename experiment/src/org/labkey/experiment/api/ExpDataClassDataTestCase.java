@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment.api;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -28,10 +29,13 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.Results;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.DataIteratorContext;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpLineage;
@@ -66,6 +70,7 @@ import org.labkey.api.util.TestContext;
 
 import java.io.StringWriter;
 import java.sql.Clob;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -99,7 +104,7 @@ public class ExpDataClassDataTestCase
     @After
     public void tearDown() throws Exception
     {
-        //ContainerManager.deleteAll(c, TestContext.get().getUser());
+        ContainerManager.deleteAll(c, TestContext.get().getUser());
     }
 
     private static List<Map<String, Object>> insertRows(Container c, List<Map<String, Object>> rows, String tableName)
@@ -121,7 +126,7 @@ public class ExpDataClassDataTestCase
         return ret;
     }
 
-   // @Test
+    @Test
     public void testDataClass() throws Exception
     {
         final User user = TestContext.get().getUser();
@@ -487,7 +492,7 @@ public class ExpDataClassDataTestCase
             Assert.assertTrue("Failed to find '" + e + "' in multivalue '" + s + "'", s.contains(e));
     }
 
-    //@Test
+    @Test
     public void testDataClassFromTemplate() throws Exception
     {
         final User user = TestContext.get().getUser();
@@ -557,7 +562,7 @@ public class ExpDataClassDataTestCase
     }
 
     // Issue 25224: NPE trying to delete a folder with a DataClass with at least one result row in it
-    //@Test
+    @Test
     public void testContainerDelete() throws Exception
     {
         final User user = TestContext.get().getUser();
@@ -636,6 +641,94 @@ public class ExpDataClassDataTestCase
             Assert.assertNull(dbTable);
         }
 
+    }
+
+    // Issue 26129: sqlserver maximum size of index keys must be < 900 bytes
+    @Test
+    public void testLargeUniqueOnSingleColumnOnly() throws ExperimentException
+    {
+        final User user = TestContext.get().getUser();
+
+        List<GWTPropertyDescriptor> props = new ArrayList<>();
+        props.add(new GWTPropertyDescriptor("aa", "int"));
+        props.add(new GWTPropertyDescriptor("bb", "multiLine"));
+
+        List<GWTIndex> indices = new ArrayList<>();
+        indices.add(new GWTIndex(Arrays.asList("aa", "bb"), true));
+
+        boolean sqlServer = ExperimentService.get().getSchema().getSqlDialect().isSqlServer();
+        try
+        {
+            final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "largeUnique", null, props, indices, null, null);
+            if (sqlServer)
+                Assert.fail("Expected exception creating large index over two columns");
+        }
+        catch (IllegalArgumentException ex)
+        {
+            // sqlserver only error
+            Assert.assertEquals("Large indexes currently only supported for a single string column", ex.getMessage());
+        }
+    }
+
+    @Test
+    public void testLargeUnique() throws Exception
+    {
+        final User user = TestContext.get().getUser();
+
+        List<GWTPropertyDescriptor> props = new ArrayList<>();
+        props.add(new GWTPropertyDescriptor("aa", "int"));
+        GWTPropertyDescriptor prop = new GWTPropertyDescriptor("bb", "multiLine");
+        prop.setScale(20000);
+        props.add(prop);
+
+
+        List<GWTIndex> indices = new ArrayList<>();
+        indices.add(new GWTIndex(Arrays.asList("bb"), true));
+
+        String nameExpr = "JUNIT-${genId}-${aa}";
+
+        final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "largeUnique2", null, props, indices, null, nameExpr);
+        final int dataClassId = dataClass.getRowId();
+
+        List<Map<String, Object>> rows = new ArrayList<>();
+        Map<String, Object> row = new CaseInsensitiveHashMap<>();
+        row.put("aa", 10);
+        // generate long string
+        row.put("bb", StringUtils.repeat("0123456789", 1000));
+        rows.add(row);
+
+        row = new CaseInsensitiveHashMap<>();
+        row.put("aa", 10);
+        // generate long string that is different at the end
+        row.put("bb", StringUtils.repeat("0123456789", 1001));
+        rows.add(row);
+
+        // first insert should succeed
+        try (DbScope.Transaction tx = ExperimentService.get().getSchema().getScope().beginTransaction())
+        {
+            insertRows(c, rows, "largeUnique2");
+            tx.commit();
+        }
+
+        // second insert should fail
+        try (DbScope.Transaction tx = ExperimentService.get().getSchema().getScope().beginTransaction())
+        {
+            insertRows(c, rows, "largeUnique2");
+            Assert.fail("Expected constraint exception");
+        }
+        catch (BatchValidationException e)
+        {
+            boolean sqlServer = ExperimentService.get().getSchema().getSqlDialect().isSqlServer();
+            if (sqlServer)
+            {
+                // Check error message from trigger script is propagated up on SqlServer
+                Assert.assertTrue("Expected error to start with '" + SqlDialect.CUSTOM_UNIQUE_ERROR_MESSAGE + "', got '" + e.getMessage() + "'",
+                        e.getMessage().startsWith(SqlDialect.CUSTOM_UNIQUE_ERROR_MESSAGE));
+            }
+            Throwable t = e.getLastRowError().getGlobalError(0).getCause();
+            Assert.assertTrue("Expected a SQLException", t instanceof SQLException);
+            Assert.assertTrue("Expected a constraint violation", RuntimeSQLException.isConstraintException((SQLException)t));
+        }
     }
 
 }
