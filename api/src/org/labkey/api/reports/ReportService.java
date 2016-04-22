@@ -53,6 +53,7 @@ public class ReportService
     {
         return _instance;
     }
+    public static String LINK_REPORT_TYPE = "ReportService.linkReport";
 
     private ReportService(){}
 

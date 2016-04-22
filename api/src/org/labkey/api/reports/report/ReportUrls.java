@@ -48,7 +48,6 @@ public interface ReportUrls extends UrlProvider
     ActionURL urlReportInfo(Container c);
     ActionURL urlAttachmentReport(Container c, ActionURL returnURL);
     ActionURL urlLinkReport(Container c, ActionURL returnURL);
-    ActionURL urlEditLinkReport(Container c, ActionURL returnURL);
     ActionURL urlReportDetails(Container c, Report r);
     ActionURL urlQueryReport(Container c, Report r);
     ActionURL urlManageNotifications(Container c);
