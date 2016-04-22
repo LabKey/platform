@@ -30,7 +30,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.reader.Readers;
-import org.labkey.api.reports.BaseRedirectReport;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportNameContext;

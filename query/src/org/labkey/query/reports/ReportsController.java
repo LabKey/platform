@@ -76,7 +76,6 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
-import org.labkey.api.reports.LinkReport;
 import org.labkey.api.reports.RConnectionHolder;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportContentEmailManager;
@@ -308,12 +307,6 @@ public class ReportsController extends SpringActionController
         public ActionURL urlLinkReport(Container c, ActionURL returnURL)
         {
             return getCreateLinkReportURL(c, returnURL);
-        }
-
-        @Override
-        public ActionURL urlEditLinkReport(Container c, ActionURL returnURL)
-        {
-            return getEditLinkReportURL(c, returnURL);
         }
 
         @Override
@@ -1695,13 +1688,6 @@ public class ReportsController extends SpringActionController
     public static ActionURL getCreateLinkReportURL(Container c, ActionURL returnURL)
     {
         ActionURL url = new ActionURL(CreateLinkReportAction.class, c);
-        url.addReturnURL(returnURL);
-        return url;
-    }
-
-    public static ActionURL getEditLinkReportURL(Container c, ActionURL returnURL)
-    {
-        ActionURL url = new ActionURL(UpdateLinkReportAction.class, c);
         url.addReturnURL(returnURL);
         return url;
     }
