@@ -1,0 +1,2 @@
+
+EXEC core.executeJavaUpgradeCode 'upgradeLocationTables';

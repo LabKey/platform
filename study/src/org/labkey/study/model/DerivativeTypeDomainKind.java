@@ -15,6 +15,7 @@
  */
 package org.labkey.study.model;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -29,7 +30,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Created by davebradlee on 2/7/15.
+ * Created by davebradlee on 2/7/15
  */
 public final class DerivativeTypeDomainKind extends AbstractSpecimenDomainKind
 {
@@ -86,7 +87,7 @@ public final class DerivativeTypeDomainKind extends AbstractSpecimenDomainKind
     @Override
     public Set<PropertyStorageSpec.ForeignKey> getPropertyForeignKeys(Container container, SpecimenTablesProvider provider)
     {
-        return Collections.EMPTY_SET;
+        return Collections.emptySet();
     }
 
     protected String getNamespacePrefix()
@@ -95,8 +96,8 @@ public final class DerivativeTypeDomainKind extends AbstractSpecimenDomainKind
     }
 
     @Override
-    public Set<PropertyStorageSpec> getPropertySpecsFromTemplate(SpecimenTablesTemplate template)
+    public Set<PropertyStorageSpec> getPropertySpecsFromTemplate(@Nullable SpecimenTablesTemplate template)
     {
-        return Collections.EMPTY_SET;
+        return Collections.emptySet();
     }
 }

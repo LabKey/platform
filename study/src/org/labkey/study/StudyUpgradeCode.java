@@ -33,10 +33,14 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudySnapshotType;
+import org.labkey.study.model.LocationDomainKind;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.query.LocationTable;
+import org.labkey.study.query.SpecimenTablesProvider;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -309,6 +313,42 @@ public class StudyUpgradeCode implements UpgradeCode
                 _log.error("Error upgrading study type.", e);
             }
             transaction.commit();
+        }
+    }
+
+    // Invoked by study-16.10-16.11.sql
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void upgradeLocationTables(final ModuleContext context)
+    {
+        if (!context.isNewInstall())
+        {
+            LocationDomainKind domainKind = new LocationDomainKind();
+            for (Container container : ContainerManager.getAllChildren(ContainerManager.getRoot()))
+            {
+                if (null != container)
+                {
+                    Study study = StudyManager.getInstance().getStudy(container);
+                    if (null != study)
+                    {
+                        try
+                        {
+                            SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, context.getUpgradeUser(), null);
+                            Domain domain = specimenTablesProvider.getDomain(SpecimenTablesProvider.LOCATION_TABLENAME, true);
+                            if (null != domain)
+                            {
+                                specimenTablesProvider.ensureAddedProperties(context.getUpgradeUser(), domain, domainKind, domainKind.getAddedProperties());
+                                TableInfo table = specimenTablesProvider.getTableInfoIfExists(SpecimenTablesProvider.LOCATION_TABLENAME);
+                                if (null != table)
+                                    LocationTable.updateLocationTableInUse(table, container);
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            _log.error("Error upgrading location table in folder '" + container.getName() + "'", e);
+                        }
+                    }
+                }
+            }
         }
     }
 }

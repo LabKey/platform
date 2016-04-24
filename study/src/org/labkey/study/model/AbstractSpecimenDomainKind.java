@@ -15,6 +15,7 @@
  */
 package org.labkey.study.model;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
@@ -43,7 +44,7 @@ import java.util.Set;
 public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
 {
     abstract protected String getNamespacePrefix();
-    abstract public Set<PropertyStorageSpec> getPropertySpecsFromTemplate(SpecimenTablesTemplate template);
+    abstract public Set<PropertyStorageSpec> getPropertySpecsFromTemplate(@Nullable SpecimenTablesTemplate template);
     public AbstractSpecimenDomainKind()
     {
         super();

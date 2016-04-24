@@ -17,14 +17,18 @@ package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainNotFoundException;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.security.User;
@@ -39,7 +43,10 @@ import org.labkey.study.model.SpecimenEventDomainKind;
 import org.labkey.study.model.VialDomainKind;
 
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class SpecimenTablesProvider
 {
@@ -86,11 +93,10 @@ public class SpecimenTablesProvider
         // if the domain doesn't exist and we're asked to create, create it
         AbstractSpecimenDomainKind domainKind = getDomainKind(tableName);
         String domainURI = domainKind.generateDomainURI(SCHEMA_NAME, tableName, _container, _user);
-        Domain domain = null;
 
         // it's possible that another thread is attempting to create the table, so we can (rarely) get a constraint violation
         // We can't try again, but tell the user to try the operation again
-        domain = PropertyService.get().getDomain(_container, domainURI);
+        Domain domain = PropertyService.get().getDomain(_container, domainURI);
         if (null == domain && create)
         {
             try
@@ -103,15 +109,13 @@ public class SpecimenTablesProvider
                     DomainProperty prop = domain.addProperty(propSpec);
                     prop.setRequired(true);
                 }
-                if (null != _template)
-                {
-                    // Add optional fields to table
-                    for (PropertyStorageSpec propSpec : domainKind.getPropertySpecsFromTemplate(_template))
-                    {
-                        domain.addProperty(propSpec);
-                    }
 
+                // Add optional fields to table
+                for (PropertyStorageSpec propSpec : domainKind.getPropertySpecsFromTemplate(_template))
+                {
+                    domain.addProperty(propSpec);
                 }
+
                 domain.setPropertyForeignKeys(domainKind.getPropertyForeignKeys(_container, this));
                 domain.save(_user);
             }
@@ -211,5 +215,47 @@ public class SpecimenTablesProvider
     {
         return StorageProvisioner.createTableInfo(domain);
     }
+
+    // Used by StudyUpgradeCode.upgradeLocationTable
+    public void ensureAddedProperties(User user, Domain domain, DomainKind domainKind, Set<PropertyStorageSpec> desiredProperties)
+    {
+        if (domain != null && domainKind != null)
+        {
+            // Create a map of desired properties
+            Map<String, PropertyStorageSpec> props = new CaseInsensitiveHashMap<>();
+            for (PropertyStorageSpec pd : desiredProperties)
+                props.put(pd.getName(), pd);
+
+            // Create a map of existing properties
+            Map<String, PropertyDescriptor> current = new CaseInsensitiveHashMap<>();
+            for (DomainProperty dp : domain.getProperties())
+            {
+                PropertyDescriptor pd = dp.getPropertyDescriptor();
+                current.put(pd.getName(), pd);
+            }
+
+            Set<PropertyStorageSpec> toAdd = new LinkedHashSet<>();
+            for (PropertyStorageSpec pd : props.values())
+                if (!current.containsKey(pd.getName()))
+                    toAdd.add(pd);
+
+            if (!toAdd.isEmpty())
+            {
+                for (PropertyStorageSpec pd : toAdd)
+                    domain.addProperty(pd);
+
+                try (DbScope.Transaction transaction = domainKind.getScope().ensureTransaction())
+                {
+                    domain.save(user, true);
+                    transaction.commit();
+                }
+                catch (ChangePropertyDescriptorException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+    }
+
 }
 

@@ -85,6 +85,7 @@ import org.labkey.study.model.SpecimenEvent;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.Vial;
+import org.labkey.study.query.LocationTable;
 import org.labkey.study.query.SpecimenTablesProvider;
 import org.labkey.study.visitmanager.VisitManager;
 
@@ -1263,6 +1264,8 @@ public class SpecimenImporter
         StudyImpl study = StudyManager.getInstance().getStudy(_container);
         info("Updating study-wide subject/visit information...");
         StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(_user, Collections.<DatasetDefinition>emptyList(), null, null, true, _logger);
+
+        LocationTable.updateLocationTableInUse(getTableInfoLocation(), getContainer());
         info("Subject/visit update complete.");
     }
 

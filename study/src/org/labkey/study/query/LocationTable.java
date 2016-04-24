@@ -26,6 +26,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
@@ -216,58 +217,107 @@ public class LocationTable extends BaseStudyTable
         }
     }
 
+    private static final String EXISTS = "    EXISTS(SELECT 1 FROM ";
+
     private SQLFragment getLocationInUseExpression(String tableAlias)
     {
-        final String EXISTS = "    EXISTS(SELECT 1 FROM ";
         final StudySchema schema = StudySchema.getInstance();
 
         // Because Location is now provisioned, each row's container must match container in the target table to be an InUse match
+        ColumnInfo inUseColumn = getRealTable().getColumn("InUse");
         SQLFragment existsSQL = new SQLFragment();
-        existsSQL.append(EXISTS).append(schema.getTableInfoSampleRequest(), "sr")
-                .append(" WHERE ").append(tableAlias).append(".RowId = sr.DestinationSiteId AND ").append(tableAlias)
-                .append(".Container = sr.Container) OR\n")
-                .append(EXISTS).append(schema.getTableInfoSampleRequestRequirement(), "srr")
-                .append(" WHERE ").append(tableAlias).append(".RowId = srr.SiteId AND ").append(tableAlias)
-                .append(".Container = srr.Container) OR\n")
-                .append(EXISTS).append(schema.getTableInfoParticipant(), "p")
-                .append(" WHERE (").append(tableAlias).append(".RowId = p.EnrollmentSiteId OR ").append(tableAlias).append(".RowId = p.CurrentSiteId) AND ")
-                .append(tableAlias).append(".Container = p.Container) OR\n")
-                .append(EXISTS).append(schema.getTableInfoAssaySpecimen(), "a")
-                .append(" WHERE ").append(tableAlias).append(".RowId = a.LocationId AND ").append(tableAlias).append(".Container = a.Container)");
+        existsSQL.append(inUseColumn.getValueSql(tableAlias));
+        if (schema.getSqlDialect().isSqlServer())
+            existsSQL.append(" = 1");
 
-        // Specimen tables are provisioned per container, so include all specimen tables in all study folders referenced by the current container filter
-        for (Container c : getStudyContainers(getContainer(), getContainerFilter()))
-        {
-            TableInfo eventTableInfo = schema.getTableInfoSpecimenEventIfExists(c);
-            if (null != eventTableInfo)
-            {
-                existsSQL.append(" OR\n" + EXISTS).append(eventTableInfo, "se").append(" WHERE (")
-                        .append(tableAlias).append(".RowId = se.LabId OR ").append(tableAlias).append(".RowId = se.OriginatingLocationId) AND ")
-                        .append(tableAlias).append(".Container = ?)");
-                existsSQL.add(c);
-            }
-
-            TableInfo vialTableInfo = schema.getTableInfoVialIfExists(c);
-            if (null != vialTableInfo)
-            {
-                existsSQL.append(" OR\n" + EXISTS).append(vialTableInfo, "v").append(" WHERE (")
-                        .append(tableAlias).append(".RowId = v.CurrentLocation OR ").append(tableAlias).append(".RowId = v.ProcessingLocation) AND ")
-                        .append(tableAlias).append(".Container = ?)");
-                existsSQL.add(c);
-            }
-
-            TableInfo specimentTableInfo = schema.getTableInfoSpecimenIfExists(c);
-            if (null != specimentTableInfo)
-            {
-                existsSQL.append(" OR\n" + EXISTS).append(specimentTableInfo, "s").append(" WHERE (")
-                        .append(tableAlias).append(".RowId = s.OriginatingLocationId OR ").append(tableAlias).append(".RowId = s.ProcessingLocation) AND ")
-                        .append(tableAlias).append(".Container = ?)");
-                existsSQL.add(c);
-            }
-        }
+        existsSQL
+            .append(" OR\n")
+            .append(EXISTS)
+            .append(schema.getTableInfoSampleRequest(), "sr")
+            .append(" WHERE ")
+            .append(tableAlias)
+            .append(".RowId = sr.DestinationSiteId AND ")
+            .append(tableAlias)
+            .append(".Container = sr.Container) OR\n")
+            .append(EXISTS)
+            .append(schema.getTableInfoSampleRequestRequirement(), "srr")
+            .append(" WHERE ")
+            .append(tableAlias)
+            .append(".RowId = srr.SiteId AND ")
+            .append(tableAlias)
+            .append(".Container = srr.Container) OR\n")
+            .append(EXISTS)
+            .append(schema.getTableInfoParticipant(), "p")
+            .append(" WHERE (")
+            .append(tableAlias)
+            .append(".RowId = p.EnrollmentSiteId OR ")
+            .append(tableAlias)
+            .append(".RowId = p.CurrentSiteId) AND ")
+            .append(tableAlias)
+            .append(".Container = p.Container) OR\n")
+            .append(EXISTS)
+            .append(schema.getTableInfoAssaySpecimen(), "a")
+            .append(" WHERE ")
+            .append(tableAlias)
+            .append(".RowId = a.LocationId AND ")
+            .append(tableAlias)
+            .append(".Container = a.Container)");
 
         // Wrap the EXISTS expression as needed for this dialect
         return schema.getSqlDialect().wrapExistsExpression(existsSQL);
+    }
+
+    public static void updateLocationTableInUse(TableInfo locationTableInfo, Container container)
+    {
+        final String tableAlias = locationTableInfo.getSelectName();
+        StudySchema schema = StudySchema.getInstance();
+        TableInfo eventTableInfo = schema.getTableInfoSpecimenEventIfExists(container);
+        TableInfo vialTableInfo = schema.getTableInfoVialIfExists(container);
+        TableInfo specimentTableInfo = schema.getTableInfoSpecimenIfExists(container);
+        if (null != eventTableInfo && null != vialTableInfo && null != specimentTableInfo)
+        {
+            ColumnInfo inUseColumn = locationTableInfo.getColumn("InUse");
+
+            SQLFragment existsSQL = new SQLFragment();
+            existsSQL
+                .append(EXISTS)
+                .append(eventTableInfo, "se")
+                .append(" WHERE (")
+                .append(tableAlias)
+                .append(".RowId = se.LabId OR ")
+                .append(tableAlias)
+                .append(".RowId = se.OriginatingLocationId)) ");
+
+            existsSQL
+                .append(" OR\n")
+                .append(EXISTS)
+                .append(vialTableInfo, "v")
+                .append(" WHERE (")
+                .append(tableAlias)
+                .append(".RowId = v.CurrentLocation OR ")
+                .append(tableAlias)
+                .append(".RowId = v.ProcessingLocation)) ");
+
+            existsSQL
+                .append(" OR\n")
+                .append(EXISTS)
+                .append(specimentTableInfo, "s")
+                .append(" WHERE (")
+                .append(tableAlias)
+                .append(".RowId = s.OriginatingLocationId OR ")
+                .append(tableAlias)
+                .append(".RowId = s.ProcessingLocation)) ");
+
+            SQLFragment updateSQL = new SQLFragment("UPDATE ");
+            updateSQL
+                .append(locationTableInfo.getSelectName())
+                .append(" SET ")
+                .append(inUseColumn.getSelectName())
+                .append(" = ")
+                .append(schema.getSqlDialect().wrapExistsExpression(existsSQL));
+
+            new SqlExecutor(locationTableInfo.getSchema()).execute(updateSQL);
+        }
     }
 
     public static Collection<Container> getStudyContainers(Container root, ContainerFilter cFilter)

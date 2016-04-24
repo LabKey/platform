@@ -15,6 +15,7 @@
  */
 package org.labkey.study.model;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -29,7 +30,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Created by davebradlee on 2/6/15.
+ * Created by davebradlee on 2/6/15
  */
 public final class LocationDomainKind extends AbstractSpecimenDomainKind
 {
@@ -55,8 +56,10 @@ public final class LocationDomainKind extends AbstractSpecimenDomainKind
     private static final String GOVERNINGDISTRICT = "GoverningDistrict";
     private static final String COUNTRY = "Country";
     private static final String POSTALAREA = "PostalArea";
+    private static final String INUSE = "InUse";        // Is location InUse, not counting SpecimenRequest and related tables
 
     private static final List<PropertyStorageSpec> BASE_PROPERTIES;
+    private static final List<PropertyStorageSpec> ADDED_PROPERTIES;    // Properties needed to upgrade table
     private static final Set<PropertyStorageSpec.Index> BASE_INDICES;
     static
     {
@@ -79,11 +82,13 @@ public final class LocationDomainKind extends AbstractSpecimenDomainKind
             new PropertyStorageSpec(CITY, JdbcType.VARCHAR, 200),
             new PropertyStorageSpec(GOVERNINGDISTRICT, JdbcType.VARCHAR, 200),
             new PropertyStorageSpec(COUNTRY, JdbcType.VARCHAR, 200),
-            new PropertyStorageSpec(POSTALAREA, JdbcType.VARCHAR, 50),
+            new PropertyStorageSpec(POSTALAREA, JdbcType.VARCHAR, 50)
         };
         BASE_PROPERTIES = Arrays.asList(props);
-        BASE_INDICES = Collections.EMPTY_SET;
+        BASE_INDICES = Collections.emptySet();
 
+        PropertyStorageSpec[] addedProps = {new PropertyStorageSpec(INUSE, JdbcType.BOOLEAN, 0, true, false)};
+        ADDED_PROPERTIES = Arrays.asList(addedProps);
     }
 
     public String getKindName()
@@ -106,7 +111,7 @@ public final class LocationDomainKind extends AbstractSpecimenDomainKind
     @Override
     public Set<PropertyStorageSpec.ForeignKey> getPropertyForeignKeys(Container container, SpecimenTablesProvider provider)
     {
-        return Collections.EMPTY_SET;
+        return Collections.emptySet();
     }
 
     protected String getNamespacePrefix()
@@ -115,14 +120,19 @@ public final class LocationDomainKind extends AbstractSpecimenDomainKind
     }
 
     @Override
-    public Set<PropertyStorageSpec> getPropertySpecsFromTemplate(SpecimenTablesTemplate template)
+    public Set<PropertyStorageSpec> getPropertySpecsFromTemplate(@Nullable SpecimenTablesTemplate template)
     {
-        return Collections.EMPTY_SET;
+        return getAddedProperties();
     }
 
     @Override
     public String getMetaDataTableName()
     {
         return METADATA_NAME;
+    }
+
+    public Set<PropertyStorageSpec> getAddedProperties()
+    {
+        return new LinkedHashSet<>(ADDED_PROPERTIES);
     }
 }
