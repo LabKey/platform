@@ -85,8 +85,8 @@ public class IssuesSchema
         return getSchema().getTable("RelatedIssues");
     }
 
-    public TableInfo getTableInfoIssueDef()
+    public TableInfo getTableInfoIssueListDef()
     {
-        return getSchema().getTable("IssueDef");
+        return getSchema().getTable("IssueListDef");
     }
 }
