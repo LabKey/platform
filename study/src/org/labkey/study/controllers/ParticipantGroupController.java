@@ -517,12 +517,23 @@ public class ParticipantGroupController extends BaseStudyController
                 switch(groupType)
                 {
                     case participantGroup:
-                        // the api will support either requesting a specific participant category or all of
+                        // the api will support either requesting a specific participant category/group or all of
                         // the categories (and groups)
                         if (form.getCategoryId() != -1)
                         {
                             ParticipantCategoryImpl category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), form.getCategoryId());
                             addCategory(form, category, groups);
+                        }
+                        else if (form.getGroupId() != -1)
+                        {
+                            // NOTE: this can expose the participant group information to a user that can't otherwise see it via the standard UI in the study module
+                            ParticipantGroup group = ParticipantGroupManager.getInstance().getParticipantGroupFromGroupRowId(getContainer(), getUser(), form.getGroupId());
+                            if (group != null)
+                            {
+                                ParticipantCategoryImpl category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), group.getCategoryId());
+                                JSONGroup jsonGroup = new JSONGroup(group, category);
+                                groups.add(jsonGroup.toJSON(getViewContext()));
+                            }
                         }
                         else
                         {
@@ -705,6 +716,7 @@ public class ParticipantGroupController extends BaseStudyController
         private boolean _includeUnassigned = true;
         private boolean _distinctCategories = true;
         private int _categoryId = -1;
+        private int _groupId = -1;
 
         public boolean isIncludePrivateGroups()
         {
@@ -764,6 +776,16 @@ public class ParticipantGroupController extends BaseStudyController
         public void setDistinctCategories(boolean distinctCategories)
         {
             _distinctCategories = distinctCategories;
+        }
+
+        public int getGroupId()
+        {
+            return _groupId;
+        }
+
+        public void setGroupId(int groupId)
+        {
+            _groupId = groupId;
         }
     }
 

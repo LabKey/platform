@@ -82,7 +82,6 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.OwnerRole;
@@ -99,7 +98,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -1361,38 +1359,6 @@ public class IssuesController extends SpringActionController
         }
     }
 
-    public static class CompleteUserForm
-    {
-        private String _prefix;
-        private String _issueId;
-
-        public String getPrefix(){return _prefix;}
-        public void setPrefix(String prefix){_prefix = prefix;}
-
-        public String getIssueId(){return _issueId;}
-        public void setIssueId(String issueId){_issueId = issueId;}
-    }
-
-
-    @RequiresPermission(InsertPermission.class)
-    public class CompleteUserAction extends ApiAction<CompleteUserForm>
-    {
-        @Override
-        public ApiResponse execute(CompleteUserForm completeUserForm, BindException errors) throws Exception
-        {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            List<JSONObject> completions = new ArrayList<>();
-
-            List<User> possibleUsers = SecurityManager.getUsersWithPermissions(getContainer(), Collections.<Class<? extends Permission>>singleton(ReadPermission.class));
-            for (AjaxCompletion completion : UserManager.getAjaxCompletions(possibleUsers, getUser(), getContainer()))
-                    completions.add(completion.toJSON());
-
-            response.put("completions", completions);
-
-            return response;
-        }
-    }
-
     private void sendUpdateEmail(Issue issue, Issue prevIssue, String fieldChanges, String summary, String comment, ActionURL detailsURL, String change, List<AttachmentFile> attachments, Class<? extends Controller> action, User createdByUser) throws ServletException
     {
         // Skip the email if no comment and no public fields have changed, #17304
@@ -1440,11 +1406,11 @@ public class IssuesController extends SpringActionController
                     html.append("</body></html>");
                     m.setEncodedHtmlContent(html.toString());
 
-                    NotificationService.get().sendMessage(getContainer(), user, m,
+                    NotificationService.get().sendMessage(getContainer(), createdByUser, user, m,
                             "view " + IssueManager.getEntryTypeNames(getContainer()).singularName,
                             new ActionURL(DetailsAction.class,getContainer()).addParameter("issueId",issue.getIssueId()).getLocalURIString(false),
                             "issue:" + issue.getIssueId(),
-                            Issue.class.getName());
+                            Issue.class.getName(), false);
                 }
             }
             catch (ConfigurationException | AddressException e)

@@ -1020,38 +1020,6 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
-    public class CompleteUserAction extends ApiAction<CompleteUserForm>
-    {
-        @Override
-        public ApiResponse execute(CompleteUserForm completeUserForm, BindException errors) throws Exception
-        {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            List<JSONObject> completions = new ArrayList<>();
-
-            for (AjaxCompletion completion : UserManager.getAjaxCompletions(getUser(), getContainer()))
-                completions.add(completion.toJSON());
-
-            response.put("completions", completions);
-            return response;
-        }
-    }
-
-    public static class CompleteUserForm
-    {
-        private String _prefix;
-
-        public String getPrefix()
-        {
-            return _prefix;
-        }
-
-        public void setPrefix(String prefix)
-        {
-            _prefix = prefix;
-        }
-    }
-
 /////////////////////////////////////////////////////////////////////////////
 //  Direct access to the PipelineQueue
 

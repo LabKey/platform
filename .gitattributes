@@ -2411,6 +2411,7 @@ study/src/org/labkey/study/view/reportPermission.jsp -text
 study/src/org/labkey/study/view/requirePipeline.jsp -text
 study/src/org/labkey/study/view/saveReportView.jsp -text
 study/src/org/labkey/study/view/securityTabHeader.jsp -text
+study/src/org/labkey/study/view/sendParticipantGroup.jsp -text
 study/src/org/labkey/study/view/snapshotSettings.jsp -text
 study/src/org/labkey/study/view/specimen/SpecimenRequestNotificationEmailTemplate.java -text
 study/src/org/labkey/study/view/specimen/addSamplesToRequest.jsp -text

@@ -27,7 +27,6 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
-import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -35,7 +34,7 @@ import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.ImportOptions;
-import org.labkey.api.admin.InvalidFileException;
+import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentForm;
@@ -54,12 +53,10 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.FolderTypeManager;
-import org.labkey.api.pipeline.DirectoryNotDeletedException;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
-import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.AbstractQueryImportAction;
@@ -103,13 +100,17 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
@@ -121,10 +122,10 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -163,7 +164,6 @@ import org.labkey.study.importer.DatasetImportUtils;
 import org.labkey.study.importer.RequestabilityManager;
 import org.labkey.study.importer.SchemaReader;
 import org.labkey.study.importer.SchemaTsvReader;
-import org.labkey.study.importer.StudyImportJob;
 import org.labkey.study.importer.StudyReload;
 import org.labkey.study.importer.StudyReload.ReloadStatus;
 import org.labkey.study.importer.StudyReload.ReloadTask;
@@ -175,6 +175,9 @@ import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetReorderer;
 import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.Participant;
+import org.labkey.study.model.ParticipantCategoryImpl;
+import org.labkey.study.model.ParticipantGroup;
+import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.QCState;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.SecurityType;
@@ -206,19 +209,16 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
-import org.xml.sax.SAXException;
 
+import javax.mail.Message;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.nio.file.FileSystemAlreadyExistsException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -6801,10 +6801,19 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class) @RequiresLogin
-    public class ManageParticipantCategoriesAction extends SimpleViewAction<Object>
+    public class ManageParticipantCategoriesAction extends SimpleViewAction<SentGroupForm>
     {
-        public ModelAndView getView(Object form, BindException errors) throws Exception
+        public ModelAndView getView(SentGroupForm form, BindException errors) throws Exception
         {
+            // if the user is viewing a sent participant group, remove any notifications related to it
+            if (form.getSentGroupId() != null)
+            {
+                NotificationService.get().removeNotifications(getContainer(), ""+form.getSentGroupId(),
+                    Collections.singletonList(ParticipantCategory.SEND_PARTICIPANT_GROUP_TYPE), getUser().getUserId());
+
+                // TODO we don't currently do anything with a sent group for this action
+            }
+
             return new JspView("/org/labkey/study/view/manageParticipantCategories.jsp");
         }
 
@@ -6814,6 +6823,224 @@ public class StudyController extends BaseStudyController
             _appendManageStudy(root);
             root.addChild("Manage " + getStudyRedirectIfNull().getSubjectNounSingular() + " Groups");
             return root;
+        }
+    }
+
+    public static class SentGroupForm
+    {
+        private Integer _sentGroupId;
+
+        public Integer getSentGroupId()
+        {
+            return _sentGroupId;
+        }
+
+        public void setSentGroupId(Integer sentGroupId)
+        {
+            _sentGroupId = sentGroupId;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class) @RequiresLogin
+    public class SendParticipantGroupAction extends FormViewAction<SendParticipantGroupForm>
+    {
+        private List<User> _validRecipients = new ArrayList<>();
+
+        @Override
+        public URLHelper getSuccessURL(SendParticipantGroupForm form)
+        {
+            return form.getReturnActionURL(form.getDefaultUrl(getContainer()));
+        }
+
+        @Override
+        public ModelAndView getView(SendParticipantGroupForm form, boolean reshow, BindException errors) throws Exception
+        {
+            if (form.getRowId() == null)
+            {
+                return new HtmlView("<span class='labkey-error'>No participant group RowId provided.</span>");
+            }
+            else
+            {
+                ParticipantGroup group = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), getUser(), form.getRowId());
+                if (group != null)
+                {
+                    ParticipantCategoryImpl category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), group.getCategoryId());
+                    if (category != null && category.canRead(getContainer(), getUser()))
+                    {
+                        form.setLabel(group.getLabel());
+                        return new JspView<>("/org/labkey/study/view/sendParticipantGroup.jsp", form, errors);
+                    }
+                }
+
+                return new HtmlView("<span class='labkey-error'>Could not find participant group for RowId " + form.getRowId()
+                        + " or you do not have permission to read it.</span>");
+            }
+        }
+
+        @Override
+        public void validateCommand(SendParticipantGroupForm form, Errors errors)
+        {
+            parseRecipientList(form, errors);
+        }
+
+        private void parseRecipientList(SendParticipantGroupForm form, Errors errors)
+        {
+            if (form.getRecipientList() != null)
+            {
+                String[] recipientArr = form.getRecipientList().split("\n");
+                List<String> invalidRecipients = new ArrayList<>();
+                List<ValidEmail> potentialValidRecipients = SecurityManager.normalizeEmails(recipientArr, invalidRecipients);
+
+                // validate that the recipient emails are valid
+                for (String rawEmail : invalidRecipients)
+                {
+                    // Ignore lines of all whitespace, otherwise show an error.
+                    if (!"".equals(rawEmail.trim()))
+                    {
+                        errors.reject(ERROR_MSG, "Invalid email address: " + rawEmail.trim());
+                    }
+                }
+
+                // validate that the valid emails are for users that have permissions to this container
+                for (ValidEmail validRecipient : potentialValidRecipients)
+                {
+                    User validUser = UserManager.getUser(validRecipient);
+                    if (validUser != null)
+                    {
+                        if (getContainer().hasPermission(validUser, ReadPermission.class))
+                            _validRecipients.add(validUser);
+                        else
+                            errors.reject(ERROR_MSG, "User does not have permissions to this container: " + validRecipient.getEmailAddress());
+                    }
+                    else
+                    {
+                        errors.reject(ERROR_MSG, "Unknown user: " + validRecipient.getEmailAddress());
+                    }
+                }
+            }
+            else
+            {
+                errors.reject(ERROR_MSG, "No recipients provided.");
+            }
+        }
+
+        @Override
+        public boolean handlePost(SendParticipantGroupForm form, BindException errors) throws Exception
+        {
+            if (!errors.hasErrors() && !_validRecipients.isEmpty())
+            {
+                ActionURL sendGroupUrl = form.getSendGroupUrl(getContainer());
+                String fullSendGroupUrlStr = sendGroupUrl.getBaseServerURI() + sendGroupUrl.toString();
+
+                for (User validRecipient : _validRecipients)
+                {
+                    // if a notification already exists for this user and participant group, remove it (i.e. replace with new one)
+                    NotificationService.get().removeNotifications(getContainer(), ""+form.getRowId(),
+                        Collections.singletonList(ParticipantCategory.SEND_PARTICIPANT_GROUP_TYPE), validRecipient.getUserId());
+
+                    // create the notification message email
+                    MailHelper.MultipartMessage m = MailHelper.createMultipartMessage();
+                    m.setFrom(LookAndFeelProperties.getInstance(getContainer()).getSystemEmailAddress());
+                    m.addRecipients(Message.RecipientType.TO, validRecipient.getEmail());
+                    m.setSubject(form.getMessageSubject());
+                    m.setTextContent(form.getMessageBody() + "\n" +  fullSendGroupUrlStr);
+
+                    // replicate the message body as html with an <a> tag
+                    StringBuilder html = new StringBuilder();
+                    html.append("<html><head></head><body>");
+                    html.append(PageFlowUtil.filter(form.getMessageBody(), true, true));
+                    html.append("<br/><a href='" + fullSendGroupUrlStr + "'>" + fullSendGroupUrlStr + "</a>");
+                    html.append("</body></html>");
+                    m.setEncodedHtmlContent(html.toString());
+
+                    // send the message and create the new notification for this user and participant group
+                    NotificationService.get().sendMessage(getContainer(), getUser(), validRecipient, m,
+                            "view", sendGroupUrl.toString(), ""+form.getRowId(), ParticipantCategory.SEND_PARTICIPANT_GROUP_TYPE, true);
+                }
+            }
+
+            return !errors.hasErrors();
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            setHelpTopic("participantGroups");
+            String manageGroupsTitle = "Manage " + getStudyRedirectIfNull().getSubjectNounSingular() + " Groups";
+            root.addChild(manageGroupsTitle, new ActionURL(ManageParticipantCategoriesAction.class, getContainer()));
+            root.addChild("Send Participant Group");
+            return root;
+        }
+    }
+
+    public static class SendParticipantGroupForm extends ReturnUrlForm
+    {
+        private Integer _rowId;
+        private String _label;
+        private String _recipientList;
+        private String _messageSubject;
+        private String _messageBody;
+
+        public Integer getRowId()
+        {
+            return _rowId;
+        }
+
+        public void setRowId(Integer rowId)
+        {
+            _rowId = rowId;
+        }
+
+        public String getLabel()
+        {
+            return _label;
+        }
+
+        public void setLabel(String label)
+        {
+            _label = label;
+        }
+
+        public String getRecipientList()
+        {
+            return _recipientList;
+        }
+
+        public void setRecipientList(String recipientList)
+        {
+            _recipientList = recipientList;
+        }
+
+        public String getMessageSubject()
+        {
+            return _messageSubject;
+        }
+
+        public void setMessageSubject(String messageSubject)
+        {
+            _messageSubject = messageSubject;
+        }
+
+        public String getMessageBody()
+        {
+            return _messageBody;
+        }
+
+        public void setMessageBody(String messageBody)
+        {
+            _messageBody = messageBody;
+        }
+
+        public ActionURL getDefaultUrl(Container container)
+        {
+            return new ActionURL(ManageParticipantCategoriesAction.class, container);
+        }
+
+        public ActionURL getSendGroupUrl(Container container)
+        {
+            ActionURL sendGroupUrl = getReturnActionURL(getDefaultUrl(container));
+            sendGroupUrl.addParameter("sentGroupId", getRowId());
+            return sendGroupUrl;
         }
     }
 

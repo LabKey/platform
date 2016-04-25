@@ -73,35 +73,42 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
 
     /* for compatibility with code that uses/used MailHelper directly */
     @Override
-    public Notification sendMessage(Container c, User user, MailHelper.MultipartMessage m,
-            String linkText, String linkURL,
-            String id, String type
+    public Notification sendMessage(Container c, User createdByUser, User notifyUser, MailHelper.MultipartMessage m,
+            String linkText, String linkURL, String id, String type, boolean useSubjectAsContent
             ) throws IOException, MessagingException, ValidationException
     {
-        MailHelper.send(m, user, c);
+        MailHelper.send(m, createdByUser, c);
 
         if (!AppProps.getInstance().isExperimentalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATIONMENU))
             return null;
+
         Notification notification = new Notification();
-        String contentType = m.getContentType();
-        notification.setContentType(contentType);
-        Object contentObject = m.getContent();
-        if (contentObject instanceof MimeMultipart)
-        {
-            MimeMultipart mm = (MimeMultipart) contentObject;
-            notification.setContent(mm.getBodyPart(0).getContent().toString(), mm.getBodyPart(0).getContentType());
-        }
-        else if (null != contentObject)
-        {
-            notification.setContent(contentObject.toString(), "text/plain");
-        }
         notification.setActionLinkText(linkText);
         notification.setActionLinkURL(linkURL);
         notification.setObjectId(id);
         notification.setType(type);
-        notification.setUserId(user.getUserId());
+        notification.setUserId(notifyUser.getUserId());
+        if (useSubjectAsContent)
+        {
+            notification.setContent(m.getSubject());
+        }
+        else
+        {
+            String contentType = m.getContentType();
+            notification.setContentType(contentType);
+            Object contentObject = m.getContent();
+            if (contentObject instanceof MimeMultipart)
+            {
+                MimeMultipart mm = (MimeMultipart) contentObject;
+                notification.setContent(mm.getBodyPart(0).getContent().toString(), mm.getBodyPart(0).getContentType());
+            }
+            else if (null != contentObject)
+            {
+                notification.setContent(contentObject.toString(), "text/plain");
+            }
+        }
 
-        return NotificationService.get().addNotification(c, user, notification);
+        return NotificationService.get().addNotification(c, createdByUser, notification);
     }
 
 

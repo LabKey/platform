@@ -55,6 +55,7 @@
 <script type="text/javascript">
 
     Ext4.onReady(function() {
+        Ext4.QuickTips.init();
 
         Ext4.override(Ext4.menu.Menu, { zIndex : 20000 });
 
@@ -158,9 +159,19 @@
                 ],
                 autoLoad: true,
                 listeners: {
-                    load: function () {
+                    load: function (store, records) {
                         // clear selection on load of the grid store
                         grid.getSelectionModel().deselectAll();
+
+                        // show the Send button if any of the groups have saved filters
+                        Ext4.each(records, function(record)
+                        {
+                            if (record.get('filters') && record.get('filters').length > 0)
+                            {
+                                Ext4.getCmp('sendSelectedButtonExt4').show();
+                                return false; // break;
+                            }
+                        });
                     }
                 }
             },
@@ -199,17 +210,36 @@
                         }
                     },
                     scope : this
+                },{
+                    id: 'sendSelectedButtonExt4',
+                    text: 'Send Selected',
+                    tooltip: 'Send a copy of the filters for this participant group as an email notification.',
+                    hidden: true,
+                    disabled: true,
+                    handler: function() {
+                        if (grid.getSelectionModel().hasSelection()) {
+                            window.location = LABKEY.ActionURL.buildURL('study', 'sendParticipantGroup', null, {
+                                rowId: grid.getSelectionModel().getLastSelected().get('rowId')
+                            })
+                        }
+                    },
+                    scope : this
                 }]
             }],
             listeners: {
                 itemclick : function(grid, row) {
                     var editButton = Ext4.getCmp('editSelectedButtonExt4');
                     var deleteButton = Ext4.getCmp('deleteSelectedButtonExt4');
+                    var sendButton = Ext4.getCmp('sendSelectedButtonExt4');
 
                     editButton.setDisabled(row.get('filters') != undefined && row.get('filters').length > 0);
                     editButton.setText(row.get('canEdit') ? 'Edit Selected' : 'View Selected');
 
                     deleteButton.setDisabled(row.get("canDelete") ? false : true);
+
+                    // currently only allowing sending of groups with saved filters
+                    if (sendButton.isVisible())
+                        sendButton.setDisabled(row.get('filters') == undefined || row.get('filters').length == 0);
                 },
                 itemdblclick : function(g) {
                     if (g.getSelectionModel().hasSelection()) {

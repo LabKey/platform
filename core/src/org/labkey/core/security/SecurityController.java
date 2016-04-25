@@ -52,6 +52,8 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ReaderRole;
@@ -186,6 +188,13 @@ public class SecurityController extends SpringActionController
         public String getCompleteUserURLPrefix(Container container)
         {
             ActionURL url = new ActionURL(CompleteUserAction.class, container);
+            url.addParameter("prefix", "");
+            return url.getLocalURIString();
+        }
+
+        public String getCompleteUserReadURLPrefix(Container container)
+        {
+            ActionURL url = new ActionURL(CompleteUserReadAction.class, container);
             url.addParameter("prefix", "");
             return url.getLocalURIString();
         }
@@ -955,6 +964,25 @@ public class SecurityController extends SpringActionController
             List<JSONObject> completions = new ArrayList<>();
 
             for (AjaxCompletion completion : UserManager.getAjaxCompletions(getUser(), getContainer()))
+                completions.add(completion.toJSON());
+
+            response.put("completions", completions);
+
+            return response;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class CompleteUserReadAction extends ApiAction<CompleteUserForm>
+    {
+        @Override
+        public ApiResponse execute(CompleteUserForm completeUserForm, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            List<JSONObject> completions = new ArrayList<>();
+
+            List<User> possibleUsers = SecurityManager.getUsersWithPermissions(getContainer(), Collections.<Class<? extends Permission>>singleton(ReadPermission.class));
+            for (AjaxCompletion completion : UserManager.getAjaxCompletions(possibleUsers, getUser(), getContainer()))
                 completions.add(completion.toJSON());
 
             response.put("completions", completions);

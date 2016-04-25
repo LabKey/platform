@@ -17,6 +17,7 @@
 %>
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.data.DataRegion"%>
+<%@ page import="org.labkey.api.security.SecurityUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -55,7 +56,7 @@
     final String popup = getNotifyHelpPopup(emailPrefs, issue.getIssueId(), IssueManager.getEntryTypeNames(c));
 
     BindException errors = bean.getErrors();
-    ActionURL completionUrl = new ActionURL(IssuesController.CompleteUserAction.class, c);
+    String completionUrl = urlProvider(SecurityUrls.class).getCompleteUserReadURLPrefix(c);
     ActionURL cancelURL;
 
     if (issue.getIssueId() > 0)
@@ -252,7 +253,7 @@
     %>
                         </td>
                         <td>
-                            <labkey:autoCompleteTextArea name="notifyList" id="notifyList" url="<%=h(completionUrl.getLocalURIString())%>" rows="4" tabindex="3" cols="40" value="<%=h(bean.getNotifyListString(false))%>"/>
+                            <labkey:autoCompleteTextArea name="notifyList" id="notifyList" url="<%=h(completionUrl)%>" rows="4" tabindex="3" cols="40" value="<%=h(bean.getNotifyListString(false))%>"/>
                         </td>
                     </tr>
     <%

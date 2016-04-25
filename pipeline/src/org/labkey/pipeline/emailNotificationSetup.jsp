@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.pipeline.PipelineController" %>
 <%@ page import="org.labkey.pipeline.api.PipelineEmailPreferences" %>
+<%@ page import="org.labkey.api.security.SecurityUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -60,7 +61,7 @@
             !StringUtils.isEmpty(notifyUsersOnError) ||
             !StringUtils.isEmpty(escalationUsers) ? "" : "none";
 
-    String completeUserUrl = new ActionURL(PipelineController.CompleteUserAction.class, c).getLocalURIString();
+    String completeUserUrl = urlProvider(SecurityUrls.class).getCompleteUserURLPrefix(c);
 %>
 <script type="text/javascript">
 
