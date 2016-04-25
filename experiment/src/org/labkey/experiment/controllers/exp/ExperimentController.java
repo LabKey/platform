@@ -117,6 +117,7 @@ import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
@@ -866,9 +867,12 @@ public class ExperimentController extends SpringActionController
                 // XXX: ridiculous amount of work to get a update url expression for the sample set's table.
                 UserSchema samplesSchema = QueryService.get().getUserSchema(getUser(), ss.getContainer(), "Samples");
                 QueryDefinition queryDef = samplesSchema.getQueryDefForTable(ss.getName());
-                StringExpression expr = queryDef.urlExpr(QueryAction.updateQueryRow, ss.getContainer());
+                StringExpression expr = queryDef.urlExpr(QueryAction.updateQueryRow, null);
                 if (expr != null)
                 {
+                    // Since we're building a detailsURL outside the context of a "row" need to set the correct
+                    // container context on the generated expr.
+                    ((DetailsURL) expr).setContainerContext(ss.getContainer());
                     String url = expr.eval(Collections.singletonMap(new FieldKey(null, "RowId"), _material.getRowId()));
                     updateLinks.append(PageFlowUtil.textLink("edit", url) + " ");
                 }
