@@ -326,7 +326,17 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @NotNull
     public Set<String> getSchemaNames()
     {
-        return PageFlowUtil.set(ExpSchema.SCHEMA_NAME);
+        return PageFlowUtil.set(
+                ExpSchema.SCHEMA_NAME,
+                DataClassDomainKind.PROVISIONED_SCHEMA_NAME
+        );
+    }
+
+    @NotNull
+    @Override
+    public Collection<String> getProvisionedSchemaNames()
+    {
+        return PageFlowUtil.set(DataClassDomainKind.PROVISIONED_SCHEMA_NAME);
     }
 
 
