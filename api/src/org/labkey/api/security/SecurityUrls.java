@@ -39,4 +39,5 @@ public interface SecurityUrls extends UrlProvider
     ActionURL getFolderAccessURL(Container container);
     ActionURL getApiKeyURL(ActionURL returnURL); // Always root
     String getCompleteUserURLPrefix(Container container);
+    String getCompleteUserReadURLPrefix(Container container);
 }

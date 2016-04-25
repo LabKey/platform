@@ -21,6 +21,8 @@ package org.labkey.api.study;
  */
 public interface ParticipantCategory
 {
+    String SEND_PARTICIPANT_GROUP_TYPE = "Study.SendParticipantGroup";
+
     public static int OWNER_SHARED = -1;
 
     public enum Type {
