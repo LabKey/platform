@@ -32,7 +32,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.ViewContext;
-import org.labkey.issue.model.IssueDef;
+import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 import org.springframework.validation.BindException;
 
@@ -77,12 +77,12 @@ public class IssuesQuerySchema extends UserSchema
                 return new CommentsTable(schema);
             }
         },
-        IssueLists
+        IssueListDef
         {
             @Override
             public TableInfo createTable(IssuesQuerySchema schema)
             {
-                return new IssuesListsTable(schema);
+                return new IssuesListDefTable(schema);
             }
         };
 
@@ -133,8 +133,8 @@ public class IssuesQuerySchema extends UserSchema
         names.addAll(tableNames);
         if (AppProps.getInstance().isExperimentalFeatureEnabled(IssueManager.NEW_ISSUES_EXPERIMENTAL_FEATURE))
         {
-            names.add(TableType.IssueLists.name());
-            names.addAll(IssueManager.getIssueDefs(getContainer()).stream().map(IssueDef::getName).collect(Collectors.toList()));
+            names.add(TableType.IssueListDef.name());
+            names.addAll(IssueManager.getIssueDefs(getContainer()).stream().map(IssueListDef::getName).collect(Collectors.toList()));
         }
         return names;
     }
@@ -147,8 +147,8 @@ public class IssuesQuerySchema extends UserSchema
         names.addAll(visibleTableNames);
         if (AppProps.getInstance().isExperimentalFeatureEnabled(IssueManager.NEW_ISSUES_EXPERIMENTAL_FEATURE))
         {
-            names.add(TableType.IssueLists.name());
-            names.addAll(IssueManager.getIssueDefs(getContainer()).stream().map(IssueDef::getName).collect(Collectors.toList()));
+            names.add(TableType.IssueListDef.name());
+            names.addAll(IssueManager.getIssueDefs(getContainer()).stream().map(IssueListDef::getName).collect(Collectors.toList()));
         }
         return names;
     }
@@ -217,7 +217,7 @@ public class IssuesQuerySchema extends UserSchema
                 return queryType.createView(context, this, settings, errors);
 
             // check for an issue definition
-            IssueDef def =  getIssueDefs().get(queryName);
+            IssueListDef def =  getIssueDefs().get(queryName);
             if (def != null)
             {
                 return new NewIssuesQueryView(def, context, this, settings, errors);
@@ -230,17 +230,17 @@ public class IssuesQuerySchema extends UserSchema
     @Nullable
     protected TableInfo getIssueTable(String name)
     {
-        IssueDef issueDef = getIssueDefs().get(name);
+        IssueListDef issueDef = getIssueDefs().get(name);
         if (issueDef == null)
             return null;
 
         return new NewIssuesTable(this, issueDef);
     }
 
-    private Map<String, IssueDef> getIssueDefs()
+    private Map<String, IssueListDef> getIssueDefs()
     {
-        Map<String, IssueDef> map = new CaseInsensitiveTreeMap<>();
-        for (IssueDef def : IssueManager.getIssueDefs(getContainer()))
+        Map<String, IssueListDef> map = new CaseInsensitiveTreeMap<>();
+        for (IssueListDef def : IssueManager.getIssueDefs(getContainer()))
         {
             map.put(def.getName(), def);
         }

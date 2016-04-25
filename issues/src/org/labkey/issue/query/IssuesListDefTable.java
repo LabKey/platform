@@ -6,10 +6,8 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
@@ -17,10 +15,8 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryAction;
-import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -29,11 +25,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.study.actions.AssayDetailRedirectAction;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.view.ActionURL;
-import org.labkey.issue.model.IssueDef;
+import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 
 import java.sql.SQLException;
@@ -43,13 +35,13 @@ import java.util.Map;
 /**
  * Created by klum on 4/10/16.
  */
-public class IssuesListsTable extends FilteredTable<IssuesQuerySchema>
+public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
 {
-    private static final Logger LOG = Logger.getLogger(IssuesListsTable.class);
+    private static final Logger LOG = Logger.getLogger(IssuesListDefTable.class);
 
-    public IssuesListsTable(IssuesQuerySchema schema)
+    public IssuesListDefTable(IssuesQuerySchema schema)
     {
-        super(IssuesSchema.getInstance().getTableInfoIssueDef(), schema);
+        super(IssuesSchema.getInstance().getTableInfoIssueListDef(), schema);
 
         addAllColumns();
     }
@@ -92,7 +84,7 @@ public class IssuesListsTable extends FilteredTable<IssuesQuerySchema>
 
     private class UpdateService extends DefaultQueryUpdateService
     {
-        public UpdateService(IssuesListsTable table)
+        public UpdateService(IssuesListDefTable table)
         {
             super(table, table.getRealTable());
         }
@@ -109,7 +101,7 @@ public class IssuesListsTable extends FilteredTable<IssuesQuerySchema>
 
             try
             {
-                IssueDef def = new IssueDef();
+                IssueListDef def = new IssueListDef();
                 def.setName(name);
                 BeanUtils.populate(def, row);
 

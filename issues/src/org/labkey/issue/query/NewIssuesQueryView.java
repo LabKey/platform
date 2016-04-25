@@ -15,7 +15,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.issue.IssuesController;
-import org.labkey.issue.model.IssueDef;
+import org.labkey.issue.model.IssueListDef;
 import org.springframework.validation.BindException;
 
 /**
@@ -23,9 +23,9 @@ import org.springframework.validation.BindException;
  */
 public class NewIssuesQueryView extends QueryView
 {
-    private IssueDef _issueDef;
+    private IssueListDef _issueDef;
 
-    public NewIssuesQueryView(IssueDef issueDef, ViewContext context, UserSchema schema, QuerySettings settings, BindException errors)
+    public NewIssuesQueryView(IssueListDef issueDef, ViewContext context, UserSchema schema, QuerySettings settings, BindException errors)
     {
         super(schema, settings, errors);
 

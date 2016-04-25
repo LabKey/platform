@@ -60,14 +60,13 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.issue.IssuesController;
-import org.labkey.issue.model.IssueDef;
+import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 
 import java.sql.Connection;
@@ -89,10 +88,10 @@ public class NewIssuesTable extends FilteredTable<IssuesQuerySchema> implements 
     private static final Logger LOG = Logger.getLogger(NewIssuesTable.class);
 
     private Set<Class<? extends Permission>> _allowablePermissions = new HashSet<>();
-    private IssueDef _issueDef;
+    private IssueListDef _issueDef;
     private TableExtension _extension;
 
-    public NewIssuesTable(IssuesQuerySchema schema, IssueDef issueDef)
+    public NewIssuesTable(IssuesQuerySchema schema, IssueListDef issueDef)
     {
         super(IssuesSchema.getInstance().getTableInfoIssues(), schema);
 
@@ -389,11 +388,13 @@ public class NewIssuesTable extends FilteredTable<IssuesQuerySchema> implements 
             SimpleTranslator step0 = new SimpleTranslator(input, context);
             step0.selectAll();
 
+            // Ensure we have a listDefId column and it is of the right value
+            ColumnInfo issueDefCol = IssuesSchema.getInstance().getTableInfoIssues().getColumn("issueDefId");
+            step0.addColumn(issueDefCol, new SimpleTranslator.ConstantColumn(_issueDef.getRowId()));
+
             // Insert into exp.data then the provisioned table
             DataIteratorBuilder step2 = TableInsertDataIterator.create(DataIteratorBuilder.wrap(step0), IssuesSchema.getInstance().getTableInfoIssues(), c, context);
             DataIteratorBuilder step3 = TableInsertDataIterator.create(step2, _issueDef.createTable(getUserSchema().getUser()), c, context);
-
-            // todo support for comments, attachments, related fields, and any other special columns
 
             return LoggingDataIterator.wrap(step3.getDataIterator(context));
         }

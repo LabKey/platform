@@ -28,7 +28,7 @@ import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.model.CustomColumn;
 import org.labkey.issue.model.Issue;
-import org.labkey.issue.model.IssueDef;
+import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -58,6 +58,7 @@ public abstract class IssueUpdateAction extends FormViewAction<IssuesController.
         User user = getUser();
 
         Issue issue = form.getBean();
+        setIssue(issue);
         Issue prevIssue = (Issue)form.getOldValues();
         requiresUpdatePermission(user, issue);
         ActionURL detailsUrl;
@@ -230,6 +231,11 @@ public abstract class IssueUpdateAction extends FormViewAction<IssuesController.
         return result;
     }
 
+    public void setIssue(Issue issue)
+    {
+        _issue = issue;
+    }
+
     public Issue getIssue()
     {
         return _issue;
@@ -320,7 +326,7 @@ public abstract class IssueUpdateAction extends FormViewAction<IssuesController.
 
         public NewCustomColumnConfiguration(Container c, User user, Issue issue)
         {
-            IssueDef issueDef = IssueManager.getIssueDef(issue);
+            IssueListDef issueDef = IssueManager.getIssueDef(issue);
             if (issueDef != null)
             {
                 Domain domain = issueDef.getDomain(user);

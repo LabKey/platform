@@ -315,7 +315,7 @@ public class IssueManager
         if (issue.assignedTo == null)
             issue.assignedTo = 0;
 
-        IssueDef issueDef = getIssueDef(issue);
+        IssueListDef issueDef = getIssueDef(issue);
         if (issueDef != null)
         {
             try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
@@ -1083,12 +1083,12 @@ public class IssueManager
 
             if (AppProps.getInstance().isExperimentalFeatureEnabled(IssueManager.NEW_ISSUES_EXPERIMENTAL_FEATURE))
             {
-                for (IssueDef issueDef : IssueManager.getIssueDefs(c))
+                for (IssueListDef issueDef : IssueManager.getIssueDefs(c))
                 {
                     TableInfo tableInfo = issueDef.createTable(user);
                     ContainerUtil.purgeTable(tableInfo, c, null);
                 }
-                ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssueDef(), c, null);
+                ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssueListDef(), c, null);
             }
             transaction.commit();
         }
@@ -1368,24 +1368,21 @@ public class IssueManager
         }
     }
 
-    public static List<IssueDef> getIssueDefs(Container container)
+    public static List<IssueListDef> getIssueDefs(Container container)
     {
-        List<IssueDef> classes = new TableSelector(IssuesSchema.getInstance().getTableInfoIssueDef(), SimpleFilter.createContainerFilter(container), null).getArrayList(IssueDef.class);
+        List<IssueListDef> classes = new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), SimpleFilter.createContainerFilter(container), null).getArrayList(IssueListDef.class);
 
         return classes;
     }
 
-    public static IssueDef getIssueDef(int rowId, Container container)
+    public static IssueListDef getIssueDef(int rowId)
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addCondition(FieldKey.fromParts("RowId"), rowId);
-
-        return new TableSelector(IssuesSchema.getInstance().getTableInfoIssueDef(), filter, null).getObject(IssueDef.class);
+        return new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), null, null).getObject(rowId, IssueListDef.class);
     }
 
     public static void deleteIssueDef(int rowId, Container c, User user) throws DomainNotFoundException
     {
-        IssueDef def = getIssueDef(rowId, c);
+        IssueListDef def = getIssueDef(rowId);
         if (def == null)
             throw new IllegalArgumentException("Can't find IssueDef with rowId " + rowId);
 
@@ -1395,11 +1392,11 @@ public class IssueManager
 
         try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
         {
-            TableInfo issueDefTable = IssuesSchema.getInstance().getTableInfoIssueDef();
+            TableInfo issueDefTable = IssuesSchema.getInstance().getTableInfoIssueListDef();
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Name"), def.getName());
 
             deleteIssueRecords(def, c, user);
-            Table.delete(IssuesSchema.getInstance().getTableInfoIssueDef(), rowId);
+            Table.delete(IssuesSchema.getInstance().getTableInfoIssueListDef(), rowId);
 
             // if there are no other containers referencing this domain, then it's safe to delete
             if (new TableSelector(issueDefTable, filter, null).getRowCount() == 0)
@@ -1414,7 +1411,7 @@ public class IssueManager
      * Delete all records from the issues provisioned table and the issues hard
      * table for the specified folder.
      */
-    private static int deleteIssueRecords(IssueDef issueDef, Container c, User user)
+    private static int deleteIssueRecords(IssueListDef issueDef, Container c, User user)
     {
         assert IssuesSchema.getInstance().getSchema().getScope().isTransactionActive();
         TableInfo issueDefTable = issueDef.createTable(user);
@@ -1422,11 +1419,10 @@ public class IssueManager
         List<AttachmentParent> attachmentParents = new ArrayList<>();
 
         // get the list of comments for all issues being deleted (these are the attachment parents)
-        SQLFragment commentsSQL = new SQLFragment("SELECT IC.EntityId FROM ").append(IssuesSchema.getInstance().getTableInfoComments(), "IC").
-                append(" WHERE IC.issueId IN (SELECT issueId FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "issues").
-                append(" WHERE EntityId IN (SELECT EntityId FROM ").append(issueDefTable, "").
-                append(" WHERE Container = ?))");
-        commentsSQL.add(c);
+        SQLFragment commentsSQL = new SQLFragment("SELECT EntityId FROM ").append(IssuesSchema.getInstance().getTableInfoComments(), "").
+                append(" WHERE IssueId IN (SELECT IssueId FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
+                append(" WHERE IssueDefId = ? )");
+        commentsSQL.add(issueDef.getRowId());
         new SqlSelector(IssuesSchema.getInstance().getSchema(), commentsSQL).forEach(entityId -> {
 
             AttachmentParentEntity parent = new AttachmentParentEntity();
@@ -1439,33 +1435,29 @@ public class IssueManager
         AttachmentService.get().deleteAttachments(attachmentParents);
 
         // clean up comments
-        SQLFragment deleteCommentsSQL = new SQLFragment("DELETE FROM ").append(IssuesSchema.getInstance().getTableInfoComments(), "IC").
-                append(" WHERE IC.issueId IN (SELECT issueId FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
-                append(" WHERE EntityId IN (SELECT EntityId FROM ").append(issueDefTable, "").
-                append(" WHERE Container = ?))");
-        deleteCommentsSQL.add(c);
+        SQLFragment deleteCommentsSQL = new SQLFragment("DELETE FROM ").append(IssuesSchema.getInstance().getTableInfoComments(), "").
+                append(" WHERE IssueId IN (SELECT issueId FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
+                append(" WHERE IssueDefId = ? )");
+        deleteCommentsSQL.add(issueDef.getRowId());
         new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(deleteCommentsSQL);
 
         // clean up related issues
-        SQLFragment deleteRelatedSQL = new SQLFragment("DELETE FROM ").append(IssuesSchema.getInstance().getTableInfoRelatedIssues(), "RI").
-                append(" WHERE RI.issueId IN (SELECT issueId FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
-                append(" WHERE EntityId IN (SELECT EntityId FROM ").append(issueDefTable, "").
-                append(" WHERE Container = ?))");
-        deleteRelatedSQL.addAll(c);
+        SQLFragment deleteRelatedSQL = new SQLFragment("DELETE FROM ").append(IssuesSchema.getInstance().getTableInfoRelatedIssues(), "").
+                append(" WHERE IssueId IN (SELECT issueId FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
+                append(" WHERE IssueDefId = ? )");
+        deleteRelatedSQL.addAll(issueDef.getRowId());
         new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(deleteRelatedSQL);
 
-        deleteRelatedSQL = new SQLFragment("DELETE FROM ").append(IssuesSchema.getInstance().getTableInfoRelatedIssues(), "RI").
-                append(" WHERE RI.relatedIssueId IN (SELECT issueId FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
-                append(" WHERE EntityId IN (SELECT EntityId FROM ").append(issueDefTable, "").
-                append(" WHERE Container = ?))");
-        deleteRelatedSQL.addAll(c);
+        deleteRelatedSQL = new SQLFragment("DELETE FROM ").append(IssuesSchema.getInstance().getTableInfoRelatedIssues(), "").
+                append(" WHERE RelatedIssueId IN (SELECT IssueId FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
+                append(" WHERE IssueDefId = ? )");
+        deleteRelatedSQL.addAll(issueDef.getRowId());
         new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(deleteRelatedSQL);
 
         // delete records from the issue table
         SQLFragment deleteIssuesSQL = new SQLFragment("DELETE FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
-                append(" WHERE EntityId IN (SELECT EntityId FROM ").append(issueDefTable, "").
-                append(" WHERE Container = ?)");
-        deleteIssuesSQL.add(c);
+                append(" WHERE IssueDefId = ?");
+        deleteIssuesSQL.add(issueDef.getRowId());
         int count = new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(deleteIssuesSQL);
 
         // delete records from the provisioned table
@@ -1478,15 +1470,12 @@ public class IssueManager
         return count;
     }
 
-    /**
-     * Temporary hack, will need a direct way to associate an issue record with its issue definition
-     */
     @Nullable
-    public static IssueDef getIssueDef(Issue issue)
+    public static IssueListDef getIssueDef(Issue issue)
     {
-        for (IssueDef def : getIssueDefs(ContainerManager.getForId(issue.getContainerId())))
+        if (issue.getIssueDefId() != null)
         {
-            return def;
+            return getIssueDef(issue.getIssueDefId());
         }
         return null;
     }

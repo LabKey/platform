@@ -24,7 +24,7 @@ import java.util.Collection;
 /**
  * Created by klum on 4/5/2016.
  */
-public class IssueDef extends Entity
+public class IssueListDef extends Entity
 {
     private int _rowId;
     private String _name;
@@ -107,14 +107,14 @@ public class IssueDef extends Entity
         return _rowId == 0;
     }
 
-    public IssueDef save(User user)
+    public IssueListDef save(User user)
     {
-        IssueDef def = null;
+        IssueListDef def = null;
 
         if (isNew())
         {
             // need to transact this
-            def = Table.insert(user, IssuesSchema.getInstance().getTableInfoIssueDef(), this);
+            def = Table.insert(user, IssuesSchema.getInstance().getTableInfoIssueListDef(), this);
             String uri = generateDomainURI(getDomainContainer(user), user);
 
             Domain domain = PropertyService.get().getDomain(getDomainContainer(user), uri);

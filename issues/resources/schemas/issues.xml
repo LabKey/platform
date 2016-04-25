@@ -280,6 +280,7 @@
             <ns:column columnName="LastIndexed">
                 <ns:isReadOnly>true</ns:isReadOnly>
             </ns:column>
+			<ns:column columnName="IssueDefId"/>
         </ns:columns>
 		<ns:tableTitle>Issues</ns:tableTitle>
 		<ns:pkColumnName>IssueId</ns:pkColumnName>
@@ -308,7 +309,7 @@
             <ns:column columnName="RelatedIssueId"/>
         </ns:columns>
     </ns:table>
-	<ns:table tableName="IssueDef" tableDbType="TABLE">
+	<ns:table tableName="IssueListDef" tableDbType="TABLE">
 		<ns:columns>
 			<ns:column columnName="RowId">
 				<ns:isHidden>true</ns:isHidden>

@@ -70,7 +70,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
 
     public double getVersion()
     {
-        return 16.11;
+        return 16.12;
     }
 
     protected void init()
@@ -109,7 +109,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
                 public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
                 {
                     UserSchema schema = QueryService.get().getUserSchema(portalCtx.getUser(), portalCtx.getContainer(), IssuesQuerySchema.SCHEMA_NAME);
-                    QuerySettings settings = schema.getSettings(portalCtx, IssuesQuerySchema.TableType.IssueLists.name(), IssuesQuerySchema.TableType.IssueLists.name());
+                    QuerySettings settings = schema.getSettings(portalCtx, IssuesQuerySchema.TableType.IssueListDef.name(), IssuesQuerySchema.TableType.IssueListDef.name());
 
                     QueryView view = schema.createView(portalCtx, settings, null);
                     view.setFrame(WebPartView.FrameType.PORTAL);

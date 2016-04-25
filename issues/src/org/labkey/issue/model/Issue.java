@@ -84,6 +84,7 @@ public class Issue extends Entity implements Serializable, Cloneable
     protected List<Comment> _added = null;
 
     protected String _notifyList;
+    protected Integer _issueDefId;
 
     public Issue()
     {
@@ -573,6 +574,15 @@ public class Issue extends Entity implements Serializable, Cloneable
         _notifyList = notifyList;
     }
 
+    public Integer getIssueDefId()
+    {
+        return _issueDefId;
+    }
+
+    public void setIssueDefId(Integer issueDefId)
+    {
+        _issueDefId = issueDefId;
+    }
 
     public void parseNotifyList(String notifyList)
     {
