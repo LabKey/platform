@@ -1817,6 +1817,7 @@ public class ExperimentController extends SpringActionController
         public ApiResponse execute(DataFileForm form, BindException errors) throws Exception
         {
             File dataFile = _data.getFile();
+            Container dataContainer = _data.getContainer();
             boolean fileExists = _data.isFileOnDisk();
             boolean fileExistsAtCurrent = false;
             File newDataFile = null;
@@ -1824,12 +1825,11 @@ public class ExperimentController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("dataFileUrl", _data.getDataFileUrl());
             response.put("fileExists", fileExists);
-            Container currentContainer = _data.getContainer();
-            response.put("containerPath", currentContainer.getPath());
+            response.put("containerPath", dataContainer.getPath());
 
             if (!fileExists)
             {
-                PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(currentContainer);
+                PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(dataContainer);
                 if (pipelineRoot != null && pipelineRoot.isValid() && dataFile != null)
                 {
                     newDataFile = pipelineRoot.resolvePath("/" + AssayFileWriter.DIR_NAME + "/" + dataFile.getName());
@@ -1845,7 +1845,7 @@ public class ExperimentController extends SpringActionController
                 if (fileExistsAtCurrent)
                 {
                     ExpDataFileListener fileListener = new ExpDataFileListener();
-                    fileListener.fileMoved(dataFile, newDataFile, getUser(), _data.getContainer());
+                    fileListener.fileMoved(dataFile, newDataFile, getUser(), dataContainer);
                     response.put("filePathFixed", true);
 
                     // update the ExpData object so that we can get the new dataFileUrl
