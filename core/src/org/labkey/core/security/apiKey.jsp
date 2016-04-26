@@ -52,6 +52,9 @@ will likely lose authorization when the session expires, e.g., when you sign out
             $(e.trigger).html('Copied!'); e.clearSelection();
             setTimeout(function() { $(e.trigger).html('Copy to clipboard'); }, 2500);
         });
-        clip.on('error', function(e) { $(e.trigger).html('Press Ctrl+C to copy'); });
+        clip.on('error', function(e) {
+            var controlKey = navigator && navigator.appVersion && navigator.appVersion.indexOf("Mac") != -1 ? "Command" : "Ctrl";
+            $(e.trigger).html('Press ' + controlKey + '+C to copy'); }
+        );
     })(jQuery);
 </script>
