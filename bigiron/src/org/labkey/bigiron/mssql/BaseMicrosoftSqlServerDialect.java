@@ -1117,7 +1117,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             List<PropertyStorageSpec> specs = change.toSpecs(Arrays.asList(index.columnNames));
             long bytes = specs.stream().collect(Collectors.summingLong(this::columnStorageSize));
 
-            if (bytes < MAX_INDEX_SIZE)
+            // Temporarily disable while fix in progress
+            //if (bytes < MAX_INDEX_SIZE)
             {
                 statements.add(String.format("CREATE %s INDEX %s ON %s (%s)",
                         index.isUnique ? "UNIQUE" : "",
@@ -1125,6 +1126,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                         makeTableIdentifier(change),
                         makeLegalIdentifiers(index.columnNames)));
             }
+            /*
             else
             {
                 if (index.columnNames.length > 1)
@@ -1184,6 +1186,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                         legalColumnName, tableName
                 ));
             }
+            */
         }
     }
 
@@ -1273,13 +1276,15 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             List<PropertyStorageSpec> specs = change.toSpecs(Arrays.asList(index.columnNames));
             int bytes = specs.stream().collect(Collectors.summingInt(this::columnStorageSize));
 
-            if (bytes < MAX_INDEX_SIZE)
+            // Temporarily disable while fix in progress
+            //if (bytes < MAX_INDEX_SIZE)
             {
                 statements.add(String.format("DROP INDEX %s ON %s",
                         nameIndex(change.getTableName(), index.columnNames),
                         makeTableIdentifier(change)
                 ));
             }
+            /*
             else
             {
                 if (index.columnNames.length > 1)
@@ -1302,6 +1307,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                         tableName,
                         hashedColumn));
             }
+            */
         }
     }
 
