@@ -15,6 +15,7 @@
  */
 package org.labkey.api.cloud;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.view.ActionURL;
 
@@ -24,5 +25,22 @@ import org.labkey.api.view.ActionURL;
  */
 public interface CloudUrls extends UrlProvider
 {
-    public ActionURL adminURL();
+    ActionURL urlAdmin();
+
+    ActionURL urlAccountDetails(@NotNull String accountName);
+
+    ActionURL urlAccountEdit(@NotNull String accountName);
+
+    ActionURL urlAccountDelete(@NotNull String accountName);
+
+    ActionURL urlStoreAdmin();
+
+    ActionURL urlStoreConfigCreate(@NotNull String accountName);
+
+    ActionURL urlStoreConfigEdit(@NotNull String accountName, @NotNull String name);
+
+    ActionURL urlStoreConfigDelete(@NotNull String accountName, @NotNull String name);
+
+    ActionURL urlComputeAdmin();
+
 }
