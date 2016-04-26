@@ -223,9 +223,11 @@ public class AssayTest extends AbstractAssayTest
 
         // Try a delete
         checkCheckbox(Locator.checkboxByName(".select"));
-        prepForPageLoad();
-        clickButton("Delete", 0);
-        assertAlert("Are you sure you want to delete the selected row?");
+        doAndWaitForPageToLoad(() ->
+        {
+            clickButton("Delete", 0);
+            assertAlert("Are you sure you want to delete the selected row?");
+        });
 
         // Verify that the edit was audited
         goToModule("Query");
@@ -563,9 +565,7 @@ public class AssayTest extends AbstractAssayTest
         clickAndWait(Locator.checkboxByNameAndValue("visitStatistic", "RowCount"));
         row2 = new String[]{TEST_ASSAY, "7 / 8", "1 / 1", "1 / 1", "1 / 1", "1 / 1", "1 / 1", "2 / 3"};
         assertTableRowsEqual("studyOverview", 1, new String[][]{row2});
-        prepForPageLoad();
-        uncheckCheckbox(Locator.checkboxByNameAndValue("visitStatistic", "ParticipantCount"));
-        waitForPageToLoad();
+        doAndWaitForPageToLoad(() -> uncheckCheckbox(Locator.checkboxByNameAndValue("visitStatistic", "ParticipantCount")));
         row2 = new String[]{TEST_ASSAY, "8", "1", "1", "1", "1", "1", "3"};
         assertTableRowsEqual("studyOverview", 1, new String[][]{row2});
 
@@ -595,10 +595,11 @@ public class AssayTest extends AbstractAssayTest
         region.setFilter("Comment", "Starts With", "3 row(s) were copied to a study from the assay");
         clickAndWait(Locator.linkWithText("details"));
         checkCheckbox(Locator.checkboxByName(".toggle"));
-        prepForPageLoad();
-        clickButton("Recall Rows", 0);
-        acceptAlert();
-        waitForPageToLoad();
+        doAndWaitForPageToLoad(() ->
+        {
+            clickButton("Recall Rows", 0);
+            acceptAlert();
+        });
         assertTextPresent("row(s) were recalled to the assay: " + TEST_ASSAY);
 
         // Set a filter so that we know we're looking at the copy event for SecondRun again

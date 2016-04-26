@@ -98,9 +98,7 @@ public class QuerySnapshotTest extends StudyBaseTest
 
         // enable advanced study security
         enterStudySecurity();
-        prepForPageLoad();
-        selectOptionByValue(Locator.name("securityString"), "BASIC_WRITE");
-        waitForPageToLoad();
+        doAndWaitForPageToLoad(() -> selectOptionByValue(Locator.name("securityString"), "BASIC_WRITE"));
     }
 
     @Override
@@ -210,10 +208,11 @@ public class QuerySnapshotTest extends StudyBaseTest
         checkCheckbox(Locator.xpath("//input[@type='radio' and @name='updateType' and not (@id)]"));
         clickButton("Save");
         assertTrue(isChecked(Locator.xpath("//input[@type='radio' and @name='updateType' and not (@id)]")));
-        prepForPageLoad();
-        clickButton("Update Snapshot", 0);
-        acceptAlert();
-        waitForPageToLoad();
+        doAndWaitForPageToLoad(() ->
+        {
+            clickButton("Update Snapshot", 0);
+            acceptAlert();
+        });
         waitForText(10000, "Dataset: Custom Query Snapshot");
 
         log("delete the snapshot");
@@ -344,9 +343,10 @@ public class QuerySnapshotTest extends StudyBaseTest
 
     private void deleteSnapshot()
     {
-        prepForPageLoad();
-        clickButton("Delete Snapshot", 0);
-        acceptAlert();
-        waitForPageToLoad();
+        doAndWaitForPageToLoad(() ->
+        {
+            clickButton("Delete Snapshot", 0);
+            acceptAlert();
+        });
     }
 }

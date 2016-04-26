@@ -777,23 +777,17 @@ public class StudyTest extends StudyBaseTest
             log("configure editable datasets");
             clickTab("Manage");
             clickAndWait(Locator.linkWithText("Manage Security"));
-            prepForPageLoad();
-            selectOptionByText(Locator.name("securityString"), "Basic security with editable datasets");
-            waitForPageToLoad();
+            doAndWaitForPageToLoad(() -> selectOptionByText(Locator.name("securityString"), "Basic security with editable datasets"));
 
             log("configure comments");
             clickFolder(getFolderName());
             clickTab("Manage");
             clickAndWait(Locator.linkWithText("Manage Comments"));
         }
-        prepForPageLoad();
-        selectOptionByText(Locator.name("participantCommentDatasetId"), PARTICIPANT_CMT_DATASET);
-        waitForPageToLoad();
+        doAndWaitForPageToLoad(() -> selectOptionByText(Locator.name("participantCommentDatasetId"), PARTICIPANT_CMT_DATASET));
         selectOptionByText(Locator.name("participantCommentProperty"), PARTICIPANT_COMMENT_LABEL);
 
-        prepForPageLoad();
-        selectOptionByText(Locator.name("participantVisitCommentDatasetId"), PARTICIPANT_VISIT_CMT_DATASET);
-        waitForPageToLoad();
+        doAndWaitForPageToLoad(() -> selectOptionByText(Locator.name("participantVisitCommentDatasetId"), PARTICIPANT_VISIT_CMT_DATASET));
         selectOptionByText(Locator.name("participantVisitCommentProperty"), PARTICIPANT_VISIT_COMMENT_LABEL);
         clickButton("Save");
 
@@ -838,10 +832,11 @@ public class StudyTest extends StudyBaseTest
 
         checkCheckbox(Locator.name(".toggle"));
         _extHelper.clickMenuButton("Comments and QC", "Set Vial Comment or QC State for Selected");
-        prepForPageLoad();
-        _extHelper.clickMenuButton(false, "Copy or Move Comment(s)", "Move", "To Mouse", "999320812");
-        acceptAlert();
-        waitForPageToLoad();
+        doAndWaitForPageToLoad(() ->
+        {
+            _extHelper.clickMenuButton(false, "Copy or Move Comment(s)", "Move", "To Mouse", "999320812");
+            acceptAlert();
+        });
         setFormElement(Locator.name("quf_" + COMMENT_FIELD_NAME), "Moved PTID Comment");
         clickButton("Submit");
         assertElementPresent(Locator.tagContainingText("td", "Moved PTID Comment"));
@@ -911,9 +906,7 @@ public class StudyTest extends StudyBaseTest
         exportHelper.exportText();
         scrollIntoView(Locators.ADMIN_MENU);
         goToAuditLog();
-        prepForPageLoad();
-        selectOptionByText(Locator.name("view"), "Query export events");
-        waitForPageToLoad();
+        doAndWaitForPageToLoad(() -> selectOptionByText(Locator.name("view"), "Query export events"));
 
         DataRegionTable auditTable =  new DataRegionTable("query", this);
         String[][] columnAndValues = new String[][] {{"Created By", getDisplayName()},
