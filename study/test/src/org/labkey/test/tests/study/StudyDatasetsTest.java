@@ -127,7 +127,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
 
         checkFieldsPresent("Original A", "YTest", "ZTest");
 
-        verifySideFilter();
+        //verifySideFilter(); // TODO: Re-enable once side-facet panel is re-enabled
 
         verifyReportAndViewDatasetReferences();
 

@@ -23,9 +23,9 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.Assays;
 import org.labkey.test.categories.BVT;
+import org.labkey.test.components.CustomizeView;
 import org.labkey.test.tests.AbstractAssayTest;
 import org.labkey.test.tests.AuditLogTest;
-import org.labkey.test.util.CustomizeViewsHelper;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.LogMethod;
@@ -864,9 +864,7 @@ public class AssayTest extends AbstractAssayTest
 
         log("Setting the customized view to include subfolders");
         assayRuns = DataRegionTable.findDataRegionWithinWebpart(this, TEST_ASSAY + " Runs");
-        // TODO: DatRegion change. Use this declaration.
-//        CustomizeView customizeViewsHelper = new CustomizeView(assayRuns);
-        CustomizeViewsHelper customizeViewsHelper = new CustomizeViewsHelper(assayRuns);
+        CustomizeView customizeViewsHelper = assayRuns.getCustomizeView();
         customizeViewsHelper.openCustomizeViewPanel();
 
         customizeViewsHelper.clipFolderFilter();
