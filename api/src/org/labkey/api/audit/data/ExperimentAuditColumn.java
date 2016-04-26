@@ -15,17 +15,26 @@
  */
 package org.labkey.api.audit.data;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.exp.api.ExpObject;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.ActionURL;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.Set;
 
 /**
  * User: klum
  * Date: Mar 15, 2012
  */
-public abstract class ExperimentAuditColumn extends DataColumn
+public abstract class ExperimentAuditColumn<ObjectType extends ExpObject> extends DataColumn
 {
     protected ColumnInfo _containerId;
     protected ColumnInfo _defaultName;
@@ -37,11 +46,40 @@ public abstract class ExperimentAuditColumn extends DataColumn
         super(col);
         _containerId = containerId;
         _defaultName = defaultName;
+        setTextAlign("left");
     }
 
     public String getName()
     {
         return getColumnInfo().getLabel();
+    }
+
+    @Nullable
+    protected Container getContainer(RenderContext ctx)
+    {
+        String cId = (String)ctx.get("ContainerId");
+        if (cId == null)
+            cId = (String) ctx.get("Container");
+        return cId == null ? null : ContainerManager.getForId(cId);
+    }
+
+    @Nullable
+    protected abstract Pair<ObjectType, ActionURL> getExpValue(RenderContext ctx);
+
+    @Override
+    public Object getDisplayValue(RenderContext ctx)
+    {
+        Pair<ObjectType, ActionURL> value = getExpValue(ctx);
+        if (value != null)
+        {
+            return value.first.getName();
+        }
+
+        if (_defaultName != null)
+        {
+            return extractFromKey3(ctx);
+        }
+        return null;
     }
 
     public void addQueryColumns(Set<ColumnInfo> columns)
@@ -58,13 +96,26 @@ public abstract class ExperimentAuditColumn extends DataColumn
         return false;
     }
 
-    protected static Pair<String, String> splitKey3(Object value)
+    @Nullable
+    protected abstract String extractFromKey3(RenderContext ctx);
+
+    @Override
+    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        if (value == null)
-            return null;
-        String[] parts = value.toString().split(KEY_SEPARATOR);
-        if (parts == null || parts.length != 2)
-            return null;
-        return new Pair<>(parts[0], parts[1].length() > 0 ? parts[1] : null);
+        Pair<ObjectType, ActionURL> value = getExpValue(ctx);
+        if (value != null && value.second != null)
+        {
+            out.write("<a href=\"" + value.second.getLocalURIString() + "\">" + PageFlowUtil.filter(value.first.getName()) + "</a>");
+            return;
+        }
+
+        if (_defaultName != null)
+        {
+            String extracted = extractFromKey3(ctx);
+            out.write(extracted != null ? PageFlowUtil.filter(extracted) : "&nbsp;");
+        }
+        else
+            out.write("&nbsp;");
     }
+
 }

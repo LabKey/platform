@@ -38,23 +38,32 @@ import java.io.Writer;
  * User: klum
  * Date: Mar 15, 2012
  */
-public class RunColumn extends ExperimentAuditColumn
+public class RunColumn extends ExperimentAuditColumn<ExpRun>
 {
     public RunColumn(ColumnInfo col, ColumnInfo containerId, @Nullable ColumnInfo defaultName)
     {
         super(col, containerId, defaultName);
     }
 
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    protected String extractFromKey3(RenderContext ctx)
     {
-        String runLsid = (String)getBoundColumn().getValue(ctx);
-        String cId = (String)ctx.get("ContainerId");
-        if (cId == null)
-            cId = (String)ctx.get("Container");
+        Object value = _defaultName.getValue(ctx);
+        if (value == null)
+            return null;
+        String[] parts = value.toString().split(KEY_SEPARATOR);
+        if (parts.length != 2)
+            return null;
+        return parts[1].length() > 0 ? parts[1] : null;
+    }
 
-        if (runLsid != null && cId != null)
+    @Override
+    @Nullable
+    protected Pair<ExpRun, ActionURL> getExpValue(RenderContext ctx)
+    {
+        String runLsid = (String) getBoundColumn().getValue(ctx);
+        if (runLsid != null)
         {
-            Container c = ContainerManager.getForId(cId);
+            Container c = getContainer(ctx);
             if (c != null)
             {
                 ExpRun run = ExperimentService.get().getExpRun(runLsid);
@@ -71,20 +80,9 @@ public class RunColumn extends ExperimentAuditColumn
                 else if (run != null)
                     url = PageFlowUtil.urlProvider(ExperimentUrls.class).getRunGraphURL(run);
 
-                if (url != null)
-                {
-                    out.write("<a href=\"" + url.getLocalURIString() + "\">" + PageFlowUtil.filter(run.getName()) + "</a>");
-                    return;
-                }
+                return run == null ? null : new Pair<>(run, url);
             }
         }
-
-        if (_defaultName != null)
-        {
-            Pair<String, String> key3 = splitKey3(_defaultName.getValue(ctx));
-            out.write(key3 != null && key3.getValue() != null ? PageFlowUtil.filter(key3.getValue()) : "&nbsp;");
-        }
-        else
-            out.write("&nbsp;");
+        return null;
     }
 }

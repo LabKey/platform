@@ -37,29 +37,28 @@ import java.io.Writer;
  * User: klum
  * Date: Mar 15, 2012
  */
-public class ProtocolColumn extends ExperimentAuditColumn
+public class ProtocolColumn extends ExperimentAuditColumn<ExpProtocol>
 {
     public ProtocolColumn(ColumnInfo col, ColumnInfo containerId, @Nullable ColumnInfo defaultName)
     {
         super(col, containerId, defaultName);
     }
 
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    @Nullable
+    @Override
+    protected Pair<ExpProtocol, ActionURL> getExpValue(RenderContext ctx)
     {
         Object protocolId = getBoundColumn().getValue(ctx);
-        String cId = (String)ctx.get("ContainerId");
-        if (cId == null)
-            cId = (String)ctx.get("Container");
 
-        if (protocolId != null && cId != null)
+        if (protocolId != null)
         {
-            Container c = ContainerManager.getForId(cId);
+            Container c = getContainer(ctx);
             if (c != null)
             {
                 ExpProtocol protocol;
 
                 if (protocolId instanceof Integer)
-                    protocol = ExperimentService.get().getExpProtocol((Integer)protocolId);
+                    protocol = ExperimentService.get().getExpProtocol((Integer) protocolId);
                 else
                     protocol = ExperimentService.get().getExpProtocol(protocolId.toString());
 
@@ -72,21 +71,22 @@ public class ProtocolColumn extends ExperimentAuditColumn
                     url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(c, protocol);
                 else if (protocol != null)
                     url = PageFlowUtil.urlProvider(ExperimentUrls.class).getProtocolDetailsURL(protocol);
-
-                if (url != null)
-                {
-                    out.write("<a href=\"" + url.getLocalURIString() + "\">" + PageFlowUtil.filter(protocol.getName()) + "</a>");
-                    return;
-                }
+                return protocol == null ? null : new Pair<>(protocol, url);
             }
         }
-
-        if (_defaultName != null)
-        {
-            Pair<String, String> key3 = splitKey3(_defaultName.getValue(ctx));
-            out.write(key3 != null ? PageFlowUtil.filter(key3.getKey()) : "&nbsp;");
-        }
-        else
-            out.write("&nbsp;");
+        return null;
     }
+
+    @Override
+    protected String extractFromKey3(RenderContext ctx)
+    {
+        Object value = _defaultName.getValue(ctx);
+        if (value == null)
+            return null;
+        String[] parts = value.toString().split(KEY_SEPARATOR);
+        if (parts.length != 2)
+            return null;
+        return parts[0];
+    }
+
 }

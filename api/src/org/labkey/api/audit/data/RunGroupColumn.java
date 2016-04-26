@@ -24,6 +24,7 @@ import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
 import java.io.IOException;
@@ -40,13 +41,14 @@ public class RunGroupColumn extends ExperimentAuditColumn
         super(col, containerId, defaultName);
     }
 
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    @Nullable
+    @Override
+    protected Pair getExpValue(RenderContext ctx)
     {
         Object rowId = getBoundColumn().getValue(ctx);
-        String cId = (String)ctx.get("ContainerId");
-        if (rowId != null && cId != null)
+        if (rowId != null)
         {
-            Container c = ContainerManager.getForId(cId);
+            Container c = getContainer(ctx);
             if (c != null)
             {
                 ExpExperiment runGroup = ExperimentService.get().getExpExperiment((Integer)rowId);
@@ -55,11 +57,16 @@ public class RunGroupColumn extends ExperimentAuditColumn
                 if (runGroup != null)
                     url = PageFlowUtil.urlProvider(ExperimentUrls.class).getExperimentDetailsURL(c, runGroup);
 
-                if (url != null)
-                {
-                    out.write("<a href=\"" + url.getLocalURIString() + "\">" + PageFlowUtil.filter(runGroup.getName()) + "</a>");
-                }
+                return runGroup == null ? null : new Pair<>(runGroup, url);
             }
         }
+        return null;
+    }
+
+    @Nullable
+    @Override
+    protected String extractFromKey3(RenderContext ctx)
+    {
+        return null;
     }
 }
