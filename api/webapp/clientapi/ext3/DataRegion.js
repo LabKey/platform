@@ -1834,6 +1834,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                                     callback: function ()
                                     {
                                         this.fireEvent('afterpanelshow');
+                                        LABKEY.Utils.signalWebDriverTest("dataRegionPanelShow");
                                     },
                                     concurrent: true,
                                     duration: _duration,
@@ -1844,6 +1845,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                             {
                                 panelToShow.getEl().setVisible(true);
                                 this.fireEvent('afterpanelshow');
+                                LABKEY.Utils.signalWebDriverTest("dataRegionPanelShow");
                             }
 
                             if (this.headerLock())
@@ -1940,6 +1942,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                         {
                             Ext.get(button).removeClass('labkey-menu-button-active');
                         }
+                        LABKEY.Utils.signalWebDriverTest("dataRegionPanelHide");
                     };
 
                     if (animate)

@@ -84,7 +84,7 @@ public class PanelButton extends ActionButton
                 "(function(el) { LABKEY.DataRegions[" + PageFlowUtil.jsString(_dataRegionName) + "].showButtonPanel(el); })(this);",
                 attributes));
 
-        out.write("<div id=\"" + panelId + "\" class=\"tabbable tabs-left\" style=\"display: none;\">");
+        out.write("<div id=\"" + panelId + "\" name=\"" + getCaption() + "-panel\" class=\"tabbable tabs-left\" style=\"display: none;\">");
 
         // render tabs
         out.write("<ul class=\"nav nav-tabs\">");
