@@ -461,31 +461,26 @@ public abstract class SqlDialect
      * In the future, we may enhance support for other scenarios, but that's not needed yet.
      *
      * @param sql And INSERT or UPDATE statement that needs re-selecting
-     * @param columnName Column from which to reselect
+     * @param column Column from which to reselect
      * @param proposedVariable Null to return a result set via code; Not null to select the value into a SQL variable
      * @return If proposedVariable is not null then actual variable used in the SQL. Otherwise null. Callers using
      * proposedVariable must use the returned variable name in subsequent code, since it may differ from what was
      * proposed.
      */
-    public abstract String addReselect(SQLFragment sql, String columnName, @Nullable String proposedVariable);
-
-    public void addReselect(SQLFragment sql, ColumnInfo column)
-    {
-        addReselect(sql, column.getSelectName(), null);
-    }
+    public abstract String addReselect(SQLFragment sql, ColumnInfo column, @Nullable String proposedVariable);
 
     // A convenience method for old code paths that don't use SQLFragment. Instead of a nearly identical implementation to
     // support StringBuilder, stick the contents into a SQLFragment, pass it to addReselect(), and replace the contents of
     // the StringBuilder with the new SQL.
     @Deprecated // Move usages to SQLFragment
-    public void addReselect(StringBuilder sql, String columnName)
+    public void addReselect(StringBuilder sql, ColumnInfo column)
     {
         SQLFragment fragment = new SQLFragment(sql);
-        addReselect(fragment, columnName, null);
+        addReselect(fragment, column, null);
         assert fragment.getParams().isEmpty();
         sql.setLength(0);
         sql.append(fragment.getSQL());
-    };
+    }
 
     // Could be INSERT, UPDATE, or DELETE statement
     public abstract @Nullable ResultSet executeWithResults(@NotNull PreparedStatement stmt) throws SQLException;
@@ -1340,6 +1335,22 @@ public abstract class SqlDialect
         SQLFragment sqlf = new SQLFragment("SELECT 1 FROM information_schema.tables WHERE UPPER(table_schema) = UPPER(?) AND UPPER(table_name) = UPPER(?)");
         sqlf.add(schema);
         sqlf.add(name);
+        return new SqlSelector(scope, sqlf).exists();
+    }
+
+    public boolean hasTriggers(DbSchema scope, String schema, String tableName)
+    {
+        SQLFragment sqlf = new SQLFragment("SELECT 1 FROM information_schema.triggers WHERE UPPER(event_object_schema) = UPPER(?) AND UPPER(event_object_table) = UPPER(?)");
+        sqlf.add(schema);
+        sqlf.add(tableName);
+        return new SqlSelector(scope, sqlf).exists();
+    }
+
+    public boolean isTriggerExists(DbSchema scope, String schema, String triggerName)
+    {
+        SQLFragment sqlf = new SQLFragment("SELECT 1 FROM information_schema.triggers WHERE UPPER(trigger_schema) = UPPER(?) AND UPPER(trigger_name) = UPPER(?)");
+        sqlf.add(schema);
+        sqlf.add(triggerName);
         return new SqlSelector(scope, sqlf).exists();
     }
 

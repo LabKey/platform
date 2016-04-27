@@ -17,6 +17,7 @@ package org.labkey.api.data.dialect;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -166,7 +167,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public String addReselect(SQLFragment sql, String columnName, @Nullable String proposedVariable)
+    public String addReselect(SQLFragment sql, ColumnInfo column, @Nullable String proposedVariable)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }

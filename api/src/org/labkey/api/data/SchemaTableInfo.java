@@ -97,6 +97,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     private boolean _hidden;
     private String _importMsg;
     private List<Pair<String, StringExpression>> _importTemplates;
+    private Boolean _hasDbTriggers;
 
     // Column-related
     private TableType _xmlTable = null;
@@ -852,6 +853,16 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     public void resetTriggers(Container c)
     {
         throw new UnsupportedOperationException("Table triggers not yet supported on schema tables");
+    }
+
+    @Override
+    public boolean hasDbTriggers()
+    {
+        if (_hasDbTriggers == null)
+        {
+            _hasDbTriggers = getSchema().getSqlDialect().hasTriggers(getSchema(), getSchema().getName(), getName());
+        }
+        return _hasDbTriggers;
     }
 
     //

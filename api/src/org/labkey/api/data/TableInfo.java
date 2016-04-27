@@ -471,6 +471,11 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
     public void resetTriggers(Container c);
 
     /**
+     * Returns true if the underlying database table has triggers.
+     */
+    default boolean hasDbTriggers() { return false; }
+
+    /**
      * TableInfos that can be associated with a DbCache need a reliable key other than a TableInfo instance.
      * Return null if DbCache is not supported.
      *

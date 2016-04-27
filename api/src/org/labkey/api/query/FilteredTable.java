@@ -572,4 +572,10 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         return ret;
     }
 
+    @Override
+    public boolean hasDbTriggers()
+    {
+        return getRealTable().hasDbTriggers();
+    }
+
 }

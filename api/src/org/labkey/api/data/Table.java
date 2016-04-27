@@ -735,7 +735,7 @@ public class Table
 
         // CONSIDER reselect version column
         if (null != autoIncColumn)
-            table.getSqlDialect().addReselect(insertSQL, autoIncColumn);
+            table.getSqlDialect().addReselect(insertSQL, autoIncColumn, null);
 
         // If Map was handed in, then we hand back a Map
         // UNDONE: use Table.select() to reselect and return new Object

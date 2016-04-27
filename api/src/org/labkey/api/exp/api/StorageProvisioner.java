@@ -571,6 +571,12 @@ public class StorageProvisioner
         }
 
         @Override
+        public boolean hasDbTriggers()
+        {
+            return _inner.hasDbTriggers();
+        }
+
+        @Override
         public Path getNotificationKey()
         {
             return _inner.getNotificationKey();

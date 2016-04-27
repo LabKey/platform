@@ -675,7 +675,7 @@ public class StatementUtils
                 selectAutoIncrement = true;
                 if (null != objectIdVar)
                     rowIdVar = "_rowid_";
-                rowIdVar = _dialect.addReselect(sqlfInsertInto, autoIncrementColumn.getSelectName(), rowIdVar);
+                rowIdVar = _dialect.addReselect(sqlfInsertInto, autoIncrementColumn, rowIdVar);
                 if (null != objectIdVar)
                     sqlfDeclare.append("DECLARE ").append(rowIdVar).append(" INT;\n");  // TODO: Move this into addReselect()?
             }
