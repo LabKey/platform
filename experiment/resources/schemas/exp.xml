@@ -165,7 +165,7 @@
       <ns:column columnName="Created">
         <ns:formatString>DateTime</ns:formatString>
         <ns:displayWidth>0</ns:displayWidth>
-        <ns:description>Contains the time at which this protocol was last modified</ns:description>
+        <ns:description>Contains the time at which this run was created</ns:description>
       </ns:column>
       <ns:column columnName="CreatedBy">
         <ns:fk>
@@ -176,7 +176,7 @@
         <ns:description>Contains the user who created this run</ns:description>
       </ns:column>
       <ns:column columnName="Modified">
-        <ns:description>Contains the time at which this protocol was last modified</ns:description>
+        <ns:description>Contains the time at which this run was last modified</ns:description>
       </ns:column>
       <ns:column columnName="ModifiedBy">
         <ns:fk>
