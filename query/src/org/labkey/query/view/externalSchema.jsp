@@ -90,7 +90,7 @@ var dataSourceStore = new Ext.data.SimpleStore({
 
 // create the tables data store
 var tablesStore = new Ext.data.JsonStore({
-    url: 'getTables.api',
+    url: 'query-getTables.api',
     autoDestroy: true,
     storeId: 'tablesStore',
     idProperty: 'table',
