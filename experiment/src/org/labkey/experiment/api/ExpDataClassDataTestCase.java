@@ -666,7 +666,12 @@ public class ExpDataClassDataTestCase
         catch (IllegalArgumentException ex)
         {
             // sqlserver only error
-            Assert.assertEquals("Large indexes currently only supported for a single string column", ex.getMessage());
+            String msg = ex.getMessage();
+            String expected = "Error creating index over 'aa, bb'";
+            Assert.assertTrue("Expected \"" + expected + "\", got \"" + msg + "\"", msg.contains(expected));
+
+            expected = "Index over large columns currently only supported for a single string column";
+            Assert.assertTrue("Expected \"" + expected + "\", got \"" + msg + "\"", msg.contains(expected));
         }
     }
 

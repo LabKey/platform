@@ -24,6 +24,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DatabaseMetaDataWrapper;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -356,7 +357,16 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     @Override
-    public String addReselect(SQLFragment sql, String columnName, @Nullable String proposedVariable)
+    public String addReselect(SQLFragment sql, ColumnInfo column, @Nullable String proposedVariable)
+    {
+        String columnName = column.getSelectName();
+        boolean hasDbTriggers = column.getParentTable().hasDbTriggers();
+
+        return _addReselect(sql, columnName, hasDbTriggers, proposedVariable);
+    }
+
+
+    public String _addReselect(SQLFragment sql, String columnName, boolean useOutputIntoTableVar, @Nullable String proposedVariable)
     {
         ReselectType type = getReselectType(sql.getRawSQL());
 
@@ -368,7 +378,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
         // SQL Server OUTPUT ... INTO syntax requires a table variable, since, in theory, you could insert/update multiple
         // rows and select multiple columns. We don't support that, however.
-        if (null != proposedVariable)
+        if (useOutputIntoTableVar || proposedVariable != null)
         {
             outputSql.append(" INTO @TableVar");
         }
@@ -412,13 +422,22 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
         String ret = null;
 
-        if (null != proposedVariable)
+        if (useOutputIntoTableVar || proposedVariable != null)
         {
-            sql.insert(0, "DECLARE @TableVar TABLE(" + proposedVariable + " INTEGER);\n");
-            ret = "@" + proposedVariable;
+            sql.insert(0, "DECLARE @TableVar TABLE(" + columnName + " INTEGER);\n");
 
-            // Note: Assume one row and one column for now
-            sql.append(";\nSELECT TOP 1 ").append(ret).append(" = ").append(proposedVariable).append(" FROM @TableVar;");
+            if (null != proposedVariable)
+            {
+                ret = "@" + proposedVariable;
+
+                // Note: Assume one row and one column for now
+                sql.append(";\nSELECT TOP 1 ").append(ret).append(" = ").append(columnName).append(" FROM @TableVar;");
+            }
+            else
+            {
+                // Note: Assume one row and one column for now
+                sql.append(";\nSELECT TOP 1 ").append(columnName).append(" FROM @TableVar;");
+            }
         }
 
         return ret;
@@ -1111,14 +1130,14 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         for (PropertyStorageSpec.Index index : change.getIndexedColumns())
         {
             if (index.columnNames.length > 16)
-                throw new IllegalArgumentException("Maximum number of columns in an index is 16");
+                throw new IllegalArgumentException(String.format("Error creating index over '%s' for table '%s.%s'.  Maximum number of columns in an index is 16",
+                        StringUtils.join(index.columnNames, ", "), change.getSchemaName(), change.getTableName()));
 
             // If the set of columns is larger than 900 bytes, creating an index will succeed, but fail when trying to insert
             List<PropertyStorageSpec> specs = change.toSpecs(Arrays.asList(index.columnNames));
             long bytes = specs.stream().collect(Collectors.summingLong(this::columnStorageSize));
 
-            // Temporarily disable while fix in progress
-            //if (bytes < MAX_INDEX_SIZE)
+            if (bytes <= MAX_INDEX_SIZE)
             {
                 statements.add(String.format("CREATE %s INDEX %s ON %s (%s)",
                         index.isUnique ? "UNIQUE" : "",
@@ -1126,16 +1145,26 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                         makeTableIdentifier(change),
                         makeLegalIdentifiers(index.columnNames)));
             }
-            /*
             else
             {
+                if (!index.isUnique)
+                {
+                    // Once Issue 26311 is fixed, throw an exception instead of logging a warning
+                    //throw new IllegalArgumentException("Index over large columns only supported for unique");
+                    LOG.warn(String.format("Error creating index over '%s' for table '%s.%s'.  Index over large columns only supported for unique",
+                        StringUtils.join(index.columnNames, ", "), change.getSchemaName(), change.getTableName()));
+                    return;
+                }
+
                 if (index.columnNames.length > 1)
-                    throw new IllegalArgumentException("Large indexes currently only supported for a single string column");
+                    throw new IllegalArgumentException(String.format("Error creating index over '%s' for table '%s.%s'.  Index over large columns currently only supported for a single string column",
+                        StringUtils.join(index.columnNames, ", "), change.getSchemaName(), change.getTableName()));
 
                 final String columnName = index.columnNames[0];
                 final PropertyStorageSpec spec = specs.get(0);
                 if (spec == null || !spec.getJdbcType().isText())
-                    throw new IllegalArgumentException("Large indexes currently only supported for a single string column");
+                    throw new IllegalArgumentException(String.format("Error creating index over '%s' for table '%s.%s'.  Index over large columns currently only supported for a single string column",
+                        StringUtils.join(index.columnNames, ", "), change.getSchemaName(), change.getTableName()));
 
                 final String legalColumnName = makeLegalIdentifier(columnName);
                 final String hashedColumn = makeLegalIdentifier("_hashed_" + columnName);
@@ -1151,16 +1180,18 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                         legalColumnName));
 
                 // Add a index over the computed hash column
-                statements.add(String.format("CREATE INDEX %s ON %s (%s)",
+                statements.add(String.format("CREATE INDEX %s ON %s (%s) INCLUDE (%s)",
                         nameIndex(change.getTableName(), new String[] { columnName }),
                         tableName,
-                        hashedColumn));
+                        hashedColumn,
+                        columnName));
 
                 // Create trigger to enforce uniqueness using the hashed column index
                 statements.add(String.format(
                         "CREATE TRIGGER %s ON %s\n" +
                         "FOR INSERT, UPDATE AS\n" +
                         "BEGIN\n" +
+                        "  SET NOCOUNT ON\n" +
                         "  IF EXISTS (\n" +
                         "    SELECT 1 FROM %s x\n" +
                         "    INNER JOIN INSERTED i\n" +
@@ -1170,10 +1201,10 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                         "    HAVING COUNT(*) > 1\n" +
                         "  )\n" +
                         "  BEGIN\n" +
-                        "    RAISERROR(N'" + CUSTOM_UNIQUE_ERROR_MESSAGE  + " ''%s'' on table ''%s''.', 16, 123)\n" +
+                        "    RAISERROR(N'" + CUSTOM_UNIQUE_ERROR_MESSAGE + " ''%s'' on table ''%s''.', 16, 123)\n" +
                         "  END\n" +
                         "END\n",
-                        nameTrigger(change.getTableName(), new String[] { columnName }),
+                        nameTrigger(change.getTableName(), new String[]{columnName}),
                         tableName,
                         tableName,
                         // ON  x.%s = HASHBYTES('SHA2_512', %s)
@@ -1186,7 +1217,6 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                         legalColumnName, tableName
                 ));
             }
-            */
         }
     }
 
@@ -1276,15 +1306,13 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             List<PropertyStorageSpec> specs = change.toSpecs(Arrays.asList(index.columnNames));
             int bytes = specs.stream().collect(Collectors.summingInt(this::columnStorageSize));
 
-            // Temporarily disable while fix in progress
-            //if (bytes < MAX_INDEX_SIZE)
+            if (bytes < MAX_INDEX_SIZE)
             {
                 statements.add(String.format("DROP INDEX %s ON %s",
                         nameIndex(change.getTableName(), index.columnNames),
                         makeTableIdentifier(change)
                 ));
             }
-            /*
             else
             {
                 if (index.columnNames.length > 1)
@@ -1307,7 +1335,6 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                         tableName,
                         hashedColumn));
             }
-            */
         }
     }
 
@@ -1590,6 +1617,37 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                 (fragmentationPercent > 0.30 ? "REBUILD" + (_edition.isOnlineSupported() ? " WITH (ONLINE = ON)" : "") : "REORGANIZE");
             new SqlExecutor(schema).execute(alterSql);
         }
+    }
+
+    public boolean hasTriggers(DbSchema schema, String schemaName, String tableName)
+    {
+        SQLFragment sql = listTriggers(schemaName, tableName);
+        return new SqlSelector(schema, sql).exists();
+    }
+
+    private SQLFragment listTriggers(@Nullable String schemaName, @Nullable String tableName)
+    {
+        SQLFragment ret = new SQLFragment("SELECT \n" +
+                "     sysobjects.name AS trigger_name,\n" +
+                "     s.name AS table_schema,\n" +
+                "     OBJECT_NAME(parent_obj) AS table_name,\n" +
+                "     OBJECTPROPERTY( id, 'ExecIsUpdateTrigger') AS isupdate,\n" +
+                "     OBJECTPROPERTY( id, 'ExecIsDeleteTrigger') AS isdelete,\n" +
+                "     OBJECTPROPERTY( id, 'ExecIsInsertTrigger') AS isinsert,\n" +
+                "     OBJECTPROPERTY( id, 'ExecIsAfterTrigger') AS isafter,\n" +
+                "     OBJECTPROPERTY( id, 'ExecIsInsteadOfTrigger') AS isinsteadof,\n" +
+                "     OBJECTPROPERTY(id, 'ExecIsTriggerDisabled') AS [disabled]\n" +
+                "FROM sysobjects\n" +
+                "INNER JOIN sys.tables t\n" +
+                "    ON sysobjects.parent_obj = t.object_id\n" +
+                "INNER JOIN sys.schemas s\n" +
+                "    ON t.schema_id = s.schema_id\n" +
+                "WHERE sysobjects.type = 'TR'\n");
+        if (schemaName != null)
+            ret.append("AND s.name = ?\n").add(schemaName);
+        if (tableName != null)
+            ret.append("AND OBJECT_NAME(parent_obj) = ?\n").add(tableName);
+        return ret;
     }
 
 

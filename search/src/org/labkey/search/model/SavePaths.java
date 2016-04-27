@@ -187,7 +187,7 @@ public class SavePaths implements DavCrawler.SavePaths
             // where
             insert.add(valueParent);
             insert.add(valueName);
-            db.getSqlDialect().addReselect(insert, id);
+            db.getSqlDialect().addReselect(insert, id, null);
 
             Integer ident = new SqlSelector(getSearchSchema(),insert).getObject(Integer.class);
             if (null == ident)

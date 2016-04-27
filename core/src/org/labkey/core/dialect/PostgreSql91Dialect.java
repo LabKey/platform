@@ -254,8 +254,9 @@ class PostgreSql91Dialect extends SqlDialect
 
 
     @Override
-    public String addReselect(SQLFragment sql, String columnName, @Nullable String proposedVariable)
+    public String addReselect(SQLFragment sql, ColumnInfo column, @Nullable String proposedVariable)
     {
+        String columnName = column.getSelectName();
         sql.append("\nRETURNING ").append(columnName);
         if (null != proposedVariable)
             sql.append(" INTO ").append(proposedVariable);
