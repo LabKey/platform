@@ -31,16 +31,26 @@ Ext4.define('LABKEY.query.browser.view.SchemaDetails', {
         this.callParent(arguments);
 
         this.on('schemaclick', this.onSchemaClick, this);
-        this.cache.getQueries(this.schemaName, this.onQueries, this);
+
+        // listener for event fired by the schema tree whenever it finishes loading (either root info or schema info/children)
+        this.schemaTree.on('schemasloaded', this.loadQueryCategories, this);
     },
+
+    loadQueryCategories: function (store, node)
+    {
+        if(this.schemaName.getName() === node.get("name"))
+        {
+            this.onQueries(node.childNodes);
+            this.schemaTree.un('schemasloaded', this.loadQueryCategories, this);
+        }
+     },
 
     onSchemaClick : function(schemaName) {
         this.schemaBrowser.selectSchema(schemaName);
         this.schemaBrowser.showPanel(this.schemaBrowser.sspPrefix + schemaName);
     },
 
-    onQueries : function(queriesMap) {
-        this.queries = queriesMap;
+    onQueries : function(schemaNodeChildren) {
         this.removeAll();
 
         var items = [],
@@ -79,21 +89,24 @@ Ext4.define('LABKEY.query.browser.view.SchemaDetails', {
             childSchemaNames.sort(function(a, b) { return a.toLowerCase().localeCompare(b.toLowerCase()); });
         }
 
-        Ext4.iterate(queriesMap, function(name, query) {
-            query.name = name;
-            if (query.isUserDefined) {
-                userDefined.push(query);
-            }
-            else {
-                builtIn.push(query);
-            }
+        // Each schemaNode has grouped the queries (built-in vs user-defined). Iterate through each group
+        // and add the query node's data to the appropriate category.
+        Ext4.each(schemaNodeChildren, function(schemaNodeChild)
+        {
+            Ext4.each(schemaNodeChild.childNodes, function(queryNode)
+            {
+                if (schemaNodeChild.get('text') === "user-defined queries")
+                    userDefined.push(Ext4.clone(queryNode.data));
+                else if (schemaNodeChild.get('text') === "built-in queries &amp; tables")
+                    builtIn.push(Ext4.clone(queryNode.data));
+            });
         });
 
         if (userDefined.length > 0) {
-            userDefined.sort(function(a, b) { return a.name.localeCompare(b.name); });
+            userDefined.sort(function(a, b) { return a.queryName.localeCompare(b.queryName); });
         }
         if (builtIn.length > 0) {
-            builtIn.sort(function(a, b) { return a.name.localeCompare(b.name); });
+            builtIn.sort(function(a, b) { return a.queryName.localeCompare(b.queryName); });
         }
 
         if (childSchemaNames.length > 0) {
@@ -264,11 +277,11 @@ Ext4.define('LABKEY.query.browser.view.SchemaDetails', {
                             {
                                 tag: 'span',
                                 cls: 'labkey-link',
-                                html: Ext4.htmlEncode(query.name)
+                                html: Ext4.htmlEncode(query.queryName)
                             },
                             {
                                 tag: 'span',
-                                html: Ext4.htmlEncode((query.name.toLowerCase() != query.title.toLowerCase() ? ' (' + query.title + ')' : ''))
+                                html: Ext4.htmlEncode((query.queryName.toLowerCase() != query.queryLabel.toLowerCase() ? ' (' + query.queryLabel + ')' : ''))
                             }
                         ]
                     },

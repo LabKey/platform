@@ -49,7 +49,6 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
 {
     // the schema browser behaves very badly if the table list gets too long, so we stop after a reasonable number
     // of tables.  The user can view the full list in the query window.
-    private static final int MAX_TABLES_TO_LIST  = 100;
     public ApiResponse execute(Form form, BindException errors) throws Exception
     {
         JSONArray respArray = new JSONArray();
@@ -121,8 +120,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                     List<String> queryNames = new ArrayList<>(form.isShowHidden() ? uschema.getTableNames() : uschema.getVisibleTableNames());
                     Collections.sort(queryNames, String::compareToIgnoreCase);
 
-                    int addedQueryCount = 0;
-                    for (int i = 0; i < queryNames.size() && addedQueryCount < MAX_TABLES_TO_LIST; i++)
+                    for (int i = 0; i < queryNames.size(); i++)
                     {
                         String qname = queryNames.get(i);
                         TableInfo tinfo = null;
@@ -139,19 +137,15 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
 
                         // If there's an error, still include the table in the tree
                         addQueryToList(schemaPath, qname, label, tinfo == null ? null : tinfo.getDescription(), false, builtIn);
-                        addedQueryCount++;
                     }
 
-                    if (addedQueryCount == MAX_TABLES_TO_LIST && addedQueryCount < queryNames.size())
-                        addMoreLinkToList(schemaPath, builtIn);
 
                     //get user-defined queries
                     Map<String, QueryDefinition> queryDefMap = uschema.getQueryDefs();
                     queryNames = new ArrayList<>(queryDefMap.keySet());
                     Collections.sort(queryNames, String::compareToIgnoreCase);
 
-                    addedQueryCount = 0;
-                    for (int i = 0; i < queryNames.size() && addedQueryCount < MAX_TABLES_TO_LIST; i++)
+                    for (int i = 0; i < queryNames.size(); i++)
                     {
                         String qname = queryNames.get(i);
                         QueryDefinition qdef = queryDefMap.get(qname);
@@ -161,12 +155,8 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                                 continue;
 
                             addQueryToList(schemaPath, qname, qname, qdef.getDescription(), qdef.isHidden(), userDefined);
-                            addedQueryCount++;
                         }
                     }
-
-                    if (addedQueryCount == MAX_TABLES_TO_LIST && addedQueryCount < queryNames.size())
-                        addMoreLinkToList(schemaPath, userDefined);
 
                     //group the user-defined and built-in queries into folders
                     if (userDefined.length() > 0)
@@ -223,20 +213,6 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
         schemaProps.put("hidden", schema.isHidden());
         return schemaProps;
     }
-
-    protected void addMoreLinkToList(SchemaKey schemaName, JSONArray list)
-    {
-        JSONObject props = new JSONObject();
-        props.put("schemaName", schemaName);
-        props.put("text", PageFlowUtil.filter("More..."));
-        props.put("leaf", true);
-        String description = "Only the first " + MAX_TABLES_TO_LIST +
-                " queries are shown.  Click to view the full list in the main pane.";
-        props.put("description", description);
-        props.put("qtip", PageFlowUtil.filter(description));
-        list.put(props);
-    }
-
 
     protected void addQueryToList(SchemaKey schemaName, String qname, String label, String description, boolean hidden, JSONArray list)
     {

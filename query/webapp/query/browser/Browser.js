@@ -37,8 +37,8 @@ Ext4.define('LABKEY.query.browser.Browser', {
             useArrows: true,
             listeners: {
                 select : this.onTreeClick,
-                schemasloaded : function() {
-                    this.fireEvent('schemasloaded', this);
+                schemasloaded : function(store, node, records) {
+                    this.fireEvent('schemasloaded', store, node);
                 },
                 scope: this
             }
@@ -559,6 +559,7 @@ Ext4.define('LABKEY.query.browser.SchemaBrowserTabFactory', {
                 itemId: tabId,
                 schemaName: schemaPath,
                 schemaBrowser: this,
+                schemaTree: browser.getTree(),
                 title: Ext4.htmlEncode(schemaPath.toDisplayString()),
                 autoScroll: true,
                 listeners: {

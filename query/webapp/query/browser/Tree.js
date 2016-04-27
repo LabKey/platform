@@ -37,6 +37,7 @@ Ext4.define('LABKEY.query.browser.Tree', {
                     {name: 'qtip'},
                     {name: 'schemaName'},
                     {name: 'queryName'},
+                    {name: 'queryLabel'},
                     {name: 'text'},
                     {name: 'leaf', type: 'boolean', defaultValue: false}
                 ]
@@ -58,9 +59,9 @@ Ext4.define('LABKEY.query.browser.Tree', {
                 draggable: false
             },
             listeners: {
-                load: function() {
+                load: function(store, node) {
                     // NOTE: there should be a better way to do this dance because I suspect it's time intensive.
-                    this.fireEvent('schemasloaded');
+                    this.fireEvent('schemasloaded',store, node);
                 },
                 beforeload: function(store, operation) {
                     var params = operation.params;
