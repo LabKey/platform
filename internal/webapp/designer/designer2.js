@@ -7,7 +7,7 @@ Ext.ns('LABKEY.ext', 'LABKEY.DataRegion');
 
 LABKEY.ext.SplitGroupTabPanel = Ext.extend(Ext.ux.GroupTabPanel, {
     constructor : function (config) {
-        this.cls = 'vertical-tabs extContainer customizeViewPanel';
+        this.cls = 'vertical-tabs extContainer customize-grid-panel';
         this.splitItem = this.lookupComponent(config.splitItem);
         delete config.splitItem;
         LABKEY.ext.SplitGroupTabPanel.superclass.constructor.call(this, config);

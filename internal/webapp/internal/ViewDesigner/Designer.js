@@ -7,7 +7,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
 
     extend: 'Ext.panel.Panel',
 
-    cls: 'customize-view-designer',
+    cls: 'customize-grid-panel',
 
     layout: 'border',
 
