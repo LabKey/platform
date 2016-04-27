@@ -44,7 +44,7 @@
 
 <p>Send a copy of your <%=h(subjectNounSingular.toLowerCase())%> group to another user to save and edit on their own.<p>
 <p>Note: if they have different permissions levels from you, they may see a different set of <%=h(subjectNounPlural.toLowerCase())%>.
-    <br/>Additionally, any further modifications to this saved group will show up in the send group.</p>
+    <br/>Additionally, any further modifications to this saved group will show up in the sent group.</p>
 
 <labkey:form action="<%=h(urlFor(SendParticipantGroupAction.class))%>" method="POST">
 
