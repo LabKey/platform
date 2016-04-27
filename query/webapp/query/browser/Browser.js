@@ -37,7 +37,7 @@ Ext4.define('LABKEY.query.browser.Browser', {
             useArrows: true,
             listeners: {
                 select : this.onTreeClick,
-                schemasloaded : function(store, node, records) {
+                schemasloaded : function(store, node) {
                     this.fireEvent('schemasloaded', store, node);
                 },
                 scope: this

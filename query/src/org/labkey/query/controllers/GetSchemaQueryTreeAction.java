@@ -47,8 +47,6 @@ import java.util.*;
 @Action(ActionType.SelectMetaData.class)
 public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction.Form>
 {
-    // the schema browser behaves very badly if the table list gets too long, so we stop after a reasonable number
-    // of tables.  The user can view the full list in the query window.
     public ApiResponse execute(Form form, BindException errors) throws Exception
     {
         JSONArray respArray = new JSONArray();
