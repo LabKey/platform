@@ -93,7 +93,7 @@ Ext.form.FileUploadField = Ext.extend(Ext.form.TextField,  {
         });
         this.button = new Ext.Button(Ext.apply(btnCfg, {
             renderTo: this.wrap,
-            cls: 'x-form-file-btn' + (btnCfg.iconCls ? ' x-btn-icon' : '')
+            cls: (this.buttonOnly ? 'x-form-file-btn-only' : 'x-form-file-btn') + (btnCfg.iconCls ? ' x-btn-icon' : '')
         }));
 
         if (this.buttonOnly)
