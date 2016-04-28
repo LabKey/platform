@@ -17,6 +17,7 @@ package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.statistics.MathStat;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.text.DecimalFormat;
 import java.util.Arrays;
@@ -269,9 +270,9 @@ public abstract class Stats
         public String getFormattedStat(StatDefinition stat)
         {
             if (stat == MIN)
-                return StringUtils.trimToEmpty(getMin());
+                return StringUtils.trimToEmpty(PageFlowUtil.filter(getMin()));
             if (stat == MAX)
-                return StringUtils.trimToEmpty(getMax());
+                return StringUtils.trimToEmpty(PageFlowUtil.filter(getMax()));
             if (stat == COUNT)
                 return String.valueOf(getCount());
             else
