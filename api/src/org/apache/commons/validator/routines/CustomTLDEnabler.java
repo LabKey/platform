@@ -15,6 +15,8 @@
  */
 package org.apache.commons.validator.routines;
 
+import org.apache.log4j.Logger;
+
 /**
  * Adds non-standard TLDs to allowable values for Apache Commons Validator. See issue 25041.
  * Needed because {@see DomainValidator.updateTLDOverride} is public, but its ArrayType argument is package-protected.
@@ -23,9 +25,20 @@ package org.apache.commons.validator.routines;
  */
 public class CustomTLDEnabler
 {
+    private static final Logger LOG = Logger.getLogger(CustomTLDEnabler.class);
+
     static
     {
-        DomainValidator.updateTLDOverride(DomainValidator.ArrayType.GENERIC_PLUS, new String[]{"local"});
+        try
+        {
+            // We've received an exception report that indicates (but does not definitively prove) this call may fail
+            // on some servers. Shouldn't be fatal if it doesn't work.
+            DomainValidator.updateTLDOverride(DomainValidator.ArrayType.GENERIC_PLUS, new String[]{"local"});
+        }
+        catch (Throwable e)
+        {
+            LOG.error("Failed to enable .local domains in URL validation", e);
+        }
     }
 
     public static void initialize()
