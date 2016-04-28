@@ -6908,9 +6908,14 @@ public class StudyController extends BaseStudyController
                     if (validUser != null)
                     {
                         if (getContainer().hasPermission(validUser, ReadPermission.class))
-                            _validRecipients.add(validUser);
+                        {
+                            if (!_validRecipients.contains(validUser))
+                                _validRecipients.add(validUser);
+                        }
                         else
+                        {
                             errors.reject(ERROR_MSG, "User does not have permissions to this container: " + validRecipient.getEmailAddress());
+                        }
                     }
                     else
                     {
