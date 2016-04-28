@@ -106,6 +106,7 @@ public abstract class SearchTest extends StudyTest
 
     protected void doCreateSteps()
     {
+        // TODO: move these out someday into separate tests, like DataClassSearchTest
         addSearchableStudy(); // Must come first;  Creates project.
         addSearchableLists();
         addSearchableContainers();

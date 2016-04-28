@@ -2526,6 +2526,7 @@ study/test/src/org/labkey/test/pages/DesignerController/DesignerTester.java -tex
 study/test/src/org/labkey/test/pages/studydesigncontroller/ManageAssayScheduleTester.java -text
 study/test/src/org/labkey/test/pages/studydesigncontroller/ManageStudyProductsTester.java -text
 study/test/src/org/labkey/test/pages/studydesigncontroller/ManageTreatmentsTester.java -text
+study/test/src/org/labkey/test/tests/search/DataClassSearchTest.java -text
 study/test/src/org/labkey/test/tests/search/SearchTest.java -text
 study/test/src/org/labkey/test/tests/search/SearchTestDefault.java -text
 study/test/src/org/labkey/test/tests/search/SearchTestMMap.java -text
