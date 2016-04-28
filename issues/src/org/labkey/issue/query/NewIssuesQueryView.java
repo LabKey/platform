@@ -60,7 +60,7 @@ public class NewIssuesQueryView extends QueryView
             if (domain != null)
             {
                 // for now just attach the domain editor to the admin button, eventually build this out to the final admin UI
-                ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(context.getContainer(), domain.getTypeURI(), true, false, false);
+                ActionURL url = domain.getDomainKind().urlEditDefinition(domain, getViewContext());
                 ActionButton adminButton = new ActionButton(url, "Admin", DataRegion.MODE_GRID, ActionButton.Action.LINK);
                 adminButton.setDisplayPermission(AdminPermission.class);
 

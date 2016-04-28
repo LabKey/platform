@@ -6,6 +6,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.issues.IssuesSchema;
@@ -25,6 +26,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.view.ActionURL;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 
@@ -51,17 +53,27 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
         setDescription("Contains one row for each issue list");
         setName("Issue List Definitions");
 
-        wrapAllColumns(true);
+        addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("RowId"))).setHidden(true);
 
-        ContainerForeignKey.initColumn(getColumn(FieldKey.fromParts("Container")), getUserSchema());
-        UserIdForeignKey.initColumn(getColumn(FieldKey.fromParts("CreatedBy")));
-        UserIdForeignKey.initColumn(getColumn(FieldKey.fromParts("ModifiedBy")));
+        // don't show the name, it's derived from label
+        ColumnInfo nameCol = addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Name")));
+        nameCol.setHidden(true);
+        nameCol.setShownInInsertView(false);
 
+        ColumnInfo labelCol = addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Label")));
         DetailsURL url = new DetailsURL(QueryService.get().urlFor(getUserSchema().getUser(), getContainer(),
                 QueryAction.executeQuery,
                 IssuesSchema.getInstance().getSchemaName(), null),
                 Collections.singletonMap("queryName", "name"));
-        getColumn(FieldKey.fromParts("Name")).setURL(url);
+        labelCol.setURL(url);
+
+        ColumnInfo containerCol = addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Container")));
+        ContainerForeignKey.initColumn(containerCol, getUserSchema());
+
+        addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Created")));
+        UserIdForeignKey.initColumn(addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("CreatedBy"))));
+        addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Modified")));
+        UserIdForeignKey.initColumn(addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("ModifiedBy"))));
     }
 
     @Nullable
@@ -82,6 +94,12 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
         return false;
     }
 
+    @Override
+    public ActionURL getImportDataURL(Container container)
+    {
+        return LINK_DISABLER_ACTION_URL;
+    }
+
     private class UpdateService extends DefaultQueryUpdateService
     {
         public UpdateService(IssuesListDefTable table)
@@ -92,17 +110,18 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
         @Override
         protected Map<String, Object> _insert(User user, Container c, Map<String, Object> row) throws SQLException, ValidationException
         {
-            String name = (String)row.get("name");
-            if (StringUtils.isBlank(name))
-                throw new ValidationException("Name required", "name");
+            String label = (String)row.get("label");
+            if (StringUtils.isBlank(label))
+                throw new ValidationException("Label required", "label");
 
-            if (IssuesQuerySchema.getReservedTableNames().contains(name))
-                throw new ValidationException("The table name : " + name + " is reserved.");
+            if (IssuesQuerySchema.getReservedTableNames().contains(label))
+                throw new ValidationException("The table name : " + label + " is reserved.");
 
             try
             {
                 IssueListDef def = new IssueListDef();
-                def.setName(name);
+                def.setName(label.toLowerCase());
+                def.setLabel(label);
                 BeanUtils.populate(def, row);
 
                 def = def.save(user);
@@ -130,7 +149,7 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
 
             try
             {
-                IssueManager.deleteIssueDef(rowId, c, getUserSchema().getUser());
+                IssueManager.deleteIssueListDef(rowId, c, getUserSchema().getUser());
             }
             catch (Exception e)
             {

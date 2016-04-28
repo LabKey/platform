@@ -28,6 +28,7 @@ public class IssueListDef extends Entity
 {
     private int _rowId;
     private String _name;
+    private String _label;
     private Container _domainContainer;
 
     public int getRowId()
@@ -48,6 +49,16 @@ public class IssueListDef extends Entity
     public void setName(String name)
     {
         _name = name;
+    }
+
+    public String getLabel()
+    {
+        return _label;
+    }
+
+    public void setLabel(String label)
+    {
+        _label = label;
     }
 
     @Nullable

@@ -134,7 +134,7 @@ public class IssuesQuerySchema extends UserSchema
         if (AppProps.getInstance().isExperimentalFeatureEnabled(IssueManager.NEW_ISSUES_EXPERIMENTAL_FEATURE))
         {
             names.add(TableType.IssueListDef.name());
-            names.addAll(IssueManager.getIssueDefs(getContainer()).stream().map(IssueListDef::getName).collect(Collectors.toList()));
+            names.addAll(IssueManager.getIssueListDefs(getContainer()).stream().map(IssueListDef::getName).collect(Collectors.toList()));
         }
         return names;
     }
@@ -148,7 +148,7 @@ public class IssuesQuerySchema extends UserSchema
         if (AppProps.getInstance().isExperimentalFeatureEnabled(IssueManager.NEW_ISSUES_EXPERIMENTAL_FEATURE))
         {
             names.add(TableType.IssueListDef.name());
-            names.addAll(IssueManager.getIssueDefs(getContainer()).stream().map(IssueListDef::getName).collect(Collectors.toList()));
+            names.addAll(IssueManager.getIssueListDefs(getContainer()).stream().map(IssueListDef::getName).collect(Collectors.toList()));
         }
         return names;
     }
@@ -240,7 +240,7 @@ public class IssuesQuerySchema extends UserSchema
     private Map<String, IssueListDef> getIssueDefs()
     {
         Map<String, IssueListDef> map = new CaseInsensitiveTreeMap<>();
-        for (IssueListDef def : IssueManager.getIssueDefs(getContainer()))
+        for (IssueListDef def : IssueManager.getIssueListDefs(getContainer()))
         {
             map.put(def.getName(), def);
         }

@@ -57,9 +57,6 @@ public class IssueDefDomainKind extends AbstractDomainKind
                 new PropertyStorageSpec("Container", JdbcType.VARCHAR).setNullable(false)
         )));
 
-        RESERVED_NAMES = BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet());
-        RESERVED_NAMES.addAll(Arrays.asList("RowId", "Name"));
-
         // required property descriptors, initialized at domain creation time
         REQUIRED_PROPERTIES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
                 new PropertyStorageSpec("Title", JdbcType.VARCHAR, 255).setNullable(false),
@@ -70,6 +67,15 @@ public class IssueDefDomainKind extends AbstractDomainKind
                 new PropertyStorageSpec("Milestone", JdbcType.VARCHAR, 200),
                 new PropertyStorageSpec("Resolution", JdbcType.VARCHAR, 200)
         )));
+
+        RESERVED_NAMES = BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet());
+        RESERVED_NAMES.addAll(Arrays.asList("RowId", "Name"));
+        RESERVED_NAMES.addAll(REQUIRED_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet()));
+
+        // field names that are contained in the issues table that get's joined to the provisioned table
+        RESERVED_NAMES.addAll(Arrays.asList("IssueId", "AssignedTo", "Modified", "ModifiedBy",
+                "Created", "CreatedBy", "Resolved", "ResolvedBy", "Status", "BuildFound",
+                "Tag", "Resolution", "Duplicate", "ClosedBy", "Closed", "LastIndexed", "IssueDefId"));
 
         MANDATORY_PROPERTIES = REQUIRED_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet());
     }
@@ -102,7 +108,7 @@ public class IssueDefDomainKind extends AbstractDomainKind
     @Override
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain.getTypeURI(), true, false, false);
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain.getTypeURI(), false, false, true);
     }
 
     @Override

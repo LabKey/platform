@@ -326,7 +326,7 @@ public abstract class IssueUpdateAction extends FormViewAction<IssuesController.
 
         public NewCustomColumnConfiguration(Container c, User user, Issue issue)
         {
-            IssueListDef issueDef = IssueManager.getIssueDef(issue);
+            IssueListDef issueDef = IssueManager.getIssueListDef(issue);
             if (issueDef != null)
             {
                 Domain domain = issueDef.getDomain(user);

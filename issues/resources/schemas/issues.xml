@@ -314,7 +314,10 @@
 			<ns:column columnName="RowId">
 				<ns:isHidden>true</ns:isHidden>
 			</ns:column>
-			<ns:column columnName="Name"/>
+			<ns:column columnName="Name">
+				<ns:isHidden>true</ns:isHidden>
+			</ns:column>
+			<ns:column columnName="Label"/>
 			<ns:column columnName="Container"/>
 			<ns:column columnName="Created"/>
 			<ns:column columnName="Modified"/>

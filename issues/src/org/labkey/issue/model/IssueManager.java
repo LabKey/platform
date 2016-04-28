@@ -315,7 +315,7 @@ public class IssueManager
         if (issue.assignedTo == null)
             issue.assignedTo = 0;
 
-        IssueListDef issueDef = getIssueDef(issue);
+        IssueListDef issueDef = getIssueListDef(issue);
         if (issueDef != null)
         {
             try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
@@ -1083,7 +1083,7 @@ public class IssueManager
 
             if (AppProps.getInstance().isExperimentalFeatureEnabled(IssueManager.NEW_ISSUES_EXPERIMENTAL_FEATURE))
             {
-                for (IssueListDef issueDef : IssueManager.getIssueDefs(c))
+                for (IssueListDef issueDef : IssueManager.getIssueListDefs(c))
                 {
                     TableInfo tableInfo = issueDef.createTable(user);
                     ContainerUtil.purgeTable(tableInfo, c, null);
@@ -1368,21 +1368,21 @@ public class IssueManager
         }
     }
 
-    public static List<IssueListDef> getIssueDefs(Container container)
+    public static List<IssueListDef> getIssueListDefs(Container container)
     {
         List<IssueListDef> classes = new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), SimpleFilter.createContainerFilter(container), null).getArrayList(IssueListDef.class);
 
         return classes;
     }
 
-    public static IssueListDef getIssueDef(int rowId)
+    public static IssueListDef getIssueListDef(int rowId)
     {
         return new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), null, null).getObject(rowId, IssueListDef.class);
     }
 
-    public static void deleteIssueDef(int rowId, Container c, User user) throws DomainNotFoundException
+    public static void deleteIssueListDef(int rowId, Container c, User user) throws DomainNotFoundException
     {
-        IssueListDef def = getIssueDef(rowId);
+        IssueListDef def = getIssueListDef(rowId);
         if (def == null)
             throw new IllegalArgumentException("Can't find IssueDef with rowId " + rowId);
 
@@ -1471,11 +1471,11 @@ public class IssueManager
     }
 
     @Nullable
-    public static IssueListDef getIssueDef(Issue issue)
+    public static IssueListDef getIssueListDef(Issue issue)
     {
         if (issue.getIssueDefId() != null)
         {
-            return getIssueDef(issue.getIssueDefId());
+            return getIssueListDef(issue.getIssueDefId());
         }
         return null;
     }
