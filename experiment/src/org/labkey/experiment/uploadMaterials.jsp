@@ -33,13 +33,6 @@
 <%@ page import="org.labkey.experiment.samples.UploadMaterialSetForm.InsertUpdateChoice" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%
-    JspView<UploadMaterialSetForm> view = (JspView<UploadMaterialSetForm>) HttpView.currentView();
-    UploadMaterialSetForm form = view.getModelBean();
-    ExpSampleSet sampleSet = form.getSampleSet();
-
-    ActionURL templateURL = PageFlowUtil.urlProvider(QueryUrls.class).urlCreateExcelTemplate(getContainer(), SamplesSchema.SCHEMA_NAME, form.getName());
-%>
 <%!
     public void addClientDependencies(ClientDependencies dependencies)
     {
@@ -103,6 +96,13 @@
         sb.append("}");
         return sb.toString();
     }
+%>
+<%
+    JspView<UploadMaterialSetForm> view = (JspView<UploadMaterialSetForm>) HttpView.currentView();
+    UploadMaterialSetForm form = view.getModelBean();
+    ExpSampleSet sampleSet = form.getSampleSet();
+
+    ActionURL templateURL = PageFlowUtil.urlProvider(QueryUrls.class).urlCreateExcelTemplate(getContainer(), SamplesSchema.SCHEMA_NAME, form.getName());
 %>
 <style type="text/css">
     #upload-field .x-form-field-wrap,
@@ -430,7 +430,7 @@ function runner() {
             return false;
         }
         return true;
-    }
+    };
 
     var validateBeforeSubmit = function() {
         var name = document.getElementById("name").value;
@@ -613,9 +613,18 @@ function runner() {
             listeners: {
                 fileselected: function (fb, v) {
 
-                    if (v && v.length > 0 && v.indexOf('\\') >= 0) {
-                        var path = v.split('\\');
-                        var filename = path[path.length-1];
+                    if (v && v.length > 0)
+                    {
+                        var filename;
+                        if (v.indexOf('\\') >= 0)
+                        {
+                            var path = v.split('\\');
+                            filename = path[path.length-1];
+                        }
+                        else
+                        {
+                            filename = v;  // dirs in path do not exist in all browsers
+                        }
                         if(filename.length > 16)
                         {
                             // truncate name if it is too long
