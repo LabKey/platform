@@ -41,12 +41,6 @@
         border-bottom: solid #aaaaaa 1px;
         margin: 0 10px 10px 10px;
     }
-    .lk-notificationexit
-    {
-        position: fixed;
-        top: 20px;
-        right: 15px;
-    }
     .lk-notificationclose
     {
         position: absolute;
@@ -61,11 +55,6 @@
         font-weight:bold;
         text-transform: uppercase;
         color: #ffffff;
-    }
-    .lk-notificationbar
-    {
-        border-top: solid #aaaaaa 1px;
-        margin: 0 10px 10px 10px;
     }
     .lk-notificationbody
     {
@@ -108,18 +97,41 @@ var $ = $ || jQuery;
 LABKEY.notifications = {};
 LABKEY.notifications.showNotificationsPanel = function()
 {
-    $('#labkey-notifications-panel').removeClass('labkey-hidden');
+    // slide open the notification panel and bind the click listener after the slide animation has completed
+    $('#labkey-notifications-panel').slideDown(250, function()
+    {
+        $('body').on('click', LABKEY.notifications.checkClick);
+        //$('#labkey-notifications-panel').on('mouseleave', LABKEY.notifications.hideNotificationsPanel);
+    });
+
     return true;
+};
+LABKEY.notifications.checkClick = function(event)
+{
+    // close if the click happened outside of the notification panel
+    var subject = $('#labkey-notifications-panel');
+    if (event.target.id != subject.attr('id') && !subject.has(event.target).length)
+    {
+        LABKEY.notifications.hideNotificationsPanel();
+    }
+
 };
 LABKEY.notifications.hideNotificationsPanel = function()
 {
-    $('#labkey-notifications-panel').addClass('labkey-hidden');
+    // slide out the notification panel and unbind the click listener
+    $('#labkey-notifications-panel').slideUp(250, function()
+    {
+        $('body').off('click', LABKEY.notifications.checkClick);
+    });
+
     return true;
 };
 LABKEY.notifications.goToNotificationLink = function(event, href)
 {
     if (!event.target.classList.contains("lk-notificationclose"))
+    {
         window.location = href;
+    }
 };
 LABKEY.notifications.markAsRead = function(notificationId)
 {
@@ -140,9 +152,7 @@ LABKEY.notifications.markAsRead = function(notificationId)
 <a href=# class='labkey-menu-text-link' onclick="return LABKEY.notifications.showNotificationsPanel()"><i class="fa fa-inbox"></i>&nbsp;<%=notifications.size()%></a>
 <div class="labkey-hidden lk-notificationpanel" id="labkey-notifications-panel">
 <div class="lk-notificationheader">
-    <div class="fa fa-times lk-notificationexit lk-notificationtimes" onclick="return LABKEY.notifications.hideNotificationsPanel()"></div>
     <div class="lk-notificationtitle">Notifications</div>
-    <%--<div class="lk-notificationbar"></div>--%>
 </div>
 <%
     if (notifications == null || notifications.isEmpty())
