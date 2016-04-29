@@ -163,15 +163,16 @@
                         // clear selection on load of the grid store
                         grid.getSelectionModel().deselectAll();
 
+                        // TODO enable this code once we decide what we want to do for "Sent Subject Groups" for the study module
                         // show the Send button if any of the groups have saved filters
-                        Ext4.each(records, function(record)
-                        {
-                            if (record.get('filters') && record.get('filters').length > 0)
-                            {
-                                Ext4.getCmp('sendSelectedButtonExt4').show();
-                                return false; // break;
-                            }
-                        });
+                        //Ext4.each(records, function(record)
+                        //{
+                        //    if (record.get('filters') && record.get('filters').length > 0)
+                        //    {
+                        //        Ext4.getCmp('sendSelectedButtonExt4').show();
+                        //        return false; // break;
+                        //    }
+                        //});
                     }
                 }
             },
