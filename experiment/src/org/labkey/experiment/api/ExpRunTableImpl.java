@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
@@ -884,73 +885,81 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 {
                     throw new UnauthorizedException("You do not have permission to edit a run in " + run.getContainer());
                 }
-                StringBuilder sb = new StringBuilder("Run edited.");
-                for (Map.Entry<String, Object> entry : row.entrySet())
+
+                try
                 {
-                    // Most fields in the hard table can't be modified, but there are a few
-                    Object value = entry.getValue();
-                    if (entry.getKey().equalsIgnoreCase(Column.Name.toString()))
+                    StringBuilder sb = new StringBuilder("Run edited.");
+                    for (Map.Entry<String, Object> entry : row.entrySet())
                     {
-                        String newName = value == null ? null : (String) ConvertUtils.convert(value.toString(), String.class);
-                        appendPropertyIfChanged(sb, "Name", run.getName(), newName);
-                        run.setName(newName);
-                    }
-                    else if (entry.getKey().equalsIgnoreCase(Column.Comments.toString()))
-                    {
-                        String newComment = value == null ? null : (String) ConvertUtils.convert(value.toString(), String.class);
-                        appendPropertyIfChanged(sb, "Comment", run.getComments(), newComment);
-                        run.setComments(newComment);
-                    }
-                    else if (entry.getKey().equalsIgnoreCase(Column.Flag.toString()))
-                    {
-                        String newFlag = value == null ? null : (String) ConvertUtils.convert(value.toString(), String.class);
-                        appendPropertyIfChanged(sb, "Flag", run.getComment(), newFlag);
-                        run.setComment(user, newFlag);
-                    }
-
-                    // Also check for properties
-                    ColumnInfo col = getQueryTable().getColumn(entry.getKey());
-                    if (col != null && col instanceof PropertyColumn)
-                    {
-                        PropertyColumn propColumn = (PropertyColumn)col;
-                        PropertyDescriptor propertyDescriptor = propColumn.getPropertyDescriptor();
-                        Object oldValue = run.getProperty(propertyDescriptor);
-                        if (propertyDescriptor.getPropertyType() == PropertyType.FILE_LINK && (value instanceof MultipartFile || value instanceof SpringAttachmentFile))
+                        // Most fields in the hard table can't be modified, but there are a few
+                        Object value = entry.getValue();
+                        if (entry.getKey().equalsIgnoreCase(Column.Name.toString()))
                         {
-                            value = saveFile(container, col.getName(), value, AssayFileWriter.DIR_NAME);
+                            String newName = value == null ? null : (String)ConvertUtils.convert(value.toString(), String.class);
+                            appendPropertyIfChanged(sb, "Name", run.getName(), newName);
+                            run.setName(newName);
                         }
-                        run.setProperty(user, propertyDescriptor, value);
-
-                        Object newValue = value;
-                        TableInfo fkTableInfo = col.getFkTableInfo();
-                        if (fkTableInfo != null)
+                        else if (entry.getKey().equalsIgnoreCase(Column.Comments.toString()))
                         {
-                            // Do type conversion in case there's a mismatch in the lookup source and target columns
-                            Class<?> keyColumnType = fkTableInfo.getPkColumns().get(0).getJavaClass();
-                            if (newValue != null && !keyColumnType.isAssignableFrom(newValue.getClass()))
-                            {
-                                newValue = ConvertUtils.convert(newValue.toString(), keyColumnType);
-                            }
-                            if (oldValue != null && !keyColumnType.isAssignableFrom(oldValue.getClass()))
-                            {
-                                oldValue = ConvertUtils.convert(oldValue.toString(), keyColumnType);
-                            }
-                            Map<String, Object> oldLookupTarget = new TableSelector(fkTableInfo).getMap(oldValue);
-                            if (oldLookupTarget != null)
-                            {
-                                oldValue = oldLookupTarget.get(fkTableInfo.getTitleColumn());
-                            }
-                            Map<String, Object> newLookupTarget = new TableSelector(fkTableInfo).getMap(newValue);
-                            if (newLookupTarget != null)
-                            {
-                                newValue = newLookupTarget.get(fkTableInfo.getTitleColumn());
-                            }
+                            String newComment = value == null ? null : (String)ConvertUtils.convert(value.toString(), String.class);
+                            appendPropertyIfChanged(sb, "Comment", run.getComments(), newComment);
+                            run.setComments(newComment);
                         }
-                        appendPropertyIfChanged(sb, propertyDescriptor.getNonBlankCaption(), oldValue, newValue);
+                        else if (entry.getKey().equalsIgnoreCase(Column.Flag.toString()))
+                        {
+                            String newFlag = value == null ? null : (String)ConvertUtils.convert(value.toString(), String.class);
+                            appendPropertyIfChanged(sb, "Flag", run.getComment(), newFlag);
+                            run.setComment(user, newFlag);
+                        }
+
+                        // Also check for properties
+                        ColumnInfo col = getQueryTable().getColumn(entry.getKey());
+                        if (col != null && col instanceof PropertyColumn)
+                        {
+                            PropertyColumn propColumn = (PropertyColumn)col;
+                            PropertyDescriptor propertyDescriptor = propColumn.getPropertyDescriptor();
+                            Object oldValue = run.getProperty(propertyDescriptor);
+                            if (propertyDescriptor.getPropertyType() == PropertyType.FILE_LINK && (value instanceof MultipartFile || value instanceof SpringAttachmentFile))
+                            {
+                                value = saveFile(container, col.getName(), value, AssayFileWriter.DIR_NAME);
+                            }
+                            run.setProperty(user, propertyDescriptor, value);
+
+                            Object newValue = value;
+                            TableInfo fkTableInfo = col.getFkTableInfo();
+                            if (fkTableInfo != null)
+                            {
+                                // Do type conversion in case there's a mismatch in the lookup source and target columns
+                                Class<?> keyColumnType = fkTableInfo.getPkColumns().get(0).getJavaClass();
+                                if (newValue != null && !keyColumnType.isAssignableFrom(newValue.getClass()))
+                                {
+                                    newValue = ConvertUtils.convert(newValue.toString(), keyColumnType);
+                                }
+                                if (oldValue != null && !keyColumnType.isAssignableFrom(oldValue.getClass()))
+                                {
+                                    oldValue = ConvertUtils.convert(oldValue.toString(), keyColumnType);
+                                }
+                                Map<String, Object> oldLookupTarget = new TableSelector(fkTableInfo).getMap(oldValue);
+                                if (oldLookupTarget != null)
+                                {
+                                    oldValue = oldLookupTarget.get(fkTableInfo.getTitleColumn());
+                                }
+                                Map<String, Object> newLookupTarget = new TableSelector(fkTableInfo).getMap(newValue);
+                                if (newLookupTarget != null)
+                                {
+                                    newValue = newLookupTarget.get(fkTableInfo.getTitleColumn());
+                                }
+                            }
+                            appendPropertyIfChanged(sb, propertyDescriptor.getNonBlankCaption(), oldValue, newValue);
+                        }
                     }
+                    run.save(user);
+                    ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, null, sb.toString());
                 }
-                run.save(user);
-                ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, null, sb.toString());
+                catch (ConversionException e)
+                {
+                    throw new ValidationException(e.getMessage());
+                }
             }
             return getRow(user, container, oldRow);
         }
