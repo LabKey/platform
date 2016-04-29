@@ -51,8 +51,7 @@ public class FlagForeignKey extends AbstractForeignKey
 
     public TableInfo getLookupTableInfo()
     {
-//        VirtualTable ret = new VirtualTable<>(ExperimentService.get().getSchema(), "FlagComment", _schema);
-        VirtualTable ret = new VirtualTable<>(ExperimentService.get().getSchema(), "FlagComment");
+        VirtualTable ret = new VirtualTable<>(ExperimentService.get().getSchema(), "FlagComment", _schema);
         ColumnInfo colComment = new ColumnInfo("Comment", ret);
         colComment.setSqlTypeName("VARCHAR");
         ret.addColumn(colComment);
