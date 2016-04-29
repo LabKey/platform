@@ -78,7 +78,7 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
             List<CustomView> views = svc.getCustomViews(user, container, null, schemaName, query, false);
             for (CustomView view : views)
             {
-                if (view.canEdit(container, null))
+                if (view.isDeletable() && view.canEdit(container, null))
                     view.delete(user, request);
             }
         }
