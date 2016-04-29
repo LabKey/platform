@@ -20,8 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyColumn;
@@ -162,18 +160,12 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         return _rootTable.getColumn("LSID");
     }
 
-    // if you change this, see similiar AssayResultTable.createFlagColumn or TSVAssayProvider.createFlagColumn()
+    // if you change this, see similar AssayResultTable.createFlagColumn or TSVAssayProvider.createFlagColumn()
     protected ColumnInfo createFlagColumn(String alias)
     {
         ColumnInfo ret = wrapColumn(alias, getLSIDColumn());
-        ret.setFk(new FlagForeignKey(urlFlag(true), urlFlag(false), _userSchema.getContainer(), _userSchema.getUser()));
-        ret.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new FlagColumnRenderer(colInfo);
-            }
-        });
+        ret.setFk(new FlagForeignKey(urlFlag(true), urlFlag(false), _userSchema));
+        ret.setDisplayColumnFactory(FlagColumnRenderer::new);
         ret.setDescription("Contains a reference to a user-editable comment about this row");
         ret.setNullable(true);
         ret.setInputType("text");
