@@ -18,27 +18,24 @@ package org.labkey.api.exp.flag;
 
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.VirtualTable;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.security.User;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.StringExpression;
 
 public class FlagForeignKey extends AbstractForeignKey
 {
     public static final String DISPLAYFIELD_NAME = "Comment";
-    String _urlFlagged;
-    String _urlUnflagged;
-    private final Container _container;
-    User _user;
-    
-    public FlagForeignKey(String urlFlagged, String urlUnflagged, Container container, User user)
+    private final String _urlFlagged;
+    private final String _urlUnflagged;
+    private final UserSchema _schema;
+
+    public FlagForeignKey(String urlFlagged, String urlUnflagged, UserSchema schema)
     {
         _urlFlagged = urlFlagged;
         _urlUnflagged = urlUnflagged;
-        _container = container;
-        _user = user;
+        _schema = schema;
     }
 
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
@@ -49,12 +46,13 @@ public class FlagForeignKey extends AbstractForeignKey
         }
         if (!displayField.equalsIgnoreCase(DISPLAYFIELD_NAME))
             return null;
-        return new FlagColumn(parent, _urlFlagged, _urlUnflagged, _container, _user, displayField);
+        return new FlagColumn(parent, _urlFlagged, _urlUnflagged, _schema.getContainer(), _schema.getUser(), displayField);
     }
 
     public TableInfo getLookupTableInfo()
     {
-        VirtualTable ret = new VirtualTable(ExperimentService.get().getSchema(), "FlagComment");
+//        VirtualTable ret = new VirtualTable<>(ExperimentService.get().getSchema(), "FlagComment", _schema);
+        VirtualTable ret = new VirtualTable<>(ExperimentService.get().getSchema(), "FlagComment");
         ColumnInfo colComment = new ColumnInfo("Comment", ret);
         colComment.setSqlTypeName("VARCHAR");
         ret.addColumn(colComment);
