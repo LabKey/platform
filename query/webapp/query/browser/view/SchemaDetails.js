@@ -33,7 +33,14 @@ Ext4.define('LABKEY.query.browser.view.SchemaDetails', {
         this.on('schemaclick', this.onSchemaClick, this);
 
         // listener for event fired by the schema tree whenever it finishes loading (either root info or schema info/children)
-        this.schemaTree.on('schemasloaded', this.loadQueryCategories, this);
+        if (this.selectedNode && this.selectedNode.hasChildNodes())
+        {
+            this.onQueries(this.selectedNode.childNodes);
+        }
+        else
+        {
+            this.schemaTree.on('schemasloaded', this.loadQueryCategories, this);
+        }
     },
 
     loadQueryCategories: function (store, node)

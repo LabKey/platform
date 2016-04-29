@@ -429,10 +429,10 @@ Ext4.define('LABKEY.query.browser.Browser', {
         }
     },
 
-    onTreeClick : function(node, record) {
+    onTreeClick : function(selectionModel, record) {
         var schemaName = record.get('schemaName');
         if (schemaName && !record.get('queryName')) {
-            this.showPanel(this.sspPrefix + schemaName);
+            this.showPanel(this.sspPrefix + schemaName, record);
         }
         else if (record.get('leaf')) {
             this.showQueryDetails(schemaName, record.get('queryName'));
@@ -498,7 +498,7 @@ Ext4.define('LABKEY.query.browser.Browser', {
         }, this);
     },
 
-    showPanel : function(queryId) {
+    showPanel : function(queryId, node) {
         var tabs = this.getComponent('lk-sb-details');
         //var safeId = this.getSafeId(queryId);
         var tab = tabs.getComponent(queryId);
@@ -506,7 +506,7 @@ Ext4.define('LABKEY.query.browser.Browser', {
             tabs.setActiveTab(tab);
         }
         else {
-            var panel = this.tabFactory.generateTab(queryId, this);
+            var panel = this.tabFactory.generateTab(queryId, this, node);
             if (panel) {
                 tabs.add(panel);
                 tabs.setActiveTab(panel);
@@ -522,7 +522,7 @@ Ext4.define('LABKEY.query.browser.Browser', {
 Ext4.define('LABKEY.query.browser.SchemaBrowserTabFactory', {
     singleton: true,
 
-    generateTab : function(tabId, browser) {
+    generateTab : function(tabId, browser, node) {
         var panel;
         if (tabId === 'lk-vq-panel') {
             panel = Ext4.create('LABKEY.query.browser.view.Validate', {
@@ -560,6 +560,7 @@ Ext4.define('LABKEY.query.browser.SchemaBrowserTabFactory', {
                 schemaName: schemaPath,
                 schemaBrowser: this,
                 schemaTree: browser.getTree(),
+                selectedNode: node,
                 title: Ext4.htmlEncode(schemaPath.toDisplayString()),
                 autoScroll: true,
                 listeners: {
