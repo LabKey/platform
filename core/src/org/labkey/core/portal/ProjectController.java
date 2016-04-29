@@ -1203,16 +1203,16 @@ public class ProjectController extends SpringActionController
 
     public static class GetWebPartForm implements CustomApiForm
     {
-        private Map<String, Object> _extendedProperites;
+        private Map<String, Object> _extendedProperties;
 
         public void bindProperties(Map<String, Object> props)
         {
-            _extendedProperites = props;
+            _extendedProperties = props;
         }
 
-        public Map<String, Object> getExtendedProperites()
+        public Map<String, Object> getExtendedProperties()
         {
-            return _extendedProperites;
+            return _extendedProperties;
         }
     }
 
@@ -1248,7 +1248,7 @@ public class ProjectController extends SpringActionController
                 throw new RuntimeException("Couldn't create web part '" + webPartName + "'!");
 
             part.setProperties(qs);
-            part.setExtendedProperties(form.getExtendedProperites());
+            part.setExtendedProperties(form.getExtendedProperties());
 
             WebPartView view = Portal.getWebPartViewSafe(factory, getViewContext(), part);
             if (null == view)
