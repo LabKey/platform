@@ -50,6 +50,7 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
     // ideally this would always be set true, but it needs to be tested for each type
     // we really care about optimizing datasets
     private final boolean _allowOptimizePermissionsCheck;
+    private final boolean _includeProject;
 
     public DataspaceContainerFilter(User user, Study sharedStudy)
     {
@@ -70,6 +71,7 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
 
         _containerIds = null==containerIds ? null : new ArrayList<>(containerIds);
         _allowOptimizePermissionsCheck = false;
+        _includeProject = false;
     }
 
     public DataspaceContainerFilter(User user, List<GUID> containerIds)
@@ -77,20 +79,29 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
         super(user);
         _containerIds = null==containerIds ? null : new ArrayList<>(containerIds);
         _allowOptimizePermissionsCheck = false;
+        _includeProject = false;
     }
 
-    private DataspaceContainerFilter(DataspaceContainerFilter src, boolean allowOptimize)
+    private DataspaceContainerFilter(DataspaceContainerFilter src, boolean allowOptimize, boolean includeProject)
     {
         super(src._user);
         _containerIds = src._containerIds;
         _allowOptimizePermissionsCheck = allowOptimize;
+        _includeProject = includeProject;
     }
 
 
     // This only works for provisioned, project scoped tables, e.g. datasets
     public DataspaceContainerFilter getCanOptimizeDatasetContainerFilter()
     {
-        return new DataspaceContainerFilter(this,true);
+        return new DataspaceContainerFilter(this,true,_includeProject);
+    }
+
+
+    // Only usefor for some metadata/design tables, e.g. participantgroups
+    public DataspaceContainerFilter getIncludeProjectDatasetContainerFilter()
+    {
+        return new DataspaceContainerFilter(this,_allowOptimizePermissionsCheck,true);
     }
 
 
@@ -128,6 +139,9 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
         {
             allowedContainers.addAll(super.getIds(currentContainer, perm, roles));
         }
+        Container project = currentContainer.getProject();
+        if (_includeProject && null != project &&  project.hasPermission(_user, perm, roles))
+            allowedContainers.add(project.getEntityId());
 
         if (_allowOptimizePermissionsCheck)
         {
