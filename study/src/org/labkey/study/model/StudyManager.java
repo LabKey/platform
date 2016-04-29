@@ -5095,7 +5095,6 @@ public class StudyManager
             try
             {
                 createStudy();
-                testDatasetSubcategory();
                 _testImportDatasetData(_studyDateBased);
                 _testDatsetUpdateService(_studyDateBased);
                 _testDaysSinceStartCalculation(_studyDateBased);
@@ -5104,6 +5103,7 @@ public class StudyManager
                 _testImportDatasetData(_studyVisitBased);
                 _testImportDatasetDataAllowImportGuid(_studyDateBased);
                 _testDatasetTransformExport(_studyDateBased);
+                testDatasetSubcategory();
 
 // TODO
 //                _testDatsetUpdateService(_studyVisitBased);
