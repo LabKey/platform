@@ -205,31 +205,14 @@ Ext.define('LABKEY.app.store.OlapExplorer2', {
     isRecordSelected : function(uniqueName) {
         return false;
     },
-    onLoadSelection : function(cellset, mdx, x) {
-        var me = this;
-        if (x.mflight === me.mflight) {
 
-            var ssf = mdx._filter['stateSelectionFilter'];
-            var hsf = mdx._filter['hoverSelectionFilter'];
-
-            if ((!ssf || ssf.length == 0) && (!hsf || hsf.length == 0)) {
-                me.clearSelection();
-            }
-            else {
-                this.suspendEvents(true);
-                me.queryBy(function(rec) {
-                    rec.set({
-                        subcount: this._calculateSubcount(cellset, rec.get('uniqueName')),
-                        hasSelect: true,
-                        isSelected: this.isRecordSelected(rec.get('uniqueName'))
-                    });
-                    return true;
-                }, this);
-                this.resumeEvents();
-            }
-
-            this.fireEvent('subselect', this);
-        }
+    setLoadSelection: function(rec, cellset) {
+        rec.set({
+            subcount: this._calculateSubcount(cellset, rec.get('uniqueName')),
+            hasSelect: true,
+            isSelected: this.isRecordSelected(rec.get('uniqueName'))
+        });
+        return true;
     },
 
     clearSelection : function() {
@@ -310,6 +293,9 @@ Ext.define('LABKEY.app.view.OlapExplorer2', {
                         return LABKEY.app.view.OlapExplorer.APPLY_ANIMATE === true ? 'animator' : '';
                     },
                     calcWidth : function(v) {
+                        if (v.maxcount == 0) {
+                            return 0;
+                        }
                         return (v.count / v.maxcount) * 100;
                     },
                     rowSelectedCls : function(v) {
@@ -319,6 +305,9 @@ Ext.define('LABKEY.app.view.OlapExplorer2', {
                         return '';
                     },
                     calcSubWidth : function(v) {
+                        if (v.maxcount == 0) {
+                            return 0;
+                        }
                         var ps = (v.subcount / v.count);
                         var pt = (v.count / v.maxcount);
                         var pts;

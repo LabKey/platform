@@ -549,17 +549,21 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
             else {
                 this.suspendEvents(true);
                 me.queryBy(function(rec) {
-                    rec.set({
-                        subcount: this._calculateSubcount(cellset, rec.get('uniqueName')),
-                        hasSelect: true
-                    });
-                    return true;
-                }, this);
+                        return this.setLoadSelection(rec, cellset);
+                    }, this);
                 this.resumeEvents();
             }
 
             this.fireEvent('subselect', this);
         }
+    },
+
+    setLoadSelection: function(rec, cellset) {
+        rec.set({
+            subcount: this._calculateSubcount(cellset, rec.get('uniqueName')),
+            hasSelect: true
+        });
+        return true;
     },
 
     _calculateSubcount : function(cellset, uniqueName) {
