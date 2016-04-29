@@ -29,6 +29,7 @@ import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.StudySchema;
@@ -46,6 +47,11 @@ public class ParticipantCategoryTable extends BaseStudyTable
     {
         super(schema, StudySchema.getInstance().getTableInfoParticipantCategory());
         setName(StudyService.get().getSubjectCategoryTableName(schema.getContainer()));
+        setDescription("This table contains one row for each study group category");
+
+        // fix up container filter to include project if dataspace study
+        if (schema.getContainer().isProject() && getContainerFilter() instanceof DataspaceContainerFilter)
+            _setContainerFilter(((DataspaceContainerFilter)getContainerFilter()).getIncludeProjectDatasetContainerFilter());
 
         ColumnInfo rowIdColumn = addWrapColumn(_rootTable.getColumn("RowId"));
         rowIdColumn.setHidden(true);

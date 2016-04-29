@@ -27,6 +27,7 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.StudySchema;
@@ -43,7 +44,12 @@ public class ParticipantGroupTable extends BaseStudyTable
     public ParticipantGroupTable(StudyQuerySchema schema)
     {
         super(schema, StudySchema.getInstance().getTableInfoParticipantGroup());
-        setName(StudyService.get().getSubjectTableName(schema.getContainer()));
+        setName(StudyService.get().getSubjectGroupTableName(schema.getContainer()));
+        setDescription("This table contains one row for each " + StudyService.get().getSubjectTableName(schema.getContainer()).toLowerCase() + " group");
+
+        // fix up container filter to include project if dataspace study
+        if (schema.getContainer().isProject() && getContainerFilter() instanceof DataspaceContainerFilter)
+            _setContainerFilter(((DataspaceContainerFilter)getContainerFilter()).getIncludeProjectDatasetContainerFilter());
 
         ColumnInfo rowIdColumn = addWrapColumn(_rootTable.getColumn("RowId"));
         rowIdColumn.setHidden(true);

@@ -30,7 +30,8 @@ public class ParticipantGroupMapTable extends BaseStudyTable
     public ParticipantGroupMapTable(StudyQuerySchema schema)
     {
         super(schema, StudySchema.getInstance().getTableInfoParticipantGroupMap());
-        setName(StudyService.get().getSubjectTableName(schema.getContainer()));
+        setName(StudyService.get().getSubjectGroupMapTableName(schema.getContainer()));
+        setDescription("This table contains study group membership information");
 
         ColumnInfo groupIdColumn = new AliasedColumn(this, "GroupId", _rootTable.getColumn("GroupId"));
         groupIdColumn.setFk(new QueryForeignKey(_userSchema, null, StudyService.get().getSubjectGroupTableName(getContainer()), "RowId", "Label"));
