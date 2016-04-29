@@ -2626,7 +2626,8 @@ if (!LABKEY.DataRegions) {
         var params = {
             dataRegionName: region.name,
             "webpart.name": 'Query',
-            schemaName: region.schemaName
+            schemaName: region.schemaName,
+            returnURL: window.location.href
         }, name = region.name;
 
         if (region.queryName) {
@@ -3590,7 +3591,7 @@ if (!LABKEY.DataRegions) {
  */
 LABKEY.QueryWebPart2.standardButtons = {
     query: 'query',
-    views: 'data grids',
+    views: 'grid views',
     insertNew: 'insert new',
     deleteRows: 'delete',
     exportRows: 'export',

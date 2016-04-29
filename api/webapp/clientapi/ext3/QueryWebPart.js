@@ -947,7 +947,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
  */
 LABKEY.QueryWebPart.standardButtons = {
     query: 'query',
-    views: 'data grids',
+    views: 'grid views',
     insertNew: 'insert new',
     deleteRows: 'delete',
     exportRows: 'export',
