@@ -292,7 +292,8 @@ public class EmailServiceImpl implements EmailService.I
             MockHttpServletResponse response = new MockHttpServletResponse();
             HttpView.include(view, request, response);
 
-            addContent(type, response.getContentAsString());
+            // Call trim() to avoid leading blank lines corresponding with import statements, etc in JSPs
+            addContent(type, response.getContentAsString().trim());
         }
 
         @Override
