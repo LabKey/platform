@@ -37,6 +37,8 @@ import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.PortalBackgroundImageCache;
+import org.labkey.api.admin.notification.Notification;
+import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentParent;
@@ -1876,6 +1878,56 @@ public class CoreController extends SpringActionController
         public void setContainerId(String containerId)
         {
             _containerId = containerId;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class) @RequiresLogin
+    public class MarkNotificationAsReadAction extends ApiAction<RowIdForm>
+    {
+        private Notification _notification;
+
+        @Override
+        public void validateForm(RowIdForm form, Errors errors)
+        {
+            if (form.getRowId() == null)
+            {
+                errors.reject(ERROR_MSG, "No notification rowId provided.");
+            }
+            else
+            {
+                _notification = NotificationService.get().getNotification(form.getRowId());
+
+                if (_notification == null || _notification.getUserId() != getUser().getUserId())
+                    errors.reject(ERROR_MSG, "You do not have permissions to update this notification.");
+            }
+        }
+
+        @Override
+        public ApiResponse execute(RowIdForm form, BindException errors) throws Exception
+        {
+            Container c = ContainerManager.getForId(_notification.getContainer());
+            int numUpdated = NotificationService.get().markAsRead(c, getUser(), _notification.getObjectId(),
+                    Collections.singletonList(_notification.getType()), _notification.getUserId()
+            );
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("numUpdated", numUpdated);
+            response.put("success", true);
+            return response;
+        }
+    }
+
+    public static class RowIdForm
+    {
+        private Integer _rowId;
+
+        public Integer getRowId()
+        {
+            return _rowId;
+        }
+
+        public void setRowId(Integer rowId)
+        {
+            _rowId = rowId;
         }
     }
 }

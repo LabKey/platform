@@ -156,6 +156,14 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
     }
 
     @Override
+    public Notification getNotification(int rowId)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowId);
+        TableSelector selector = new TableSelector(getTable(), filter, null);
+        return selector.getObject(Notification.class);
+    }
+
+    @Override
     public Notification getNotification(Container container, @NotNull Notification notification)
     {
         return getNotification(container, notification.getObjectId(), notification.getType(), notification.getUserId());
