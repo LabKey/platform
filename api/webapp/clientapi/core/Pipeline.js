@@ -40,7 +40,7 @@ LABKEY.Pipeline = new function(){
          *  <li>webDavURL: the WebDavURL for the pipeline root.</li>
          * </ul>
          * @param {Function} [config.failure] A function to call if an error occurs. This function
-         * will receive one parameter of type object with the following properites:
+         * will receive one parameter of type object with the following properties:
          * <ul>
          *  <li>exception: The exception message.</li>
          * </ul>
@@ -74,7 +74,7 @@ LABKEY.Pipeline = new function(){
          *  <li>containerPath: The container path where this protocol was saved</li>
          * </ul>
          * @param {Function} [config.failure] A function to call if an error occurs. This function
-         * will receive one parameter of type object with the following properites:
+         * will receive one parameter of type object with the following properties:
          * <ul>
          *  <li>exception: The exception message.</li>
          * </ul>
@@ -119,7 +119,7 @@ LABKEY.Pipeline = new function(){
          *  <li>status: status of the file, a String</li>
          * </ul>
          * @param {Function} [config.failure] A function to call if an error occurs. This function
-         * will receive one parameter of type object with the following properites:
+         * will receive one parameter of type object with the following properties:
          * <ul>
          *  <li>exception: The exception message.</li>
          * </ul>
@@ -171,7 +171,7 @@ LABKEY.Pipeline = new function(){
          * @param {String} [config.containerPath] The container in which to make the request (defaults to current container)
          * @param {Function} config.success A function to call if this operation is successful.
          * @param {Function} [config.failure] A function to call if an error occurs. This function
-         * will receive one parameter of type object with the following properites:
+         * will receive one parameter of type object with the following properties:
          * <ul>
          *  <li>exception: The exception message.</li>
          * </ul>

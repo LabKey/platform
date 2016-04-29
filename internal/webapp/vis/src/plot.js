@@ -1419,7 +1419,7 @@ boxPlot.render();
  * @param {String} [config.properties.stdDev] The data property name for the standard deviation of the expected range.
  * @param {String} [config.properties.xTickLabel] The data property name for the x-axis tick label.
  * @param {Number} [config.properties.xTickTagIndex] (Optional) The index/value of the x-axis label to be tagged (i.e. class="xticktag").
- * @param {Boolean} [config.properites.showTrendLine] (Optional) Whether or not to show a line connecting the data points. Default false.
+ * @param {Boolean} [config.properties.showTrendLine] (Optional) Whether or not to show a line connecting the data points. Default false.
  * @param {Boolean} [config.properties.disableRangeDisplay] (Optional) Whether or not to show the mean/stdev ranges in the plot. Defaults to false.
  * @param {String} [config.properties.xTick] (Optional) The data property to use for unique x-axis tick marks. Defaults to sequence from 1:data length.
  * @param {String} [config.properties.yAxisScale] (Optional) Whether the y-axis should be plotted with linear or log scale. Default linear.

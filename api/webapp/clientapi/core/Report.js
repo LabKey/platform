@@ -136,7 +136,7 @@ LABKEY.Report = new function(){
          * @param {String} config.reportSessionId Identifier for the report session to delete.
          * @param {Function} config.success The function to call if the operation is successful.
          * @param {Function} [config.failure] A function to call if an error occurs. This function
-         * will receive one parameter of type object with the following properites:
+         * will receive one parameter of type object with the following properties:
          * <ul>
          *  <li>exception: The exception message.</li>
          * </ul>
@@ -165,7 +165,7 @@ LABKEY.Report = new function(){
          * </ul>
          *
          * @param {Function} [config.failure] A function to call if an error occurs. This function
-         * will receive one parameter of type object with the following properites:
+         * will receive one parameter of type object with the following properties:
          * <ul>
          *  <li>exception: The exception message.</li>
          * </ul>
@@ -201,7 +201,7 @@ LABKEY.Report = new function(){
          *     <li>ouputParams:  an outputParam[] of any output parameters (imgout, jsonout, etc) returned by the script</li>
          * </ul>
          * @param {Function} [config.failure] A function to call if an error preventing script execution occurs.
-         * This function will receive one parameter of type object with the following properites:
+         * This function will receive one parameter of type object with the following properties:
          * <ul>
          *  <li>exception: The exception message.</li>
          * </ul>
@@ -233,7 +233,7 @@ LABKEY.Report = new function(){
          *     <li>ouputParams:  an outputParam[] of any output parameters (imgout, jsonout, etc) returned by the script</li>
          * </ul>
          * @param {Function} [config.failure] A function to call if an error preventing script execution occurs.
-         * This function will receive one parameter of type object with the following properites:
+         * This function will receive one parameter of type object with the following properties:
          * <ul>
          *  <li>exception: The exception message.</li>
          * </ul>

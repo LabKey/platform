@@ -33,7 +33,7 @@ import java.util.Set;
  */
 public interface UpdateableTableInfo
 {
-    public enum ObjectUriType
+    enum ObjectUriType
     {
         schemaColumn,       // copy from a column in the root table
         generateUrn        // call GUID.makeURN()
@@ -77,14 +77,14 @@ public interface UpdateableTableInfo
      * physical column -> query column
      * e.g. for list if the key column is named "Name" then this map should have ("key" -> "Name")
      *
-     * TODO this should probably be handled by a tranform step, and removed from this api
+     * TODO this should probably be handled by a transform step, and removed from this api
      */
     @Nullable
     CaseInsensitiveHashMap<String> remapSchemaColumns();
 
     /**
      * if table.getDomain() is not null, you can use this method to skip properties that should not be
-     * persisted in the exp.ObjectProperites.  This happens when there is a PropertyDescriptor that actually
+     * persisted in the exp.ObjectProperties. This happens when there is a PropertyDescriptor that actually
      * describes a column in the base-table (e.g. Key column in list)
      */
     @Nullable
