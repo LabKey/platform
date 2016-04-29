@@ -61,6 +61,11 @@ public class NotificationService
         List<Notification> getNotificationsByType(Container container, @NotNull String type, int notifyUserId, boolean unreadOnly);
 
         /*
+         * Returns a notification based on the notification's RowId.
+         */
+        Notification getNotification(int rowId);
+
+        /*
          * Returns a notification (used for checking if a record already exists for the given user, objectId, and type).
          */
         Notification getNotification(Container container, @NotNull Notification notification);
