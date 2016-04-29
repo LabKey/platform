@@ -61,7 +61,7 @@ import java.util.*;
  * User: jgarms
  */
 @SuppressWarnings("unchecked")
-class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetService
+public class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetService
 {
 
     private final StudyImpl study;

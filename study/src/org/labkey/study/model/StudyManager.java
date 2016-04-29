@@ -16,6 +16,7 @@
 
 package org.labkey.study.model;
 
+import gwt.client.org.labkey.study.dataset.client.model.GWTDataset;
 import org.apache.commons.collections15.CollectionUtils;
 import org.apache.commons.collections15.Transformer;
 import org.apache.commons.collections15.map.CaseInsensitiveMap;
@@ -65,6 +66,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.portal.ProjectUrls;
@@ -123,6 +125,7 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
@@ -132,6 +135,7 @@ import org.labkey.study.StudyCache;
 import org.labkey.study.StudySchema;
 import org.labkey.study.assay.AssayManager;
 import org.labkey.study.controllers.BaseStudyController;
+import org.labkey.study.controllers.DatasetServiceImpl;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.designer.StudyDesignManager;
@@ -5091,6 +5095,7 @@ public class StudyManager
             try
             {
                 createStudy();
+                testDatasetSubcategory();
                 _testImportDatasetData(_studyDateBased);
                 _testDatsetUpdateService(_studyDateBased);
                 _testDaysSinceStartCalculation(_studyDateBased);
@@ -5721,8 +5726,44 @@ public class StudyManager
 
         }
 
+        /**
+         * Regression test for 24107
+         */
+        public void testDatasetSubcategory() throws Exception
+        {
+            Container c = _studyDateBased.getContainer();
+            User user = _context.getUser();
+            Dataset dataset = createDataset(_studyDateBased, "DatasetWithSubcategory", true);
+            int datasetId = dataset.getDatasetId();
+            ViewCategoryManager mgr = ViewCategoryManager.getInstance();
 
-//        @AfterClass
+            ViewCategory category = mgr.ensureViewCategory(c, user, "category");
+            ViewCategory subCategory = mgr.ensureViewCategory(c, user, "category", "category");
+
+            DatasetDefinition dd = _manager.getDatasetDefinition(_studyDateBased, dataset.getDatasetId());
+            dd = dd.createMutable();
+
+            dd.setCategoryId(subCategory.getRowId());
+            dd.save(user);
+
+            // roundtrip the definition through the domain editor
+            DatasetServiceImpl datasetService = new DatasetServiceImpl(ViewContext.getMockViewContext(user, c, null, false), _studyDateBased, _manager);
+
+            GWTDataset gwtDataset = datasetService.getDataset(datasetId);
+            GWTDomain gwtDomain = datasetService.getDomainDescriptor(dd.getTypeURI());
+            datasetService.updateDatasetDefinition(gwtDataset, gwtDomain, gwtDomain);
+
+            DatasetDefinition ds = _studyDateBased.getDataset(datasetId);
+            assertTrue(ds.getCategoryId() == subCategory.getRowId());
+
+            // clean up
+            try (Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction())
+            {
+                dataset.delete(_context.getUser());
+                transaction.commit();
+            }
+        }
+
         public void tearDown()
         {
             if (null != _studyDateBased)
