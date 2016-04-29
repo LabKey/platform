@@ -117,7 +117,7 @@ abstract class OracleDialect extends SimpleSqlDialect
     @Override
     protected Set<String> getJdbcKeywords(SqlExecutor executor) throws SQLException, IOException
     {
-        // Remove goofy "keyword" that Orcale includes in JDBC call
+        // Remove goofy "keyword" that Oracle includes in JDBC call
         Set<String> keywords = super.getJdbcKeywords(executor);
         keywords.remove("all_PL_SQL_reserved_ words");
         return keywords;
