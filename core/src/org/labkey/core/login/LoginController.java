@@ -1959,7 +1959,7 @@ public class LoginController extends SpringActionController
                     laf.setSystemEmailAddress(newUserBean.getEmail());
                     laf.save();
 
-                    //set default domain and default LSID authority to user email domain
+                    //set default domain to user email domain
                     String userEmailAddress = newUserBean.getEmail().getEmailAddress();
                     int atSign = userEmailAddress.indexOf("@");
 
@@ -1969,7 +1969,6 @@ public class LoginController extends SpringActionController
                         String defaultDomain = userEmailAddress.substring(atSign + 1, userEmailAddress.length());
                         WriteableAppProps appProps = AppProps.getWriteableInstance();
                         appProps.setDefaultDomain(defaultDomain);
-                        appProps.setDefaultLsidAuthority(defaultDomain);
                         appProps.save();
                     }
 
