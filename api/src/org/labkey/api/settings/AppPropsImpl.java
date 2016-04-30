@@ -216,30 +216,13 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps.In
 
     public String getDefaultLsidAuthority()
     {
-        String result = lookupStringValue(DEFAULT_LSID_AUTHORITY_PROP, "NOT_SET");
-
-        if ("NOT_SET".equals(result) && UserManager.hasNoUsers())
-        {
-            Logger.getLogger(this.getClass()).info("Server is waiting for first HTTP request and initial user setting");
-
-            while (UserManager.hasNoUsers())
-            {
-                try
-                {
-                    Thread.sleep(1000);
-                }
-                catch (InterruptedException e)
-                {
-                    throw new RuntimeException(e);
-                }
-            }
-
-            result = lookupStringValue(DEFAULT_LSID_AUTHORITY_PROP, "NOT_SET");
-        }
+        // Bad things happen if you change this value on an existing server, so making read-only per issue 26335
+        String result = lookupStringValue(DEFAULT_LSID_AUTHORITY_PROP, "labkey.com");
 
         if (result == null || "".equals(result) || "NOT_SET".equals(result))
         {
-            // We now prevent empty values but in case there's an installation that has one, convert to "localhost"
+            // We now prevent empty values but in case there's an installation that has one, convert to "localhost" for
+            // backwards compatibility
             return "localhost";
         }
         return result;

@@ -407,10 +407,8 @@ public class ModuleLoader implements Filter
         if (!modulesRequiringUpgrade.isEmpty() || !additionalSchemasRequiringUpgrade.isEmpty())
             setUpgradeState(UpgradeState.UpgradeRequired);
 
-        // terminateAfterStartup flag allows "headless upgrade". This is currently allowed only for upgrade, not new install, because
-        // module startup registers audit providers which requires a default LSID authority which requires the initial user to be set
-        // which requires a request which requires server startup to complete. See AppPropsImpl.getDefaultLsidAuthority().
-        boolean terminateAfterStartup = Boolean.valueOf(System.getProperty("terminateAfterStartup")) && !isNewInstall();
+        // terminateAfterStartup flag allows "headless upgrade". Now supports initial install as well
+        boolean terminateAfterStartup = Boolean.valueOf(System.getProperty("terminateAfterStartup"));
         Execution execution = terminateAfterStartup ? Execution.Synchronous : Execution.Asynchronous;
 
         startNonCoreUpgradeAndStartup(User.getSearchUser(), execution, coreRequiredUpgrade);  // TODO: Change search user to system user

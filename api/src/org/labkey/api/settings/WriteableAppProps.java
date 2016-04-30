@@ -107,15 +107,6 @@ public class WriteableAppProps extends AppPropsImpl
         storeStringValue(DEFAULT_DOMAIN_PROP, defaultDomain);
     }
 
-    public void setDefaultLsidAuthority(String defaultLsidAuthority)
-    {
-        if (defaultLsidAuthority != null && defaultLsidAuthority.contains(":"))
-        {
-            throw new IllegalArgumentException("Default LSID authority may not contain ':'");
-        }
-        storeStringValue(DEFAULT_LSID_AUTHORITY_PROP, defaultLsidAuthority);
-    }
-
     public void setBaseServerUrl(String baseServerUrl) throws URISyntaxException
     {
         validateBaseServerUrl(baseServerUrl);
