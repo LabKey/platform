@@ -1401,7 +1401,7 @@ public class IssueManager
             // if there are no other containers referencing this domain, then it's safe to delete
             if (new TableSelector(issueDefTable, filter, null).getRowCount() == 0)
             {
-                d.delete(user);
+                d.getDomainKind().deleteDomain(user, d);
             }
             transaction.commit();
         }

@@ -1,6 +1,7 @@
 package org.labkey.issue.model;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Entity;
@@ -13,13 +14,17 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.issues.IssuesSchema;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.issue.query.IssueDefDomainKind;
 
 import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by klum on 4/5/2016.
@@ -127,21 +132,21 @@ public class IssueListDef extends Entity
             // need to transact this
             def = Table.insert(user, IssuesSchema.getInstance().getTableInfoIssueListDef(), this);
             String uri = generateDomainURI(getDomainContainer(user), user);
+            Container domainContainer = getDomainContainer(user);
 
-            Domain domain = PropertyService.get().getDomain(getDomainContainer(user), uri);
+            Domain domain = PropertyService.get().getDomain(domainContainer, uri);
             if (domain == null)
             {
-                domain = PropertyService.get().createDomain(getDomainContainer(user), uri, getName());
-                DomainKind domainKind = domain.getDomainKind();
                 try
                 {
-                    if (domainKind instanceof IssueDefDomainKind)
-                    {
-                        ensureDomainProperties(domain, ((IssueDefDomainKind)domainKind).getRequiredProperties());
-                    }
+                    IssueDefDomainKind domainKind = (IssueDefDomainKind)PropertyService.get().getDomainKindByName(IssueDefDomainKind.NAME);
+                    domainKind.createLookupDomains(domainContainer, user, getName());
+                    domain = PropertyService.get().createDomain(getDomainContainer(user), uri, getName());
+
+                    ensureDomainProperties(domain, domainKind, domainKind.getRequiredProperties(), domainKind.getPropertyForeignKeys(domainContainer));
                     domain.save(user);
                 }
-                catch (ChangePropertyDescriptorException e)
+                catch (ChangePropertyDescriptorException | BatchValidationException e)
                 {
                     throw new UnexpectedException(e);
                 }
@@ -175,9 +180,15 @@ public class IssueListDef extends Entity
         return domain;
     }
 
-    private void ensureDomainProperties(Domain domain, Collection<PropertyStorageSpec> requiredProps)
+    private void ensureDomainProperties(Domain domain, IssueDefDomainKind domainKind, Collection<PropertyStorageSpec> requiredProps, Set<PropertyStorageSpec.ForeignKey> foreignKeys)
     {
         String typeUri = domain.getTypeURI();
+        Map<String, PropertyStorageSpec.ForeignKey> foreignKeyMap = new CaseInsensitiveHashMap<>();
+
+        for (PropertyStorageSpec.ForeignKey fk : foreignKeys)
+        {
+            foreignKeyMap.put(fk.getColumnName(), fk);
+        }
 
         for (PropertyStorageSpec spec : requiredProps)
         {
@@ -188,6 +199,14 @@ public class IssueListDef extends Entity
             prop.setRangeURI(PropertyType.getFromJdbcType(spec.getJdbcType()).getTypeUri());
             prop.setScale(spec.getSize());
             prop.setRequired(!spec.isNullable());
+
+            if (foreignKeyMap.containsKey(spec.getName()))
+            {
+                PropertyStorageSpec.ForeignKey fk = foreignKeyMap.get(spec.getName());
+                Lookup lookup = new Lookup(domain.getContainer(), fk.getSchemaName(), domainKind.getLookupTableName(getName(), fk.getTableName()));
+
+                prop.setLookup(lookup);
+            }
         }
     }
 }

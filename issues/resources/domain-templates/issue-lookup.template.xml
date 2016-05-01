@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xmlns="http://labkey.org/data/xml/domainTemplate"
+           xmlns:dat="http://labkey.org/data/xml"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+    <template xsi:type="ListTemplateType">
+        <table tableName="priority" tableDbType="NOT_IN_DB">
+            <dat:columns>
+                <dat:column columnName="value">
+                    <dat:datatype>int</dat:datatype>
+                </dat:column>
+            </dat:columns>
+        </table>
+        <initialData>
+            <file>/data/priority.tsv</file>
+        </initialData>
+        <options>
+            <keyCol>value</keyCol>
+        </options>
+    </template>
+    <template xsi:type="ListTemplateType">
+        <table tableName="type" tableDbType="NOT_IN_DB">
+            <dat:columns>
+                <dat:column columnName="value">
+                    <dat:datatype>varchar</dat:datatype>
+                    <dat:scale>50</dat:scale>
+                </dat:column>
+            </dat:columns>
+        </table>
+        <initialData>
+            <file>/data/type.tsv</file>
+        </initialData>
+        <options>
+            <keyCol>value</keyCol>
+        </options>
+    </template>
+    <template xsi:type="ListTemplateType">
+        <table tableName="area" tableDbType="NOT_IN_DB">
+            <dat:columns>
+                <dat:column columnName="value">
+                    <dat:datatype>varchar</dat:datatype>
+                    <dat:scale>100</dat:scale>
+                </dat:column>
+            </dat:columns>
+        </table>
+        <options>
+            <keyCol>value</keyCol>
+        </options>
+    </template>
+    <template xsi:type="ListTemplateType">
+        <table tableName="milestone" tableDbType="NOT_IN_DB">
+            <dat:columns>
+                <dat:column columnName="value">
+                    <dat:datatype>varchar</dat:datatype>
+                    <dat:scale>50</dat:scale>
+                </dat:column>
+            </dat:columns>
+        </table>
+        <options>
+            <keyCol>value</keyCol>
+        </options>
+    </template>
+</templates>

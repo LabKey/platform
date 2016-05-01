@@ -958,6 +958,9 @@ filecontent/webapp/File/util/IconUtil.js -text
 issues/Issue-API.iml -text svneol=unset#application/xml
 issues/api-src/org/labkey/api/issues/IssuesUrls.java -text
 issues/module.properties -text
+issues/resources/data/priority.tsv -text
+issues/resources/data/type.tsv -text
+issues/resources/domain-templates/issue-lookup.template.xml -text
 issues/resources/queries/issues/Issues/mine.qview.xml -text
 issues/resources/queries/issues/Issues/open.qview.xml -text
 issues/resources/queries/issues/Issues/resolved.qview.xml -text

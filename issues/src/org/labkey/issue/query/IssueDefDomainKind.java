@@ -10,19 +10,26 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.list.ListDefinition;
+import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainTemplate;
+import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.issues.IssuesSchema;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
+import org.quartz.ListenerManager;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -47,8 +54,13 @@ public class IssueDefDomainKind extends AbstractDomainKind
     //private static final Set<PropertyStorageSpec.Index> INDEXES;
     private static final Set<String> RESERVED_NAMES;
     private static final Set<String> MANDATORY_PROPERTIES;
+    private static final Set<PropertyStorageSpec.ForeignKey> FOREIGN_KEYS;
 
-    //private static final Set<PropertyStorageSpec.ForeignKey> FOREIGN_KEYS;
+    private static final String ISSUE_LOOKUP_TEMPLATE_GROUP = "issue-lookup";
+    private static final String PRIORITY_LOOKUP = "priority";
+    private static final String TYPE_LOOKUP = "type";
+    private static final String AREA_LOOKUP = "area";
+    private static final String MILESTONE_LOOKUP = "milestone";
 
     static
     {
@@ -66,6 +78,13 @@ public class IssueDefDomainKind extends AbstractDomainKind
                 new PropertyStorageSpec("Priority", JdbcType.INTEGER).setNullable(false),
                 new PropertyStorageSpec("Milestone", JdbcType.VARCHAR, 200),
                 new PropertyStorageSpec("Resolution", JdbcType.VARCHAR, 200)
+        )));
+
+        FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
+                new PropertyStorageSpec.ForeignKey(PRIORITY_LOOKUP, "Lists", PRIORITY_LOOKUP, "value", null, false),
+                new PropertyStorageSpec.ForeignKey(TYPE_LOOKUP, "Lists", TYPE_LOOKUP, "value", null, false),
+                new PropertyStorageSpec.ForeignKey(AREA_LOOKUP, "Lists", AREA_LOOKUP, "value", null, false),
+                new PropertyStorageSpec.ForeignKey(MILESTONE_LOOKUP, "Lists", MILESTONE_LOOKUP, "value", null, false)
         )));
 
         RESERVED_NAMES = BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet());
@@ -134,6 +153,12 @@ public class IssueDefDomainKind extends AbstractDomainKind
         return MANDATORY_PROPERTIES;
     }
 
+    @Override
+    public Set<PropertyStorageSpec.ForeignKey> getPropertyForeignKeys(Container container)
+    {
+        return FOREIGN_KEYS;
+    }
+
     @Nullable
     @Override
     public Priority getPriority(String domainURI)
@@ -182,6 +207,58 @@ public class IssueDefDomainKind extends AbstractDomainKind
         {
             return null;
         }
+    }
+
+    @Override
+    public void deleteDomain(User user, Domain domain)
+    {
+        try
+        {
+            // delete any of the built in lookups that are created automatically
+            deleteLookup(domain, user, PRIORITY_LOOKUP);
+            deleteLookup(domain, user, AREA_LOOKUP);
+            deleteLookup(domain, user, TYPE_LOOKUP);
+            deleteLookup(domain, user, MILESTONE_LOOKUP);
+            domain.delete(user);
+        }
+        catch (DomainNotFoundException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void deleteLookup(Domain domain, User user, String lookupName) throws DomainNotFoundException
+    {
+        Container c = domain.getContainer();
+
+        ListDefinition def = ListService.get().getList(c, getLookupTableName(domain.getName(), lookupName));
+        if (def != null)
+            def.delete(user);
+    }
+
+    public String getLookupTableName(String domainName, String lookupTemplateName)
+    {
+        return domainName + "-" + lookupTemplateName + "-lookup";
+    }
+
+    /**
+     * Create the lists for any of the built in lookup fields (priority, type, area and milestone)
+     */
+    public void createLookupDomains(Container domainContainer, User user, String domainName) throws BatchValidationException
+    {
+        DomainTemplateGroup templateGroup = DomainTemplateGroup.get(domainContainer, ISSUE_LOOKUP_TEMPLATE_GROUP);
+
+        DomainTemplate priorityTemplate = templateGroup.getTemplate(PRIORITY_LOOKUP);
+        priorityTemplate.createAndImport(domainContainer, user, getLookupTableName(domainName, PRIORITY_LOOKUP), true, true);
+
+        DomainTemplate typeTemplate = templateGroup.getTemplate(TYPE_LOOKUP);
+        typeTemplate.createAndImport(domainContainer, user, getLookupTableName(domainName, TYPE_LOOKUP), true, true);
+
+        DomainTemplate areaTemplate = templateGroup.getTemplate(AREA_LOOKUP);
+        areaTemplate.createAndImport(domainContainer, user, getLookupTableName(domainName, AREA_LOOKUP), true, false);
+
+        DomainTemplate milestoneTemplate = templateGroup.getTemplate(MILESTONE_LOOKUP);
+        milestoneTemplate.createAndImport(domainContainer, user, getLookupTableName(domainName, MILESTONE_LOOKUP), true, false);
     }
 }
 
