@@ -362,4 +362,45 @@ public class JsonWriter
 
         return null;
     }
+
+    public static Map<String,Object> getColModel(DisplayColumn dc) throws Exception
+    {
+        Map<String,Object> extGridColumn = new HashMap<>();
+        ColumnInfo colInfo = dc.getColumnInfo();
+
+        // see  Ext.grid.ColumnModel Ext.grid.Column
+        extGridColumn.put("dataIndex", dc.getName());
+        extGridColumn.put("sortable", dc.isSortable());
+        extGridColumn.put("editable", dc.isEditable());
+        extGridColumn.put("hidden", colInfo != null && (colInfo.isHidden() || colInfo.isAutoIncrement())); //auto-incr list key columns return false for isHidden(), so check isAutoIncrement as well
+        if (dc.getTextAlign() != null)
+            extGridColumn.put("align", dc.getTextAlign());
+        if (dc.getDescription() != null)
+            extGridColumn.put("tooltip", dc.getDescription());
+        if (dc.getCaption() != null)
+            extGridColumn.put("header", dc.getCaption());
+        if (dc.getWidth() != null)
+        {
+            try
+            {
+                //try to parse as integer (which is what Ext wants)
+                extGridColumn.put("width", Integer.parseInt(dc.getWidth()));
+            }
+            catch(NumberFormatException e)
+            {
+                //include it as a string
+                extGridColumn.put("width", dc.getWidth());
+            }
+        }
+
+        // TODO ext grids doesn't understand missing values, so treat required as !nullable
+        extGridColumn.put("required", colInfo != null && (!colInfo.isNullable() || colInfo.isRequired()));
+        if (colInfo != null && dc.isEditable() && null != colInfo.getDefaultValue())
+            extGridColumn.put("defaultValue", colInfo.getDefaultValue());
+        if (colInfo != null)
+        {
+            extGridColumn.put("scale", colInfo.getScale());
+        }
+        return extGridColumn;
+    }
 }
