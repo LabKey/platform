@@ -35,6 +35,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.admin.CoreUrls;
+import org.labkey.api.admin.notification.Notification;
+import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.announcements.api.Tour;
 import org.labkey.api.announcements.api.TourService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -63,6 +65,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebTheme;
 import org.labkey.api.view.WebThemeManager;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.core.notification.NotificationMenuView;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.web.servlet.ModelAndView;
@@ -128,6 +131,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -2016,6 +2020,9 @@ public class PageFlowUtil
         json.put("serverName", StringUtils.isNotEmpty(serverName) ? serverName : "Labkey Server");
         json.put("versionString", appProps.getLabKeyVersionString());
 
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATIONMENU))
+            json.put("notifications", getNotificationJson(user));
+
         if (request != null)
         {
             json.put("login", AuthenticationManager.getLoginPageConfiguration(getTermsOfUseProject(project, request.getParameter("returnUrl"))));
@@ -2045,6 +2052,35 @@ public class PageFlowUtil
             }
         }
         return tourProps;
+    }
+
+    private static JSONObject getNotificationJson(User user)
+    {
+        Map<Integer, Map<String, Object>> notificationsPropMap = new HashMap<>();
+        Map<String, List<Integer>> notificationGroupingsMap = new TreeMap<>();
+        List<Notification> userNotifications = new ArrayList<>();
+
+        NotificationService.Service service = NotificationService.get();
+        if (service != null && user != null && !user.isGuest())
+        {
+            userNotifications = service.getNotificationsByUser(null, user.getUserId(), true);
+            for (Notification notification : userNotifications)
+            {
+                notificationsPropMap.put(notification.getRowId(), notification.asPropMap());
+
+                String groupLabel = service.getNotificationTypeLabel(notification.getType());
+                if (!notificationGroupingsMap.containsKey(groupLabel))
+                {
+                    notificationGroupingsMap.put(groupLabel, new ArrayList<>());
+                }
+                notificationGroupingsMap.get(groupLabel).add(notification.getRowId());
+            }
+        }
+
+        JSONObject notifications = new JSONObject(notificationsPropMap);
+        notifications.put("grouping", notificationGroupingsMap);
+        notifications.put("count", userNotifications.size());
+        return notifications;
     }
 
     public static String getServerSessionHash()

@@ -406,6 +406,7 @@ if (typeof LABKEY == "undefined")
                     "clientapi/dom/Chart.js",
                     "clientapi/dom/Form.js",
                     "clientapi/dom/NavTrail.js",
+                    "clientapi/dom/Notification.js",
                     "clientapi/dom/Portal.js",
                     "clientapi/dom/Query.js",
                     "clientapi/dom/Security.js",

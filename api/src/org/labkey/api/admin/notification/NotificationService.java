@@ -95,6 +95,16 @@ public class NotificationService
          * Return a count of the number of notification records removed.
          */
         int removeNotificationsByType(Container container, @Nullable String objectId, @NotNull List<String> types);
+
+        /*
+         * Register a mapping from a String notification type to a display label for that type.
+         */
+        void registerNotificationTypeLabel(@NotNull String type, String label);
+
+        /*
+         * Get the registered display label for a given notification type String. Default "Other".
+         */
+        String getNotificationTypeLabel(@NotNull String type);
     }
 
     public static void register(Service serviceImpl)

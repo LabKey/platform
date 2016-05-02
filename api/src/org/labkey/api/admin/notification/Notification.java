@@ -21,6 +21,8 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * User: cnathe
@@ -170,5 +172,21 @@ public class Notification
             return content;
         else
             return PageFlowUtil.filter(content, true, true);
+    }
+
+    @Transient
+    public Map<String, Object> asPropMap()
+    {
+        Map<String, Object> props = new HashMap<>();
+        props.put("RowId", getRowId());
+        props.put("UserId", getUserId());
+        props.put("ObjectId", getObjectId());
+        props.put("Type", getType());
+        props.put("ContainerId", getContainer());
+        props.put("HtmlContent", getHtmlContent());
+        props.put("ActionLinkText", getActionLinkText());
+        props.put("ActionLinkUrl", getActionLinkURL());
+        props.put("ReadOn", getReadOn());
+        return props;
     }
 }
