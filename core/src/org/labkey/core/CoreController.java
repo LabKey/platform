@@ -1882,52 +1882,64 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class) @RequiresLogin
-    public class MarkNotificationAsReadAction extends ApiAction<RowIdForm>
+    public class MarkNotificationAsReadAction extends ApiAction<RowIdsForm>
     {
-        private Notification _notification;
+        private List<Notification> _notifications = new ArrayList<>();
 
         @Override
-        public void validateForm(RowIdForm form, Errors errors)
+        public void validateForm(RowIdsForm form, Errors errors)
         {
-            if (form.getRowId() == null)
+            if (form.getRowIds() == null || form.getRowIds().isEmpty())
             {
-                errors.reject(ERROR_MSG, "No notification rowId provided.");
+                errors.reject(ERROR_MSG, "No notification rowIds provided.");
             }
             else
             {
-                _notification = NotificationService.get().getNotification(form.getRowId());
-
-                if (_notification == null || _notification.getUserId() != getUser().getUserId())
-                    errors.reject(ERROR_MSG, "You do not have permissions to update this notification.");
+                for (Integer rowId : form.getRowIds())
+                {
+                    Notification notification = NotificationService.get().getNotification(rowId);
+                    if (notification == null || notification.getUserId() != getUser().getUserId())
+                        errors.reject(ERROR_MSG, "You do not have permissions to update this notification: " + rowId);
+                    else
+                        _notifications.add(notification);
+                }
             }
         }
 
         @Override
-        public ApiResponse execute(RowIdForm form, BindException errors) throws Exception
+        public ApiResponse execute(RowIdsForm form, BindException errors) throws Exception
         {
-            Container c = ContainerManager.getForId(_notification.getContainer());
-            int numUpdated = NotificationService.get().markAsRead(c, getUser(), _notification.getObjectId(),
-                    Collections.singletonList(_notification.getType()), _notification.getUserId()
-            );
+            int totalUpdated = 0;
+
+            for (Notification notification : _notifications)
+            {
+                Container c = ContainerManager.getForId(notification.getContainer());
+                int numUpdated = NotificationService.get().markAsRead(c, getUser(), notification.getObjectId(),
+                        Collections.singletonList(notification.getType()), notification.getUserId()
+                );
+
+                totalUpdated += numUpdated;
+            }
+
             ApiSimpleResponse response = new ApiSimpleResponse();
-            response.put("numUpdated", numUpdated);
+            response.put("numUpdated", totalUpdated);
             response.put("success", true);
             return response;
         }
     }
 
-    public static class RowIdForm
+    public static class RowIdsForm
     {
-        private Integer _rowId;
+        private List<Integer> _rowIds;
 
-        public Integer getRowId()
+        public List<Integer> getRowIds()
         {
-            return _rowId;
+            return _rowIds;
         }
 
-        public void setRowId(Integer rowId)
+        public void setRowIds(List<Integer> rowIds)
         {
-            _rowId = rowId;
+            _rowIds = rowIds;
         }
     }
 }

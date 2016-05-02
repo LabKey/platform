@@ -319,7 +319,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AdminConsole.addExperimentalFeatureFlag(MenuBarView.EXPERIMENTAL_NAV, "Combined Navigation Drop-down",
                 "This feature will combine the Navigation of Projects and Folders into one drop-down.", false);
         AdminConsole.addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATIONMENU, "Notifications Menu",
-                "Prototype of notifications alert.", false);
+                "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false);
 
         // authentication provider implementations
         AuthenticationManager.registerProvider(new LdapAuthenticationProvider(), Priority.High);

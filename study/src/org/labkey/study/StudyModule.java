@@ -19,6 +19,7 @@ package org.labkey.study;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.admin.FolderSerializationRegistry;
+import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -56,6 +57,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.PlateService;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
@@ -287,6 +289,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         DataViewService.get().registerProvider(ReportViewProvider.TYPE, new ReportViewProvider());
 
         EmailTemplateService.get().registerTemplate(SpecimenRequestNotificationEmailTemplate.class);
+
+        NotificationService.get().registerNotificationTypeLabel(ParticipantCategory.SEND_PARTICIPANT_GROUP_TYPE, "Study");
     }
 
     @NotNull

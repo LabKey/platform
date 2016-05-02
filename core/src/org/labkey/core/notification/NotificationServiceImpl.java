@@ -51,6 +51,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * User: cnathe
@@ -59,6 +60,7 @@ import java.util.Map;
 public class NotificationServiceImpl extends AbstractContainerListener implements NotificationService.Service
 {
     private final static NotificationServiceImpl INSTANCE = new NotificationServiceImpl();
+    private final Map<String, String> _typeLabelMap = new ConcurrentHashMap<>();
 
     public static NotificationServiceImpl getInstance()
     {
@@ -228,6 +230,24 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
         if (objectId != null)
             filter.addCondition(FieldKey.fromParts("ObjectId"), objectId);
         return filter;
+    }
+
+    @Override
+    public void registerNotificationTypeLabel(@NotNull String type, String label)
+    {
+        if (!_typeLabelMap.containsKey(type))
+            _typeLabelMap.put(type, label);
+        else
+            throw new IllegalStateException("A label has already been registered for this type: " + type);
+    }
+
+    @Override
+    public String getNotificationTypeLabel(@NotNull String type)
+    {
+        if (_typeLabelMap.containsKey(type))
+            return _typeLabelMap.get(type);
+        else
+            return "Other";
     }
 
     private TableInfo getTable()

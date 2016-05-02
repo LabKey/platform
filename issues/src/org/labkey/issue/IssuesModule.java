@@ -16,6 +16,7 @@
 package org.labkey.issue;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SqlExecutor;
@@ -43,6 +44,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
+import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.query.IssueDefDomainKind;
 import org.labkey.issue.query.IssuesQuerySchema;
@@ -82,6 +84,8 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
 
         PropertyService.get().registerDomainKind(new IssueDefDomainKind());
         AdminConsole.addExperimentalFeatureFlag(IssueManager.NEW_ISSUES_EXPERIMENTAL_FEATURE, "New Issues List", "Enables storage of issue list data in provisioned tables", true);
+
+        NotificationService.get().registerNotificationTypeLabel(Issue.class.getName(), "Issues");
     }
 
     @NotNull

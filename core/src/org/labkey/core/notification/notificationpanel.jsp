@@ -1,210 +1,69 @@
-<%@ page import="org.labkey.api.admin.notification.Notification" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="java.util.List" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="java.util.TreeMap" %>
-<%@ page import="java.util.ArrayList" %>
-<%@ page import="java.util.HashMap" %>
+<%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<style>
-    A.labkey-menu-text-link I
-    {
-        font-size:120%;
-    }
-    .lk-notificationpanel
-    {
-        position:fixed; right:0; top:0;
-        background-color: #323336;
-        color:#ffffff;
-        height:100%;
-        width:400px;
-    }
-    .lk-notification, .lk-notificationnone
-    {
-        color: #aaaaaa;
-        padding: 10px 15px;
-    }
-    .lk-notification:hover
-    {
-        background-color: #555555;
-        /*cursor: pointer;*/
-    }
-    .lk-notificationpanel A.lk-action
-    {
-        color: #aaaaaa;
-    }
-    .lk-notificationtype
-    {
-        padding: 10px 5px;
-        color: #ffffff;
-        /*font-weight: bold;*/
-        border-bottom: solid #aaaaaa 1px;
-        margin: 0 10px 10px 10px;
-    }
-    .lk-notificationclose
-    {
-        position: absolute;
-        right: 15px;
-        border-left: solid #aaaaaa 1px;
-        line-height: 26px;
-        padding-left: 10px;
-    }
-    .lk-notificationtitle
-    {
-        padding: 20px 15px;
-        font-weight:bold;
-        text-transform: uppercase;
-        color: #ffffff;
-    }
-    .lk-notificationbody
-    {
-        display: inline-block;
-        color: #aaaaaa;
-        cursor: default;
-        padding: 5px 0;
-        white-space: normal;
-        word-wrap: break-word;
-        width: 305px;
-        max-height: 100px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .lk-notificationicon
-    {
-        display: inline-block;
-        font-size: 16px;
-        color: #ffffff;
-        margin-right: 5px;
-        padding: 5px;
-        background-color: #aaaaaa;
-        vertical-align: top;
-    }
-    .lk-notificationtimes
-    {
-        font-size: 16px;
-        color: #aaaaaa;
-    }
-    .lk-notificationtimes:hover
-    {
-        color: #ffffff;
-    }
-</style>
 <%
-    List<Notification> notifications = (List<Notification>) HttpView.currentModel();
+    String notificationCountId = "labkey-notifications-count" + UniqueID.getServerSessionScopedUID();
+    String notificationPanelId = "labkey-notifications-panel" + UniqueID.getServerSessionScopedUID();
 %>
-<script type="text/ecmascript">
-var $ = $ || jQuery;
-LABKEY.notifications = {};
-LABKEY.notifications.showNotificationsPanel = function()
-{
-    // slide open the notification panel and bind the click listener after the slide animation has completed
-    $('#labkey-notifications-panel').slideDown(250, function()
-    {
-        $('body').on('click', LABKEY.notifications.checkClick);
-        //$('#labkey-notifications-panel').on('mouseleave', LABKEY.notifications.hideNotificationsPanel);
-    });
 
-    return true;
-};
-LABKEY.notifications.checkClick = function(event)
+<script type="text/javascript">
+(function($)
 {
-    // close if the click happened outside of the notification panel
-    var subject = $('#labkey-notifications-panel');
-    if (event.target.id != subject.attr('id') && !subject.has(event.target).length)
+    LABKEY.Utils.onReady(function ()
     {
-        LABKEY.notifications.hideNotificationsPanel();
-    }
+        LABKEY.Notification.setElementIds(<%=q(notificationCountId)%>, <%=q(notificationPanelId)%>);
+        LABKEY.Notification.updateUnreadCount();
 
-};
-LABKEY.notifications.hideNotificationsPanel = function()
-{
-    // slide out the notification panel and unbind the click listener
-    $('#labkey-notifications-panel').slideUp(250, function()
-    {
-        $('body').off('click', LABKEY.notifications.checkClick);
-    });
+        var html = "";
+        html += "<div class='lk-notificationheader'>"
+            + "   <div class='lk-notificationtitle'>Notifications</div>"
+            + "</div>";
 
-    return true;
-};
-LABKEY.notifications.goToNotificationLink = function(event, href)
-{
-    if (!event.target.classList.contains("lk-notificationclose"))
-    {
-        window.location = href;
-    }
-};
-LABKEY.notifications.markAsRead = function(notificationId)
-{
-    LABKEY.Ajax.request({
-        url: LABKEY.ActionURL.buildURL('core', 'markNotificationAsRead.api'),
-        params: {rowId: notificationId},
-        success: LABKEY.Utils.getCallbackWrapper(function (response)
+        html += "<div class='lk-notificationclearall " + (LABKEY.notifications.count > 0 ? "" : "labkey-hidden") + "' onclick='LABKEY.Notification.clearAllUnread(); return true;'>clear all</div>";
+        html += "<div class='lk-notificationnone " + (LABKEY.notifications.count == 0 ? "" : "labkey-hidden") + "'>No new notifications</div>";
+        html += "<div class='lk-notificationarea'>";
+        if (LABKEY.notifications.count > 0)
         {
-            if (response.success && response.numUpdated == 1)
+            var groupings = LABKEY.notifications.grouping ? Object.keys(LABKEY.notifications.grouping) : [];
+
+            // sort groups alphabetically, with "Other" at the bottom
+            groupings.sort(function(a, b)
             {
-                $('#notification-' + notificationId).addClass('labkey-hidden');
-                // TODO: update the notification count inbox number in the header bar
+                if (a === "Other")
+                    return 1;
+                else if (b === "Other")
+                    return -1;
+                else
+                    return a.localeCompare(b);
+            });
+
+            for (var i = 0; i < groupings.length; i++)
+            {
+                html += "<div class='lk-notificationtype' id='notificationtype-" + groupings[i] + "'>" + groupings[i] + "</div>";
+
+                var groupRowIds = LABKEY.notifications.grouping[groupings[i]];
+                for (var j = 0; j < groupRowIds.length; j++)
+                {
+                    var rowId = groupRowIds[j], info = LABKEY.notifications[rowId];
+                    html += "<div class='lk-notification' id='notification-" + rowId + "' onclick='LABKEY.Notification.goToActionLink(event, " + rowId + "); return true;'>"
+                        + "   <div class='fa fa-bell lk-notificationicon'></div>"
+                        + "   <div class='lk-notificationbody'>" + info.HtmlContent + "</div>"
+                        + "   <div class='fa fa-times lk-notificationclose lk-notificationtimes' onclick='LABKEY.Notification.markAsRead(" + rowId + "); return true;'></div>"
+                        + "</div>";
+                }
             }
-        })
+        }
+        html += "</div>";
+
+        $('#' + <%=q(notificationPanelId)%>).html(html);
     });
-}
+})(jQuery);
 </script>
-<a href=# class='labkey-menu-text-link' onclick="return LABKEY.notifications.showNotificationsPanel()"><i class="fa fa-inbox"></i>&nbsp;<%=notifications.size()%></a>
-<div class="labkey-hidden lk-notificationpanel" id="labkey-notifications-panel">
-<div class="lk-notificationheader">
-    <div class="lk-notificationtitle">Notifications</div>
-</div>
-<%
-    if (notifications == null || notifications.isEmpty())
-    {
-%>
-        <div class="lk-notificationnone">No new notifications</div>
-<%
-    }
-    else
-    {
-        // TODO: THIS IS TEMPORARY. where to put this type map? add notification table property for module name and use that?
-        Map<String, String> typeLabels = new HashMap<>();
-        typeLabels.put("AdjudicationCaseCreated", "Adjudication");
-        typeLabels.put("AdjudicationCaseAssayDataUpdated", "Adjudication");
-        typeLabels.put("AdjudicationCaseCompleted", "Adjudication");
-        typeLabels.put("AdjudicationCaseReadyForVerification", "Adjudication");
-        typeLabels.put("AdjudicationCaseResolutionRequired", "Adjudication");
-        typeLabels.put("Study.SendParticipantGroup", "Study");
-        typeLabels.put("org.labkey.issue.model.Issue", "Issues");
 
-        Map<String, List<Notification>> notificationsMap = new TreeMap<>();
-        for (Notification notification : notifications)
-        {
-            String type = notification.getType();
-            type = typeLabels.containsKey(type) ? typeLabels.get(type) : "Other";
-
-            if (!notificationsMap.containsKey(type))
-                notificationsMap.put(type, new ArrayList<>());
-
-            notificationsMap.get(type).add(notification);
-        }
-
-        for (Map.Entry<String, List<Notification>> notificationType : notificationsMap.entrySet())
-        {
-%>
-            <div class="lk-notificationtype"><%=h(notificationType.getKey())%></div>
-<%
-
-            for (Notification notification : notificationType.getValue())
-            {
-%>
-                <div class="lk-notification" id="notification-<%=notification.getRowId()%>" onclick="return LABKEY.notifications.goToNotificationLink(event, '<%=h(notification.getActionLinkURL())%>')">
-                    <div class="fa fa-bell lk-notificationicon"></div>
-                    <div class="lk-notificationbody"><%=text(notification.getHtmlContent())%></div>
-                    <div class="fa fa-times lk-notificationclose lk-notificationtimes" onclick="return LABKEY.notifications.markAsRead(<%=notification.getRowId()%>)"></div>
-                </div>
-<%
-            }
-        }
-    }
-%>
-</div>
+<a href=# class='labkey-menu-text-link' onclick="LABKEY.Notification.showPanel(); return true;">
+    <span class="fa fa-inbox lk-notificationinbox"></span>
+    <span id=<%=q(notificationCountId)%>>&nbsp;</span>
+</a>
+<div class="labkey-hidden lk-notificationpanel" id=<%=q(notificationPanelId)%>></div>
 
 
 
