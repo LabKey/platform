@@ -336,7 +336,7 @@ public class ConnectionWrapper implements java.sql.Connection
                     if (_transactionStateMethod == null)
                     {
                         _transactionStateMethod = connection.getClass().getMethod("getTransactionState");
-                        _log.info("Got transactionStateMethod from org.postgresql.jdbc4.Jdbc4Connection. " + _transactionStateMethod);
+                        _log.debug("Got transactionStateMethod from org.postgresql.jdbc4.Jdbc4Connection. " + _transactionStateMethod);
                     }
                     Object state = _transactionStateMethod.invoke(connection);
 
