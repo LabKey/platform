@@ -131,6 +131,10 @@ Ext4.define('Study.window.ParticipantGroup', {
                         infoCombo.setValue(records[0].get("Label"));
                         this.onDemographicSelect(infoCombo, records, 0);
                     }
+                    else
+                    {
+                        LABKEY.Utils.signalWebDriverTest("dataRegionUpdate"); // Tests expect a data region
+                    }
                 },
                 scope : this
             }
@@ -339,8 +343,6 @@ Ext4.define('Study.window.ParticipantGroup', {
         }
         simplePanel.on('closewindow', this.close, this);
         this.callParent(arguments);
-        //This class exists for testing purposes (e.g. ReportTest)
-        this.cls = "doneLoadingTestMarker";
         if (this.hideDataRegion){
             this.on('donewithbuttons', function(){this.height = simplePanel.el.dom.scrollHeight + 25;});
         }

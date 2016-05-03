@@ -526,7 +526,7 @@ public class StudyTest extends StudyBaseTest
     {
         waitAndClick(Ext4Helper.Locators.ext4Button("Create"));
         _extHelper.waitForExtDialog("Define Mouse Group");
-        waitForElement(Locator.css(".doneLoadingTestMarker"));
+        waitForElement(Locators.pageSignal(DataRegionTable.UPDATE_SIGNAL));
         String dataset = getFormElement(Locator.name("infoCombo"));
         if (dataset.length() > 0)
         {
