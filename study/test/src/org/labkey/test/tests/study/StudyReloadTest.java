@@ -21,10 +21,11 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyA;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.LogMethod;
+import org.labkey.test.util.PipelineStatusTable;
 
 import java.io.File;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 @Category({DailyA.class})
 public class StudyReloadTest extends StudyBaseTest
@@ -43,11 +44,9 @@ public class StudyReloadTest extends StudyBaseTest
     protected void doVerifySteps()
     {
         reloadStudyFromZip(new File(TestFileUtils.getSampledataPath(), "/studyreload/edited.zip"));
-        pushLocation();
         //query validation should have been run by default
-        clickAndWait(Locator.linkWithText("COMPLETE"));
+        new PipelineStatusTable(this).clickStatusLink(0);
         checkQueryValidationInLog(true);
-        popLocation();
         clickFolder(getFolderName());
         clickAndWait(Locator.linkWithText("1 dataset"));
         clickAndWait(Locator.linkWithText("update_test"));
@@ -58,7 +57,7 @@ public class StudyReloadTest extends StudyBaseTest
 
         //verify skipping query validation during reload
         reloadStudyFromZip(new File(TestFileUtils.getSampledataPath(), "/studyreload/edited.zip"), false, 3);
-        clickAndWait(Locator.linkWithText("COMPLETE"));
+        new PipelineStatusTable(this).clickStatusLink(0);
         checkQueryValidationInLog(false);
     }
 
