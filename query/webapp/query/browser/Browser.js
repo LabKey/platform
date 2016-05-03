@@ -365,7 +365,7 @@ Ext4.define('LABKEY.query.browser.Browser', {
 
     onHistoryChange : function(token) {
         if (!Ext4.isEmpty(token)) {
-            token = token.substring(this.historyPrefix.length);
+            token = decodeURIComponent(token.substring(this.historyPrefix.length));
         }
         else {
             token = 'lk-sp-panel-home';
