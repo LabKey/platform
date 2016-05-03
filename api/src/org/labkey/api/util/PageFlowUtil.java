@@ -54,6 +54,7 @@ import org.labkey.api.reader.Readers;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.ResourceURL;
@@ -2059,14 +2060,25 @@ public class PageFlowUtil
         Map<Integer, Map<String, Object>> notificationsPropMap = new HashMap<>();
         Map<String, List<Integer>> notificationGroupingsMap = new TreeMap<>();
         List<Notification> userNotifications = new ArrayList<>();
+        int unreadCount = 0;
+        boolean hasRead = false;
 
         NotificationService.Service service = NotificationService.get();
         if (service != null && user != null && !user.isGuest())
         {
-            userNotifications = service.getNotificationsByUser(null, user.getUserId(), true);
+            userNotifications = service.getNotificationsByUser(null, user.getUserId(), false);
             for (Notification notification : userNotifications)
             {
-                notificationsPropMap.put(notification.getRowId(), notification.asPropMap());
+                if (notification.getReadOn() != null)
+                {
+                    hasRead = true;
+                    continue;
+                }
+
+                Map<String, Object> notifPropMap = notification.asPropMap();
+                notifPropMap.put("CreatedBy", UserManager.getDisplayName((Integer)notifPropMap.get("CreatedBy"), user));
+                notifPropMap.put("IconCls", service.getNotificationTypeIconCls(notification.getType()));
+                notificationsPropMap.put(notification.getRowId(), notifPropMap);
 
                 String groupLabel = service.getNotificationTypeLabel(notification.getType());
                 if (!notificationGroupingsMap.containsKey(groupLabel))
@@ -2074,12 +2086,15 @@ public class PageFlowUtil
                     notificationGroupingsMap.put(groupLabel, new ArrayList<>());
                 }
                 notificationGroupingsMap.get(groupLabel).add(notification.getRowId());
+
+                unreadCount++;
             }
         }
 
         JSONObject notifications = new JSONObject(notificationsPropMap);
         notifications.put("grouping", notificationGroupingsMap);
-        notifications.put("count", userNotifications.size());
+        notifications.put("unreadCount", unreadCount);
+        notifications.put("hasRead", hasRead);
         return notifications;
     }
 

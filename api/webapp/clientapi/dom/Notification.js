@@ -77,6 +77,30 @@
         };
 
         /**
+         * Expand the content body vertically for the selected notification
+         * @private
+         */
+        var toggleBody = function (domEl)
+        {
+            if (domEl)
+            {
+                var el = $(domEl);
+                if (el.hasClass('fa-angle-down'))
+                {
+                    el.closest('.lk-notification').find('.lk-notificationbody').addClass('lk-notificationbodyexpand');
+                    el.removeClass('fa-angle-down');
+                    el.addClass('fa-angle-up');
+                }
+                else
+                {
+                    el.closest('.lk-notification').find('.lk-notificationbody').removeClass('lk-notificationbodyexpand');
+                    el.removeClass('fa-angle-up');
+                    el.addClass('fa-angle-down');
+                }
+            }
+        };
+
+        /**
          * Mark a given notification as read based on the RowId
          * @param id - notification RowId
          * @private
@@ -127,7 +151,6 @@
                         params: {rowIds: rowIds},
                         success: LABKEY.Utils.getCallbackWrapper(function (response)
                         {
-                            console.log(response);
                             if (response.success && response.numUpdated == rowIds.length)
                             {
                                 for(var i = 0; i < rowIds.length; i++)
@@ -152,7 +175,9 @@
         {
             if (id && LABKEY.notifications && LABKEY.notifications[id])
             {
-                if (!event.target.classList.contains("lk-notificationclose"))
+                if (!event.target.classList.contains("lk-notificationtimes")
+                    && !event.target.classList.contains("lk-notificationtoggle")
+                    && !event.target.classList.contains("lk-notificationclose"))
                 {
                     window.location = LABKEY.notifications[id].ActionLinkUrl;
                 }
@@ -169,7 +194,7 @@
             $('body').off('click', _checkBodyClick);
         };
 
-        var _checkBodyClick = function()
+        var _checkBodyClick = function(event)
         {
             // close if the click happened outside of the notification panel
             if (NOTIF_PANEL_EL && event.target.id != NOTIF_PANEL_EL.attr('id') && !NOTIF_PANEL_EL.has(event.target).length)
@@ -225,6 +250,10 @@
                 var el = NOTIF_PANEL_EL.find('.lk-notificationnone');
                 if (el)
                     el.removeClass('labkey-hidden');
+
+                el = NOTIF_PANEL_EL.find('.lk-notificationclearall');
+                if (el)
+                    el.addClass('labkey-hidden');
             }
         };
 
@@ -233,6 +262,7 @@
             updateUnreadCount: updateUnreadCount,
             showPanel: showPanel,
             hidePanel: hidePanel,
+            toggleBody: toggleBody,
             markAsRead: markAsRead,
             clearAllUnread: clearAllUnread,
             goToActionLink: goToActionLink

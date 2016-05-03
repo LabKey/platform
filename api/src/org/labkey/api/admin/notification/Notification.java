@@ -32,6 +32,8 @@ public class Notification
 {
     private int _rowId;
     private GUID _container;
+    private Date _created;
+    private int _createdBy;
     private int _userId;
     private String _objectId;
     private String _type;
@@ -164,6 +166,26 @@ public class Notification
         setContentType(contentType);
     }
 
+    public Date getCreated()
+    {
+        return _created;
+    }
+
+    public void setCreated(Date created)
+    {
+        _created = created;
+    }
+
+    public int getCreatedBy()
+    {
+        return _createdBy;
+    }
+
+    public void setCreatedBy(int createdBy)
+    {
+        _createdBy = createdBy;
+    }
+
     @Transient
     public String getHtmlContent()
     {
@@ -187,6 +209,8 @@ public class Notification
         props.put("ActionLinkText", getActionLinkText());
         props.put("ActionLinkUrl", getActionLinkURL());
         props.put("ReadOn", getReadOn());
+        props.put("Created", getCreated());
+        props.put("CreatedBy", getCreatedBy());
         return props;
     }
 }

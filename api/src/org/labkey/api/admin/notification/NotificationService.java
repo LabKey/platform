@@ -51,7 +51,7 @@ public class NotificationService
                 ) throws IOException, MessagingException, ValidationException;
 
         /*
-         * Returns a list of notifications for a specific user.
+         * Returns a list of notifications for a specific user. Sorted descending by created date.
          */
         List<Notification> getNotificationsByUser(Container container, int notifyUserId, boolean unreadOnly);
 
@@ -97,14 +97,19 @@ public class NotificationService
         int removeNotificationsByType(Container container, @Nullable String objectId, @NotNull List<String> types);
 
         /*
-         * Register a mapping from a String notification type to a display label for that type.
+         * Register a mapping from a String notification type to a display label and font-awesome icon for that type.
          */
-        void registerNotificationTypeLabel(@NotNull String type, String label);
+        void registerNotificationType(@NotNull String type, String label, @Nullable String iconCls);
 
         /*
          * Get the registered display label for a given notification type String. Default "Other".
          */
         String getNotificationTypeLabel(@NotNull String type);
+
+        /*
+         * Get the registered font-awesome icon class for a given notification type String. Default "fa-bell".
+         */
+        String getNotificationTypeIconCls(@NotNull String type);
     }
 
     public static void register(Service serviceImpl)
