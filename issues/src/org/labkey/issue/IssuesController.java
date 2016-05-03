@@ -1410,7 +1410,7 @@ public class IssuesController extends SpringActionController
                             "view " + IssueManager.getEntryTypeNames(getContainer()).singularName,
                             new ActionURL(DetailsAction.class,getContainer()).addParameter("issueId",issue.getIssueId()).getLocalURIString(false),
                             "issue:" + issue.getIssueId(),
-                            Issue.class.getName(), false);
+                            Issue.class.getName(), true);
                 }
             }
             catch (ConfigurationException | AddressException e)

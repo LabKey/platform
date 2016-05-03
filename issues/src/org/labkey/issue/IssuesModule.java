@@ -85,7 +85,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
         PropertyService.get().registerDomainKind(new IssueDefDomainKind());
         AdminConsole.addExperimentalFeatureFlag(IssueManager.NEW_ISSUES_EXPERIMENTAL_FEATURE, "New Issues List", "Enables storage of issue list data in provisioned tables", true);
 
-        NotificationService.get().registerNotificationTypeLabel(Issue.class.getName(), "Issues");
+        NotificationService.get().registerNotificationType(Issue.class.getName(), "Issues", "fa-bug");
     }
 
     @NotNull

@@ -18,10 +18,10 @@
             + "   <div class='lk-notificationtitle'>Notifications</div>"
             + "</div>";
 
-        html += "<div class='lk-notificationclearall " + (LABKEY.notifications.count > 0 ? "" : "labkey-hidden") + "' onclick='LABKEY.Notification.clearAllUnread(); return true;'>clear all</div>";
-        html += "<div class='lk-notificationnone " + (LABKEY.notifications.count == 0 ? "" : "labkey-hidden") + "'>No new notifications</div>";
+        html += "<div class='lk-notificationclearall " + (LABKEY.notifications.unreadCount > 0 ? "" : "labkey-hidden") + "' onclick='LABKEY.Notification.clearAllUnread(); return true;'>clear all</div>";
+        html += "<div class='lk-notificationnone " + (LABKEY.notifications.unreadCount == 0 ? "" : "labkey-hidden") + "'>No new notifications</div>";
         html += "<div class='lk-notificationarea'>";
-        if (LABKEY.notifications.count > 0)
+        if (LABKEY.notifications.unreadCount > 0)
         {
             var groupings = LABKEY.notifications.grouping ? Object.keys(LABKEY.notifications.grouping) : [];
 
@@ -44,10 +44,20 @@
                 for (var j = 0; j < groupRowIds.length; j++)
                 {
                     var rowId = groupRowIds[j], info = LABKEY.notifications[rowId];
+
+                    // get the date/time display string based on the current date
+                    var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun","Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+                        d = new Date(info.Created), today = new Date(),
+                        dStr = d.toDateString() == today.toDateString() ? 'Today' : monthNames[d.getMonth()] + ' ' + d.getDate();
+
                     html += "<div class='lk-notification' id='notification-" + rowId + "' onclick='LABKEY.Notification.goToActionLink(event, " + rowId + "); return true;'>"
-                        + "   <div class='fa fa-bell lk-notificationicon'></div>"
+                        + "   <div class='fa " + info.IconCls + " lk-notificationicon'></div>"
+                        + "   <div class='lk-notificationclose'>"
+                        + "      <div class='fa fa-times lk-notificationtimes' onclick='LABKEY.Notification.markAsRead(" + rowId + "); return true;'></div>"
+                        + "      <div class='fa fa-angle-down lk-notificationtoggle' onclick='LABKEY.Notification.toggleBody(this); return true;'></div>"
+                        + "   </div>"
+                        + "   <div class='lk-notificationcreatedby'>" + dStr + " - " + info.CreatedBy + "</div>"
                         + "   <div class='lk-notificationbody'>" + info.HtmlContent + "</div>"
-                        + "   <div class='fa fa-times lk-notificationclose lk-notificationtimes' onclick='LABKEY.Notification.markAsRead(" + rowId + "); return true;'></div>"
                         + "</div>";
                 }
             }

@@ -3892,7 +3892,6 @@ a div.x4-menu-item-icon.fa-users
 .lk-notification:hover
 {
     background-color: #555555;
-    /*cursor: pointer;*/
 }
 .lk-notificationinbox
 {
@@ -3902,16 +3901,14 @@ a div.x4-menu-item-icon.fa-users
 {
     padding: 10px 5px;
     color: #ffffff;
-    /*font-weight: bold;*/
     border-bottom: solid #aaaaaa 1px;
     margin: 0 10px 10px 10px;
 }
 .lk-notificationclose
 {
-    position: absolute;
-    right: 15px;
+    float: right;
+    height: 32px;
     border-left: solid #aaaaaa 1px;
-    line-height: 26px;
     padding-left: 10px;
 }
 .lk-notificationtitle
@@ -3921,36 +3918,54 @@ a div.x4-menu-item-icon.fa-users
     text-transform: uppercase;
     color: #ffffff;
 }
-.lk-notificationbody
+.lk-notificationcreatedby
 {
     display: inline-block;
+    color: #ffffff;
+    cursor: default;
+    white-space: nowrap;
+    width: 300px;
+    text-overflow: ellipsis;
+}
+.lk-notificationbody
+{
     color: #aaaaaa;
     cursor: default;
-    padding: 5px 0;
-    white-space: normal;
-    word-wrap: break-word;
-    width: 305px;
-    max-height: 100px;
+    white-space: nowrap;
+    width: 300px;
+    height: 18px;
     overflow: hidden;
     text-overflow: ellipsis;
 }
+.lk-notificationbodyexpand
+{
+    height: 100px;
+    word-wrap: break-word;
+    white-space: normal;
+    /*overflow: visible;*/
+    padding-left: 40px;
+}
 .lk-notificationicon
 {
-    display: inline-block;
-    font-size: 16px;
-    color: #ffffff;
-    margin-right: 5px;
-    padding: 5px;
+    float: left;
+    font-size: 18px;
+    color: #444444;
+    margin-right: 8px;
+    padding: 7px;
     background-color: #aaaaaa;
-    vertical-align: top;
 }
-.lk-notificationtimes
+.lk-notificationtoggle
 {
+    padding-left: 1px;
+}
+.lk-notificationtimes, .lk-notificationtoggle
+{
+    display: block;
     font-size: 16px;
     color: #aaaaaa;
     cursor: default;
 }
-.lk-notificationtimes:hover
+.lk-notificationtimes:hover, .lk-notificationtoggle:hover
 {
     color: #ffffff;
 }

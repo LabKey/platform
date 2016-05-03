@@ -31,6 +31,7 @@ import org.labkey.api.data.ContainerManager.AbstractContainerListener;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -61,6 +62,7 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
 {
     private final static NotificationServiceImpl INSTANCE = new NotificationServiceImpl();
     private final Map<String, String> _typeLabelMap = new ConcurrentHashMap<>();
+    private final Map<String, String> _typeIconMap = new ConcurrentHashMap<>();
 
     public static NotificationServiceImpl getInstance()
     {
@@ -153,7 +155,10 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
         if (unreadOnly)
             filter.addCondition(FieldKey.fromParts("ReadOn"), null, CompareType.ISBLANK);
 
-        TableSelector selector = new TableSelector(getTable(), filter, null);
+        Sort sort = new Sort();
+        sort.appendSortColumn(FieldKey.fromParts("Created"), Sort.SortDirection.DESC, false);
+
+        TableSelector selector = new TableSelector(getTable(), filter, sort);
         return selector.getArrayList(Notification.class);
     }
 
@@ -233,12 +238,20 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
     }
 
     @Override
-    public void registerNotificationTypeLabel(@NotNull String type, String label)
+    public void registerNotificationType(@NotNull String type, String label, @Nullable String iconCls)
     {
         if (!_typeLabelMap.containsKey(type))
             _typeLabelMap.put(type, label);
         else
             throw new IllegalStateException("A label has already been registered for this type: " + type);
+
+        if (iconCls != null)
+        {
+            if (!_typeIconMap.containsKey(type))
+                _typeIconMap.put(type, iconCls);
+            else
+                throw new IllegalStateException("An iconCls has already been registered for this type: " + type);
+        }
     }
 
     @Override
@@ -248,6 +261,15 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
             return _typeLabelMap.get(type);
         else
             return "Other";
+    }
+
+    @Override
+    public String getNotificationTypeIconCls(@NotNull String type)
+    {
+        if (_typeIconMap.containsKey(type))
+            return _typeIconMap.get(type);
+        else
+            return "fa-bell";
     }
 
     private TableInfo getTable()

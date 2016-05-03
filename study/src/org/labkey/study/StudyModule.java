@@ -290,7 +290,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         EmailTemplateService.get().registerTemplate(SpecimenRequestNotificationEmailTemplate.class);
 
-        NotificationService.get().registerNotificationTypeLabel(ParticipantCategory.SEND_PARTICIPANT_GROUP_TYPE, "Study");
+        NotificationService.get().registerNotificationType(ParticipantCategory.SEND_PARTICIPANT_GROUP_TYPE, "Study", "fa-users");
     }
 
     @NotNull
