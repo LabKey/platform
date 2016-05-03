@@ -1710,7 +1710,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             {
                 this.fireEvent('selectchange', this, this.selectedCount);
                 this.updateRequiresSelectionButtons(this.selectedCount);
-                LABKEY.Utils.signalWebDriverTest('dataRegionSelectionChange', this.selectedCount);
+                LABKEY.Utils.signalWebDriverTest('dataRegionUpdate', this.selectedCount);
             },
 
             onButtonClick: function (buttonId)
