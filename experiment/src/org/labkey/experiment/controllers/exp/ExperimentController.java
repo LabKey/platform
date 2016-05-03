@@ -1902,7 +1902,7 @@ public class ExperimentController extends SpringActionController
             {
                 File realContent = _data.getFile();
                 boolean inline = _data.isInlineImage() || form.isInline() || "inlineImage".equalsIgnoreCase(form.getFormat());
-                if (_data.isInlineImage() && form.getMaxDimension() != null)
+                if (_data.isInlineImage() && form.getMaxDimension() != null && realContent != null)
                 {
                     BufferedImage image = ImageIO.read(realContent);
                     // If image, create a thumbnail, otherwise fall through as a regular download attempt
@@ -1917,7 +1917,7 @@ public class ExperimentController extends SpringActionController
                             PageFlowUtil.streamFileBytes(getViewContext().getResponse(), realContent.getName() + ".png", bOut.toByteArray(), !inline);
                             return null;
                         }
-                   }
+                    }
                 }
 
                 boolean extended = "jsonTSVExtended".equalsIgnoreCase(form.getFormat());
