@@ -16,6 +16,7 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -26,25 +27,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.AttachmentParentEntity;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DbSequence;
-import org.labkey.api.data.DbSequenceManager;
-import org.labkey.api.data.LookupColumn;
-import org.labkey.api.data.MultiValuedForeignKey;
-import org.labkey.api.data.Parameter;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableExtension;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.*;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
@@ -92,6 +75,7 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
@@ -811,42 +795,8 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                                         aliasNames.add(itemEntry);
                                 }
                             });
-
-                            // make sure that an alias entry exist for each string value passed in, else create it
-                            for (String aliasName : aliasNames)
-                            {
-                                aliasName = aliasName.trim();
-                                TableSelector selector = new TableSelector(svc.getTinfoAlias(), Collections.singleton("rowid"), new SimpleFilter(FieldKey.fromParts("Name"), aliasName), null);
-                                assert selector.getRowCount() <= 1;
-
-                                if (selector.getRowCount() > 0)
-                                {
-                                    selector.forEach(rs -> params.add(rs.getInt("rowid")));
-                                }
-                                else
-                                {
-                                    // create a new alias
-                                    DataAlias alias = new DataAlias();
-                                    alias.setName(aliasName);
-
-                                    alias = Table.insert(_user, svc.getTinfoAlias(), alias);
-                                    assert alias.getRowId() != 0;
-
-                                    params.add(alias.getRowId());
-                                }
-                            }
-
-                            SimpleFilter filter = new SimpleFilter();
-                            filter.addClause(new SimpleFilter.InClause(FieldKey.fromParts("rowid"), params));
-
-                            if (new TableSelector(svc.getTinfoAlias(), filter, null).getRowCount() == params.size())
-                            {
-                                // insert the new rows into the mapping table
-                                for (Integer aliasId : params)
-                                {
-                                    Table.insert(_user, svc.getTinfoDataAliasMap(), new DataAliasMap(entry.getKey(), aliasId, getContainer()));
-                                }
-                            }
+                            params.addAll(getAliasIds(_user, aliasNames));
+                            insertAliases(_user, params, entry.getKey());
                         }
                         transaction.commit();
                     }
@@ -1249,6 +1199,73 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
         }
 
         @Override
+        @Deprecated
+        protected Map<String, Object> coerceTypes(Map<String, Object> row)
+        {
+            Map<String, Object> result = new CaseInsensitiveHashMap<>(row.size());
+            Map<String, ColumnInfo> columnMap = ImportAliasable.Helper.createImportMap(getQueryTable().getColumns(), true);
+            for (Map.Entry<String, Object> entry : row.entrySet())
+            {
+                ColumnInfo col = columnMap.get(entry.getKey());
+
+                Object value = entry.getValue();
+                // dont convert to string the String[] used for aliases by QueryController action update
+                // but do convert to string the json object used for aliases by LABKEY.Query.updateRows
+                if (col != null && value != null && !col.getJavaObjectClass().isInstance(value) &&
+                        !(value instanceof AttachmentFile) && !(value instanceof String[]))
+                {
+                    try
+                    {
+
+                        value = ConvertUtils.convert(value.toString(), col.getJavaObjectClass());
+                    }
+                    catch (ConversionException e)
+                    {
+                        // That's OK, the transformation script may be able to fix up the value before it gets inserted
+                    }
+                }
+                result.put(entry.getKey(), value);
+            }
+            return result;
+        }
+
+        @Override
+        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, boolean allowOwner)
+                throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        {
+            Map<String,Object> rowStripped = new CaseInsensitiveHashMap<>(row.size());
+            for (ColumnInfo col : getQueryTable().getColumns())
+            {
+                String name = col.getName();
+                if (!row.containsKey(name))
+                    continue;
+                // Skip readonly and wrapped columns except for Alias
+                if (!col.getName().equals("Alias") && (col.isReadOnly() || col.isCalculated()))
+                    continue;
+                if ((!allowOwner && name.equalsIgnoreCase("Owner")) ||
+                        name.equalsIgnoreCase("CreatedBy") ||
+                        name.equalsIgnoreCase("Created") ||
+                        name.equalsIgnoreCase("EntityId"))
+                    continue;
+                rowStripped.put(name, row.get(name));
+            }
+            convertTypes(container, rowStripped);
+            setSpecialColumns(user, container, getDbTable(), row);
+            Object rowContainer = row.get("container");
+            if (rowContainer != null)
+            {
+                if (oldRow == null)
+                    throw new UnauthorizedException("The existing row was not found");
+                Object oldContainer = new CaseInsensitiveHashMap(oldRow).get("container");
+                if (null != oldContainer && !rowContainer.equals(oldContainer))
+                    throw new UnauthorizedException("The row is from the wrong container.");
+            }
+            Map<String,Object> updatedRow = _update(user, container, rowStripped, oldRow, oldRow == null ? getKeys(row) : getKeys(oldRow));
+            row.putAll(updatedRow);
+            return row;
+        }
+
+        @Override
         protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException
         {
             // LSID was stripped by super.updateRows() and is needed to insert into the dataclass provisioned table
@@ -1295,7 +1312,55 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                 data.setComment(user, flag);
             }
 
-            // TODO: update aliases
+            // update aliases
+            if (row.containsKey("Alias"))
+            {
+                List<String> aliasNames = new ArrayList();
+                List<Integer> params = new ArrayList();
+                String aliases = "";
+                // QueryController action update passes here an array of Strings where each string is the rowId of an alias in the exp.Alias table
+                if (row.get("Alias") instanceof String[])
+                {
+                    String[] aa = (String[]) row.get("Alias");
+                    if (aa.length > 0)
+                    {
+                        for (int x = 0; x < aa.length; x++)
+                        {
+                            if (NumberUtils.isDigits((String) aa[x]))
+                            {
+                                params.add(NumberUtils.toInt((String) aa[x]));
+                            }
+                            else
+                            {
+                                aliases = aliases + "," + aa[x];
+                            }
+                        }
+                    }
+                }
+                // LABKEY.Query.updateRows passes here a JSON String of an array of strings where each string is an alias
+                else
+                {
+                    aliases = (String) row.get("Alias");
+                    if (aliases.startsWith("[") && aliases.endsWith("]"))
+                    {
+                        aliases = aliases.substring(1, aliases.length() - 1);
+                    }
+                    if (null != aliases)
+                    {
+                        aliases = aliases.replace("\"", "");
+                    }
+                    if (aliases.contains(","))
+                    {
+                        String[] parts = aliases.split(",");
+                        aliasNames.addAll(Arrays.asList(parts));
+                    }
+                    else
+                        aliasNames.add(aliases);
+                }
+                params.addAll(getAliasIds(user, aliasNames));
+                deleteAliases(filter);
+                insertAliases(user, params, lsid);
+            }
 
             // handle attachments
             removePreviousAttachments(user, c, row, oldRow);
@@ -1392,4 +1457,56 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             }
         }
     }
+
+    // make sure that an alias entry exist for each string value passed in, else create it
+    private List<Integer> getAliasIds (User user,  List<String> aliasNames)
+    {
+        final ExperimentService.Interface svc = ExperimentService.get();
+        List<Integer> params = new ArrayList<>();
+
+        for (String aliasName : aliasNames)
+        {
+            aliasName = aliasName.trim();
+            TableSelector selector = new TableSelector(svc.getTinfoAlias(), Collections.singleton("rowid"), new SimpleFilter(FieldKey.fromParts("Name"), aliasName), null);
+            assert selector.getRowCount() <= 1;
+            if (selector.getRowCount() > 0)
+            {
+                selector.forEach(rs -> params.add(rs.getInt("rowid")));
+            }
+            else
+            {
+                // create a new alias
+                DataAlias alias = new DataAlias();
+                alias.setName(aliasName);
+                alias = Table.insert(user, svc.getTinfoAlias(), alias);
+                assert alias.getRowId() != 0;
+                params.add(alias.getRowId());
+            }
+        }
+
+        return params;
+    }
+
+    private void insertAliases(User user, List<Integer> aliasIds, String lsid)
+    {
+        final ExperimentService.Interface svc = ExperimentService.get();
+
+        SimpleFilter filter = new SimpleFilter();
+        filter.addClause(new SimpleFilter.InClause(FieldKey.fromParts("rowid"), aliasIds));
+        if (new TableSelector(svc.getTinfoAlias(), filter, null).getRowCount() == aliasIds.size())
+        {
+            // insert the new rows into the mapping table
+            for (Integer aliasId : aliasIds)
+            {
+                Table.insert(user, svc.getTinfoDataAliasMap(), new DataAliasMap(lsid, aliasId, getContainer()));
+            }
+        }
+    }
+
+    private void deleteAliases(SimpleFilter filter)
+    {
+        final ExperimentService.Interface svc = ExperimentService.get();
+        Table.delete(svc.getTinfoDataAliasMap(), filter);
+    }
+
 }
