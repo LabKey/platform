@@ -3883,6 +3883,7 @@ a div.x4-menu-item-icon.fa-users
     color:#ffffff;
     height:100%;
     width:400px;
+    /*z-index: 2147483630;*/
 }
 .lk-notification, .lk-notificationnone
 {
@@ -3918,6 +3919,20 @@ a div.x4-menu-item-icon.fa-users
     text-transform: uppercase;
     color: #ffffff;
 }
+.lk-notificationfooter
+{
+    position: absolute;
+    bottom: 0;
+    padding: 15px;
+    width: 100%;
+    background-color: #323336;
+    color: #126495;
+}
+.lk-notificationfooter span:hover
+{
+    color: #ffffff;
+    cursor: default;
+}
 .lk-notificationcreatedby
 {
     display: inline-block;
@@ -3949,7 +3964,7 @@ a div.x4-menu-item-icon.fa-users
 {
     float: left;
     font-size: 18px;
-    color: #444444;
+    color: #323336;
     margin-right: 8px;
     padding: 7px;
     background-color: #aaaaaa;
@@ -3971,7 +3986,7 @@ a div.x4-menu-item-icon.fa-users
 }
 .lk-notificationclearall
 {
-    color: #aaaaaa;
+    color: #126495;
     cursor: default;
     position: fixed;
     top: 20px;
@@ -3980,5 +3995,10 @@ a div.x4-menu-item-icon.fa-users
 .lk-notificationclearall:hover
 {
     color: #ffffff;
+}
+.lk-notificationpanel a:hover
+{
+    color: #ffffff;
+    cursor: default;
 }
 /* End: Notification inbox and panel */

@@ -13,13 +13,14 @@
         LABKEY.Notification.setElementIds(<%=q(notificationCountId)%>, <%=q(notificationPanelId)%>);
         LABKEY.Notification.updateUnreadCount();
 
-        var html = "";
-        html += "<div class='lk-notificationheader'>"
-            + "   <div class='lk-notificationtitle'>Notifications</div>"
-            + "</div>";
+        var html = "<div class='lk-notificationheader'><div class='lk-notificationtitle'>Notifications</div></div>";
 
-        html += "<div class='lk-notificationclearall " + (LABKEY.notifications.unreadCount > 0 ? "" : "labkey-hidden") + "' onclick='LABKEY.Notification.clearAllUnread(); return true;'>clear all</div>";
-        html += "<div class='lk-notificationnone " + (LABKEY.notifications.unreadCount == 0 ? "" : "labkey-hidden") + "'>No new notifications</div>";
+        html += "<div class='lk-notificationclearall " + (LABKEY.notifications.unreadCount > 0 ? "" : "labkey-hidden")
+                + "' onclick='LABKEY.Notification.clearAllUnread(); return true;'>Clear all</div>";
+
+        html += "<div class='lk-notificationnone " + (LABKEY.notifications.unreadCount == 0 ? "" : "labkey-hidden")
+                + "'>No new notifications</div>";
+
         html += "<div class='lk-notificationarea'>";
         if (LABKEY.notifications.unreadCount > 0)
         {
@@ -63,6 +64,11 @@
             }
         }
         html += "</div>";
+
+        if (LABKEY.notifications.unreadCount > 0 || LABKEY.notifications.hasRead)
+        {
+            html += "<div class='lk-notificationfooter' onclick='LABKEY.Notification.goToViewAll(); return true;'><span>View all notifications</span></div>";
+        }
 
         $('#' + <%=q(notificationPanelId)%>).html(html);
     });

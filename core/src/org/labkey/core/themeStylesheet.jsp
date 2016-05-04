@@ -735,3 +735,7 @@ div.headermenu {
 span.labkey-file-icon {
     color: #<%= link %>;
 }
+
+.lk-notificationclearall, .lk-notificationfooter {
+    color: #<%= link %>;
+}

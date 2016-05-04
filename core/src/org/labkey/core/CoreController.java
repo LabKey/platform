@@ -1942,4 +1942,45 @@ public class CoreController extends SpringActionController
             _rowIds = rowIds;
         }
     }
+
+    @RequiresPermission(ReadPermission.class) @RequiresLogin
+    public class UserNotificationsAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/core/notification/userNotifications.jsp");
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("User Notifications");
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class) @RequiresLogin
+    public class GetUserNotificationsAction extends ApiAction<Object>
+    {
+        @Override
+        public ApiResponse execute(Object form, BindException errors) throws Exception
+        {
+            NotificationService.Service service = NotificationService.get();
+
+            List<Map<String, Object>> notificationList = new ArrayList<>();
+            for (Notification notification : service.getNotificationsByUser(null, getUser().getUserId(), false))
+            {
+                Map<String, Object> notifPropMap = notification.asPropMap();
+                notifPropMap.put("CreatedBy", UserManager.getDisplayName((Integer)notifPropMap.get("CreatedBy"), getUser()));
+                notifPropMap.put("TypeLabel", service.getNotificationTypeLabel(notification.getType()));
+                notifPropMap.put("IconCls", service.getNotificationTypeIconCls(notification.getType()));
+                notificationList.add(notifPropMap);
+            }
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("notifications", notificationList);
+            response.put("success", true);
+            return response;
+        }
+    }
 }
