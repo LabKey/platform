@@ -62,7 +62,7 @@ public class ProjectAndSiteGroupsCache
     };
 
 
-    static @NotNull Group[] getProjectGroups(Container project, boolean includeSiteGroups)
+    static @NotNull List<Group> getProjectGroups(Container project, boolean includeSiteGroups)
     {
         Collection<Integer> projectGroups = CACHE.get(project, includeSiteGroups, GROUP_LIST_LOADER);
         ArrayList<Group> groups;
@@ -80,17 +80,17 @@ public class ProjectAndSiteGroupsCache
 
         addAll(groups, projectGroups);
 
-        return groups.toArray(new Group[groups.size()]);
+        return Collections.unmodifiableList(groups);
     }
 
 
-    static @NotNull Group[] getSiteGroups()
+    static @NotNull List<Group> getSiteGroups()
     {
         Collection<Integer> siteGroupIds = getSiteGroupIds();
         ArrayList<Group> groups = new ArrayList<>(siteGroupIds.size());
         addAll(groups, siteGroupIds);
 
-        return groups.toArray(new Group[groups.size()]);
+        return Collections.unmodifiableList(groups);
     }
 
 

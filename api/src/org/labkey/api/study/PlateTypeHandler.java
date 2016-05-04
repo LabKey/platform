@@ -31,27 +31,27 @@ import java.util.Map;
  */
 public interface PlateTypeHandler
 {
-    public String getAssayType();
+    String getAssayType();
 
-    public List<String> getTemplateTypes(Pair<Integer, Integer> size);
+    List<String> getTemplateTypes(Pair<Integer, Integer> size);
 
     /**
      * createPlate will be given a null value for templateTypeName when it is creating a new template which is a 
      * default for that assay type.
      */
-    public PlateTemplate createPlate(String templateTypeName, Container container, int rowCount, int colCount) throws SQLException;
+    PlateTemplate createPlate(String templateTypeName, Container container, int rowCount, int colCount) throws SQLException;
 
-    public List<Pair<Integer, Integer>> getSupportedPlateSizes();
+    List<Pair<Integer, Integer>> getSupportedPlateSizes();
 
-    public WellGroup.Type[] getWellGroupTypes();
+    List<WellGroup.Type> getWellGroupTypes();
 
     /**
      * Validate a new or edited plate template for handler specific errors.
      * @throws ValidationException
      */
-    public void validate(Container container, User user, PlateTemplate template) throws ValidationException;
+    void validate(Container container, User user, PlateTemplate template) throws ValidationException;
 
-    public Map<String, List<String>> getDefaultGroupsForTypes();
+    Map<String, List<String>> getDefaultGroupsForTypes();
 
-    public boolean showEditorWarningPanel();
+    boolean showEditorWarningPanel();
 }

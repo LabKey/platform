@@ -106,8 +106,8 @@ public class NestedGroupsTest extends Assert
 
         // Grab the first group (if there is one) in the home project
         Container home = ContainerManager.getHomeContainer();
-        Group[] homeGroups = SecurityManager.getGroups(home, false);
-        @Nullable Group homeGroup = homeGroups.length > 0 ? homeGroups[0] : null;
+        List<Group> homeGroups = SecurityManager.getGroups(home, false);
+        @Nullable Group homeGroup = homeGroups.size() > 0 ? homeGroups.get(0) : null;
 
         final Group all = create(ALL);
         Group divA = create(DIV_A);
@@ -278,7 +278,7 @@ public class NestedGroupsTest extends Assert
         expected(allGroups, projectX, coders, divA, user, all);
         notExpected(allGroups, divB, divC, testers, writers, siteGroup1);
 
-        List<Group> projectGroups = Arrays.asList(SecurityManager.getGroups(_project, false));
+        List<Group> projectGroups = SecurityManager.getGroups(_project, false);
         String svg = GroupManager.getGroupGraphSvg(projectGroups, user, false);
 
         // TODO: Assert something about svg... maybe just length of svg?

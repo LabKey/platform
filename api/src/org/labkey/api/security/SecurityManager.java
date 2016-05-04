@@ -1368,7 +1368,7 @@ public class SecurityManager
 
 
     // Site groups are first (if included) followed by project groups. Each list is sorted by name (case-insensitive).
-    public static @NotNull Group[] getGroups(@Nullable Container project, boolean includeGlobalGroups)
+    public static @NotNull List<Group> getGroups(@Nullable Container project, boolean includeGlobalGroups)
     {
         if (null != project)
             return ProjectAndSiteGroupsCache.getProjectGroups(project, includeGlobalGroups);
@@ -1718,7 +1718,7 @@ public class SecurityManager
         if (c != null && !c.isProject())
             c = c.getProject();
 
-        Group[] groups = getGroups(c, includeGlobal);
+        List<Group> groups = getGroups(c, includeGlobal);
         Set<String> emails = new HashSet<>();
 
        //get members for each group
@@ -1776,7 +1776,7 @@ public class SecurityManager
         Set<Group> groupsToExpand = new HashSet<>();
 
         // Add all project groups
-        groupsToExpand.addAll(Arrays.asList(getGroups(project, false)));
+        groupsToExpand.addAll(getGroups(project, false));
 
         // Look for users and site groups that have direct assignment to the container
         for (RoleAssignment roleAssignment : c.getPolicy().getAssignments())

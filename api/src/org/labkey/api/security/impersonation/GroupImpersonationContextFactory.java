@@ -34,6 +34,7 @@ import org.labkey.api.view.ViewContext;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -128,7 +129,7 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
     public static Collection<Group> getValidImpersonationGroups(Container c, User user)
     {
         LinkedList<Group> validGroups = new LinkedList<>();
-        Group[] groups = SecurityManager.getGroups(c.getProject(), true);
+        List<Group> groups = SecurityManager.getGroups(c.getProject(), true);
         Container project = c.getProject();
 
         // Site groups are always first, followed by project groups
