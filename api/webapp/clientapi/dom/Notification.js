@@ -111,7 +111,7 @@
          */
         var markAsRead = function (id, callback)
         {
-            if (NOTIF_PANEL_EL && id && LABKEY.notifications && LABKEY.notifications[id])
+            if (id)
             {
                 LABKEY.Ajax.request({
                     url: LABKEY.ActionURL.buildURL('core', 'markNotificationAsRead.api'),
@@ -120,10 +120,12 @@
                     {
                         if (response.success && response.numUpdated == 1)
                         {
-                            LABKEY.notifications[id].ReadOn = new Date();
-                            updateUnreadCount();
-
-                            NOTIF_PANEL_EL.find('#notification-' + id).slideUp(250, _updateGroupDisplay);
+                            if (NOTIF_PANEL_EL && id && LABKEY.notifications && LABKEY.notifications[id])
+                            {
+                                LABKEY.notifications[id].ReadOn = new Date();
+                                NOTIF_PANEL_EL.find('#notification-' + id).slideUp(250, _updateGroupDisplay);
+                                updateUnreadCount();
+                            }
 
                             if (callback)
                                 callback.call(this, id);
