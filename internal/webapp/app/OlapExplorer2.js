@@ -7,7 +7,8 @@ Ext.define('LABKEY.app.model.OlapExplorer2', {
 
     fields: [
         {name : 'lvlDepth', type: 'int', defaultValue: 0},
-        {name : 'isSelected', type : 'boolean', defaultValue: false}
+        {name : 'isSelected', type : 'boolean', defaultValue: false},
+        {name : 'isLeafNode', type : 'boolean', defaultValue: false}
     ]
 });
 
@@ -161,6 +162,7 @@ Ext.define('LABKEY.app.store.OlapExplorer2', {
             }
         }
 
+        this.allRecordTree.updateLeafNodes();
         var allRecords = this.allRecordTree.getAllRecords();
         var allInstances = [];
         Ext.each(allRecords, function(rec){
@@ -251,7 +253,7 @@ Ext.define('LABKEY.app.view.OlapExplorer2', {
                 '<tpl if="isGroup === true">',
                 '<div class="saeparent">',
                 '<div class="saecollapse {#}-collapse" id="{#}-collapse">',
-                '<p><tpl if="collapsed === true">+<tpl else>-</tpl></p>',
+                '<p><tpl if="isLeafNode === true"><tpl else><tpl if="collapsed === true">+<tpl else>-</tpl></tpl></p>',
                 '</div>',
                 '<div class="', this.barCls, ' large">',
                 '<span class="', this.barLabelCls, '">{label:htmlEncode}',
@@ -364,6 +366,25 @@ Ext.define('LABKEY.app.util.OlapExplorerTree', {
     },
     getAllRecords: function() {
         return this.preOrderTraversal(this.root, [], true);
+    },
+    /**
+     * Detemine if a node is a leaf node with no children
+     */
+    updateLeafNodes: function() {
+        this.updateLeafNodesInfo(this.root);
+    },
+    updateLeafNodesInfo: function(parentNode) {
+        for (var i = 0, length = parentNode.childrenNodes.length; i < length; i++) {
+            var curNode = parentNode.childrenNodes[i];
+            if (curNode.childrenNodes.length == 0) {
+                if (curNode.record.data) {
+                    curNode.record.data.isLeafNode = true;
+                }
+            }
+            else {
+                this.updateLeafNodesInfo(curNode);
+            }
+        }
     },
     preOrderTraversal: function(currentNode, results, isRoot) {
         if (!isRoot) {
