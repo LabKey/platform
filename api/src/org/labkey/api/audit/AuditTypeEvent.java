@@ -15,6 +15,7 @@
  */
 package org.labkey.api.audit;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
 import java.util.Date;
@@ -37,6 +38,11 @@ public class AuditTypeEvent
     private User _createdBy;
     private Date _modified;
     private User _modifiedBy;
+
+    public AuditTypeEvent(String eventType, Container container, String comment)
+    {
+        this(eventType, container.getId(), comment);
+    }
 
     public AuditTypeEvent(String eventType, String container, String comment)
     {
