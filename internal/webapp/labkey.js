@@ -251,7 +251,7 @@ if (typeof LABKEY == "undefined")
                 LABKEY.Security.currentUser = LABKEY.user;
         };
 
-        //private (Depricated)
+        //private (Deprecated)
         //Pull in the required JS files and invoke the callback when they're loaded
         var initializeExt3ViewDesigner = function(cb, scope)
         {
