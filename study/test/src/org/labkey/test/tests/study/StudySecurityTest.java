@@ -215,6 +215,7 @@ public class StudySecurityTest extends StudyBaseTest
 
         waitForElement(Locator.name("securityString"));
         selectOptionByValue(Locator.name("securityString"), "ADVANCED_WRITE");
+        clickAndWait(Locator.lkButton("Update Type"));
         waitForElements(Locator.tagWithName("table", "webpart"), 3);
 
         //the radio buttons are named "group.<id>" and since we don't know the

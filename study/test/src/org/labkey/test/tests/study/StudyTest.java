@@ -777,7 +777,7 @@ public class StudyTest extends StudyBaseTest
             log("configure editable datasets");
             clickTab("Manage");
             clickAndWait(Locator.linkWithText("Manage Security"));
-            doAndWaitForPageToLoad(() -> selectOptionByText(Locator.name("securityString"), "Basic security with editable datasets"));
+            doAndWaitForPageToLoad(() -> { selectOptionByText(Locator.name("securityString"), "Basic security with editable datasets"); click(Locator.lkButton("Update Type")); } );
 
             log("configure comments");
             clickFolder(getFolderName());

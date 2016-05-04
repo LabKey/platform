@@ -24,6 +24,8 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportIdentifier;
@@ -57,6 +59,7 @@ import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
+import org.labkey.study.audit.StudyAuditProvider;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.model.GroupSecurityType;
 import org.labkey.study.model.SecurityType;
@@ -126,8 +129,8 @@ public class SecurityController extends SpringActionController
         {
             Study study = BaseStudyController.getStudyThrowIfNull(getContainer());
             HttpServletRequest request = getViewContext().getRequest();
-            Group[] groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
-            HashSet<Integer> set = new HashSet<>(groups.length*2);
+            List<Group> groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
+            HashSet<Integer> set = new HashSet<>(groups.size()*2);
 
             for (Group g : groups)
                 set.add(g.getUserId());
@@ -352,8 +355,8 @@ public class SecurityController extends SpringActionController
         public boolean handlePost(Object o, BindException errors) throws Exception
         {
             Study study = BaseStudyController.getStudyThrowIfNull(getContainer());
-            Group[] groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
-            HashSet<Integer> groupsInProject = new HashSet<>(groups.length * 2);
+            List<Group> groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
+            Set<Integer> groupsInProject = new HashSet<>(groups.size() * 2);
             for (Group g : groups)
                 groupsInProject.add(g.getUserId());
 
@@ -407,7 +410,7 @@ public class SecurityController extends SpringActionController
             return groupToPermission;
         }
 
-        private MutableSecurityPolicy policyFromPost(Map<Integer, String> group2Perm, HashSet<Integer> groupsInProject, Dataset dsDef)
+        private MutableSecurityPolicy policyFromPost(Map<Integer, String> group2Perm, Set<Integer> groupsInProject, Dataset dsDef)
         {
             MutableSecurityPolicy policy = new MutableSecurityPolicy(dsDef);
 
@@ -610,9 +613,13 @@ public class SecurityController extends SpringActionController
             StudyImpl study = BaseStudyController.getStudy(getContainer());
             if (study != null && form.getSecurityType() != study.getSecurityType())
             {
+                String comment = "Dataset security type changed from " + study.getSecurityType() + " to " + form.getSecurityType();
                 StudyImpl updated = study.createMutable();
                 updated.setSecurityType(form.getSecurityType());
                 StudyManager.getInstance().updateStudy(getUser(), updated);
+
+                AuditTypeEvent event = new AuditTypeEvent(StudyAuditProvider.STUDY_AUDIT_EVENT, getContainer(), comment);
+                AuditLogService.get().addEvent(getUser(), event);
             }
             return true;
         }

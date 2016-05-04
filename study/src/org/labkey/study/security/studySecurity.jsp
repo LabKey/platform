@@ -54,7 +54,7 @@
 
 <labkey:form action="<%=h(buildURL(SecurityController.StudySecurityAction.class))%>" method="post" name="studySecurityForm">
     <p>Study Security Type<%=PageFlowUtil.helpPopup("Study Security", SecurityType.getHTMLDescription(), true, 400)%>:
-    <select name="securityString" onchange="document.studySecurityForm.submit();">
+    <select name="securityString" onchange="document.getElementById('securityTypeWarning').style.display = 'block';">
         <%
             for (SecurityType securityType : SecurityType.values())
             {
@@ -67,6 +67,8 @@
             }
         %>
     </select>
+    <labkey:button text="Update Type" />
+        <div id="securityTypeWarning" style="display: none"><em>Changing the security type can significantly alter who can view and modify data.</em></div>
     </p>
 </labkey:form>
 <%

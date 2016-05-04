@@ -304,6 +304,7 @@ public class StudyExportTest extends StudyManualTest
 
         // enable advanced study security
         selectOptionByValue(Locator.name("securityString"), "ADVANCED_READ");
+        clickAndWait(Locator.lkButton("Update Type"));
         waitForElements(Locator.tagWithName("table", "webpart"), 3);
 
         click(Locator.xpath("//td[.='Users']/..//input[@value='READ']"));
@@ -420,7 +421,7 @@ public class StudyExportTest extends StudyManualTest
 
         enterStudySecurity();
 
-        doAndWaitForPageToLoad(() -> selectOptionByValue(Locator.name("securityString"), "BASIC_WRITE"),
+        doAndWaitForPageToLoad(() -> { selectOptionByValue(Locator.name("securityString"), "BASIC_WRITE"); click(Locator.lkButton("Update Type")); },
                 WAIT_FOR_PAGE);
 
         clickFolder(getFolderName());

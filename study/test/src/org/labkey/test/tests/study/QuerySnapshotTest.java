@@ -98,7 +98,7 @@ public class QuerySnapshotTest extends StudyBaseTest
 
         // enable advanced study security
         enterStudySecurity();
-        doAndWaitForPageToLoad(() -> selectOptionByValue(Locator.name("securityString"), "BASIC_WRITE"));
+        doAndWaitForPageToLoad(() -> { selectOptionByValue(Locator.name("securityString"), "BASIC_WRITE"); click(Locator.lkButton("Update Type")); });
     }
 
     @Override

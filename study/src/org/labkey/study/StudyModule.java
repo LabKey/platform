@@ -96,6 +96,7 @@ import org.labkey.study.assay.ModuleAssayLoader;
 import org.labkey.study.assay.TsvAssayProvider;
 import org.labkey.study.assay.query.AssayAuditProvider;
 import org.labkey.study.assay.query.AssaySchemaImpl;
+import org.labkey.study.audit.StudyAuditProvider;
 import org.labkey.study.controllers.CohortController;
 import org.labkey.study.controllers.CreateChildStudyAction;
 import org.labkey.study.controllers.DatasetController;
@@ -386,6 +387,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         });
         AuditLogService.registerAuditType(new AssayAuditProvider());
         AuditLogService.registerAuditType(new DatasetAuditProvider());
+        AuditLogService.registerAuditType(new StudyAuditProvider());
         AuditLogService.registerAuditType(new SpecimenCommentAuditProvider());
 
         ReportService.get().registerReport(new StudyController.StudyChartReport());
