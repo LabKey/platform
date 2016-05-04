@@ -11,7 +11,11 @@ var _hideTimer;
 function getHelpDiv()
 {
     if (!_helpDiv)
+    {
         _helpDiv = document.getElementById("helpDiv");
+        document.addEventListener('keyup', helpDivHideHandler);
+        document.addEventListener('click', helpDivHideHandler);
+    }
     return _helpDiv;
 }
 
@@ -41,6 +45,7 @@ function showHelpDiv(elem, titleText, bodyText, width)
     posTop += elem.offsetHeight;
 
     var div = getHelpDiv();
+    div.anchorElem = elem;
 
     document.getElementById("helpDivTitle").innerHTML = titleText;
     document.getElementById("helpDivBody").innerHTML = bodyText;
@@ -90,6 +95,24 @@ function hideHelpDivDelay()
     if (_showTimer)
         clearTimeout(_showTimer);
     _hideTimer = setTimeout("hideHelpDiv(false);", 500);
+}
+
+function helpDivHideHandler(e)
+{
+    // Returns true if el is a parent node of child.
+    function contains(el, child) {
+        var up = child.parentNode;
+        return el === up || !!(up && up.nodeType === 1 && el.contains(up));
+    }
+
+    // check help is visible
+    if (getHelpDiv().style.display != "none")
+    {
+        // escape pressed or the click target is not the offset elem and is outside the help div
+        var isEscPress = e.type == 'keyup' && e.which == 27;
+        if (isEscPress || (e.type == 'click' && e.target != getHelpDiv().anchorElem && !contains(getHelpDiv(), e.target)))
+            hideHelpDiv(true);
+    }
 }
 
 /** Element is anything that can be resolved using Ext.get() - an element, an id, etc */
