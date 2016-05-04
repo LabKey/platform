@@ -32,6 +32,7 @@ import org.labkey.api.view.ViewContext;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +54,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
         try
         {
             PlateTemplate template;
-            PlateTypeHandler handler = null;
+            PlateTypeHandler handler;
 
             if (templateName != null)
             {
@@ -111,15 +112,15 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
 
     private List<String> getTypeList(PlateTemplate template)
     {
-        List<String> types = new ArrayList<>();
-        WellGroup.Type[] wellTypes = new WellGroup.Type[]{
+        List<WellGroup.Type> wellTypes = Arrays.asList(
                 WellGroup.Type.CONTROL, WellGroup.Type.SPECIMEN,
-                WellGroup.Type.REPLICATE, WellGroup.Type.OTHER};
+                WellGroup.Type.REPLICATE, WellGroup.Type.OTHER);
 
         PlateTypeHandler handler = PlateManager.get().getPlateTypeHandler(template.getType());
         if (handler != null)
             wellTypes = handler.getWellGroupTypes();
 
+        List<String> types = new ArrayList<>();
         for (WellGroup.Type type : wellTypes)
             types.add(type.name());
         return types;
@@ -161,11 +162,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
             PlateManager.get().getPlateTypeHandler(template.getType()).validate(getContainer(), getUser(), template);
             PlateService.get().save(getContainer(), getUser(), template);
         }
-        catch (SQLException e)
-        {
-            throw new Exception(e);
-        }
-        catch (ValidationException e)
+        catch (SQLException | ValidationException e)
         {
             throw new Exception(e);
         }

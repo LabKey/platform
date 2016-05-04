@@ -17,22 +17,23 @@ package org.labkey.core.admin.writer;
 
 import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.BaseFolderWriter;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.MemberType;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.security.xml.GroupType;
 import org.labkey.security.xml.GroupsType;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by susanh on 4/6/15.
@@ -58,9 +59,9 @@ public class SecurityGroupWriterFactory implements FolderWriterFactory
         {
             FolderDocument.Folder folderXml = ctx.getXml();
 
-            Group[] groups = SecurityManager.getGroups(c, false);
+            List<Group> groups = SecurityManager.getGroups(c, false);
 
-            if (groups.length != 0)
+            if (!groups.isEmpty())
             {
                 GroupsType xmlGroups = folderXml.addNewGroups();
                 for (Group group : groups)

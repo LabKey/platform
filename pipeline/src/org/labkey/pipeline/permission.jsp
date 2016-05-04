@@ -48,7 +48,7 @@ These permissions control whether pipeline files can be downloaded and updated v
 <input type="hidden" name="<%= h(ActionURL.Param.returnUrl) %>" value="<%= h(getViewContext().getActionURL())%>" />
 <input id="enabledCheckbox" type="checkbox" name="enable"<%=checked(enableFTP)%> onclick="toggleEnableFTP(this)" onchange="toggleEnableFTP(this)"> Share files via web site<br>
     <%
-    Group[] groups = SecurityManager.getGroups(c.getProject(), true);
+    List<Group> groups = SecurityManager.getGroups(c.getProject(), true);
     Pair[] optionsFull = new Pair[]
     {
         new Pair<>("no access", RoleManager.getRole(NoPermissionsRole.class)),

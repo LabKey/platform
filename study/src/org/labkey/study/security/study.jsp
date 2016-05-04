@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.study.model.GroupSecurityType" %>
 <%@ page import="org.labkey.study.model.SecurityType" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
+<%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
@@ -57,7 +58,7 @@ Any user with READ access to this folder may view some summary data.  However, a
     <%
     SecurityPolicy folderPolicy = getContainer().getPolicy();
     SecurityPolicy studyPolicy = SecurityPolicyManager.getPolicy(study);
-    Group[] groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
+    List<Group> groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
     for (Group group : groups)
     {
         if (group.getUserId() == Group.groupAdministrators)

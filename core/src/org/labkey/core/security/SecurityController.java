@@ -923,8 +923,8 @@ public class SecurityController extends SpringActionController
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
 
-            Group[] allGroups = SecurityManager.getGroups(getContainer().getProject(), true);
-            Collection<Group> validGroups = SecurityManager.getValidPrincipals(form.getGroup(), Arrays.asList(allGroups));
+            List<Group> allGroups = SecurityManager.getGroups(getContainer().getProject(), true);
+            Collection<Group> validGroups = SecurityManager.getValidPrincipals(form.getGroup(), allGroups);
 
             Collection<User> validUsers = SecurityManager.getValidPrincipals(form.getGroup(), UserManager.getActiveUsers());
 
@@ -1075,7 +1075,7 @@ public class SecurityController extends SpringActionController
                 }
 
                 List<Container> projects = getContainer().isRoot() ? getContainer().getChildren() : Collections.singletonList(getContainer().getProject());
-                Map<Container, Group[]> projectGroupCache = new HashMap<>();
+                Map<Container, List<Group>> projectGroupCache = new HashMap<>();
                 buildAccessDetailList(projects, rows, containersInList, _requestedGroup, 0, projectGroupCache, form.getShowAll());
             }
             else
@@ -1095,7 +1095,7 @@ public class SecurityController extends SpringActionController
 
         private void buildAccessDetailList(List<Container> children, List<UserController.AccessDetailRow> rows,
                                            Set<Container> containersInList, Group requestedGroup, int depth,
-                                           Map<Container, Group[]> projectGroupCache, boolean showAll)
+                                           Map<Container, List<Group>> projectGroupCache, boolean showAll)
         {
             if (children == null || children.isEmpty())
                 return;
@@ -1109,13 +1109,13 @@ public class SecurityController extends SpringActionController
                     roles.remove(RoleManager.getRole(NoPermissionsRole.class)); //ignore no perms
                     for (Role role : roles)
                     {
-                        groupAccessGroups.put(role.getName(), new ArrayList<Group>());
+                        groupAccessGroups.put(role.getName(), new ArrayList<>());
                     }
 
                     if (roles.size() > 0)
                     {
                         Container project = child.getProject();
-                        Group[] groups = projectGroupCache.get(project);
+                        List<Group> groups = projectGroupCache.get(project);
                         if (groups == null)
                         {
                             groups = SecurityManager.getGroups(project, true);
@@ -1736,7 +1736,7 @@ public class SecurityController extends SpringActionController
         @Override
         public ApiResponse execute(GroupDiagramForm form, BindException errors) throws Exception
         {
-            List<Group> groups = Arrays.asList(SecurityManager.getGroups(getContainer().getProject(), false));
+            List<Group> groups = SecurityManager.getGroups(getContainer().getProject(), false);
             String html;
 
             if (groups.isEmpty())
@@ -1842,7 +1842,7 @@ public class SecurityController extends SpringActionController
 
             // add an AccessDetailRow for each user that has perm within the project
             Container project = getContainer().getProject();
-            Group[] groups = SecurityManager.getGroups(project, true);
+            List<Group> groups = SecurityManager.getGroups(project, true);
             for (User user : activeUsers)
             {
                 user = UserManager.getUser(user.getUserId()); // the cache from UserManager.getActiveUsers might not have the udpated groups list

@@ -70,6 +70,7 @@ import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -119,11 +120,10 @@ public class PlateManager implements PlateService.Service
                 return Collections.singletonList(new Pair<>(8, 12));
             }
 
-            public WellGroup.Type[] getWellGroupTypes()
+            public List<WellGroup.Type> getWellGroupTypes()
             {
-                return new WellGroup.Type[]{
-                        WellGroup.Type.CONTROL, WellGroup.Type.SPECIMEN,
-                        WellGroup.Type.REPLICATE, WellGroup.Type.OTHER};
+                return Arrays.asList(WellGroup.Type.CONTROL, WellGroup.Type.SPECIMEN,
+                        WellGroup.Type.REPLICATE, WellGroup.Type.OTHER);
             }
         });
     }

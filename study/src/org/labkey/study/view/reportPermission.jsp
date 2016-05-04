@@ -21,7 +21,6 @@
 <%@ page import="org.labkey.api.security.SecurityManager"%>
 <%@ page import="org.labkey.api.security.SecurityPolicy"%>
 <%@ page import="org.labkey.api.security.SecurityPolicyManager"%>
-<%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission"%>
 <%@ page import="org.labkey.api.study.Study"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
@@ -30,9 +29,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
-<%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%!
@@ -51,16 +48,8 @@
     SecurityPolicy reportPolicy = SecurityPolicyManager.getPolicy(bean.getDescriptor());
 
     Container project = study.getContainer().getProject();
-    Group[] globalGroups = SecurityManager.getGroups(null, false);
-    Group[] projectGroups = SecurityManager.getGroups(project, false);
-    List<User> projectUsers = SecurityManager.getProjectUsers(project, false);
-    Map mapPrincipals = new HashMap();
-    for (Group g : globalGroups)
-        mapPrincipals.put(g.getUserId(), g);
-    for (Group g : projectGroups)
-        mapPrincipals.put(g.getUserId(), g);
-    for (User g : projectUsers)
-        mapPrincipals.put(g.getUserId(), g);
+    List<Group> globalGroups = org.labkey.api.security.SecurityManager.getGroups(null, false);
+    List<Group> projectGroups = org.labkey.api.security.SecurityManager.getGroups(project, false);
 %>
 
 <script type="text/javascript">
@@ -137,7 +126,7 @@
             %><tr><td><font color=<%=text(disabled ? "gray" : "black")%>><%=h(g.getName())%></font></td><td height="22" width=20><input name=group value="<%=g.getUserId()%>" type=checkbox<%=checked(checked)%><%=disabled(disabled)%>></td></tr><%
         }
 
-        if (projectGroups.length > 0)
+        if (projectGroups.size() > 0)
         {
             %><tr><th class=labkey-form-label colspan=2 align=left>Project groups</th></tr><%
         }

@@ -51,7 +51,7 @@
     StudyImpl study = me.getModelBean();
     SecurityPolicy studyPolicy = SecurityPolicyManager.getPolicy(study);
 
-    Group[] groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
+    List<Group> groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
 
     ArrayList<Group> readGroups = new ArrayList<>();
     ArrayList<Group> restrictedGroups = new ArrayList<>();

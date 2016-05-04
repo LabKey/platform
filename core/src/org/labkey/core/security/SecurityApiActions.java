@@ -113,7 +113,7 @@ public class SecurityApiActions
             return response;
         }
 
-        protected Map<String, Object> getContainerPerms(Container container, Group[] groups, boolean recurse)
+        protected Map<String, Object> getContainerPerms(Container container, List<Group> groups, boolean recurse)
         {
             SecurityPolicy policy = container.getPolicy();
             Map<String, Object> containerPerms = new HashMap<>();
@@ -142,7 +142,7 @@ public class SecurityApiActions
             return containerPerms;
         }
 
-        protected List<Map<String, Object>> getGroupPerms(Container container, SecurityPolicy policy, Group[] groups)
+        protected List<Map<String, Object>> getGroupPerms(Container container, SecurityPolicy policy, List<Group> groups)
         {
             if (null == policy)
                 policy = container.getPolicy();

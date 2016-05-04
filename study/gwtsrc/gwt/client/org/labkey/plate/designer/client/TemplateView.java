@@ -128,7 +128,7 @@ public class TemplateView extends HorizontalPanel
     {
         if (_testService == null)
         {
-            _testService = (PlateDataServiceAsync) GWT.create(PlateDataService.class);
+            _testService = GWT.create(PlateDataService.class);
             ServiceUtil.configureEndpoint(_testService, "designerService");
         }
         return _testService;

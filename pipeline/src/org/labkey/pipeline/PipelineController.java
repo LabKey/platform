@@ -19,7 +19,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
-import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -90,7 +89,6 @@ import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.HBox;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -669,8 +667,8 @@ public class PipelineController extends SpringActionController
                 MutableSecurityPolicy policy = new MutableSecurityPolicy(pipeRoot);
                 if (form.isEnable())
                 {
-                    Group[] groupsAll = SecurityManager.getGroups(c.getProject(), true);
-                    Map<Integer,Group> map = new HashMap<>(groupsAll.length * 2);
+                    List<Group> groupsAll = SecurityManager.getGroups(c.getProject(), true);
+                    Map<Integer,Group> map = new HashMap<>(groupsAll.size() * 2);
                     for (Group g : groupsAll)
                         map.put(g.getUserId(),g);
 

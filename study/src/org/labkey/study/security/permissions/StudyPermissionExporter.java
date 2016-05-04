@@ -84,7 +84,7 @@ public class StudyPermissionExporter
 
         //group permissions
         GroupPermissions gp = GroupPermissions.Factory.newInstance();
-        Group[] groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
+        List<Group> groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
         for (Group group : groups)
         {
             if (group.getUserId() == Group.groupAdministrators)

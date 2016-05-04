@@ -150,7 +150,7 @@ public class PermissionsDetailsView extends WebPartView
                 out.println((childrenAdminOnly ? "No" : "Some") + " child folders can be accessed by non-administrators.");
             }
         }
-        Group[] projGroups = SecurityManager.getGroups(_project, false);
+        List<Group> projGroups = SecurityManager.getGroups(_project, false);
 
         // browse link
         //out.println("Go back to <a href=\"" + ActionURL.toPathString("Project", "begin", _c.getPath()) + "\">" + _c.getPath() + "</a>");
@@ -177,7 +177,7 @@ public class PermissionsDetailsView extends WebPartView
         out.println("<tr><td colspan='2' class='labkey-strong'>Site Groups</td></tr>");
         
         //render global groups
-        Group[] globalGroups = SecurityManager.getGroups(ContainerManager.getRoot(), true);
+        List<Group> globalGroups = SecurityManager.getGroups(ContainerManager.getRoot(), true);
         Group usersGroup = null;
         Group guestsGroup = null;
 
