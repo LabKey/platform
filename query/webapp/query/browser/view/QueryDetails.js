@@ -112,10 +112,12 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
         };
 
         this.on('afterrender', function() { loader.call(this); }, this, {single: true});
+        // Callback function scope will be the cache, so stash for future use
+        var panel = this;
         this.cache.loadQueryDetails(this.schemaName, this.queryName, this.fk, function(queryDetails) {
             loader.call(this, queryDetails);
         }, function(errorInfo) {
-            this.getEl().update('<p class="lk-qd-error">Error in query: ' + errorInfo.exception + '</p>');
+            panel.getEl().update('<p class="lk-qd-error">Error in query: ' + errorInfo.exception + '</p>');
         }, this);
     },
 
