@@ -1,4 +1,4 @@
-package org.labkey.issue.query;
+package org.labkey.issue.experimental.query;
 
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
@@ -21,11 +21,11 @@ import org.springframework.validation.BindException;
 /**
  * Created by klum on 4/11/2016.
  */
-public class NewIssuesQueryView extends QueryView
+public class IssuesQueryView extends QueryView
 {
     private IssueListDef _issueDef;
 
-    public NewIssuesQueryView(IssueListDef issueDef, ViewContext context, UserSchema schema, QuerySettings settings, BindException errors)
+    public IssuesQueryView(IssueListDef issueDef, ViewContext context, UserSchema schema, QuerySettings settings, BindException errors)
     {
         super(schema, settings, errors);
 

@@ -1,8 +1,5 @@
-package org.labkey.issue.actions;
+package org.labkey.issue.experimental.actions;
 
-import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.Container;
-import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -15,9 +12,6 @@ import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.IssuePage;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
-
-import java.util.Collections;
-import java.util.Map;
 
 /**
  * Created by klum on 4/13/2016.
@@ -42,7 +36,7 @@ public class NewUpdateAction extends IssueUpdateAction
         _issue.beforeUpdate(getContainer());
 
         IssuePage page = new IssuePage(getContainer(), user);
-        JspView v = new JspView<>("/org/labkey/issue/view/newUpdateView.jsp", page);
+        JspView v = new JspView<>("/org/labkey/issue/experimental/view/updateView.jsp", page);
 
         page.setAction(NewUpdateAction.class);
         page.setIssue(_issue);
@@ -58,10 +52,7 @@ public class NewUpdateAction extends IssueUpdateAction
 
     public NavTree appendNavTrail(NavTree root)
     {
-        return root.addChild("update new issue");
-/*
-        return new IssuesController.DetailsAction(_issue, getViewContext()).appendNavTrail(root)
+        return new NewDetailsAction(_issue, getViewContext()).appendNavTrail(root)
                 .addChild("Update " + getSingularEntityName() + ": " + _issue.getTitle());
-*/
     }
 }

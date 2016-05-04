@@ -1,4 +1,4 @@
-package org.labkey.issue.actions;
+package org.labkey.issue.experimental.actions;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -8,6 +8,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -107,7 +108,7 @@ public abstract class IssueUpdateAction extends FormViewAction<IssuesController.
         IssuesController.ChangeSummary changeSummary;
         try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
         {
-//            detailsUrl = new IssuesController.DetailsAction(issue, getViewContext()).getURL();
+            detailsUrl = new NewDetailsAction(issue, getViewContext()).getURL();
 
             if (IssuesController.ResolveAction.class.equals(form.getAction()))
                 issue.resolve(user);
@@ -199,11 +200,9 @@ public abstract class IssueUpdateAction extends FormViewAction<IssuesController.
 
     public ActionURL getSuccessURL(IssuesController.IssuesForm form)
     {
-/*
         if(getIssue(form.getIssueId(), false).getStatus().equals("closed"))
-            return issueURL(IssuesController.ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true");
+            return new ActionURL(NewListAction.class, getContainer()).addParameter(DataRegion.LAST_FILTER_PARAM, "true");
 
-*/
         return form.getForwardURL();
     }
 

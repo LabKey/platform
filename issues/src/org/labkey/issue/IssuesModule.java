@@ -44,6 +44,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
+import org.labkey.issue.experimental.IssuesWebPartFactory;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.query.IssueDefDomainKind;
@@ -92,7 +93,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         ArrayList<WebPartFactory> result = new ArrayList<>();
-        result.add(new IssuesWebPartFactory());
+        result.add(new org.labkey.issue.IssuesWebPartFactory());
         result.add(new AlwaysAvailableWebPartFactory("Issues List")
         {
             @Override
@@ -122,6 +123,8 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
                     return view;
                 }
             });
+
+            result.add(new IssuesWebPartFactory());
         }
         return result;
     }

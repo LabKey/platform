@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.issue.query;
+package org.labkey.issue.experimental.query;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -66,8 +66,10 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.issue.IssuesController;
+import org.labkey.issue.experimental.actions.NewDetailsAction;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
+import org.labkey.issue.query.IssuesQuerySchema;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -83,15 +85,15 @@ import java.util.Set;
 /**
  * Created by klum on 4/5/2016.
  */
-public class NewIssuesTable extends FilteredTable<IssuesQuerySchema> implements UpdateableTableInfo
+public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements UpdateableTableInfo
 {
-    private static final Logger LOG = Logger.getLogger(NewIssuesTable.class);
+    private static final Logger LOG = Logger.getLogger(IssuesTable.class);
 
     private Set<Class<? extends Permission>> _allowablePermissions = new HashSet<>();
     private IssueListDef _issueDef;
     private TableExtension _extension;
 
-    public NewIssuesTable(IssuesQuerySchema schema, IssueListDef issueDef)
+    public IssuesTable(IssuesQuerySchema schema, IssueListDef issueDef)
     {
         super(IssuesSchema.getInstance().getTableInfoIssues(), schema);
 
@@ -110,7 +112,7 @@ public class NewIssuesTable extends FilteredTable<IssuesQuerySchema> implements 
 
         setDescription("Contains one row per registered issue");
 
-        ActionURL base = IssuesController.issueURL(_userSchema.getContainer(), IssuesController.DetailsAction.class);
+        ActionURL base = IssuesController.issueURL(_userSchema.getContainer(), NewDetailsAction.class);
         DetailsURL detailsURL = new DetailsURL(base, Collections.singletonMap("issueId", "IssueId"));
         setDetailsURL(detailsURL);
 
@@ -320,7 +322,7 @@ public class NewIssuesTable extends FilteredTable<IssuesQuerySchema> implements 
 
     private class IssuesUpdateService extends DefaultQueryUpdateService
     {
-        public IssuesUpdateService(NewIssuesTable table)
+        public IssuesUpdateService(IssuesTable table)
         {
             super(table, table.getRealTable());
         }

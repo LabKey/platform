@@ -220,7 +220,7 @@ public class IssuesQuerySchema extends UserSchema
             IssueListDef def =  getIssueDefs().get(queryName);
             if (def != null)
             {
-                return new NewIssuesQueryView(def, context, this, settings, errors);
+                return new org.labkey.issue.experimental.query.IssuesQueryView(def, context, this, settings, errors);
             }
         }
 
@@ -234,7 +234,7 @@ public class IssuesQuerySchema extends UserSchema
         if (issueDef == null)
             return null;
 
-        return new NewIssuesTable(this, issueDef);
+        return new org.labkey.issue.experimental.query.IssuesTable(this, issueDef);
     }
 
     private Map<String, IssueListDef> getIssueDefs()

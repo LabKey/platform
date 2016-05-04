@@ -110,7 +110,9 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
-import org.labkey.issue.actions.NewUpdateAction;
+import org.labkey.issue.experimental.actions.NewDetailsAction;
+import org.labkey.issue.experimental.actions.NewListAction;
+import org.labkey.issue.experimental.actions.NewUpdateAction;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.CustomColumn;
@@ -157,7 +159,9 @@ public class IssuesController extends SpringActionController
     private static final String helpTopic = "issues";
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
             IssuesController.class,
-            NewUpdateAction.class);
+            NewUpdateAction.class,
+            NewDetailsAction.class,
+            NewListAction.class);
 
     private static final int MAX_STRING_FIELD_LENGTH = 200;
 
