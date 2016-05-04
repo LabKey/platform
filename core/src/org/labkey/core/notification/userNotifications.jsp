@@ -20,7 +20,6 @@
     .notification-group-panel {
         border: solid #c0c0c0 1px;
         border-top-width: 0;
-        border-top-bottom: 0;
     }
 
     .notification-group-view {
@@ -58,6 +57,10 @@
     .notification-header-unread span.fa {
         color: #000000;
     }
+
+    .notification-empty-group {
+        font-style: italic;
+    }
 </style>
 
 <script type="text/javascript">
@@ -83,6 +86,11 @@
         {
             this.callParent();
             this.addGroupPanels();
+
+            if (!Ext4.isArray(this.notifications) || this.notifications.length == 0)
+            {
+                this.createNoneDisplay();
+            }
         },
 
         getStore : function()
@@ -125,8 +133,8 @@
                     cls: 'notification-group-panel',
                     border: false,
                     collapsible: true,
-                    //collapsed: notificationGroups.length > 0,
                     titleCollapse: true,
+                    collapsed: notificationGroups.length > 4,
                     items: [this.createGroupNotificationsView(notificationDataArr)]
                 }));
             }, this);
@@ -178,9 +186,25 @@
             {
                 // replace the clicked text link with the "Read On: Today" text and remove the "unread" class from the header
                 Ext4.get(target.id).up('.notification-readon').update('Read On: Today');
-                //target.style.display = 'none';
                 Ext4.get('notification-body-' + rowId).down('.notification-header').removeCls('notification-header-unread');
             });
+        },
+
+        createNoneDisplay : function()
+        {
+            this.add(Ext4.create('Ext.panel.Panel', {
+                title: 'Other (0)',
+                cls: 'notification-group-panel',
+                border: false,
+                collapsible: true,
+                titleCollapse: true,
+                items: [{
+                    xtype: 'box',
+                    padding: 10,
+                    cls: 'notification-empty-group',
+                    html: 'No data to show.'
+                }]
+            }));
         }
     });
 </script>

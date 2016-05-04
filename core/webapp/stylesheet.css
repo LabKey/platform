@@ -3883,7 +3883,7 @@ a div.x4-menu-item-icon.fa-users
     color:#ffffff;
     height:100%;
     width:400px;
-    /*z-index: 2147483630;*/
+    z-index: 2147483630; /* see relationship to value for miniprofiler */
 }
 .lk-notification, .lk-notificationnone
 {
@@ -3957,7 +3957,6 @@ a div.x4-menu-item-icon.fa-users
     height: 100px;
     word-wrap: break-word;
     white-space: normal;
-    /*overflow: visible;*/
     padding-left: 40px;
 }
 .lk-notificationicon

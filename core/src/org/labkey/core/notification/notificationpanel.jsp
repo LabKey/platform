@@ -10,6 +10,12 @@
 {
     LABKEY.Utils.onReady(function ()
     {
+        // need to create the div as a direct child of body so that the z-index will keep it in front
+        var notificationPanelDiv = document.createElement("div");
+        notificationPanelDiv.id = <%=q(notificationPanelId)%>;
+        notificationPanelDiv.className = 'lk-notificationpanel labkey-hidden';
+        document.body.appendChild(notificationPanelDiv);
+
         LABKEY.Notification.setElementIds(<%=q(notificationCountId)%>, <%=q(notificationPanelId)%>);
         LABKEY.Notification.updateUnreadCount();
 
@@ -79,7 +85,7 @@
     <span class="fa fa-inbox lk-notificationinbox"></span>
     <span id=<%=q(notificationCountId)%>>&nbsp;</span>
 </a>
-<div class="labkey-hidden lk-notificationpanel" id=<%=q(notificationPanelId)%>></div>
+
 
 
 
