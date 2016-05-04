@@ -12,6 +12,8 @@
 
         /**
          * Set the dom element Ids for the notification count and panel
+         * @param countId - the dom element id for the "inbox" header icon/count
+         * @param panelId  - the dom element id for the notification panel
          * @private
          */
         var setElementIds = function (countId, panelId)
@@ -78,6 +80,7 @@
 
         /**
          * Expand the content body vertically for the selected notification
+         * @param domEl - the expand/collapse dom element that was clicked
          * @private
          */
         var toggleBody = function (domEl)
@@ -103,9 +106,10 @@
         /**
          * Mark a given notification as read based on the RowId
          * @param id - notification RowId
+         * @param callback - function to call on success
          * @private
          */
-        var markAsRead = function (id)
+        var markAsRead = function (id, callback)
         {
             if (NOTIF_PANEL_EL && id && LABKEY.notifications && LABKEY.notifications[id])
             {
@@ -120,6 +124,9 @@
                             updateUnreadCount();
 
                             NOTIF_PANEL_EL.find('#notification-' + id).slideUp(250, _updateGroupDisplay);
+
+                            if (callback)
+                                callback.call(this, id);
                         }
                     })
                 });
@@ -182,6 +189,15 @@
                     window.location = LABKEY.notifications[id].ActionLinkUrl;
                 }
             }
+        };
+
+        /**
+         * Navigate to the action to view all notifications
+         * @private
+         */
+        var goToViewAll = function ()
+        {
+            window.location = LABKEY.ActionURL.buildURL('core', 'userNotifications');
         };
 
         var _addBodyClickHandler = function()
@@ -265,7 +281,8 @@
             toggleBody: toggleBody,
             markAsRead: markAsRead,
             clearAllUnread: clearAllUnread,
-            goToActionLink: goToActionLink
+            goToActionLink: goToActionLink,
+            goToViewAll: goToViewAll
         };
     };
 
