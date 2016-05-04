@@ -122,7 +122,6 @@ LABKEY.pipeline.StatusUpdate = function(controller, action, returnURL)
                         dr.destroy();
                     el.update(response.responseText, true);
                     _lastUpdate = newText;
-                    LABKEY.DataRegions["StatusFiles"]._initElements();
                 }
                 nextUpdate(0);
             }

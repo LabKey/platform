@@ -477,40 +477,31 @@ Ext4.define('Study.window.ParticipantGroup', {
 
         if (!this.hideDataRegion) {
 
-            //QueryWebPart is an Ext 3 based component, so we need to include Ext 3 here.
-            LABKEY.requiresExt3ClientAPI(function() {
-
-                Ext.onReady(function() {
-
-                    var me = this;
-                    var wp = new LABKEY.QueryWebPart({
-                        renderTo: this.selectionGrid.id,
-                        autoScroll : true,
-                        dataRegionName : this.dataRegionName,
-                        schemaName: 'study',
-                        queryName: queryName,
-                        frame : 'none',
-                        border : false,
-                        showRecordSelectors : true,
-                        showUpdateColumn : false,
-                        buttonBar : {
-                            position: (this.canEdit ? 'top' : 'none'),
-                            includeStandardButtons : false,
-                            items : [{
-                                text : 'Add Selected',
-                                requiresSelection : true,
-                                handler : function() { me._getSelectedDemoParticipants(queryName, 'selected'); }
-                            },{
-                                text : 'Add All',
-                                handler : function() { me._getSelectedDemoParticipants(queryName, 'all'); }
-                            }]
-                        },
-                        scope : this
-                    });
-
-                }, this);
-
-            }, this);
+            var me = this;
+            var wp = new LABKEY.QueryWebPart({
+                renderTo: this.selectionGrid.id,
+                autoScroll : true,
+                dataRegionName : this.dataRegionName,
+                schemaName: 'study',
+                queryName: queryName,
+                frame : 'none',
+                border : false,
+                showRecordSelectors : true,
+                showUpdateColumn : false,
+                buttonBar : {
+                    position: (this.canEdit ? 'top' : 'none'),
+                    includeStandardButtons : false,
+                    items : [{
+                        text : 'Add Selected',
+                        requiresSelection : true,
+                        handler : function() { me._getSelectedDemoParticipants(queryName, 'selected'); }
+                    },{
+                        text : 'Add All',
+                        handler : function() { me._getSelectedDemoParticipants(queryName, 'all'); }
+                    }]
+                },
+                scope : this
+            });
         }
     },
 
