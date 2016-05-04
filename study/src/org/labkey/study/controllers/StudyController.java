@@ -6808,7 +6808,7 @@ public class StudyController extends BaseStudyController
             // if the user is viewing a sent participant group, remove any notifications related to it
             if (form.getGroupId() != null)
             {
-                NotificationService.get().removeNotifications(getContainer(), ""+form.getGroupId(),
+                NotificationService.get().removeNotifications(getContainer(), form.getGroupId().toString(),
                     Collections.singletonList(ParticipantCategory.SEND_PARTICIPANT_GROUP_TYPE), getUser().getUserId());
 
                 // TODO we don't currently do anything with a sent group for this action
@@ -6940,7 +6940,7 @@ public class StudyController extends BaseStudyController
                 for (User validRecipient : _validRecipients)
                 {
                     // if a notification already exists for this user and participant group, remove it (i.e. replace with new one)
-                    NotificationService.get().removeNotifications(getContainer(), ""+form.getRowId(),
+                    NotificationService.get().removeNotifications(getContainer(), form.getRowId().toString(),
                         Collections.singletonList(ParticipantCategory.SEND_PARTICIPANT_GROUP_TYPE), validRecipient.getUserId());
 
                     // create the notification message email
@@ -6960,7 +6960,8 @@ public class StudyController extends BaseStudyController
 
                     // send the message and create the new notification for this user and participant group
                     NotificationService.get().sendMessage(getContainer(), getUser(), validRecipient, m,
-                            "view", sendGroupUrl.toString(), ""+form.getRowId(), ParticipantCategory.SEND_PARTICIPANT_GROUP_TYPE, true);
+                            "view", sendGroupUrl.toString(), form.getRowId().toString(),
+                            ParticipantCategory.SEND_PARTICIPANT_GROUP_TYPE, true);
                 }
             }
 

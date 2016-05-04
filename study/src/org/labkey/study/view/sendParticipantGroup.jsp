@@ -32,19 +32,19 @@
     ActionURL sendGroupUrl = bean.getSendGroupUrl(container);
 
     String messageSubject = bean.getMessageSubject() != null ? bean.getMessageSubject()
-            : "A " + subjectNounSingular.toLowerCase() + " group has been sent";
+            : "A " + subjectNounSingular.toLowerCase() + " group has been sent: " + bean.getLabel();
     String messageBody = bean.getMessageBody() != null ? bean.getMessageBody()
             :  getUser().getDisplayName(getUser()) + " has sent the following " + subjectNounSingular.toLowerCase()
-                + " group to you: \"" + bean.getLabel() + "\".\n\nNote: if they have different permissions levels from you,"
+                + " group to you: \"" + bean.getLabel() + "\".\n\nNote: if the sender has different permissions levels than you,"
                 + " you may see a different set of " + subjectNounPlural.toLowerCase() + "."
                 + "\n\nClick the link below to view the sent " + subjectNounSingular.toLowerCase() + " group: ";
 %>
 
 <labkey:errors/>
 
-<p>Send a copy of your <%=h(subjectNounSingular.toLowerCase())%> group to another user to save and edit on their own.<p>
-<p>Note: if they have different permissions levels from you, they may see a different set of <%=h(subjectNounPlural.toLowerCase())%>.
-    <br/>Additionally, any further modifications to this saved group will show up in the sent group.</p>
+<p>Send a copy of your <%=h(subjectNounSingular.toLowerCase())%> group to one or more users to save and edit on their own.<p>
+<p>Note: if the other user has different permissions levels than you, that user may see a different set of <%=h(subjectNounPlural.toLowerCase())%>.
+    <br/>Additionally, any further modifications to this saved group will be reflected in the sent group.</p>
 
 <labkey:form action="<%=h(urlFor(SendParticipantGroupAction.class))%>" method="POST">
 
