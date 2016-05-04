@@ -3120,17 +3120,21 @@ if (!LABKEY.DataRegions) {
                     'internal/ViewDesigner/button/PaperclipButton.js',
                     'internal/ViewDesigner/field/FilterOpCombo.js',
                     'internal/ViewDesigner/field/FilterTextValue.js',
-                    'internal/ViewDesigner/tab/BaseTab.js',
-                    'internal/ViewDesigner/tab/ColumnsTab.js',
-                    'internal/ViewDesigner/tab/FilterTab.js',
-                    'internal/ViewDesigner/tab/SortTab.js'
+                    'internal/ViewDesigner/tab/BaseTab.js'
                 ], function() {
-                    // These scripts depend on each other -- inOrder
+                    // These scripts depend BaseTab.js
                     LABKEY.requiresScript([
-                        'internal/ViewDesigner/FieldMetaRecord.js',
-                        'internal/ViewDesigner/FieldMetaStore.js',
-                        'internal/ViewDesigner/Designer.js'
-                    ], cb, scope, true);
+                        'internal/ViewDesigner/tab/ColumnsTab.js',
+                        'internal/ViewDesigner/tab/FilterTab.js',
+                        'internal/ViewDesigner/tab/SortTab.js'
+                    ], function() {
+                        // These scripts depend on each other -- inOrder
+                        LABKEY.requiresScript([
+                            'internal/ViewDesigner/FieldMetaRecord.js',
+                            'internal/ViewDesigner/FieldMetaStore.js',
+                            'internal/ViewDesigner/Designer.js'
+                        ], cb, scope, true);
+                    });
                 });
             }
             else {
