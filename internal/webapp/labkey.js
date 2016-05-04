@@ -473,7 +473,6 @@ if (typeof LABKEY == "undefined")
                     "GuidedTip.js",
 
                     // clientapi/ext3.lib.xml
-                    "clientapi/ext3/DataRegion.js",
                     "clientapi/ext3/EditorGridPanel.js",
                     "clientapi/ext3/ExtendedJsonReader.js",
                     "clientapi/ext3/FieldKey.js",
@@ -484,7 +483,6 @@ if (typeof LABKEY == "undefined")
                     "clientapi/ext3/HoverPopup.js",
                     "clientapi/ext3/LongTextEditor.js",
                     "clientapi/ext3/PersistentToolTip.js",
-                    "clientapi/ext3/QueryWebPart.js",
                     "clientapi/ext3/SecurityPolicy.js",
                     "clientapi/ext3/Store.js",
                     "clientapi/ext3/Utils.js"

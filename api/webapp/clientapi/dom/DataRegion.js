@@ -1025,15 +1025,6 @@ if (!LABKEY.DataRegions) {
             this.msgbox.bindRegion(this);
         }
 
-        //-- WHILE EXPERIMENTAL
-        var adminLink = LABKEY.Utils.textLink({
-            text: 'Experimental Features',
-            href: LABKEY.ActionURL.buildURL('admin', 'experimentalFeatures', '/')
-        });
-
-        this.messages['experimental'] = '<span class="labkey-strong">Warning!</span>&nbsp;<span>This is an experimental Data Region. ' + adminLink + '</span>';
-        //!-- WHILE EXPERIMENTAL
-
         if (this.messages) {
             this.msgbox.setMessages(this.messages);
             this.msgbox.render();
@@ -3623,5 +3614,5 @@ LABKEY.AggregateTypes = {
 };
 
 // Be sure to comment out DataRegion.js, QueryWebPart.js in clientapi/ext3.lib.xml and labkey.js
-//LABKEY.DataRegion = LABKEY.DataRegion2;
-//LABKEY.QueryWebPart = LABKEY.QueryWebPart2;
+LABKEY.DataRegion = LABKEY.DataRegion2;
+LABKEY.QueryWebPart = LABKEY.QueryWebPart2;

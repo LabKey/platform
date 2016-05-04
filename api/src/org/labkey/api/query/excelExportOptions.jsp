@@ -132,10 +132,27 @@
                     part: 'excelExport', hideButtonPanel: true, duration:5000
                 });
 
+                //Destroy iframe from previous download
+                var downloadIFrameId = 'downloadIFrame';
+                var oldIFrame = document.getElementById(downloadIFrameId);
+                if (oldIFrame) {
+                    oldIFrame.parentNode.removeChild(oldIFrame);
+                }
+
                 <%-- Sometimes the GET URL gets too long, so use a POST instead. We have to create a separate <form> since we might --%>
                 <%-- already be inside a form for the DataRegion itself. --%>
-                var newForm = document.createElement('form');
-                document.body.appendChild(newForm);
+                var newIFrame = document.createElement('iframe');
+                newIFrame.id = downloadIFrameId;
+                newIFrame.style.display = 'none';
+                document.body.appendChild(newIFrame);
+                //Check for contentWindow vs contentDocument for cross browser support
+                var contentDoc = newIFrame.contentWindow || newIFrame.contentDocument;
+                if (contentDoc.document) {
+                    contentDoc = contentDoc.document;
+                }
+                var newForm = contentDoc.createElement('form');
+                newForm.method = 'post';
+                contentDoc.body.appendChild(newForm);
 
                 <%-- Add the CSRF form input --%>
                 var csrfElement = document.createElement('input');
@@ -144,8 +161,6 @@
                 csrfElement.setAttribute('value', LABKEY.CSRF);
                 newForm.appendChild(csrfElement);
 
-                <%-- We need to build up all of the form elements ourselves because Ext.Ajax will concatentate multiple parameter values --%>
-                <%-- into a single string when the 'isUpload: true' config option is used --%>
                 function addInput(form, property, value){
                     // Issue 25592. Browsers are required to canonicalize newlines to \r\n in form inputs, per the HTTP
                     // spec (https://www.w3.org/TR/html401/interact/forms.html#h-17.13.4). This mangles the desired filter,
@@ -173,28 +188,11 @@
                     }
                 });
 
-                <%-- TODO: Either make LABKEY.Ajax handle a form or use jQuery --%>
-                Ext.Ajax.request({
-                    url: exportUrl,
-                    method: 'POST',
-                    form: newForm,
-                    isUpload: true,
-                    callback: function (options, success, response) {
-                        dr.removeAllMessages();
-                        if (!success) {
-                            dr.showErrorMessage("Error exporting to Excel.");
-                        }
-                        if (response.responseXML && response.responseXML.title) {
-                            var title = response.responseXML.title;
-                            var index = title.indexOf("Error Page -- ");
-                            if (index != -1) {
-                                var message = title.substring(index + "Error Page -- ".length);
-                                dr.showErrorMessage("Error: " + message);
-                            }
-                        }
-                        document.body.removeChild(newForm);
-                    }
-                });
+                newForm.action = exportUrl;
+                newIFrame = $('#' + downloadIFrameId);
+                if (newIFrame && newIFrame.contents().find('form') && newIFrame.contents().find('form').length > 0) {
+                    newIFrame.contents().find('form')[0].submit();
+                }
 
                 return false;
             };

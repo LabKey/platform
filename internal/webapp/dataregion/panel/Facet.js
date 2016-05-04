@@ -21,6 +21,8 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         }
 
         this.dataRegion = config.dataRegion;
+        // TODO: Ensure the region is setup for async handling
+        //this.dataRegion.async = true;
         var renderTarget = config.dataRegion.domId + '-facet';
         var topEl = this.getContainerEl(config.dataRegion);
         var tableEl = this.getDataRegionTableEl(config.dataRegion);
@@ -126,33 +128,33 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
     },
 
     getWrappedDataRegion : function() {
-        if (!this.qwp) {
-
-            if (this.dataRegion.getQWP()) {
-                this.qwp = this.dataRegion.getQWP();
-                this.qwp.updateRenderElement(this.dataRegion);
-                this.qwp.on('success', this.onQueryWebPartSuccess, this);
-            }
-            else {
-                // Wrap the corresponding Data Region with a QWP
-                this.qwp = new LABKEY.QueryWebPart({
-                    dataRegion : this.dataRegion,
-                    success : this.onQueryWebPartSuccess,
-                    scope : this
-                });
-            }
-
-            this.qwp.on('beforeclearallfilters', function(dr) {
-                this.filterPanel.getFilterPanel().selectAll(true);
-            }, this);
-            this.qwp.on('beforerefresh', function(dr) {
-                this.remove(0);
-                this.filterPanel = undefined;
-                this.add(this.getFilterCfg());
-            }, this);
-        }
-
-        return this.qwp;
+        //if (!this.qwp) {
+        //
+        //    if (this.dataRegion.getQWP()) {
+        //        this.qwp = this.dataRegion.getQWP();
+        //        this.qwp.updateRenderElement(this.dataRegion);
+        //        this.qwp.on('success', this.onQueryWebPartSuccess, this);
+        //    }
+        //    else {
+        //        // Wrap the corresponding Data Region with a QWP
+        //        this.qwp = new LABKEY.QueryWebPart({
+        //            dataRegion : this.dataRegion,
+        //            success : this.onQueryWebPartSuccess,
+        //            scope : this
+        //        });
+        //    }
+        //
+        //    this.qwp.on('beforeclearallfilters', function(dr) {
+        //        this.filterPanel.getFilterPanel().selectAll(true);
+        //    }, this);
+        //    this.qwp.on('beforerefresh', function(dr) {
+        //        this.remove(0);
+        //        this.filterPanel = undefined;
+        //        this.add(this.getFilterCfg());
+        //    }, this);
+        //}
+        //
+        //return this.qwp;
     },
 
     onQueryWebPartSuccess : function(dr) {
@@ -185,28 +187,34 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
     getFilterCfg : function() {
 
         return {
-            xtype : 'participantfilter',
-            width     : this.width,
-            layout    : 'fit',
-            bodyStyle : 'padding: 8px;',
-            normalWrap : true,
-            overCls   : 'iScroll',
-
-            // Filter specific config
-            filterType  : 'group',
-            subjectNoun : this.subjectNoun,
-            defaultSelectUncheckedCategory : true,
-
-            listeners : {
-                afterrender : this.onFilterRender,
-                selectionchange : this.onFilterChange,
-                beforeInitGroupConfig : this.applyFilters,
-                buffer : 1000,
-                scope : this
-            },
-
-            scope : this
+            xtype: 'box',
+            style: 'text-align: center',
+            padding: '50 0',
+            html: 'Hey! We\'re working hard to update the filter experience.\nStay tuned.'
         };
+        //return {
+        //    xtype : 'participantfilter',
+        //    width     : this.width,
+        //    layout    : 'fit',
+        //    bodyStyle : 'padding: 8px;',
+        //    normalWrap : true,
+        //    overCls   : 'iScroll',
+        //
+        //    // Filter specific config
+        //    filterType  : 'group',
+        //    subjectNoun : this.subjectNoun,
+        //    defaultSelectUncheckedCategory : true,
+        //
+        //    listeners : {
+        //        afterrender : this.onFilterRender,
+        //        selectionchange : this.onFilterChange,
+        //        beforeInitGroupConfig : this.applyFilters,
+        //        buffer : 1000,
+        //        scope : this
+        //    },
+        //
+        //    scope : this
+        //};
     },
 
     onResize : function(panel, w, h, oldW, oldH) {

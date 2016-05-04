@@ -137,7 +137,7 @@ public class DataRegion extends AbstractDataRegion
 
     public static boolean useExperimentalDataRegion()
     {
-        return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_MIGRATE_DATA_REGION);
+        return true;// AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_MIGRATE_DATA_REGION);
     }
 
     private class GroupTable

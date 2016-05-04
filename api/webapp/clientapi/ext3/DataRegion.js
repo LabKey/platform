@@ -16,6 +16,7 @@
  * limitations under the License.
  * <p/>
  */
+throw new Error('clientapi/ext3/DataRegion is being loaded. It should not. This implementation is not intended to be downloaded independently.');
 
 /**
  * @namespace The DataRegion class allows you to interact with LabKey grids, including querying and modifying selection state, filters, and more.
