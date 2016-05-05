@@ -31,7 +31,7 @@ public enum PrincipalType
     private final char _typeChar;
     private final String _description;
 
-    private PrincipalType(char type, String description)
+    PrincipalType(char type, String description)
     {
         _typeChar = type;
         _description = description;
@@ -55,6 +55,7 @@ public enum PrincipalType
             case 'g': return GROUP;
             case 'r': return ROLE;
             case 'm': return MODULE;
+            case 's': return SERVICE;
             default : return null;
         }
     }

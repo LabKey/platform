@@ -45,6 +45,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
+import org.labkey.api.security.PrincipalType;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.util.PageFlowUtil;
@@ -358,14 +359,24 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
                     Container groupContainer = g.isAdministrators() ? ContainerManager.getRoot() : ContainerManager.getForId(g.getContainer());
                     if (g.isAdministrators() || g.isProjectGroup())
                     {
-                        String groupName = g.isProjectGroup() ? groupContainer.getPath() + "/" + g.getName() : g.getName();
-                        ActionURL url = PageFlowUtil.urlProvider(SecurityUrls.class).getManageGroupURL(groupContainer, groupName);
+                        String displayText = PageFlowUtil.filter(g.getName());
 
-                        out.write("<a href=\"");
-                        out.write(PageFlowUtil.filter(url));
-                        out.write("\">");
-                        out.write(PageFlowUtil.filter(g.getName()));
-                        out.write("</a>");
+                        // Link to security-group action ONLY for standard security groups (not module groups, like actors). See #26351.
+                        if (g.getPrincipalType() == PrincipalType.GROUP)
+                        {
+                            String groupName = g.isProjectGroup() ? groupContainer.getPath() + "/" + g.getName() : g.getName();
+                            ActionURL url = PageFlowUtil.urlProvider(SecurityUrls.class).getManageGroupURL(groupContainer, groupName);
+
+                            out.write("<a href=\"");
+                            out.write(PageFlowUtil.filter(url));
+                            out.write("\">");
+                            out.write(displayText);
+                            out.write("</a>");
+                        }
+                        else
+                        {
+                            out.write(displayText);
+                        }
                         return;
                     }
                 }

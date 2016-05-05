@@ -36,7 +36,7 @@ public class GroupCache
         @Override
         public Group load(Integer groupId, Object argument)
         {
-            SQLFragment sql = new SQLFragment("SELECT Name, UserId, Container, OwnerId FROM " + CORE.getTableInfoPrincipals() + " WHERE Type <> 'u' AND UserId = ?", groupId);
+            SQLFragment sql = new SQLFragment("SELECT * FROM " + CORE.getTableInfoPrincipals() + " WHERE Type <> 'u' AND UserId = ?", groupId);
             SqlSelector selector = new SqlSelector(CORE.getSchema(), sql);
 
             return selector.getObject(Group.class);

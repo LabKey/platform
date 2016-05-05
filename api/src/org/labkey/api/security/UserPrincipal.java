@@ -91,11 +91,10 @@ public abstract class UserPrincipal implements Principal, Parameter.JdbcParamete
         return String.valueOf(_principalType.getTypeChar());
     }
 
-    protected void setType(String type)
+    public void setType(String type)
     {
-        if (type.length() != 1 || !"gum".contains(type))
-            throw new IllegalArgumentException("Unrecognized type specified.  Must be one of 'u', 'g', or 'm'.");
-        _principalType = PrincipalType.forChar(type.charAt(0));
+        if (null == type || type.length() != 1 || null == (_principalType = PrincipalType.forChar(type.charAt(0))))
+            throw new IllegalArgumentException("Unrecognized type specified. Must be one of 'u', 'g', 'm', or 's'.");
     }
 
     public abstract int[] getGroups();
