@@ -65,15 +65,15 @@ public abstract class IssueUpdateAction extends FormViewAction<IssuesController.
         ActionURL detailsUrl;
 
         // check for no op
-        if (IssuesController.UpdateAction.class.equals(form.getAction()) && form.getComment().equals("") && issue.equals(prevIssue))
+        if (NewUpdateAction.class.equals(form.getAction()) && form.getComment().equals("") && issue.equals(prevIssue))
             return true;
 
         // clear resolution, resolvedBy, and duplicate fields
-        if (IssuesController.ReopenAction.class.equals(form.getAction()))
+        if (NewReopenAction.class.equals(form.getAction()))
             issue.beforeReOpen(getContainer());
 
         Issue duplicateOf = null;
-        if (IssuesController.ResolveAction.class.equals(form.getAction()) &&
+        if (NewResolveAction.class.equals(form.getAction()) &&
                 issue.getResolution().equals("Duplicate") &&
                 issue.getDuplicate() != null &&
                 !issue.getDuplicate().equals(prevIssue.getDuplicate()))
@@ -110,11 +110,11 @@ public abstract class IssueUpdateAction extends FormViewAction<IssuesController.
         {
             detailsUrl = new NewDetailsAction(issue, getViewContext()).getURL();
 
-            if (IssuesController.ResolveAction.class.equals(form.getAction()))
+            if (NewResolveAction.class.equals(form.getAction()))
                 issue.resolve(user);
-            else if (IssuesController.InsertAction.class.equals(form.getAction()) || IssuesController.ReopenAction.class.equals(form.getAction()))
+            else if (IssuesController.InsertAction.class.equals(form.getAction()) || NewReopenAction.class.equals(form.getAction()))
                 issue.open(c, user);
-            else if (IssuesController.CloseAction.class.equals(form.getAction()))
+            else if (NewCloseAction.class.equals(form.getAction()))
                 issue.close(user);
             else
                 issue.change(user);
@@ -266,7 +266,7 @@ public abstract class IssueUpdateAction extends FormViewAction<IssuesController.
 
         editable.add("notifyList");
 
-        if (IssuesController.ResolveAction.class.equals(action))
+        if (NewResolveAction.class.equals(action))
         {
             editable.add("resolution");
             editable.add("duplicate");
@@ -316,6 +316,23 @@ public abstract class IssueUpdateAction extends FormViewAction<IssuesController.
     public void setColumnConfiguration(CustomColumnConfiguration columnConfiguration)
     {
         _columnConfiguration = columnConfiguration;
+    }
+
+    @Deprecated
+    /**
+     * Temporary helper for the new details action
+     */
+    public static ActionURL getDetailsURL(Container c, Integer issueId, boolean print)
+    {
+        ActionURL url = new ActionURL(NewDetailsAction.class, c);
+
+        if (print)
+            url.addParameter("_print", "1");
+
+        if (null != issueId)
+            url.addParameter("issueId", issueId.toString());
+
+        return url;
     }
 
     public static class NewCustomColumnConfiguration implements CustomColumnConfiguration

@@ -110,8 +110,11 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
+import org.labkey.issue.experimental.actions.NewCloseAction;
 import org.labkey.issue.experimental.actions.NewDetailsAction;
 import org.labkey.issue.experimental.actions.NewListAction;
+import org.labkey.issue.experimental.actions.NewReopenAction;
+import org.labkey.issue.experimental.actions.NewResolveAction;
 import org.labkey.issue.experimental.actions.NewUpdateAction;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
@@ -161,7 +164,10 @@ public class IssuesController extends SpringActionController
             IssuesController.class,
             NewUpdateAction.class,
             NewDetailsAction.class,
-            NewListAction.class);
+            NewListAction.class,
+            NewResolveAction.class,
+            NewReopenAction.class,
+            NewCloseAction.class);
 
     private static final int MAX_STRING_FIELD_LENGTH = 200;
 
@@ -288,6 +294,7 @@ public class IssuesController extends SpringActionController
     }
 
 
+    @Deprecated     // delete this code after we pivot to the new implementation
     @RequiresPermission(ReadPermission.class)
     public class ListAction extends SimpleViewAction<ListForm>
     {
@@ -358,6 +365,7 @@ public class IssuesController extends SpringActionController
         }
     }
 
+    @Deprecated     // delete this code after we pivot to the new implementation
     @RequiresPermission(ReadPermission.class)
     public class DetailsAction extends SimpleViewAction<IssueIdForm>
     {
@@ -741,6 +749,7 @@ public class IssuesController extends SpringActionController
         return relatedIssue;
     }
 
+    @Deprecated     // delete this code after we pivot to the new implementation
     protected abstract class IssueUpdateAction extends FormViewAction<IssuesForm>
     {
         // NOTE: aaron this is used in the InsertAction but not the update (consider refactor)
@@ -988,6 +997,7 @@ public class IssuesController extends SpringActionController
     }
 
 
+    @Deprecated     // delete this code after we pivot to the new implementation
     @RequiresPermission(ReadPermission.class)
     public class UpdateAction extends IssueUpdateAction
     {
@@ -1067,6 +1077,7 @@ public class IssuesController extends SpringActionController
     }
 
 
+    @Deprecated     // delete this code after we pivot to the new implementation
     @RequiresPermission(ReadPermission.class)
     public class ResolveAction extends IssueUpdateAction
     {
@@ -1126,6 +1137,7 @@ public class IssuesController extends SpringActionController
     }
 
 
+    @Deprecated     // delete this code after we pivot to the new implementation
     @RequiresPermission(ReadPermission.class)
     public class CloseAction extends IssueUpdateAction
     {
@@ -1169,6 +1181,7 @@ public class IssuesController extends SpringActionController
     }
 
 
+    @Deprecated     // delete this code after we pivot to the new implementation
     @RequiresPermission(ReadPermission.class)
     public class ReopenAction extends IssueUpdateAction
     {
@@ -3298,7 +3311,10 @@ public class IssuesController extends SpringActionController
             }
             else
             {
-                return getDetailsURL(getViewContext().getContainer(), getBean().getIssueId(), false);
+                if (getViewContext().getActionURL().getAction().startsWith("new"))
+                    return org.labkey.issue.experimental.actions.IssueUpdateAction.getDetailsURL(getViewContext().getContainer(), getBean().getIssueId(), false);
+                else
+                    return getDetailsURL(getViewContext().getContainer(), getBean().getIssueId(), false);
             }
         }
 

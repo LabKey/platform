@@ -25,8 +25,13 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.issue.ColumnType" %>
 <%@ page import="org.labkey.issue.ColumnTypeEnum" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
+<%@ page import="org.labkey.issue.experimental.actions.IssueUpdateAction" %>
+<%@ page import="org.labkey.issue.experimental.actions.NewDetailsAction" %>
+<%@ page import="org.labkey.issue.experimental.actions.NewListAction" %>
+<%@ page import="org.labkey.issue.model.CustomColumn" %>
 <%@ page import="org.labkey.issue.model.Issue" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="org.labkey.issue.model.IssueManager.EntryTypeNames" %>
@@ -36,9 +41,6 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.issue.model.CustomColumn" %>
-<%@ page import="org.labkey.issue.ColumnType" %>
-<%@ page import="org.labkey.issue.experimental.actions.IssueUpdateAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -64,11 +66,11 @@
 
     if (issue.getIssueId() > 0)
     {
-        cancelURL = IssuesController.issueURL(c, IssuesController.DetailsAction.class).addParameter("issueId", issue.getIssueId());
+        cancelURL = IssuesController.issueURL(c, NewDetailsAction.class).addParameter("issueId", issue.getIssueId());
     }
     else
     {
-        cancelURL = IssuesController.issueURL(c, IssuesController.ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true");
+        cancelURL = IssuesController.issueURL(c, NewListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true");
     }
 
     List<ColumnTypeEnum> extraOptions = new ArrayList<>();

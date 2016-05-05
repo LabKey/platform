@@ -28,14 +28,14 @@
 <%@ page import="org.labkey.issue.ColumnType" %>
 <%@ page import="org.labkey.issue.ColumnTypeEnum" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
-<%@ page import="org.labkey.issue.IssuesController.CloseAction" %>
 <%@ page import="org.labkey.issue.IssuesController.EmailPrefsAction" %>
 <%@ page import="org.labkey.issue.IssuesController.InsertAction" %>
-<%@ page import="org.labkey.issue.IssuesController.ReopenAction" %>
-<%@ page import="org.labkey.issue.IssuesController.ResolveAction" %>
 <%@ page import="org.labkey.issue.experimental.IssuesListView" %>
 <%@ page import="org.labkey.issue.experimental.actions.IssueUpdateAction" %>
+<%@ page import="org.labkey.issue.experimental.actions.NewCloseAction" %>
 <%@ page import="org.labkey.issue.experimental.actions.NewListAction" %>
+<%@ page import="org.labkey.issue.experimental.actions.NewReopenAction" %>
+<%@ page import="org.labkey.issue.experimental.actions.NewResolveAction" %>
 <%@ page import="org.labkey.issue.experimental.actions.NewUpdateAction" %>
 <%@ page import="org.labkey.issue.model.CustomColumn" %>
 <%@ page import="org.labkey.issue.model.Issue" %>
@@ -141,16 +141,16 @@
         }
         if (issue.getStatus().equals(Issue.statusOPEN) && bean.getHasUpdatePermissions())
         {%>
-        <td><%= textLink("resolve", IssuesController.issueURL(c, ResolveAction.class).addParameter("issueId", issueId))%></td><%
+        <td><%= textLink("resolve", IssuesController.issueURL(c, NewResolveAction.class).addParameter("issueId", issueId))%></td><%
         }
         else if (issue.getStatus().equals(Issue.statusRESOLVED) && bean.getHasUpdatePermissions())
         {%>
-        <td><%= textLink("close", IssuesController.issueURL(c, CloseAction.class).addParameter("issueId", issueId))%></td>
-        <td><%= textLink("reopen", IssuesController.issueURL(c, ReopenAction.class).addParameter("issueId", issueId))%></td><%
+        <td><%= textLink("close", IssuesController.issueURL(c, NewCloseAction.class).addParameter("issueId", issueId))%></td>
+        <td><%= textLink("reopen", IssuesController.issueURL(c, NewReopenAction.class).addParameter("issueId", issueId))%></td><%
         }
         else if (issue.getStatus().equals(Issue.statusCLOSED) && bean.getHasUpdatePermissions())
         {%>
-        <td><%= textLink("reopen", IssuesController.issueURL(c, ReopenAction.class).addParameter("issueId", issueId))%></td><%
+        <td><%= textLink("reopen", IssuesController.issueURL(c, NewReopenAction.class).addParameter("issueId", issueId))%></td><%
         }
         if (bean.getHasAdminPermissions() && bean.hasMoveDestinations())
         {%>
