@@ -465,9 +465,7 @@ LABKEY.Assay = new function()
         },
 
         /**
-         * @private
          * Create an assay run and import results.
-         * <b>NOTE: This is an experimental API and may change without warning.</b>
          *
          * @param {Number} config.assayId The assay protocol id.
          * @param {String} [config.containerPath] The path to the container in which the assay run will be imported,
@@ -539,77 +537,56 @@ LABKEY.Assay = new function()
          */
         importRun : function (config)
         {
-            if (window.FormData)
-            {
-                var files = [];
-                if (config.files) {
-                    for (var i = 0; i < config.files.length; i++) {
-                        var f = config.files[i];
-                        if (f instanceof window.File) {
-                            files.push(f);
+            if (!window.FormData)
+                throw new Error("modern browser required");
+
+            var files = [];
+            if (config.files) {
+                for (var i = 0; i < config.files.length; i++) {
+                    var f = config.files[i];
+                    if (f instanceof window.File) {
+                        files.push(f);
+                    }
+                    else if (f.tagName == "INPUT") {
+                        for (var j = 0; j < f.files.length; j++) {
+                            files.push(f.files[j]);
                         }
-                        else if (f.tagName == "INPUT") {
-                            for (var j = 0; j < f.files.length; j++) {
-                                files.push(f.files[j]);
-                            }
-                        }
                     }
                 }
-
-                if (files.length == 0)
-                    throw new Error("At least one file is required");
-
-                var formData = new window.FormData();
-                formData.append("assayId", config.assayId);
-                formData.append("name", config.name);
-                formData.append("comment", config.comment);
-                if (config.batchId)
-                    formData.append("batchId", config.batchId);
-
-                if (config.properties) {
-                    for (var key in config.properties)
-                        formData.append("properties['" + key + "']", config.properties[key]);
-                }
-
-                if (config.batchProperties) {
-                    for (var key in config.batchProperties)
-                        formData.append("batchProperties['" + key + "']", config.batchProperties[key]);
-                }
-
-                formData.append("file", files[0]);
-                for (var i = 1; i < files.length; i++) {
-                    formData.append("file" + i, files[i]);
-                }
-
-                var success = LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope, false);
-                var failure = LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true);
-
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', LABKEY.ActionURL.buildURL("assay", "importRun", config.containerPath));
-                xhr.onprogress = function (evt) {
-                    if (evt.lengthComputable) {
-                        var loaded = evt.loaded / evt.total;
-                        console.log("  percent complete: " + (100 * loaded) + " ...");
-                    }
-                    else {
-                        console.log("  loading ...");
-                    }
-                };
-                xhr.onerror = function (evt) {
-                    //console.error(evt);
-                    failure.call(config.scope || this);
-                };
-                xhr.onload = function (evt) {
-                    //console.log(evt);
-
-                    if (evt.target.status === 200)
-                        success.call(config.scope || window, xhr);
-                    else
-                        failure.call(config.scope || window, xhr);
-                };
-
-                xhr.send(formData);
             }
+
+            if (files.length == 0)
+                throw new Error("At least one file is required");
+
+            var formData = new FormData();
+            formData.append("assayId", config.assayId);
+            formData.append("name", config.name);
+            formData.append("comment", config.comment);
+            if (config.batchId)
+                formData.append("batchId", config.batchId);
+
+            if (config.properties) {
+                for (var key in config.properties)
+                    formData.append("properties['" + key + "']", config.properties[key]);
+            }
+
+            if (config.batchProperties) {
+                for (var key in config.batchProperties)
+                    formData.append("batchProperties['" + key + "']", config.batchProperties[key]);
+            }
+
+            formData.append("file", files[0]);
+            for (var i = 1; i < files.length; i++) {
+                formData.append("file" + i, files[i]);
+            }
+
+            LABKEY.Ajax.request({
+                method: 'POST',
+                url: LABKEY.ActionURL.buildURL("assay", "importRun.api", config.containerPath),
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope, false),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
+                form: formData
+            });
         }
     };
 };

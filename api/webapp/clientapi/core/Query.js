@@ -294,7 +294,7 @@ LABKEY.Query = new function()
             }
 
             var requestConfig = {
-                url : LABKEY.ActionURL.buildURL("query", "executeSql", config.containerPath, qsParams),
+                url : LABKEY.ActionURL.buildURL("query", "executeSql.api", config.containerPath, qsParams),
                 method : 'POST',
                 success: getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.stripHiddenColumns, config.scope, config.requiredVersion),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
@@ -308,6 +308,91 @@ LABKEY.Query = new function()
                 requestConfig.timeout = config.timeout;
 
             return LABKEY.Ajax.request(requestConfig);
+        },
+
+        /**
+         * Bulk import data rows into a table.
+         * One of 'text', 'path', 'moduleResource', or 'file' is required and cannot be combined.
+         *
+         * @param {Object} config An object which contains the following configuration properties.
+         * @param {String} config.schemaName Name of a schema defined within the current container.
+         * @param {String} config.queryName Name of a query table associated with the chosen schema.
+         * @param {File} [config.file] A <a href='https://developer.mozilla.org/en-US/docs/DOM/File'><code>File</code></a> object or a file input element to upload to the server.
+         * @param {String} [config.text] Text to import.
+         * @param {String} [config.path] Path to resource under webdav tree. E.g. "/_webdav/MyProject/@files/data.tsv"
+         * @param {String} [config.module] Module name to use when resolving a module resource.
+         * @param {String} [config.moduleResource] A file resource within the module to import.
+         * @param {String} [config.importIdentity] When true, auto-increment key columns may be imported from the data.
+         * @param {String} [config.importLookupByAlternateKey] When true, lookup columns can be imported by their alternate keys instead of the primary key.
+         *          For example, if a column is a lookup to a SampleSet, the imported value can be the Sample's name since names must be unique within a SampleSet.
+         * @param {Function} [config.success] Function called when the "importData" function executes successfully.
+                        Will be called with the following arguments:
+                        An object containing success and rowCount properties.
+         * @param {Function} [config.failure]  Function called importing data fails.
+         * @param {String} [config.containerPath] The container path in which the schema and query name are defined.
+         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
+         *       generating a timeout error (defaults to 30000).
+         * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
+         * @returns {Mixed} In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
+         * @example Example, importing tsv data from a module: <pre name="code" class="javascript">
+         LABKEY.Query.importData({
+                 schemaName: 'lists',
+                 queryName: 'People',
+                 // reference to &lt;input type='file' id='file'&gt;
+                 file: document.getElementById('file')
+             },
+         });</pre>
+         * @example Example, importing tsv data from a module: <pre name="code" class="javascript">
+         LABKEY.Query.importData({
+                 schemaName: 'lists',
+                 queryName: 'People',
+                 module: 'mymodule',
+                 moduleResource: '/data/lists/People.tsv'
+             },
+         });</pre>
+        */
+        importData : function (config)
+        {
+            if (!window.FormData)
+                throw new Error("modern browser required");
+
+            var form = new FormData();
+
+            form.append("schemaName", config.schemaName);
+            form.append("queryName", config.queryName);
+            if (config.text)
+                form.append("text", config.text);
+            if (config.path)
+                form.append("path", config.path);
+            if (config.format)
+                form.append("format", config.format);
+            if (config.module)
+                form.append("module", config.module);
+            if (config.moduleResource)
+                form.append("moduleResource", config.moduleResource);
+            if (config.importIdentity)
+                form.append("importIdentity", config.importIdentity);
+            if (config.importLookupByAlternateKey)
+                form.append("importLookupByAlternateKey", config.importLookupByAlternateKey);
+
+            if (config.file) {
+                if (config.file instanceof File)
+                    form.append("file", config.file);
+                else if (config.file.tagName == "INPUT" && config.file.files.length > 0)
+                    form.append("file", config.file.files[0]);
+            }
+
+            return LABKEY.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("query", "import.api", config.containerPath),
+                method: 'POST',
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope, false),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
+                form: form,
+                timeout: config.timeout
+            });
         },
 
         /**
@@ -519,7 +604,7 @@ LABKEY.Query = new function()
                 dataObject.includeStyle = config.includeStyle;
 
             var requestConfig = {
-                url : LABKEY.ActionURL.buildURL('query', 'getQuery', config.containerPath),
+                url : LABKEY.ActionURL.buildURL('query', 'getQuery.api', config.containerPath),
                 method : getMethod(config.method),
                 success: getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.stripHiddenColumns, config.scope, config.requiredVersion),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
@@ -601,7 +686,7 @@ LABKEY.Query = new function()
             }
 
             return LABKEY.Ajax.request({
-                url : LABKEY.ActionURL.buildURL('query', 'selectDistinct', config.containerPath),
+                url : LABKEY.ActionURL.buildURL('query', 'selectDistinct.api', config.containerPath),
                 method : getMethod(config.method),
                 success: getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config), false, config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
@@ -660,7 +745,7 @@ LABKEY.Query = new function()
                                         }, this);
 
             return LABKEY.Ajax.request({
-                url : LABKEY.ActionURL.buildURL('reports', 'browseData', config.containerPath),
+                url : LABKEY.ActionURL.buildURL('reports', 'browseData.api', config.containerPath),
                 method : 'POST',
                 success: success,
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
@@ -707,7 +792,7 @@ LABKEY.Query = new function()
         {
             if (arguments.length > 1)
                 config = configFromArgs(arguments);
-            config.action = "updateRows";
+            config.action = "updateRows.api";
             return sendJsonQueryRequest(config);
         },
 
@@ -779,7 +864,7 @@ LABKEY.Query = new function()
             };
 
             var requestConfig = {
-                url : LABKEY.ActionURL.buildURL("query", "saveRows", config.containerPath),
+                url : LABKEY.ActionURL.buildURL("query", "saveRows.api", config.containerPath),
                 method : 'POST',
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
@@ -831,22 +916,23 @@ LABKEY.Query = new function()
          // Upon success, it moves the user to the confirmation page and
          // passes the current user's ID to that page.
          LABKEY.Query.insertRows({
-                 containerPath: '/home/Study/demo/guestaccess',
-                 schemaName: 'lists',
-                 queryName: 'Reagent Requests',
-             rows: [
-                {"Name":  ReagentReqForm.DisplayName.value,
+             containerPath: '/home/Study/demo/guestaccess',
+             schemaName: 'lists',
+             queryName: 'Reagent Requests',
+             rows: [{
+                "Name":  ReagentReqForm.DisplayName.value,
                 "Email": ReagentReqForm.Email.value,
                 "UserID": ReagentReqForm.UserID.value,
                 "Reagent": ReagentReqForm.Reagent.value,
                 "Quantity": parseInt(ReagentReqForm.Quantity.value),
                 "Date": new Date(),
                 "Comments": ReagentReqForm.Comments.value,
-                "Fulfilled": 'false'}],
+                "Fulfilled": 'false'
+             }],
              successCallback: function(data){
-                     window.location =
-                        '/wiki/home/Study/demo/page.view?name=confirmation&userid='
-                        + LABKEY.Security.currentUser.id;
+                 window.location =
+                    '/wiki/home/Study/demo/page.view?name=confirmation&userid='
+                    + LABKEY.Security.currentUser.id;
              },
          });  </pre>
 		* @see LABKEY.Query.ModifyRowsResults
@@ -856,7 +942,7 @@ LABKEY.Query = new function()
         {
             if (arguments.length > 1)
                 config = configFromArgs(arguments);
-            config.action = "insertRows";
+            config.action = "insertRows.api";
             return sendJsonQueryRequest(config);
         },
 
@@ -897,7 +983,7 @@ LABKEY.Query = new function()
             {
                 config = configFromArgs(arguments);
             }
-            config.action = "deleteRows";
+            config.action = "deleteRows.api";
             return sendJsonQueryRequest(config);
         },
 
@@ -1050,7 +1136,7 @@ LABKEY.Query = new function()
                 params.schemaName = config.schemaName;
 
             return LABKEY.Ajax.request({
-                url : LABKEY.ActionURL.buildURL('query', 'getSchemas', config.containerPath),
+                url : LABKEY.ActionURL.buildURL('query', 'getSchemas.api', config.containerPath),
                 method : 'GET',
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
@@ -1128,7 +1214,7 @@ LABKEY.Query = new function()
             }, false, false);
 
             return LABKEY.Ajax.request({
-                url: LABKEY.ActionURL.buildURL('query', 'getQueries', config.containerPath),
+                url: LABKEY.ActionURL.buildURL('query', 'getQueries.api', config.containerPath),
                 method : 'GET',
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
@@ -1200,7 +1286,7 @@ LABKEY.Query = new function()
                 params.metadata = config.metadata;
 
             return LABKEY.Ajax.request({
-                url: LABKEY.ActionURL.buildURL('query', 'getQueryViews', config.containerPath),
+                url: LABKEY.ActionURL.buildURL('query', 'getQueryViews.api', config.containerPath),
                 method : 'GET',
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
@@ -1241,7 +1327,7 @@ LABKEY.Query = new function()
                 params.views = config.views;
 
             return LABKEY.Ajax.request({
-                url: LABKEY.ActionURL.buildURL('query', 'saveQueryViews', config.containerPath),
+                url: LABKEY.ActionURL.buildURL('query', 'saveQueryViews.api', config.containerPath),
                 method: 'POST',
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
@@ -1319,7 +1405,7 @@ LABKEY.Query = new function()
                 params.initializeMissingView = config.initializeMissingView;
 
             return LABKEY.Ajax.request({
-                url: LABKEY.ActionURL.buildURL('query', 'getQueryDetails', config.containerPath),
+                url: LABKEY.ActionURL.buildURL('query', 'getQueryDetails.api', config.containerPath),
                 method : 'GET',
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
@@ -1361,7 +1447,7 @@ LABKEY.Query = new function()
             });
 
             return LABKEY.Ajax.request({
-                url: LABKEY.ActionURL.buildURL('query', (config.validateQueryMetadata ? 'validateQueryMetadata' : 'validateQuery'), config.containerPath),
+                url: LABKEY.ActionURL.buildURL('query', (config.validateQueryMetadata ? 'validateQueryMetadata.api' : 'validateQuery.api'), config.containerPath),
                 method : 'GET',
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
@@ -1387,7 +1473,7 @@ LABKEY.Query = new function()
         getServerDate : function(config)
         {
             return LABKEY.Ajax.request({
-                url: LABKEY.ActionURL.buildURL('query', 'getServerDate'),
+                url: LABKEY.ActionURL.buildURL('query', 'getServerDate.api'),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope),
                 success: LABKEY.Utils.getCallbackWrapper(function(json){
                     var d;

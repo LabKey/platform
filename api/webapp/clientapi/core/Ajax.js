@@ -19,12 +19,38 @@
 
 /**
  * @namespace
- * Adapter for <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.Ajax">Ext.Ajax</a>.
+ * Utility for making XHR.
  */
-LABKEY.Ajax = new function ()
-{
+LABKEY.Ajax = new function () {
+    'use strict';
+
+    var DEFAULT_HEADERS = {'X-LABKEY-CSRF': LABKEY.CSRF};
+
+    var callback = function(fn, scope, args) {
+        if (fn) {
+            fn.apply(scope, args);
+        }
+    };
+
+    /**
+     * Returns true iff obj contains case-insensitive key
+     * @param {object} obj
+     * @param {string} key
+     */
+    var contains = function(obj, key) {
+        if (key) {
+            var lowerKey = key.toLowerCase();
+            for (var k in obj) {
+                if (obj.hasOwnProperty(k) && k.toLowerCase() === lowerKey) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
+
     var configureOptions = function(config) {
-        var url, params, method, jsonData;
+        var url, params, method = 'GET', data, isForm = false;
 
         if (!config.hasOwnProperty('url') || config.url === null) {
             throw new Error("a URL is required to make a request");
@@ -32,58 +58,69 @@ LABKEY.Ajax = new function ()
 
         url = config.url;
         params = config.params;
-        jsonData = JSON.stringify(config.jsonData);
 
+        // configure data
+        if (config.form) {
+            data = config.form instanceof FormData ? config.form : new FormData(config.form);
+            isForm = true;
+        }
+        else if (config.jsonData) {
+            data = JSON.stringify(config.jsonData);
+        }
+        else {
+            data = null;
+        }
+
+        // configure method
         if (config.hasOwnProperty('method') && config.method !== null) {
             method = config.method.toUpperCase();
-        } else {
-            method = (jsonData === null || jsonData === undefined) ? 'GET' : 'POST';
+        }
+        else if (data) {
+            method = 'POST';
         }
 
-        if (params !== undefined || params !== null) {
-            params = LABKEY.ActionURL.queryString(params);
-        }
-
-        if ((method == 'GET' || jsonData) && params) {
-            // Put the params on the URL if the request is a GET or if we have jsonData.
-            url = url + (url.indexOf('?') === -1 ? '?' : '&') + params;
-            params = null;
+        // configure params
+        if (params !== undefined && params !== null) {
+            url += (url.indexOf('?') === -1 ? '?' : '&') + LABKEY.ActionURL.queryString(params);
         }
 
         return {
             url: url,
             method: method,
-            data: jsonData || params || null
+            data: data,
+            isForm: isForm
         };
     };
 
-    var configureHeaders = function(xhr, headers, jsonData) {
-        var contentTypeHeader = 'application/x-www-form-urlencoded; charset=UTF-8',
-            xhrHeader = 'XMLHttpRequest', k;
+    var configureHeaders = function(xhr, config, options) {
+        var headers = config.headers,
+            jsonData = config.jsonData;
 
         if (headers === undefined || headers === null) {
             headers = {};
         }
 
-        if (!headers['Content-Type']) {
+        // only set Content-Type if this is not FormData and it has not been set explicitly
+        if (!options.isForm && !contains(headers, 'Content-Type')) {
             if (jsonData !== undefined && jsonData !== null) {
-                contentTypeHeader = 'application/json';
+                headers['Content-Type'] = 'application/json';
             }
-
-            headers['Content-Type'] = contentTypeHeader;
-        }
-
-        if (!headers['X-Requested-With']) {
-            headers['X-Requested-With'] = xhrHeader;
-        }
-
-        for (k in LABKEY.Ajax.DEFAULT_HEADERS) {
-            if (LABKEY.Ajax.DEFAULT_HEADERS.hasOwnProperty(k)) {
-                xhr.setRequestHeader(k, LABKEY.Ajax.DEFAULT_HEADERS[k]);
+            else {
+                headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8';
             }
         }
 
-        for (k in headers) {
+        if (!contains(headers, 'X-Requested-With')) {
+            headers['X-Requested-With'] = 'XMLHttpRequest';
+        }
+
+        for (var k in DEFAULT_HEADERS) {
+            if (DEFAULT_HEADERS.hasOwnProperty(k)) {
+                xhr.setRequestHeader(k, DEFAULT_HEADERS[k]);
+            }
+        }
+
+        for (var k in headers) {
             if (headers.hasOwnProperty(k)) {
                 xhr.setRequestHeader(k, headers[k]);
             }
@@ -94,61 +131,35 @@ LABKEY.Ajax = new function ()
 
     /** @scope LABKEY.Ajax */
     return {
-        DEFAULT_HEADERS : {'X-LABKEY-CSRF': LABKEY.CSRF},
+        DEFAULT_HEADERS : DEFAULT_HEADERS,
 
         request : function(config) {
-            var options, callback, successCB, failureCB, scope, xhr;
-            options = configureOptions(config);
-            scope = config.hasOwnProperty('scope') && config.scope !== null ? config.scope : this;
-
-            if (config.hasOwnProperty('callback') && config.callback !== null) {
-                callback = config.callback;
-            }
-
-            if (config.hasOwnProperty('success') && config.success !== null) {
-                successCB = config.success;
-            }
-
-            if (config.hasOwnProperty('failure') && config.failure !== null) {
-                failureCB = config.failure;
-            }
-
-            // issue 20849 : IE errors when setting timeout after object created
-            if (config.hasOwnProperty('timeout') && config.timeout !== null)
-                xhr = new XMLHttpRequest({timeout: config.timeout});
-            else
+            var options = configureOptions(config),
+                scope = config.hasOwnProperty('scope') && config.scope !== null ? config.scope : this,
                 xhr = new XMLHttpRequest();
 
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === 4) {
-                    if (xhr.status === 200) {
-                        if (successCB) {
-                            successCB.call(scope, xhr, config);
-                        } else if (callback) {
-                            callback.call(scope, config, true, xhr);
-                        }
-                    } else {
-                        if (failureCB) {
-                            failureCB.call(scope, xhr, config);
-                        } else if (callback) {
-                            callback.call(scope, config, false, xhr);
-                        }
-                    }
+                    var success = (xhr.status >= 200 && xhr.status < 300) || xhr.status == 304;
+
+                    callback(success ? config.success : config.failure, scope, [xhr, config]);
+                    callback(config.callback, scope, [config, success, xhr]);
                 }
             };
 
+            xhr.open(options.method, options.url, true);
+
+            // configure headers after request is open
+            configureHeaders(xhr, config, options);
+
+            // configure timeout after request is open
             if (config.hasOwnProperty('timeout') && config.timeout !== null) {
                 xhr.ontimeout = function() {
-                    if (failureCB) {
-                        failureCB.call(scope, xhr, config);
-                    } else if (callback) {
-                        callback.call(scope, config, false, xhr);
-                    }
+                    callback(config.failure, scope, [xhr, config]);
+                    callback(config.callback, scope, [config, false /* success */, xhr]);
                 };
             }
 
-            xhr.open(options.method, options.url, true);
-            configureHeaders(xhr, config.headers, config.jsonData);
             xhr.send(options.data);
 
             return xhr;
