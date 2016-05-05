@@ -251,6 +251,21 @@ public class AssayManager implements AssayService.Interface
     }
 
     @Override
+    public ExpProtocol getAssayProtocolByName(Container container, String name)
+    {
+        if (name != null)
+        {
+            List<ExpProtocol> allProtocols = getAssayProtocols(container);
+            for (ExpProtocol protocol : allProtocols)
+            {
+                if (name.equals(protocol.getName()))
+                    return protocol;
+            }
+        }
+        return null;
+    }
+
+    @Override
     public WebPartView createAssayListView(ViewContext context, boolean portalView, BindException errors)
     {
         String name = AssaySchema.ASSAY_LIST_TABLE_NAME;

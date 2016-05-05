@@ -354,6 +354,10 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                     ExpProtocol protocol;
                     if (assay.getProtocolId() == null)
                     {
+                        // check for existing assay protocol with the given name before creating
+                        if (AssayManager.get().getAssayProtocolByName(getContainer(), assay.getName()) != null)
+                            throw new AssayException("Assay protocol already exists for this name.");
+
                         protocol = AssayManager.get().createAssayDefinition(getUser(), getContainer(), assay);
                         assay.setProtocolId(protocol.getRowId());
 
