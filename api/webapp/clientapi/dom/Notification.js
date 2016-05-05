@@ -61,7 +61,7 @@
             // slide open the notification panel and bind the click listener after the slide animation has completed
             if (NOTIF_PANEL_EL)
             {
-                NOTIF_PANEL_EL.slideDown(250, _addBodyClickHandler);
+                NOTIF_PANEL_EL.slideDown(250, _addCheckHandlers);
             }
         };
 
@@ -74,7 +74,7 @@
             // slide out the notification panel and unbind the click listener
             if (NOTIF_PANEL_EL)
             {
-                NOTIF_PANEL_EL.slideUp(250, _removeBodyClickHandler);
+                NOTIF_PANEL_EL.slideUp(250, _removeCheckHandlers);
             }
         };
 
@@ -202,20 +202,31 @@
             window.location = LABKEY.ActionURL.buildURL('core', 'userNotifications');
         };
 
-        var _addBodyClickHandler = function()
+        var _addCheckHandlers = function()
         {
             $('body').on('click', _checkBodyClick);
+            $(document).on('keyup', _checkKeyUp);
         };
 
-        var _removeBodyClickHandler = function()
+        var _removeCheckHandlers = function()
         {
             $('body').off('click', _checkBodyClick);
+            $(document).off('keyup', _checkKeyUp);
         };
 
         var _checkBodyClick = function(event)
         {
             // close if the click happened outside of the notification panel
             if (NOTIF_PANEL_EL && event.target.id != NOTIF_PANEL_EL.attr('id') && !NOTIF_PANEL_EL.has(event.target).length)
+            {
+                hidePanel();
+            }
+        };
+
+        var _checkKeyUp = function(event)
+        {
+            // close if the ESC key is pressed
+            if (NOTIF_PANEL_EL && event.keyCode == 27)
             {
                 hidePanel();
             }
