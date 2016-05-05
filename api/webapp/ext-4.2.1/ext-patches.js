@@ -513,8 +513,3 @@ Ext4.override(Ext4.data.proxy.Server, { timeout: Ext4.Ajax.timeout });
 Ext4.override(Ext4.form.Basic, { timeout: Ext4.Ajax.timeout / 1000 });
 Ext4.override(Ext4.form.action.Action, { timeout: Ext4.Ajax.timeout / 1000 });
 
-if (!Date.prototype.format) {
-    Date.prototype.format = function(formatStr){
-        return Ext4.util.Format.date(this, formatStr);
-    };
-}
