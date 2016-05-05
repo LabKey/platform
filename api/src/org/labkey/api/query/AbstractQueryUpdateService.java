@@ -466,8 +466,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             ColumnInfo col = columnMap.get(entry.getKey());
 
             Object value = entry.getValue();
-            if (col != null && value != null && !col.getJavaObjectClass().isInstance(value) && !(value instanceof AttachmentFile))
-            {
+                if (col != null && value != null && !col.getJavaObjectClass().isInstance(value) &&
+                        !(value instanceof AttachmentFile) && !(value instanceof String[]))
+                {
                 try
                 {
                     value = ConvertUtils.convert(value.toString(), col.getJavaObjectClass());
