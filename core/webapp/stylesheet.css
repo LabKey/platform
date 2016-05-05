@@ -1166,6 +1166,11 @@ th.labkey-col-header-filter:hover, td.labkey-col-header-filter:hover, tr.labkey-
     background-color: #EEEEEE;
 }
 
+.labkey-data-region .labkey-col-total td
+{
+    vertical-align: top;
+}
+
 /* Used for the unbordered empty or title cells sometimes put on tables */
 .labkey-data-region .labkey-data-region-title
 {
