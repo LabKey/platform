@@ -16,12 +16,10 @@
 package org.labkey.api.settings;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.util.ExceptionReportingLevel;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.MothershipReport;

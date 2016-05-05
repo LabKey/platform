@@ -269,9 +269,9 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
     public static class GroupAuditDomainKind extends AbstractAuditDomainKind
     {
         public static final String NAME = "GroupAuditDomain";
-        public static String NAMESPACE_PREFIX = "Audit-" + NAME;
+        public static final String NAMESPACE_PREFIX = "Audit-" + NAME;
 
-        private static Set<PropertyDescriptor> _fields;
+        private static Set<PropertyDescriptor> _fields;  // TODO: Seems wrong... static + set in constructor?
 
         public GroupAuditDomainKind()
         {
