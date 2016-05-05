@@ -410,6 +410,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         this.required = required;
     }
 
+    @NotNull
     public Set<String> getImportAliasSet()
     {
         return importAliases;

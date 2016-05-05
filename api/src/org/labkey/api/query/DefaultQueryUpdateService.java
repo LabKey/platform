@@ -319,9 +319,16 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
         for (ColumnInfo col : getQueryTable().getColumns())
         {
-            String name = col.getName();
-            if (!row.containsKey(name))
-                continue;
+            final String name = col.getName();
+            String key = name;
+            if (!row.containsKey(key))
+            {
+                // Check if the row map contains an alias for the column
+                Optional<String> firstAlias = col.getImportAliasSet().stream().filter(row::containsKey).findFirst();
+                if (!firstAlias.isPresent())
+                    continue;
+                key = firstAlias.get();
+            }
 
             // Skip readonly and wrapped columns.  The wrapped column is usually a pk column and can't be updated.
             if (col.isReadOnly() || col.isCalculated())
@@ -341,7 +348,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
             // We want a map using the DbTable column names as keys, so figure out the right name to use
             String dbName = queryToDb.containsKey(name) ? queryToDb.get(name) : name;
-            rowStripped.put(dbName, row.get(name));
+            rowStripped.put(dbName, row.get(key));
         }
 
         convertTypes(container, rowStripped);
