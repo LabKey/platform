@@ -280,6 +280,20 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
             int rowCount = 3;
             int offset = 2;
 
+            MutableInt testCount = new MutableInt(0);
+            selector.forEach(new Selector.ForEachBlock<K>()
+            {
+                @Override
+                public void exec(K object) throws SQLException, StopIteratingException
+                {
+                    testCount.increment();
+
+                    if (testCount.intValue() == rowCount)
+                        stopIterating();
+                }
+            }, clazz);
+            assertEquals(rowCount, testCount.intValue());
+
             selector.setMaxRows(Table.ALL_ROWS);
             assertEquals(count, (int) selector.getRowCount());
             assertEquals(count, selector.getArray(clazz).length);

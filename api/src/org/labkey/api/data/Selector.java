@@ -96,7 +96,12 @@ public interface Selector
     interface ForEachBlock<T>
     {
         /** Invoked once for each row returned by the selector */
-        void exec(T object) throws SQLException;
+        void exec(T object) throws SQLException, StopIteratingException;
+
+        default void stopIterating() throws StopIteratingException
+        {
+            throw new StopIteratingException();
+        }
     }
 
     /** Callback interface for dealing with objects streamed from the database in batches */

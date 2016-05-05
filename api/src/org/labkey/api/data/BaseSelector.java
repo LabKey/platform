@@ -199,8 +199,14 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
     protected void forEach(final ForEachBlock<ResultSet> block, ResultSetFactory factory)
     {
         handleResultSet(factory, ((rs, conn) -> {
-            while (rs.next())
-                block.exec(rs);
+            try
+            {
+                while (rs.next())
+                    block.exec(rs);
+            }
+            catch (StopIteratingException sie)
+            {
+            }
 
             return null;
         }));
@@ -217,8 +223,14 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
         handleResultSet(factory, (rs, conn) -> {
             ResultSetIterator iter = new ResultSetIterator(rs);
 
-            while (iter.hasNext())
-                block.exec(iter.next());
+            try
+            {
+                while (iter.hasNext())
+                    block.exec(iter.next());
+            }
+            catch (StopIteratingException sie)
+            {
+            }
 
             return null;
         });

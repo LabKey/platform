@@ -239,8 +239,14 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         TableSqlFactory sqlFactory = getSqlFactory(false);
         handleResultSet(new ExecutingResultSetFactory(sqlFactory), (rs, conn) -> {
             Results results = new ResultsImpl(rs, sqlFactory.getSelectedColumns());
-            while (results.next())
-                block.exec(results);
+            try
+            {
+                while (results.next())
+                    block.exec(results);
+            }
+            catch (StopIteratingException sie)
+            {
+            }
 
             return null;
         });

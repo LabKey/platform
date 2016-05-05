@@ -70,8 +70,14 @@ public class JdbcMetaDataSelector
             @Override
             public Object handle(ResultSet rs) throws SQLException
             {
-                while (rs.next())
-                    block.exec(rs);
+                try
+                {
+                    while (rs.next())
+                        block.exec(rs);
+                }
+                catch (StopIteratingException sie)
+                {
+                }
 
                 return null;
             }
