@@ -1311,7 +1311,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             var formItems = [];
             var queryStore = this.initializeQueryStore();
-            var queryId = Ext.id();
+            var queryId = Ext4.id();
 
             this.schemaName = 'study';
 
@@ -1422,13 +1422,15 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
      */
     initializeSchemaStore : function() {
 
-        Ext4.define('LABKEY.data.Schema', {
-            extend : 'Ext.data.Model',
-            fields : [
-                {name : 'name'},
-                {name : 'description'}
-            ]
-        });
+        if (!Ext4.ModelManager.isRegistered('LABKEY.data.Schema')) {
+            Ext4.define('LABKEY.data.Schema', {
+                extend: 'Ext.data.Model',
+                fields: [
+                    {name: 'name'},
+                    {name: 'description'}
+                ]
+            });
+        }
 
         // manually define for now, we could query at some point
         var schemaStore = Ext4.create('Ext.data.Store', {
@@ -1583,10 +1585,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     onFailure : function(resp){
         var error = Ext4.decode(resp.responseText).exception;
-        if(error){
-            Ext.MessageBox.alert('Error', error);
-        } else {
-            Ext.MessageBox.alert('Error', 'An unknown error has occurred, unable to save the chart.');
+        if (error) {
+            Ext4.Msg.alert('Error', error);
+        }
+        else {
+            Ext4.Msg.alert('Error', 'An unknown error has occurred, unable to save the chart.');
         }
     },
 
@@ -1954,19 +1957,21 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     validateYAxis: function(chartType, chartConfig, aes, scales, data){
         var validation = LABKEY.vis.GenericChartHelper.validateYAxis(chartType, chartConfig, aes, scales, data);
 
-        if(validation.success === true) {
+        if (validation.success === true) {
             if(validation.message != null) {
                 this.addWarningText(validation.message);
             }
 
             return true;
-        } else {
+        }
+        else {
             this.centerPanel.getEl().unmask();
             this.setRenderRequested(false);
 
             if (this.editMode) {
-                Ext.MessageBox.alert('Error', validation.message, this.showYMeasureWindow, this);
-            } else {
+                Ext4.Msg.alert('Error', validation.message, this.showYMeasureWindow, this);
+            }
+            else {
                 this.clearChartPanel();
                 var errorDiv = Ext4.create('Ext.container.Container', {
                     border: 1,
@@ -1983,19 +1988,21 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     validateXAxis: function(chartType, chartConfig, aes, scales, data){
         var validation = LABKEY.vis.GenericChartHelper.validateXAxis(chartType, chartConfig, aes, scales, data);
 
-        if(validation.success === true) {
-            if(validation.message != null) {
+        if (validation.success === true) {
+            if (validation.message != null) {
                 this.addWarningText(validation.message);
             }
 
             return true;
-        } else {
+        }
+        else {
             this.centerPanel.getEl().unmask();
             this.setRenderRequested(false);
 
             if (this.editMode) {
-                Ext.MessageBox.alert('Error', validation.message, this.showXMeasureWindow, this);
-            } else {
+                Ext4.Msg.alert('Error', validation.message, this.showXMeasureWindow, this);
+            }
+            else {
                 this.clearChartPanel();
                 var errorDiv = Ext4.create('Ext.container.Container', {
                     border: 1,

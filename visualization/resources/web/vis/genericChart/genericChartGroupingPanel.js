@@ -88,8 +88,8 @@ Ext4.define('LABKEY.vis.GenericChartGroupingPanel', {
             labelWidth: 105,
             width: 385,
             listeners: {
-                change: function(combo, oldVal, newVal){
-                    if(!this.suppressEvents){
+                change: function() {
+                    if (!this.suppressEvents) {
                         this.hasChanges = true;
                     }
                 },

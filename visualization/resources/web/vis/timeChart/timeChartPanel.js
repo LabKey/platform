@@ -1271,15 +1271,11 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
     viewDataGrid: function() {
         // make sure the tempGridInfo is available
-        if(typeof this.tempGridInfo == "object") {
+        if (Ext4.isObject(this.tempGridInfo)) {
             this.maskAndRemoveCharts();
             this.loaderFn = this.viewDataGrid;
             this.loaderName = 'viewDataGrid';
 
-            // add a panel to put the queryWebpart in
-            var qwpPanelDiv = Ext4.create('Ext.container.Container', {
-                autoEl: {tag: 'div'}
-            });
             var dataGridPanel = Ext4.create('Ext.panel.Panel', {
                 minHeight: 620,
                 autoScroll: true,
@@ -1291,36 +1287,49 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                         value: 'Note: filters applied to the data grid will not be reflected in the chart view.',
                         style: 'font-style:italic;padding:10px'
                     },
-                    qwpPanelDiv
+                    {
+                        // add container to place QWP into
+                        xtype: 'container',
+                        autoEl: {tag: 'div'},
+                        listeners: {
+                            afterrender: {
+                                fn : function(ct) {
+
+                                    // create the queryWebpart using the temp grid schema and query name
+                                    var chartQueryWebPart = new LABKEY.QueryWebPart({
+                                        renderTo: ct.getId(),
+                                        schemaName: this.tempGridInfo.schema,
+                                        queryName: this.tempGridInfo.query,
+                                        sort: this.tempGridInfo.sortCols ? this.tempGridInfo.sortCols.join(", ") : null,
+                                        parameters: this.chartInfo.parameters,
+                                        allowChooseQuery: false,
+                                        allowChooseView: false,
+                                        allowHeaderLock: false,
+                                        title: '',
+                                        frame: 'none'
+                                    });
+
+                                    // re-enable the View Charts button once the QWP has rendered
+                                    chartQueryWebPart.on('render', function() {
+                                        this.viewChartBtn.enable();
+
+                                        // redo the layout of the qwp panel to set reset the auto height
+                                        ct.doLayout();
+
+                                        if (chartQueryWebPart.parameters) {
+                                            this.updateQueryParameters(chartQueryWebPart);
+                                        }
+
+                                        this.unmaskPanel();
+                                    }, this);
+                                },
+                                scope: this,
+                                single: true
+                            }
+                        }
+                    }
                 ]
             });
-
-            // create the queryWebpart using the temp grid schema and query name
-            var chartQueryWebPart = new LABKEY.QueryWebPart({
-                renderTo: qwpPanelDiv.getId(),
-                schemaName: this.tempGridInfo.schema,
-                queryName: this.tempGridInfo.query,
-                sort: this.tempGridInfo.sortCols ? this.tempGridInfo.sortCols.join(", ") : null,
-                parameters: this.chartInfo.parameters,
-                allowChooseQuery : false,
-                allowChooseView  : false,
-                allowHeaderLock  : false,
-                title: "",
-                frame: "none"
-            });
-
-            // re-enable the View Charts button once the QWP has rendered
-            chartQueryWebPart.on('render', function(){
-                this.viewChartBtn.enable();
-
-                // redo the layout of the qwp panel to set reset the auto height
-                qwpPanelDiv.doLayout();
-
-                if (chartQueryWebPart.parameters)
-                    this.updateQueryParameters(chartQueryWebPart);
-
-                this.unmaskPanel();
-            }, this);
 
             this.chart.removeAll();
             this.chart.add(dataGridPanel);
@@ -1328,11 +1337,10 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
     },
 
     updateQueryParameters : function(qwp) {
-        for (var param in qwp.parameters)
-        {
-            var pref = qwp.dataRegionName + ".param.";
-            if (param.indexOf(pref) == 0) {
-                this.parameters[param.replace(pref, "")] = qwp.parameters[param];
+        var pref = qwp.dataRegionName + '.param.';
+        for (var param in qwp.parameters) {
+            if (qwp.parameters.hasOwnProperty(param) && param.indexOf(pref) == 0) {
+                this.parameters[param.replace(pref, '')] = qwp.parameters[param];
             }
         }
     },
