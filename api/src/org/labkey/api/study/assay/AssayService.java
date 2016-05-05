@@ -86,6 +86,9 @@ public class AssayService
         /** @return all of the assay protocols that are in scope in the given container, filtered to only include those that are owned by the given provider */
         List<ExpProtocol> getAssayProtocols(Container container, @Nullable AssayProvider provider);
 
+        /** @return an assay protocol that matches the given name for the assay protocols that are in scope in the given container */
+        ExpProtocol getAssayProtocolByName(Container container, String name);
+
         /**
          * Populates the import button with possible containers
          * @param isStudyView true if this view is from a study, and thus should exclude the current container
