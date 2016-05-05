@@ -18,6 +18,7 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.SQLFragment;
@@ -171,6 +172,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         ret.setInputType("text");
         ret.setMeasure(false);
         ret.setDimension(false);
+        ret.setImportAliasesSet(Sets.newCaseInsensitiveHashSet("comment"));
         return ret;
     }
 

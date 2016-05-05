@@ -21,30 +21,27 @@ import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.labkey.remoteapi.CommandException;
 import org.labkey.remoteapi.CommandResponse;
 import org.labkey.remoteapi.Connection;
 import org.labkey.remoteapi.PostCommand;
 import org.labkey.test.Locator;
-import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.WebTestHelper;
-import org.labkey.test.tests.IssuesTest;
+import org.labkey.test.categories.DailyB;
+import org.labkey.test.categories.Search;
 import org.labkey.test.tests.study.StudyTest;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.SearchHelper;
-import org.labkey.test.util.WikiHelper;
 import org.labkey.test.util.search.SearchAdminAPIHelper;
 import org.openqa.selenium.NoSuchElementException;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 
-import static org.junit.Assert.*;
-
+@Category({Search.class, DailyB.class})
 public class DataClassSearchTest extends StudyTest
 {
     public SearchAdminAPIHelper.DirectoryType directoryType()
@@ -283,7 +280,7 @@ public class DataClassSearchTest extends StudyTest
         firstDomainRowJson.put("name", DATA_CLASS_1_NAME_2);
         firstDomainRowJson.put("description", DATA_CLASS_1_DESCRIPTION_2);
         firstDomainRowJson.put("alias", DATA_CLASS_1_ALIAS_2);
-        firstDomainRowJson.put("comment", DATA_CLASS_1_COMMENT_2);  // TODO: doesn't work currently, Issue 26317
+        firstDomainRowJson.put("comment", DATA_CLASS_1_COMMENT_2);
         firstDomainRowJson.put("iceCreamFlavor", DATA_CLASS_ICE_CREAM);
         firstDomainRowJson.put("foodColor", "speckled");
         firstDomainRowJson.put("sequence", "ek\ndo\nteen");
@@ -305,7 +302,7 @@ public class DataClassSearchTest extends StudyTest
         _searchHelper.enqueueSearchItem(DATA_CLASS_1_NAME_1);
         _searchHelper.enqueueSearchItem(DATA_CLASS_1_DESCRIPTION_1);
         //_searchHelper.enqueueSearchItem(DATA_CLASS_1_ALIAS_1);  TODO: re-enable this and related lines when alias indexing is added
-        //_searchHelper.enqueueSearchItem(DATA_CLASS_1_COMMENT_1);  TODO: re-enable this and related lines when Issue 26317 is fixed
+        _searchHelper.enqueueSearchItem(DATA_CLASS_1_COMMENT_1);
         _searchHelper.enqueueSearchItem(DATA_CLASS_1_DESCRIPTION_2, Locator.linkContainingText(DATA_CLASS_1_NAME_2));
         //_searchHelper.enqueueSearchItem(DATA_CLASS_1_ALIAS_2, Locator.linkContainingText(DATA_CLASS_1_NAME_2));
         //_searchHelper.enqueueSearchItem(DATA_CLASS_1_COMMENT_2, Locator.linkContainingText(DATA_CLASS_1_NAME_2));
