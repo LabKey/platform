@@ -1816,7 +1816,7 @@ public class DataRegion extends AbstractDataRegion
         }
     }
 
-    public void renderDetailsHiddenFields(Writer out, Map rowMap) throws IOException
+    private void renderDetailsHiddenFields(Writer out, Map rowMap) throws IOException
     {
         if (null != rowMap)
         {

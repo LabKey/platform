@@ -20,7 +20,6 @@ import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
@@ -96,23 +95,19 @@ public class AssayJSONConverter
             filter.addClause(new SimpleFilter.InClause(FieldKey.fromParts(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME), Arrays.asList(objectIds)));
         }
 
-        try (Results results = new TableSelector(tableInfo, columns.values(), filter, new Sort(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME)).getResults())
-        {
-            JSONArray dataRows = new JSONArray();
+        JSONArray dataRows = new JSONArray();
 
-            while (results.next())
+        new TableSelector(tableInfo, columns.values(), filter, new Sort(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME)).forEachResults(results -> {
+            JSONObject dataRow = new JSONObject();
+            for (ColumnInfo columnInfo : columns.values())
             {
-                JSONObject dataRow = new JSONObject();
-                for (ColumnInfo columnInfo : columns.values())
-                {
-                    Object value = columnInfo.getValue(results);
-                    dataRow.put(columnInfo.getName(), value);
-                }
-                dataRows.put(dataRow);
+                Object value = columnInfo.getValue(results);
+                dataRow.put(columnInfo.getName(), value);
             }
+            dataRows.put(dataRow);
+        });
 
-            return dataRows;
-        }
+        return dataRows;
     }
 
     public static JSONObject serializeRun(ExpRun run, AssayProvider provider, ExpProtocol protocol, User user) throws SQLException
