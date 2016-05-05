@@ -175,175 +175,178 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
         var fieldKey = columnRecord.data.fieldKey;
         var metadataRecord = this.fieldMetaStore.getById(fieldKey.toUpperCase());
 
-        if (!this._editPropsWin) {
-            var aggregateStoreCopy = this.createAggregateStore(); //NOTE: we deliberately create a separate store to use with this window.
-            var aggregateStore = this.aggregateStore;
-            var columnsList = this.getList();
+        var aggregateStoreCopy = this.createAggregateStore(); //NOTE: we deliberately create a separate store to use with this window.
+        var aggregateStore = this.aggregateStore;
+        var columnsList = this.getList();
 
-            var aggregateOptions = [];
-            aggregateOptions.push({value: "", name: "[None]"});
-            Ext4.each(LABKEY.Query.getAggregatesForType(metadataRecord.get('jsonType')), function(key){
-                aggregateOptions.push({value: key.toUpperCase(), name: key.toUpperCase()});
-            }, this);
+        var aggregateOptions = [];
+        aggregateOptions.push({value: "", name: "[None]"});
+        Ext4.each(LABKEY.Query.getAggregatesForType(metadataRecord.get('jsonType')), function(key){
+            aggregateOptions.push({value: key.toUpperCase(), name: key.toUpperCase()});
+        }, this);
 
-            var win = Ext4.create('Ext.window.Window', {
-                title: "Edit column properties",
-                resizable: false,
-                constrain: true,
-                constrainHeader: true,
-                modal: true,
+        var win = Ext4.create('Ext.window.Window', {
+            title: "Edit column properties",
+            resizable: false,
+            constrain: true,
+            constrainHeader: true,
+            modal: true,
+            border: false,
+            closable: true,
+            closeAction: 'hide',
+            items: {
+                xtype: 'form',
                 border: false,
-                closable: true,
-                closeAction: 'hide',
-                items: {
-                    xtype: 'form',
-                    border: false,
-                    padding: 5,
-                    defaults: { padding: 5 },
-                    items: [{
-                        xtype: "label",
-                        text: "Title:"
-                    },{
-                        xtype: "textfield",
-                        itemId: "titleField",
-                        name: "title",
-                        allowBlank: true,
-                        width: 330
-                    },{
-                        xtype: "label",
-                        text: "Aggregates:"
-                    },{
-                        xtype: 'grid',
-                        width: 340,
-                        store: aggregateStoreCopy,
-                        selType: 'rowmodel',
-                        plugins: [
-                            Ext4.create('Ext.grid.plugin.CellEditing', {
-                                clicksToEdit: 1
-                            })
-                        ],
-                        columns: [{ text: 'Type', dataIndex: 'type', width: 75, menuDisabled: true,
-                            editor: {
-                                xtype: "combo",
-                                name: "aggregate",
-                                displayField: 'name',
-                                valueField: 'value',
-                                store: Ext4.create('Ext.data.Store', {
-                                    fields: [{name: 'name'}, {name: 'value'}],
-                                    data: aggregateOptions
-                                }),
-                                mode: 'local',
-                                editable: false
-                            }
-                        },
-                            { text: 'Label', dataIndex: 'label', flex: 1, menuDisabled: true, editor: 'textfield' },
-                            {
-                                xtype: 'actioncolumn',
-                                width: 30,
-                                menuDisabled: true,
-                                sortable: false,
-                                items: [{
-                                    icon: LABKEY.contextPath + '/_images/delete.png',
-                                    tooltip: 'Remove',
-                                    handler: function(grid, rowIndex, colIndex) {
-                                        var record = grid.getStore().getAt(rowIndex);
-                                        grid.getStore().remove(record);
-                                    }
-                                }]
-                            }],
-                        buttons: [{
-                            text: 'Add Aggregate',
-                            margin: 10,
-                            handler: function(btn) {
-                                var store = btn.up('grid').getStore();
-                                store.add({
-                                    fieldKey: win.columnRecord.get('fieldKey')
-                                });
-                            }
-                        }]
-                    }]
-                },
-                buttonAlign: "center",
-                buttons: [{
-                    text: "OK",
-                    handler: function() {
-                        var title = win.down('#titleField').getValue();
-                        title = title ? title.trim() : "";
-                        win.columnRecord.set("title", !Ext4.isEmpty(title) ? title : undefined);
-
-                        var error;
-                        var fieldKey = win.columnRecord.get('fieldKey');
-                        var aggregateStoreCopy = win.down('grid').getStore();
-
-                        //validate the records
-                        aggregateStoreCopy.each(function(rec) {
-                            if (!rec.get('type') && !rec.get('label')) {
-                                aggregateStoreCopy.remove(rec);
-                            }
-                            else if (!rec.get('type'))
-                            {
-                                error = true;
-                                alert('Aggregate is missing a type');
-                                return false;
-                            }
-                        }, this);
-
-                        if (error) {
-                            return;
-                        }
-
-                        //remove existing records matching this field
-                        aggregateStore.removeAll();
-
-                        //then add to store
-                        aggregateStoreCopy.each(function(rec) {
-                            aggregateStore.add({
-                                fieldKey: rec.get('fieldKey'),
-                                type: rec.get('type'),
-                                label: rec.get('label')
-                            });
-                        }, this);
-
-                        columnsList.refresh();
-                        win.hide();
-                    }
+                padding: 5,
+                defaults: { padding: 5 },
+                items: [{
+                    xtype: "label",
+                    text: "Title:"
                 },{
-                    text: "Cancel",
-                    handler: function() { win.hide(); }
-                }],
-
-                initEditForm : function(columnRecord, metadataRecord) {
-                    this.columnRecord = columnRecord;
-                    this.metadataRecord = metadataRecord;
-
-                    this.setTitle("Edit column properties for '" + Ext4.htmlEncode(this.columnRecord.get('fieldKey')) + "'");
-                    this.down('#titleField').setValue(this.columnRecord.get("title"));
-
-                    //NOTE: we make a copy of the data so we can avoid committing updates until the user clicks OK
-                    aggregateStoreCopy.removeAll();
-                    aggregateStore.each(function(rec){
-                        if (rec.get('fieldKey') == this.columnRecord.get('fieldKey'))
+                    xtype: "textfield",
+                    itemId: "titleField",
+                    name: "title",
+                    allowBlank: true,
+                    width: 330
+                },{
+                    xtype: "label",
+                    text: "Aggregates:"
+                },{
+                    xtype: 'grid',
+                    width: 340,
+                    store: aggregateStoreCopy,
+                    selType: 'rowmodel',
+                    plugins: [
+                        Ext4.create('Ext.grid.plugin.CellEditing', {
+                            clicksToEdit: 1
+                        })
+                    ],
+                    columns: [{ text: 'Type', dataIndex: 'type', width: 75, menuDisabled: true,
+                        editor: {
+                            xtype: "combo",
+                            name: "aggregate",
+                            displayField: 'name',
+                            valueField: 'value',
+                            store: Ext4.create('Ext.data.Store', {
+                                fields: [{name: 'name'}, {name: 'value'}],
+                                data: aggregateOptions
+                            }),
+                            mode: 'local',
+                            editable: false
+                        }
+                    },
+                        { text: 'Label', dataIndex: 'label', flex: 1, menuDisabled: true, editor: 'textfield' },
                         {
-                            aggregateStoreCopy.add({
-                                fieldKey: rec.get('fieldKey'),
-                                label: rec.get('label'),
-                                type: rec.get('type')
+                            xtype: 'actioncolumn',
+                            width: 30,
+                            menuDisabled: true,
+                            sortable: false,
+                            items: [{
+                                icon: LABKEY.contextPath + '/_images/delete.png',
+                                tooltip: 'Remove',
+                                handler: function(grid, rowIndex, colIndex) {
+                                    var record = grid.getStore().getAt(rowIndex);
+                                    grid.getStore().remove(record);
+                                }
+                            }]
+                        }],
+                    buttons: [{
+                        text: 'Add Aggregate',
+                        margin: 10,
+                        handler: function(btn) {
+                            var store = btn.up('grid').getStore();
+                            store.add({
+                                fieldKey: win.columnRecord.get('fieldKey')
                             });
+                        }
+                    }]
+                }]
+            },
+            buttonAlign: "center",
+            buttons: [{
+                text: "OK",
+                handler: function() {
+                    var title = win.down('#titleField').getValue();
+                    title = title ? title.trim() : "";
+                    win.columnRecord.set("title", !Ext4.isEmpty(title) ? title : undefined);
+
+                    var error;
+                    var fieldKey = win.columnRecord.get('fieldKey');
+                    var aggregateStoreCopy = win.down('grid').getStore();
+
+                    //validate the records
+                    aggregateStoreCopy.each(function(rec) {
+                        if (!rec.get('type') && !rec.get('label')) {
+                            aggregateStoreCopy.remove(rec);
+                        }
+                        else if (!rec.get('type'))
+                        {
+                            error = true;
+                            alert('Aggregate is missing a type');
+                            return false;
                         }
                     }, this);
 
-                    //columnsList
-                    this.columnRecord.store.fireEvent('datachanged', this.columnRecord.store)
+                    if (error) {
+                        return;
+                    }
 
+                    //remove existing records matching this field
+                    var recordsToRemove = [];
+                    aggregateStore.each(function(rec) {
+                        if (fieldKey == rec.get('fieldKey'))
+                            recordsToRemove.push(rec);
+                    }, this);
+                    if (recordsToRemove.length > 0) {
+                        aggregateStore.remove(recordsToRemove);
+                    }
+
+                    //then add to store
+                    aggregateStoreCopy.each(function(rec) {
+                        aggregateStore.add({
+                            fieldKey: rec.get('fieldKey'),
+                            type: rec.get('type'),
+                            label: rec.get('label')
+                        });
+                    }, this);
+
+                    columnsList.refresh();
+                    win.hide();
                 }
-            });
+            },{
+                text: "Cancel",
+                handler: function() { win.hide(); }
+            }],
 
-            win.render(document.body);
-            this._editPropsWin = win;
-        }
+            initEditForm : function(columnRecord, metadataRecord) {
+                this.columnRecord = columnRecord;
+                this.metadataRecord = metadataRecord;
 
-        this._editPropsWin.initEditForm(columnRecord, metadataRecord);
-        this._editPropsWin.show();
+                this.setTitle("Edit column properties for '" + Ext4.htmlEncode(this.columnRecord.get('fieldKey')) + "'");
+                this.down('#titleField').setValue(this.columnRecord.get("title"));
+
+                //NOTE: we make a copy of the data so we can avoid committing updates until the user clicks OK
+                aggregateStoreCopy.removeAll();
+                aggregateStore.each(function(rec){
+                    if (rec.get('fieldKey') == this.columnRecord.get('fieldKey'))
+                    {
+                        aggregateStoreCopy.add({
+                            fieldKey: rec.get('fieldKey'),
+                            label: rec.get('label'),
+                            type: rec.get('type')
+                        });
+                    }
+                }, this);
+
+                //columnsList
+                this.columnRecord.store.fireEvent('datachanged', this.columnRecord.store)
+
+            }
+        });
+
+        win.render(document.body);
+        win.initEditForm(columnRecord, metadataRecord);
+        win.show();
     },
 
     createDefaultRecordData : function(fieldKey) {
