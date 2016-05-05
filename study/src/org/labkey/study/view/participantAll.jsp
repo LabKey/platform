@@ -23,7 +23,6 @@
 <%@ page import="org.labkey.api.data.DbSchema" %>
 <%@ page import="org.labkey.api.data.Results" %>
 <%@ page import="org.labkey.api.data.SQLFragment" %>
-<%@ page import="org.labkey.api.data.Selector" %>
 <%@ page import="org.labkey.api.data.SimpleFilter" %>
 <%@ page import="org.labkey.api.data.Sort" %>
 <%@ page import="org.labkey.api.data.SqlSelector" %>
@@ -63,8 +62,6 @@
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="org.labkey.study.query.StudyQuerySchema" %>
 <%@ page import="org.labkey.study.reports.StudyChartQueryReport" %>
-<%@ page import="java.sql.ResultSet" %>
-<%@ page import="java.sql.SQLException" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Date" %>
@@ -132,20 +129,15 @@
             "SELECT VisitRowId, ParticipantId, SequenceNum, VisitDate\n" +
                     "FROM " + StudySchema.getInstance().getTableInfoParticipantVisit() + "\n" +
                     "WHERE Container = ? AND ParticipantId = ?",
-            study.getContainer(), bean.getParticipantId()).forEach(new Selector.ForEachBlock<ResultSet>()
-    {
-        @Override
-        public void exec(ResultSet rs) throws SQLException
-        {
-            int visitRowId = rs.getInt(1);
-            String ptid = rs.getString(2);
-            double sequenceNum = rs.getDouble(3);
-            Date visitDate = rs.getDate(4);
-            visitRowIdMap.put(new Pair<>(ptid, sequenceNum), visitRowId);
-            if (bean.getParticipantId().equals(ptid))
-                ptidVisitDates.put(sequenceNum, visitDate);
-        }
-    });
+            study.getContainer(), bean.getParticipantId()).forEach(rs -> {
+                int visitRowId = rs.getInt(1);
+                String ptid = rs.getString(2);
+                double sequenceNum = rs.getDouble(3);
+                Date visitDate = rs.getDate(4);
+                visitRowIdMap.put(new Pair<>(ptid, sequenceNum), visitRowId);
+                if (bean.getParticipantId().equals(ptid))
+                    ptidVisitDates.put(sequenceNum, visitDate);
+            });
 
     final VisitMultiMap visitSequenceMap = new VisitMultiMap();
     final Map<Double, Integer> countKeysForSequence = new HashMap<>();
@@ -159,24 +151,19 @@
     f.append("GROUP BY ParticipantId, SequenceNum, DatasetId");
     f.add(bean.getParticipantId());
 
-    new SqlSelector(dbSchema, f).forEach(new Selector.ForEachBlock<ResultSet>()
-    {
-        @Override
-        public void exec(ResultSet rs) throws SQLException
-        {
-            String ptid = rs.getString(1);
-            double s = rs.getDouble(2);
-            Double sequenceNum = rs.wasNull() ? null : s;
-            int datasetId = rs.getInt(3);
-            int rowCount = ((Number) rs.getObject(4)).intValue();
-            Integer visitRowId = visitRowIdMap.get(new Pair<>(ptid, sequenceNum));
-            if (null != visitRowId && null != sequenceNum)
-                visitSequenceMap.put(visitRowId, sequenceNum);
-            datasetSet.add(datasetId);
-            Integer count = countKeysForSequence.get(sequenceNum);
-            if (null == count || count < rowCount)
-                countKeysForSequence.put(sequenceNum, rowCount);
-        }
+    new SqlSelector(dbSchema, f).forEach(rs -> {
+        String ptid = rs.getString(1);
+        double s = rs.getDouble(2);
+        Double sequenceNum = rs.wasNull() ? null : s;
+        int datasetId = rs.getInt(3);
+        int rowCount = ((Number) rs.getObject(4)).intValue();
+        Integer visitRowId = visitRowIdMap.get(new Pair<>(ptid, sequenceNum));
+        if (null != visitRowId && null != sequenceNum)
+            visitSequenceMap.put(visitRowId, sequenceNum);
+        datasetSet.add(datasetId);
+        Integer count = countKeysForSequence.get(sequenceNum);
+        if (null == count || count < rowCount)
+            countKeysForSequence.put(sequenceNum, rowCount);
     });
 
     // Now we have a list of datasets with 1 or more rows and
@@ -337,7 +324,6 @@
     ResultSetUtil.close(dsResults);
     if (rowCount == 0)
         continue;
-
 %>
 <tr class="labkey-header">
     <th nowrap align="left" class="labkey-expandable-row-header">
