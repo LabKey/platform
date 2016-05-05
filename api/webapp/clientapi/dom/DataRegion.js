@@ -2777,7 +2777,7 @@ if (!LABKEY.DataRegions) {
             // handle min-count
             var minCount = el.attr('labkey-requires-selection-min-count');
             if (minCount) {
-                minCount = parseInt(minCount.value);
+                minCount = parseInt(minCount);
             }
             if (minCount === undefined) {
                 minCount = 1;
@@ -2786,7 +2786,7 @@ if (!LABKEY.DataRegions) {
             // handle max-count
             var maxCount = el.attr('labkey-requires-selection-max-count');
             if (maxCount) {
-                maxCount = parseInt(maxCount.value);
+                maxCount = parseInt(maxCount);
             }
 
             if (minCount <= selectedCount && (!maxCount || maxCount >= selectedCount)) {
