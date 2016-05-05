@@ -208,7 +208,8 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                         return ExperimentService.get().getTinfoDataAliasMap();
                     }
                 }, "Alias"));
-                aliasCol.setCalculated(true);
+                aliasCol.setCalculated(false);
+                aliasCol.setNullable(true);
                 aliasCol.setRequired(false);
                 return aliasCol;
 
@@ -1196,73 +1197,6 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                     .append(" AND d.rowid=?").add(keys[0]);
 
             return new SqlSelector(getDbTable().getSchema(), sql).getObject(Map.class);
-        }
-
-        @Override
-        @Deprecated
-        protected Map<String, Object> coerceTypes(Map<String, Object> row)
-        {
-            Map<String, Object> result = new CaseInsensitiveHashMap<>(row.size());
-            Map<String, ColumnInfo> columnMap = ImportAliasable.Helper.createImportMap(getQueryTable().getColumns(), true);
-            for (Map.Entry<String, Object> entry : row.entrySet())
-            {
-                ColumnInfo col = columnMap.get(entry.getKey());
-
-                Object value = entry.getValue();
-                // dont convert to string the String[] used for aliases by QueryController action update
-                // but do convert to string the json object used for aliases by LABKEY.Query.updateRows
-                if (col != null && value != null && !col.getJavaObjectClass().isInstance(value) &&
-                        !(value instanceof AttachmentFile) && !(value instanceof String[]))
-                {
-                    try
-                    {
-
-                        value = ConvertUtils.convert(value.toString(), col.getJavaObjectClass());
-                    }
-                    catch (ConversionException e)
-                    {
-                        // That's OK, the transformation script may be able to fix up the value before it gets inserted
-                    }
-                }
-                result.put(entry.getKey(), value);
-            }
-            return result;
-        }
-
-        @Override
-        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, boolean allowOwner)
-                throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
-        {
-            Map<String,Object> rowStripped = new CaseInsensitiveHashMap<>(row.size());
-            for (ColumnInfo col : getQueryTable().getColumns())
-            {
-                String name = col.getName();
-                if (!row.containsKey(name))
-                    continue;
-                // Skip readonly and wrapped columns except for Alias
-                if (!col.getName().equals("Alias") && (col.isReadOnly() || col.isCalculated()))
-                    continue;
-                if ((!allowOwner && name.equalsIgnoreCase("Owner")) ||
-                        name.equalsIgnoreCase("CreatedBy") ||
-                        name.equalsIgnoreCase("Created") ||
-                        name.equalsIgnoreCase("EntityId"))
-                    continue;
-                rowStripped.put(name, row.get(name));
-            }
-            convertTypes(container, rowStripped);
-            setSpecialColumns(user, container, getDbTable(), row);
-            Object rowContainer = row.get("container");
-            if (rowContainer != null)
-            {
-                if (oldRow == null)
-                    throw new UnauthorizedException("The existing row was not found");
-                Object oldContainer = new CaseInsensitiveHashMap(oldRow).get("container");
-                if (null != oldContainer && !rowContainer.equals(oldContainer))
-                    throw new UnauthorizedException("The row is from the wrong container.");
-            }
-            Map<String,Object> updatedRow = _update(user, container, rowStripped, oldRow, oldRow == null ? getKeys(row) : getKeys(oldRow));
-            row.putAll(updatedRow);
-            return row;
         }
 
         @Override
