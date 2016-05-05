@@ -18,6 +18,7 @@ package org.labkey.list.model;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,6 +33,7 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
+import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.exp.DomainURIFactory;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
@@ -83,9 +85,9 @@ public class ListManager implements SearchService.DocumentProvider
     public static final String LISTID_FIELD_NAME = "listId";
 
 
-    Cache<String, List<ListDef>> _listDefCache = new BlockingStringKeyCache<>(new DatabaseCache<>(CoreSchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "listdef cache"), new ListDefCacheLoader()) ;
+    private final Cache<String, List<ListDef>> _listDefCache = new BlockingStringKeyCache<>(new DatabaseCache<>(CoreSchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "listdef cache"), new ListDefCacheLoader()) ;
 
-    class ListDefCacheLoader implements CacheLoader<String,List<ListDef>>
+    private class ListDefCacheLoader implements CacheLoader<String,List<ListDef>>
     {
         @Override
         public List<ListDef> load(String entityId, @Nullable Object argument)
@@ -101,12 +103,12 @@ public class ListManager implements SearchService.DocumentProvider
         return INSTANCE;
     }
 
-    public DbSchema getListMetadataSchema()
+    DbSchema getListMetadataSchema()
     {
         return ExperimentService.get().getSchema();
     }
 
-    public TableInfo getListMetadataTable()
+    TableInfo getListMetadataTable()
     {
         return getListMetadataSchema().getTable("list");
     }
@@ -466,58 +468,50 @@ public class ListManager implements SearchService.DocumentProvider
 
         FieldKey keyKey = new FieldKey(null, list.getKeyName());
         FieldKey entityIdKey = new FieldKey(null, "EntityId");
-        int count = 0;
+        MutableInt count = new MutableInt(0);
 
-        try (Results results = new TableSelector(listTable, filter, null).setForDisplay(true).getResults())
-        {
-            while (results.next())
-            {
-                Map<FieldKey, Object> map = results.getFieldKeyRowMap();
-                final Object pk = map.get(keyKey);
-                String entityId = (String)map.get(entityIdKey);
+        new TableSelector(listTable, filter, null).setForDisplay(true).forEachResults(results -> {
+            Map<FieldKey, Object> map = results.getFieldKeyRowMap();
+            final Object pk = map.get(keyKey);
+            String entityId = (String)map.get(entityIdKey);
 
-                String documentId = getDocumentId(list, entityId);
-                Map<String, Object> props = new HashMap<>();
-                props.put(SearchService.PROPERTY.categories.toString(), listCategory.toString());
-                props.put(SearchService.PROPERTY.title.toString(), titleTemplate.eval(map));
+            String documentId = getDocumentId(list, entityId);
+            Map<String, Object> props = new HashMap<>();
+            props.put(SearchService.PROPERTY.categories.toString(), listCategory.toString());
+            props.put(SearchService.PROPERTY.title.toString(), titleTemplate.eval(map));
 
-                String body = bodyTemplate.eval(map);
+            String body = bodyTemplate.eval(map);
 
-                ActionURL itemURL = list.urlDetails(pk);
-                itemURL.setExtraPath(list.getContainer().getId()); // Use ID to guard against folder moves/renames
+            ActionURL itemURL = list.urlDetails(pk);
+            itemURL.setExtraPath(list.getContainer().getId()); // Use ID to guard against folder moves/renames
 
-                SimpleDocumentResource r = new SimpleDocumentResource(
-                        new Path(documentId),
-                        documentId,
-                        list.getContainer().getId(),
-                        "text/plain",
-                        null == body ? new byte[0] : body.getBytes(),
-                        itemURL,
-                        props) {
-                    @Override
-                    public void setLastIndexed(long ms, long modified)
-                    {
-                        ListManager.get().setItemLastIndexed(list, pk, ms);
-                    }
-                };
+            SimpleDocumentResource r = new SimpleDocumentResource(
+                    new Path(documentId),
+                    documentId,
+                    list.getContainer().getId(),
+                    "text/plain",
+                    null == body ? new byte[0] : body.getBytes(),
+                    itemURL,
+                    props) {
+                @Override
+                public void setLastIndexed(long ms, long modified)
+                {
+                    ListManager.get().setItemLastIndexed(list, pk, ms);
+                }
+            };
 
-                // Add navtrail that includes link to full list grid
-                ActionURL gridURL = list.urlShowData();
-                gridURL.setExtraPath(list.getContainer().getId()); // Use ID to guard against folder moves/renames
-                NavTree t = new NavTree("list", gridURL);
-                String nav = NavTree.toJS(Collections.singleton(t), null, false).toString();
-                r.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
+            // Add navtrail that includes link to full list grid
+            ActionURL gridURL = list.urlShowData();
+            gridURL.setExtraPath(list.getContainer().getId()); // Use ID to guard against folder moves/renames
+            NavTree t = new NavTree("list", gridURL);
+            String nav = NavTree.toJS(Collections.singleton(t), null, false).toString();
+            r.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
 
-                task.addResource(r, SearchService.PRIORITY.item);
-                count++;
-            }
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+            task.addResource(r, SearchService.PRIORITY.item);
+            count.increment();
+        });
 
-        return count;
+        return count.getValue();
     }
 
 
@@ -582,9 +576,15 @@ public class ListManager implements SearchService.DocumentProvider
                 StringBuilder data = new StringBuilder();
 
                 // All columns, all rows, no filters, no sorts
-                new TableSelector(ti).setForDisplay(true).forEachResults(results -> {
-                    if (SINGLE_LIST_MAX_SIZE_FOR_INDEX > data.length())
+                new TableSelector(ti).setForDisplay(true).forEachResults(new ForEachBlock<Results>()
+                {
+                    @Override
+                    public void exec(Results results) throws SQLException, StopIteratingException
+                    {
                         data.append(template.eval(results.getFieldKeyRowMap())).append("\n");
+                        if (data.length() > SINGLE_LIST_MAX_SIZE_FOR_INDEX)
+                            stopIterating();  // Short circuit for very large list, #25366
+                    }
                 });
 
                 body.append(sep);
@@ -614,7 +614,7 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
 
-    public void deleteIndexedList(ListDefinition list)
+    void deleteIndexedList(ListDefinition list)
     {
         deleteIndexedEntireListDoc(list);
         deleteIndexedItems(list);
@@ -754,14 +754,14 @@ public class ListManager implements SearchService.DocumentProvider
         return false;
     }
 
-    public void setLastIndexed(ListDefinition list, long ms)
+    private void setLastIndexed(ListDefinition list, long ms)
     {
         new SqlExecutor(getListMetadataSchema()).execute("UPDATE " + getListMetadataTable().getSelectName() +
                 " SET LastIndexed = ? WHERE ListId = ?", new Timestamp(ms), list.getListId());
     }
 
 
-    public void setItemLastIndexed(ListDefinition list, Object pk, long ms)
+    private void setItemLastIndexed(ListDefinition list, Object pk, long ms)
     {
         TableInfo ti = list.getTable(User.getSearchUser());
 
@@ -791,7 +791,7 @@ public class ListManager implements SearchService.DocumentProvider
         }
     }
 
-    public void addAuditEvent(ListDefinitionImpl list, User user, String comment)
+    void addAuditEvent(ListDefinitionImpl list, User user, String comment)
     {
         if (null != user)
         {
@@ -812,7 +812,7 @@ public class ListManager implements SearchService.DocumentProvider
     /**
      * Modeled after ListItemImpl.addAuditEvent
      */
-    public void addAuditEvent(ListDefinitionImpl list, User user, Container c, String comment, String entityId, @Nullable String oldRecord, @Nullable String newRecord)
+    void addAuditEvent(ListDefinitionImpl list, User user, Container c, String comment, String entityId, @Nullable String oldRecord, @Nullable String newRecord)
     {
         ListAuditProvider.ListAuditEvent event = new ListAuditProvider.ListAuditEvent(c.getId(), comment);
 
@@ -831,7 +831,7 @@ public class ListManager implements SearchService.DocumentProvider
         AuditLogService.get().addEvent(user, event);
     }
 
-    public String formatAuditItem(ListDefinitionImpl list, User user, Map<String, Object> props)
+    String formatAuditItem(ListDefinitionImpl list, User user, Map<String, Object> props)
     {
         String itemRecord = "";
         TableInfo ti = list.getTable(user);
@@ -896,7 +896,7 @@ public class ListManager implements SearchService.DocumentProvider
         return itemRecord;
     }
 
-    public boolean importListSchema(ListDefinition unsavedList, String typeColumn, List<Map<String, Object>> importMaps, User user, List<String> errors) throws Exception
+    boolean importListSchema(ListDefinition unsavedList, String typeColumn, List<Map<String, Object>> importMaps, User user, List<String> errors) throws Exception
     {
         if (!errors.isEmpty())
             return false;
