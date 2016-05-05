@@ -159,7 +159,7 @@ function requestSelected(requestRecord)
 
     if (!_detailsPanel)
     {
-        var createdLabel = new Ext.form.Label({ html: new Date(requestData.created).format("Y-m-d H:i:s") });
+        var createdLabel = new Ext.form.Label({ html: Ext.util.Format.date(new Date(requestData.created), "Y-m-d H:i:s") });
         var createdByLabel = new Ext.form.Label({ html: requestData.createdBy });
         var destinationLabel = new Ext.form.Label({ html: requestData.destination });
         var statusLabel = new Ext.form.Label({ html: requestData.status });
@@ -193,7 +193,7 @@ function requestSelected(requestRecord)
     else
     {
         _detailsPanel.setTitle('Request ' + requestData.requestId);
-        _detailsPanel.createdLabel.setText(new Date(requestData.created).format("Y-m-d H:i:s"));
+        _detailsPanel.createdLabel.setText(Ext.util.Format.date(new Date(requestData.created), "Y-m-d H:i:s"));
         _detailsPanel.createdByLabel.setText(requestData.createdBy);
         _detailsPanel.destinationLabel.setText(requestData.destination);
         _detailsPanel.statusLabel.setText(requestData.status);
