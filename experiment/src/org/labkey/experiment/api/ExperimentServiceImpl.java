@@ -542,7 +542,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public List<ExpMaterialImpl> getExpMaterialsByName(String name, Container container, User user)
     {
         List<ExpMaterialImpl> result = getSamplesByName(container, user).get(name);
-        return result == null ? Collections.<ExpMaterialImpl>emptyList() : result;
+        return result == null ? Collections.emptyList() : result;
     }
 
     public ExpMaterialImpl getExpMaterial(int rowid)
@@ -2453,7 +2453,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     if (protocol != null)
                     {
                         protocolImpl = protocol.getImplementation();
-                        for (Dataset dataset : StudyService.get().getDatasetsForAssayRuns(Collections.<ExpRun>singletonList(run), user))
+                        for (Dataset dataset : StudyService.get().getDatasetsForAssayRuns(Collections.singletonList(run), user))
                         {
                             if (!dataset.canWrite(user))
                             {
@@ -3061,9 +3061,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         SQLFragment sql = new SQLFragment("SELECT * FROM exp.ExperimentRun WHERE\n" +
                             "RowId IN (SELECT pa.RunId FROM exp.ProtocolApplication pa WHERE pa.RowId IN\n" +
                             "(SELECT di.TargetApplicationId FROM exp.DataInput di WHERE ");
-        sql.append(in1.toSQLFragment(Collections.<FieldKey, ColumnInfo>emptyMap(), getExpSchema().getSqlDialect()));
+        sql.append(in1.toSQLFragment(Collections.emptyMap(), getExpSchema().getSqlDialect()));
         sql.append(") UNION (SELECT d.SourceApplicationId FROM exp.Data d WHERE ");
-        sql.append(in2.toSQLFragment(Collections.<FieldKey, ColumnInfo>emptyMap(), getExpSchema().getSqlDialect()));
+        sql.append(in2.toSQLFragment(Collections.emptyMap(), getExpSchema().getSqlDialect()));
         sql.append(")) ORDER BY Created DESC");
 
         return ExpRunImpl.fromRuns(new SqlSelector(getExpSchema(), sql).getArrayList(ExperimentRun.class));
@@ -3563,7 +3563,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     + " INNER JOIN " + getTinfoProtocolApplication().getSelectName() + " PA"
                     + " ON M.TargetApplicationId = PA.RowId"
                     + " WHERE ");
-            sql.append(in.toSQLFragment(Collections.<FieldKey, ColumnInfo>emptyMap(), getExpSchema().getSqlDialect()));
+            sql.append(in.toSQLFragment(Collections.emptyMap(), getExpSchema().getSqlDialect()));
             sql.append(" AND PA.RunId <> ? ORDER BY TargetApplicationId, MaterialId");
             sql.add(runId);
 
@@ -4323,7 +4323,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                         SQLFragment sql = new SQLFragment("UPDATE ").append(getTinfoMaterial(), "").
                                 append(" SET SourceApplicationId = ?, RunId = ? WHERE RowId = ?");
 
-                        sql.addAll(new Object[]{rec._protApp.getRowId(), rec._protApp._object.getRunId(), outputMaterial.getRowId()});
+                        sql.addAll(rec._protApp.getRowId(), rec._protApp._object.getRunId(), outputMaterial.getRowId());
 
                         new SqlExecutor(getTinfoMaterial().getSchema()).execute(sql);
                     }
@@ -4342,7 +4342,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                         SQLFragment sql = new SQLFragment("UPDATE ").append(getTinfoData(), "").
                                 append(" SET SourceApplicationId = ?, RunId = ? WHERE RowId = ?");
 
-                        sql.addAll(new Object[]{rec._protApp.getRowId(), rec._protApp._object.getRunId(), outputData.getRowId()});
+                        sql.addAll(rec._protApp.getRowId(), rec._protApp._object.getRunId(), outputData.getRowId());
 
                         new SqlExecutor(getTinfoMaterial().getSchema()).execute(sql);
                     }
@@ -4416,7 +4416,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     {
         ExpRun run = createRun(inputMaterials, inputDatas, outputMaterials, outputDatas,info);
         return saveSimpleExperimentRun(run, inputMaterials, inputDatas, outputMaterials, outputDatas,
-                Collections.<ExpData, String>emptyMap(), info, log, false);
+                Collections.emptyMap(), info, log, false);
     }
 
     private ExpRunImpl createRun(Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas,

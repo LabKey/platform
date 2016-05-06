@@ -259,7 +259,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
         expectedTexts.addAll(Arrays.asList(COHORTS));
         expectedTexts.addAll(Arrays.asList(NEW_COHORTS));
         expectedTexts.addAll(Arrays.asList(TREATMENTS));
-        expectedTexts.addAll(Arrays.asList(new String[]{"Visit 1", "Visit 2", "NewVisit1", "NewVisit2"}));
+        expectedTexts.addAll(Arrays.asList("Visit 1", "Visit 2", "NewVisit1", "NewVisit2"));
 
         for (String expectedText : expectedTexts)
         {
@@ -279,7 +279,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
         List<String> expectedTexts = new ArrayList<>();
         expectedTexts.addAll(Arrays.asList(NEW_ASSAYS));
         expectedTexts.addAll(Arrays.asList(LABS));
-        expectedTexts.addAll(Arrays.asList(new String[]{"Enrollment", "Visit 1", "Visit 2", "NewVisit1", "NewVisit2"}));
+        expectedTexts.addAll(Arrays.asList("Enrollment", "Visit 1", "Visit 2", "NewVisit1", "NewVisit2"));
 
         for (String expectedText : expectedTexts)
         {
