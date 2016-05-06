@@ -88,7 +88,7 @@ public class TableViewFormTestCase extends Assert
         tf.validateBind(errors);
         Assert.assertEquals("1 error", errors.getErrorCount(), 1);
         Assert.assertEquals("Date conversion error", errors.getFieldErrors("datetimeNull").size(), 1);
-        Assert.assertEquals("Date conversion error", ((FieldError)errors.getFieldErrors("datetimeNull").get(0)).getDefaultMessage(), "Could not convert value: garbage");
+        Assert.assertEquals("Date conversion error", errors.getFieldErrors("datetimeNull").get(0).getDefaultMessage(), "Could not convert value: garbage");
 
         tf.setTypedValue("datetimeNull", new Date("6/20/2004"));
         Assert.assertTrue("Final form should be valid", tf.isValid());

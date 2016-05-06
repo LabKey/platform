@@ -453,7 +453,7 @@ public final class MSXMLParser
                     e.printStackTrace(System.err);
             }
         }
-        Scan s =(Scan) scanHandler.getScan();
+        Scan s = scanHandler.getScan();
         if (null != s)
             s.header.scanOffset = scanOffset;
         return s;

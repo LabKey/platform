@@ -53,7 +53,7 @@ public class InvalidFileException extends ImportException
 
     public InvalidFileException(VirtualFile root, File file, XmlValidationException e)
     {
-        super(getErrorString(root.getRelativePath(file.getName()), (String)null), e);
+        super(getErrorString(root.getRelativePath(file.getName()), null), e);
     }
 
     public InvalidFileException(String relativePath, Throwable t)

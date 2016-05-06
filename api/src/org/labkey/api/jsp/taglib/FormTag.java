@@ -133,7 +133,7 @@ public class FormTag extends BodyTagSupport
         {
             String s;
             if (action instanceof URLHelper)
-                s = PageFlowUtil.filter(((URLHelper)action));
+                s = PageFlowUtil.filter(action);
             else
             {
                 s = String.valueOf(action);

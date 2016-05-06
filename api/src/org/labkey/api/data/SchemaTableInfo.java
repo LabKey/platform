@@ -332,7 +332,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         if (column == null /*|| column.isKeyField()*/)
             return new NamedObjectList();
 
-        return getSelectList(Collections.<String>singletonList(column.getName()));
+        return getSelectList(Collections.singletonList(column.getName()));
     }
 
 
@@ -1039,7 +1039,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
                 if (pair.second instanceof DetailsURL)
                     templates.add(Pair.of(pair.first, ((DetailsURL)pair.second).copy(ctx.getContainer()).getActionURL().toString()));
                 else if (pair.second instanceof StringExpressionFactory.URLStringExpression)
-                    templates.add(Pair.of(pair.first, ((StringExpressionFactory.URLStringExpression)pair.second).eval(renderCtx)));
+                    templates.add(Pair.of(pair.first, pair.second.eval(renderCtx)));
             }
         }
 

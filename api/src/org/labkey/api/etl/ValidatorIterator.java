@@ -170,7 +170,7 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
                     String msg;
                     // CONSIDER: add validatorContext to ColumnValidator.validate() always
                     if (v instanceof PropertyValidator)
-                        msg = ((PropertyValidator)v).validate(rowNum, value, validatorContext);
+                        msg = v.validate(rowNum, value, validatorContext);
                     else
                         msg = v.validate(rowNum, value);
                     if (null != msg)

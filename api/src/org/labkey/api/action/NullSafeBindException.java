@@ -141,7 +141,7 @@ public class NullSafeBindException extends org.springframework.validation.BindEx
 
     private static void checkErrors(Errors errors)
     {
-        for (ObjectError error : (List<ObjectError>)errors.getAllErrors())
+        for (ObjectError error : errors.getAllErrors())
             checkError(error);
     }
 

@@ -58,7 +58,7 @@ public class PostscriptOutput extends DownloadParamReplacement
     public HttpView render(ViewContext context)
     {
         if (getReport() instanceof AttachmentParent)
-            return new PostscriptReportView(this, (AttachmentParent)getReport());
+            return new PostscriptReportView(this, getReport());
         else
             return new HtmlView(DownloadParamReplacement.UNABlE_TO_RENDER);
     }

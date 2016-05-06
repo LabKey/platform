@@ -470,7 +470,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
 
     public boolean isValid()
     {
-        BindException bind = populateValues((BindException)null);
+        BindException bind = populateValues(null);
         return bind.getErrorCount() == 0 && bind.getFieldErrorCount() == 0;
     }
 
@@ -515,7 +515,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
             return null;
 
         if (null == _values)
-            populateValues((BindException)null);
+            populateValues(null);
 
         return _values;
     }

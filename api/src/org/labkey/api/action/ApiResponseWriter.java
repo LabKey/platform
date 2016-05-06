@@ -390,7 +390,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
     {
         String exceptionMessage = null;
         JSONArray errorsArray = new JSONArray();
-        List<ObjectError> allErrors = (List<ObjectError>) errors.getAllErrors();
+        List<ObjectError> allErrors = errors.getAllErrors();
         for (int i = startingErrorIndex; i < allErrors.size(); i++)
         {
             ObjectError error = allErrors.get(i);

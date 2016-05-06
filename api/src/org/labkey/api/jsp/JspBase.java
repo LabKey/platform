@@ -497,7 +497,7 @@ abstract public class JspBase extends JspContext implements HasViewContext
 
         if (null != errors)
         {
-            for (ObjectError e : (List<ObjectError>)errors.getAllErrors())
+            for (ObjectError e : errors.getAllErrors())
             {
                 if (!_returnedErrors.containsKey(e))
                 {

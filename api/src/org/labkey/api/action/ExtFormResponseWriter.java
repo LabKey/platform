@@ -136,7 +136,7 @@ public class ExtFormResponseWriter extends ApiJsonWriter
     public void writeAndClose(Errors errors) throws IOException
     {
         JSONObject jsonErrors = new JSONObject();
-        for(ObjectError error : (List<ObjectError>)errors.getAllErrors())
+        for(ObjectError error : errors.getAllErrors())
         {
             String msg = error.getDefaultMessage();
             String key = "_form";

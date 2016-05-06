@@ -809,7 +809,7 @@ public class FileSystemResource extends AbstractWebdavResource
                 {
                     File canonicalFile = FileUtil.getAbsoluteCaseSensitiveFile(this.getFile());
                     String url = canonicalFile.toURI().toURL().toString();
-                    Map<String, Object> keys = Collections.singletonMap(ExpDataTable.Column.DataFileUrl.name(), (Object)url);
+                    Map<String, Object> keys = Collections.singletonMap(ExpDataTable.Column.DataFileUrl.name(), url);
                     List<Map<String, Object>> rows = qus.getRows(user, getContainer(), Collections.singletonList(keys));
 
                     assert(rows.size() <= 1);

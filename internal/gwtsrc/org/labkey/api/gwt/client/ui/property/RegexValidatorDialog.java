@@ -121,7 +121,7 @@ public class RegexValidatorDialog extends ValidatorDialog
         panel.setWidget(row++, 1, errorMessage);
 
         boolean checked = false;
-        String failOnMatch = (String)prop.getProperties().get(FAIL_ON_MATCH);
+        String failOnMatch = prop.getProperties().get(FAIL_ON_MATCH);
         if (failOnMatch != null)
             checked = Boolean.parseBoolean(failOnMatch);
 

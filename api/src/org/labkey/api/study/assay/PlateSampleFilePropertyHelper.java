@@ -99,7 +99,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
             else
                 return null;
 
-            for (Map.Entry<String, MultipartFile> entry : ((Map<String, MultipartFile>) multipartRequest.getFileMap()).entrySet())
+            for (Map.Entry<String, MultipartFile> entry : multipartRequest.getFileMap().entrySet())
             {
                 if (entryKeyToFind.equals(entry.getKey()))
                 {

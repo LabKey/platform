@@ -215,7 +215,7 @@ public class AssayDesignerMainPanel extends AbstractDesignerMainPanel implements
     {
         if (_testService == null)
         {
-            _testService = (AssayServiceAsync) GWT.create(AssayService.class);
+            _testService = GWT.create(AssayService.class);
             ServiceUtil.configureEndpoint(_testService, "service", "assay");
         }
         return _testService;

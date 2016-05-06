@@ -166,7 +166,7 @@ public class JobRunner implements Executor
             Job job;
             synchronized (_jobs)
             {
-                job = _jobs.get((Future) r);
+                job = _jobs.get(r);
             }
             if (null != job)
             {
@@ -184,7 +184,7 @@ public class JobRunner implements Executor
                 Job job;
                 synchronized (_jobs)
                 {
-                    job = _jobs.remove((Future) r);
+                    job = _jobs.remove(r);
                 }
                 if (null != job)
                 {

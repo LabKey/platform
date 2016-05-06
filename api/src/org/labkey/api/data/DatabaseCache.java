@@ -266,7 +266,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
                 @Override
                 protected StringKeyCache<String> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
                 {
-                    return CacheManager.getTemporaryCache(maxSize, defaultTimeToLive, debugName, (Stats)null);
+                    return CacheManager.getTemporaryCache(maxSize, defaultTimeToLive, debugName, null);
                 }
             };
 

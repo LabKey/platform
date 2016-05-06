@@ -1456,7 +1456,7 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
                 if(pair.second instanceof DetailsURL)
                     templates.add(Pair.of(pair.first, ((DetailsURL)pair.second).copy(ctx.getContainer()).getActionURL().toString()));
                 else if (pair.second instanceof StringExpressionFactory.URLStringExpression)
-                    templates.add(Pair.of(pair.first, ((StringExpressionFactory.URLStringExpression)pair.second).eval(renderCtx)));
+                    templates.add(Pair.of(pair.first, pair.second.eval(renderCtx)));
             }
         }
 

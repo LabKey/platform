@@ -59,7 +59,7 @@ public class FileOutput extends DownloadParamReplacement
     public HttpView render(ViewContext context)
     {
         if (getReport() instanceof AttachmentParent)
-            return new FileoutReportView(this, (AttachmentParent)getReport());
+            return new FileoutReportView(this, getReport());
         else
             return new HtmlView(DownloadParamReplacement.UNABlE_TO_RENDER);
     }

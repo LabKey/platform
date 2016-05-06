@@ -558,7 +558,7 @@ public class Path implements Serializable, Comparable, Iterable<String>
             Path clean = Path.parse("/a/c/f");
             assertEquals(messy.normalize(), clean);
 
-            Iterator<String> n = ((Iterable<String>)normalized).iterator();
+            Iterator<String> n = normalized.iterator();
             assertTrue(n.hasNext());
             assertEquals("a",n.next());
             assertTrue(n.hasNext());

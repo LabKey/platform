@@ -456,7 +456,7 @@ public abstract class Stats
             if (Double.isNaN((Double)getStat(stat)))
                 return "";
             
-            return formatter.format((Double) getStat(stat));
+            return formatter.format(getStat(stat));
         }
 
         public double getStdDev()

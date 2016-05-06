@@ -54,7 +54,7 @@
         if (errors.hasErrors())
         {
             sb.append("Unable to display the report");
-            for (ObjectError error : (List<ObjectError>)errors.getAllErrors())
+            for (ObjectError error : errors.getAllErrors())
             {
                 sb.append("\n");
                 sb.append(error.getDefaultMessage());

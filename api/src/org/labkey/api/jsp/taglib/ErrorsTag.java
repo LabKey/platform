@@ -61,7 +61,7 @@ public class ErrorsTag extends TagSupport
                         continue;
                     BindingResult errors = (BindingResult)o;
                     if (null != errors.getAllErrors())
-                        for (ObjectError m : (List<ObjectError>)errors.getAllErrors())
+                        for (ObjectError m : errors.getAllErrors())
                         {
                             count++;
                             if (count == 1)

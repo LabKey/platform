@@ -182,7 +182,7 @@ public class TaskPipelineRegistrar implements InitializingBean, ApplicationConte
     {
         try
         {
-            _declaringModule = (SpringModule)applicationContext.getBean("moduleBean", SpringModule.class);
+            _declaringModule = applicationContext.getBean("moduleBean", SpringModule.class);
         }
         catch (NoSuchBeanDefinitionException x)
         {
