@@ -2731,6 +2731,7 @@ if (!LABKEY.DataRegions) {
             _applyOptionalParameters(region, params, [
                 'allowChooseQuery',
                 'allowChooseView',
+                'allowHeaderLock',
                 'buttonBarPosition',
                 'detailsURL',
                 'importURL',
