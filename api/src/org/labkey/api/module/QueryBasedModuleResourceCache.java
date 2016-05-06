@@ -104,7 +104,8 @@ public final class QueryBasedModuleResourceCache<T>
                 Path path = dir.getPath();
 
                 // Register a listener, if this directory has never been visited before
-                if (_pathsWithListeners.add(path.toString()))
+                //    dir.toString() contains module name, but lets be more explicit
+                if (_pathsWithListeners.add(module.getName() + ":" + dir.toString()))
                 {
                     Resource parent = module.getModuleResource(path);
 
