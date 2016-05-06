@@ -24,11 +24,13 @@ import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.template.ClientDependency;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -136,5 +138,14 @@ public class AJAXDetailsDisplayColumn extends DataColumn
     {
         super.addQueryFieldKeys(keys);
         keys.addAll(_urlParams.values());
+    }
+
+    @NotNull
+    @Override
+    public Set<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromPath("clientapi/ext3"));
+        return resources;
     }
 }
