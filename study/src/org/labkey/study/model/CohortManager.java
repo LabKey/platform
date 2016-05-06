@@ -269,7 +269,7 @@ public class CohortManager
     {
         StringBuilder script = new StringBuilder();
         script.append("(function() { ")
-              .append("LABKEY.DataRegions['").append(dataRegionName).append("'].replaceAdvCohortFilter(")
+              .append("LABKEY.DataRegions['").append(dataRegionName).append("']._replaceAdvCohortFilter(")
               .append("LABKEY.Filter.create('")
               .append(filterColValue.first).append("', '").append(filterColValue.second)
               .append("', LABKEY.Filter.Types.EQUAL)")
