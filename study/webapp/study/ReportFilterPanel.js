@@ -243,7 +243,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
         var target = this.getGrid();
 
         if(!target.store.getCount() || !target.getView().viewReady){
-            this.initSelection.defer(10, this);
+            Ext4.defer(this.initSelection, 10, this);
             return;
         }
 

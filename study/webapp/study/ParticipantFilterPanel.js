@@ -391,7 +391,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
     initSelection: function() {
         var panel = this.getFilterPanel();
         if(!panel){
-            this.initSelection.defer(20, this);
+            Ext4.defer(this.initSelection, 20, this);
             return;
         }
         panel.initSelection();
