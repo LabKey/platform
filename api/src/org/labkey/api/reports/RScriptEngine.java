@@ -63,7 +63,7 @@ public class RScriptEngine extends ExternalScriptEngine
             //
 
             // write the incoming script as the input of the preprocessor {ex: script.rhtml}
-            List<String> preprocessExtensions = Arrays.asList(new String[] {getKnitrExtension(context, extensions)});
+            List<String> preprocessExtensions = Arrays.asList(getKnitrExtension(context, extensions));
             scriptFile = writeScriptFile(script, context, preprocessExtensions);
 
             // write a new script (the acutal .R script to be run) as the preprocessing script and use
