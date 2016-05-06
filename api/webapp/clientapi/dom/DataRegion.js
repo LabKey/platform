@@ -1680,12 +1680,18 @@ if (!LABKEY.DataRegions) {
     // Misc
     //
 
+    /**
+     * @private
+     */
     Proto._initHeaderLocking = function() {
         if (this._allowHeaderLock === true) {
             this.hLock = new HeaderLock(this);
         }
     };
 
+    /**
+     * @private
+     */
     Proto._initPanes = function() {
         var callbacks = _paneCache[this.name];
         if (callbacks) {
@@ -1695,6 +1701,28 @@ if (!LABKEY.DataRegions) {
             });
             delete _paneCache[this.name];
         }
+    };
+
+    /**
+     * DO NOT CALL DIRECTLY. This method is private and only available for replacing advanced cohort filters
+     * for this Data Region. Remove if advanced cohorts are removed.
+     * @param filter
+     * @private
+     */
+    Proto._replaceAdvCohortFilter = function(filter) {
+        var params = _getParameters(this, this.requestURL);
+        var skips = [], i, p;
+
+        for (i = 0; i < params.length; i++) {
+            p = params[i][0];
+            if (p.indexOf(this.name + '.') == 0) {
+                if (p.indexOf('/Cohort/Label') > -1 || p.indexOf('/InitialCohort/Label') > -1) {
+                    skips.push(p);
+                }
+            }
+        }
+
+        _updateFilter(this, filter, skips);
     };
 
     /**
