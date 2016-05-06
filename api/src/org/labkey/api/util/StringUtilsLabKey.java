@@ -167,7 +167,7 @@ public class StringUtilsLabKey
         @Test
         public void testFindCommonPrefix()
         {
-            assertEquals("", findCommonPrefix(Collections.<String>emptySet()));
+            assertEquals("", findCommonPrefix(Collections.emptySet()));
             assertEquals("", findCommonPrefix(PageFlowUtil.set("")));
             assertEquals("abcdefghijklmnopqrstuvwxyz", findCommonPrefix(PageFlowUtil.set("abcdefghijklmnopqrstuvwxyz")));
             assertEquals("abc", findCommonPrefix(PageFlowUtil.set("abcdefghijklmnop", "abcxyz", "abcdefg")));

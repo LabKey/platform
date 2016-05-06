@@ -75,7 +75,7 @@ public abstract class AbstractTempDirDataCollector<ContextType extends AssayRunU
         // to the file that are stored in the exp.data table
         try
         {
-            List<? extends ExpData> allData = run == null ? Collections.<ExpData>emptyList() : run.getAllDataUsedByRun();
+            List<? extends ExpData> allData = run == null ? Collections.emptyList() : run.getAllDataUsedByRun();
             File assayDir = ensureUploadDirectory(context.getContainer());
             File tempDir = getFileTargetDir(context);
             for (File tempDirFile : tempDir.listFiles())

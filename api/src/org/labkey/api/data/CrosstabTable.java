@@ -607,7 +607,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
     @Override
     public List<CrosstabMember> getColMembers()
     {
-        return _colMembers == null ? Collections.<CrosstabMember>emptyList() : _colMembers;
+        return _colMembers == null ? Collections.emptyList() : _colMembers;
     }
 
     @Override

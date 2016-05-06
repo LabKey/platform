@@ -326,7 +326,7 @@ public class NestedGroupsTest extends Assert
 
     private Set<UserPrincipal> getMembers(@Nullable Group group)
     {
-        return null != group ? SecurityManager.getGroupMembers(group, MemberType.ALL_GROUPS_AND_USERS) : Collections.<UserPrincipal>emptySet();
+        return null != group ? SecurityManager.getGroupMembers(group, MemberType.ALL_GROUPS_AND_USERS) : Collections.emptySet();
     }
 
     private void expected(int[] actualIds, UserPrincipal... expectedMembers)

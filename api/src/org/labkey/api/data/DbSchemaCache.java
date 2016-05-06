@@ -119,7 +119,7 @@ public class DbSchemaCache
     {
         public DbSchemaBlockingCache(String dsName)
         {
-            super(CacheManager.<String, Wrapper<DbSchema>>getCache(1000, CacheManager.UNLIMITED, "DbSchemas for " + dsName), new DbSchemaLoader());
+            super(CacheManager.getCache(1000, CacheManager.UNLIMITED, "DbSchemas for " + dsName), new DbSchemaLoader());
             setCacheTimeChooser(SCHEMA_CACHE_TIME_CHOOSER);
         }
     }

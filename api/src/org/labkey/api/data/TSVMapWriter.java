@@ -133,7 +133,7 @@ public class TSVMapWriter extends TSVWriter
             row.put("three", "");
             rows.add(row);
 
-            rows.add(Collections.<String, Object>singletonMap("three", 3.3));
+            rows.add(Collections.singletonMap("three", 3.3));
 
             String lineSep = "|";
 

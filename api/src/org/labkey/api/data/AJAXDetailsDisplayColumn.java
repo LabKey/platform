@@ -50,7 +50,7 @@ public class AJAXDetailsDisplayColumn extends DataColumn
 
     public AJAXDetailsDisplayColumn(@NotNull ColumnInfo col, @Nullable ActionURL detailsURL, @NotNull JSONObject properties)
     {
-        this(col, detailsURL, Collections.<String, FieldKey>emptyMap(), properties);
+        this(col, detailsURL, Collections.emptyMap(), properties);
     }
 
     public AJAXDetailsDisplayColumn(@NotNull ColumnInfo col, @Nullable ActionURL url, @NotNull Map<String, FieldKey> urlParams, @NotNull JSONObject properties, @NotNull FieldKey containerFieldKey)

@@ -1320,7 +1320,7 @@ public class Table
             List<Aggregate> aggregates = new LinkedList<>();
 
             // Test no aggregates case
-            Map<String, List<Aggregate.Result>> aggregateMap = new TableSelector(tinfo, Collections.<ColumnInfo>emptyList(), null, null).getAggregates(aggregates);
+            Map<String, List<Aggregate.Result>> aggregateMap = new TableSelector(tinfo, Collections.emptyList(), null, null).getAggregates(aggregates);
             assertTrue(aggregateMap.isEmpty());
 
             aggregates.add(Aggregate.createCountStar());
@@ -1338,7 +1338,7 @@ public class Table
             aggregates.add(new Aggregate(tinfo.getColumn(CREATED_COLUMN_NAME), Aggregate.Type.MIN));
             aggregates.add(new Aggregate(tinfo.getColumn("Name"), Aggregate.Type.MIN));
 
-            aggregateMap = new TableSelector(tinfo, Collections.<ColumnInfo>emptyList(), null, null).getAggregates(aggregates);
+            aggregateMap = new TableSelector(tinfo, Collections.emptyList(), null, null).getAggregates(aggregates);
 
             String sql =
                     "SELECT " +

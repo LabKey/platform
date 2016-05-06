@@ -169,7 +169,7 @@ public class NestedRenderContext extends RenderContext
 
         if (!aggregatesIn.isEmpty())
         {
-            TableSelector selector = new TableSelector(aggTableInfo, Collections.<ColumnInfo>emptyList(), null, null);
+            TableSelector selector = new TableSelector(aggTableInfo, Collections.emptyList(), null, null);
 
             if (async)
                 return selector.getAggregatesAsync(aggregatesIn, getViewContext().getResponse());

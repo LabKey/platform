@@ -39,7 +39,7 @@ public class MultisetRateAccumulator<E> extends RateAccumulator<Multiset<E>, E>
 
     public MultisetRateAccumulator(long start)
     {
-        super(start, HashMultiset.<E>create());
+        super(start, HashMultiset.create());
     }
 
     public MultisetRateAccumulator(long start, Multiset<E> multiset)

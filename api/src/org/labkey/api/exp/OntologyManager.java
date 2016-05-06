@@ -330,7 +330,7 @@ public class OntologyManager
 		List<String> resultingLsids = new ArrayList<>(rows.size());
 
         Domain d = table.getDomain();
-        List<? extends DomainProperty> properties = null == d ? Collections.<DomainProperty>emptyList() : d.getProperties();
+        List<? extends DomainProperty> properties = null == d ? Collections.emptyList() : d.getProperties();
         
         ValidatorContext validatorCache = new ValidatorContext(c, user);
 

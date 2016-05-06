@@ -220,7 +220,7 @@ public class UnmodifiableMultiMap<K, V> implements MultiMap<K, V>, Unmodifiable
 
             try
             {
-                unmodifiable.putAll(Collections.<String, String>emptyMap());
+                unmodifiable.putAll(Collections.emptyMap());
                 fail("Expected UnsupportedOperationException");
             }
             catch (UnsupportedOperationException ignored)

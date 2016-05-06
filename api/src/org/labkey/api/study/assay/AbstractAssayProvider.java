@@ -499,7 +499,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     {
         Domain domain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_RUN), "Run Fields");
         domain.setDescription("The user is prompted to enter run level properties for each file they import.  This is the second step of the import process.");
-        return new Pair<>(domain, Collections.<DomainProperty, Object>emptyMap());
+        return new Pair<>(domain, Collections.emptyMap());
     }
 
     protected Pair<Domain, Map<DomainProperty, Object>> createBatchDomain(Container c, User user)
@@ -527,7 +527,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             studyProp.setShownInInsertView(true);
         }
 
-        return new Pair<>(domain, Collections.<DomainProperty, Object>emptyMap());
+        return new Pair<>(domain, Collections.emptyMap());
     }
 
     /**

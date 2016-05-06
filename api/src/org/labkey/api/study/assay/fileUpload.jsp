@@ -70,7 +70,7 @@
     {
         // Add an entry for all files that can be reused from a previous upload
         <%
-        PreviouslyUploadedDataCollector reuseDataCollector = new PreviouslyUploadedDataCollector(Collections.<String, File>emptyMap(), PreviouslyUploadedDataCollector.Type.ReRun);
+        PreviouslyUploadedDataCollector reuseDataCollector = new PreviouslyUploadedDataCollector(Collections.emptyMap(), PreviouslyUploadedDataCollector.Type.ReRun);
         for (Map.Entry<String, File> entry : bean.getReusableFiles().entrySet()) { %>
             addFileUploadInputRow(null, <%= PageFlowUtil.jsString(entry.getValue().getName())%>, <%= PageFlowUtil.jsString(reuseDataCollector.getHiddenFormElementHTML(getContainer(), entry.getKey(), entry.getValue()))%>);
         <% } %>

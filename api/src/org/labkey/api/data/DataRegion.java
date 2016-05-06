@@ -357,7 +357,7 @@ public class DataRegion extends AbstractDataRegion
 
         assert Table.checkAllColumns(table, columns, "DataRegion.getSelectColumns() columns");
 
-        LinkedHashMap<FieldKey, ColumnInfo> ret = QueryService.get().getColumns(table, Collections.<FieldKey>emptySet(), columns);
+        LinkedHashMap<FieldKey, ColumnInfo> ret = QueryService.get().getColumns(table, Collections.emptySet(), columns);
 
         assert Table.checkAllColumns(table, columns, "DataRegion.getSelectColumns()");
 
@@ -793,7 +793,7 @@ public class DataRegion extends AbstractDataRegion
         {
             Collection<QueryService.ParameterDecl> params = getTable().getNamedParameters();
             (new ParameterView(params, null)).render(ctx.getViewContext().getRequest(), ctx.getViewContext().getResponse());
-            renderHeaderScript(ctx, out, Collections.<String, String>emptyMap(), showRecordSelectors);
+            renderHeaderScript(ctx, out, Collections.emptyMap(), showRecordSelectors);
         }
         catch (IOException ioe)
         {

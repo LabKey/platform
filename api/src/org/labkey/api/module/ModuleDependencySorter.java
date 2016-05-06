@@ -190,7 +190,7 @@ public class ModuleDependencySorter
                 testModules.add(new MockModule("a", "b"));
                 testModules.add(new MockModule("b", "a"));
                 ModuleDependencySorter sorter = new ModuleDependencySorter();
-                sorter.sortModulesByDependencies(testModules, Collections.<ModuleResourceLoader>emptySet());
+                sorter.sortModulesByDependencies(testModules, Collections.emptySet());
                 fail("Should have detected a problem");
             }
             catch (IllegalArgumentException e) { /* Expected failure */ }
@@ -204,7 +204,7 @@ public class ModuleDependencySorter
                 List<Module> testModules = new ArrayList<>();
                 testModules.add(new MockModule("a", "a"));
                 ModuleDependencySorter sorter = new ModuleDependencySorter();
-                sorter.sortModulesByDependencies(testModules, Collections.<ModuleResourceLoader>emptySet());
+                sorter.sortModulesByDependencies(testModules, Collections.emptySet());
                 fail("Should have detected a problem");
             }
             catch (IllegalArgumentException e) { /* Expected failure */ }
@@ -221,7 +221,7 @@ public class ModuleDependencySorter
                 testModules.add(new MockModule("d", "e"));
                 testModules.add(new MockModule("e"));
                 ModuleDependencySorter sorter = new ModuleDependencySorter();
-                sorter.sortModulesByDependencies(testModules, Collections.<ModuleResourceLoader>emptySet());
+                sorter.sortModulesByDependencies(testModules, Collections.emptySet());
                 fail("Should have detected a problem");
             }
             catch (IllegalArgumentException e) { /* Expected failure */ }
@@ -240,7 +240,7 @@ public class ModuleDependencySorter
             testModules.add(new MockModule("g"));
             testModules.add(new MockModule("h"));
             ModuleDependencySorter sorter = new ModuleDependencySorter();
-            List<Module> sortedModules = sorter.sortModulesByDependencies(testModules, Collections.<ModuleResourceLoader>emptySet());
+            List<Module> sortedModules = sorter.sortModulesByDependencies(testModules, Collections.emptySet());
             assertEquals(sortedModules.size(), testModules.size());
             assertEquals(sortedModules.get(0).getName(), "e");
             assertEquals(sortedModules.get(1).getName(), "d");

@@ -74,8 +74,8 @@ public class DefaultFolderType implements FolderType
     public DefaultFolderType(String name, String description, @Nullable List<Portal.WebPart> requiredParts, @Nullable List<Portal.WebPart> preferredParts, Set<Module> activeModules, Module defaultModule)
     {
         this(name, description);
-        this.requiredParts = requiredParts == null ? Collections.<WebPart>emptyList() : requiredParts;
-        this.preferredParts = preferredParts == null ? Collections.<WebPart>emptyList() : preferredParts;
+        this.requiredParts = requiredParts == null ? Collections.emptyList() : requiredParts;
+        this.preferredParts = preferredParts == null ? Collections.emptyList() : preferredParts;
         this.activeModules = activeModules;
         this.defaultModule = defaultModule;
     }

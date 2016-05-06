@@ -347,7 +347,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     {
         assertCorrectParentTable(col);
         SimpleFilter.InClause clause = new SimpleFilter.InClause(col.getFieldKey(), params);
-        SQLFragment frag = clause.toSQLFragment(Collections.<FieldKey, ColumnInfo>emptyMap(), _schema.getSqlDialect());
+        SQLFragment frag = clause.toSQLFragment(Collections.emptyMap(), _schema.getSqlDialect());
         addCondition(frag, col.getFieldKey());
     }
 

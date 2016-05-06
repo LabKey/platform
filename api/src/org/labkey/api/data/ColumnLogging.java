@@ -40,7 +40,7 @@ public class ColumnLogging implements Comparable<ColumnLogging>
 
     public ColumnLogging(FieldKey columnFieldKey, TableInfo parentTable)
     {
-        this(false, columnFieldKey, parentTable, Collections.<FieldKey>emptySet(), "");
+        this(false, columnFieldKey, parentTable, Collections.emptySet(), "");
     }
 
     // If true, then this column's name should be logged when used in a query

@@ -212,7 +212,7 @@ abstract public class QueryService
 
     public Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
     {
-        return select(table, columns, filter, sort, Collections.<String, Object>emptyMap(), true);
+        return select(table, columns, filter, sort, Collections.emptyMap(), true);
     }
 
     abstract public Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Map<String, Object> parameters, boolean cached);

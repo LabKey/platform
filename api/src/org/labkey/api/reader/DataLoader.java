@@ -280,7 +280,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             return;
         }
 
-        Set<String> missingValueIndicators = _mvIndicatorContainer != null ? MvUtil.getMvIndicators(_mvIndicatorContainer) : Collections.<String>emptySet();
+        Set<String> missingValueIndicators = _mvIndicatorContainer != null ? MvUtil.getMvIndicators(_mvIndicatorContainer) : Collections.emptySet();
 
         int nCols = 0;
         for (String[] lineField : lineFields)

@@ -95,7 +95,7 @@ public class GWTView extends JspView<GWTView.GWTViewBean>
 
     public GWTView(String moduleName)
     {
-        this(moduleName, Collections.<String, String>emptyMap());
+        this(moduleName, Collections.emptyMap());
     }
 
     public GWTView(Class<? extends EntryPoint> moduleClass, Map<String, String> properties)

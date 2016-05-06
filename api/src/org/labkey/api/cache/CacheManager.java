@@ -67,7 +67,7 @@ public class CacheManager
 
     private static <K, V> TrackingCache<K, V> createCache(int limit, long defaultTimeToLive, String debugName)
     {
-        CacheWrapper<K, V> cache = new CacheWrapper<>(PROVIDER.<K, V>getSimpleCache(debugName, limit, defaultTimeToLive, UNLIMITED, false), debugName, null);
+        CacheWrapper<K, V> cache = new CacheWrapper<>(PROVIDER.getSimpleCache(debugName, limit, defaultTimeToLive, UNLIMITED, false), debugName, null);
         addToKnownCaches(cache);  // Permanent cache -- hold onto it
         LabKeyManagement.register(cache.createDynamicMBean(), "Cache", debugName);
         return cache;
@@ -80,7 +80,7 @@ public class CacheManager
 
     public static <V> StringKeyCache<V> getStringKeyCache(int limit, long defaultTimeToLive, String debugName)
     {
-        return new StringKeyCacheWrapper<>(CacheManager.<String, V>createCache(limit, defaultTimeToLive, debugName));
+        return new StringKeyCacheWrapper<>(CacheManager.createCache(limit, defaultTimeToLive, debugName));
     }
 
     public static <K, V> BlockingCache<K, V> getBlockingCache(int limit, long defaultTimeToLive, String debugName, @Nullable CacheLoader<K, V> loader)
@@ -98,7 +98,7 @@ public class CacheManager
     // Temporary caches must be closed when no longer needed. Their statistics can accumulate to another cache's stats.
     public static <V> StringKeyCache<V> getTemporaryCache(int limit, long defaultTimeToLive, String debugName, @Nullable Stats stats)
     {
-        TrackingCache<String, V> cache = new CacheWrapper<>(PROVIDER.<String, V>getSimpleCache(debugName, limit, defaultTimeToLive, UNLIMITED, true), debugName, stats);
+        TrackingCache<String, V> cache = new CacheWrapper<>(PROVIDER.getSimpleCache(debugName, limit, defaultTimeToLive, UNLIMITED, true), debugName, stats);
         return new StringKeyCacheWrapper<>(cache);
     }
 

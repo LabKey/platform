@@ -103,7 +103,7 @@ public class SessionHelper
      */
     public static void clearSession(@NotNull HttpServletRequest request)
     {
-        clearSession(request, Collections.<String>emptySet());
+        clearSession(request, Collections.emptySet());
     }
 
 

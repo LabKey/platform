@@ -32,7 +32,7 @@ public class RecordedActionSet
     // No-args constructor to support de-serialization in Java 7
     public RecordedActionSet()
     {
-        this(Collections.<RecordedAction>emptyList());
+        this(Collections.emptyList());
     }
 
     public RecordedActionSet(RecordedAction... actions)

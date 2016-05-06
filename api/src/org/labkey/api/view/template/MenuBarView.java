@@ -45,7 +45,7 @@ public class MenuBarView extends JspView<MenuBarView.MenuBarBean>
 
     public MenuBarView(ViewContext ctx, PageConfig page)
     {
-        this(Collections.<Portal.WebPart>emptyList(), page);
+        this(Collections.emptyList(), page);
         Container container = ctx.getContainer();
         Container project = container.getProject();
 

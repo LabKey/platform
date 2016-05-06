@@ -474,7 +474,7 @@ public class Sort
 
     public String getOrderByClause(SqlDialect dialect)
     {
-        return getOrderByClause(dialect, Collections.<FieldKey, ColumnInfo>emptyMap());
+        return getOrderByClause(dialect, Collections.emptyMap());
     }
 
     public String getOrderByClause(SqlDialect dialect, Map<FieldKey, ? extends ColumnInfo> columns)

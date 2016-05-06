@@ -273,7 +273,7 @@ public abstract class AbstractDataRegion extends DisplayElement
 
     public Map<String, Object> getQueryParameters()
     {
-        return null == getSettings() ? Collections.<String, Object>emptyMap() : getSettings().getQueryParameters();
+        return null == getSettings() ? Collections.emptyMap() : getSettings().getQueryParameters();
     }
 
     /**

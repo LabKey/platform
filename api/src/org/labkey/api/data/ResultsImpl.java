@@ -119,7 +119,7 @@ public class ResultsImpl implements Results, DataIterator
     public ResultsImpl(ResultSet rs, @NotNull Map<FieldKey, ColumnInfo> fieldMap)
     {
         _rs = rs;
-        _fieldMap = null == fieldMap ? Collections.<FieldKey, ColumnInfo>emptyMap() : fieldMap;
+        _fieldMap = null == fieldMap ? Collections.emptyMap() : fieldMap;
         _fieldIndexMap = new HashMap<>(_fieldMap.size() * 2);
         _columnInfoList = new ArrayList<>(fieldMap.size()+1);
         _columnInfoList.add(new ColumnInfo("_rowNumber", JdbcType.INTEGER));

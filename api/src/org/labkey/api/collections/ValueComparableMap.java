@@ -46,7 +46,7 @@ public class ValueComparableMap<K extends Comparable<K>, V> extends TreeMap<K, V
     {
         super(partialValueOrdering // Apply the value ordering...
                 .onResultOf(Functions.forMap(valueMap)) // ...on the result of getting the value for the key from the map
-                .compound(ValueComparableMap.<K>getOrdering())); // ...and include the keys as a tie-breaker
+                .compound(ValueComparableMap.getOrdering())); // ...and include the keys as a tie-breaker
         _valueMap = valueMap;
     }
 

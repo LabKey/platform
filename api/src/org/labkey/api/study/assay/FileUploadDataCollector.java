@@ -48,7 +48,7 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext<?
 
     public FileUploadDataCollector(int maxFileInputs)
     {
-        this(maxFileInputs, Collections.<String, File>emptyMap());
+        this(maxFileInputs, Collections.emptyMap());
     }
 
     public FileUploadDataCollector(int maxFileInputs, Map<String, File> reusableFiles)
@@ -113,7 +113,7 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext<?
         {
             // In the case that we're allowing reuse through this codepath
             // use any previously uploaded files that are still selected
-            PreviouslyUploadedDataCollector<ContextType> previousCollector = new PreviouslyUploadedDataCollector<>(Collections.<String, File>emptyMap(), PreviouslyUploadedDataCollector.Type.ReRun);
+            PreviouslyUploadedDataCollector<ContextType> previousCollector = new PreviouslyUploadedDataCollector<>(Collections.emptyMap(), PreviouslyUploadedDataCollector.Type.ReRun);
             Map<String, File> reusedFiles = previousCollector.createData(context);
 
             // Merge the two sets of files

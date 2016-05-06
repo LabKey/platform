@@ -232,7 +232,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         {
             try
             {
-                AssayDataCollector<AssayRunUploadContextImpl<?>> collector = new FileUploadDataCollector<>(1, Collections.<String, File>emptyMap(), FILE_INPUT_NAME);
+                AssayDataCollector<AssayRunUploadContextImpl<?>> collector = new FileUploadDataCollector<>(1, Collections.emptyMap(), FILE_INPUT_NAME);
                 Map<String, File> files = collector.createData(this);
                 // HACK: rekey the map using PRIMARY_FILE instead of FILE_INPUT_NAME
                 _uploadedData = Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, files.get(FILE_INPUT_NAME));

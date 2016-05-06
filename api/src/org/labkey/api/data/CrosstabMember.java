@@ -111,7 +111,7 @@ public class CrosstabMember
                 rewrittenURL.replaceParameter(param.getKey(), getCaption());
             }
         }
-        return new DetailsURL(rewrittenURL, Collections.<String, Object>emptyMap());
+        return new DetailsURL(rewrittenURL, Collections.emptyMap());
     }
 
     // XXX: Use DetailsURL instead

@@ -508,7 +508,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         saveFinishButton.setActionType(ActionButton.Action.POST);
         bbar.add(saveFinishButton);
 
-        List<AssayDataCollector> collectors = newRunForm.getProvider().getDataCollectors(Collections.<String, File>emptyMap(), newRunForm);
+        List<AssayDataCollector> collectors = newRunForm.getProvider().getDataCollectors(Collections.emptyMap(), newRunForm);
         for (AssayDataCollector collector : collectors)
         {
             AssayDataCollector.AdditionalUploadType t = collector.getAdditionalUploadType(newRunForm);

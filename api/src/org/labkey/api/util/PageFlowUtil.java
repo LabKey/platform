@@ -874,12 +874,12 @@ public class PageFlowUtil
     public static void streamFile(HttpServletResponse response, File file, boolean asAttachment, boolean detectContentType) throws IOException
     {
         if (detectContentType)
-            streamFile(response, Collections.<String, String>emptyMap(), file, asAttachment);
+            streamFile(response, Collections.emptyMap(), file, asAttachment);
         else
         {
             try
             {
-                streamFile(response, Collections.<String, String>emptyMap(), file.getName(), new FileInputStream(file), asAttachment);
+                streamFile(response, Collections.emptyMap(), file.getName(), new FileInputStream(file), asAttachment);
             }
             catch (FileNotFoundException e)
             {
@@ -933,7 +933,7 @@ public class PageFlowUtil
 
     public static void streamFileBytes(HttpServletResponse response, String filename, byte[] bytes, boolean asAttachment) throws IOException
     {
-        prepareResponseForFile(response, Collections.<String, String>emptyMap(), filename, asAttachment);
+        prepareResponseForFile(response, Collections.emptyMap(), filename, asAttachment);
         response.getOutputStream().write(bytes);
     }
 
@@ -1317,12 +1317,12 @@ public class PageFlowUtil
     @Deprecated
     public static String textLink(String text, String href, @Nullable String onClickScript, @Nullable String id)
     {
-        return textLink(text, href, onClickScript, id, Collections.<String, String>emptyMap());
+        return textLink(text, href, onClickScript, id, Collections.emptyMap());
     }
 
     public static String textLink(String text, URLHelper url, @Nullable String onClickScript, @Nullable String id)
     {
-        return textLink(text, url, onClickScript, id, Collections.<String, String>emptyMap());
+        return textLink(text, url, onClickScript, id, Collections.emptyMap());
     }
 
     @Deprecated

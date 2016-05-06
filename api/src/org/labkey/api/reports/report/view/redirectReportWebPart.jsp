@@ -32,7 +32,7 @@
     String url = report.getUrl(getContainer());
     Map<String, String> reportURLAttributes =  report.getRunReportTarget() != null ?
             Collections.singletonMap("target", report.getRunReportTarget()) :
-            Collections.<String, String>emptyMap();
+            Collections.emptyMap();
 
     URLHelper thumbnailURL = ReportUtil.getThumbnailUrl(getContainer(), report);
 

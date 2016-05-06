@@ -201,7 +201,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     private List<AssayDataCollector> getDataCollectors()
     {
         if (_collectors == null)
-            _collectors = getProvider().getDataCollectors(Collections.<String, File>emptyMap(), this);
+            _collectors = getProvider().getDataCollectors(Collections.emptyMap(), this);
         return _collectors;
     }
 

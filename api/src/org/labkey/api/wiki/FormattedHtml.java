@@ -46,7 +46,7 @@ public class FormattedHtml
 
     public FormattedHtml(String html, boolean isVolatile)
     {
-        this(html, isVolatile, Collections.<String>emptySet(), Collections.emptySet());
+        this(html, isVolatile, Collections.emptySet(), Collections.emptySet());
     }
 
     public FormattedHtml(String html, boolean isVolatile, @NotNull Set<String> wikiDependencies, @NotNull Set<String> anchors)
@@ -56,7 +56,7 @@ public class FormattedHtml
 
     public FormattedHtml(String html, boolean isVolatile, @NotNull LinkedHashSet<ClientDependency> clientDependencies)
     {
-        this(html, isVolatile, Collections.<String>emptySet(), Collections.<String>emptySet(), clientDependencies);
+        this(html, isVolatile, Collections.emptySet(), Collections.emptySet(), clientDependencies);
     }
 
     public FormattedHtml(String html, boolean isVolatile, @NotNull Set<String> wikiDependencies, @NotNull Set<String> anchors, @NotNull LinkedHashSet<ClientDependency> clientDependencies)

@@ -94,7 +94,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
     protected Iterable<PropertyColumn> getPropertyColumns()
     {
-        return _helper == null ? Collections.<PropertyColumn>emptyList() : _helper.getPropertyColumns();
+        return _helper == null ? Collections.emptyList() : _helper.getPropertyColumns();
     }
 
     /**
