@@ -335,6 +335,19 @@ if (!LABKEY.DataRegions) {
 
         if (isQWP && this.renderTo) {
             _load(this);
+        }
+        else if (!isQWP) {
+            this._initMessaging();
+            this._initSelection();
+            this._initHeaderLocking();
+            this._initPaging();
+            this._initCustomViews();
+            this._initPanes();
+        }
+        // else the user needs to call render
+
+        // bind supported listeners
+        if (isQWP) {
             var me = this;
             if (config.listeners) {
                 var scope = config.listeners.scope || me;
@@ -350,15 +363,6 @@ if (!LABKEY.DataRegions) {
                 });
             }
         }
-        else if (!isQWP) {
-            this._initMessaging();
-            this._initSelection();
-            this._initHeaderLocking();
-            this._initPaging();
-            this._initCustomViews();
-            this._initPanes();
-        }
-        // else the user needs to call render
     };
 
     Proto.destroy = function() {
