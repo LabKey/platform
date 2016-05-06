@@ -649,7 +649,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             // message is consistent across JVMs; NoClassDefFoundError's is not. Note: This shouldn't happen any more
             // since Bouncy Castle ships with Tika as of 0.7.
             if (cause != null && cause instanceof ClassNotFoundException && cause.getMessage().equals("org.bouncycastle.cms.CMSException"))
-                _log.warn("Can't read encrypted document \"" + id + "\".  You must install the Bouncy Castle encryption libraries to index this document.  Refer to the LabKey Software documentation for instructions.");
+                _log.warn("Can't read encrypted document \"" + id + "\".  You must install the Bouncy Castle encryption libraries to index this document.  Refer to the LabKey documentation for instructions.");
             else
                 logAsPreProcessingException(r, err);
             handledException[0] = err;

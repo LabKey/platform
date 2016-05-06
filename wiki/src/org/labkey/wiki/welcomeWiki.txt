@@ -8,7 +8,7 @@
 </ul>
 
 <p>
-If you need further assistance, <a href="http://www.labkey.com">LabKey Software</a> provides professional support,
+If you need further assistance, <a href="http://www.labkey.com">LabKey</a> provides professional support,
 customization and development. Please <a href="https://www.labkey.com/company/contact-us">contact us</a>.
 </p>
 
@@ -16,5 +16,5 @@ customization and development. Please <a href="https://www.labkey.com/company/co
 
 <p>Regards,</p>
 
-<p>The LabKey Software Team<br/>
+<p>The LabKey Team<br/>
 <a href="http://www.labkey.com">www.labkey.com</a></p>
