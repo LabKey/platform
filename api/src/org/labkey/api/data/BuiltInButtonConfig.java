@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.DisplayElement;
 
 import java.util.List;
@@ -35,6 +36,8 @@ public class BuiltInButtonConfig implements ButtonConfig
     private String _insertAfter, _insertBefore;
     private Integer _insertPosition;
     private boolean _hidden = false;
+    /** Permission that a user must have in order to see the button */
+    private Class<? extends Permission> _permission;
 
     public BuiltInButtonConfig(String originalCaption)
     {
@@ -100,6 +103,8 @@ public class BuiltInButtonConfig implements ButtonConfig
             if (de instanceof ActionButton && _originalCaption.equalsIgnoreCase(de.getCaption()))
             {
                 de.setVisible(!_hidden);
+                if (getPermission() != null)
+                    de.setDisplayPermission(_permission);
                 if (_caption != null && !_caption.equals(_originalCaption))
                 {
                     de.setCaption(_caption);
@@ -111,6 +116,17 @@ public class BuiltInButtonConfig implements ButtonConfig
         }
         return null;
     }
+
+    public Class<? extends Permission> getPermission()
+    {
+        return _permission;
+    }
+
+    public void setPermission(Class<? extends Permission> permission)
+    {
+        _permission = permission;
+    }
+
 
     public void setHidden(boolean hidden)
     {
@@ -124,6 +140,7 @@ public class BuiltInButtonConfig implements ButtonConfig
         ret.setInsertBefore(_insertBefore);
         ret.setInsertPosition(_insertPosition);
         ret.setHidden(_hidden);
+        ret.setPermission(_permission);
 
         return ret;
     }

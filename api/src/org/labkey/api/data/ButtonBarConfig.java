@@ -114,7 +114,7 @@ public class ButtonBarConfig
                     else if (json.getString("permissionClass") != null)
                     {
                         // permission has precedence, but if it's not specified look at permissionClass instead
-                        setPermissionClass(button, json.getString("permissionClass"));
+                        button.setPermission(getPermissionClass(json.getString("permissionClass")));
                     }
 
 
@@ -206,6 +206,7 @@ public class ButtonBarConfig
                 else if ("end".equals(position))
                     buttonConfig.setInsertPosition(-1);
             }
+            buttonConfig.setPermission(getPermission(item));
 
             return buttonConfig;
         }
@@ -253,31 +254,7 @@ public class ButtonBarConfig
             if (item.getRequiresSelectionMaxCount() > 0)
                 buttonConfig.setRequiresSelectionMaxCount(item.getRequiresSelectionMaxCount());
 
-            if (item.getPermission() == PermissionType.READ)
-            {
-                buttonConfig.setPermission(ReadPermission.class);
-            }
-            else if (item.getPermission() == PermissionType.INSERT)
-            {
-                buttonConfig.setPermission(InsertPermission.class);
-            }
-            else if (item.getPermission() == PermissionType.UPDATE)
-            {
-                buttonConfig.setPermission(UpdatePermission.class);
-            }
-            else if (item.getPermission() == PermissionType.DELETE)
-            {
-                buttonConfig.setPermission(DeletePermission.class);
-            }
-            else if (item.getPermission() == PermissionType.ADMIN)
-            {
-                buttonConfig.setPermission(AdminPermission.class);
-            }
-            else if (item.getPermissionClass() != null)
-            {
-                // permission has precedence, but if it's not specified look at permissionClass instead
-                setPermissionClass(buttonConfig, item.getPermissionClass());
-            }
+            buttonConfig.setPermission(getPermission(item));
 
             ButtonMenuItem[] subItems = item.getItemArray();
             if (subItems != null && subItems.length > 0)
@@ -292,14 +269,48 @@ public class ButtonBarConfig
         }
     }
 
-    private void setPermissionClass(UserDefinedButtonConfig buttonConfig, String permissionClassName)
+    private Class<? extends Permission> getPermission(ButtonBarItem item)
+    {
+        if (item.getPermission() == PermissionType.READ)
+        {
+            return ReadPermission.class;
+        }
+        else if (item.getPermission() == PermissionType.INSERT)
+        {
+            return InsertPermission.class;
+        }
+        else if (item.getPermission() == PermissionType.UPDATE)
+        {
+            return UpdatePermission.class;
+        }
+        else if (item.getPermission() == PermissionType.DELETE)
+        {
+            return DeletePermission.class;
+        }
+        else if (item.getPermission() == PermissionType.ADMIN)
+        {
+            return AdminPermission.class;
+        }
+        else if (item.getPermissionClass() != null)
+        {
+            // permission has precedence, but if it's not specified look at permissionClass instead
+            return getPermissionClass(item.getPermissionClass());
+        }
+        else
+        {
+            return null;
+        }
+
+    }
+
+    private Class<? extends Permission> getPermissionClass(String permissionClassName)
     {
         try
         {
             Class c = Class.forName(permissionClassName);
             if (Permission.class.isAssignableFrom(c))
             {
-                buttonConfig.setPermission((Class<? extends Permission>)c);
+                return (Class<? extends Permission>) c;
             }
             else
             {
@@ -310,6 +321,7 @@ public class ButtonBarConfig
         {
             LOG.warn("Could not find permission class " + permissionClassName);
         }
+        return null;
     }
 
     private NavTree loadNavTree(ButtonMenuItem item)
