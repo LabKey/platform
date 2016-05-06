@@ -16,6 +16,7 @@
 package org.labkey.api.study.assay;
 
 import org.apache.commons.beanutils.ConvertUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.ColumnInfo;
@@ -32,10 +33,13 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.template.ClientDependency;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -44,7 +48,6 @@ import java.util.Set;
  */
 public class AssayQCFlagColumn extends ExprColumn
 {
-    private boolean _qcFlagToggleJSIncluded = false;
     private String _protocolName;
 
     public AssayQCFlagColumn(TableInfo parent, String protocolName)
@@ -64,6 +67,16 @@ public class AssayQCFlagColumn extends ExprColumn
             {
                 return new DataColumn(colInfo)
                 {
+                    @NotNull
+                    @Override
+                    public Set<ClientDependency> getClientDependencies()
+                    {
+                        return new LinkedHashSet<>(Arrays.asList(
+                            ClientDependency.fromPath("clientapi/ext3"),
+                            ClientDependency.fromPath("Experiment/QCFlagToggleWindow.js")
+                        ));
+                    }
+
                     @Override
                     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
                     {
@@ -72,16 +85,6 @@ public class AssayQCFlagColumn extends ExprColumn
                             String[] values = ((String)getValue(ctx)).split(",");
                             Boolean[] enabled = parseBooleans(values, ctx.get(getEnabledFieldKey(), String.class));
                             Integer runId = ctx.get(getRunRowIdFieldKey(), Integer.class);
-
-                            if (!_qcFlagToggleJSIncluded)
-                            {
-                                // add script block to include the necessary JS file for the QCFlag toggle panel
-                                out.write("<script type='text/javascript'>"
-                                        + "   LABKEY.requiresScript('Experiment/QCFlagToggleWindow.js');"
-                                        + "</script>");
-
-                                _qcFlagToggleJSIncluded = true;
-                            }
 
                             // add onclick handler to call the QCFlag toggle window creation function
                             // users with update perm will be able to change enabled state and edit comment, others will only be able to read flag details
