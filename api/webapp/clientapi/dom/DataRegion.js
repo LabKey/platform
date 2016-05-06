@@ -22,6 +22,9 @@ if (!LABKEY.DataRegions) {
     var CONTAINER_FILTER_NAME = '.containerFilterName';
     var CUSTOM_VIEW_PANELID = '~~customizeView~~';
     var VIEWNAME_PREFIX = '.viewName';
+    var VALID_LISTENERS = ['afterpanelhide', 'afterpanelshow', 'beforechangeview', 'beforeclearsort', 'beforemaxrowschange',
+                            'beforeoffsetchange', 'beforerefresh', 'beforesetparameters', 'beforesortchange', 'render',
+                            'rendermsg', 'success'];
 
     //
     // PRIVATE VARIABLES
@@ -332,6 +335,20 @@ if (!LABKEY.DataRegions) {
 
         if (isQWP && this.renderTo) {
             _load(this);
+            var me = this;
+            if (config.listeners) {
+                var scope = config.listeners.scope || me;
+                $.each(config.listeners, function(event, func) {
+                    if ($.inArray(event, VALID_LISTENERS) > -1) {
+                        $(me).bind(event, function () {
+                            func.apply(scope, $(arguments).slice(1));
+                        });
+                    }
+                    else if (event != 'scope') {
+                        throw 'Unsupported listener: ' + event;
+                    }
+                });
+            }
         }
         else if (!isQWP) {
             this._initMessaging();
