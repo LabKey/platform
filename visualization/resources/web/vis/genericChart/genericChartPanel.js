@@ -1072,18 +1072,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             showSurroundingBorder : false,
             showPagination        : false,
             maxRows               : this.dataLimit,
+            allowHeaderLock       : false,
             buttonBar   : {
                 includeStandardButton: false,
                 items: [LABKEY.QueryWebPart.standardButtons.exportRows]
-            },
-            listeners : {
-                render : function() {
-                    var dr = LABKEY.DataRegions[this.dataRegionName];
-                    if (dr) {
-                        dr.disableHeaderLock();
-                    }
-                },
-                scope  : wp
             }
         };
 

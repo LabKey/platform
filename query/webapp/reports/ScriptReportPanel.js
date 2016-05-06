@@ -206,21 +206,10 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             showSurroundingBorder   : false,
             showPagination          : true,
             quickChartDisabled      : true,
+            allowHeaderLock         : false,
             buttonBar   : {
                 includeStandardButton: false,
                 items: [LABKEY.QueryWebPart.standardButtons.exportRows, LABKEY.QueryWebPart.standardButtons.pageSize]
-            },
-            listeners : {
-                render : function() {
-                    var panel = cmp.up('tabpanel');
-                    if (panel)
-                        panel.doLayout();
-                    var dr = LABKEY.DataRegions[this.reportConfig.dataRegionName + '_report'];
-                    if (dr) {
-                        dr.disableHeaderLock();
-                    }
-                },
-                scope  : this
             },
             success : this.onDataSuccess,
             failure : this.onDataFailure,
