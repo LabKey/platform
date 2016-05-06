@@ -839,7 +839,7 @@ public class RolapCubeDef
                 if (null == o)
                     s = "#null";
                 else if (o instanceof Number)
-                    s = df.format((Number)o);
+                    s = df.format(o);
                 else if (cube.emptyEqualsNull && o instanceof String && StringUtils.isEmpty((String)o))
                     s = "#null";
                 else
@@ -863,7 +863,7 @@ public class RolapCubeDef
                 if (null == o)
                     s = "#null";
                 else if (o instanceof Number)
-                    s = df.format((Number)o);
+                    s = df.format(o);
                 else if (cube.emptyEqualsNull && o instanceof String && StringUtils.isEmpty((String)o))
                     s = "#null";
                 else

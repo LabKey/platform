@@ -1260,9 +1260,9 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                     {
                         for (int x = 0; x < aa.length; x++)
                         {
-                            if (NumberUtils.isDigits((String) aa[x]))
+                            if (NumberUtils.isDigits(aa[x]))
                             {
-                                params.add(NumberUtils.toInt((String) aa[x]));
+                                params.add(NumberUtils.toInt(aa[x]));
                             }
                             else
                             {

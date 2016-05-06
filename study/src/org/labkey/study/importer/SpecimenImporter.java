@@ -1263,7 +1263,7 @@ public class SpecimenImporter
 
         StudyImpl study = StudyManager.getInstance().getStudy(_container);
         info("Updating study-wide subject/visit information...");
-        StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(_user, Collections.<DatasetDefinition>emptyList(), null, null, true, _logger);
+        StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(_user, Collections.emptyList(), null, null, true, _logger);
 
         LocationTable.updateLocationTableInUse(getTableInfoLocation(), getContainer());
         info("Subject/visit update complete.");
@@ -2663,7 +2663,7 @@ public class SpecimenImporter
         if (values == null)
         {
             info(tableName + ": No rows to merge");
-            return new Pair<>(Collections.<T>emptyList(), 0);
+            return new Pair<>(Collections.emptyList(), 0);
         }
 
         if (null == target)
@@ -2776,7 +2776,7 @@ public class SpecimenImporter
         if (file == null)
         {
             info(tableName + ": No rows to replace");
-            return new Pair<>(Collections.<T>emptyList(), 0);
+            return new Pair<>(Collections.emptyList(), 0);
         }
 
         ensureNotCanceled();
@@ -3012,7 +3012,7 @@ public class SpecimenImporter
                             {
                                 if (((String)ret).length() > ic.getMaxSize())
                                 {
-                                    throw new SQLException("Value \"" + ((String)ret) + "\" is too long for column " +
+                                    throw new SQLException("Value \"" + ret + "\" is too long for column " +
                                             ic.getDbColumnName() + ".  The maximum allowable length is " + ic.getMaxSize() + ".");
                                 }
                             }

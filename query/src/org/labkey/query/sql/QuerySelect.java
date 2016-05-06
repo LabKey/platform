@@ -1255,7 +1255,7 @@ groupByLoop:
         else if (qt instanceof QTable)
         {
             if (((QTable)qt).getQueryRelation() instanceof QuerySelect)
-                ((QuerySelect)((QTable)qt).getQueryRelation()).resolveFields();
+                ((QTable)qt).getQueryRelation().resolveFields();
         }
     }
 

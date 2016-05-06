@@ -198,9 +198,9 @@ public class ParticipantIdImportHelper
             // the map is populated with values to return upon translation
             try
             {
-                String result1 = h.translateParticipantId((Object) "IdAnimal01");
+                String result1 = h.translateParticipantId("IdAnimal01");
                 assertEquals(result1, "IdAnimal01_ID");
-                String result3 = h.translateParticipantId((Object) "IdAnimal03");
+                String result3 = h.translateParticipantId("IdAnimal03");
                 assertEquals(result3, "IdAnimal03_ID");
             }
             catch (ValidationException e) {
@@ -218,9 +218,9 @@ public class ParticipantIdImportHelper
             try
             {
                 // the map is empty, so values should be "translated" back to themselves
-                String result1 = h.translateParticipantId((Object) "IdAnimal01");
+                String result1 = h.translateParticipantId("IdAnimal01");
                 assertEquals(result1, "IdAnimal01");
-                String result3 = h.translateParticipantId((Object) "IdAnimal03");
+                String result3 = h.translateParticipantId("IdAnimal03");
                 assertEquals(result3, "IdAnimal03");
             }
             catch (ValidationException e)

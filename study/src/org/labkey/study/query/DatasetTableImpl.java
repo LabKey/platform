@@ -861,7 +861,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             StringBuilder formattedValue = new StringBuilder(super.getFormattedValue(ctx));
             if (value != null && value instanceof Integer)
             {
-                QCState state = getStateCache(ctx).get((Integer) value);
+                QCState state = getStateCache(ctx).get(value);
                 if (state != null && state.getDescription() != null)
                     formattedValue.append(PageFlowUtil.helpPopup("QC State " + state.getLabel(), state.getDescription()));
             }

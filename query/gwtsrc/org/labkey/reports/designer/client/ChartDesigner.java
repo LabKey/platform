@@ -138,7 +138,7 @@ public class ChartDesigner extends AbstractChartPanel implements EntryPoint
 
     public ChartServiceAsync getService()
     {
-        ChartServiceAsync service = (ChartServiceAsync) GWT.create(ChartService.class);
+        ChartServiceAsync service = GWT.create(ChartService.class);
         ServiceUtil.configureEndpoint(service, "chartService");
 
         return service;

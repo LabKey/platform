@@ -275,7 +275,7 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
     {
         if (_service == null)
         {
-            _service = (MetadataServiceAsync) GWT.create(MetadataService.class);
+            _service = GWT.create(MetadataService.class);
             ServiceUtil.configureEndpoint(_service, "metadataService", "query");
         }
         return _service;

@@ -208,8 +208,8 @@
 
                 for (Cohort co : cohorts)
                 {
-                    cohortIndexMap.put(((CohortImpl)co).getRowId(), index);
-                    %><%=commas[0]%>{id:<%=((CohortImpl)co).getRowId()%>, index:<%=index%>, type:'cohort', label:<%=q(co.getLabel())%>, enrolled:<%=co.isEnrolled()%>}<%
+                    cohortIndexMap.put(co.getRowId(), index);
+                    %><%=commas[0]%>{id:<%=co.getRowId()%>, index:<%=index%>, type:'cohort', label:<%=q(co.getLabel())%>, enrolled:<%=co.isEnrolled()%>}<%
                     commas[0]=",\n";
                     index++;
                     if (!co.isEnrolled())

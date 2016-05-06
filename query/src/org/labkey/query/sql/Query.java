@@ -779,7 +779,7 @@ public class Query
 
         if (t instanceof TableInfo)
         {
-            _resolveCache.get(currentSchema).put(key,new Pair(resolvedSchema,(TableInfo)t));
+            _resolveCache.get(currentSchema).put(key,new Pair(resolvedSchema, t));
             return new QueryTable(this, resolvedSchema, (TableInfo)t, alias);
         }
 

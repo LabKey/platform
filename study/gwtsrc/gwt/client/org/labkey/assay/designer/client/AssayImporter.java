@@ -268,7 +268,7 @@ public class AssayImporter implements EntryPoint, Listener<FieldEvent>
     {
         if (service == null)
         {
-            service = (AssayImporterServiceAsync) GWT.create(AssayImporterService.class);
+            service = GWT.create(AssayImporterService.class);
             ServiceUtil.configureEndpoint(service, "assayImportService");
         }
         return service;
@@ -432,7 +432,7 @@ public class AssayImporter implements EntryPoint, Listener<FieldEvent>
 
         public AssayDomainImporter(AssayImporterServiceAsync service, List<String> columnsToMap, Set<String> baseColumnNames)
         {
-            super((DomainImporterServiceAsync)service, columnsToMap, baseColumnNames);
+            super(service, columnsToMap, baseColumnNames);
 
             service.getInferenceColumns(PropertyUtil.getServerProperty("path"), PropertyUtil.getServerProperty("file"), new ErrorDialogAsyncCallback<List<InferencedColumn>>()
             {

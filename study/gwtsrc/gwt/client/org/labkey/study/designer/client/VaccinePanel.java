@@ -154,14 +154,14 @@ public class VaccinePanel extends Composite
 
         public Widget getCellWidget(int row, int col)
         {
-            final GWTImmunogen immunogen = row >= immunogens.size() ? ghostImmunogen : (GWTImmunogen) immunogens.get(row);
+            final GWTImmunogen immunogen = row >= immunogens.size() ? ghostImmunogen : immunogens.get(row);
             return getCellWidget(immunogen, row, col);
         }
 
 
         Object getCellValue(int row, int col)
         {
-            final GWTImmunogen immunogen = row >= immunogens.size() ? ghostImmunogen : (GWTImmunogen) immunogens.get(row);
+            final GWTImmunogen immunogen = row >= immunogens.size() ? ghostImmunogen : immunogens.get(row);
             switch (col)
             {
                 case 0:
@@ -184,7 +184,7 @@ public class VaccinePanel extends Composite
                 return super.getReadOnlyWidget(row, col); //Just plain labels
             else
             {
-                GWTImmunogen immunogen = (GWTImmunogen) immunogens.get(row);
+                GWTImmunogen immunogen = immunogens.get(row);
                 if (null != immunogen.getAntigens() && immunogen.getAntigens().size() > 0)
                     return getCellWidget(row, col);
                 else
@@ -292,7 +292,7 @@ public class VaccinePanel extends Composite
 
         void deleteRow(int dataRow)
         {
-            GWTImmunogen immunogen = (GWTImmunogen) immunogens.remove(dataRow);
+            GWTImmunogen immunogen = immunogens.remove(dataRow);
             GWTImmunizationSchedule schedule = designer.getDefinition().getImmunizationSchedule();
             schedule.removeImmunogen(immunogen);
             designer.setDirty(true);

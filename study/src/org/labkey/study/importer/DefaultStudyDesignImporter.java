@@ -336,7 +336,7 @@ public class DefaultStudyDesignImporter
             {
                 if (null != inserted.get(_fieldName))
                 {
-                    Map<String, Object> orig = rowMap.get((String)inserted.get(_fieldName));
+                    Map<String, Object> orig = rowMap.get(inserted.get(_fieldName));
                     if (orig.containsKey("RowId") && inserted.containsKey("RowId"))
                     {
                         _idMap.put(orig.get("RowId"), inserted.get("RowId"));

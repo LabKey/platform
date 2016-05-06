@@ -97,7 +97,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 			DefaultSchema folderSchema = DefaultSchema.get(null, _c);
 			QuerySchema s  = folderSchema.getSchema(name);
 			if (null != s && s instanceof UserSchema)
-				return new SchemaResource(this, ((UserSchema)s).getSchemaName());
+				return new SchemaResource(this, s.getSchemaName());
 			return null;
 		}
 

@@ -1327,7 +1327,7 @@ public class BitSetQueryImpl
         {
             if (!(r instanceof MemberSetResult))
                 throw new IllegalArgumentException();
-            sets.add(((MemberSetResult) r).getCollection());
+            sets.add(r.getCollection());
         }
         MemberSet s = MemberSet.union(sets);
         return new MemberSetResult(s);
@@ -1548,9 +1548,9 @@ public class BitSetQueryImpl
         {
             MemberSet set;
 
-            if (null != outer.level && sub instanceof MemberSetResult && null != ((MemberSetResult)sub).members && ((MemberSetResult)sub).members.size() == 1)
+            if (null != outer.level && sub instanceof MemberSetResult && null != sub.members && sub.members.size() == 1)
             {
-                Iterator<Member> it = ((MemberSetResult)sub).members.iterator();
+                Iterator<Member> it = sub.members.iterator();
                 it.hasNext();
                 set = membersQuery(outer.level, it.next());
             }
@@ -1968,9 +1968,9 @@ public class BitSetQueryImpl
         {
             MemberSet set;
 
-            if (null != outer.level && sub instanceof MemberSetResult && null != ((MemberSetResult)sub).members && ((MemberSetResult)sub).members.size() == 1)
+            if (null != outer.level && sub instanceof MemberSetResult && null != sub.members && sub.members.size() == 1)
             {
-                Iterator<Member> it = ((MemberSetResult)sub).members.iterator();
+                Iterator<Member> it = sub.members.iterator();
                 it.hasNext();
                 return membersQuery(outer.level, it.next());
             }

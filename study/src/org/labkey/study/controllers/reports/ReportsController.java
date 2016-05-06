@@ -1871,12 +1871,12 @@ public class ReportsController extends BaseStudyController
             Object measures = props.get(ParticipantReport.MEASURES_PROP);
             if (measures instanceof JSONArray)
             {
-                _measures = ((JSONArray) measures).toString();
+                _measures = measures.toString();
             }
             Object groups = props.get(ParticipantReport.GROUPS_PROP);
             if (groups instanceof JSONArray)
             {
-                _groups = ((JSONArray) groups).toString();
+                _groups = groups.toString();
             }
         }
     }

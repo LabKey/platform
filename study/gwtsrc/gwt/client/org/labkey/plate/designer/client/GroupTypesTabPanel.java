@@ -70,7 +70,7 @@ public class GroupTypesTabPanel extends TabPanel
 
             public void onTabSelected(SourcesTabEvents sender, int tabIndex)
             {
-                _view.setActiveType((String) _types.get(tabIndex));
+                _view.setActiveType(_types.get(tabIndex));
                 moveGrid(tabIndex);
             }
         });

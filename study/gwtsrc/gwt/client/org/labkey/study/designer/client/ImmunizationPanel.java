@@ -114,12 +114,12 @@ public class ImmunizationPanel extends Composite
 
         Widget getCategoryWidget(int categoryIndex, int col)
         {
-            return getCategoryWidget((GWTCohort) studyDef.getGroups().get(categoryIndex), col);
+            return getCategoryWidget(studyDef.getGroups().get(categoryIndex), col);
         }
 
         Object getCategoryValue(int categoryIndex, int col)
         {
-            GWTCohort group = (GWTCohort) studyDef.getGroups().get(categoryIndex);
+            GWTCohort group = studyDef.getGroups().get(categoryIndex);
             if (col == 0)
                 return group.getName();
             else
@@ -134,7 +134,7 @@ public class ImmunizationPanel extends Composite
 
         Object getEventValue(int categoryIndex, GWTTimepoint tp)
         {
-            GWTCohort cohort = (GWTCohort) studyDef.getGroups().get(categoryIndex);
+            GWTCohort cohort = studyDef.getGroups().get(categoryIndex);
             GWTImmunization immunization = immunizationSchedule.getImmunization(cohort, tp);
             if (null == immunization)
                 return null;
@@ -210,7 +210,7 @@ public class ImmunizationPanel extends Composite
 
         Widget getEventWidget(int categoryIndex, GWTTimepoint tp)
         {
-            GWTCohort cohort = (GWTCohort) studyDef.getGroups().get(categoryIndex);
+            GWTCohort cohort = studyDef.getGroups().get(categoryIndex);
             return new ImmunizationWidget(cohort, tp);
         }
 
@@ -305,7 +305,7 @@ public class ImmunizationPanel extends Composite
 
             for (int i = 0; i < studyDef.getImmunogens().size(); i++)
             {
-                GWTImmunogen immunogen = (GWTImmunogen) studyDef.getImmunogens().get(i);
+                GWTImmunogen immunogen = studyDef.getImmunogens().get(i);
                 CheckBox cb = new VaccineComponentCheckbox(immunization.immunogens, immunogen);
                 cb.setChecked(immunization.immunogens.contains(immunogen));
                 ft.setWidget(i + 1, 0, cb);
@@ -313,7 +313,7 @@ public class ImmunizationPanel extends Composite
 
             for (int i = 0; i < studyDef.getAdjuvants().size(); i++)
             {
-                GWTAdjuvant adjuvant = (GWTAdjuvant) studyDef.getAdjuvants().get(i);
+                GWTAdjuvant adjuvant = studyDef.getAdjuvants().get(i);
                 CheckBox cb = new VaccineComponentCheckbox(immunization.adjuvants, adjuvant);
                 cb.setChecked(immunization.adjuvants.contains(adjuvant));
                 ft.setWidget(i + 1, 1, cb);

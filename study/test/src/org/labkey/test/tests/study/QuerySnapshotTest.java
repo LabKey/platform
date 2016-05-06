@@ -294,7 +294,7 @@ public class QuerySnapshotTest extends StudyBaseTest
             clickButton("Edit Dataset Definition");
             waitForElement(Locator.xpath("//input[@id='DatasetDesignerName']"), WAIT_FOR_JAVASCRIPT);
 
-            _listHelper.addField("Dataset Fields", keyField, (String) null, ListHelper.ListColumnType.Integer);
+            _listHelper.addField("Dataset Fields", keyField, null, ListHelper.ListColumnType.Integer);
 
             click(Locator.name("ff_name0"));
             click(Locator.radioButtonById("button_managedField"));

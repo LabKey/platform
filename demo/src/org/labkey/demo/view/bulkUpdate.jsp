@@ -35,7 +35,7 @@
     {
         // since we're not showing errors field-by-field don't show duplicates
         Set<String> messages = new HashSet<>();
-        for (ObjectError e : (List<ObjectError>) errors.getAllErrors())
+        for (ObjectError e : errors.getAllErrors())
         {
             String message = getMessage(e);
             if (messages.add(message))

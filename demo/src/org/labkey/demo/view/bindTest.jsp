@@ -91,7 +91,7 @@
         }
         else
         {
-            for (ObjectError e : (List<ObjectError>) errors.getAllErrors())
+            for (ObjectError e : errors.getAllErrors())
             {
                 String message = getMessage(e);
                 %><font class="labkey-error"><%=h(message)%></font><br><%
@@ -104,7 +104,7 @@
 
 <hr>
 <b>All errors</b><br><%
-for (ObjectError e : (List<ObjectError>)errors.getAllErrors())
+for (ObjectError e : errors.getAllErrors())
 {
     %><%=(e instanceof FieldError)?((FieldError)e).getField()+": ":""%><%=h(getMessage(e))%><br><%
 }

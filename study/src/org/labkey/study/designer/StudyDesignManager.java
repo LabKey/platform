@@ -539,7 +539,7 @@ public class StudyDesignManager
         int timepointIndex = 1; //Use one based
         for (GWTTimepoint tp : timepoints)
         {
-            List<GWTCohort> groups = (List<GWTCohort>) studyDefinition.getGroups();
+            List<GWTCohort> groups = studyDefinition.getGroups();
             Map<String, Integer> timepointSamples = vialsPerSampleType.get(tp);
             String cohort = null;
             int cohortIndex = 0;

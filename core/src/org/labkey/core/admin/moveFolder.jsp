@@ -58,7 +58,7 @@
     {
 %>
         <table><%
-        for (ObjectError e : (List<ObjectError>) errors.getAllErrors())
+        for (ObjectError e : errors.getAllErrors())
         {
             %><tr><td colspan=3><font class="labkey-error"><%=h(ctx.getMessage(e))%></font></td></tr><%
         }%>

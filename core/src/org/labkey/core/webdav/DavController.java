@@ -1118,7 +1118,7 @@ public class DavController extends SpringActionController
                     if (multipartRequest.getFileMap().isEmpty())
                         return WebdavStatus.SC_METHOD_NOT_ALLOWED;
 
-                    Map.Entry<String, MultipartFile> entry = (Map.Entry<String, MultipartFile>)multipartRequest.getFileMap().entrySet().iterator().next();
+                    Map.Entry<String, MultipartFile> entry = multipartRequest.getFileMap().entrySet().iterator().next();
                     MultipartFile file = entry.getValue();
                     if (null == filename)
                         filename = file.getOriginalFilename();
@@ -2397,7 +2397,7 @@ public class DavController extends SpringActionController
         public void writeLockNullProperties(Path path, Find type, List<String> propertiesVector) throws DavException
         {
             // Retrieving the lock associated with the lock-null resource
-            LockInfo lock = (LockInfo) resourceLocks.get(path);
+            LockInfo lock = resourceLocks.get(path);
             if (lock == null)
                 return;
 

@@ -40,7 +40,7 @@
         <div id="errors">
             <ul>
                 <%
-                    for (ObjectError error : (List<ObjectError>) errors.getAllErrors())
+                    for (ObjectError error : errors.getAllErrors())
                     {
                 %>
                 <li>

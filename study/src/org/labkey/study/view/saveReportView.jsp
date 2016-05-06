@@ -57,7 +57,7 @@
 <%
     if (bean.getErrors() != null)
     {
-        for (ObjectError e : (List<ObjectError>) bean.getErrors().getAllErrors())
+        for (ObjectError e : bean.getErrors().getAllErrors())
         {
             %><tr><td colspan=3><font class="labkey-error"><%=h(context.getMessage(e))%></font></td></tr><%
         }

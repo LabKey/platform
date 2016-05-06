@@ -257,7 +257,7 @@ public class Designer implements EntryPoint, Saveable<GWTDomain>
     {
         if (_service == null)
         {
-            _service = (PropertyServiceAsync) GWT.create(PropertyService.class);
+            _service = GWT.create(PropertyService.class);
             ServiceUtil.configureEndpoint(_service, "propertyService");
         }
         return _service;

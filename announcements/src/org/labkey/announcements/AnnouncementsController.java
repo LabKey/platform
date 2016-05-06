@@ -785,7 +785,7 @@ public class AnnouncementsController extends SpringActionController
                 insert.setParent(form.getParentId());
 
             if (getSettings().hasMemberList() && CollectionUtils.isEmpty(form.getMemberListIds()))
-                insert.setMemberListIds(Collections.<Integer>emptyList());  // Force member list to get deleted, bug #2484
+                insert.setMemberListIds(Collections.emptyList());  // Force member list to get deleted, bug #2484
             else
             {
                 insert.setMemberListIds(form.getMemberListIds());
@@ -987,7 +987,7 @@ public class AnnouncementsController extends SpringActionController
     // AssignedTo == null => assigned to no one.
     private static String getAssignedToSelect(Container c, Integer assignedTo, String name, final User currentUser)
     {
-        Set<Class<? extends Permission>> perms = Collections.<Class<? extends Permission>>singleton(InsertPermission.class);
+        Set<Class<? extends Permission>> perms = Collections.singleton(InsertPermission.class);
         List<User> possibleAssignedTo = SecurityManager.getUsersWithPermissions(c, perms);
 
         Collections.sort(possibleAssignedTo, new Comparator<User>()
@@ -1031,7 +1031,7 @@ public class AnnouncementsController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
 
             List<JSONObject> completions = new ArrayList<>();
-            Set<Class<? extends Permission>> perms = Collections.<Class<? extends Permission>>singleton(ReadPermission.class);
+            Set<Class<? extends Permission>> perms = Collections.singleton(ReadPermission.class);
             List<User> completionUsers = SecurityManager.getUsersWithPermissions(getContainer(), perms);
 
             for (AjaxCompletion completion : UserManager.getAjaxCompletions(completionUsers, getUser(), getContainer()))
@@ -1283,7 +1283,7 @@ public class AnnouncementsController extends SpringActionController
             }
 
             if (getSettings().hasMemberList() && CollectionUtils.isEmpty(form.getMemberListIds()))
-                update.setMemberListIds(Collections.<Integer>emptyList());  // Force member list to get deleted, bug #2484
+                update.setMemberListIds(Collections.emptyList());  // Force member list to get deleted, bug #2484
             else
             {
                 update.setMemberListIds(form.getMemberListIds());
@@ -1429,7 +1429,7 @@ public class AnnouncementsController extends SpringActionController
             // TODO: This only grabs announcementModels... add responses too?
             Pair<AnnouncementModel[], Boolean> pair = AnnouncementManager.getAnnouncements(c, filter, getSettings().getSort(), 100);
 
-            ActionURL url = getThreadURL(c, "", 0).deleteParameters().addParameter("rowId", (String)null);
+            ActionURL url = getThreadURL(c, "", 0).deleteParameters().addParameter("rowId", null);
 
             WebPartView v = new RssView(pair.first, url.getURIString());
 
@@ -1824,7 +1824,7 @@ public class AnnouncementsController extends SpringActionController
 
         public AnnouncementForm()
         {
-            super(AnnouncementModel.class, null, Collections.<String, Class>singletonMap("parentid", GUID.class));
+            super(AnnouncementModel.class, null, Collections.singletonMap("parentid", GUID.class));
         }
 
         // XXX: change return value to typed GuidString

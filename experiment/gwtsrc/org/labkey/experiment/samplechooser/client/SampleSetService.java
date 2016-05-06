@@ -46,7 +46,7 @@ public interface SampleSetService extends RemoteService
         {
             if (_service == null)
             {
-                _service = (SampleSetServiceAsync) GWT.create(SampleSetService.class);
+                _service = GWT.create(SampleSetService.class);
                 ServiceUtil.configureEndpoint(_service, "sampleSetService", "experiment");
             }
             return _service;

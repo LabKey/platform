@@ -617,7 +617,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
     {
         if (_service == null)
         {
-            _service = (ListEditorServiceAsync) GWT.create(ListEditorService.class);
+            _service = GWT.create(ListEditorService.class);
             ServiceUtil.configureEndpoint(_service, "listEditorService");
         }
         return _service;
@@ -699,7 +699,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
     {
         if (_importerService == null)
         {
-            _importerService = (DomainImporterServiceAsync) GWT.create(DomainImporterService.class);
+            _importerService = GWT.create(DomainImporterService.class);
             ServiceUtil.configureEndpoint(_importerService, "domainImportService");
         }
         return _importerService;

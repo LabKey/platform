@@ -36,7 +36,7 @@
 
 <table>
     <%
-        for (ObjectError e : (List<ObjectError>) me.getErrors().getAllErrors())
+        for (ObjectError e : me.getErrors().getAllErrors())
         {
     %>      <tr><td colspan=3><font class="labkey-error"><%=h(getViewContext().getMessage(e))%></font></td></tr><%
     }

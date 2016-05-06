@@ -169,7 +169,7 @@ public class StudyChartDesigner extends AbstractChartPanel implements EntryPoint
         Map<String, String> params = new HashMap<String, String>();
         params.put("isParticipantChart", _isParticipantChart ? "true" : "false");
 
-        StudyChartServiceAsync service = (StudyChartServiceAsync) GWT.create(StudyChartService.class);
+        StudyChartServiceAsync service = GWT.create(StudyChartService.class);
         ServiceUtil.configureEndpoint(service, "chartService", null, params);
 
         return service;

@@ -389,7 +389,7 @@ public class Designer implements EntryPoint
     {
         if (service == null)
         {
-            service = (StudyDefinitionServiceAsync) GWT.create(StudyDefinitionService.class);
+            service = GWT.create(StudyDefinitionService.class);
             ServiceUtil.configureEndpoint(service, "definitionService");
         }
         return service;

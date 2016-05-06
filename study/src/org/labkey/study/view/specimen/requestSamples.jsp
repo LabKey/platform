@@ -55,7 +55,7 @@
         BindException errors = bean.getErrors();
         if (errors != null)
         {
-            for (ObjectError e : (List<ObjectError>) errors.getAllErrors())
+            for (ObjectError e : errors.getAllErrors())
             {
                 %><%=h(context.getMessage(e))%><br><%
             }

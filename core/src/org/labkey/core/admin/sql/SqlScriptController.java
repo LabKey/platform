@@ -1182,7 +1182,7 @@ public class SqlScriptController extends SpringActionController
         public ModelAndView getView(ConsolidateForm form, BindException errors) throws Exception
         {
             List<Module> modules = ModuleLoader.getInstance().getModules();
-            Set<SqlScript> unreachableScripts = new TreeSet<>((Comparator<SqlScript>) (s1, s2) -> {
+            Set<SqlScript> unreachableScripts = new TreeSet<>((s1, s2) -> {
                 // Order scripts by fromVersion.  If fromVersion is the same, use standard compare order (schema + from + to)
                 int fromCompare = new Double(s1.getFromVersion()).compareTo(s2.getFromVersion());
 

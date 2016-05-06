@@ -197,7 +197,7 @@ public class SqlParser
                     return null;
                 }
 
-                CommonTree selectStmt = (CommonTree)list.remove(0);
+                CommonTree selectStmt = list.remove(0);
                 if (selectStmt.getType() != QUERY && !isSetOperator(selectStmt.getType()))
                 {
                     errors.add(new QueryParseException(tokenName(selectStmt.getType()) + " statements are not supported", null, parseRoot.getLine(), parseRoot.getCharPositionInLine()));

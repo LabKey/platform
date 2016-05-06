@@ -353,7 +353,7 @@ public class IndexGate {
 
     SegmentInfos infos = SegmentInfos.readLatestCommit(dir);
 
-    SegmentInfo info = (SegmentInfo) infos.info(0).info;
+    SegmentInfo info = infos.info(0).info;
     return info.getCodec();
 
   }

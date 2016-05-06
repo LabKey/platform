@@ -87,7 +87,7 @@ public class DatasetImporter implements EntryPoint
     {
         if (service == null)
         {
-            service = (DomainImporterServiceAsync) GWT.create(DomainImporterService.class);
+            service = GWT.create(DomainImporterService.class);
             ServiceUtil.configureEndpoint(service, "domainImportService");
         }
         return service;

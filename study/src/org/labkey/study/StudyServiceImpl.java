@@ -397,7 +397,7 @@ public class StudyServiceImpl implements StudyService.Service
             Study study = null;
             if (user == null || c.hasPermission(user, ReadPermission.class))
                 study = getStudy(c);
-            return study != null ? Collections.singleton(study) : Collections.<Study>emptySet();
+            return study != null ? Collections.singleton(study) : Collections.emptySet();
         }
 
         Set<Study> result = new HashSet<>();
@@ -512,7 +512,7 @@ public class StudyServiceImpl implements StudyService.Service
         if(null == study || !SecurityPolicyManager.getPolicy(container).hasPermission(user, ReadPermission.class))
             return Collections.emptyList();
         else
-            return Collections.singletonList((SecurableResource)study);
+            return Collections.singletonList(study);
     }
 
     public Set<Role> getStudyRoles()
@@ -941,7 +941,7 @@ public class StudyServiceImpl implements StudyService.Service
             throw new IllegalStateException("Unable to construct class instance.");
         }
 
-        return createTypeUnionTable(schemaDefault, tables.values(), tables.keySet(), publicName, Collections.<TableInfo, SQLFragment>emptyMap(), dontAliasColumns);
+        return createTypeUnionTable(schemaDefault, tables.values(), tables.keySet(), publicName, Collections.emptyMap(), dontAliasColumns);
     }
 
     private TableInfo createTypeUnionTable(StudyQuerySchema schemaDefault, Collection<BaseStudyTable> terms, Set<Container> containers, String tableName,

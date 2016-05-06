@@ -66,7 +66,7 @@ public class QOrder extends QNode
                     {
                         ret.add(entry);
                     }
-                    entry = new Pair((QExpr) child, Boolean.TRUE);
+                    entry = new Pair(child, Boolean.TRUE);
                     break;
                 case SqlBaseParser.DESCENDING:
                     assert entry != null;

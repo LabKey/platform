@@ -361,7 +361,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
     {
         if (_service == null)
         {
-            _service = (DatasetServiceAsync) GWT.create(DatasetService.class);
+            _service = GWT.create(DatasetService.class);
             ServiceUtil.configureEndpoint(_service, "datasetService");
         }
         return _service;

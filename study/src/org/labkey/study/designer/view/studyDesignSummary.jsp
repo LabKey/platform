@@ -77,12 +77,12 @@ This study was created from a vaccine study protocol with the following descript
 </blockquote>
 <b>Immunogens:</b> <%
     String sep = "";
-    for (GWTImmunogen immunogen : (List<GWTImmunogen>) revision.getImmunogens())
+    for (GWTImmunogen immunogen : revision.getImmunogens())
     {
         out.print(sep);
         out.print(h(immunogen.getName()));
         String antigenSep = "";
-        for (GWTAntigen antigen : (List<GWTAntigen>) immunogen.getAntigens())
+        for (GWTAntigen antigen : immunogen.getAntigens())
         {
             out.print(antigenSep);
             out.print(h(antigen.getName()));
@@ -93,7 +93,7 @@ This study was created from a vaccine study protocol with the following descript
 %><br>
 <b>Cohorts:</b> <%
     sep = "";
-    for (GWTCohort cohort : (List<GWTCohort>) revision.getGroups())
+    for (GWTCohort cohort : revision.getGroups())
     {
         out.print(sep);
         out.print(h(cohort.getName()));
