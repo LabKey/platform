@@ -864,7 +864,7 @@ public class SecurityController extends SpringActionController
             _group = form.getGroupFor(getContainer());
             if (null == _group)
                 throw new RedirectException(new ActionURL(PermissionsAction.class, getContainer()));
-            return renderGroup(_group, errors, Collections.<String>emptyList());
+            return renderGroup(_group, errors, Collections.emptyList());
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -981,7 +981,7 @@ public class SecurityController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             List<JSONObject> completions = new ArrayList<>();
 
-            List<User> possibleUsers = SecurityManager.getUsersWithPermissions(getContainer(), Collections.<Class<? extends Permission>>singleton(ReadPermission.class));
+            List<User> possibleUsers = SecurityManager.getUsersWithPermissions(getContainer(), Collections.singleton(ReadPermission.class));
             for (AjaxCompletion completion : UserManager.getAjaxCompletions(possibleUsers, getUser(), getContainer()))
                 completions.add(completion.toJSON());
 
@@ -1147,7 +1147,7 @@ public class SecurityController extends SpringActionController
                         Container parent = child.getParent();
                         while (parent != null && !parent.isRoot() && !containersInList.contains(parent))
                         {
-                            rows.add(index, new UserController.AccessDetailRow(getViewContext(), parent, requestedGroup, Collections.<String, List<Group>>emptyMap(), --newDepth));
+                            rows.add(index, new UserController.AccessDetailRow(getViewContext(), parent, requestedGroup, Collections.emptyMap(), --newDepth));
                             containersInList.add(parent);
                             parent = parent.getParent();
                         }

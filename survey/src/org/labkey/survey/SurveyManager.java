@@ -473,7 +473,7 @@ public class SurveyManager
 
                     if (survey.getResponsesPk() != null)
                     {
-                        keys.add(Collections.<String, Object>singletonMap(pk.getName(), survey.getResponsesPk()));
+                        keys.add(Collections.singletonMap(pk.getName(), survey.getResponsesPk()));
                         qus.deleteRows(user, ContainerManager.getForId(survey.getContainerId()), keys, null, null);
                     }
                 }

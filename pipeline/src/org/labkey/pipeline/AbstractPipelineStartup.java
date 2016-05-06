@@ -64,7 +64,7 @@ public abstract class AbstractPipelineStartup
         List<Module> modules = moduleLoader.doInit(moduleFiles);
         moduleLoader.setWebappDir(webappDir);
         ModuleDependencySorter sorter = new ModuleDependencySorter();
-        modules = sorter.sortModulesByDependencies(modules, Collections.<ModuleResourceLoader>emptySet());
+        modules = sorter.sortModulesByDependencies(modules, Collections.emptySet());
 
         // Horrible hack to work around failure to respect module dependencies in non-built file based modules
         Module pipelineModule = null;

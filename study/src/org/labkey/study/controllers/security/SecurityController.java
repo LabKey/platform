@@ -215,7 +215,7 @@ public class SecurityController extends SpringActionController
                 xmlOptions.setSavePrettyPrint();
 
                 String fileName = "studyPolicy.xml";
-                PageFlowUtil.prepareResponseForFile(response, Collections.<String, String>emptyMap(), fileName, true);
+                PageFlowUtil.prepareResponseForFile(response, Collections.emptyMap(), fileName, true);
                 doc.save(response.getOutputStream(), xmlOptions);
             }
             catch (IOException e)

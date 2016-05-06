@@ -116,7 +116,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
             switch (action)
             {
                 case detailsQueryRow:
-                    Map<FieldKey, ColumnInfo> selectCols = QueryService.get().getColumns(table, Collections.<FieldKey>emptySet(), table.getColumns());
+                    Map<FieldKey, ColumnInfo> selectCols = QueryService.get().getColumns(table, Collections.emptySet(), table.getColumns());
                     StringExpression expr = table.getDetailsURL(selectCols.keySet(), container);
                     // See if there's a details URL available with the set of columns that we can offer, and
                     // we have enough PK values to uniquely identify the row

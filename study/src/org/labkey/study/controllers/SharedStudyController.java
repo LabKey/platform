@@ -128,7 +128,7 @@ public class SharedStudyController extends BaseStudyController
 
         public void setContainers(List<GUID> containers)
         {
-            _containers = containers == null ? Collections.<GUID>emptyList() : Collections.unmodifiableList(containers);
+            _containers = containers == null ? Collections.emptyList() : Collections.unmodifiableList(containers);
         }
     }
 

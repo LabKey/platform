@@ -212,7 +212,7 @@ public class AssayPublishManager implements AssayPublishService.Service
     public ActionURL publishAssayData(User user, Container sourceContainer, @Nullable Container targetContainer, String assayName, @Nullable ExpProtocol protocol,
                                       List<Map<String, Object>> dataMaps, String keyPropertyName, List<String> errors)
     {
-        return publishAssayData(user, sourceContainer, targetContainer, assayName, protocol, dataMaps, Collections.<PropertyDescriptor>emptyList(), keyPropertyName, errors);
+        return publishAssayData(user, sourceContainer, targetContainer, assayName, protocol, dataMaps, Collections.emptyList(), keyPropertyName, errors);
     }
 
     private ActionURL publishAssayData(User user, Container sourceContainer, @Nullable Container targetContainer, String assayName, @Nullable ExpProtocol protocol,

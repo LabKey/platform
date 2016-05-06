@@ -134,12 +134,12 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
 
     public ConfirmDeleteView(String objectType, Class<? extends Controller> detailAction, List<? extends ExpObject> objects, DeleteForm form) throws ServletException
     {
-        this(objectType, detailAction, objects, form, Collections.<ExpRun>emptyList());
+        this(objectType, detailAction, objects, form, Collections.emptyList());
     }
 
     public ConfirmDeleteView(String objectType, Class<? extends Controller> detailAction, List<? extends ExpObject> objects, DeleteForm form, List<? extends ExpRun> runs) throws ServletException
     {
-        this(objectType, detailAction, objects, form, runs, null, Collections.<Pair<SecurableResource, ActionURL>>emptyList(), Collections.<Pair<SecurableResource, ActionURL>>emptyList());
+        this(objectType, detailAction, objects, form, runs, null, Collections.emptyList(), Collections.emptyList());
     }
 
     public ConfirmDeleteView(String objectType, Class<? extends Controller> detailAction, List<? extends ExpObject> objects, DeleteForm form, List<? extends ExpRun> runs, String extraNoun, List<Pair<SecurableResource, ActionURL>> deleteableExtras, List<Pair<SecurableResource, ActionURL>> noPermissionExtras) throws ServletException

@@ -1300,7 +1300,7 @@ public class XarReader extends AbstractXarImporter
                 }
             }
             // Set the child properties to an empty map to prevent ExperimentService.savePropertyCollection from having to query to retrieve child props.
-            objectProp.setChildProperties(Collections.<String, ObjectProperty>emptyMap());
+            objectProp.setChildProperties(Collections.emptyMap());
             result.put(ontologyEntryURI, objectProp);
         }
 

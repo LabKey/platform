@@ -208,7 +208,7 @@ public class TreatmentManager
                 QueryUpdateService qus = treatmentTable.getUpdateService();
                 List<Map<String, Object>> keys = new ArrayList<>();
                 ColumnInfo treatmentPk = treatmentTable.getColumn(FieldKey.fromParts("RowId"));
-                keys.add(Collections.<String, Object>singletonMap(treatmentPk.getName(), rowId));
+                keys.add(Collections.singletonMap(treatmentPk.getName(), rowId));
                 qus.deleteRows(user, container, keys, null, null);
             }
 
@@ -241,7 +241,7 @@ public class TreatmentManager
                 QueryUpdateService qus = productTable.getUpdateService();
                 List<Map<String, Object>> keys = new ArrayList<>();
                 ColumnInfo productPk = productTable.getColumn(FieldKey.fromParts("RowId"));
-                keys.add(Collections.<String, Object>singletonMap(productPk.getName(), rowId));
+                keys.add(Collections.singletonMap(productPk.getName(), rowId));
                 qus.deleteRows(user, container, keys, null, null);
             }
             else
@@ -272,7 +272,7 @@ public class TreatmentManager
                 ColumnInfo productAntigenPk = productAntigenTable.getColumn(FieldKey.fromParts("RowId"));
                 for (Integer productAntigenId : productAntigenIds)
                 {
-                    keys.add(Collections.<String, Object>singletonMap(productAntigenPk.getName(), productAntigenId));
+                    keys.add(Collections.singletonMap(productAntigenPk.getName(), productAntigenId));
                 }
 
                 qus.deleteRows(user, container, keys, null, null);
@@ -299,7 +299,7 @@ public class TreatmentManager
                 ColumnInfo productMapPk = productMapTable.getColumn(FieldKey.fromParts("RowId"));
                 for (Integer productMapId : productMapIds)
                 {
-                    keys.add(Collections.<String, Object>singletonMap(productMapPk.getName(), productMapId));
+                    keys.add(Collections.singletonMap(productMapPk.getName(), productMapId));
                 }
 
                 qus.deleteRows(user, container, keys, null, null);

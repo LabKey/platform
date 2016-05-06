@@ -261,7 +261,7 @@ public class DatasetController extends BaseStudyController
             }
 
             if (countDeleted > 0)
-                StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(getUser(), Collections.<DatasetDefinition>emptySet());
+                StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(getUser(), Collections.emptySet());
 
             return true;
         }

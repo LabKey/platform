@@ -136,7 +136,7 @@ public class MothershipModule extends DefaultModule
     @NotNull
     public Set<Class> getUnitTests()
     {
-        return PageFlowUtil.<Class>set(ExceptionStackTrace.TestCase.class);
+        return PageFlowUtil.set(ExceptionStackTrace.TestCase.class);
     }
 
     public void doStartup(ModuleContext moduleContext)

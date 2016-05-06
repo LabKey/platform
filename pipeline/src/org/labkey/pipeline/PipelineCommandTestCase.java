@@ -105,8 +105,8 @@ public class PipelineCommandTestCase extends Assert
 
         test1.setParameter("test1");
         test1.setDefault("default1");
-        assertEquals("Expected default value", "default1", test1.getValue(Collections.<String, String>singletonMap("test1", null)));
-        args1 = test1.toArgs(test1.getValue(Collections.<String, String>singletonMap("test1", null)));
+        assertEquals("Expected default value", "default1", test1.getValue(Collections.singletonMap("test1", null)));
+        args1 = test1.toArgs(test1.getValue(Collections.singletonMap("test1", null)));
         assertEquals("Unexpected length for ValueWithSwitch args", 2, args1.size());
         assertEquals("Unexpected arg for ValueWithSwitch", "-a", args1.get(0));
         assertEquals("Unexpected arg for ValueWithSwitch", "default1", args1.get(1));
@@ -125,8 +125,8 @@ public class PipelineCommandTestCase extends Assert
 
         test2.setParameter("test2");
         test2.setDefault("yes");
-        assertEquals("Expected default value", "yes", test2.getValue(Collections.<String, String>singletonMap("test2", null)));
-        args2 = test2.toArgs(test2.getValue(Collections.<String, String>singletonMap("test2", null)));
+        assertEquals("Expected default value", "yes", test2.getValue(Collections.singletonMap("test2", null)));
+        args2 = test2.toArgs(test2.getValue(Collections.singletonMap("test2", null)));
         assertEquals("Unexpected length for BooleanToSwitch args", 1, args2.size());
 
         RequiredSwitch test3 = new RequiredSwitch();

@@ -78,7 +78,7 @@ public class TypeParticipantReportFactory extends TypeReportFactory
             Study study = StudyManager.getInstance().getStudy(getContainer());
             Participant participant = StudyManager.getInstance().getParticipant(study, _participantId);
             if (participant == null)
-                return Collections.<SpecimenVisitReport>emptyList();
+                return Collections.emptyList();
             participantIds = new String[] { _participantId };
         }
         else
@@ -89,7 +89,7 @@ public class TypeParticipantReportFactory extends TypeReportFactory
             else
                 participantIds = StudyManager.getInstance().getParticipantIds(study, getUser());
             if (participantIds == null)
-                return Collections.<SpecimenVisitReport>emptyList();
+                return Collections.emptyList();
         }
         List<SpecimenVisitReport> reports = new ArrayList<>();
         Map<Integer, List<VisitImpl>> visitListCache = new HashMap<>(); // cohort rowId -> visits

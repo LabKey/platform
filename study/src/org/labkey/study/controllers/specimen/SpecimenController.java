@@ -472,7 +472,7 @@ public class SpecimenController extends BaseStudyController
 
         public SpecimenHeaderBean(ViewContext context, SpecimenQueryView view) throws ServletException
         {
-            this(context, view, Collections.<Pair<String, String>>emptySet());
+            this(context, view, Collections.emptySet());
         }
 
         public SpecimenHeaderBean(ViewContext context, SpecimenQueryView view, Set<Pair<String, String>> filteredPtidVisits) throws RuntimeException

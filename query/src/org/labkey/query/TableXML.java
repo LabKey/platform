@@ -89,7 +89,7 @@ public class TableXML
 
     static public void initTable(TableType xbTable, TableInfo table, FieldKey key)
     {
-        initTable(xbTable, table, key, table == null ? Collections.<ColumnInfo>emptyList() : table.getColumns());
+        initTable(xbTable, table, key, table == null ? Collections.emptyList() : table.getColumns());
     }
 
 }

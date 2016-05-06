@@ -84,7 +84,7 @@ public class AuditLogUpdateService extends AbstractQueryUpdateService
         event = AuditLogService.get().addEvent(user, event);
         try
         {
-            return getRow(user, container, Collections.<String, Object>singletonMap("RowId", event.getRowId()));
+            return getRow(user, container, Collections.singletonMap("RowId", event.getRowId()));
         }
         catch (InvalidKeyException e)
         {

@@ -1321,7 +1321,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             // Property columns (see OntologyManager.getColumnsForType())
 
             Domain d = def.getDomain();
-            List<? extends DomainProperty> properties = null == d ? Collections.<DomainProperty>emptyList() : d.getProperties();
+            List<? extends DomainProperty> properties = null == d ? Collections.emptyList() : d.getProperties();
 
             for (DomainProperty p : properties)
             {
@@ -2314,7 +2314,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 Object ptidObject = get(indexPtidOutput);
                 if (ptidObject != null && ptidObject.toString().length() > _maxPTIDLength)
                 {
-                    throw new BatchValidationException(Collections.singletonList(new ValidationException(_study.getSubjectColumnName() + " value '" + ptidObject + "' is too long, maximum length is " + _maxPTIDLength + " characters")), Collections.<String, Object>emptyMap());
+                    throw new BatchValidationException(Collections.singletonList(new ValidationException(_study.getSubjectColumnName() + " value '" + ptidObject + "' is too long, maximum length is " + _maxPTIDLength + " characters")), Collections.emptyMap());
                 }
                 if (null != lsids && null != indexLSIDOutput)
                 {

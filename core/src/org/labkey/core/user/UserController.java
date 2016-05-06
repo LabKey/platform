@@ -1166,7 +1166,7 @@ public class UserController extends SpringActionController
                 int newDepth = depth;
                 while (parent != null && !parent.isRoot() && !containersInList.contains(parent))
                 {
-                    rows.add(index, new AccessDetailRow(getViewContext(), parent, requestedUser, Collections.<String, List<Group>>emptyMap(), --newDepth));
+                    rows.add(index, new AccessDetailRow(getViewContext(), parent, requestedUser, Collections.emptyMap(), --newDepth));
                     containersInList.add(parent);
                     parent = parent.getParent();
                 }

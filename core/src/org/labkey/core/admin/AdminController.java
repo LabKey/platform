@@ -924,7 +924,7 @@ public class AdminController extends SpringActionController
         Set<String> filenames = new CaseInsensitiveTreeSet();
         // We don't need to include licensing information for our own JAR files (only third-party JARs), so filter out
         // our JARs that end up in WEB-INF/lib
-        Set<String> internalJars = removeInternalJars ? new CsvSet("api.jar,schemas.jar,internal.jar") : Collections.<String>emptySet();
+        Set<String> internalJars = removeInternalJars ? new CsvSet("api.jar,schemas.jar,internal.jar") : Collections.emptySet();
 
         // Remove path prefix and copy to a modifiable collection
         for (String filename : resources)
@@ -5768,7 +5768,7 @@ public class AdminController extends SpringActionController
                 "in the past but the corresponding module file is currently missing or invalid. Possible explanations: the " +
                 "module is no longer being distributed, the module has been renamed, the server location where the module " +
                 "is stored is not accessible, or the module file is corrupted.") + deleteInstructions, PageFlowUtil.filter("A module is considered \"unknown\" if it was installed on this server " +
-                "in the past but the corresponding module file is currently missing or invalid. This server has no unknown modules."), Collections.<Double>emptySet(), filter);
+                "in the past but the corresponding module file is currently missing or invalid. This server has no unknown modules."), Collections.emptySet(), filter);
 
             return new VBox(known, unknown);
         }

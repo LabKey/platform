@@ -705,7 +705,7 @@ public class IssuesController extends SpringActionController
 
         // Fetch from IssueManager to make sure the related issues are populated
         Issue originalIssue = IssueManager.getIssue(null, issue.getIssueId());
-        Set<Integer> originalRelatedIssues = originalIssue == null ? Collections.<Integer>emptySet() : originalIssue.getRelatedIssues();
+        Set<Integer> originalRelatedIssues = originalIssue == null ? Collections.emptySet() : originalIssue.getRelatedIssues();
 
         // Only check permissions if
         if (!originalRelatedIssues.equals(newRelatedIssues))

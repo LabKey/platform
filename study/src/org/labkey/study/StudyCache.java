@@ -65,7 +65,7 @@ public class StudyCache
 
     public static Object get(TableInfo tinfo, Container c, Object cacheKey, CacheLoader<String, Object> loader)
     {
-        BlockingCache<String, Object> cache = new BlockingCache<>(DbCache.<Wrapper<Object>>getCacheGeneric(tinfo), loader);
+        BlockingCache<String, Object> cache = new BlockingCache<>(DbCache.getCacheGeneric(tinfo), loader);
         return cache.get(getCacheName(c, cacheKey), null);
     }
 

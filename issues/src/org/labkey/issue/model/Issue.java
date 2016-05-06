@@ -369,7 +369,7 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     public Collection<Integer> getDuplicates()
     {
-        return duplicates != null ? duplicates : Collections.<Integer>emptyList();
+        return duplicates != null ? duplicates : Collections.emptyList();
     }
 
     public void setDuplicates(Collection<Integer> dups)
@@ -393,7 +393,7 @@ public class Issue extends Entity implements Serializable, Cloneable
     @NotNull
     public Set<Integer> getRelatedIssues()
     {
-        return relatedIssues != null ? Collections.unmodifiableSet(relatedIssues) : Collections.<Integer>emptySet();
+        return relatedIssues != null ? Collections.unmodifiableSet(relatedIssues) : Collections.emptySet();
     }
 
     public void setRelatedIssues(@NotNull Collection<Integer> rels)

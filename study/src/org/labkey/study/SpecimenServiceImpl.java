@@ -186,7 +186,7 @@ public class SpecimenServiceImpl implements SpecimenService.Service
             }
         }
         
-        return Collections.<ParticipantVisit>singleton(new StudyParticipantVisit(studyContainer, null, participantId, null, date));
+        return Collections.singleton(new StudyParticipantVisit(studyContainer, null, participantId, null, date));
     }
 
     public Set<ParticipantVisit> getSampleInfo(Container studyContainer, User user, String participantId, Double visit) throws SQLException
@@ -204,7 +204,7 @@ public class SpecimenServiceImpl implements SpecimenService.Service
                 return result;
             }
         }
-        return Collections.<ParticipantVisit>singleton(new StudyParticipantVisit(studyContainer, null, participantId, visit, null));
+        return Collections.singleton(new StudyParticipantVisit(studyContainer, null, participantId, visit, null));
     }
 
     public String getCompletionURLBase(Container studyContainer, SpecimenService.CompletionType type)

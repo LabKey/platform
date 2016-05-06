@@ -167,6 +167,6 @@ public class FileContentModule extends DefaultModule
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        return Collections.<Class>singleton(FileContentServiceImpl.TestCase.class);
+        return Collections.singleton(FileContentServiceImpl.TestCase.class);
     }
 }

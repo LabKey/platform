@@ -2811,7 +2811,7 @@ public class StudyController extends BaseStudyController
                 Set<String> lsids = DataRegionSelection.getSelected(getViewContext(), null, true, false);
                 List<Map<String, Object>> keys = new ArrayList<>(lsids.size());
                 for (String lsid : lsids)
-                    keys.add(Collections.<String, Object>singletonMap("lsid", lsid));
+                    keys.add(Collections.singletonMap("lsid", lsid));
 
                 StudyQuerySchema schema = StudyQuerySchema.createSchema(study, getUser(), true);
                 TableInfo datasetTable = schema.createDatasetTableInternal((DatasetDefinition) dataset);
@@ -3039,7 +3039,7 @@ public class StudyController extends BaseStudyController
             {
                 // there is no custom view for this dataset
                 sortMap = Collections.emptyMap();
-                map.put(dsd.getLabel(), Collections.<String,Integer>emptyMap());
+                map.put(dsd.getLabel(), Collections.emptyMap());
             }
         }
         return new CaseInsensitiveHashMap<>(sortMap);
@@ -4619,7 +4619,7 @@ public class StudyController extends BaseStudyController
                 StudyManager.getInstance().deleteDataset(getStudyRedirectIfNull(), getUser(), ds, false);
                 transaction.commit();
             }
-            StudyManager.getInstance().getVisitManager((StudyImpl)study).updateParticipantVisits(getUser(), Collections.<DatasetDefinition>emptySet());
+            StudyManager.getInstance().getVisitManager((StudyImpl)study).updateParticipantVisits(getUser(), Collections.emptySet());
 
             throw new RedirectException(new ActionURL(ManageTypesAction.class, getContainer()));
         }

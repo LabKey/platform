@@ -338,7 +338,7 @@ public class ExperimentController extends SpringActionController
         public VBox getView(Object o, BindException errors) throws Exception
         {
             Set<ExperimentRunType> types = ExperimentService.get().getExperimentRunTypes(getContainer());
-            ChooseExperimentTypeBean bean = new ChooseExperimentTypeBean(types, ExperimentRunType.getSelectedFilter(types, getViewContext().getRequest().getParameter("experimentRunFilter")), getViewContext().getActionURL().clone(), Collections.<ExpProtocol>emptyList());
+            ChooseExperimentTypeBean bean = new ChooseExperimentTypeBean(types, ExperimentRunType.getSelectedFilter(types, getViewContext().getRequest().getParameter("experimentRunFilter")), getViewContext().getActionURL().clone(), Collections.emptyList());
             JspView chooserView = new JspView<>("/org/labkey/experiment/experimentRunQueryHeader.jsp", bean);
 
             ExperimentRunListView view = ExperimentService.get().createExperimentRunWebPart(getViewContext(), bean.getSelectedFilter());
@@ -2201,7 +2201,7 @@ public class ExperimentController extends SpringActionController
                 String filename = filenamePrefix + "." + delimType.extension;
                 String newlineChar = rootObject.getString("newlineChar") != null ? rootObject.getString("newlineChar") : "\n";
 
-                PageFlowUtil.prepareResponseForFile(response, Collections.<String, String>emptyMap(), filename, true);
+                PageFlowUtil.prepareResponseForFile(response, Collections.emptyMap(), filename, true);
                 response.setContentType(delimType.contentType);
 
                 //NOTE: we could also have used TSVWriter; however, this is in use elsewhere and we dont need a custom subclass
@@ -2681,7 +2681,7 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
-            return new ConfirmDeleteView("run", ShowRunGraphAction.class, runs, deleteForm, Collections.<ExpRun>emptyList(), "dataset(s) have one or more rows which", permissionDatasetRows, noPermissionDatasetRows);
+            return new ConfirmDeleteView("run", ShowRunGraphAction.class, runs, deleteForm, Collections.emptyList(), "dataset(s) have one or more rows which", permissionDatasetRows, noPermissionDatasetRows);
         }
 
         protected void deleteObjects(DeleteForm deleteForm) throws ExperimentException
@@ -4501,7 +4501,7 @@ public class ExperimentController extends SpringActionController
                 materialsWithRoles.put(materials.get(i), form.determineLabel(i));
             }
 
-            DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(getUploadableSampleSets(), materialsWithRoles, form.getOutputCount(), Collections.<String>emptyList(), helper);
+            DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(getUploadableSampleSets(), materialsWithRoles, form.getOutputCount(), Collections.emptyList(), helper);
             JspView<DeriveSamplesChooseTargetBean> view = new JspView<>("/org/labkey/experiment/summarizeMaterialInputs.jsp", bean);
             view.setTitle("Input Samples");
 

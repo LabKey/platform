@@ -160,7 +160,7 @@ public class AggregateQueryDataTransform extends AbstractQueryReportDataTransfor
         public void testPassthrough()
         {
             AggregateQueryDataTransform transform = new AggregateQueryDataTransform(new DummyQueryDataSource(),
-                    new SimpleFilter(), Collections.<Aggregate>emptyList(), Collections.<FieldKey>emptyList(), null);
+                    new SimpleFilter(), Collections.emptyList(), Collections.emptyList(), null);
 
             assertEqualsIgnoreWhitespace("SELECT A.* FROM ( mySchema.myTable ) A", transform.getLabKeySQL());
         }
@@ -172,7 +172,7 @@ public class AggregateQueryDataTransform extends AbstractQueryReportDataTransfor
             pivotBuilder.setColumns(Arrays.asList(FieldKey.fromParts("Pivot1"), FieldKey.fromParts("Pivot2")));
             pivotBuilder.setBy(FieldKey.fromParts("Pivot3"));
             AggregateQueryDataTransform transform = new AggregateQueryDataTransform(new DummyQueryDataSource(),
-                    new SimpleFilter(), Collections.<Aggregate>emptyList(), Collections.<FieldKey>emptyList(),
+                    new SimpleFilter(), Collections.emptyList(), Collections.emptyList(),
                     pivotBuilder);
 
             assertEqualsIgnoreWhitespace("SELECT A.*, \"Pivot3\" FROM ( mySchema.myTable ) A PIVOT \"Pivot1\", \"Pivot2\" BY \"Pivot3\"", transform.getLabKeySQL());
@@ -182,7 +182,7 @@ public class AggregateQueryDataTransform extends AbstractQueryReportDataTransfor
         public void testAggregatesWithNoGroupBy()
         {
             AggregateQueryDataTransform transform = new AggregateQueryDataTransform(new DummyQueryDataSource(),
-                    new SimpleFilter(), Collections.singletonList(new Aggregate(FieldKey.fromParts("Agg1"), Aggregate.Type.MAX)), Collections.<FieldKey>emptyList(),
+                    new SimpleFilter(), Collections.singletonList(new Aggregate(FieldKey.fromParts("Agg1"), Aggregate.Type.MAX)), Collections.emptyList(),
                     null);
 
             assertEqualsIgnoreWhitespace("SELECT MAX(\"Agg1\") AS \"MAXAgg1\" FROM ( mySchema.myTable ) A", transform.getLabKeySQL());

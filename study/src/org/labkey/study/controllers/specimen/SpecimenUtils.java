@@ -198,7 +198,7 @@ public class SpecimenUtils
                 {
                     String dataRegionName = gridView.getSettings().getDataRegionName();
                     String createRequestURL = urlFor(SpecimenController.ShowCreateSampleRequestAction.class,
-                            Collections.<Enum, String>singletonMap(SpecimenController.CreateSampleRequestForm.PARAMS.returnUrl,
+                            Collections.singletonMap(SpecimenController.CreateSampleRequestForm.PARAMS.returnUrl,
                                     getViewContext().getActionURL().getLocalURIString()));
 
                     requestMenuButton.addMenuItem("Create New Request", null,
@@ -844,7 +844,7 @@ public class SpecimenUtils
         Map<String, List<Vial>> vialsByHash = SpecimenManager.getInstance().getVialsForSampleHashes(getContainer(), getUser(), formValues, true);
 
         if (vialsByHash == null || vialsByHash.isEmpty())
-            return new RequestedSpecimens(Collections.<Vial>emptyList());
+            return new RequestedSpecimens(Collections.emptyList());
 
         if (preferredLocation == null)
         {

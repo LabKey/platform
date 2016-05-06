@@ -76,6 +76,6 @@ public class SchemaQueryReportDataSource extends AbstractQueryReportDataSource
             {
                 return Collections.emptyList();
             }
-        }, Collections.<QueryService.ParameterDecl>emptySet());
+        }, Collections.emptySet());
     }
 }

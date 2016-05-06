@@ -268,7 +268,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
             try
             {
                 ann.setDiscussionSrcURL(null);
-                AnnouncementManager.updateAnnouncement(user, ann, Collections.<AttachmentFile>emptyList());
+                AnnouncementManager.updateAnnouncement(user, ann, Collections.emptyList());
             }
             catch (IOException e)
             {

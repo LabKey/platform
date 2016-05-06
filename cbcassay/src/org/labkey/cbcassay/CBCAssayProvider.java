@@ -184,7 +184,7 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
             addProperty(resultDomain, ddp.name, ddp.label, ddp.type, ddp.description);
         }
 
-        result.add(new Pair<>(resultDomain, Collections.<DomainProperty, Object>emptyMap()));
+        result.add(new Pair<>(resultDomain, Collections.emptyMap()));
         return result;
     }
 

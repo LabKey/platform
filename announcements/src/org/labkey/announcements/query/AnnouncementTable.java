@@ -186,7 +186,7 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
             ensureNotSecure();
             try
             {
-                return AnnouncementManager.insertAnnouncement(container, user, bean, Collections.<AttachmentFile>emptyList());
+                return AnnouncementManager.insertAnnouncement(container, user, bean, Collections.emptyList());
             }
             catch (IOException e)
             {
@@ -204,7 +204,7 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
             ensureNotSecure();
             try
             {
-                return AnnouncementManager.updateAnnouncement(user, bean, Collections.<AttachmentFile>emptyList());
+                return AnnouncementManager.updateAnnouncement(user, bean, Collections.emptyList());
             }
             catch (IOException e)
             {

@@ -328,7 +328,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
             else
             {
                 List<Map<String, Object>> updatedRows = qus.updateRows(user, c, Collections.singletonList(data),
-                        Collections.singletonList(Collections.<String, Object>singletonMap("lsid", form.getLsid())), null, null);
+                        Collections.singletonList(Collections.singletonMap("lsid", form.getLsid())), null, null);
                 if (updatedRows.size() == 0)
                     return false;
             }

@@ -1243,7 +1243,7 @@ public class StudyManager
     public Map<String, Double> getVisitImportMap(Study study, boolean includeStandardMapping)
     {
         Collection<VisitAlias> customMapping = getCustomVisitImportMapping(study);
-        List<VisitImpl> visits = includeStandardMapping ? StudyManager.getInstance().getVisits(study, Visit.Order.SEQUENCE_NUM) : Collections.<VisitImpl>emptyList();
+        List<VisitImpl> visits = includeStandardMapping ? StudyManager.getInstance().getVisits(study, Visit.Order.SEQUENCE_NUM) : Collections.emptyList();
 
         Map<String, Double> map = new CaseInsensitiveHashMap<>((customMapping.size() + visits.size()) * 3 / 4);
 
@@ -2904,7 +2904,7 @@ public class StudyManager
         SecurityPolicyManager.deletePolicy(ds);
 
         if (safeIntegersEqual(ds.getDatasetId(), study.getParticipantCohortDatasetId()))
-            CohortManager.getInstance().setManualCohortAssignment(study, user, Collections.<String, Integer>emptyMap());
+            CohortManager.getInstance().setManualCohortAssignment(study, user, Collections.emptyMap());
 
         if (performStudyResync)
         {
@@ -2912,7 +2912,7 @@ public class StudyManager
             // to re-sync the participant and participant/visit tables.  (Issue 12447)
             // Don't provide the deleted dataset in the list of modified datasets- deletion doesn't count as a modification
             // within VisitManager, and passing in the empty set ensures that all subject/visit info will be recalculated.
-            getVisitManager(study).updateParticipantVisits(user, Collections.<DatasetDefinition>emptySet());
+            getVisitManager(study).updateParticipantVisits(user, Collections.emptySet());
         }
 
         SchemaKey schemaPath = SchemaKey.fromParts(SCHEMA.getSchemaName());

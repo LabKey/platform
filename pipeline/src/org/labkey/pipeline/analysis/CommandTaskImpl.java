@@ -699,7 +699,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             CommandTaskImpl impl = new CommandTaskImpl(context.mock(PipelineJob.class), factory);
 
             assertEquals("/originalPath:/morePath", impl.variableSubstitution("${TEST}:/morePath", Collections.singletonMap("TEST", "/originalPath")));
-            assertEquals(":/morePath", impl.variableSubstitution("${TEST}:/morePath", Collections.<String, String>emptyMap()));
+            assertEquals(":/morePath", impl.variableSubstitution("${TEST}:/morePath", Collections.emptyMap()));
             assertEquals("/originalPath:/morePath:/originalPath", impl.variableSubstitution("${TEST}:/morePath:${TEST}", Collections.singletonMap("TEST", "/originalPath")));
         }
     }

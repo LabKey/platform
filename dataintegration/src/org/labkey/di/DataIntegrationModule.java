@@ -124,7 +124,7 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
     @Override
     public Set<Class> getIntegrationTests()
     {
-        return Collections.<Class>singleton(RemoteQueryTransformStep.TestCase.class);
+        return Collections.singleton(RemoteQueryTransformStep.TestCase.class);
     }
 
     /** web parts **/
@@ -132,7 +132,7 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return Arrays.<WebPartFactory>asList(
+        return Arrays.asList(
                 new SimpleWebPartFactory("Data Transforms", WebPartFactory.LOCATION_BODY, TransFormsWebPart.class, null),
                 new BaseWebPartFactory("Data Transform Jobs")
                 {

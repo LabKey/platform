@@ -551,7 +551,7 @@ public class TransformManager implements DataIntegrationService.Interface
         try
         {
             Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
-            Set<TriggerKey> keys = scheduler.getTriggerKeys(GroupMatcher.<TriggerKey>groupEquals(JOB_GROUP_NAME));
+            Set<TriggerKey> keys = scheduler.getTriggerKeys(GroupMatcher.groupEquals(JOB_GROUP_NAME));
             String containerPrefix = "" + container.getRowId() + "/";
             for (TriggerKey key : keys)
             {
@@ -600,14 +600,14 @@ public class TransformManager implements DataIntegrationService.Interface
 
             {
             LOG.debug("Jobs");
-            Set<JobKey> keys = scheduler.getJobKeys(GroupMatcher.<JobKey>groupEquals(JOB_GROUP_NAME));
+            Set<JobKey> keys = scheduler.getJobKeys(GroupMatcher.groupEquals(JOB_GROUP_NAME));
             for (JobKey key : keys)
                 LOG.debug("\t" + key.toString());
             }
 
             {
             LOG.debug("Triggers");
-            Set<TriggerKey> keys = scheduler.getTriggerKeys(GroupMatcher.<TriggerKey>groupEquals(JOB_GROUP_NAME));
+            Set<TriggerKey> keys = scheduler.getTriggerKeys(GroupMatcher.groupEquals(JOB_GROUP_NAME));
             for (TriggerKey key : keys)
                 LOG.debug("\t" + key.toString());
             }

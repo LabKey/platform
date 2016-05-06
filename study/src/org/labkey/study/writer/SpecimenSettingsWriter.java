@@ -236,7 +236,7 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
     private void writeActorGroup(SpecimenRequestActor actor, @Nullable LocationImpl location, GroupType xmlGroupType)
     {
         // Note: these actor groups only currently have Users (no groups within groups)
-        GroupManager.exportGroupMembers(actor.getGroup(location), Collections.<Group>emptyList(), Arrays.asList(actor.getMembers(location)), xmlGroupType);
+        GroupManager.exportGroupMembers(actor.getGroup(location), Collections.emptyList(), Arrays.asList(actor.getMembers(location)), xmlGroupType);
 
         // for a actor type of per location, use the location label as the group name
         // otherwise use the actor label in the per study case

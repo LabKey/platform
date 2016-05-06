@@ -41,7 +41,7 @@ public class AssayFolderType extends MultiPortalFolderType
         super(NAME,
                 "Design and manage specialized assays. " +
                 "Analyze, visualize and share results.",
-                Collections.<Portal.WebPart>emptyList(),
+                Collections.emptyList(),
                 Arrays.asList(StudyModule.assayListWebPartFactory.createWebPart()),
                 getActiveModulesForOwnedFolder(module),
                 module);

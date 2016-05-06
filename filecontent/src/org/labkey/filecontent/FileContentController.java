@@ -1376,12 +1376,12 @@ public class FileContentController extends SpringActionController
 
             if (form.getType().equalsIgnoreCase("tbar"))
             {
-                options.setTbarConfig(Collections.<FilesTbarBtnOption>emptyList());
+                options.setTbarConfig(Collections.emptyList());
                 options.setGridConfig(null);
             }
             else if (form.getType().equalsIgnoreCase("actions"))
             {
-                options.setPipelineConfig(Collections.<PipelineActionConfig>emptyList());
+                options.setPipelineConfig(Collections.emptyList());
             }
             else if (form.getType().equalsIgnoreCase("general"))
             {

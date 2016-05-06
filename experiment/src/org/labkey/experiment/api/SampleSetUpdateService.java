@@ -247,7 +247,7 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
     public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws SQLException
     {
         DataIterator iterator = rows.getDataIterator(getDataIteratorContext(errors, InsertOption.MERGE, configParameters));
-        Collector<Map<String, Object>, ?, List<Map<String, Object>>> collector = Collectors.<Map<String, Object>>toList();
+        Collector<Map<String, Object>, ?, List<Map<String, Object>>> collector = Collectors.toList();
         List<Map<String, Object>> maps = iterator.stream().collect(collector);
         try
         {

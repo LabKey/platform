@@ -83,6 +83,6 @@ public class BigIronModule extends DefaultModule
     @Override
     public Set<Class> getIntegrationTests()
     {
-        return Collections.<Class>singleton(GroupConcatInstallationManager.TestCase.class);
+        return Collections.singleton(GroupConcatInstallationManager.TestCase.class);
     }
 }

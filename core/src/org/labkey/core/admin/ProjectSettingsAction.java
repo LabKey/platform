@@ -353,7 +353,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         AdminController.deleteExistingLogo(c, user);
 
         AttachmentFile renamed = new SpringAttachmentFile(file, AttachmentCache.LOGO_FILE_NAME_PREFIX + uploadedFileName.substring(index));
-        AttachmentService.get().addAttachments(parent, Collections.<AttachmentFile>singletonList(renamed), user);
+        AttachmentService.get().addAttachments(parent, Collections.singletonList(renamed), user);
         AttachmentCache.clearLogoCache();
     }
 
@@ -371,7 +371,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
         ContainerManager.ContainerParent parent = new ContainerManager.ContainerParent(c);
         AttachmentFile renamed = new SpringAttachmentFile(file, AttachmentCache.FAVICON_FILE_NAME);
-        AttachmentService.get().addAttachments(parent, Collections.<AttachmentFile>singletonList(renamed), user);
+        AttachmentService.get().addAttachments(parent, Collections.singletonList(renamed), user);
         AttachmentCache.clearFavIconCache();
     }
 
@@ -383,7 +383,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
         ContainerManager.ContainerParent parent = new ContainerManager.ContainerParent(c);
         AttachmentFile renamed = new SpringAttachmentFile(file, AttachmentCache.STYLESHEET_FILE_NAME);
-        AttachmentService.get().addAttachments(parent, Collections.<AttachmentFile>singletonList(renamed), user);
+        AttachmentService.get().addAttachments(parent, Collections.singletonList(renamed), user);
 
         // Don't need to clear cache -- lookAndFeelRevision gets checked on retrieval
     }

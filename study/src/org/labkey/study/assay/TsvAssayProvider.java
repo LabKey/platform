@@ -174,7 +174,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         DomainProperty dateProperty = addProperty(dataDomain, DATE_PROPERTY_NAME,  DATE_PROPERTY_CAPTION, PropertyType.DATE_TIME, "Used with " + PARTICIPANTID_PROPERTY_NAME + " to identify subject and timepoint for assay.");
         dateProperty.setImportAliasSet(dateImportAliases);
 
-        return new Pair<>(dataDomain, Collections.<DomainProperty, Object>emptyMap());
+        return new Pair<>(dataDomain, Collections.emptyMap());
     }
 
     public HttpView getDataDescriptionView(AssayRunUploadForm form)

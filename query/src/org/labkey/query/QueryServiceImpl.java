@@ -1017,7 +1017,7 @@ public class QueryServiceImpl extends QueryService
     @NotNull
     public Map<FieldKey, ColumnInfo> getColumns(@NotNull TableInfo table, @NotNull Collection<FieldKey> fields)
     {
-        return getColumns(table, fields, Collections.<ColumnInfo>emptySet());
+        return getColumns(table, fields, Collections.emptySet());
     }
 
 
@@ -1837,7 +1837,7 @@ public class QueryServiceImpl extends QueryService
     @Override
     public void bindNamedParameters(SQLFragment frag, @Nullable Map<String,Object> in)
     {
-        Map<String, Object> params = null == in ? Collections.<String, Object>emptyMap() :
+        Map<String, Object> params = null == in ? Collections.emptyMap() :
                 in instanceof CaseInsensitiveHashMap ? in :
                 new CaseInsensitiveHashMap<>(in);
 

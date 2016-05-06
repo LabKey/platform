@@ -1735,7 +1735,7 @@ public class IssueManager
             User user = UserManager.getGuestUser();
             boolean showEmailAddresses = SecurityManager.canSeeEmailAddresses(fakeRoot, user);
             assertFalse("readers should not see emails", showEmailAddresses);
-            List<User> possibleUsers = SecurityManager.getUsersWithPermissions(fakeRoot, Collections.<Class<? extends Permission>>singleton(ReadPermission.class));
+            List<User> possibleUsers = SecurityManager.getUsersWithPermissions(fakeRoot, Collections.singleton(ReadPermission.class));
 
             for (AjaxCompletion completion : UserManager.getAjaxCompletions(possibleUsers, user, fakeRoot))
             {

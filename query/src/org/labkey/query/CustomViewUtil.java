@@ -230,7 +230,7 @@ public class CustomViewUtil
             columns = new ArrayList<>();
             for (FieldKey key : tinfo.getDefaultVisibleColumns())
             {
-                columns.add(Pair.of(key, Collections.<CustomViewInfo.ColumnProperty, String>emptyMap()));
+                columns.add(Pair.of(key, Collections.emptyMap()));
             }
         }
 

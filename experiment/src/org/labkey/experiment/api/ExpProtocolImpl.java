@@ -111,7 +111,7 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
 
     public List<ExpProtocolAction> getSteps()
     {
-        return Arrays.<ExpProtocolAction>asList(ExpProtocolActionImpl.fromProtocolActions(ExperimentServiceImpl.get().getProtocolActions(getRowId())));
+        return Arrays.asList(ExpProtocolActionImpl.fromProtocolActions(ExperimentServiceImpl.get().getProtocolActions(getRowId())));
     }
 
     public Container getContainer()

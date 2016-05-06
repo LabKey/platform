@@ -157,7 +157,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView, Ed
     {
         List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> list = new ArrayList<>(columns.size());
         for (FieldKey column : columns)
-            list.add(Pair.of(column, Collections.<ColumnProperty, String>emptyMap()));
+            list.add(Pair.of(column, Collections.emptyMap()));
 
         edit().setColumns(encodeProperties(list));
     }

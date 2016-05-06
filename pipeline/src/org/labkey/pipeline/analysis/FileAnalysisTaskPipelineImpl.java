@@ -119,7 +119,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
 
         // Add the initial types to the hierarchy
         for (FileType ft : _initialFileTypes)
-            _typeHierarchy.put(ft, Collections.<FileType>emptyList());
+            _typeHierarchy.put(ft, Collections.emptyList());
 
         if (extHierarchy != null)
         {
@@ -362,7 +362,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         // Add the initial types to the hierarchy
         pipeline._typeHierarchy = new HashMap<>();
         for (FileType ft : pipeline._initialFileTypes)
-            pipeline._typeHierarchy.put(ft, Collections.<FileType>emptyList());
+            pipeline._typeHierarchy.put(ft, Collections.emptyList());
 
 //        // UNDONE: Default display state
 //        if (xpipeline.isSetDefaultDisplay())

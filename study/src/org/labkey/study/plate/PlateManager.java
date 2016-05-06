@@ -356,7 +356,7 @@ public class PlateManager implements PlateService.Service
         {
             setProperties(plate.getContainer(), wellgroup);
             List<PositionImpl> groupPositions = groupLsidToPositions.get(wellgroup.getLSID());
-            wellgroup.setPositions(groupPositions != null ? groupPositions : Collections.<Position>emptyList());
+            wellgroup.setPositions(groupPositions != null ? groupPositions : Collections.emptyList());
             sortedGroups.add(wellgroup);
         }
 
