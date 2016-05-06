@@ -29,16 +29,15 @@ import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
-import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
@@ -50,8 +49,6 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -134,11 +131,10 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
                 props.put(pd.getName(), pd);
 
             // Create a map of existing properties
-            Map<String, PropertyDescriptor> current = new CaseInsensitiveHashMap<>();
+            Map<String, DomainProperty> current = new CaseInsensitiveHashMap<>();
             for (DomainProperty dp : domain.getProperties())
             {
-                PropertyDescriptor pd = dp.getPropertyDescriptor();
-                current.put(pd.getName(), pd);
+                current.put(dp.getName(), dp);
             }
 
             Set<PropertyDescriptor> toAdd = new LinkedHashSet<>();
@@ -146,14 +142,18 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
                 if (!current.containsKey(pd.getName()))
                     toAdd.add(pd);
 
-            Set<PropertyDescriptor> toUpdate = new LinkedHashSet<>();
-            Set<PropertyDescriptor> toDelete = new LinkedHashSet<>();
-            for (PropertyDescriptor pd : current.values())
+            Set<DomainProperty> toUpdate = new LinkedHashSet<>();
+            boolean changed = false;
+
+            for (DomainProperty dp : current.values())
             {
-                if (props.containsKey(pd.getName()))
-                    toUpdate.add(pd);
+                if (props.containsKey(dp.getName()))
+                    toUpdate.add(dp);
                 else
-                    toDelete.add(pd);
+                {
+                    dp.delete();
+                    changed = true;
+                }
             }
 
             for (PropertyDescriptor pd : toAdd)
@@ -161,26 +161,22 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
                 domain.addPropertyOfPropertyDescriptor(pd);
             }
 
-            for (PropertyDescriptor pd : toDelete)
-            {
-                DomainProperty dp = domain.getPropertyByURI(pd.getPropertyURI());
-                if (dp == null)
-                    throw new RuntimeException("Failed to find property to delete: " + pd.getName());
-                dp.delete();
-            }
-
             try (DbScope.Transaction transaction = domainKind.getScope().ensureTransaction())
             {
                 // CONSIDER: Avoid always updating the existing properties -- only update changed props.
-                for (PropertyDescriptor pd : toUpdate)
+                for (DomainProperty dp : toUpdate)
                 {
-                    PropertyDescriptor desired = props.get(pd.getName());
+                    PropertyDescriptor desired = props.get(dp.getName());
                     assert desired != null;
-                    desired.copyTo(pd);
-                    OntologyManager.updatePropertyDescriptor(pd);
+
+                    if (differ(desired, dp, domain.getContainer()))
+                    {
+                        changed = true;
+                        copyTo(dp, desired, domain.getContainer());
+                    }
                 }
 
-                boolean changed = !toAdd.isEmpty() || !toDelete.isEmpty();
+                changed = changed || !toAdd.isEmpty();
                 if (changed)
                 {
                     domain.save(user);
@@ -193,6 +189,33 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    // #26311  We want to trigger a save if the scale has changed
+    // CONSIDER: check for other differences here as well.
+    private boolean differ(PropertyDescriptor pd, DomainProperty dp, Container c)
+    {
+        return dp.getScale() != pd.getScale()
+//                || !dp.getLabel().equals(pd.getLabel())
+//                || dp.isRequired() != pd.isRequired()
+//                || dp.isHidden() != pd.isHidden()
+//                || dp.isMvEnabled() != pd.isMvEnabled()
+//                || dp.getDefaultValueTypeEnum() != pd.getDefaultValueTypeEnum()
+                ;
+
+
+    }
+
+    private void copyTo(DomainProperty dp, PropertyDescriptor pd, Container c)
+    {
+        dp.setType(PropertyService.get().getType(c, pd.getPropertyURI()));
+        dp.setLabel(pd.getLabel());
+        dp.setRequired(pd.isRequired());
+        dp.setHidden(pd.isHidden());
+        dp.setMvEnabled(pd.isMvEnabled());
+        dp.setScale(pd.getScale());
+        if (pd.getDefaultValueType() != null)
+            dp.setDefaultValueTypeEnum(DefaultValueType.valueOf(pd.getDefaultValueType()));
     }
 
     @Override
