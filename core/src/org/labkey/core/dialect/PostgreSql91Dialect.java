@@ -38,6 +38,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.core.admin.sql.ScriptReorderer;
 import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
+import org.postgresql.PGConnection;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -1312,6 +1313,8 @@ class PostgreSql91Dialect extends SqlDialect
     @Override
     public void initializeConnection(Connection conn) throws SQLException
     {
+        PGConnection pgConn = conn.unwrap(PGConnection.class);
+        pgConn.setPrepareThreshold(0);
     }
 
     @Override

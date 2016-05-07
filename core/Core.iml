@@ -25,5 +25,14 @@
     <orderEntry type="module" module-name="Internal" />
     <orderEntry type="module" module-name="API" />
     <orderEntry type="module" module-name="Core-API" />
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../external/lib/tomcat/postgresql.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
   </component>
 </module>
