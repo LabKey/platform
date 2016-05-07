@@ -392,11 +392,13 @@ public abstract class SqlDialect
         initialize();
     }
 
-    // Post construction initiatization that doesn't require a scope
+    // Post construction initialization that doesn't require a scope
     void initialize()
     {
         _stringHandler = createStringHandler();
     }
+
+    public abstract void initializeConnection(Connection conn) throws SQLException;
 
     // Called once when new scope is being prepared
     protected DialectStringHandler createStringHandler()
@@ -1305,7 +1307,6 @@ public abstract class SqlDialect
     }
 
     public abstract List<String> getChangeStatements(TableChange change);
-    public abstract void initializeConnection(Connection conn) throws SQLException;
 
     public abstract void purgeTempSchema(Map<String, TempTableTracker> createdTableNames);
 
