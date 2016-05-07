@@ -31,7 +31,7 @@
 <%!
     public void addClientDependencies(ClientDependencies dependencies)
     {
-        dependencies.add("Ext3");
+        dependencies.add("clientapi/ext3");
         dependencies.add("sampleRequest.js");
     }
 %>

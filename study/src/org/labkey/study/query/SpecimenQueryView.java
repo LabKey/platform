@@ -17,7 +17,6 @@
 package org.labkey.study.query;
 
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.*;
 import org.labkey.api.query.DetailsURL;
@@ -37,7 +36,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.view.template.ClientDependency;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.StudySchema;
@@ -1010,15 +1008,5 @@ public class SpecimenQueryView extends BaseStudyQueryView
             return ColumnHeaderType.DisplayFieldKey;
         else
             return ColumnHeaderType.Caption;
-    }
-
-    @NotNull
-    @Override
-    public LinkedHashSet<ClientDependency> getClientDependencies()
-    {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.addAll(super.getClientDependencies());
-        resources.add(ClientDependency.fromPath("clientapi/ext3"));
-        return resources;
     }
 }
