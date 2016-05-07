@@ -194,6 +194,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         {
             Kind<Path> kind = event.kind();
 
+            //noinspection RedundantCast -- IntelliJ is wrong; this Kind<?> cast is actually required
             if (OVERFLOW == (Kind<?>)kind)
             {
                 LOG.info("Overflow! File system watcher events may have been lost.");

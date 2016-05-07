@@ -301,6 +301,7 @@ public class FieldKey extends QueryKey<FieldKey>
         public void testConcat()
         {
             assertEquals(FieldKey.fromParts(FieldKey.fromParts("Parent"), FieldKey.fromParts("Child")), FieldKey.fromParts("Parent", "Child"));
+            //noinspection RedundantCast -- IntelliJ inspection is wrong; this FieldKey cast is actually required
             assertEquals(FieldKey.fromParts((FieldKey)null, FieldKey.fromParts("Parent"), FieldKey.fromParts("Child")), FieldKey.fromParts("Parent", "Child"));
         }
 
