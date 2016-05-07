@@ -1145,6 +1145,7 @@ public class AnnouncementsController extends SpringActionController
             bean.statusSelect = getStatusSelect(settings, (String)form.get("status"));
 
             User u = form.getUser() == null ? getViewContext().getUser() : form.getUser();
+            //noinspection RedundantCast -- IntelliJ inspection is wrong; this String cast is actually required
             bean.memberList = getMemberList(u, c, latestPost, (String) (reshow ? form.get("memberList") : null));
             bean.currentRendererType = currentRendererType;
             bean.renderers = WikiRendererType.values();
