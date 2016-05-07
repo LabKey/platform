@@ -28,8 +28,6 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.PropertyStorageSpec.Index;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
@@ -129,7 +127,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
     @Override
     public TableInfo createTableInfo(final UserSchema userSchema)
     {
-        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, defaultVisibleColumns)
+        return new DefaultAuditTypeTable(GroupAuditProvider.this, createStorageTableInfo(), userSchema, defaultVisibleColumns)
         {
             @Override
             protected void initColumn(ColumnInfo col)
@@ -138,13 +136,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
                 {
                     col.setLabel("Group");
                     col.setFk(new GroupForeignKey(userSchema));
-                    col.setDisplayColumnFactory(new DisplayColumnFactory()
-                    {
-                        public DisplayColumn createRenderer(ColumnInfo colInfo)
-                        {
-                            return new GroupDisplayColumn(colInfo);
-                        }
-                    });
+                    col.setDisplayColumnFactory(GroupDisplayColumn::new);
                 }
                 else if (COLUMN_NAME_USER.equalsIgnoreCase(col.getName()))
                 {
@@ -153,8 +145,6 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
                 }
             }
         };
-
-        return table;
     }
 
     @Override

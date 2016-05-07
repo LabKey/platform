@@ -50,45 +50,30 @@ public class GroupMembershipCache
     }
 
 
-    private final static CacheLoader<String, int[]> ALL_GROUP_MEMBERSHIPS_LOADER = new CacheLoader<String, int[]>()
-    {
-        @Override
-        public int[] load(String key, Object argument)
-        {
-            UserPrincipal user = (UserPrincipal)argument;
-            return computeAllGroups(user);
-        }
+    private final static CacheLoader<String, int[]> ALL_GROUP_MEMBERSHIPS_LOADER = (key, argument) -> {
+        UserPrincipal user = (UserPrincipal)argument;
+        return computeAllGroups(user);
     };
 
 
-    private final static CacheLoader<String, int[]> IMMEDIATE_GROUP_MEMBERSHIPS_LOADER = new CacheLoader<String, int[]>()
-    {
-        @Override
-        public int[] load(String key, Object argument)
-        {
-            int groupId = (Integer)argument;
-            SqlSelector selector = new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT GroupId FROM " + CORE.getTableInfoMembers() + " WHERE UserId = ?", groupId));
-            Integer[] groupsInt = selector.getArray(Integer.class);
-            return _toIntArray(groupsInt);
-        }
+    private final static CacheLoader<String, int[]> IMMEDIATE_GROUP_MEMBERSHIPS_LOADER = (key, argument) -> {
+        int groupId = (Integer)argument;
+        SqlSelector selector = new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT GroupId FROM " + CORE.getTableInfoMembers() + " WHERE UserId = ?", groupId));
+        Integer[] groupsInt = selector.getArray(Integer.class);
+        return _toIntArray(groupsInt);
     };
 
 
-    private final static CacheLoader<String, int[]> GROUP_MEMBERS_LOADER = new CacheLoader<String, int[]>()
-    {
-        @Override
-        public int[] load(String key, Object argument)
-        {
-            Group group = (Group)argument;
-            Selector selector = new SqlSelector(CORE.getSchema(), new SQLFragment(
-                "SELECT Members.UserId FROM " + CORE.getTableInfoMembers() + " Members" +
-                " JOIN " + CORE.getTableInfoPrincipals() + " Users ON Members.UserId = Users.UserId\n" +
-                " WHERE Members.GroupId = ?" +
-                // order: Site groups, project groups, users
-                " ORDER BY Users.Type, CASE WHEN ( Users.Container IS NULL ) THEN 1 ELSE 2 END, Users.Name", group.getUserId()));
+    private final static CacheLoader<String, int[]> GROUP_MEMBERS_LOADER = (key, argument) -> {
+        Group group = (Group)argument;
+        Selector selector = new SqlSelector(CORE.getSchema(), new SQLFragment(
+            "SELECT Members.UserId FROM " + CORE.getTableInfoMembers() + " Members" +
+            " JOIN " + CORE.getTableInfoPrincipals() + " Users ON Members.UserId = Users.UserId\n" +
+            " WHERE Members.GroupId = ?" +
+            // order: Site groups, project groups, users
+            " ORDER BY Users.Type, CASE WHEN ( Users.Container IS NULL ) THEN 1 ELSE 2 END, Users.Name", group.getUserId()));
 
-            return _toIntArray(selector.getArray(Integer.class));
-        }
+        return _toIntArray(selector.getArray(Integer.class));
     };
 
 
@@ -99,7 +84,7 @@ public class GroupMembershipCache
     }
 
 
-    // Return array of groups to which this principal belongs (non-recursive)
+    // Return array of groups to which this principal directly belongs (non-recursive)
     static int[] getGroupMemberships(int principalId)
     {
         return CACHE.get(IMMEDIATE_GROUP_MEMBERSHIPS_PREFIX + principalId, principalId, IMMEDIATE_GROUP_MEMBERSHIPS_LOADER);
