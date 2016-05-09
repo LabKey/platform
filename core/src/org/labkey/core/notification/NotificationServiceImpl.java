@@ -112,6 +112,10 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
             }
         }
 
+        // if a notification already exists for this user/objectid/type, remove it (i.e. replace with new one)
+        NotificationService.get().removeNotifications(c, notification.getObjectId(),
+                Collections.singletonList(notification.getType()), notification.getUserId());
+
         return NotificationService.get().addNotification(c, createdByUser, notification);
     }
 

@@ -6939,10 +6939,6 @@ public class StudyController extends BaseStudyController
 
                 for (User validRecipient : _validRecipients)
                 {
-                    // if a notification already exists for this user and participant group, remove it (i.e. replace with new one)
-                    NotificationService.get().removeNotifications(getContainer(), form.getRowId().toString(),
-                        Collections.singletonList(ParticipantCategory.SEND_PARTICIPANT_GROUP_TYPE), validRecipient.getUserId());
-
                     // create the notification message email
                     MailHelper.MultipartMessage m = MailHelper.createMultipartMessage();
                     m.setFrom(LookAndFeelProperties.getInstance(getContainer()).getSystemEmailAddress());

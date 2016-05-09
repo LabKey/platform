@@ -402,7 +402,9 @@ public class IssuesController extends SpringActionController
             page.setMoveDestinations(IssueManager.getMoveDestinationContainers(getContainer()).size() != 0 ? true : false);
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
 
-            NotificationService.get().markAsRead(getContainer(), getUser(), "issue:" + _issue.getIssueId(), Arrays.asList(Issue.class.getName()), getUser().getUserId());
+            // remove any notifications related to this user/objectid/type
+            NotificationService.get().removeNotifications(getContainer(), "issue:" + _issue.getIssueId(), Arrays.asList(Issue.class.getName()), getUser().getUserId());
+
             return new JspView<>("/org/labkey/issue/view/detailView.jsp", page);
         }
 
