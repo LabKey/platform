@@ -3,12 +3,21 @@ html, body
     height: 100%;
 }
 
-body, div, td, th, table, img, form
+body, div, td, th, table, img, form, input, select, .gwt-TextBox
 {
-    font-family: verdana, arial, helvetica, sans-serif;
+    font-family: 'Roboto', arial, helvetica, sans-serif;
     font-size: 13px;
     margin: 0;
 	color: #000000;
+}
+
+.x-body, .x-btn {
+    font-family: 'Roboto', arial, helvetica, sans-serif !important;
+}
+
+@font-face {
+    font-family: 'Roboto';
+    src: url('fonts/Roboto/Roboto-Regular.ttf');
 }
 
 img
@@ -395,7 +404,6 @@ table.labkey-button-bar
     color: #126495;
     text-transform: uppercase;
     /*font-size: 10px;*/
-    font-family: Verdana, Arial, Helvetica, sans serif;
     font-weight: bold;
 
 	line-height: 2.3em;
@@ -512,7 +520,6 @@ td .labkey-menu-button:hover,
     text-transform: uppercase;
     /*font-size: 10px;*/
     font-weight: bold;
-    font-family: Verdana, Arial, Helvetica, sans serif;
     cursor: default;
 
     line-height: 2.3em;
@@ -607,7 +614,6 @@ span.labkey-button {
     color: #126495;
     text-transform: uppercase;
     /*font-size: 10px;*/
-    font-family: Verdana, Arial, Helvetica, sans serif;
     font-weight: bold;
     white-space: nowrap;
 
@@ -637,7 +643,6 @@ span.labkey-button:hover
     color: #000000;
     text-transform: uppercase;
     /*font-size: 10px;*/
-    font-family: Verdana, Arial, Helvetica, sans serif;
     font-weight: bold;
     cursor: pointer;
 
@@ -661,7 +666,6 @@ a.labkey-disabled-button {
     color: #808080 !important;
     text-transform: uppercase;
     /*font-size: 10px;*/
-    font-family: Verdana, Arial, Helvetica, sans serif;
     font-weight: bold;
     cursor: default;
 
@@ -688,7 +692,6 @@ span.labkey-button:active
     color: #000000;
     text-transform: uppercase;
     /*font-size: 10px;*/
-    font-family: Verdana, Arial, Helvetica, sans serif;
     font-weight: bold;
     cursor: pointer;
 
@@ -748,7 +751,6 @@ regions on mouseover */
 
 .labkey-disabled-text-link
 {
-    font-family: Verdana,Arial,Helvetica,sans-serif;
     font-weight: bold;
     padding: .3em 14px 2px 0;
     text-transform: uppercase;
@@ -903,7 +905,6 @@ span.labkey-help-pop-up
 
 /* Login screen*/
 .auth-header {
-    font-family: Arial, Helvetica, sans serif;
     font-size: 14pt;
 }
 
@@ -913,7 +914,6 @@ span.labkey-help-pop-up
 
 .auth-form-body {
     margin-top: 15px;
-    font-family: Arial, sans-serif;
 }
 
 .auth-item {
@@ -922,7 +922,6 @@ span.labkey-help-pop-up
 
 .auth-form-body label {
     font-weight: bold;
-    font-family: Arial, sans-serif;
 }
 
 .auth-form-body input[type="text"],
@@ -1566,7 +1565,6 @@ td.labkey-main-title-area
 
 .labkey-main-title-area a.labkey-main-title
 {
-    font-family: arial, helvetica, sans-serif;
     font-size:14pt;
     vertical-align: bottom;
     color: #676767;
@@ -1906,7 +1904,6 @@ td.labkey-crumb-trail {
 {
     font-size: 26px;
     font-weight: normal;
-    font-family: Arial, Helvetica, sans-serif;
     color: #000000;
 }
 
@@ -1972,7 +1969,6 @@ tr.labkey-wp-header
 /* This is used for the left side of the wp header and often contains the title */
 td.labkey-wp-title-left, th.labkey-wp-title-left, .labkey-wp-title {
     border-right: 0 none;
-    font-family: Arial, Helvetica, sans serif;
     color: #000000;
 	padding-left: 4px;
 	padding-bottom: 4px;
@@ -1992,7 +1988,6 @@ th.labkey-wp-title-left a:hover {
 th.labkey-wp-title-right, td.labkey-wp-title-right {
     text-align:  right;
     border-left:  0 none;
-	font-family: Arial, Helvetica, sans serif;
     color: #000000;
 	padding-bottom: 5px;
 	*padding-bottom: 1px;
@@ -2041,7 +2036,6 @@ span.labkey-wp-icon-button-inactive:hover {
     color: #126495;
     text-transform: uppercase;
     /*font-size: 10px;*/
-    font-family: Verdana, Arial, Helvetica, sans serif;
     font-weight: bold;
     white-space: nowrap;
 
@@ -2073,7 +2067,6 @@ a.no-arrow {
 
 a.labkey-text-link, a.labkey-text-link:visited, a.labkey-text-link-noarrow {
     color: #126495;
-    font-family: Verdana,Arial,Helvetica,sans-serif;
     font-weight: bold;
     padding: .3em 14px 2px 0;
     text-transform: uppercase;
@@ -2097,7 +2090,6 @@ table.labkey-data-region a.labkey-text-link:visited {
 a.labkey-text-link:hover, a.labkey-text-link-noarrow:hover {
     text-transform: uppercase;
     /*font-size: 10px;*/
-    font-family: Verdana, Arial, Helvetica, sans serif;
     font-weight: bold;
     padding: .3em 14px 2px 0;
 	border: none;
@@ -2386,7 +2378,6 @@ table.labkey-r-tsvout
 
 .gwt-ToolTip {
 	background-color: #FFDF8C;
-	font-family: verdana;
 	font-size: 8pt;
     padding-left: 4px;
     padding-right: 4px;
@@ -2843,7 +2834,6 @@ div.note {
 .tool-icon a:visited {
 	text-transform: uppercase;
 	text-decoration: none;
-	font-family: Verdana, Arial, Helvetica, sans serif;
 	color: #126495;
 	font-size: 10px;
 	font-weight: bold;
@@ -2940,7 +2930,6 @@ input[type="checkbox"], input[type="radio"] {
 
 .labkey-app-bar div.labkey-folder-title { /* this should map to the link and top border color in theme */
 	float: left;
-    font-family: Arial, Helvetica, sans serif;
     font-size: 14pt;
     line-height: 22px;
     white-space: nowrap;
@@ -3468,7 +3457,6 @@ div.headermenu a.labkey-menu-text-link img {
 .x4-menu-item-text
 {
     zoom: normal;
-    font-family: arial, tahoma, sans-serif;
 }
 
 .x4-menu-item-arrow
