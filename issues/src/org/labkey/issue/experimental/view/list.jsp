@@ -21,11 +21,15 @@
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.issue.IssuesController" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
+<%@ page import="org.labkey.issue.experimental.actions.NewInsertAction" %>
+<%@ page import="org.labkey.issue.model.IssueListDef" %>
+<%@ page import="org.labkey.issue.experimental.IssuesListView" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Container c = getContainer();
     IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c);
+    String issueListDef = (String)getModelBean();
 
     if (request.getParameter("error") != null)
     {%>
@@ -38,7 +42,7 @@
         <%
         if (c.hasPermission(getUser(), InsertPermission.class))
         {%>
-        <%= button("New " + names.singularName).href(new ActionURL(IssuesController.InsertAction.class, c)) %>&nbsp;&nbsp;&nbsp;<%
+        <%= button("New " + names.singularName).href(new ActionURL(NewInsertAction.class, c).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueListDef)) %>&nbsp;&nbsp;&nbsp;<%
         }%>
         <input type="text" size="5" name="issueId"/>
         <%= button("Jump to " + names.singularName).submit(true).attributes("align=\"top\" vspace=\"2\"") %></labkey:form></td>

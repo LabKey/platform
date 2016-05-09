@@ -1,5 +1,6 @@
 package org.labkey.issue.experimental.actions;
 
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -18,7 +19,7 @@ import org.springframework.web.servlet.ModelAndView;
  */
 
 @RequiresPermission(ReadPermission.class)
-public class NewUpdateAction extends IssueUpdateAction
+public class NewUpdateAction extends AbstractIssueAction
 {
     public ModelAndView getView(IssuesController.IssuesForm form, boolean reshow, BindException errors) throws Exception
     {
@@ -39,6 +40,7 @@ public class NewUpdateAction extends IssueUpdateAction
         JspView v = new JspView<>("/org/labkey/issue/experimental/view/updateView.jsp", page);
 
         page.setAction(NewUpdateAction.class);
+        page.setMode(DataRegion.MODE_UPDATE);
         page.setIssue(_issue);
         page.setPrevIssue(prevIssue);
         page.setCustomColumnConfiguration(getColumnConfiguration());
@@ -46,6 +48,7 @@ public class NewUpdateAction extends IssueUpdateAction
         page.setEditable(getEditableFields(page.getAction(), getColumnConfiguration()));
         page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
         page.setErrors(errors);
+        page.setIssueListDef(getIssueListDef());
 
         return v;
     }

@@ -997,11 +997,13 @@ issues/src/org/labkey/issue/IssueUserListener.java -text
 issues/src/org/labkey/issue/IssuesListView.java -text
 issues/src/org/labkey/issue/IssuesModule.java -text
 issues/src/org/labkey/issue/IssuesWebPartFactory.java -text
+issues/src/org/labkey/issue/NewColumnType.java -text
 issues/src/org/labkey/issue/experimental/IssuesListView.java -text
 issues/src/org/labkey/issue/experimental/IssuesWebPartFactory.java -text
-issues/src/org/labkey/issue/experimental/actions/IssueUpdateAction.java -text
+issues/src/org/labkey/issue/experimental/actions/AbstractIssueAction.java -text
 issues/src/org/labkey/issue/experimental/actions/NewCloseAction.java -text
 issues/src/org/labkey/issue/experimental/actions/NewDetailsAction.java -text
+issues/src/org/labkey/issue/experimental/actions/NewInsertAction.java -text
 issues/src/org/labkey/issue/experimental/actions/NewListAction.java -text
 issues/src/org/labkey/issue/experimental/actions/NewReopenAction.java -text
 issues/src/org/labkey/issue/experimental/actions/NewResolveAction.java -text

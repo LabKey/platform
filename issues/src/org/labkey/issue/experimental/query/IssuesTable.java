@@ -64,6 +64,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.experimental.actions.NewDetailsAction;
@@ -104,6 +105,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         _allowablePermissions.add(ReadPermission.class);
 
         addAllColumns();
+        setDefaultColumns();
     }
 
     private void addAllColumns()
@@ -213,6 +215,22 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
                 }
             }
         }
+    }
+
+    private void setDefaultColumns()
+    {
+        List<FieldKey> columns = new ArrayList<>();
+
+        columns.add(FieldKey.fromParts("IssueId"));
+        columns.add(FieldKey.fromParts("Type"));
+        columns.add(FieldKey.fromParts("Area"));
+        columns.add(FieldKey.fromParts("Title"));
+        columns.add(FieldKey.fromParts("AssignedTo"));
+        columns.add(FieldKey.fromParts("Priority"));
+        columns.add(FieldKey.fromParts("Status"));
+        columns.add(FieldKey.fromParts("Milestone"));
+
+        setDefaultVisibleColumns(columns);
     }
 
     @Nullable

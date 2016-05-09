@@ -1,6 +1,7 @@
 package org.labkey.issue.experimental.actions;
 
 import org.labkey.api.admin.notification.NotificationService;
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.ActionURL;
@@ -21,7 +22,7 @@ import java.util.Arrays;
  * Created by klum on 5/3/2016.
  */
 @RequiresPermission(ReadPermission.class)
-public class NewDetailsAction extends IssueUpdateAction
+public class NewDetailsAction extends AbstractIssueAction
 {
     public NewDetailsAction(){}
     public NewDetailsAction(Issue issue, ViewContext context)
@@ -43,6 +44,7 @@ public class NewDetailsAction extends IssueUpdateAction
         }
 
         IssuePage page = new IssuePage(getContainer(), getUser());
+        page.setMode(DataRegion.MODE_DETAILS);
         page.setPrint(isPrint());
         page.setIssue(_issue);
         page.setCustomColumnConfiguration(getColumnConfiguration());
@@ -51,6 +53,7 @@ public class NewDetailsAction extends IssueUpdateAction
         page.setUserHasAdminPermissions(hasAdminPermission(getUser(), _issue));
         page.setMoveDestinations(IssueManager.getMoveDestinationContainers(getContainer()).size() != 0 ? true : false);
         page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
+        page.setIssueListDef(getIssueListDef());
 
         NotificationService.get().markAsRead(getContainer(), getUser(), "issue:" + _issue.getIssueId(), Arrays.asList(Issue.class.getName()), getUser().getUserId());
         return new JspView<>("/org/labkey/issue/experimental/view/detailView.jsp", page);

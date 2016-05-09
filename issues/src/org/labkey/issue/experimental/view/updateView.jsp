@@ -28,7 +28,7 @@
 <%@ page import="org.labkey.issue.ColumnType" %>
 <%@ page import="org.labkey.issue.ColumnTypeEnum" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
-<%@ page import="org.labkey.issue.experimental.actions.IssueUpdateAction" %>
+<%@ page import="org.labkey.issue.experimental.actions.AbstractIssueAction" %>
 <%@ page import="org.labkey.issue.experimental.actions.NewDetailsAction" %>
 <%@ page import="org.labkey.issue.experimental.actions.NewListAction" %>
 <%@ page import="org.labkey.issue.model.CustomColumn" %>
@@ -41,6 +41,10 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.issue.experimental.IssuesListView" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.labkey.issue.NewColumnType" %>
+<%@ page import="org.labkey.issue.model.IssueListDef" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -70,7 +74,7 @@
     }
     else
     {
-        cancelURL = IssuesController.issueURL(c, NewListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true");
+        cancelURL = IssuesController.issueURL(c, NewListAction.class).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issue.getIssueDefName()).addParameter(DataRegion.LAST_FILTER_PARAM, "true");
     }
 
     List<ColumnTypeEnum> extraOptions = new ArrayList<>();
@@ -86,16 +90,20 @@
     int rowSpan = 2 + extraOptions.size();
 
     // create collections for additional custom columns and distribute them evenly in the form
-    List<ColumnType> columnTypes1 = new ArrayList<>();
-    List<ColumnType> columnTypes2 = new ArrayList<>();
+    List<NewColumnType> columnTypes1 = new ArrayList<>();
+    List<NewColumnType> columnTypes2 = new ArrayList<>();
+    IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issue.getIssueDefName());
+    if (issueListDef == null)
+        issueListDef = IssueManager.getIssueListDef(issue);
+
     int i=0;
 
     for (CustomColumn col : bean.getCustomColumnConfiguration().getCustomColumns(getUser()))
     {
         if ((i++ % 2) == 0)
-            columnTypes1.add(IssueUpdateAction.ColumnTypeImpl.fromCustomColumn(col));
+            columnTypes1.add(AbstractIssueAction.ColumnTypeImpl.fromCustomColumn(issue, col, issueListDef, user));
         else
-            columnTypes2.add(IssueUpdateAction.ColumnTypeImpl.fromCustomColumn(col));
+            columnTypes2.add(AbstractIssueAction.ColumnTypeImpl.fromCustomColumn(issue, col, issueListDef, user));
     }
 %>
 
@@ -230,9 +238,9 @@
                         Ext4.EventManager.on(document.getElementsByName('related')[0], 'keypress', filterCommaSepNumber);
                     </script><%
 
-                    for (ColumnType col : columnTypes1)
+                    for (NewColumnType col : columnTypes1)
                     {%>
-                    <%=text(bean.writeCustomColumn(col, 2, true))%><%
+                    <%=text(bean.renderCustomColumn(col, getViewContext()))%><%
                     }%>
                 </table>
             </td>
@@ -263,9 +271,9 @@
                 {%>
                 <tr><td class="labkey-form-label">Notify</td><td><%=text(bean.getNotifyList())%></td></tr><%
                 }
-                for (ColumnType col : columnTypes2)
+                for (NewColumnType col : columnTypes2)
                 {%>
-                <%=text(bean.writeCustomColumn(col, 2, true))%><%
+                <%=text(bean.renderCustomColumn(col, getViewContext()))%><%
                 }%>
             </table></td>
         </tr>
@@ -311,6 +319,7 @@
     <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(bean.getPrevIssue())%>">
     <input type="hidden" name="action" value="<%=h(bean.getAction().getName())%>">
     <input type="hidden" name="issueId" value="<%=issue.getIssueId()%>">
+    <input type="hidden" name="issueDefName" value="<%=h(StringUtils.trimToEmpty(issue.getIssueDefName()))%>">
 </labkey:form>
 <script type="text/javascript" for="window" event="onload">try {document.getElementById(<%=q(focusId)%>).focus();} catch (x) {}</script>
 <script type="text/javascript">

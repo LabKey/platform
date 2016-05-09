@@ -22,10 +22,20 @@ import com.google.common.collect.Collections2;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.issues.IssuesSchema;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -36,15 +46,20 @@ import org.labkey.issue.ColumnType;
 import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.IssuesController.DownloadAction;
+import org.labkey.issue.NewColumnType;
+import org.labkey.issue.query.IssuesQuerySchema;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.labkey.api.util.PageFlowUtil.filter;
@@ -74,6 +89,9 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     private String _dataRegionSelectionKey;
     private boolean _print = false;
     private boolean _moveDestinations;
+    private IssueListDef _issueListDef;
+    private RenderContext _renderContext;
+    private int _mode = DataRegion.MODE_DETAILS;
 
     public IssuePage(Container c, User user)
     {
@@ -236,6 +254,30 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         _moveDestinations = moveDestinations;
     }
 
+    public IssueListDef getIssueListDef()
+    {
+        return _issueListDef;
+    }
+
+    public void setIssueListDef(IssueListDef issueListDef)
+    {
+        _issueListDef = issueListDef;
+    }
+
+    public int getMode()
+    {
+        return _mode;
+    }
+
+    public void setMode(int mode)
+    {
+        _mode = mode;
+    }
+
+    /**
+     * We should be migrating away form custom rendering of the fields to display column based rendering
+     */
+    @Deprecated
     public String writeCustomColumn(ColumnType type, int tabIndex, boolean markIfRequired) throws IOException
     {
         if (_ccc.shouldDisplay(_user, type.getColumnName()))
@@ -263,6 +305,65 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return "";
     }
 
+    private RenderContext getRenderContext(ViewContext context)
+    {
+        if (_renderContext == null)
+        {
+            try
+            {
+                _renderContext = new RenderContext(context);
+                _renderContext.setMode(_mode);
+                UserSchema userSchema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), IssuesQuerySchema.SCHEMA_NAME);
+                TableInfo table = userSchema.getTable(_issueListDef.getName());
+
+                SimpleFilter filter = null;
+                if (_issue != null)
+                    filter = new SimpleFilter(FieldKey.fromParts("IssueId"), _issue.getIssueId());
+
+                try (Results rs = QueryService.get().select(table, table.getColumns(), filter, null, null, false))
+                {
+                    Map<String, Object> rowMap = new CaseInsensitiveHashMap<>();
+                    if (rs.next())
+                    {
+                        for (String colName : table.getColumnNameSet())
+                        {
+                            rowMap.put(colName, rs.getObject(colName));
+                        }
+                        _renderContext.setRow(rowMap);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+        return  _renderContext;
+    }
+
+    public String renderCustomColumn(NewColumnType type, ViewContext context) throws IOException
+    {
+        if (_ccc.shouldDisplay(_user, type.getColumnName()))
+        {
+            final StringBuilder sb = new StringBuilder();
+
+            sb.append("<tr><td class=\"labkey-form-label\">");
+            sb.append(getLabel(type, false));
+            sb.append("</td><td>");
+
+            RenderContext renderContext = getRenderContext(context);
+            try (Writer writer = new StringWriter())
+            {
+                DisplayColumn dc = type.getRenderer(context);
+
+                dc.render(renderContext, writer);
+                sb.append(writer);
+            }
+            sb.append("</td></tr>");
+            return sb.toString();
+        }
+        return "";
+    }
 
     // Field is always standard column name, which is HTML safe
     public String writeInput(String field, String value, String extra)

@@ -110,8 +110,10 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
+import org.labkey.issue.experimental.actions.AbstractIssueAction;
 import org.labkey.issue.experimental.actions.NewCloseAction;
 import org.labkey.issue.experimental.actions.NewDetailsAction;
+import org.labkey.issue.experimental.actions.NewInsertAction;
 import org.labkey.issue.experimental.actions.NewListAction;
 import org.labkey.issue.experimental.actions.NewReopenAction;
 import org.labkey.issue.experimental.actions.NewResolveAction;
@@ -167,7 +169,8 @@ public class IssuesController extends SpringActionController
             NewListAction.class,
             NewResolveAction.class,
             NewReopenAction.class,
-            NewCloseAction.class);
+            NewCloseAction.class,
+            NewInsertAction.class);
 
     private static final int MAX_STRING_FIELD_LENGTH = 200;
 
@@ -482,6 +485,7 @@ public class IssuesController extends SpringActionController
     }
 
 
+    @Deprecated     // delete this code after we pivot to the new implementation
     @RequiresPermission(InsertPermission.class)
     public class InsertAction extends FormViewAction<IssuesForm>
     {
@@ -3292,6 +3296,16 @@ public class IssuesController extends SpringActionController
             return _stringValues.get("priority");
         }
 
+        public String getIssueDefName()
+        {
+            return _stringValues.get(org.labkey.issue.experimental.IssuesListView.ISSUE_LIST_DEF_NAME);
+        }
+
+        public void setTable(TableInfo table)
+        {
+            super.setTable(table);
+        }
+
         /**
          * A bit of a hack but to allow the mothership controller to continue to create issues
          * in the way that it previously did, we need to be able to tell the issues controller
@@ -3314,7 +3328,7 @@ public class IssuesController extends SpringActionController
             else
             {
                 if (getViewContext().getActionURL().getAction().startsWith("new"))
-                    return org.labkey.issue.experimental.actions.IssueUpdateAction.getDetailsURL(getViewContext().getContainer(), getBean().getIssueId(), false);
+                    return AbstractIssueAction.getDetailsURL(getViewContext().getContainer(), getBean().getIssueId(), false);
                 else
                     return getDetailsURL(getViewContext().getContainer(), getBean().getIssueId(), false);
             }

@@ -310,7 +310,7 @@ public class IssueManager
         indexIssue(null, issue);
     }
 
-    public static void newSaveIssue(User user, Container container, Issue issue) throws SQLException
+    public static void newSaveIssue(User user, Container container, Issue issue, Map<String, Object> extraProperties) throws SQLException
     {
         if (issue.assignedTo == null)
             issue.assignedTo = 0;
@@ -327,17 +327,23 @@ public class IssueManager
 
                 ObjectFactory factory = ObjectFactory.Registry.getFactory(Issue.class);
                 factory.toMap(issue, row);
+                row.putAll(extraProperties);
+
                 BatchValidationException batchErrors = new BatchValidationException();
+                List<Map<String, Object>> results;
 
                 if (issue.issueId == 0)
                 {
                     issue.beforeInsert(user, container.getId());
-                    qus.insertRows(user, container, Collections.singletonList(row), batchErrors, null, null);
+                    results = qus.insertRows(user, container, Collections.singletonList(row), batchErrors, null, null);
+
+                    assert results.size() == 1;
+                    issue.setIssueId((int)results.get(0).get("IssueId"));
                 }
                 else
                 {
                     issue.beforeUpdate(user);
-                    qus.updateRows(user, container, Collections.singletonList(row), Collections.singletonList(row) , null, null);
+                    results = qus.updateRows(user, container, Collections.singletonList(row), Collections.singletonList(row) , null, null);
                 }
 
                 saveComments(user, issue);
@@ -1375,6 +1381,13 @@ public class IssueManager
         return classes;
     }
 
+    public static IssueListDef getIssueListDef(Container container, String name)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("name"), name);
+        return new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), filter, null).getObject(IssueListDef.class);
+    }
+
     public static IssueListDef getIssueListDef(int rowId)
     {
         return new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), null, null).getObject(rowId, IssueListDef.class);
@@ -1476,6 +1489,10 @@ public class IssueManager
         if (issue.getIssueDefId() != null)
         {
             return getIssueListDef(issue.getIssueDefId());
+        }
+        else if (issue.getIssueDefName() != null)
+        {
+            return getIssueListDef(ContainerManager.getForId(issue.getContainerId()), issue.getIssueDefName());
         }
         return null;
     }

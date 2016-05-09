@@ -85,6 +85,7 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     protected String _notifyList;
     protected Integer _issueDefId;
+    protected String _issueDefName;         // used only in the actions
 
     public Issue()
     {
@@ -582,6 +583,16 @@ public class Issue extends Entity implements Serializable, Cloneable
     public void setIssueDefId(Integer issueDefId)
     {
         _issueDefId = issueDefId;
+    }
+
+    public String getIssueDefName()
+    {
+        return _issueDefName;
+    }
+
+    public void setIssueDefName(String issueDefName)
+    {
+        _issueDefName = issueDefName;
     }
 
     public void parseNotifyList(String notifyList)

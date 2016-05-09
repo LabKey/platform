@@ -29,10 +29,10 @@
 <%@ page import="org.labkey.issue.ColumnTypeEnum" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
 <%@ page import="org.labkey.issue.IssuesController.EmailPrefsAction" %>
-<%@ page import="org.labkey.issue.IssuesController.InsertAction" %>
 <%@ page import="org.labkey.issue.experimental.IssuesListView" %>
-<%@ page import="org.labkey.issue.experimental.actions.IssueUpdateAction" %>
+<%@ page import="org.labkey.issue.experimental.actions.AbstractIssueAction" %>
 <%@ page import="org.labkey.issue.experimental.actions.NewCloseAction" %>
+<%@ page import="org.labkey.issue.experimental.actions.NewInsertAction" %>
 <%@ page import="org.labkey.issue.experimental.actions.NewListAction" %>
 <%@ page import="org.labkey.issue.experimental.actions.NewReopenAction" %>
 <%@ page import="org.labkey.issue.experimental.actions.NewResolveAction" %>
@@ -45,6 +45,7 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.issue.NewColumnType" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -67,23 +68,23 @@
 
     // Create Issue from a Ticket
     Container relatedIssueContainer = IssueManager.getRelatedIssuesList(c);
-    ActionURL insertURL = relatedIssueContainer == null ? null : new ActionURL(InsertAction.class, relatedIssueContainer);
+    ActionURL insertURL = relatedIssueContainer == null ? null : new ActionURL(NewInsertAction.class, relatedIssueContainer);
     boolean showRelatedIssuesButton = relatedIssueContainer == null ? false : relatedIssueContainer.hasPermission(user, InsertPermission.class);
 
     List<Issue.Comment> commentLinkedList = IssueManager.getCommentsForRelatedIssues(issue, user);
     IssueListDef issueDef = IssueManager.getIssueListDef(issue);
 
     // create collections for additional custom columns and distribute them evenly in the form
-    List<ColumnType> columnTypes1 = new ArrayList<>();
-    List<ColumnType> columnTypes2 = new ArrayList<>();
+    List<NewColumnType> columnTypes1 = new ArrayList<>();
+    List<NewColumnType> columnTypes2 = new ArrayList<>();
     int i=0;
 
     for (CustomColumn col : bean.getCustomColumnConfiguration().getCustomColumns(getUser()))
     {
         if ((i++ % 2) == 0)
-            columnTypes1.add(IssueUpdateAction.ColumnTypeImpl.fromCustomColumn(col));
+            columnTypes1.add(AbstractIssueAction.ColumnTypeImpl.fromCustomColumn(issue, col, issueDef, user));
         else
-            columnTypes2.add(IssueUpdateAction.ColumnTypeImpl.fromCustomColumn(col));
+            columnTypes2.add(AbstractIssueAction.ColumnTypeImpl.fromCustomColumn(issue, col, issueDef, user));
     }
 
 %>
@@ -132,7 +133,7 @@
     <table><tr><%
         if (bean.getHasUpdatePermissions())
         {%>
-        <td><%= textLink("new " + names.singularName.toLowerCase(), PageFlowUtil.getLastFilter(context, IssuesController.issueURL(c, InsertAction.class)))%></td><%
+        <td><%= textLink("new " + names.singularName.toLowerCase(), PageFlowUtil.getLastFilter(context, IssuesController.issueURL(c, NewInsertAction.class).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDef.getName())))%></td><%
         }%>
         <td><%= textLink("return to grid", PageFlowUtil.getLastFilter(context, IssuesController.issueURL(c, NewListAction.class).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDef.getName())).deleteParameter("error"))%></td><%
         if (bean.getHasUpdatePermissions())
@@ -215,9 +216,9 @@
             {%>
             <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnTypeEnum.RELATED, false))%></td><td><%=bean.renderRelatedIssues(issue.getRelatedIssues())%></td></tr><%
             }
-            for (ColumnType col : columnTypes1)
+            for (NewColumnType col : columnTypes1)
             {%>
-            <%=text(bean.writeCustomColumn(col, 2, true))%><%
+            <%=text(bean.renderCustomColumn(col, getViewContext()))%><%
             }%>
         </table></td>
         <td valign="top" width="33%"><table>
@@ -228,9 +229,9 @@
             <tr><td class="labkey-form-label">Notify</td><td><%=bean.getNotifyList()%></td></tr><%
             }
 
-            for (ColumnType col : columnTypes2)
+            for (NewColumnType col : columnTypes2)
             {%>
-            <%=text(bean.writeCustomColumn(col, 2, true))%><%
+            <%=text(bean.renderCustomColumn(col, getViewContext()))%><%
             }%>
         </table></td>
     </tr>

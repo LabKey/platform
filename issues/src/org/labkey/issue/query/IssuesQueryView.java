@@ -52,6 +52,7 @@ import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 
+@Deprecated
 public class IssuesQueryView extends QueryView
 {
     private ViewContext _context;
