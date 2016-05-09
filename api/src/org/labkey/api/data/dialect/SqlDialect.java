@@ -471,19 +471,6 @@ public abstract class SqlDialect
      */
     public abstract String addReselect(SQLFragment sql, ColumnInfo column, @Nullable String proposedVariable);
 
-    // A convenience method for old code paths that don't use SQLFragment. Instead of a nearly identical implementation to
-    // support StringBuilder, stick the contents into a SQLFragment, pass it to addReselect(), and replace the contents of
-    // the StringBuilder with the new SQL.
-    @Deprecated // Move usages to SQLFragment
-    public void addReselect(StringBuilder sql, ColumnInfo column)
-    {
-        SQLFragment fragment = new SQLFragment(sql);
-        addReselect(fragment, column, null);
-        assert fragment.getParams().isEmpty();
-        sql.setLength(0);
-        sql.append(fragment.getSQL());
-    }
-
     // Could be INSERT, UPDATE, or DELETE statement
     public abstract @Nullable ResultSet executeWithResults(@NotNull PreparedStatement stmt) throws SQLException;
 
@@ -503,14 +490,6 @@ public abstract class SqlDialect
      * @return the query
      */
     public abstract SQLFragment limitRows(SQLFragment sql, int maxRows);
-
-    public void limitRows(StringBuilder builder, int maxRows)
-    {
-        SQLFragment frag = new SQLFragment();
-        frag.append(builder);
-        limitRows(frag, maxRows);
-        builder.replace(0, builder.length(), frag.getSQL());
-    }
 
     /**
      * Composes the fragments into a SQL query that will be limited by rowCount
