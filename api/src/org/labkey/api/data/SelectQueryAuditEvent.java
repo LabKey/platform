@@ -112,4 +112,9 @@ public class SelectQueryAuditEvent extends AuditTypeEvent
         Collections.sort(sortedDataLoggingValues);
         return sortedDataLoggingValues;
     }
+
+    protected boolean isLogEmptyResults()
+    {
+        return true;
+    }
 }

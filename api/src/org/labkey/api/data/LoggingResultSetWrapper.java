@@ -56,8 +56,11 @@ public class LoggingResultSetWrapper extends ResultSetWrapper
         if (!_queryLogging.isEmpty())
         {
             SelectQueryAuditEvent selectQueryAuditEvent = _queryLogging.getSelectQueryAuditEvent();
-            selectQueryAuditEvent.setDataLogging(_queryLogging, _dataLoggingValues);
-            AuditLogService.get().addEvent(_queryLogging.getUser(), selectQueryAuditEvent);
+            if (!_dataLoggingValues.isEmpty() || selectQueryAuditEvent.isLogEmptyResults())
+            {
+                selectQueryAuditEvent.setDataLogging(_queryLogging, _dataLoggingValues);
+                AuditLogService.get().addEvent(_queryLogging.getUser(), selectQueryAuditEvent);
+            }
         }
         super.close();
     }
