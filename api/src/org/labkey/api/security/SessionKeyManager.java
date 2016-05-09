@@ -49,7 +49,7 @@ abstract class SessionKeyManager<T>
     public String createKey(HttpServletRequest request, User user)
     {
         String prefix = getKeyPrefix();
-        String apiKey = (null != prefix ? prefix + ":" : "") + GUID.makeHash();
+        String apiKey = (null != prefix ? prefix + "|" : "") + GUID.makeHash();
         HttpSession session = request.getSession(true);
         KEY_MAP.put(apiKey, createContext(session, user));
 
