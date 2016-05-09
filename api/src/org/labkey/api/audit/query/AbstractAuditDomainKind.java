@@ -308,12 +308,7 @@ public abstract class AbstractAuditDomainKind extends DomainKind
 
     protected PropertyDescriptor createPropertyDescriptor(@NotNull String name, @NotNull PropertyType type)
     {
-        return createPropertyDescriptor(name, type, null, null, false, null);
-    }
-
-    protected PropertyDescriptor createPropertyDescriptor(@NotNull String name, @NotNull PropertyType type, @Nullable Integer scale)
-    {
-        return createPropertyDescriptor(name, type, null, null, false, scale);
+        return createPropertyDescriptor(name, type, null, null, false);
     }
 
     protected PropertyDescriptor createPropertyDescriptor(
@@ -321,19 +316,11 @@ public abstract class AbstractAuditDomainKind extends DomainKind
             @Nullable String caption, @Nullable String description,
             boolean required)
     {
-        return createPropertyDescriptor(name, type, caption, description, required, null);
-    }
-
-    protected PropertyDescriptor createPropertyDescriptor(
-            @NotNull String name, @NotNull PropertyType type,
-            @Nullable String caption, @Nullable String description,
-            boolean required, Integer scale)
-    {
         Container domainContainer = getDomainContainer();
 
         String propertyURI = generatePropertyURI(name);
 
-        PropertyDescriptor pd = new PropertyDescriptor(propertyURI, type.getTypeUri(), name, null, domainContainer, scale);
+        PropertyDescriptor pd = new PropertyDescriptor(propertyURI, type.getTypeUri(), name, domainContainer);
         if (caption != null)
             pd.setLabel(caption);
         if (description != null)

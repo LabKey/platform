@@ -111,19 +111,14 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
 
     public PropertyDescriptor(String propertyURI, String rangeURI, String name, String caption, Container container)
     {
-        this(propertyURI, rangeURI, name, caption, container, PropertyType.STRING.getTypeUri().equals(rangeURI) ? PropertyStorageSpec.DEFAULT_SIZE : null);
-    }
-
-    public PropertyDescriptor(String propertyURI, String rangeURI, String name, String caption, Container container, @Nullable Integer scale)
-    {
         this();
         this.propertyURI = propertyURI;
         this.rangeURI = rangeURI;
         this.name = name;
         this.label = caption;
         setContainer(container);
-        if (scale != null)
-            setScale(scale);
+        if (PropertyType.STRING.getTypeUri().equals(rangeURI))
+            setScale(PropertyStorageSpec.DEFAULT_SIZE);       // Make sure to set default scale
     }
 
     public int getPropertyId()
