@@ -106,10 +106,10 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements QuerySnapshotService.AutoUpdateable, DatasetManager.DatasetListener, ParticipantCategoryListener
 {
-    private static final DatasetSnapshotProvider _instance = new DatasetSnapshotProvider();
-    private static final Logger _log = Logger.getLogger(DatasetSnapshotProvider.class);
-    private static final BlockingQueue<SnapshotDependency.SourceDataType> _queue = new LinkedBlockingQueue<>(1000);
-    private static final QuerySnapshotDependencyThread _dependencyThread = new QuerySnapshotDependencyThread();
+    private static final DatasetSnapshotProvider INSTANCE = new DatasetSnapshotProvider();
+    private static final Logger LOG = Logger.getLogger(DatasetSnapshotProvider.class);
+    private static final BlockingQueue<SnapshotDependency.SourceDataType> QUEUE = new LinkedBlockingQueue<>(1000);
+    private static final QuerySnapshotDependencyThread DEPENDENCY_THREAD = new QuerySnapshotDependencyThread();
 
     // query snapshot dependency checkers
     private static SnapshotDependency.Dataset _datasetDependency = new SnapshotDependency.Dataset();
@@ -117,7 +117,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
     static
     {
-        _dependencyThread.start();
+        DEPENDENCY_THREAD.start();
     }
 
     private DatasetSnapshotProvider()
@@ -128,7 +128,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
     public static DatasetSnapshotProvider getInstance()
     {
-        return _instance;
+        return INSTANCE;
     }
 
     public String getName()
@@ -599,7 +599,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
     public void datasetChanged(final Dataset def)
     {
-        _log.debug("Cache cleared notification on dataset : " + def.getDatasetId());
+        LOG.debug("Cache cleared notification on dataset : " + def.getDatasetId());
 
         _sourceDataChanged(new SnapshotDependency.SourceDataType(def.getContainer(), SnapshotDependency.SourceDataType.Type.dataset, def));
     }
@@ -609,7 +609,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         if (_coalesceMap.containsKey(type.getContainer()))
             deferReload(type);
         else
-            _queue.add(type);
+            QUEUE.add(type);
     }
 
     @Override
@@ -625,7 +625,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     @Override
     public void categoryUpdated(User user, ParticipantCategoryImpl category) throws Exception
     {
-        _log.debug("Category updated notification on participant category : " + category.getLabel());
+        LOG.debug("Category updated notification on participant category : " + category.getLabel());
 
         Container c = ContainerManager.getForId(category.getContainerId());
         _sourceDataChanged(new SnapshotDependency.SourceDataType(c, SnapshotDependency.SourceDataType.Type.participantCategory, category));
@@ -677,7 +677,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             {
                 while (true)
                 {
-                    SnapshotDependency.SourceDataType data = _queue.take();
+                    SnapshotDependency.SourceDataType data = QUEUE.take();
                     if (data != null)
                     {
                         try
@@ -685,13 +685,13 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                             List<QuerySnapshotDefinition> dependencies = getDependencies(data);
                             for (QuerySnapshotDefinition snapshotDef : dependencies)
                             {
-                                _log.info("Updating snapshot definition : " + snapshotDef.getName());
+                                LOG.info("Updating snapshot definition : " + snapshotDef.getName());
                                 autoUpdateSnapshot(snapshotDef);
                             }
                         }
                         catch (Throwable e)
                         {
-                            _log.error(e);
+                            LOG.error(e);
                             ExceptionUtil.logExceptionToMothership(null, e);
                         }
                     }
@@ -699,7 +699,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             }
             catch (InterruptedException e)
             {
-                _log.info(getClass().getSimpleName() + " is terminating due to interruption");
+                LOG.info(getClass().getSimpleName() + " is terminating due to interruption");
             }
         }
 
@@ -740,9 +740,17 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             Set<DatasetDefinition> deferredDatasets = new HashSet<>(snapshotDefs.size());
             for (QuerySnapshotDefinition def : snapshotDefs)
             {
-                deferredDatasets.add(StudyManager.getInstance().getDatasetDefinitionByName(study, def.getName()));
-                TimerTask task = new SnapshotUpdateTask(def, true);
-                task.run();
+                DatasetDefinition deferredDataset = StudyManager.getInstance().getDatasetDefinitionByName(study, def.getName());
+                if (deferredDataset == null)
+                {
+                    LOG.warn("Unable to find dataset " + def.getName() + " to update for query snapshot " + def.getName() + " in study in " + snapshotContainer.getPath() + ", skipping");
+                }
+                else
+                {
+                    deferredDatasets.add(deferredDataset);
+                    TimerTask task = new SnapshotUpdateTask(def, true);
+                    task.run();
+                }
             }
             StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, deferredDatasets);
         }
@@ -789,7 +797,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
         public void run()
         {
-            _log.debug("Automatically Updating Dataset Snapshot : " + _def.getName());
+            LOG.debug("Automatically Updating Dataset Snapshot : " + _def.getName());
 
             try
             {
