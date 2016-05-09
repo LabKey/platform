@@ -148,7 +148,7 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
             super(AttachmentService.ATTACHMENT_AUDIT_EVENT);
 
             Set<PropertyDescriptor> fields = new LinkedHashSet<>();
-            fields.add(createPropertyDescriptor(COLUMN_NAME_ATTACHMENT_PARENT_ENTITY_ID, PropertyType.STRING, 36)); // UNDONE: Is needed ? .setEntityId(true));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_ATTACHMENT_PARENT_ENTITY_ID, PropertyType.STRING)); // UNDONE: Is needed ? .setEntityId(true));
             fields.add(createPropertyDescriptor(COLUMN_NAME_ATTACHMENT, PropertyType.STRING, null, null, true));
             _fields = Collections.unmodifiableSet(fields);
         }

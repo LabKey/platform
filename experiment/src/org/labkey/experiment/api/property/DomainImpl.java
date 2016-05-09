@@ -69,6 +69,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 
 public class DomainImpl implements Domain
@@ -82,7 +84,7 @@ public class DomainImpl implements Domain
     private Set<PropertyStorageSpec.Index> _propertyIndices = Collections.emptySet();
     private boolean _shouldDeleteAllData = false;
 
-    // NOTE we could put responsibility for generating column names on the StorageProvisioner
+    // NOTE we could put responsibilty for generating column names on the StorageProvisioner
     // But then we'd have the situation of StorageProvisioner knowing about/updating Domains, which seems fraught
     transient AliasManager _aliasManager = null;
 
@@ -500,7 +502,7 @@ public class DomainImpl implements Domain
         }
     }
 
-    private void checkAndThrowSizeConstraints(DomainKind kind, Domain domain, DomainProperty prop)
+    private void checkAndThrowSizeConstraints(DomainKind kind, Domain domain, DomainProperty prop )
     {
         boolean tooLong = kind.exceedsMaxLength(this, prop);
         if (tooLong)
