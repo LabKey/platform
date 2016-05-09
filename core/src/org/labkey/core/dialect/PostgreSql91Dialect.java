@@ -25,6 +25,7 @@ import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
+import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.data.dialect.JdbcHelper;
@@ -1323,19 +1324,27 @@ class PostgreSql91Dialect extends SqlDialect
         try
         {
             trackTempTables(createdTableNames);
+        }
+        catch (SQLException e)
+        {
+            LOG.warn("error cleaning up temp schema", e);
+        }
 
-            DbSchema coreSchema = CoreSchema.getInstance().getSchema();
-            SqlExecutor executor = new SqlExecutor(coreSchema);
+        DbSchema coreSchema = CoreSchema.getInstance().getSchema();
+        SqlExecutor executor = new SqlExecutor(coreSchema);
 
-            //rs = conn.getMetaData().getFunctions(dbName, tempSchemaName, "%");
-            Map<String, String> types = null;
+        //rs = conn.getMetaData().getFunctions(dbName, tempSchemaName, "%");
 
-            try (ResultSet rs = new SqlSelector(coreSchema, "SELECT proname AS SPECIFIC_NAME, CAST(proargtypes AS VARCHAR) FROM pg_proc WHERE pronamespace=(select oid from pg_namespace where nspname = ?)", DbSchema.getTemp().getName()).getResultSet())
+        new SqlSelector(coreSchema, "SELECT proname AS SPECIFIC_NAME, CAST(proargtypes AS VARCHAR) FROM pg_proc WHERE pronamespace=(select oid from pg_namespace where nspname = ?)", DbSchema.getTemp().getName()).forEach(
+            new ForEachBlock<ResultSet>()
             {
-                while (rs.next())
+                private Map<String, String> _types = null;
+
+                @Override
+                public void exec(ResultSet rs) throws SQLException, StopIteratingException
                 {
-                    if (null == types)
-                        types = new SqlSelector(coreSchema, "SELECT CAST(oid AS VARCHAR), typname FROM pg_type").getValueMap();
+                    if (null == _types)
+                        _types = new SqlSelector(coreSchema, "SELECT CAST(oid AS VARCHAR), typname FROM pg_type").getValueMap();
 
                     String name = rs.getString(1);
                     String[] oids = StringUtils.split(rs.getString(2), ' ');
@@ -1344,19 +1353,14 @@ class PostgreSql91Dialect extends SqlDialect
                     String comma = "";
                     for (String oid : oids)
                     {
-                        drop.append(comma).append(types.get(oid));
+                        drop.append(comma).append(_types.get(oid));
                         comma = ",";
                     }
                     drop.append(")");
 
                     executor.execute(drop);
                 }
-            }
-        }
-        catch (SQLException x)
-        {
-            LOG.warn("error cleaning up temp schema", x);
-        }
+            });
     }
 
     @Override
