@@ -305,7 +305,7 @@ public class DataClassSearchTest extends StudyTest
         _searchHelper.enqueueSearchItem(DATA_CLASS_1_COMMENT_1);
         _searchHelper.enqueueSearchItem(DATA_CLASS_1_DESCRIPTION_2, Locator.linkContainingText(DATA_CLASS_1_NAME_2));
         //_searchHelper.enqueueSearchItem(DATA_CLASS_1_ALIAS_2, Locator.linkContainingText(DATA_CLASS_1_NAME_2));
-        //_searchHelper.enqueueSearchItem(DATA_CLASS_1_COMMENT_2, Locator.linkContainingText(DATA_CLASS_1_NAME_2));
+        _searchHelper.enqueueSearchItem(DATA_CLASS_1_COMMENT_2, Locator.linkContainingText(DATA_CLASS_1_NAME_2));
         _searchHelper.enqueueSearchItem("speckled", Locator.linkContainingText(DATA_CLASS_1_NAME_2));
         _searchHelper.enqueueSearchItem("ek \ndo \nteen", Locator.linkContainingText(DATA_CLASS_1_NAME_2));
         _searchHelper.verifySearchResults("/" + getProjectName(), false);
