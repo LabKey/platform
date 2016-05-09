@@ -49,6 +49,7 @@
     boolean hasSelected = model.hasSelected(getViewContext());
     String exportRegionName = model.getExportRegionName();
 %>
+<form>
 <table class="labkey-export-tab-contents">
     <tr>
         <td valign="center"><input type="radio" id="<%=h(xlsxGUID)%>" name="excelExportType" checked="checked" /></td>
@@ -86,7 +87,7 @@
         <td colspan="2"><%= button("Export to Excel").id(exportButtonId) %></td>
     </tr>
 </table>
-
+</form>
 <script type="text/javascript">
     (function($) {
 
@@ -189,9 +190,43 @@
                 });
 
                 newForm.action = exportUrl;
-                newIFrame = $('#' + downloadIFrameId);
-                if (newIFrame && newIFrame.contents().find('form') && newIFrame.contents().find('form').length > 0) {
-                    newIFrame.contents().find('form')[0].submit();
+                var downloadIFrame = $('#' + downloadIFrameId);
+                if (downloadIFrame && downloadIFrame.contents().find('form') && downloadIFrame.contents().find('form').length > 0) {
+                    downloadIFrame.on('load', function(){
+                        var response = {
+                                    responseText: '',
+                                    responseXML: null
+                                }, doc, firstChild;
+
+                        try {
+                            doc = newIFrame.contentWindow.document || newIFrame.contentDocument || window.frames[id].document;
+                            if (doc) {
+                                if (doc.body) {
+                                    if (/textarea/i.test((firstChild = doc.body.firstChild || {}).tagName)) { // json response wrapped in textarea
+                                        response.responseText = firstChild.value;
+                                    } else {
+                                        response.responseText = doc.body.innerHTML;
+                                    }
+                                }
+                                //in IE the document may still have a body even if returns XML.
+                                response.responseXML = doc.XMLDocument || doc;
+                            }
+                        }
+                        catch (e) {
+                        }
+
+                        if (response.responseXML && response.responseXML.title) {
+                            var title = response.responseXML.title;
+                            var index = title.indexOf("Error Page -- ");
+                            if (index != -1) {
+                                var message = title.substring(index + "Error Page -- ".length);
+                                dr.showErrorMessage("Error: " + message);
+                            }
+                        }
+
+                    });
+
+                    downloadIFrame.contents().find('form')[0].submit();
                 }
 
                 return false;
