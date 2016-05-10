@@ -2603,10 +2603,11 @@ public class OntologyManager
             String propertyURI = StringUtils.trimToEmpty((String) m.get("propertyuri"));
             if (propertyURI.length() == 0)
                 propertyURI = domainURI + "." + name;
-            if (-1 != name.indexOf('#'))
+            int idx = name.indexOf('#');
+            if (-1 != idx && name.length() > (idx + 1))
             {
                 propertyURI = name;
-                name = name.substring(name.indexOf('#')+1);
+                name = name.substring(idx+1);
             }
             if (name.length() == 0)
             {
