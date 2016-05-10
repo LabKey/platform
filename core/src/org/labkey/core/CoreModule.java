@@ -320,7 +320,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_JSDOC, "Javascript Documentation", "Displays LabKey javascript API's from the Developer Links menu.", false);
         AdminConsole.addExperimentalFeatureFlag(MenuBarView.EXPERIMENTAL_NAV, "Combined Navigation Drop-down",
                 "This feature will combine the Navigation of Projects and Folders into one drop-down.", false);
-        AdminConsole.addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATIONMENU, "Notifications Menu",
+        AdminConsole.addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
                 "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false);
         AdminConsole.addExperimentalFeatureFlag(AnalyticsProviderRegistry.EXPERIMENTAL_ANALYTICS_PROVIDER, "Analytics Provider Registry",
                 "This feature allows modules to register column based or query based analytics providers.", false);

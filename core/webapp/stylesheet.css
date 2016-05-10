@@ -3874,7 +3874,7 @@ a div.x4-menu-item-icon.fa-users
 }
 
 /* Begin: Notification inbox and panel */
-.lk-notificationpanel
+.labkey-notification-panel
 {
     position:fixed; right:0; top:0;
     background-color: #323336;
@@ -3883,41 +3883,41 @@ a div.x4-menu-item-icon.fa-users
     width:400px;
     z-index: 2147483630; /* see relationship to value for miniprofiler */
 }
-.lk-notification, .lk-notificationnone
+.labkey-notification, .labkey-notification-none
 {
     color: #aaaaaa;
     padding: 10px 15px;
 }
-.lk-notification:hover
+.labkey-notification:hover
 {
     background-color: #555555;
 }
-.lk-notificationinbox
+.labkey-notification-inbox
 {
     font-size: 15px;
 }
-.lk-notificationtype
+.labkey-notification-type
 {
     padding: 10px 5px;
     color: #ffffff;
     border-bottom: solid #aaaaaa 1px;
     margin: 0 10px 10px 10px;
 }
-.lk-notificationclose
+.labkey-notification-close
 {
     float: right;
     height: 32px;
     border-left: solid #aaaaaa 1px;
     padding-left: 10px;
 }
-.lk-notificationtitle
+.labkey-notification-title
 {
     padding: 20px 15px;
     font-weight:bold;
     text-transform: uppercase;
     color: #ffffff;
 }
-.lk-notificationfooter
+.labkey-notification-footer
 {
     position: absolute;
     bottom: 0;
@@ -3926,12 +3926,12 @@ a div.x4-menu-item-icon.fa-users
     background-color: #323336;
     color: #126495;
 }
-.lk-notificationfooter span:hover
+.labkey-notification-footer span:hover
 {
     color: #ffffff;
     cursor: default;
 }
-.lk-notificationcreatedby
+.labkey-notification-createdby
 {
     display: inline-block;
     color: #ffffff;
@@ -3940,7 +3940,7 @@ a div.x4-menu-item-icon.fa-users
     width: 300px;
     text-overflow: ellipsis;
 }
-.lk-notificationbody
+.labkey-notification-body
 {
     color: #aaaaaa;
     cursor: default;
@@ -3950,14 +3950,14 @@ a div.x4-menu-item-icon.fa-users
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.lk-notificationbodyexpand
+.labkey-notification-body-expand
 {
     height: 100px;
     word-wrap: break-word;
     white-space: normal;
     padding-left: 40px;
 }
-.lk-notificationicon
+.labkey-notification-icon
 {
     float: left;
     font-size: 18px;
@@ -3966,22 +3966,22 @@ a div.x4-menu-item-icon.fa-users
     padding: 7px;
     background-color: #aaaaaa;
 }
-.lk-notificationtoggle
+.labkey-notification-toggle
 {
     padding-left: 1px;
 }
-.lk-notificationtimes, .lk-notificationtoggle
+.labkey-notification-times, .labkey-notification-toggle
 {
     display: block;
     font-size: 16px;
     color: #aaaaaa;
     cursor: default;
 }
-.lk-notificationtimes:hover, .lk-notificationtoggle:hover
+.labkey-notification-times:hover, .labkey-notification-toggle:hover
 {
     color: #ffffff;
 }
-.lk-notificationclearall
+.labkey-notification-clear-all
 {
     color: #126495;
     cursor: default;
@@ -3989,11 +3989,11 @@ a div.x4-menu-item-icon.fa-users
     top: 20px;
     right: 15px;
 }
-.lk-notificationclearall:hover
+.labkey-notification-clear-all:hover
 {
     color: #ffffff;
 }
-.lk-notificationpanel a:hover
+.labkey-notification-panel a:hover
 {
     color: #ffffff;
     cursor: default;

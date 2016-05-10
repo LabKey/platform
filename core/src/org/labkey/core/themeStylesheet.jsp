@@ -736,6 +736,6 @@ span.labkey-file-icon {
     color: #<%= link %>;
 }
 
-.lk-notificationclearall, .lk-notificationfooter {
+.labkey-notification-clear-all, .labkey-notification-footer {
     color: #<%= link %>;
 }
