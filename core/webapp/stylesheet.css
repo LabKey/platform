@@ -405,7 +405,7 @@ table.labkey-button-bar
     text-transform: uppercase;
     /*font-size: 10px;*/
     font-weight: bold;
-
+    letter-spacing: .5px;
 	line-height: 2.3em;
     *line-height: 1.9em;
     *height: 1%; /* hack for IE 7, so it sets its 'hasLayout' DOM property.  This
@@ -3603,7 +3603,8 @@ a.x4-menu-item-link {
     text-transform: uppercase;
     font-weight: bold;
     color: black;
-    font-size: 11px;
+    font-size: 10px;
+    letter-spacing: .5px;
 }
 
 .x4-menu-body .iconbtn-label{
