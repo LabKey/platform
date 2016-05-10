@@ -1165,6 +1165,21 @@ groupByLoop:
                 // Use the QuerySchema name, not the DbSchema name
                 return _relation.getSchema().getSchemaName();
             }
+
+            @Override
+            public String getTitleColumn()
+            {
+                // Issue #26362: perhaps there's a better way. Problem is that thru LinkedTableInfo,
+                // we're not getting to the SchemaTableInfo that accessed the metadata. We don't propagate
+                // ALL of the metadata, which perhaps would be better. But this finds the SchemaTableInfo.
+                if (null != _relation && _relation instanceof QuerySelect)
+                {
+                    QueryRelation querySelect = ((QuerySelect)_relation).getTable(FieldKey.fromString(getName()));
+                    if (null != querySelect && null != querySelect.getTableInfo())
+                        return querySelect.getTableInfo().getTitleColumn();
+                }
+                return super.getTitleColumn();
+            }
         };
 
         Collection<String> keys = getKeyColumns();
