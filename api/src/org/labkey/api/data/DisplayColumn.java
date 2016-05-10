@@ -17,12 +17,16 @@
 package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
+import org.labkey.api.analytics.AnalyticsProviderRegistry;
+import org.labkey.api.analytics.ColumnAnalyticsProvider;
 import org.labkey.api.collections.NullPreventingSet;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -41,9 +45,11 @@ import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.Format;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -72,6 +78,9 @@ public abstract class DisplayColumn extends RenderColumn
 
     private StringExpression _urlTitle = null;
     private StringExpression _urlTitleCompiled = null;
+
+    private Set<ClientDependency> _clientDependencies = new LinkedHashSet<>();
+    private List<ColumnAnalyticsProvider> _analyticsProviders = new ArrayList<>();
 
     public abstract void renderGridCellContents(RenderContext ctx, Writer out) throws IOException;
 
@@ -178,7 +187,22 @@ public abstract class DisplayColumn extends RenderColumn
 
     public @NotNull Set<ClientDependency> getClientDependencies()
     {
-        return Collections.emptySet();
+        return _clientDependencies;
+    }
+
+    protected void addClientDependencies(@NotNull Set<ClientDependency> clientDependencies)
+    {
+        _clientDependencies.addAll(clientDependencies);
+    }
+
+    public @NotNull List<ColumnAnalyticsProvider> getAnalyticsProviders()
+    {
+        return _analyticsProviders;
+    }
+
+    protected  void addAnalyticsProvider(@NotNull ColumnAnalyticsProvider analyticsProvider)
+    {
+        _analyticsProviders.add(analyticsProvider);
     }
 
     public abstract boolean isQueryColumn();
@@ -693,6 +717,8 @@ public abstract class DisplayColumn extends RenderColumn
                 Sort.SortField sortField = null;
                 boolean primarySort = false;
                 boolean isRemoveableSort = false;
+                boolean colIsNumeric = getColumnInfo() != null && getColumnInfo().isNumericType();
+
                 if (sort != null)
                 {
                     sortField = getSortColumn(sort);
@@ -702,6 +728,7 @@ public abstract class DisplayColumn extends RenderColumn
 
                 boolean selected = sortField != null && sortField.getSortDirection() == Sort.SortDirection.ASC;
                 NavTree asc = new NavTree("Sort Ascending");
+                asc.setImageCls(colIsNumeric ? "fa fa-sort-numeric-asc" : "fa fa-sort-alpha-asc");
                 asc.setScript(getSortHandler(ctx, Sort.SortDirection.ASC));
                 asc.setSelected(selected);
                 asc.setDisabled(primarySort && selected);
@@ -709,6 +736,7 @@ public abstract class DisplayColumn extends RenderColumn
 
                 selected = sortField != null && sortField.getSortDirection() == Sort.SortDirection.DESC;
                 NavTree desc = new NavTree("Sort Descending");
+                desc.setImageCls(colIsNumeric ? "fa fa-sort-numeric-desc" : "fa fa-sort-alpha-desc");
                 desc.setScript(getSortHandler(ctx, Sort.SortDirection.DESC));
                 desc.setSelected(selected);
                 desc.setDisabled(primarySort && selected);
@@ -729,6 +757,7 @@ public abstract class DisplayColumn extends RenderColumn
                 // Give a harmless URL to prevent an Ext event handling problem that causes the page to navigate to Ext's
                 // default URL, #. See https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=11925
                 NavTree filterItem = new NavTree("Filter...");
+                filterItem.setImageCls("fa fa-filter");
                 filterItem.setId(baseId + ":filter");//PageFlowUtil.filter(baseId + ":filter"));
                 filterItem.setScript(getFilterOnClick(ctx));
                 navtree.addChild(filterItem);
@@ -740,16 +769,65 @@ public abstract class DisplayColumn extends RenderColumn
                 navtree.addChild(clearFilterItem);
             }
 
-            NavTree chartItem = GenericChartReport.getQuickChartItem(rgn.getName(), ctx.getViewContext(), 
-                    rgn.getDisplayColumns(), getColumnInfo(), rgn.getSettings());
-
-            if (chartItem != null)
+            if (AppProps.getInstance().isExperimentalFeatureEnabled(AnalyticsProviderRegistry.EXPERIMENTAL_ANALYTICS_PROVIDER))
             {
-                if (navtree.hasChildren())
-                    navtree.addSeparator();
+                boolean disableAnalytics = BooleanUtils.toBoolean(ctx.getViewContext().getActionURL().getParameter(rgn.getName() + ".disableAnalytics"));
+                if (!disableAnalytics && !getAnalyticsProviders().isEmpty())
+                {
+                    int counter = 0;
+                    boolean toAddSeparator = true;
 
-                chartItem.setId(baseId + ":quick-chart");
-                navtree.addChild(chartItem);
+                    for (ColumnAnalyticsProvider analyticsProvider : getAnalyticsProviders())
+                    {
+                        ActionURL providerUrl = analyticsProvider.getActionURL(ctx, rgn.getSettings(), getColumnInfo());
+                        String onClickScript = analyticsProvider.getScript(ctx, rgn.getSettings(), getColumnInfo());
+                        if (providerUrl != null || onClickScript != null)
+                        {
+                            if (toAddSeparator && navtree.hasChildren())
+                            {
+                                navtree.addSeparator();
+                                toAddSeparator = false;
+                            }
+
+                            NavTree item = new NavTree();
+                            item.setId(baseId + ":analytics-" + counter++);
+                            item.setText(analyticsProvider.getName());
+                            item.setImageCls(analyticsProvider.getIconCls(ctx, rgn.getSettings(), getColumnInfo()));
+                            if (providerUrl != null)
+                                item.setHref(providerUrl.getLocalURIString());
+                            if (onClickScript != null)
+                                item.setScript(onClickScript);
+
+                            if (analyticsProvider.getGroupingHeader() != null)
+                            {
+                                NavTree subtree = navtree.findSubtree(analyticsProvider.getGroupingHeader());
+                                if (subtree == null)
+                                {
+                                    subtree = navtree.addChild(analyticsProvider.getGroupingHeader());
+                                    subtree.setImageCls(analyticsProvider.getGroupingHeaderIconCls());
+                                }
+                                subtree.addChild(item);
+                            }
+                            else
+                            {
+                                navtree.addChild(item);
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                NavTree chartItem = GenericChartReport.getQuickChartItem(rgn.getName(), ctx.getViewContext(),
+                        rgn.getDisplayColumns(), getColumnInfo(), rgn.getSettings());
+                if (chartItem != null)
+                {
+                    if (navtree.hasChildren())
+                        navtree.addSeparator();
+
+                    chartItem.setId(baseId + ":quick-chart");
+                    navtree.addChild(chartItem);
+                }
             }
         }
         return navtree;

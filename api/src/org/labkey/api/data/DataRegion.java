@@ -1429,7 +1429,7 @@ public class DataRegion extends AbstractDataRegion
                     List<Aggregate.Result> result = null;
                     if (col != null)
                     {
-                        result = _aggregateResults.get(renderer.getColumnInfo().getName());
+                        result = _aggregateResults.get(renderer.getColumnInfo().getFieldKey().toString());
                         if (result == null)
                             _aggregateResults.get(renderer.getColumnInfo().getAlias());
                     }
@@ -1457,14 +1457,24 @@ public class DataRegion extends AbstractDataRegion
                             if (type.isLegal(inputType))
                             {
                                 if (r.getValue() == null)
+                                {
                                     out.write("&lt;none&gt;");
+                                }
                                 else if (formatter != null &&
                                         (inputType == returnType ||
                                                 (inputType.isInteger() && returnType.isInteger()) ||
                                                 (inputType.isReal() && returnType.isReal())))
+                                {
                                     out.write(formatter.format(r.getValue()));
+                                }
+                                else if (inputType.isNumeric())
+                                {
+                                    out.write(Formats.fv3.format(r.getValue()));
+                                }
                                 else
+                                {
                                     out.write(r.getValue().toString());
+                                }
                             }
                             else
                             {

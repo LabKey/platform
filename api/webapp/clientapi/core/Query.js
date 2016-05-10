@@ -1078,16 +1078,19 @@ LABKEY.Query = new function()
             ];
 
             switch(jsonType){
-                case 'boolean':
                 case 'int':
                 case 'float':
-                case 'date':
                     aggregates.push(LABKEY.AggregateTypes.SUM);
                     aggregates.push(LABKEY.AggregateTypes.AVG);
                     aggregates.push(LABKEY.AggregateTypes.MIN);
                     aggregates.push(LABKEY.AggregateTypes.MAX);
                     break;
+                case 'date':
+                    aggregates.push(LABKEY.AggregateTypes.MIN);
+                    aggregates.push(LABKEY.AggregateTypes.MAX);
+                    break;
                 case 'string':
+                case 'boolean':
                     break;
             }
 

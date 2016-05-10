@@ -69,7 +69,9 @@ public class RenderContext implements Map<String, Object>, Serializable
     private ShowRows _showRows = ShowRows.PAGINATED;
     private List<String> _recordSelectorValueColumns;
     private CustomView _view;
+
     private List<Aggregate> _aggregates;
+    private Map<FieldKey, List<Aggregate>> _aggregatesByFieldKey;
 
     private Results _rs;
 //    private Map<FieldKey, ColumnInfo> _fieldMap;
@@ -174,9 +176,28 @@ public class RenderContext implements Map<String, Object>, Serializable
         return _aggregates;
     }
 
+    public List<Aggregate> getAggregatesByFieldKey(FieldKey fieldKey)
+    {
+        if (fieldKey != null && _aggregatesByFieldKey != null && _aggregatesByFieldKey.containsKey(fieldKey))
+        {
+            return _aggregatesByFieldKey.get(fieldKey);
+        }
+
+        return Collections.emptyList();
+    }
+
     public void setBaseAggregates(List<Aggregate> aggregates)
     {
         _aggregates = aggregates;
+
+        _aggregatesByFieldKey = new HashMap<>();
+        for (Aggregate aggregate : aggregates)
+        {
+            if (!_aggregatesByFieldKey.containsKey(aggregate.getFieldKey()))
+                _aggregatesByFieldKey.put(aggregate.getFieldKey(), new ArrayList<>());
+
+            _aggregatesByFieldKey.get(aggregate.getFieldKey()).add(aggregate);
+        }
     }
 
     public Results getResults()

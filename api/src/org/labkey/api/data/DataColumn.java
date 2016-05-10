@@ -21,6 +21,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.analytics.AnalyticsProviderRegistry;
+import org.labkey.api.analytics.ColumnAnalyticsProvider;
 import org.labkey.api.collections.NamedObject;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.exp.property.IPropertyValidator;
@@ -28,6 +30,8 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -105,8 +109,21 @@ public class DataColumn extends DisplayColumn
         _caption = StringExpressionFactory.create(_boundColumn.getLabel());
         _editable = !_boundColumn.isReadOnly() && _boundColumn.isUserEditable();
         _textAlign = _displayColumn.getTextAlign();
-    }
 
+        // get the applicable ColumnAnalyticsProviders
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(AnalyticsProviderRegistry.EXPERIMENTAL_ANALYTICS_PROVIDER))
+        {
+            AnalyticsProviderRegistry analyticsProviderRegistry = ServiceRegistry.get().getService(AnalyticsProviderRegistry.class);
+            if (analyticsProviderRegistry != null)
+            {
+                for (ColumnAnalyticsProvider columnAnalyticsProvider : analyticsProviderRegistry.getColumnAnalyticsProviders(_boundColumn))
+                {
+                    addAnalyticsProvider(columnAnalyticsProvider);
+                    addClientDependencies(columnAnalyticsProvider.getClientDependencies());
+                }
+            }
+        }
+    }
 
     protected ColumnInfo getDisplayField(@NotNull ColumnInfo col, boolean withLookups)
     {

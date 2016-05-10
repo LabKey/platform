@@ -185,6 +185,8 @@ if (!LABKEY.DataRegions) {
 
                 quickChartDisabled: false,
 
+                disableAnalytics: false,
+
                 removeableContainerFilter: undefined,
 
                 removeableFilters: undefined,
@@ -2703,6 +2705,10 @@ if (!LABKEY.DataRegions) {
 
         if (region.quickChartDisabled) {
             params[name + '.quickChartDisabled'] = region.quickChartDisabled;
+        }
+
+        if (region.disableAnalytics) {
+            params[name + '.disableAnalytics'] = region.disableAnalytics;
         }
 
         //

@@ -559,7 +559,7 @@ public class NavTree implements Collapsible
         if (StringUtils.isNotEmpty(getDescription()))
             sb.append(",tooltip:").append(PageFlowUtil.qh(getDescription()));
         if (isSelected())
-            sb.append(",checked:true");
+            sb.append(",iconCls:'fa fa-check-square-o'");
         if (null != getImageCls())
             sb.append(",iconCls:").append(PageFlowUtil.qh(getImageCls()));
         else if (null != getImageSrc())
