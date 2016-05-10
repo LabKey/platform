@@ -25,6 +25,7 @@ import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.admin.sitevalidation.SiteValidationService;
+import org.labkey.api.analytics.AnalyticsProviderRegistry;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.ClientApiAuditProvider;
@@ -47,7 +48,6 @@ import org.labkey.api.etl.RemoveDuplicatesDataIterator;
 import org.labkey.api.etl.ResultSetDataIterator;
 import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.etl.StatementDataIterator;
-import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.iterator.MarkableIterator;
@@ -161,6 +161,7 @@ import org.labkey.core.admin.writer.RoleAssignmentsWriterFactory;
 import org.labkey.core.admin.writer.SearchSettingsWriterFactory;
 import org.labkey.core.admin.writer.SecurityGroupWriterFactory;
 import org.labkey.core.analytics.AnalyticsController;
+import org.labkey.core.analytics.AnalyticsProviderRegistryImpl;
 import org.labkey.core.analytics.AnalyticsServiceImpl;
 import org.labkey.core.attachment.AttachmentServiceImpl;
 import org.labkey.core.dialect.PostgreSqlDialectFactory;
@@ -286,6 +287,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ServiceRegistry.get().registerService(StatsService.class, new StatsServiceImpl());
         AnalyticsServiceImpl.register();
         ServiceRegistry.get().registerService(SiteValidationService.class, new SiteValidationServiceImpl());
+        ServiceRegistry.get().registerService(AnalyticsProviderRegistry.class, new AnalyticsProviderRegistryImpl());
 
         WebdavService.get().setResolver(ModuleStaticResolverImpl.get());
 
@@ -320,6 +322,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "This feature will combine the Navigation of Projects and Folders into one drop-down.", false);
         AdminConsole.addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATIONMENU, "Notifications Menu",
                 "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false);
+        AdminConsole.addExperimentalFeatureFlag(AnalyticsProviderRegistry.EXPERIMENTAL_ANALYTICS_PROVIDER, "Analytics Provider Registry",
+                "This feature allows modules to register column based or query based analytics providers.", false);
 
         // authentication provider implementations
         AuthenticationManager.registerProvider(new LdapAuthenticationProvider(), Priority.High);

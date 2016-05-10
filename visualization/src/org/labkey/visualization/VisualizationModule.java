@@ -17,6 +17,7 @@
 package org.labkey.visualization;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.analytics.AnalyticsProviderRegistry;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
@@ -32,6 +33,7 @@ import org.labkey.api.visualization.GenericChartReportDescriptor;
 import org.labkey.api.visualization.TimeChartReportDescriptor;
 import org.labkey.api.visualization.VisualizationService;
 import org.labkey.visualization.report.GenericChartReportImpl;
+import org.labkey.visualization.report.QuickChartAnalyticsProvider;
 import org.labkey.visualization.report.TimeChartReportImpl;
 import org.labkey.visualization.report.VisualizationUIProvider;
 import org.labkey.visualization.sql.VisualizationCDSGenerator;
@@ -118,6 +120,11 @@ public class VisualizationModule extends DefaultModule
     @Override
     public void doStartup(ModuleContext moduleContext)
     {
+        AnalyticsProviderRegistry analyticsProviderRegistry = ServiceRegistry.get().getService(AnalyticsProviderRegistry.class);
+        if (null != analyticsProviderRegistry)
+        {
+            analyticsProviderRegistry.registerProvider(new QuickChartAnalyticsProvider());
+        }
     }
 
 

@@ -18,6 +18,7 @@ package org.labkey.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.FolderSerializationRegistry;
+import org.labkey.api.analytics.AnalyticsProviderRegistry;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
@@ -72,6 +73,11 @@ import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.query.analytics.AggregatesAverageAnalyticsProvider;
+import org.labkey.query.analytics.AggregatesCountAnalyticsProvider;
+import org.labkey.query.analytics.AggregatesMaxAnalyticsProvider;
+import org.labkey.query.analytics.AggregatesMinAnalyticsProvider;
+import org.labkey.query.analytics.AggregatesSumAnalyticsProvider;
 import org.labkey.query.audit.QueryAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
 import org.labkey.query.controllers.OlapController;
@@ -278,6 +284,16 @@ public class QueryModule extends DefaultModule
                     adminNavTree.addChild(new NavTree("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(container)));
             }
         });
+
+        AnalyticsProviderRegistry analyticsProviderRegistry = ServiceRegistry.get().getService(AnalyticsProviderRegistry.class);
+        if (null != analyticsProviderRegistry)
+        {
+            analyticsProviderRegistry.registerProvider(new AggregatesCountAnalyticsProvider());
+            analyticsProviderRegistry.registerProvider(new AggregatesSumAnalyticsProvider());
+            analyticsProviderRegistry.registerProvider(new AggregatesAverageAnalyticsProvider());
+            analyticsProviderRegistry.registerProvider(new AggregatesMinAnalyticsProvider());
+            analyticsProviderRegistry.registerProvider(new AggregatesMaxAnalyticsProvider());
+        }
     }
 
     @Override

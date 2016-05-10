@@ -1375,6 +1375,10 @@ img.labkey-grid-filter-icon
     filter:alpha(opacity=100);
 }
 
+.labkey-customview-item .item-aggregate {
+    float: right;
+}
+
 .labkey-customview-filter-item .labkey-tool-pin,
 .labkey-customview-filter-item .labkey-tool-unpin,
 .labkey-customview-filter-item .labkey-tool-close,
