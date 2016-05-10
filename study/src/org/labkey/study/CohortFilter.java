@@ -36,15 +36,14 @@ public interface CohortFilter
 {
     Type getType();
     ActionURL addURLParameters(Study study, ActionURL url, @Nullable String dataregion);
-//    ActionURL addURLParameters(ActionURL url);
     String getDescription(Container container, User user);
     void addFilterCondition(TableInfo table, Container container, SimpleFilter filter);
     String getCacheKey();
 
-    @Deprecated // Callers need to handle multiple cohorts case
+    @Deprecated /** Callers need to handle multiple cohorts case */
     CohortImpl getCohort(Container container, User user);
 
-    @Deprecated // Callers need to handle multiple cohorts case
+    @Deprecated /** Callers need to handle multiple cohorts case */
     int getCohortId();
 
     public enum Type

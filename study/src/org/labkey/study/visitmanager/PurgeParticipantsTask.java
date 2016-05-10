@@ -30,8 +30,9 @@ import java.util.Set;
 import java.util.TimerTask;
 
 /**
-* Created by gktaylor on 4/29/14.
-*/
+ * Background task to remove participants that are no longer referenced in datasets or specimen data.
+ * Created by gktaylor on 4/29/14.
+ */
 public class PurgeParticipantsTask extends TimerTask
 {
     private Map<Container, Set<String>> _potentiallyDeletedParticipants;

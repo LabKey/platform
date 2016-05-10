@@ -78,8 +78,11 @@ import java.util.TimerTask;
 import java.util.TreeMap;
 
 /**
+ * Handles the bookkeeping for some basic study tables based on inserts, updates, and deletes
+ * on other tables.
+ *
  * User: brittp
- * Created: Feb 29, 2008 11:23:08 AM
+ * Created: Feb 29, 2008
  */
 public abstract class VisitManager
 {

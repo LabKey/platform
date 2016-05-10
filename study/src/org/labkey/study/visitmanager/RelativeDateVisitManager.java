@@ -49,7 +49,8 @@ import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.Date;
 
-/** 
+/**
+ * Manages bookkeeping for date-based studies, lumping dates into timepoints as defined for the study.
  * User: brittp
  * Created: Feb 29, 2008 11:23:37 AM
  */

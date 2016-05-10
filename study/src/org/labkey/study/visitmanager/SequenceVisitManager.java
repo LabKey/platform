@@ -31,6 +31,7 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.security.User;
+import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
 import org.labkey.study.CohortFilter;
@@ -42,8 +43,6 @@ import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.DatasetTableImpl;
-import org.labkey.api.study.DataspaceContainerFilter;
-import org.labkey.study.query.DataspaceQuerySchema;
 import org.labkey.study.query.ParticipantGroupFilterClause;
 import org.labkey.study.query.StudyQuerySchema;
 
@@ -55,6 +54,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
+ * Manages bookkeeping for studies using assigned visit identifiers
  * User: brittp
  * Created: Feb 29, 2008 11:23:56 AM
  */
@@ -76,9 +76,8 @@ public class SequenceVisitManager extends VisitManager
         if (_study.isDataspaceStudy())
         {
             StudyQuerySchema querySchema = (StudyQuerySchema)DefaultSchema.get(user, _study.getContainer(), "study");
-            DataspaceQuerySchema dataspaceSchema = (DataspaceQuerySchema)querySchema;
 
-            studyData = new FilteredTable(studyData, querySchema, new DataspaceContainerFilter(user, _study));
+            studyData = new FilteredTable<>(studyData, querySchema, new DataspaceContainerFilter(user, _study));
 
             ParticipantGroup group = querySchema.getSessionParticipantGroup();
             if (null != group)
@@ -168,11 +167,11 @@ public class SequenceVisitManager extends VisitManager
     }
 
 
-    /*
-    // TODO: this is a peformance HACK
-    // TODO: we should be incrementally updating ParticipantVisit, rather than trying to speed up resync!
-    // TDOO: see 19867: Speed issues when inserting into study datasets
-    */
+    /**
+     * TODO: this is a performance HACK
+     * TODO: we should be incrementally updating ParticipantVisit, rather than trying to speed up resync!
+     * TDOO: see 19867: Speed issues when inserting into study datasets
+     */
     protected void updateParticipantVisitTableAfterInsert(@Nullable User user, DatasetDefinition ds, @Nullable Set<String> potentiallyAddedParticipants, @Nullable Logger logger)
     {
         info(logger, "SequenceVisitManager: updateParticipantVisitTableAfterInsert");

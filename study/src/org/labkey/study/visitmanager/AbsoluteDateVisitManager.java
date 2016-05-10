@@ -27,14 +27,10 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.VisitImpl;
-import org.labkey.study.model.VisitMapKey;
 import org.labkey.study.query.DatasetTableImpl;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-
 /**
+ * Avoid bookkeeping on study-managed tables for continuous-style studies, like EHRs.
  * User: kevink
  * Date: Dec 30, 2009 12:13:57 PM
  */
