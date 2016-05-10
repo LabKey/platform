@@ -90,7 +90,7 @@
     <%
         }
 
-        boolean showNotifications = AppProps.getInstance().isExperimentalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATIONMENU);
+        boolean showNotifications = AppProps.getInstance().isExperimentalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU);
         if (showNotifications)
         {
             HttpView notificationMenu = NotificationMenuView.createView(currentContext);

@@ -2021,7 +2021,7 @@ public class PageFlowUtil
         json.put("serverName", StringUtils.isNotEmpty(serverName) ? serverName : "Labkey Server");
         json.put("versionString", appProps.getLabKeyVersionString());
 
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATIONMENU))
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU))
             json.put("notifications", getNotificationJson(user));
 
         if (request != null)

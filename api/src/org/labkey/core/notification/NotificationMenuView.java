@@ -30,7 +30,7 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class NotificationMenuView extends JspView<Object>
 {
-    public static final String EXPERIMENTAL_NOTIFICATIONMENU = "experimental-notificationmenu";
+    public static final String EXPERIMENTAL_NOTIFICATION_MENU = "experimental-notificationmenu";
 
     public static HttpView createView(ViewContext context)
     {
@@ -53,7 +53,7 @@ public class NotificationMenuView extends JspView<Object>
     @Override
     protected void renderView(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
-        if (!AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_NOTIFICATIONMENU))
+        if (!AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_NOTIFICATION_MENU))
             return;
         if (getViewContext().getUser().isGuest())
             return;

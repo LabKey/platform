@@ -7,8 +7,7 @@
      */
     LABKEY.Notification = new function ()
     {
-        var NOTIF_COUNT_ID = null, NOTIF_COUNT_EL = null,
-            NOTIF_PANEL_ID = null, NOTIF_PANEL_EL = null;
+        var NOTIFICATION_COUNT_EL = null, NOTIFICATION_PANEL_EL = null;
 
         /**
          * Set the dom element Ids for the notification count and panel
@@ -20,13 +19,12 @@
         {
             if (countId)
             {
-                NOTIF_COUNT_ID = countId;
-                NOTIF_COUNT_EL = $('#' + NOTIF_COUNT_ID);
+                NOTIFICATION_COUNT_EL = $('#' + countId);
             }
+
             if (panelId)
             {
-                NOTIF_PANEL_ID = panelId;
-                NOTIF_PANEL_EL = $('#' + NOTIF_PANEL_ID);
+                NOTIFICATION_PANEL_EL = $('#' + panelId);
             }
         };
 
@@ -36,8 +34,7 @@
          */
         var updateUnreadCount = function ()
         {
-            // slide open the notification panel and bind the click listener after the slide animation has completed
-            if (NOTIF_COUNT_EL && LABKEY.notifications)
+            if (NOTIFICATION_COUNT_EL && LABKEY.notifications)
             {
                 var count = 0;
                 for (var id in LABKEY.notifications)
@@ -48,7 +45,7 @@
                         count++;
                     }
                 }
-                NOTIF_COUNT_EL.html(count);
+                NOTIFICATION_COUNT_EL.html(count);
             }
         };
 
@@ -59,9 +56,9 @@
         var showPanel = function ()
         {
             // slide open the notification panel and bind the click listener after the slide animation has completed
-            if (NOTIF_PANEL_EL)
+            if (NOTIFICATION_PANEL_EL)
             {
-                NOTIF_PANEL_EL.slideDown(250, _addCheckHandlers);
+                NOTIFICATION_PANEL_EL.slideDown(250, _addCheckHandlers);
             }
         };
 
@@ -72,9 +69,9 @@
         var hidePanel = function ()
         {
             // slide out the notification panel and unbind the click listener
-            if (NOTIF_PANEL_EL)
+            if (NOTIFICATION_PANEL_EL)
             {
-                NOTIF_PANEL_EL.slideUp(250, _removeCheckHandlers);
+                NOTIFICATION_PANEL_EL.slideUp(250, _removeCheckHandlers);
             }
         };
 
@@ -90,13 +87,13 @@
                 var el = $(domEl);
                 if (el.hasClass('fa-angle-down'))
                 {
-                    el.closest('.lk-notification').find('.lk-notificationbody').addClass('lk-notificationbodyexpand');
+                    el.closest('.labkey-notification').find('.labkey-notification-body').addClass('labkey-notification-body-expand');
                     el.removeClass('fa-angle-down');
                     el.addClass('fa-angle-up');
                 }
                 else
                 {
-                    el.closest('.lk-notification').find('.lk-notificationbody').removeClass('lk-notificationbodyexpand');
+                    el.closest('.labkey-notification').find('.labkey-notification-body').removeClass('labkey-notification-body-expand');
                     el.removeClass('fa-angle-up');
                     el.addClass('fa-angle-down');
                 }
@@ -120,17 +117,22 @@
                     {
                         if (response.success && response.numUpdated == 1)
                         {
-                            if (NOTIF_PANEL_EL && id && LABKEY.notifications && LABKEY.notifications[id])
+                            if (NOTIFICATION_PANEL_EL && id && LABKEY.notifications && LABKEY.notifications[id])
                             {
                                 LABKEY.notifications[id].ReadOn = new Date();
-                                NOTIF_PANEL_EL.find('#notification-' + id).slideUp(250, _updateGroupDisplay);
+                                NOTIFICATION_PANEL_EL.find('#notification-' + id).slideUp(250, _updateGroupDisplay);
                                 updateUnreadCount();
                             }
 
                             if (callback)
                                 callback.call(this, id);
                         }
-                    })
+                    }),
+                    failure: function(response)
+                    {
+                        var responseText = LABKEY.Utils.decode(response.responseText);
+                        LABKEY.Utils.alert('Error', responseText.exception);
+                    }
                 });
             }
         };
@@ -141,7 +143,7 @@
          */
         var clearAllUnread = function ()
         {
-            if (NOTIF_PANEL_EL && LABKEY.notifications)
+            if (NOTIFICATION_PANEL_EL && LABKEY.notifications)
             {
                 var rowIds = [];
                 for (var id in LABKEY.notifications)
@@ -166,9 +168,14 @@
                                     LABKEY.notifications[rowIds[i]].ReadOn = new Date();
                                 updateUnreadCount();
 
-                                NOTIF_PANEL_EL.find('.lk-notificationarea').slideUp(100, _showNotificationsNone);
+                                NOTIFICATION_PANEL_EL.find('.labkey-notification-area').slideUp(100, _showNotificationsNone);
                             }
-                        })
+                        }),
+                        failure: function(response)
+                        {
+                            var responseText = LABKEY.Utils.decode(response.responseText);
+                            LABKEY.Utils.alert('Error', responseText.exception);
+                        }
                     });
                 }
             }
@@ -184,9 +191,9 @@
         {
             if (id && LABKEY.notifications && LABKEY.notifications[id])
             {
-                if (!event.target.classList.contains("lk-notificationtimes")
-                    && !event.target.classList.contains("lk-notificationtoggle")
-                    && !event.target.classList.contains("lk-notificationclose"))
+                if (!event.target.classList.contains("labkey-notification-times")
+                    && !event.target.classList.contains("labkey-notification-toggle")
+                    && !event.target.classList.contains("labkey-notification-close"))
                 {
                     window.location = LABKEY.notifications[id].ActionLinkUrl;
                 }
@@ -217,7 +224,7 @@
         var _checkBodyClick = function(event)
         {
             // close if the click happened outside of the notification panel
-            if (NOTIF_PANEL_EL && event.target.id != NOTIF_PANEL_EL.attr('id') && !NOTIF_PANEL_EL.has(event.target).length)
+            if (NOTIFICATION_PANEL_EL && event.target.id != NOTIFICATION_PANEL_EL.attr('id') && !NOTIFICATION_PANEL_EL.has(event.target).length)
             {
                 hidePanel();
             }
@@ -226,7 +233,7 @@
         var _checkKeyUp = function(event)
         {
             // close if the ESC key is pressed
-            if (NOTIF_PANEL_EL && event.keyCode == 27)
+            if (NOTIFICATION_PANEL_EL && event.keyCode == 27)
             {
                 hidePanel();
             }
@@ -234,7 +241,7 @@
 
         var _updateGroupDisplay = function()
         {
-            if (NOTIF_PANEL_EL && LABKEY.notifications.grouping)
+            if (NOTIFICATION_PANEL_EL && LABKEY.notifications.grouping)
             {
                 var hasAnyGroup = false;
 
@@ -256,7 +263,7 @@
 
                         if (!hasUnread)
                         {
-                            var notificationGroupDiv = NOTIF_PANEL_EL.find('#notificationtype-' + group);
+                            var notificationGroupDiv = NOTIFICATION_PANEL_EL.find('#notificationtype-' + group);
                             if (notificationGroupDiv)
                                 notificationGroupDiv.addClass('labkey-hidden');
                         }
@@ -274,13 +281,13 @@
 
         var _showNotificationsNone = function()
         {
-            if (NOTIF_PANEL_EL)
+            if (NOTIFICATION_PANEL_EL)
             {
-                var el = NOTIF_PANEL_EL.find('.lk-notificationnone');
+                var el = NOTIFICATION_PANEL_EL.find('.labkey-notification-none');
                 if (el)
                     el.removeClass('labkey-hidden');
 
-                el = NOTIF_PANEL_EL.find('.lk-notificationclearall');
+                el = NOTIFICATION_PANEL_EL.find('.labkey-notification-clear-all');
                 if (el)
                     el.addClass('labkey-hidden');
             }
