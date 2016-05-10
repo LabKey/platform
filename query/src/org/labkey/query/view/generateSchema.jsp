@@ -212,7 +212,7 @@
                     {
                         text: 'Cancel',
                         handler: function() {
-                            window.location = '<%=h(bean.getReturnUrl().toString())%>';
+                            window.location = '<%=h(bean.getReturnUrl())%>';
                         }
                     }
                 ]

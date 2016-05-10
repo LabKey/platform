@@ -139,6 +139,7 @@ import javax.servlet.http.HttpSession;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -6175,34 +6176,42 @@ public class QueryController extends SpringActionController
                 return false;
             }
 
-            for (TableInfo table : tables)
+            try
             {
-                if (DatabaseTableType.TABLE.equals(table.getTableType()))
+                for (TableInfo table : tables)
                 {
-                    String tableName = table.getName();
-                    try (Results results = new TableSelector(table).getResults(false))
+                    if (DatabaseTableType.TABLE.equals(table.getTableType()))
                     {
-                        if (results.isBeforeFirst()) // only export tables with data
+                        String tableName = table.getName();
+                        try (Results results = new TableSelector(table).getResults(false))
                         {
-                            File outputFile = new File(form.getOutputDir(), tableName + ".tsv.gz");
-                            GZIPOutputStream outputStream = new GZIPOutputStream(new BufferedOutputStream(new FileOutputStream(outputFile), 64 * 1024), 64 * 1024);
-                            try (TSVGridWriter tsv = new TSVGridWriter(results))
+                            if (results.isBeforeFirst()) // only export tables with data
                             {
-                                tsv.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey);
-                                tsv.setApplyFormats(false);
-                                tsv.setPreserveEmptyString(true); // TODO: Make that an option on export?
-                                tsv.write(outputStream);
-                            }
+                                File outputFile = new File(form.getOutputDir(), tableName + ".tsv.gz");
+                                GZIPOutputStream outputStream = new GZIPOutputStream(new BufferedOutputStream(new FileOutputStream(outputFile), 64 * 1024), 64 * 1024);
+                                try (TSVGridWriter tsv = new TSVGridWriter(results))
+                                {
+                                    tsv.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey);
+                                    tsv.setApplyFormats(false);
+                                    tsv.setPreserveEmptyString(true); // TODO: Make that an option on export?
+                                    tsv.write(outputStream);
+                                }
 
-                            importScript.append(sourceSchema.getSqlDialect().execute(DbSchema.get("core", DbSchemaType.Module), "bulkImport", "'" + targetSchema + "', '" + tableName + "', '" + pathInScript + outputFile.getName() + "'")).append(";\n");
+                                importScript.append(sourceSchema.getSqlDialect().execute(DbSchema.get("core", DbSchemaType.Module), "bulkImport", "'" + targetSchema + "', '" + tableName + "', '" + pathInScript + outputFile.getName() + "'")).append(";\n");
+                            }
                         }
                     }
                 }
-            }
 
-            PrintWriter writer = new PrintWriter( new File(form.getOutputDir(), form.getSourceSchema()+"_updateScript.sql"), StandardCharsets.UTF_8.name());
-            writer.print(importScript.toString());
-            writer.close();
+                PrintWriter writer = new PrintWriter(new File(form.getOutputDir(), form.getSourceSchema() + "_updateScript.sql"), StandardCharsets.UTF_8.name());
+                writer.print(importScript.toString());
+                writer.close();
+            }
+            catch (FileNotFoundException e)
+            {
+                errors.reject(ERROR_MSG, e.getMessage());
+                return false;
+            }
 
             return true;
         }
