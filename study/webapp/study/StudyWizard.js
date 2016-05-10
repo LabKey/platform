@@ -341,7 +341,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         this.sideBar = new Ext.Panel({
             name: 'sidebar',
-            width: 195,
+            width: 210,
             border: false,
             cls: 'extContainer',
             tpl: this.sideBarTemplate,
