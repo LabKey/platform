@@ -33,6 +33,7 @@ import org.labkey.api.data.Results;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.User;
@@ -199,6 +200,18 @@ abstract public class QueryService
     abstract public Collection<TableType> findMetadataOverride(UserSchema schema, String tableName, boolean customQuery, boolean allModules, @NotNull Collection<QueryException> errors, @Nullable Path dir);
 
     abstract public TableType parseMetadata(String metadataXML, Collection<QueryException> errors);
+
+    /**
+     * Create a TableSelector for a LabKey sql query string.
+     * @param schema The query schema context used to parse the sql query in.
+     * @param sql The LabKey query string.
+     * @return a TableSelector
+     */
+    @NotNull
+    abstract public TableSelector selector(@NotNull QuerySchema schema, @NotNull String sql);
+
+    @NotNull
+    abstract public TableSelector selector(@NotNull QuerySchema schema, @NotNull String sql, Set<String> columnNames, @Nullable Filter filter, @Nullable Sort sort);
 
 	public ResultSet select(QuerySchema schema, String sql) throws SQLException
     {

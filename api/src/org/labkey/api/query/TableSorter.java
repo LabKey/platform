@@ -132,7 +132,7 @@ public final class TableSorter
         Set<TableInfo> visited = new HashSet<>(tables.size());
         List<TableInfo> sorted = new ArrayList<>(tables.size());
         for (String tableName : startTables)
-            depthFirstWalk(schemaName, tables, tables.get(tableName), visited, new LinkedList<TableInfo>(), sorted);
+            depthFirstWalk(schemaName, tables, tables.get(tableName), visited, new LinkedList<>(), sorted);
 
         return sorted;
     }
@@ -163,7 +163,7 @@ public final class TableSorter
             if (fk == null || fk instanceof RowIdForeignKey || fk instanceof MultiValuedForeignKey)
                 continue;
 
-            // Unforuntaely, we need to get the lookup table since some FKs don't expose .getLookupSchemaName() or .getLookupTableName()
+            // Unfortunately, we need to get the lookup table since some FKs don't expose .getLookupSchemaName() or .getLookupTableName()
             TableInfo t = null;
             try
             {
