@@ -1,8 +1,8 @@
 package org.labkey.query.analytics;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.analytics.ColumnAnalyticsProvider;
-import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.QuerySettings;
@@ -11,53 +11,36 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.template.ClientDependency;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 
-public abstract class BaseAggregatesAnalyticsProvider extends ColumnAnalyticsProvider
+public class HideColumnAnalyticsProvider extends ColumnAnalyticsProvider
 {
-    public abstract Aggregate.Type getAggregateType();
-
     @Override
     public String getName()
     {
-        return getAggregateType().getFriendlyName();
+        return "Hide Column";
     }
 
     @Override
     public String getDescription()
     {
-        return "Aggregate " + getName() + " value function to apply to a given column.";
+        return "Hide the selected column from the view.";
     }
 
     @Override
-    public String getGroupingHeader()
+    public boolean isApplicable(@NotNull ColumnInfo col)
     {
-        return "Aggregates";
+        return true;
     }
 
+    @Nullable
     @Override
     public String getIconCls(RenderContext ctx, QuerySettings settings, ColumnInfo col)
     {
-        List<Aggregate> colAggregates = ctx.getAggregatesByFieldKey(col.getFieldKey());
-        if (!colAggregates.isEmpty())
-        {
-            for (Aggregate colAggregate : colAggregates)
-            {
-                if (colAggregate.getType() == getAggregateType())
-                    return "fa fa-check-square-o";
-            }
-        }
-
-        return null;
+        return "fa fa-eye-slash";
     }
 
-    @Override
-    public String getGroupingHeaderIconCls()
-    {
-        return "fa fa-calculator";
-    }
-
+    @Nullable
     @Override
     public ActionURL getActionURL(RenderContext ctx, QuerySettings settings, ColumnInfo col)
     {
@@ -67,10 +50,9 @@ public abstract class BaseAggregatesAnalyticsProvider extends ColumnAnalyticsPro
     @Override
     public String getScript(RenderContext ctx, QuerySettings settings, ColumnInfo col)
     {
-        return "LABKEY.ColumnAnalytics.applyAggregateFromDataRegion(" +
+        return "LABKEY.ColumnAnalytics.hideColumnFromDataRegion(" +
                 PageFlowUtil.jsString(ctx.getCurrentRegion().getName()) + "," +
-                PageFlowUtil.jsString(col.getName()) + "," +
-                PageFlowUtil.jsString(getAggregateType().name()) +
+                PageFlowUtil.jsString(col.getName()) +
             ");";
     }
 

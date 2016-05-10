@@ -1379,6 +1379,7 @@ query/src/org/labkey/query/analytics/AggregatesMaxAnalyticsProvider.java -text
 query/src/org/labkey/query/analytics/AggregatesMinAnalyticsProvider.java -text
 query/src/org/labkey/query/analytics/AggregatesSumAnalyticsProvider.java -text
 query/src/org/labkey/query/analytics/BaseAggregatesAnalyticsProvider.java -text
+query/src/org/labkey/query/analytics/HideColumnAnalyticsProvider.java -text
 query/src/org/labkey/query/audit/QueryAuditProvider.java -text
 query/src/org/labkey/query/audit/QueryUpdateAuditProvider.java -text
 query/src/org/labkey/query/controllers/AbstractExternalSchemaForm.java -text
@@ -1602,7 +1603,7 @@ query/webapp/dataview/DataViewsPanel.js -text
 query/webapp/dataview/FaTreeColumn.js -text
 query/webapp/dataview/ManageNotifications.js -text
 query/webapp/dataviews.lib.xml -text
-query/webapp/query/ColumnAggregates.js -text
+query/webapp/query/ColumnAnalytics.js -text
 query/webapp/query/ExportTablePanel.js -text
 query/webapp/query/QueryEditorPanel.js -text
 query/webapp/query/browser.lib.xml -text

@@ -3,9 +3,9 @@
 {
     /**
      * @private
-     * @namespace API used by the Aggregates column analytics providers.
+     * @namespace API used by the various column analytics providers for the Query module.
      */
-    LABKEY.ColumnAggregates = new function ()
+    LABKEY.ColumnAnalytics = new function ()
     {
         /**
          * Used via BaseAggregatesAnalyticsProvider to add or remove an aggregate from the selected column in the view.
@@ -13,7 +13,7 @@
          * @param columnName
          * @param selectedAggregate
          */
-        var fromDataRegion = function(dataRegionName, columnName, selectedAggregate)
+        var applyAggregateFromDataRegion = function(dataRegionName, columnName, selectedAggregate)
         {
             var region = LABKEY.DataRegions[dataRegionName];
             if (region)
@@ -48,6 +48,33 @@
                             view,
                             colFieldKey,
                             fieldKeyAggregates
+                        );
+                    }
+                });
+            }
+        };
+
+        /**
+         * Used via HideColumnAnalyticsProvider to remove the selected column in the view.
+         * @param dataRegionName
+         * @param columnName
+         */
+        var hideColumnFromDataRegion = function(dataRegionName, columnName)
+        {
+            var region = LABKEY.DataRegions[dataRegionName];
+            if (region)
+            {
+                var regionViewName = region.viewName || "";
+                region.getQueryDetails(function(queryDetails)
+                {
+                    var view = _getViewFromQueryDetails(queryDetails, regionViewName);
+                    if (view != null)
+                    {
+                        _hideSelectedColumn(
+                            queryDetails.schemaName,
+                            queryDetails.name,
+                            view,
+                            LABKEY.FieldKey.fromString(columnName)
                         );
                     }
                 });
@@ -108,8 +135,41 @@
             });
         };
 
+        var _hideSelectedColumn = function(schemaName, queryName, customView, fieldKey)
+        {
+            var colFieldKeys = $.map(customView.columns, function(c) { return c.fieldKey; }),
+                fieldKeyIndex = colFieldKeys.indexOf(fieldKey.toString());
+
+            if (fieldKeyIndex > -1)
+            {
+                customView.columns.splice(fieldKeyIndex, 1);
+
+                LABKEY.Query.saveQueryViews({
+                    containerPath: LABKEY.container.path,
+                    schemaName: schemaName,
+                    queryName: queryName,
+                    views: [{
+                        name: customView.name,
+                        hidden: customView.hidden,
+                        columns: customView.columns,
+                        filter: customView.filter,
+                        sort: customView.sort,
+                        aggregates: customView.aggregates,
+                        shared: false,
+                        inherit: false,
+                        session: true
+                    }],
+                    scope: this,
+                    success: function(savedViewsInfo) {
+                        window.location.reload();
+                    }
+                });
+            }
+        };
+
         return {
-            fromDataRegion: fromDataRegion
+            applyAggregateFromDataRegion: applyAggregateFromDataRegion,
+            hideColumnFromDataRegion: hideColumnFromDataRegion
         };
     };
 })(jQuery);
