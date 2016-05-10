@@ -12,6 +12,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
 
     baseTitle: 'Selected Fields',
 
+    border: false,
+
     initComponent : function() {
 
         // Load aggregates from the customView.aggregates Array.
