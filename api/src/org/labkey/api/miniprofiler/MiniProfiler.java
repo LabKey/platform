@@ -36,6 +36,9 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Does some lightweight data capture about database queries and other potentially expensive work performed in the
+ * context of an HTTP request.
+ *
  * User: kevink
  */
 public class MiniProfiler

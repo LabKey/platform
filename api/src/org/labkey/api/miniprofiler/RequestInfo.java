@@ -29,6 +29,7 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
+ * Captures basic profiling data for a single HTTP request.
  * User: kevink
  */
 @JsonPropertyOrder({"id", "url", "date", "duration", "root", "objects"})

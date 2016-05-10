@@ -25,10 +25,10 @@ import org.labkey.api.view.NavTree;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
-/*
+/**
+ * Removes previously set default values.
  * User: brittp
  * Date: Jan 30, 2009
- * Time: 7:06:18 PM
  */
 
 // Any of one of these permissions is sufficient
