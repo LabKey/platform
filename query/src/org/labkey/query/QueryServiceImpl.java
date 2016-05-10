@@ -33,7 +33,31 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnHeaderType;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ColumnLogging;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.LookupColumn;
+import org.labkey.api.data.Parameter;
+import org.labkey.api.data.QueryLogging;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.ResultsImpl;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SQLGenerationException;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.gwt.client.AuditBehaviorType;
@@ -42,7 +66,29 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.QueryBasedModuleResourceCache;
 import org.labkey.api.module.QueryBasedModuleResourceCacheHandler;
-import org.labkey.api.query.*;
+import org.labkey.api.query.AliasManager;
+import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.CustomViewChangeListener;
+import org.labkey.api.query.CustomViewInfo;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.InvalidNamedSetException;
+import org.labkey.api.query.MetadataParseException;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryChangeListener;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.SchemaTreeNode;
+import org.labkey.api.query.SchemaTreeWalker;
+import org.labkey.api.query.SimpleUserSchema;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
@@ -1795,20 +1841,60 @@ public class QueryServiceImpl extends QueryService
     }
 
     @Override
-    public ResultSet select(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList, boolean cached)
-	{
-		Query q = new Query(schema);
+    @NotNull
+    public TableSelector selector(@NotNull QuerySchema schema, @NotNull String sql)
+    {
+        return new LabKeyQuerySelector(schema, sql);
+    }
+
+    @Override
+    @NotNull
+    public TableSelector selector(@NotNull QuerySchema schema, @NotNull String sql, Set<String> columnNames, @Nullable Filter filter, @Nullable Sort sort)
+    {
+        return new LabKeyQuerySelector(schema, sql, columnNames, filter, sort);
+    }
+
+    private static class LabKeyQuerySelector extends TableSelector
+    {
+        public LabKeyQuerySelector(@NotNull QuerySchema schema, @NotNull String sql)
+        {
+            super(QueryServiceImpl.get().createTable(schema, sql));
+        }
+
+        public LabKeyQuerySelector(@NotNull QuerySchema schema, @NotNull String sql, Set<String> columnNames, @Nullable Filter filter, @Nullable Sort sort)
+        {
+            super(QueryServiceImpl.get().createTable(schema, sql), columnNames, filter, sort);
+        }
+    }
+
+    private TableInfo createTable(QuerySchema schema, String sql)
+    {
+        return createTable(schema, sql, null, false);
+    }
+
+    private TableInfo createTable(QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList)
+    {
+        Query q = new Query(schema);
         q.setStrictColumnList(strictColumnList);
         q.setTableMap(tableMap);
-		q.parse(sql);
+        q.parse(sql);
 
-		if (q.getParseErrors().size() > 0)
-			throw q.getParseErrors().get(0);
+        if (q.getParseErrors().size() > 0)
+            throw q.getParseErrors().get(0);
 
-		TableInfo table = q.getTableInfo();
+        TableInfo table = q.getTableInfo();
 
-		if (q.getParseErrors().size() > 0)
-			throw q.getParseErrors().get(0);
+        if (q.getParseErrors().size() > 0)
+            throw q.getParseErrors().get(0);
+
+        return table;
+    }
+
+
+    @Override
+    public ResultSet select(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList, boolean cached)
+	{
+        TableInfo table = createTable(schema, sql, tableMap, strictColumnList);
 
         QueryLogging queryLogging = new QueryLogging();
         SQLFragment sqlf = getSelectSQL(table, null, null, null, Table.ALL_ROWS, Table.NO_OFFSET, false, queryLogging);
@@ -2529,6 +2615,25 @@ public class QueryServiceImpl extends QueryService
         }
         return result.toString();
     }
+
+
+    /*
+    public Set<ColumnInfo> getIncomingLookups(User user, Container c, TableInfo targetTable, Set<SchemaKey> schemaKeys)
+    {
+        Set<ColumnInfo> lookups = new HashSet<>();
+
+        Set<UserSchema> schemas = schemaKeys.stream().map(key -> getUserSchema(user, c, key)).collect(Collectors.toSet());
+        UserSchema schema = getUserSchema(user, c, schemaKey);
+        SchemaTreeWalker walk = new SchemaTreeWalker<ColumnInfo, Void>(true) {
+            @Override
+            public ColumnInfo visitTable(TableInfo table, Path path, Void param)
+            {
+                return super.visitTable(table, path, param);
+            }
+        };
+        Set<ColumnInfo> lookups = walk.visitTop(schemas, null);
+    }
+    */
 
     public static class TestCase extends Assert
     {
