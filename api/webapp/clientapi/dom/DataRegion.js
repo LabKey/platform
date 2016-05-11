@@ -2618,12 +2618,17 @@ if (!LABKEY.DataRegions) {
         _processButtonBar(region, json);
 
         // 10505: add non-removable sorts and filters to json (not url params).
-        if (region.filters || region.aggregates) {
+        if (region.sort || region.filters || region.aggregates) {
             json.filters = {};
 
             if (region.filters) {
                 LABKEY.Filter.appendFilterParams(json.filters, region.filters, region.name);
             }
+
+            if (region.sort) {
+                json.filters[region.dataRegionName + ".sort"] = region.sort;
+            }
+
             if (region.aggregates) {
                 LABKEY.Filter.appendAggregateParams(json.filters, region.aggregates, region.name);
             }
