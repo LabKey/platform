@@ -34,13 +34,6 @@ public class RemoveColumnAnalyticsProvider extends ColumnAnalyticsProvider
 
     @Nullable
     @Override
-    public String getIconCls(RenderContext ctx, QuerySettings settings, ColumnInfo col)
-    {
-        return "fa fa-eye-slash";
-    }
-
-    @Nullable
-    @Override
     public ActionURL getActionURL(RenderContext ctx, QuerySettings settings, ColumnInfo col)
     {
         return null;
@@ -49,7 +42,7 @@ public class RemoveColumnAnalyticsProvider extends ColumnAnalyticsProvider
     @Override
     public String getScript(RenderContext ctx, QuerySettings settings, ColumnInfo col)
     {
-        return "LABKEY.ColumnAnalytics.removeColumnFromDataRegion(" +
+        return "LABKEY.ColumnQueryAnalytics.removeColumnFromDataRegion(" +
                 PageFlowUtil.jsString(ctx.getCurrentRegion().getName()) + "," +
                 PageFlowUtil.jsString(col.getName()) +
             ");";
@@ -58,7 +51,7 @@ public class RemoveColumnAnalyticsProvider extends ColumnAnalyticsProvider
     @Override
     public void addClientDependencies(Set<ClientDependency> dependencies)
     {
-        dependencies.add(ClientDependency.fromPath("query/ColumnAnalytics.js"));
+        dependencies.add(ClientDependency.fromPath("query/ColumnQueryAnalytics.js"));
     }
 
     @Override

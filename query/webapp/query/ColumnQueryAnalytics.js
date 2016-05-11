@@ -5,7 +5,7 @@
      * @private
      * @namespace API used by the various column analytics providers for the Query module.
      */
-    LABKEY.ColumnAnalytics = new function ()
+    LABKEY.ColumnQueryAnalytics = new function ()
     {
         /**
          * Used via BaseAggregatesAnalyticsProvider to add or remove an aggregate from the selected column in the view.

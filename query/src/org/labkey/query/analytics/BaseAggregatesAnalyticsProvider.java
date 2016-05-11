@@ -67,7 +67,7 @@ public abstract class BaseAggregatesAnalyticsProvider extends ColumnAnalyticsPro
     @Override
     public String getScript(RenderContext ctx, QuerySettings settings, ColumnInfo col)
     {
-        return "LABKEY.ColumnAnalytics.applyAggregateFromDataRegion(" +
+        return "LABKEY.ColumnQueryAnalytics.applyAggregateFromDataRegion(" +
                 PageFlowUtil.jsString(ctx.getCurrentRegion().getName()) + "," +
                 PageFlowUtil.jsString(col.getName()) + "," +
                 PageFlowUtil.jsString(getAggregateType().name()) +
@@ -77,6 +77,6 @@ public abstract class BaseAggregatesAnalyticsProvider extends ColumnAnalyticsPro
     @Override
     public void addClientDependencies(Set<ClientDependency> dependencies)
     {
-        dependencies.add(ClientDependency.fromPath("query/ColumnAnalytics.js"));
+        dependencies.add(ClientDependency.fromPath("query/ColumnQueryAnalytics.js"));
     }
 }

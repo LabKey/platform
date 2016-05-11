@@ -32,7 +32,10 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.visualization.GenericChartReportDescriptor;
 import org.labkey.api.visualization.TimeChartReportDescriptor;
 import org.labkey.api.visualization.VisualizationService;
+import org.labkey.visualization.report.DimensionBarChartAnalyticsProvider;
+import org.labkey.visualization.report.DimensionPieChartAnalyticsProvider;
 import org.labkey.visualization.report.GenericChartReportImpl;
+import org.labkey.visualization.report.MeasureBoxPlotAnalyticsProvider;
 import org.labkey.visualization.report.QuickChartAnalyticsProvider;
 import org.labkey.visualization.report.TimeChartReportImpl;
 import org.labkey.visualization.report.VisualizationUIProvider;
@@ -123,6 +126,9 @@ public class VisualizationModule extends DefaultModule
         AnalyticsProviderRegistry analyticsProviderRegistry = ServiceRegistry.get().getService(AnalyticsProviderRegistry.class);
         if (null != analyticsProviderRegistry)
         {
+            analyticsProviderRegistry.registerProvider(new MeasureBoxPlotAnalyticsProvider());
+            analyticsProviderRegistry.registerProvider(new DimensionPieChartAnalyticsProvider());
+            analyticsProviderRegistry.registerProvider(new DimensionBarChartAnalyticsProvider());
             analyticsProviderRegistry.registerProvider(new QuickChartAnalyticsProvider());
         }
     }

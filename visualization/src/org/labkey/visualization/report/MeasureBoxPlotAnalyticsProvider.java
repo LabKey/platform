@@ -1,64 +1,70 @@
 package org.labkey.visualization.report;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.analytics.ColumnAnalyticsProvider;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.visualization.GenericChartReport.RenderType;
-import org.labkey.api.visualization.VisualizationUrls;
+import org.labkey.api.view.template.ClientDependency;
 
-public class QuickChartAnalyticsProvider extends ColumnAnalyticsProvider
+import java.util.Set;
+
+public class MeasureBoxPlotAnalyticsProvider extends ColumnAnalyticsProvider
 {
     @Override
     public String getName()
     {
-        return "Quick Chart";
+        return "Box & Whisker";
     }
 
     @Override
     public String getDescription()
     {
-        return "Quick chart option based on the specified column type.";
+        return "View a box and whisker plot of the selected measure column's data values.";
     }
 
     @Override
     public boolean isApplicable(@NotNull ColumnInfo col)
     {
-        return col.isNumericType();
+        return col.isMeasure();
     }
 
+    @Nullable
     @Override
     public String getIconCls(RenderContext ctx, QuerySettings settings, ColumnInfo col)
     {
-        return RenderType.SCATTER_PLOT.getIconCls();
+        return "fa fa-sliders fa-rotate-90";
     }
 
+    @Nullable
     @Override
     public ActionURL getActionURL(RenderContext ctx, QuerySettings settings, ColumnInfo col)
     {
-        VisualizationUrls urlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
-        if (urlProvider != null && settings != null && settings.getSchemaName() != null && settings.getQueryName() != null)
-        {
-            ActionURL url = urlProvider.getGenericChartDesignerURL(ctx.getContainer(), ctx.getViewContext().getUser(), settings, RenderType.AUTO_PLOT);
-            url.addParameter("autoColumnYName", col.getName());
-            return url;
-        }
-
         return null;
     }
 
     @Override
     public String getScript(RenderContext ctx, QuerySettings settings, ColumnInfo col)
     {
-        return null;
+        return "LABKEY.ColumnVisualizationAnalytics.showMeasureFromDataRegion(this, " +
+                PageFlowUtil.jsString(ctx.getCurrentRegion().getName()) + "," +
+                PageFlowUtil.jsString(col.getName()) +
+            ");";
+    }
+
+    @Override
+    public void addClientDependencies(Set<ClientDependency> dependencies)
+    {
+        dependencies.add(ClientDependency.fromPath("vis/vis"));
+        dependencies.add(ClientDependency.fromPath("vis/ColumnVisualizationAnalytics.js"));
     }
 
     @Override
     public Integer getSortOrder()
     {
-        return null;
+        return 300;
     }
 }
