@@ -8,10 +8,9 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.template.ClientDependency;
 
-import java.util.Collections;
 import java.util.Set;
 
-public abstract class ColumnAnalyticsProvider extends AnalyticsProvider
+public abstract class ColumnAnalyticsProvider implements AnalyticsProvider, Comparable<ColumnAnalyticsProvider>
 {
     public abstract boolean isApplicable(@NotNull ColumnInfo col);
 
@@ -21,10 +20,9 @@ public abstract class ColumnAnalyticsProvider extends AnalyticsProvider
     @Nullable
     public abstract String getScript(RenderContext ctx, QuerySettings settings, ColumnInfo col);
 
-    @NotNull
-    public Set<ClientDependency> getClientDependencies()
+    @SuppressWarnings("UnusedParameters")
+    public void addClientDependencies(Set<ClientDependency> dependencies)
     {
-        return Collections.emptySet();
     }
 
     @Nullable
@@ -43,5 +41,17 @@ public abstract class ColumnAnalyticsProvider extends AnalyticsProvider
     public String getGroupingHeaderIconCls()
     {
         return null;
+    }
+
+    @Override
+    public int compareTo(ColumnAnalyticsProvider o)
+    {
+        Integer a = this.getSortOrder();
+        Integer b = o.getSortOrder();
+
+        if ((a == null && b == null) || (a != null && a.equals(b)))
+            return this.getName().compareTo(o.getName());
+        else
+            return a != null ? a.compareTo(b) : 1;
     }
 }

@@ -79,7 +79,7 @@ public abstract class DisplayColumn extends RenderColumn
     private StringExpression _urlTitle = null;
     private StringExpression _urlTitleCompiled = null;
 
-    private Set<ClientDependency> _clientDependencies = new LinkedHashSet<>();
+    protected Set<ClientDependency> _clientDependencies = new LinkedHashSet<>();
     private List<ColumnAnalyticsProvider> _analyticsProviders = new ArrayList<>();
 
     public abstract void renderGridCellContents(RenderContext ctx, Writer out) throws IOException;
@@ -188,11 +188,6 @@ public abstract class DisplayColumn extends RenderColumn
     public @NotNull Set<ClientDependency> getClientDependencies()
     {
         return _clientDependencies;
-    }
-
-    protected void addClientDependencies(@NotNull Set<ClientDependency> clientDependencies)
-    {
-        _clientDependencies.addAll(clientDependencies);
     }
 
     public @NotNull List<ColumnAnalyticsProvider> getAnalyticsProviders()
@@ -769,64 +764,48 @@ public abstract class DisplayColumn extends RenderColumn
                 navtree.addChild(clearFilterItem);
             }
 
-            if (AppProps.getInstance().isExperimentalFeatureEnabled(AnalyticsProviderRegistry.EXPERIMENTAL_ANALYTICS_PROVIDER))
+            boolean disableAnalytics = BooleanUtils.toBoolean(ctx.getViewContext().getActionURL().getParameter(rgn.getName() + ".disableAnalytics"));
+            if (!disableAnalytics && !getAnalyticsProviders().isEmpty())
             {
-                boolean disableAnalytics = BooleanUtils.toBoolean(ctx.getViewContext().getActionURL().getParameter(rgn.getName() + ".disableAnalytics"));
-                if (!disableAnalytics && !getAnalyticsProviders().isEmpty())
+                int counter = 0;
+                boolean toAddSeparator = true;
+
+                for (ColumnAnalyticsProvider analyticsProvider : getAnalyticsProviders())
                 {
-                    int counter = 0;
-                    boolean toAddSeparator = true;
-
-                    for (ColumnAnalyticsProvider analyticsProvider : getAnalyticsProviders())
+                    ActionURL providerUrl = analyticsProvider.getActionURL(ctx, rgn.getSettings(), getColumnInfo());
+                    String onClickScript = analyticsProvider.getScript(ctx, rgn.getSettings(), getColumnInfo());
+                    if (providerUrl != null || onClickScript != null)
                     {
-                        ActionURL providerUrl = analyticsProvider.getActionURL(ctx, rgn.getSettings(), getColumnInfo());
-                        String onClickScript = analyticsProvider.getScript(ctx, rgn.getSettings(), getColumnInfo());
-                        if (providerUrl != null || onClickScript != null)
+                        if (toAddSeparator && navtree.hasChildren())
                         {
-                            if (toAddSeparator && navtree.hasChildren())
-                            {
-                                navtree.addSeparator();
-                                toAddSeparator = false;
-                            }
+                            navtree.addSeparator();
+                            toAddSeparator = false;
+                        }
 
-                            NavTree item = new NavTree();
-                            item.setId(baseId + ":analytics-" + counter++);
-                            item.setText(analyticsProvider.getName());
-                            item.setImageCls(analyticsProvider.getIconCls(ctx, rgn.getSettings(), getColumnInfo()));
-                            if (providerUrl != null)
-                                item.setHref(providerUrl.getLocalURIString());
-                            if (onClickScript != null)
-                                item.setScript(onClickScript);
+                        NavTree item = new NavTree();
+                        item.setId(baseId + ":analytics-" + counter++);
+                        item.setText(analyticsProvider.getName());
+                        item.setImageCls(analyticsProvider.getIconCls(ctx, rgn.getSettings(), getColumnInfo()));
+                        if (providerUrl != null)
+                            item.setHref(providerUrl.getLocalURIString());
+                        if (onClickScript != null)
+                            item.setScript(onClickScript);
 
-                            if (analyticsProvider.getGroupingHeader() != null)
+                        if (analyticsProvider.getGroupingHeader() != null)
+                        {
+                            NavTree subtree = navtree.findSubtree(analyticsProvider.getGroupingHeader());
+                            if (subtree == null)
                             {
-                                NavTree subtree = navtree.findSubtree(analyticsProvider.getGroupingHeader());
-                                if (subtree == null)
-                                {
-                                    subtree = navtree.addChild(analyticsProvider.getGroupingHeader());
-                                    subtree.setImageCls(analyticsProvider.getGroupingHeaderIconCls());
-                                }
-                                subtree.addChild(item);
+                                subtree = navtree.addChild(analyticsProvider.getGroupingHeader());
+                                subtree.setImageCls(analyticsProvider.getGroupingHeaderIconCls());
                             }
-                            else
-                            {
-                                navtree.addChild(item);
-                            }
+                            subtree.addChild(item);
+                        }
+                        else
+                        {
+                            navtree.addChild(item);
                         }
                     }
-                }
-            }
-            else
-            {
-                NavTree chartItem = GenericChartReport.getQuickChartItem(rgn.getName(), ctx.getViewContext(),
-                        rgn.getDisplayColumns(), getColumnInfo(), rgn.getSettings());
-                if (chartItem != null)
-                {
-                    if (navtree.hasChildren())
-                        navtree.addSeparator();
-
-                    chartItem.setId(baseId + ":quick-chart");
-                    navtree.addChild(chartItem);
                 }
             }
         }

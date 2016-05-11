@@ -111,16 +111,13 @@ public class DataColumn extends DisplayColumn
         _textAlign = _displayColumn.getTextAlign();
 
         // get the applicable ColumnAnalyticsProviders
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(AnalyticsProviderRegistry.EXPERIMENTAL_ANALYTICS_PROVIDER))
+        AnalyticsProviderRegistry analyticsProviderRegistry = ServiceRegistry.get().getService(AnalyticsProviderRegistry.class);
+        if (analyticsProviderRegistry != null)
         {
-            AnalyticsProviderRegistry analyticsProviderRegistry = ServiceRegistry.get().getService(AnalyticsProviderRegistry.class);
-            if (analyticsProviderRegistry != null)
+            for (ColumnAnalyticsProvider columnAnalyticsProvider : analyticsProviderRegistry.getColumnAnalyticsProviders(_boundColumn, true))
             {
-                for (ColumnAnalyticsProvider columnAnalyticsProvider : analyticsProviderRegistry.getColumnAnalyticsProviders(_boundColumn))
-                {
-                    addAnalyticsProvider(columnAnalyticsProvider);
-                    addClientDependencies(columnAnalyticsProvider.getClientDependencies());
-                }
+                addAnalyticsProvider(columnAnalyticsProvider);
+                columnAnalyticsProvider.addClientDependencies(_clientDependencies);
             }
         }
     }

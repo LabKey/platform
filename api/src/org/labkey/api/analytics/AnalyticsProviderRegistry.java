@@ -8,9 +8,7 @@ import java.util.Collection;
 
 public interface AnalyticsProviderRegistry
 {
-    String EXPERIMENTAL_ANALYTICS_PROVIDER = "experimental-analytics-provider";
-
     void registerProvider(AnalyticsProvider analyticsProvider);
-    Collection<ColumnAnalyticsProvider> getColumnAnalyticsProviders(@Nullable ColumnInfo columnInfo);
+    Collection<ColumnAnalyticsProvider> getColumnAnalyticsProviders(@Nullable ColumnInfo columnInfo, boolean sort);
     Collection<QueryAnalyticsProvider> getQueryAnalyticsProviders(@Nullable QuerySettings settings);
 }

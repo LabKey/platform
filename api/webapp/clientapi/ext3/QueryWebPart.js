@@ -435,8 +435,6 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
             params[regionName + ".maxRows"] = this.maxRows;
         if (this.offset)
             params[regionName + ".offset"] = this.offset;
-        if (this.quickChartDisabled)
-            params[regionName + ".quickChartDisabled"] = this.quickChartDisabled;
         if (this.disableAnalytics)
             params[regionName + ".disableAnalytics"] = this.disableAnalytics;
 

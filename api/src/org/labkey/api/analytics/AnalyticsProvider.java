@@ -1,7 +1,8 @@
 package org.labkey.api.analytics;
 
-public abstract class AnalyticsProvider
+public interface AnalyticsProvider
 {
-    public abstract String getName();
-    public abstract String getDescription();
+    String getName();
+    String getDescription();
+    Integer getSortOrder();
 }

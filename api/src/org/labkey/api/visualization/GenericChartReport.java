@@ -15,22 +15,13 @@
  */
 package org.labkey.api.visualization;
 
-import org.apache.commons.lang3.BooleanUtils;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.ResourceURL;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
-
-import java.util.List;
 
 /**
  * User: klum
@@ -196,42 +187,6 @@ public abstract class GenericChartReport extends AbstractReport
     public String getDescriptorType()
     {
         return GenericChartReportDescriptor.TYPE;
-    }
-
-    /**
-     * Create a menu item for the auto chart option based on the specified column type
-     * @return
-     */
-    public static NavTree getQuickChartItem(String rgnName, ViewContext context, List<DisplayColumn> columns, ColumnInfo col, QuerySettings settings)
-    {
-        VisualizationUrls urlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
-        if (urlProvider != null && settings != null && settings.getSchemaName() != null && settings.getQueryName() != null)
-        {
-            boolean quickChartDisabled = BooleanUtils.toBoolean(context.getActionURL().getParameter(rgnName + ".quickChartDisabled"));
-
-            if (!quickChartDisabled)
-            {
-                if (col.getFk() == null)
-                {
-                    Class cls = col.getJavaObjectClass();
-
-                    if (Number.class.isAssignableFrom(cls))
-                    {
-                        RenderType type = RenderType.AUTO_PLOT;
-
-                        ActionURL plotURL = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), settings, type).addParameter("autoColumnYName", col.getName());
-
-                        NavTree navItem = new NavTree("Quick Chart");
-
-                        navItem.setImageSrc(new ResourceURL(type.getIconPath()));
-                        navItem.setHref(plotURL.getLocalURIString());
-
-                        return navItem;
-                    }
-                }
-            }
-        }
-        return null;
     }
 
     @Override

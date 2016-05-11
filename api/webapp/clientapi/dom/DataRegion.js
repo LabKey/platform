@@ -22,6 +22,7 @@ if (!LABKEY.DataRegions) {
     var CONTAINER_FILTER_NAME = '.containerFilterName';
     var CUSTOM_VIEW_PANELID = '~~customizeView~~';
     var VIEWNAME_PREFIX = '.viewName';
+    var DISABLE_ANALYTICS = '.disableAnalytics';
     var VALID_LISTENERS = ['afterpanelhide', 'afterpanelshow', 'beforechangeview', 'beforeclearsort', 'beforemaxrowschange',
                             'beforeoffsetchange', 'beforerefresh', 'beforesetparameters', 'beforesortchange', 'render',
                             'rendermsg', 'success'];
@@ -182,8 +183,6 @@ if (!LABKEY.DataRegions) {
                  * Name of the query to which this DataRegion is bound. Read-only.
                  */
                 queryName: '',
-
-                quickChartDisabled: false,
 
                 disableAnalytics: false,
 
@@ -2703,12 +2702,8 @@ if (!LABKEY.DataRegions) {
             params[name + OFFSET_PREFIX] = region.offset;
         }
 
-        if (region.quickChartDisabled) {
-            params[name + '.quickChartDisabled'] = region.quickChartDisabled;
-        }
-
         if (region.disableAnalytics) {
-            params[name + '.disableAnalytics'] = region.disableAnalytics;
+            params[name + DISABLE_ANALYTICS] = region.disableAnalytics;
         }
 
         //
