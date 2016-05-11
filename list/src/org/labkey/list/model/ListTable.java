@@ -35,7 +35,6 @@ import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.etl.TableInsertDataIterator;
 import org.labkey.api.etl.ValidatorIterator;
 import org.labkey.api.exp.MvColumn;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -43,6 +42,7 @@ import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
@@ -82,126 +82,124 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
 
         ColumnInfo colKey = null;
 
-        for (ColumnInfo baseColumn : getRealTable().getColumns())
+        // We can have a ListDef that has been saved before the domain has been saved (urg)
+        if (!domain.getProperties().isEmpty())
         {
-            String name = baseColumn.getName();
-            if (listDef.getKeyName().equalsIgnoreCase(name))
+            for (ColumnInfo baseColumn : getRealTable().getColumns())
             {
-                colKey = wrapColumn(baseColumn);
+                String name = baseColumn.getName();
+                String propertyURI = baseColumn.getPropertyURI();
+                DomainProperty dp = null==propertyURI ? null : domain.getPropertyByURI(propertyURI);
+                PropertyDescriptor pd = null==dp ? null : dp.getPropertyDescriptor();
 
-                if (null != colKey.getPropertyURI())
+                if (listDef.getKeyName().equalsIgnoreCase(name))
                 {
-                    PropertyDescriptor key = OntologyManager.getPropertyDescriptor(colKey.getPropertyURI(), _list.getContainer());
+                    colKey = wrapColumn(baseColumn);
 
-                    if (null != key)
+                    if (null != pd)
                     {
-                        colKey.setName(key.getName());
-                        colKey.setLabel(key.getLabel());
-                        if (null != key.getLookupQuery() || null != key.getConceptURI())
-                            colKey.setFk(new PdLookupForeignKey(schema.getUser(), key, schema.getContainer()));
+                        colKey.setName(pd.getName());
+                        colKey.setLabel(pd.getLabel());
+                        if (null != pd.getLookupQuery() || null != pd.getConceptURI())
+                            colKey.setFk(new PdLookupForeignKey(schema.getUser(), pd, schema.getContainer()));
                     }
                     else
                     {
                         throw new IllegalStateException("" + _list.getName() + "." + _list.getKeyName() + " (primary key) " +
                                 "has not been provisioned properly. Ensure the domain is established before constructing.");
                     }
-                }
 
-                colKey.setKeyField(true);
-                colKey.setNullable(false); // Must assure this as it can be set incorrectly via StorageProvisioner
-                colKey.setInputType("text");
-                colKey.setInputLength(-1);
-                colKey.setWidth("180");
+                    colKey.setKeyField(true);
+                    colKey.setNullable(false); // Must assure this as it can be set incorrectly via StorageProvisioner
+                    colKey.setInputType("text");
+                    colKey.setInputLength(-1);
+                    colKey.setWidth("180");
 
-                if (_list.getKeyType().equals(ListDefinition.KeyType.AutoIncrementInteger))
-                {
-                    colKey.setAutoIncrement(true);
-                    colKey.setUserEditable(false);
-                    colKey.setHidden(true);
-                }
-
-                addColumn(colKey);
-                defaultColumnsCandidates.add(colKey);
-            }
-            else if (name.equalsIgnoreCase("EntityId"))
-            {
-                continue; // processed at the end
-            }
-            else if (name.equalsIgnoreCase("Created") || name.equalsIgnoreCase("Modified") ||
-                    name.equalsIgnoreCase("CreatedBy") || name.equalsIgnoreCase("ModifiedBy")
-                    )
-            {
-                ColumnInfo c = wrapColumn(baseColumn);
-                if (name.equalsIgnoreCase("CreatedBy") || name.equalsIgnoreCase("ModifiedBy"))
-                {
-                    UserIdQueryForeignKey.initColumn(schema.getUser(), schema.getContainer(), c, true);
-                    if (name.equalsIgnoreCase("CreatedBy"))
+                    if (_list.getKeyType().equals(ListDefinition.KeyType.AutoIncrementInteger))
                     {
-                        c.setName("CreatedBy");
-                        c.setLabel("Created By");
+                        colKey.setAutoIncrement(true);
+                        colKey.setUserEditable(false);
+                        colKey.setHidden(true);
+                    }
+
+                    addColumn(colKey);
+                    defaultColumnsCandidates.add(colKey);
+                }
+                else if (name.equalsIgnoreCase("EntityId"))
+                {
+                    continue; // processed at the end
+                }
+                else if (name.equalsIgnoreCase("Created") || name.equalsIgnoreCase("Modified") ||
+                        name.equalsIgnoreCase("CreatedBy") || name.equalsIgnoreCase("ModifiedBy")
+                        )
+                {
+                    ColumnInfo c = wrapColumn(baseColumn);
+                    if (name.equalsIgnoreCase("CreatedBy") || name.equalsIgnoreCase("ModifiedBy"))
+                    {
+                        UserIdQueryForeignKey.initColumn(schema.getUser(), schema.getContainer(), c, true);
+                        if (name.equalsIgnoreCase("CreatedBy"))
+                        {
+                            c.setName("CreatedBy");
+                            c.setLabel("Created By");
+                        }
+                        else
+                        {
+                            c.setName("ModifiedBy");
+                            c.setLabel("Modified By");
+                        }
+                    }
+                    else if (name.equalsIgnoreCase("modified"))
+                    {
+                        c.setName("Modified");
+                        c.setLabel("Modified");
                     }
                     else
                     {
-                        c.setName("ModifiedBy");
-                        c.setLabel("Modified By");
+                        c.setName("Created");
+                        c.setLabel("Created");
                     }
+                    c.setUserEditable(false);
+                    c.setShownInInsertView(false);
+                    c.setShownInUpdateView(false);
+                    addColumn(c);
                 }
-                else if (name.equalsIgnoreCase("modified"))
+                else if (name.equalsIgnoreCase("LastIndexed"))
                 {
-                    c.setName("Modified");
-                    c.setLabel("Modified");
+                    ColumnInfo column = addWrapColumn(baseColumn);
+                    column.setHidden(true);
+                    column.setUserEditable(false);
                 }
-                else
+                else if (name.equalsIgnoreCase("Container"))
                 {
-                    c.setName("Created");
-                    c.setLabel("Created");
+                    ColumnInfo folderColumn = wrapColumn(baseColumn);
+                    folderColumn.setFk(new ContainerForeignKey(schema));
+                    folderColumn.setUserEditable(false);
+                    folderColumn.setShownInInsertView(false);
+                    folderColumn.setShownInUpdateView(false);
+                    folderColumn.setLabel("Folder");
+                    addColumn(folderColumn);
                 }
-                c.setUserEditable(false);
-                c.setShownInInsertView(false);
-                c.setShownInUpdateView(false);
-                addColumn(c);
-            }
-            else if (name.equalsIgnoreCase("LastIndexed"))
-            {
-                ColumnInfo column = addWrapColumn(baseColumn);
-                column.setHidden(true);
-                column.setUserEditable(false);
-            }
-            else if (name.equalsIgnoreCase("Container"))
-            {
-                ColumnInfo folderColumn = wrapColumn(baseColumn);
-                folderColumn.setFk(new ContainerForeignKey(schema));
-                folderColumn.setUserEditable(false);
-                folderColumn.setShownInInsertView(false);
-                folderColumn.setShownInUpdateView(false);
-                folderColumn.setLabel("Folder");
-                addColumn(folderColumn);
-            }
-            // MV indicator columns will be handled by their associated value column
-            else if (!baseColumn.isMvIndicatorColumn())
-            {
-                assert baseColumn.getParentTable() == getRealTable() : "Column is not from the same \"real\" table";
-
-                ColumnInfo col = wrapColumn(baseColumn);
-
-                ColumnInfo ret = new AliasedColumn(this, col.getName(), col);
-                // Use getColumnNameSet() instead of getColumn() because we don't want to go through the resolveColumn()
-                // codepath, which is potentially expensive and doesn't reflect the "real" columns that are part of this table
-                if (col.isKeyField() && getColumnNameSet().contains(col.getName()))
+                // MV indicator columns will be handled by their associated value column
+                else if (!baseColumn.isMvIndicatorColumn())
                 {
-                    ret.setKeyField(false);
-                }
+                    assert baseColumn.getParentTable() == getRealTable() : "Column is not from the same \"real\" table";
 
-                col = ret;
+                    ColumnInfo col = wrapColumn(baseColumn);
 
-                // When copying a column, the hidden bit is not propagated, so we need to do it manually
-                if (baseColumn.isHidden())
-                    col.setHidden(true);
+                    ColumnInfo ret = new AliasedColumn(this, col.getName(), col);
+                    // Use getColumnNameSet() instead of getColumn() because we don't want to go through the resolveColumn()
+                    // codepath, which is potentially expensive and doesn't reflect the "real" columns that are part of this table
+                    if (col.isKeyField() && getColumnNameSet().contains(col.getName()))
+                    {
+                        ret.setKeyField(false);
+                    }
 
-                String propertyURI = col.getPropertyURI();
-                if (null != propertyURI)
-                {
-                    PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(propertyURI, schema.getContainer());
+                    col = ret;
+
+                    // When copying a column, the hidden bit is not propagated, so we need to do it manually
+                    if (baseColumn.isHidden())
+                        col.setHidden(true);
+
                     if (null != pd)
                     {
                         col.setName(pd.getName());
@@ -239,17 +237,17 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                         if (pd.getPropertyType() == PropertyType.ATTACHMENT)
                         {
                             col.setURL(StringExpressionFactory.createURL(
-                                            new ActionURL(ListController.DownloadAction.class, schema.getContainer())
-                                                    .addParameter("listId", listDef.getListId())
-                                                    .addParameter("entityId", "${EntityId}")
-                                                    .addParameter("name", "${" + col.getName() + "}"))
+                                    new ActionURL(ListController.DownloadAction.class, schema.getContainer())
+                                            .addParameter("listId", listDef.getListId())
+                                            .addParameter("entityId", "${EntityId}")
+                                            .addParameter("name", "${" + col.getName() + "}"))
                             );
                         }
                     }
-                }
 
-                addColumn(col);
-                defaultColumnsCandidates.add(col);
+                    addColumn(col);
+                    defaultColumnsCandidates.add(col);
+                }
             }
         }
 
