@@ -110,7 +110,8 @@ function helpDivHideHandler(e)
     {
         // escape pressed or the click target is not the offset elem and is outside the help div
         var isEscPress = e.type == 'keyup' && e.which == 27;
-        if (isEscPress || (e.type == 'click' && e.target != getHelpDiv().anchorElem && !contains(getHelpDiv(), e.target)))
+        var isAnchorElem = e.target == getHelpDiv().anchorElem || contains(getHelpDiv().anchorElem, e.target);
+        if (isEscPress || (e.type == 'click' && !isAnchorElem && !contains(getHelpDiv(), e.target)))
             hideHelpDiv(true);
     }
 }
