@@ -255,7 +255,8 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
                     }
                     catch (ConvertHelper.ContainerConversionException e)
                     {
-                        throw new ConvertHelper.ContainerConversionException(e.getMessage());
+                        // Rethrow exception as-is
+                        throw e;
                     }
                     catch (IllegalAccessException | InvocationTargetException e)
                     {
