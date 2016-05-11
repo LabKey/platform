@@ -227,7 +227,7 @@
 
         var _appendPlotDiv = function(dataRegion)
         {
-            var plotAnalyticsCls = 'labkey-dataregion-msg-plot-analytics',
+            var plotAnalyticsCls = 'labkey-dataregion-msg-plot-analytics-' + dataRegion.name,
                 plotDivId = LABKEY.Utils.id();
 
             if (!$('.' + plotAnalyticsCls).length)
