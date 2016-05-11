@@ -48,20 +48,21 @@ public class ExceptionStackTraceQueryView extends QueryView
             MenuButton assignToButton = new MenuButton("Assign To");
             assignToButton.setRequiresSelection(true);
             assignToButton.setDisplayPermission(UpdatePermission.class);
+            String form = "LABKEY.DataRegions." + getDataRegionName() + ".form";
             for (User user : MothershipManager.get().getAssignedToList(getSchema().getContainer()))
             {
                 ActionURL url = new ActionURL(MothershipController.BulkUpdateAction.class, getContainer());
                 url.addParameter("userId", user.getUserId());
-                String script = "if (verifySelected(document.forms['" + getDataRegionName() + "'], '" + url +
-                        "', 'post', 'rows')) document.forms['" + getDataRegionName() + "'].submit();";
+                String script = "if (verifySelected("+form+", '" + url +
+                        "', 'post', 'rows')) "+form+".submit();";
 
                 assignToButton.addMenuItem(user.getDisplayName(getSchema().getUser()), null, script);
             }
             assignToButton.addSeparator();
             ActionURL ignoreURL = new ActionURL(MothershipController.BulkUpdateAction.class, getContainer());
             ignoreURL.addParameter("ignore", true);
-            String ignoreScript = "if (verifySelected(document.forms['" + getDataRegionName() + "'], '" + ignoreURL +
-                    "', 'post', 'rows')) document.forms['" + getDataRegionName() + "'].submit();";
+            String ignoreScript = "if (verifySelected("+form+", '" + ignoreURL +
+                    "', 'post', 'rows')) "+form+".submit();";
             assignToButton.addMenuItem("Ignore", null, ignoreScript);
             bar.add(assignToButton);
         }
