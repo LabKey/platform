@@ -10,21 +10,20 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.template.ClientDependency;
 
-import java.util.Collections;
 import java.util.Set;
 
-public class HideColumnAnalyticsProvider extends ColumnAnalyticsProvider
+public class RemoveColumnAnalyticsProvider extends ColumnAnalyticsProvider
 {
     @Override
     public String getName()
     {
-        return "Hide Column";
+        return "Remove Column";
     }
 
     @Override
     public String getDescription()
     {
-        return "Hide the selected column from the view.";
+        return "Remove the selected column from the view.";
     }
 
     @Override
@@ -50,16 +49,21 @@ public class HideColumnAnalyticsProvider extends ColumnAnalyticsProvider
     @Override
     public String getScript(RenderContext ctx, QuerySettings settings, ColumnInfo col)
     {
-        return "LABKEY.ColumnAnalytics.hideColumnFromDataRegion(" +
+        return "LABKEY.ColumnAnalytics.removeColumnFromDataRegion(" +
                 PageFlowUtil.jsString(ctx.getCurrentRegion().getName()) + "," +
                 PageFlowUtil.jsString(col.getName()) +
             ");";
     }
 
-    @NotNull
     @Override
-    public Set<ClientDependency> getClientDependencies()
+    public void addClientDependencies(Set<ClientDependency> dependencies)
     {
-        return Collections.singleton(ClientDependency.fromPath("query/ColumnAnalytics.js"));
+        dependencies.add(ClientDependency.fromPath("query/ColumnAnalytics.js"));
+    }
+
+    @Override
+    public Integer getSortOrder()
+    {
+        return 100;
     }
 }

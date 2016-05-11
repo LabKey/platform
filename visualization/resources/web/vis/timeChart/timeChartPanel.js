@@ -1305,7 +1305,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                                         allowChooseQuery: false,
                                         allowChooseView: false,
                                         allowHeaderLock: false,
-                                        quickChartDisabled: true,
                                         disableAnalytics: true,
                                         title: '',
                                         frame: 'none'

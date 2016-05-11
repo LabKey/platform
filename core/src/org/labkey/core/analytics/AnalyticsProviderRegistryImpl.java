@@ -25,7 +25,7 @@ public class AnalyticsProviderRegistryImpl implements AnalyticsProviderRegistry
     }
 
     @Override
-    public Collection<ColumnAnalyticsProvider> getColumnAnalyticsProviders(@Nullable ColumnInfo columnInfo)
+    public Collection<ColumnAnalyticsProvider> getColumnAnalyticsProviders(@Nullable ColumnInfo columnInfo, boolean sort)
     {
         List<ColumnAnalyticsProvider> providers = new ArrayList<>();
         for (AnalyticsProvider registeredProvider : REGISTERED_PROVIDERS)
@@ -39,6 +39,12 @@ public class AnalyticsProviderRegistryImpl implements AnalyticsProviderRegistry
                 }
             }
         }
+
+        if (sort)
+        {
+            Collections.sort(providers);
+        }
+
         return providers;
     }
 
@@ -57,6 +63,7 @@ public class AnalyticsProviderRegistryImpl implements AnalyticsProviderRegistry
                 }
             }
         }
+
         return providers;
     }
 }

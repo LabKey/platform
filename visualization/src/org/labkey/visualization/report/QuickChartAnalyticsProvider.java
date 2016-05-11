@@ -55,4 +55,10 @@ public class QuickChartAnalyticsProvider extends ColumnAnalyticsProvider
     {
         return null;
     }
+
+    @Override
+    public Integer getSortOrder()
+    {
+        return null;
+    }
 }

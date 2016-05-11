@@ -17,4 +17,10 @@ public class AggregatesSumAnalyticsProvider extends BaseAggregatesAnalyticsProvi
     {
         return col.isNumericType();
     }
+
+    @Override
+    public Integer getSortOrder()
+    {
+        return 201;
+    }
 }

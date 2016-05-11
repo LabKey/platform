@@ -17,4 +17,10 @@ public class AggregatesMinAnalyticsProvider extends BaseAggregatesAnalyticsProvi
     {
         return col.isNumericType() || col.isDateTimeType();
     }
+
+    @Override
+    public Integer getSortOrder()
+    {
+        return 203;
+    }
 }

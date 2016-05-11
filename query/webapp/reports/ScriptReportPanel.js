@@ -205,7 +205,6 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             showRecordSelectors     : false,
             showSurroundingBorder   : false,
             showPagination          : true,
-            quickChartDisabled      : true,
             disableAnalytics        : true,
             allowHeaderLock         : false,
             buttonBar   : {

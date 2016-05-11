@@ -17,4 +17,10 @@ public class AggregatesAverageAnalyticsProvider extends BaseAggregatesAnalyticsP
     {
         return col.isNumericType();
     }
+
+    @Override
+    public Integer getSortOrder()
+    {
+        return 202;
+    }
 }

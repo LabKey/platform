@@ -55,11 +55,11 @@
         };
 
         /**
-         * Used via HideColumnAnalyticsProvider to remove the selected column in the view.
+         * Used via RemoveColumnAnalyticsProvider to remove the selected column in the view.
          * @param dataRegionName
          * @param columnName
          */
-        var hideColumnFromDataRegion = function(dataRegionName, columnName)
+        var removeColumnFromDataRegion = function(dataRegionName, columnName)
         {
             var region = LABKEY.DataRegions[dataRegionName];
             if (region)
@@ -75,6 +75,35 @@
                             queryDetails.name,
                             view,
                             LABKEY.FieldKey.fromString(columnName)
+                        );
+                    }
+                });
+            }
+        };
+
+        /**
+         * Used to move the selected column in the view.
+         * @param dataRegionName
+         * @param columnName
+         * @param shiftVal - +1 = move right, -1 = move left
+         */
+        var moveColumnInDataRegion = function(dataRegionName, columnName, shiftVal)
+        {
+            var region = LABKEY.DataRegions[dataRegionName];
+            if (region)
+            {
+                var regionViewName = region.viewName || "";
+                region.getQueryDetails(function(queryDetails)
+                {
+                    var view = _getViewFromQueryDetails(queryDetails, regionViewName);
+                    if (view != null)
+                    {
+                        _moveSelectedColumn(
+                            queryDetails.schemaName,
+                            queryDetails.name,
+                            view,
+                            LABKEY.FieldKey.fromString(columnName),
+                            shiftVal
                         );
                     }
                 });
@@ -113,6 +142,42 @@
                 aggregates.push({fieldKey: fieldKey, type: newAggType});
             });
 
+            customView.aggregates = aggregates;
+            _saveQueryView(schemaName, queryName, customView);
+        };
+
+        var _hideSelectedColumn = function(schemaName, queryName, customView, fieldKey)
+        {
+            var colFieldKeys = $.map(customView.columns, function(c) { return c.fieldKey; }),
+                fieldKeyIndex = colFieldKeys.indexOf(fieldKey.toString());
+
+            if (fieldKeyIndex > -1)
+            {
+                customView.columns.splice(fieldKeyIndex, 1);
+                _saveQueryView(schemaName, queryName, customView);
+            }
+        };
+
+        var _moveSelectedColumn = function(schemaName, queryName, customView, fieldKey, shiftVal)
+        {
+            var colFieldKeys = $.map(customView.columns, function(c) { return c.fieldKey; }),
+                fieldKeyIndex = colFieldKeys.indexOf(fieldKey.toString());
+
+            if (fieldKeyIndex > -1)
+            {
+                var insertIndex = fieldKeyIndex + shiftVal;
+                if ((shiftVal == 1 && insertIndex < customView.columns.length)
+                    || (shiftVal == -1 && insertIndex > -1))
+                {
+                    var removed = customView.columns.splice(fieldKeyIndex, 1);
+                    customView.columns.splice(fieldKeyIndex + shiftVal, 0, removed[0]);
+                    _saveQueryView(schemaName, queryName, customView);
+                }
+            }
+        };
+
+        var _saveQueryView = function(schemaName, queryName, customView)
+        {
             LABKEY.Query.saveQueryViews({
                 containerPath: LABKEY.container.path,
                 schemaName: schemaName,
@@ -123,7 +188,7 @@
                     columns: customView.columns,
                     filter: customView.filter,
                     sort: customView.sort,
-                    aggregates: aggregates,
+                    aggregates: customView.aggregates,
                     shared: false,
                     inherit: false,
                     session: true
@@ -135,41 +200,10 @@
             });
         };
 
-        var _hideSelectedColumn = function(schemaName, queryName, customView, fieldKey)
-        {
-            var colFieldKeys = $.map(customView.columns, function(c) { return c.fieldKey; }),
-                fieldKeyIndex = colFieldKeys.indexOf(fieldKey.toString());
-
-            if (fieldKeyIndex > -1)
-            {
-                customView.columns.splice(fieldKeyIndex, 1);
-
-                LABKEY.Query.saveQueryViews({
-                    containerPath: LABKEY.container.path,
-                    schemaName: schemaName,
-                    queryName: queryName,
-                    views: [{
-                        name: customView.name,
-                        hidden: customView.hidden,
-                        columns: customView.columns,
-                        filter: customView.filter,
-                        sort: customView.sort,
-                        aggregates: customView.aggregates,
-                        shared: false,
-                        inherit: false,
-                        session: true
-                    }],
-                    scope: this,
-                    success: function(savedViewsInfo) {
-                        window.location.reload();
-                    }
-                });
-            }
-        };
-
         return {
             applyAggregateFromDataRegion: applyAggregateFromDataRegion,
-            hideColumnFromDataRegion: hideColumnFromDataRegion
+            removeColumnFromDataRegion: removeColumnFromDataRegion,
+            moveColumnInDataRegion: moveColumnInDataRegion
         };
     };
 })(jQuery);

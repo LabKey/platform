@@ -74,10 +74,9 @@ public abstract class BaseAggregatesAnalyticsProvider extends ColumnAnalyticsPro
             ");";
     }
 
-    @NotNull
     @Override
-    public Set<ClientDependency> getClientDependencies()
+    public void addClientDependencies(Set<ClientDependency> dependencies)
     {
-        return Collections.singleton(ClientDependency.fromPath("query/ColumnAnalytics.js"));
+        dependencies.add(ClientDependency.fromPath("query/ColumnAnalytics.js"));
     }
 }

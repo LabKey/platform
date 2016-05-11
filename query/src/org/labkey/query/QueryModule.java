@@ -78,7 +78,7 @@ import org.labkey.query.analytics.AggregatesCountAnalyticsProvider;
 import org.labkey.query.analytics.AggregatesMaxAnalyticsProvider;
 import org.labkey.query.analytics.AggregatesMinAnalyticsProvider;
 import org.labkey.query.analytics.AggregatesSumAnalyticsProvider;
-import org.labkey.query.analytics.HideColumnAnalyticsProvider;
+import org.labkey.query.analytics.RemoveColumnAnalyticsProvider;
 import org.labkey.query.audit.QueryAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
 import org.labkey.query.controllers.OlapController;
@@ -294,8 +294,7 @@ public class QueryModule extends DefaultModule
             analyticsProviderRegistry.registerProvider(new AggregatesAverageAnalyticsProvider());
             analyticsProviderRegistry.registerProvider(new AggregatesMinAnalyticsProvider());
             analyticsProviderRegistry.registerProvider(new AggregatesMaxAnalyticsProvider());
-
-            analyticsProviderRegistry.registerProvider(new HideColumnAnalyticsProvider());
+            analyticsProviderRegistry.registerProvider(new RemoveColumnAnalyticsProvider());
         }
     }
 

@@ -17,4 +17,10 @@ public class AggregatesCountAnalyticsProvider extends BaseAggregatesAnalyticsPro
     {
         return true;
     }
+
+    @Override
+    public Integer getSortOrder()
+    {
+        return 200;
+    }
 }

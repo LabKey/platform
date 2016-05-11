@@ -1067,7 +1067,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             columns     : this.savedColumns,        // TODO, qwp does not support passing in a column list
             parameters  : this.parameters,
             frame       : 'none',
-            quickChartDisabled    : true,
             disableAnalytics      : true,
             removeableFilters     : userFilters,
             removeableSort        : userSort,

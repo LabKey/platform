@@ -322,8 +322,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "This feature will combine the Navigation of Projects and Folders into one drop-down.", false);
         AdminConsole.addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
                 "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false);
-        AdminConsole.addExperimentalFeatureFlag(AnalyticsProviderRegistry.EXPERIMENTAL_ANALYTICS_PROVIDER, "Analytics Provider Registry",
-                "This feature allows modules to register column based or query based analytics providers.", false);
 
         // authentication provider implementations
         AuthenticationManager.registerProvider(new LdapAuthenticationProvider(), Priority.High);
