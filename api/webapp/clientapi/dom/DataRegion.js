@@ -1116,7 +1116,10 @@ if (!LABKEY.DataRegions) {
      * If a message is currently showing, hide it and clear out its contents
      */
     Proto.hideMessage = function() {
-        if (this.msgbox) { this.msgbox.hide(); }
+        if (this.msgbox) {
+            this.msgbox.hide();
+            this.removeAllMessages();
+        }
     };
 
     /**

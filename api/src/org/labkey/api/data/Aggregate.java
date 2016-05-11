@@ -50,7 +50,7 @@ public class Aggregate
 
     public enum Type
     {
-        SUM("Total")
+        SUM("Sum")
                 {
                     @Override
                     public JdbcType returnType(JdbcType jdbcType)
