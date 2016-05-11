@@ -22,6 +22,8 @@ import org.json.JSONObject;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -210,6 +212,12 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
         Object incrementalStartTimestamp = getLastSuccessfulIncrementalEndTimestampJson(deleting);
         if (null != incrementalStartTimestamp)
             f.addCondition(tsCol.getFieldKey(), incrementalStartTimestamp, CompareType.GT);
+
+        // Consider the timestamps of rows in *all* containers in scope by a specified filter
+        if (null != _config.getSourceContainerFilter() && table.supportsContainerFilter())
+        {
+            ((ContainerFilterable)table).setContainerFilter(ContainerFilter.getContainerFilterByName(_config.getSourceContainerFilter(), _context.getUser()));
+        }
 
         Aggregate max = new Aggregate(tsCol, Aggregate.Type.MAX);
 
