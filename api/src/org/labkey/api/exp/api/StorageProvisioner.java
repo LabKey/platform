@@ -1028,8 +1028,10 @@ public class StorageProvisioner
                 ProvisioningReport.ColumnStatus status = new ProvisioningReport.ColumnStatus();
                 domainReport._columns.add(status);
                 status.prop = domainProp;
-                if (hardColumnNames.remove(domainProp.getName()))
+                if (hardColumnNames.remove(domainProp.getPropertyDescriptor().getStorageColumnName()))
+                {
                     status.colName = domainProp.getName();
+                }
                 else
                 {
                     domainReport.addError(String.format("database table %s.%s did not contain expected column '%s'", domainReport.getSchemaName(), domainReport.getTableName(), domainProp.getName()));
