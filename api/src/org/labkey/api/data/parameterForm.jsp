@@ -28,8 +28,11 @@
 <%
     DataRegion.ParameterViewBean bean = (DataRegion.ParameterViewBean)HttpView.currentModel();
 %>
+<%-- NOTE: div id must match DataRegion.js expected <table> element so it can be removed in DataRegion.destroy() --%>
+<div id=<%=PageFlowUtil.qh(bean.dataRegionDomId)%>></div>
 <script type="text/javascript">
-(function (){
+(function(){
+var regionDomId = <%=q(bean.dataRegionDomId)%>;
 var dataRegionName = <%=q(bean.dataRegionName)%>;
 var decl = [
     <%
@@ -52,61 +55,64 @@ var decl = [
         COMMA = ",";
     }
     %>];
-var formpanel;
-function submitHandler()
-{
-    var valuesRaw = formpanel.getForm().getValues();
-    formpanel.destroy();
-    delete formpanel;
 
-    var values = {};
-    for (var i=0; i < decl.length; i++)
-    {
-        var parameter = dataRegionName + ".param." + decl[i].name;
-        values[parameter] = valuesRaw[parameter];
-    }
+    <%-- This page is loaded only at render time, require Ext 4 --%>
+    LABKEY.requiresExt4Sandbox(function() {
+        Ext4.onReady(function() {
 
-    var dataRegion = LABKEY.DataRegions[dataRegionName];
-    if (dataRegion)
-    {
-        dataRegion.setParameters(values);
-    }
-    else
-    {
-        var query = Ext.apply(LABKEY.ActionURL.getParameters() || {}, values);
-        window.location.search = "?" + LABKEY.ActionURL.queryString(query);
-    }
-}
-Ext.onReady(function()
-{
-    var items = [], item,
-        p, name, i=0;
+            var region = LABKEY.DataRegions[dataRegionName];
+            var items = [], item, p;
 
-    for (; i < decl.length; i++)
-    {
-        p = decl[i];
-        name = <%=PageFlowUtil.qh(bean.dataRegionName)%> + ".param." + Ext.util.Format.htmlEncode(p.name);
+            for (var i=0; i < decl.length; i++) {
+                p = decl[i];
+                name = Ext4.htmlEncode(region.name) + '.param.' + Ext4.htmlEncode(p.name);
 
-        item = {
-            xtype: p.xtype || 'textfield',
-            fieldLabel: p.name,
-            width: 250,
-            name: name,
-            value: LABKEY.ActionURL.getParameter(name) || p.value
-        };
-        if (p.jsontype == 'int') {
-            item.decimalPrecision = 0;
-        }
-        items.push(item);
-    }
-    formpanel = new LABKEY.ext.FormPanel({
-        renderTo: <%=PageFlowUtil.jsString(bean.dataRegionDomId)%>,
-        items: items,
-        bodyStyle: 'padding: 5px;',
-        bbar: [{text: 'Submit', handler: submitHandler}]
+                item = {
+                    xtype: p.xtype || 'textfield',
+                    fieldLabel: p.name,
+                    width: 250,
+                    name: name,
+                    value: LABKEY.ActionURL.getParameter(name) || p.value
+                };
+
+                if (p.jsontype == 'int') {
+                    item.decimalPrecision = 0;
+                }
+                items.push(item);
+            }
+
+            var parameterForm = Ext4.create('Ext.form.Panel', {
+                renderTo: regionDomId,
+                border: false,
+                bodyStyle: 'padding: 5px',
+                items: items,
+                buttonAlign: 'left',
+                buttons: [{
+                    text: 'Submit',
+                    handler: function() {
+                        var valuesRaw = parameterForm.getForm().getValues();
+                        parameterForm.destroy();
+                        delete parameterForm;
+
+                        var values = {};
+                        for (var i=0; i < decl.length; i++) {
+                            var parameter = dataRegionName + '.param.' + decl[i].name;
+                            values[parameter] = valuesRaw[parameter];
+                        }
+
+                        var dataRegion = LABKEY.DataRegions[dataRegionName];
+                        if (dataRegion) {
+                            dataRegion.setParameters(values);
+                        }
+                        else {
+                            var query = Ext4.apply(LABKEY.ActionURL.getParameters() || {}, values);
+                            window.location.search = "?" + LABKEY.ActionURL.queryString(query);
+                        }
+                    }
+                }]
+            });
+
+        });
     });
-});
 })();
 </script>
-<%-- NOTE: div id must match DataRegion.js expected <table> element so it can be removed in DataRegion.destroy() --%>
-<div id=<%=PageFlowUtil.qh(bean.dataRegionDomId)%>></div>

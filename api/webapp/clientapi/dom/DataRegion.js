@@ -2441,6 +2441,12 @@ if (!LABKEY.DataRegions) {
                     }
 
                     params.push([param, value]);
+                    if (region.async) {
+                        if (!region.parameters) {
+                            region.parameters = {};
+                        }
+                        region.parameters[param] = value;
+                    }
                 }
             });
         }
