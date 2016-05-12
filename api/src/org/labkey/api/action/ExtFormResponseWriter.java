@@ -28,7 +28,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Writer;
-import java.util.List;
 
 /*
 * User: Dave
@@ -41,13 +40,15 @@ import java.util.List;
  * that Ext forms require.
  *
  * Ext has a particular format they use for consuming validation errors expressed in JSON:
- *  {
+ * <pre>
+ * {
  *      success: false,
  *      errors: {
  *          clientCode: "Client not found",
  *          portOfLoading: "This field must not be null"
- *          }
+ *      }
  * }
+ * </pre>
  *
  * This is a bit strange, since you can't provide more than one error
  * for a given field, and there's really no place to put object-level
@@ -55,12 +56,19 @@ import java.util.List;
  *
  * Also, the response code must be SC_OK(200).
  *
- * See http://extjs.com/deploy/dev/docs/?class=Ext.form.Action.Submit
+ * See: http://extjs.com/deploy/dev/docs/?class=Ext.form.Action.Submit
  *
+ * NOTE: When returning JSON for ExtJS BasicForm with a file upload field, the
+ * response Content-Type must be "text/html" with a html encoded json body.
+ *
+ * See: http://docs.sencha.com/extjs/4.1.3/#!/api/Ext.form.Basic-method-hasUpload
+ *
+ * When not submitting a file upload or when using XMLHttpRequest directly (e.g,
+ * with FormData as in LABKEY.Query.importData) the response Content-Type should be application/json.
  */
 public class ExtFormResponseWriter extends ApiJsonWriter
 {
-    boolean isMultipartRequest = false;
+    boolean sendHtmlJsonResponse = false;
     boolean startResponse = true;
     
     public ExtFormResponseWriter(HttpServletResponse response) throws IOException
@@ -72,15 +80,15 @@ public class ExtFormResponseWriter extends ApiJsonWriter
     public ExtFormResponseWriter(HttpServletRequest request, HttpServletResponse response) throws IOException
     {
         this(response);
-        if (request instanceof MultipartHttpServletRequest)
-            isMultipartRequest = true;
-        response.setContentType(isMultipartRequest ? "text/html" : CONTENT_TYPE_JSON);
+        if (!"XMLHttpRequest".equals(request.getHeader("X-Requested-With")) && (request instanceof MultipartHttpServletRequest))
+            sendHtmlJsonResponse = true;
+        response.setContentType(sendHtmlJsonResponse ? "text/html" : CONTENT_TYPE_JSON);
     }
 
     public  ExtFormResponseWriter(HttpServletRequest request, HttpServletResponse response, String contentTypeOverride) throws IOException
     {
         this(request, response);
-        if (!isMultipartRequest && null != contentTypeOverride)
+        if (!sendHtmlJsonResponse && null != contentTypeOverride)
             response.setContentType(contentTypeOverride);
     }
 
@@ -166,7 +174,7 @@ public class ExtFormResponseWriter extends ApiJsonWriter
         Writer w = super.getWriter();
         if (null == w)
             return null;
-        if (isMultipartRequest && startResponse)
+        if (sendHtmlJsonResponse && startResponse)
         {
             startResponse = false;
             try
