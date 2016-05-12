@@ -49,6 +49,11 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
 
     private boolean _closed = false;
 
+    static
+    {
+        // Never ever cache queries, #26416
+        IndexSearcher.setDefaultQueryCache(null);
+    }
 
     static WritableIndexManager get(Path indexPath, Analyzer analyzer) throws IOException
     {
