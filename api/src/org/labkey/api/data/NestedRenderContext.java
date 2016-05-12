@@ -114,7 +114,7 @@ public class NestedRenderContext extends RenderContext
             String sortSQL = withSort.getSQL().substring(withSort.getSQL().toUpperCase().lastIndexOf("ORDER BY"));
 
             // The ORDER BY shouldn't include any parameters of its own
-            assert withoutSort.getParams().size() == withSort.getParams().size();
+            assert withoutSort.getParams().size() == withSort.getParams().size() : "Parameter objects don't match: " + withoutSort.getParams() + " vs " + withSort.getParams();
 
             // Our GROUP BY is exactly the same set of columns as the ORDER BY, but without the
             // ASC or DESC. In buildSort we explicitly include the grouping PK in the Sort
