@@ -213,6 +213,7 @@
         {
             $('body').on('click', _checkBodyClick);
             $(document).on('keyup', _checkKeyUp);
+            LABKEY.Utils.signalWebDriverTest("notificationPanelShown");
         };
 
         var _removeCheckHandlers = function()
