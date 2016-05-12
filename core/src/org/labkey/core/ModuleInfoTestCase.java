@@ -36,7 +36,7 @@ public class ModuleInfoTestCase
 
         for (Module m : ModuleLoader.getInstance().getModules())
         {
-            if (!"LabKey Software".equals(m.getOrganization()))
+            if (!"LabKey".equals(m.getOrganization()))
                 continue;
 
             List<String> report = ModuleLoader.getInstance().checkLabKeyModuleInfo(m);
@@ -46,7 +46,7 @@ public class ModuleInfoTestCase
         }
 
         if (sb.length() > 0)
-            Assert.fail("Missing expected properties on 'LabKey Software' modules:" + sb.toString());
+            Assert.fail("Missing expected properties on 'LabKey' modules:" + sb.toString());
     }
 
 }

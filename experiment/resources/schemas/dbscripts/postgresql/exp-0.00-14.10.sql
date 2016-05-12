@@ -20,7 +20,7 @@
  *  Creates experiment annotation tables in the exp schema based on FuGE-OM types
  *
  *  Author Peter Hussey
- *  LabKey Software
+ *  LabKey
  */
 
 CREATE SCHEMA exp;
