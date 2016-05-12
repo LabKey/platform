@@ -655,7 +655,7 @@ public class ModuleLoader implements Filter
                     }
 
                     // Check for LabKey module info. Missing info is only a warning for now, but may be an error later.
-                    if ("LabKey Software".equals(module.getOrganization()))
+                    if ("LabKey".equals(module.getOrganization()))
                     {
                         List<String> report = checkLabKeyModuleInfo(module);
                         if (report != null)

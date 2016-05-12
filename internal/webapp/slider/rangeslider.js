@@ -5,7 +5,7 @@
 |                  (http://webfx.eae.net/contact.html#erik)                   |
 |                      For WebFX (http://webfx.eae.net/)                      |
 |           Modified to have two handles, defining a range, by David Stearns  |
-               for LabKey Software (http://www.labkey.com)                    |
+               for LabKey (http://www.labkey.com)                    |
 |-----------------------------------------------------------------------------|
 | A  slider  control that  degrades  to an  input control  for non  supported |
 | browsers.                                                                   |
