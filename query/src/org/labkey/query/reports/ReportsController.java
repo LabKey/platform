@@ -130,6 +130,7 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.SortHelpers;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GWTView;
@@ -2809,6 +2810,17 @@ public class ReportsController extends SpringActionController
                 props = resolveJSONProperties(form.getProps());
             }
 
+            SortOrder sortOrder;
+            if (props.containsKey("sortOrder"))
+            {
+                sortOrder = SortOrder.valueOf(props.get("sortOrder"));
+            }
+            else
+            {
+                sortOrder = SortOrder.BY_DISPLAY_ORDER;  // default
+            }
+            response.put("sortOrder", sortOrder.toString());
+
             List<DataViewProvider.Type> visibleDataTypes = new ArrayList<>();
             for (DataViewProvider.Type type : DataViewService.get().getDataTypes(getContainer(), getUser()))
             {
@@ -2964,6 +2976,12 @@ public class ReportsController extends SpringActionController
         }
     }
 
+    private enum SortOrder
+    {
+        ALPHABETICAL,
+        BY_DISPLAY_ORDER
+    }
+
     private Map<String, String> getAdminConfiguration()
     {
         Map<String, String> props = new HashMap<>();
@@ -2981,6 +2999,8 @@ public class ReportsController extends SpringActionController
                 props.put(typeName, "0");
         }
 
+        props.put("sortOrder", SortOrder.BY_DISPLAY_ORDER.toString());
+
         // visible columns
         props.put("Type", "1");
         props.put("Author", "1");
@@ -2997,9 +3017,32 @@ public class ReportsController extends SpringActionController
     @Action(ActionType.SelectMetaData.class)
     public class BrowseDataTreeAction extends ApiAction<BrowseDataForm>
     {
+        SortOrder _sortOrder;
+
         @Override
         public ApiResponse execute(BrowseDataForm form, BindException errors) throws Exception
         {
+            Portal.WebPart webPart = Portal.getPart(getContainer(), form.getPageId(), form.getIndex());
+
+            Map<String, String> props;
+            if (webPart != null)
+            {
+                props = webPart.getPropertyMap();
+                String sortOrderString = props.get("sortOrder");
+                if(sortOrderString != null)
+                {
+                    _sortOrder = SortOrder.valueOf(sortOrderString);
+                }
+                else  // sort order has never been set before
+                {
+                    _sortOrder = SortOrder.BY_DISPLAY_ORDER;  // so use default
+                }
+            }
+            else
+            {
+                _sortOrder = SortOrder.BY_DISPLAY_ORDER;  // use default
+            }
+
             HttpServletResponse resp = getViewContext().getResponse();
             resp.setContentType("application/json");
             resp.getWriter().write(getTreeData(form).toString());
@@ -3208,7 +3251,7 @@ public class ReportsController extends SpringActionController
             // process other categories
             if (tree.get(vc.getRowId()).size() > 0)
             {
-                // has it's own sub-categories
+                // has its own sub-categories
                 for (ViewCategory v : tree.get(vc.getRowId()))
                 {
                     JSONObject category = new JSONObject();
@@ -3221,6 +3264,7 @@ public class ReportsController extends SpringActionController
                     children.put(category);
                 }
             }
+            ArrayList<JSONObject> views = new ArrayList<>();
 
             // process views
             for (DataViewInfo view : groups.get(vc.getRowId()))
@@ -3230,7 +3274,23 @@ public class ReportsController extends SpringActionController
                 viewJson.put("leaf", true);
                 viewJson.put("icon", view.getIconUrl().getLocalURIString());
                 viewJson.put("iconCls", view.getIconCls());
-                children.put(viewJson);
+                views.add(viewJson);
+            }
+
+            Comparator<JSONObject>naturalOrderComparator = new Comparator<JSONObject>() {
+                @Override
+                public int compare(JSONObject a, JSONObject b)
+                {
+                    return SortHelpers.compare(a.get("name"), b.get("name"));
+                }
+            };
+            if(_sortOrder == SortOrder.ALPHABETICAL)
+            {
+                views.sort(naturalOrderComparator);
+            }
+            for (JSONObject view : views)
+            {
+                children.put(view);
             }
 
             return children;

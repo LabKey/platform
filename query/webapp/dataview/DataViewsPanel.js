@@ -310,6 +310,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         this.dateFormat = LABKEY.extDefaultDateFormat;
         this.dateRenderer = Ext4.util.Format.dateRenderer(this.dateFormat);
         this.editInfo = json.editInfo;
+        this.sortOrder = json.sortOrder;
 
         this.initGrid(json.visibleColumns);
     },
@@ -990,7 +991,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         var cbItems = [],
             cbColumns = [],
-            sizeItems = [];
+            sizeItems = []
+            reportOrderItems = [];
 
         var heights = {
             450 : 'small',
@@ -1035,6 +1037,25 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             }
         }, scope : this});
 
+        reportOrderItems.push({
+            boxLabel: 'Alphabetical', name: 'sortOrder', inputValue: 'ALPHABETICAL', checked: false, handler: function (grp){
+                if (grp.getValue()) {
+                    this.updateConfig = true;
+                }
+        }, scope : this  });
+        reportOrderItems.push({
+            boxLabel: 'By Display Order', name: 'sortOrder', inputValue: 'BY_DISPLAY_ORDER', checked: false, handler: function (grp){
+                if (grp.getValue()) {
+                    this.updateConfig = true;
+                }
+        }, scope : this  });
+        if (this.sortOrder === 'ALPHABETICAL') {
+            reportOrderItems[0].checked = true;
+        }
+        else if (this.sortOrder === 'BY_DISPLAY_ORDER') {
+            reportOrderItems[1].checked = true;
+        }
+
         var namePanel = Ext4.create('Ext.form.Panel', {
             border : false,
             fieldDefaults  : {
@@ -1063,10 +1084,17 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 emptyText       : '225',
                 hidden          : !customSize,
                 name            : 'height',
-                listeners       : {change : {fn : function(cmp, newValue){
+                listeners       : {change: {fn: function (cmp, newValue){
                     this.updateConfig = true;
                     this._height = parseInt(newValue);
-                }, scope : this}}
+                }, scope: this}}
+            },{
+                xtype      : 'radiogroup',
+                fieldLabel : 'Sort',
+                columns    : 2,
+                height     : 50,
+                width      : 250,
+                items      : reportOrderItems
             }]
         });
 
