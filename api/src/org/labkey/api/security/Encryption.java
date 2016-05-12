@@ -288,12 +288,18 @@ public class Encryption
         {
             String textToEncrypt = "this is some text I want to encrypt";
             String passPhrase = "Here's my super secret pass phrase";
+            String wrongPassPhrase = passPhrase + " not";
 
-            Algorithm aesPassPhrase = new AES(passPhrase, 128, "test pass phrase");
-            byte[] encrypted = aesPassPhrase.encrypt(textToEncrypt);
+            // Our AES implementation can usually detect a bad pass phrase (based on padding anomalies), but this is not 100% guaranteed.
+            // Give the test three tries... by my calculations, this will fail once in every 2.6 million runs, which we can live with.
+            for (int i = 0; i < 3; i++)
+            {
+                Algorithm aesPassPhrase = new AES(passPhrase, 128, "test pass phrase");
+                byte[] encrypted = aesPassPhrase.encrypt(textToEncrypt);
 
-            Algorithm aesWrongPassPhrase = new AES(passPhrase + " not", 128, "test pass phrase");
-            aesWrongPassPhrase.decrypt(encrypted);
+                Algorithm aesWrongPassPhrase = new AES(wrongPassPhrase, 128, "test pass phrase");
+                aesWrongPassPhrase.decrypt(encrypted);
+            }
         }
 
         private void test(Algorithm algorithm)
