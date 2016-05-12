@@ -590,17 +590,21 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
         // Also look using label, if different
         // TODO qd.getTitle() calls getTable() which can cause QueryParseException, can we avoid the getTable() call?
-        try
+        // qd.getTitle() ends up calling calling TableQueryDefinition.createTable() which takes a long time, just use gq.getName() unless directed otherwise by alwaysUseTitlesForLoadingCustomViews
+        if (alwaysUseTitlesForLoadingCustomViews)
         {
-            if (!qd.getName().equals(qd.getTitle()))
+            try
             {
-                Path providerLabelPath = new Path(AssayService.ASSAY_DIR_NAME, getProvider().getResourceName(), QueryService.MODULE_QUERIES_DIRECTORY, FileUtil.makeLegalName(qd.getTitle()));
-                result.addAll(QueryService.get().getFileBasedCustomViews(container, qd, providerLabelPath, qd.getTitle()));
+                if (!qd.getName().equals(qd.getTitle()))
+                {
+                    Path providerLabelPath = new Path(AssayService.ASSAY_DIR_NAME, getProvider().getResourceName(), QueryService.MODULE_QUERIES_DIRECTORY, FileUtil.makeLegalName(qd.getTitle()));
+                    result.addAll(QueryService.get().getFileBasedCustomViews(container, qd, providerLabelPath, qd.getTitle()));
+                }
             }
-        }
-        catch (QueryParseException qpe)
-        {
-            // move along, nothing to see here...
+            catch (QueryParseException qpe)
+            {
+                // move along, nothing to see here...
+            }
         }
 
         // Look in the legacy location in file-based modules (assay.<PROTOCOL_NAME> Batches, etc)
@@ -610,7 +614,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
         result.addAll(QueryService.get().getFileBasedCustomViews(container, qd, legacyPath, qd.getName()));
 
         // Look in the legacy location in file-based modules (assay.<PROTOCOL_NAME> Batches, etc)
-        result.addAll(QueryService.get().getCustomViews(getUser(), container, getUser(), legacySchemaName, legacyQueryName, true));
+        result.addAll(QueryService.get().getCustomViews(getUser(), container, getUser(), legacySchemaName, legacyQueryName, true, alwaysUseTitlesForLoadingCustomViews));
 
         // Look in the standard location (based on the assay design name) for additional custom views
         result.addAll(super.getModuleCustomViews(container, qd, alwaysUseTitlesForLoadingCustomViews));
