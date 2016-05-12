@@ -25,6 +25,7 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.StartupListener;
@@ -52,6 +53,8 @@ import java.util.Set;
 public class VisualizationModule extends DefaultModule
 {
     public static final String NAME = "Visualization";
+
+    public static final String EXPERIMENTAL_VISUALIZATION_ANALYTICS_PROVIDER = "experimental-visualization-analytics-provider";
 
     @Override
     public String getName()
@@ -117,6 +120,11 @@ public class VisualizationModule extends DefaultModule
         ReportService.get().addUIProvider(new VisualizationUIProvider());
 
         ServiceRegistry.get().registerService(VisualizationService.class, new VisualizationServiceImpl());
+
+        AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_VISUALIZATION_ANALYTICS_PROVIDER,
+                "Visualization Column Analytics Providers", "This feature allows columns marked as measures and "
+                    + "dimensions to display visualizations (pie chart, bar chart, or box plot) of their data in "
+                    + "the Data Region message area.", false);
     }
 
 

@@ -6,9 +6,11 @@ import org.labkey.api.analytics.ColumnAnalyticsProvider;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.visualization.VisualizationModule;
 
 import java.util.Set;
 
@@ -29,7 +31,8 @@ public class DimensionPieChartAnalyticsProvider extends ColumnAnalyticsProvider
     @Override
     public boolean isApplicable(@NotNull ColumnInfo col)
     {
-        return col.isDimension();
+        return AppProps.getInstance().isExperimentalFeatureEnabled(VisualizationModule.EXPERIMENTAL_VISUALIZATION_ANALYTICS_PROVIDER)
+                && col.isDimension();
     }
 
     @Nullable

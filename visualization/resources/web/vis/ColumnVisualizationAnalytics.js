@@ -55,7 +55,7 @@
                         fontFamily: 'Roboto, arial',
                         margins: {
                             top: 35,
-                            bottom: 25,
+                            bottom: 15,
                             left: 50,
                             right: 50
                         },
@@ -90,7 +90,8 @@
                             yLeft: {
                                 scaleType: 'continuous',
                                 trans: scale.toLowerCase(),
-                                domain: [min, null]
+                                domain: [min, null],
+                                tickDigits: 6
                             }
                         }
                     });
@@ -134,7 +135,7 @@
                         if (categoryCountMap.hasOwnProperty(category))
                         {
                             categoryData.push({
-                                label: _truncateLabel(category),
+                                label: _truncateLabel(category, 10),
                                 value: categoryCountMap[category]
                             });
                         }
@@ -151,7 +152,7 @@
                             fontFamily: 'Roboto, arial',
                             margins: {
                                 top: 35,
-                                bottom: 25,
+                                bottom: 35,
                                 left: 50,
                                 right: 50
                             },
@@ -167,7 +168,7 @@
                                 fill: '#64A1C6'
                             },
                             xAes: function(row){
-                                return _truncateLabel(row[columnName].value);
+                                return _truncateLabel(row[columnName].value, 7);
                             }
                         });
 
@@ -258,9 +259,9 @@
             return plotDivId;
         };
 
-        var _truncateLabel = function(value)
+        var _truncateLabel = function(value, length)
         {
-            return value != null && value.length > 10 ? value.substring(0, 10) + '...' : value;
+            return value != null && value.length > length ? value.substring(0, length) + '...' : value;
         };
 
         return {
