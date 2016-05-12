@@ -29,25 +29,7 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.ResultSetRowMapFactory;
-import org.labkey.api.data.AttachmentParentEntity;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DatabaseCache;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.Filter;
-import org.labkey.api.data.ObjectFactory;
-import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.issues.IssuesSchema;
@@ -90,6 +72,7 @@ import org.labkey.issue.ColumnTypeEnum;
 import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.query.IssuesQuerySchema;
+import org.labkey.remoteapi.assay.Run;
 
 import javax.servlet.ServletException;
 import java.io.ByteArrayOutputStream;
@@ -191,6 +174,7 @@ public class IssueManager
         return false;
     }
 
+    @Deprecated
     public static Issue getIssue(@Nullable Container c, int issueId)
     {
         SimpleFilter f = new SimpleFilter(FieldKey.fromParts("issueId"), issueId);
@@ -220,6 +204,37 @@ public class IssueManager
         issue.setRelatedIssues(rels);
         // the related string is only used when rendering the update form
         issue.setRelated(StringUtils.join(rels, ", "));
+        return issue;
+    }
+
+    public static Issue getNewIssue(Container c, User user, int issueId)
+    {
+        Issue issue = getIssue(c, issueId);
+
+        IssueListDef issueListDef = getIssueListDef(issue.getIssueDefId());
+        UserSchema userSchema = QueryService.get().getUserSchema(user, c, IssuesQuerySchema.SCHEMA_NAME);
+        TableInfo table = userSchema.getTable(issueListDef.getName());
+
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("IssueId"), issueId);
+
+        try (Results rs = QueryService.get().select(table, table.getColumns(), filter, null, null, false))
+        {
+            Map<String, Object> rowMap = new CaseInsensitiveHashMap<>();
+            if (rs.next())
+            {
+                for (String colName : table.getColumnNameSet())
+                {
+                    Object value = rs.getObject(colName);
+                    if (value != null)
+                        rowMap.put(colName, value);
+                }
+            }
+            issue.setExtraProperties(rowMap);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeException(e);
+        }
         return issue;
     }
 
@@ -310,7 +325,7 @@ public class IssueManager
         indexIssue(null, issue);
     }
 
-    public static void newSaveIssue(User user, Container container, Issue issue, Map<String, Object> extraProperties) throws SQLException
+    public static void newSaveIssue(User user, Container container, Issue issue) throws SQLException
     {
         if (issue.assignedTo == null)
             issue.assignedTo = 0;
@@ -327,7 +342,7 @@ public class IssueManager
 
                 ObjectFactory factory = ObjectFactory.Registry.getFactory(Issue.class);
                 factory.toMap(issue, row);
-                row.putAll(extraProperties);
+                row.putAll(issue.getExtraProperties());
 
                 BatchValidationException batchErrors = new BatchValidationException();
                 List<Map<String, Object>> results;

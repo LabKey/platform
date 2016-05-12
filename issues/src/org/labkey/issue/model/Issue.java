@@ -17,6 +17,7 @@ package org.labkey.issue.model;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -36,6 +37,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -86,6 +88,8 @@ public class Issue extends Entity implements Serializable, Cloneable
     protected String _notifyList;
     protected Integer _issueDefId;
     protected String _issueDefName;         // used only in the actions
+
+    private Map<String, Object> _extraProperties = new CaseInsensitiveHashMap<>();
 
     public Issue()
     {
@@ -667,6 +671,16 @@ public class Issue extends Entity implements Serializable, Cloneable
                 ret.add(v);
         }
         return ret;
+    }
+
+    public Map<String, Object> getExtraProperties()
+    {
+        return _extraProperties;
+    }
+
+    public void setExtraProperties(Map<String, Object> extraProperties)
+    {
+        _extraProperties = extraProperties;
     }
 
     @Override

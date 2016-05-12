@@ -309,34 +309,9 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     {
         if (_renderContext == null)
         {
-            try
-            {
-                _renderContext = new RenderContext(context);
-                _renderContext.setMode(_mode);
-                UserSchema userSchema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), IssuesQuerySchema.SCHEMA_NAME);
-                TableInfo table = userSchema.getTable(_issueListDef.getName());
-
-                SimpleFilter filter = null;
-                if (_issue != null)
-                    filter = new SimpleFilter(FieldKey.fromParts("IssueId"), _issue.getIssueId());
-
-                try (Results rs = QueryService.get().select(table, table.getColumns(), filter, null, null, false))
-                {
-                    Map<String, Object> rowMap = new CaseInsensitiveHashMap<>();
-                    if (rs.next())
-                    {
-                        for (String colName : table.getColumnNameSet())
-                        {
-                            rowMap.put(colName, rs.getObject(colName));
-                        }
-                        _renderContext.setRow(rowMap);
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                throw new RuntimeException(e);
-            }
+            _renderContext = new RenderContext(context);
+            _renderContext.setMode(_mode);
+            _renderContext.setRow(_issue.getExtraProperties());
         }
         return  _renderContext;
     }
@@ -348,7 +323,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
             final StringBuilder sb = new StringBuilder();
 
             sb.append("<tr><td class=\"labkey-form-label\">");
-            sb.append(getLabel(type, false));
+            sb.append(getLabel(type, getMode() != DataRegion.MODE_DETAILS));
             sb.append("</td><td>");
 
             RenderContext renderContext = getRenderContext(context);

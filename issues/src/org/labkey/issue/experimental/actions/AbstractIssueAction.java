@@ -1,10 +1,13 @@
 package org.labkey.issue.experimental.actions;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.notification.NotificationService;
+import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
@@ -14,6 +17,8 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.validator.ColumnValidator;
+import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.issues.IssuesSchema;
@@ -29,12 +34,20 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.MailHelper;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.issue.ColumnTypeEnum;
 import org.labkey.issue.CustomColumnConfiguration;
+import org.labkey.issue.IssueUpdateEmailTemplate;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.NewColumnType;
 import org.labkey.issue.model.CustomColumn;
@@ -47,6 +60,9 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.MapBindingResult;
 import org.springframework.web.servlet.mvc.Controller;
 
+import javax.mail.Address;
+import javax.mail.Message;
+import javax.mail.internet.AddressException;
 import javax.servlet.ServletException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -58,11 +74,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.action.SpringActionController.getActionName;
+
 /**
  * Created by klum on 4/13/2016.
  */
 public abstract class AbstractIssueAction extends FormViewAction<IssuesController.IssuesForm>
 {
+    private static final Logger _log = Logger.getLogger(IssuesController.class);
     protected Issue _issue = null;
     private CustomColumnConfiguration _columnConfiguration;
 
@@ -80,6 +99,7 @@ public abstract class AbstractIssueAction extends FormViewAction<IssuesControlle
         // bind the provisioned table to the form bean so we can get typed properties
         IssueListDef issueListDef = getIssueListDef();
         form.setTable(issueListDef.createTable(getUser()));
+        issue.setExtraProperties(form.getTypedColumns());
 
         Issue prevIssue = (Issue)form.getOldValues();
         requiresUpdatePermission(user, issue);
@@ -126,7 +146,7 @@ public abstract class AbstractIssueAction extends FormViewAction<IssuesControlle
         if (!ret) return false;
 */
 
-        IssuesController.ChangeSummary changeSummary;
+        ChangeSummary changeSummary;
         try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
         {
             detailsUrl = new NewDetailsAction(issue, getViewContext()).getURL();
@@ -150,8 +170,8 @@ public abstract class AbstractIssueAction extends FormViewAction<IssuesControlle
             // convert from email addresses & display names to userids before we hit the database
             issue.parseNotifyList(issue.getNotifyList());
 
-            changeSummary = IssuesController.createChangeSummary(issue, prevIssue, duplicateOf, user, form.getAction(), form.getComment(), getColumnConfiguration(), getUser());
-            IssueManager.newSaveIssue(user, c, issue, form.getTypedColumns());
+            changeSummary = ChangeSummary.createChangeSummary(getIssueListDef(), issue, prevIssue, duplicateOf, getContainer(), user, form.getAction(), form.getComment(), getColumnConfiguration(), getUser());
+            IssueManager.newSaveIssue(user, c, issue);
             AttachmentService.get().addAttachments(changeSummary.getComment(), getAttachmentFileList(), user);
 
             if (duplicateOf != null)
@@ -159,7 +179,7 @@ public abstract class AbstractIssueAction extends FormViewAction<IssuesControlle
                 StringBuilder sb = new StringBuilder();
                 sb.append("<em>Issue ").append(issue.getIssueId()).append(" marked as duplicate of this issue.</em>");
                 Issue.Comment dupComment = duplicateOf.addComment(user, sb.toString());
-                IssueManager.newSaveIssue(user, c, duplicateOf, Collections.emptyMap());
+                IssueManager.newSaveIssue(user, c, duplicateOf);
             }
 
             Set<Integer> newRelatedIds = issue.getRelatedIssues();
@@ -205,8 +225,8 @@ public abstract class AbstractIssueAction extends FormViewAction<IssuesControlle
         // Send update email...
         //    ...if someone other than "created by" is closing a bug
         //    ...if someone other than "assigned to" is updating, reopening, or resolving a bug
-/*
         final String assignedTo = UserManager.getDisplayName(_issue.getAssignedTo(), user);
+        String change;
         if (NewInsertAction.class.equals(form.getAction()))
         {
             if (assignedTo != null)
@@ -222,7 +242,7 @@ public abstract class AbstractIssueAction extends FormViewAction<IssuesControlle
             change += " as " + issue.getResolution(); // Issue 12273
         }
         sendUpdateEmail(issue, prevIssue, changeSummary.getTextChanges(), changeSummary.getSummary(), form.getComment(), detailsUrl, change, getAttachmentFileList(), form.getAction(), user);
-*/
+
         return true;
     }
 
@@ -255,7 +275,7 @@ public abstract class AbstractIssueAction extends FormViewAction<IssuesControlle
      */
     protected Issue getIssue(int issueId, boolean redirect) throws RedirectException
     {
-        Issue result = IssueManager.getIssue(redirect ? null : getContainer(), issueId);
+        Issue result = IssueManager.getNewIssue(getContainer(), getUser(), issueId);
         // See if it's from a different container
         if (result != null && redirect && !result.getContainerId().equals(getContainer().getId()))
         {
@@ -441,23 +461,26 @@ public abstract class AbstractIssueAction extends FormViewAction<IssuesControlle
         if (newFields.containsKey("notifyList"))
             validateRequired("notifylist", newFields.get("notifyList"), requiredFields, requiredErrors);
 
-        // todo handle required custom fields
-/*
-        if (newFields.containsKey("int1"))
-            validateRequired("int1", newFields.get("int1"), requiredFields, requiredErrors);
-        if (newFields.containsKey("int2"))
-            validateRequired("int2", newFields.get("int2"), requiredFields, requiredErrors);
-        if (newFields.containsKey("string1"))
-            validateRequired("string1", newFields.get("string1"), requiredFields, requiredErrors);
-        if (newFields.containsKey("string2"))
-            validateRequired("string2", newFields.get("string2"), requiredFields, requiredErrors);
-        if (newFields.containsKey("string3"))
-            validateRequired("string3", newFields.get("string3"), requiredFields, requiredErrors);
-        if (newFields.containsKey("string4"))
-            validateRequired("string4", newFields.get("string4"), requiredFields, requiredErrors);
-        if (newFields.containsKey("string5"))
-            validateRequired("string5", newFields.get("string5"), requiredFields, requiredErrors);
-*/
+        // handle custom field types
+        IssueListDef issueListDef = getIssueListDef();
+        if (issueListDef != null)
+        {
+            TableInfo tableInfo = issueListDef.createTable(getUser());
+
+            for (Map.Entry<String, String> entry : newFields.entrySet())
+            {
+                ColumnInfo col = tableInfo.getColumn(FieldKey.fromParts(entry.getKey()));
+                if (col != null)
+                {
+                    for (ColumnValidator validator : ColumnValidators.create(col, null))
+                    {
+                        String msg = validator.validate(0, entry.getValue());
+                        if (msg != null)
+                            requiredErrors.rejectValue(col.getName(), "NullError", new Object[] {col.getName()}, msg);
+                    }
+                }
+            }
+        }
         if (newFields.containsKey("comment"))
             validateRequired("comment", newFields.get("comment"), requiredFields, requiredErrors);
 
@@ -566,6 +589,127 @@ public abstract class AbstractIssueAction extends FormViewAction<IssuesControlle
         }
     }
 
+    private void sendUpdateEmail(Issue issue, Issue prevIssue, String fieldChanges, String summary, String comment, ActionURL detailsURL, String change, List<AttachmentFile> attachments, Class<? extends Controller> action, User createdByUser) throws ServletException
+    {
+        // Skip the email if no comment and no public fields have changed, #17304
+        if (fieldChanges.isEmpty() && comment.isEmpty())
+            return;
+
+        final Set<User> allAddresses = getUsersToEmail(issue, prevIssue, action);
+        for (User user : allAddresses)
+        {
+            boolean hasPermission = getContainer().hasPermission(user, ReadPermission.class);
+            if (!hasPermission) continue;
+
+            String to = user.getEmail();
+            try
+            {
+                Issue.Comment lastComment = issue.getLastComment();
+                String messageId = "<" + issue.getEntityId() + "." + lastComment.getCommentId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
+                String references = messageId + " <" + issue.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
+                MailHelper.MultipartMessage m = MailHelper.createMultipartMessage();
+                m.addRecipients(Message.RecipientType.TO, MailHelper.createAddressArray(to));
+                Address[] addresses = m.getAllRecipients();
+
+                if (addresses != null && addresses.length > 0)
+                {
+                    IssueUpdateEmailTemplate template = EmailTemplateService.get().getEmailTemplate(IssueUpdateEmailTemplate.class, getContainer());
+                    template.init(issue, detailsURL, change, comment, fieldChanges, allAddresses, attachments, user);
+
+                    m.setSubject(template.renderSubject(getContainer()));
+                    m.setFrom(template.renderFrom(getContainer(), LookAndFeelProperties.getInstance(getContainer()).getSystemEmailAddress()));
+                    m.setHeader("References", references);
+                    String body = template.renderBody(getContainer());
+
+                    m.setTextContent(body);
+                    StringBuilder html = new StringBuilder();
+                    html.append("<html><head></head><body>");
+                    html.append(PageFlowUtil.filter(body,true,true));
+                    html.append(
+                            "<div itemscope itemtype=\"http://schema.org/EmailMessage\">\n" +
+                                    "  <div itemprop=\"action\" itemscope itemtype=\"http://schema.org/ViewAction\">\n" +
+                                    "    <link itemprop=\"url\" href=\"" + PageFlowUtil.filter(detailsURL) + "\"></link>\n" +
+                                    "    <meta itemprop=\"name\" content=\"View Commit\"></meta>\n" +
+                                    "  </div>\n" +
+                                    "  <meta itemprop=\"description\" content=\"View this " + PageFlowUtil.filter(IssueManager.getEntryTypeNames(getContainer()).singularName) + "\"></meta>\n" +
+                                    "</div>\n");
+                    html.append("</body></html>");
+                    m.setEncodedHtmlContent(html.toString());
+
+                    NotificationService.get().sendMessage(getContainer(), createdByUser, user, m,
+                            "view " + IssueManager.getEntryTypeNames(getContainer()).singularName,
+                            new ActionURL(IssuesController.DetailsAction.class,getContainer()).addParameter("issueId",issue.getIssueId()).getLocalURIString(false),
+                            "issue:" + issue.getIssueId(),
+                            Issue.class.getName(), true);
+                }
+            }
+            catch (ConfigurationException | AddressException e)
+            {
+                _log.error("error sending update email to " + to, e);
+            }
+            catch (Exception e)
+            {
+                _log.error("error sending update email to " + to, e);
+                ExceptionUtil.logExceptionToMothership(null, e);
+            }
+        }
+    }
+
+    /**
+     * Builds the list of email addresses for notification based on the user
+     * preferences and the explicit notification list.
+     */
+    private Set<User> getUsersToEmail(Issue issue, Issue prevIssue, Class<? extends Controller> action) throws ServletException
+    {
+        final Set<User> emailUsers = new HashSet<>();
+        final Container c = getContainer();
+        int assignedToPref = IssueManager.getUserEmailPreferences(c, issue.getAssignedTo());
+        int assignedToPrev = prevIssue != null && prevIssue.getAssignedTo() != null ? prevIssue.getAssignedTo() : 0;
+        int assignedToPrevPref = assignedToPrev != 0 ? IssueManager.getUserEmailPreferences(c, prevIssue.getAssignedTo()) : 0;
+        int createdByPref = IssueManager.getUserEmailPreferences(c, issue.getCreatedBy());
+
+        if (IssuesController.InsertAction.class.equals(action))
+        {
+            if ((assignedToPref & IssueManager.NOTIFY_ASSIGNEDTO_OPEN) != 0)
+                safeAddEmailUsers(emailUsers, UserManager.getUser(issue.getAssignedTo()));
+        }
+        else
+        {
+            if ((assignedToPref & IssueManager.NOTIFY_ASSIGNEDTO_UPDATE) != 0)
+                safeAddEmailUsers(emailUsers, UserManager.getUser(issue.getAssignedTo()));
+
+            if ((assignedToPrevPref & IssueManager.NOTIFY_ASSIGNEDTO_UPDATE) != 0)
+                safeAddEmailUsers(emailUsers, UserManager.getUser(prevIssue.getAssignedTo()));
+
+            if ((createdByPref & IssueManager.NOTIFY_CREATED_UPDATE) != 0)
+                safeAddEmailUsers(emailUsers, UserManager.getUser(issue.getCreatedBy()));
+        }
+
+        // add any users subscribed to this forum
+        List<ValidEmail> subscribedEmails = IssueManager.getSubscribedUserEmails(c);
+        for (ValidEmail email : subscribedEmails)
+            safeAddEmailUsers(emailUsers, UserManager.getUser(email));
+
+        // add any explicit notification list addresses
+        List<ValidEmail> emails = issue.getNotifyListEmail();
+        for (ValidEmail email : emails)
+            safeAddEmailUsers(emailUsers, UserManager.getUser(email));
+
+        boolean selfSpam = !((IssueManager.NOTIFY_SELF_SPAM & IssueManager.getUserEmailPreferences(c, getUser().getUserId())) == 0);
+        if (selfSpam)
+            safeAddEmailUsers(emailUsers, getUser());
+        else
+            emailUsers.remove(getUser());
+
+        return emailUsers;
+    }
+
+    private void safeAddEmailUsers(Set<User> users, User user)
+    {
+        if (user != null && user.isActive())
+            users.add(user);
+    }
+
     public static class NewCustomColumnConfiguration implements CustomColumnConfiguration
     {
         private Map<String, CustomColumn> _columnMap = new LinkedHashMap<>();
@@ -587,7 +731,7 @@ public abstract class AbstractIssueAction extends FormViewAction<IssuesControlle
                         {
                             CustomColumn col = new CustomColumn(c,
                                     prop.getName().toLowerCase(),
-                                    prop.getLabel(),
+                                    prop.getLabel() != null ? prop.getLabel() : prop.getName(),
                                     prop.getLookup() != null,
                                     prop.isProtected() ? InsertPermission.class : ReadPermission.class);
 
@@ -626,7 +770,12 @@ public abstract class AbstractIssueAction extends FormViewAction<IssuesControlle
         @Override
         public boolean shouldDisplay(User user, String name)
         {
-            return true;
+            CustomColumn col = _columnMap.get(name);
+            if (col != null)
+            {
+                return col.getContainer().hasPermission(user, col.getPermission());
+            }
+            return false;
         }
 
         @Override

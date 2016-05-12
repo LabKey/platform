@@ -1002,6 +1002,7 @@ issues/src/org/labkey/issue/NewColumnType.java -text
 issues/src/org/labkey/issue/experimental/IssuesListView.java -text
 issues/src/org/labkey/issue/experimental/IssuesWebPartFactory.java -text
 issues/src/org/labkey/issue/experimental/actions/AbstractIssueAction.java -text
+issues/src/org/labkey/issue/experimental/actions/ChangeSummary.java -text
 issues/src/org/labkey/issue/experimental/actions/NewCloseAction.java -text
 issues/src/org/labkey/issue/experimental/actions/NewDetailsAction.java -text
 issues/src/org/labkey/issue/experimental/actions/NewInsertAction.java -text
