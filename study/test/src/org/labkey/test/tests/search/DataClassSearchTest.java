@@ -15,34 +15,34 @@
  */
 package org.labkey.test.tests.search;
 
-import org.apache.http.HttpStatus;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.junit.Before;
-import org.junit.Ignore;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.labkey.remoteapi.CommandException;
-import org.labkey.remoteapi.CommandResponse;
 import org.labkey.remoteapi.Connection;
 import org.labkey.remoteapi.PostCommand;
+import org.labkey.remoteapi.query.DeleteRowsCommand;
+import org.labkey.remoteapi.query.InsertRowsCommand;
+import org.labkey.remoteapi.query.SaveRowsResponse;
+import org.labkey.remoteapi.query.UpdateRowsCommand;
+import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestTimeoutException;
-import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.DailyB;
 import org.labkey.test.categories.Search;
-import org.labkey.test.tests.study.StudyTest;
-import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.SearchHelper;
 import org.labkey.test.util.search.SearchAdminAPIHelper;
-import org.openqa.selenium.NoSuchElementException;
 
-import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Category({Search.class, DailyB.class})
-public class DataClassSearchTest extends StudyTest
+public class DataClassSearchTest extends BaseWebDriverTest
 {
     public SearchAdminAPIHelper.DirectoryType directoryType()
     {
@@ -72,8 +72,6 @@ public class DataClassSearchTest extends StudyTest
     private static long[] dataClassRowIds = new long[3];
     private static Connection connection;
 
-    private PortalHelper portalHelper = new PortalHelper(this);
-
     @Override
     public List<String> getAssociatedModules()
     {
@@ -89,29 +87,31 @@ public class DataClassSearchTest extends StudyTest
     @Override
     protected String getProjectName()
     {
-        return "SearchTest" + TRICKY_CHARACTERS_FOR_PROJECT_NAMES + " Project";
+        return "DataClass SearchTest" + TRICKY_CHARACTERS_FOR_PROJECT_NAMES + " Project";
+    }
+
+    @BeforeClass
+    public static void initProject()
+    {
+        DataClassSearchTest init = (DataClassSearchTest)getCurrentTest();
+
+        init.doInit();
+    }
+
+    private void doInit()
+    {
+        _containerHelper.createProject(getProjectName(), null);
+        _searchHelper.initialize();
     }
 
     @Before
     public void preTest()
     {
-        _containerHelper.deleteProject(getProjectName(), false);
-        _searchHelper.initialize();
-        openProjectMenu();
-        int response = -1;
-        try{
-            response = WebTestHelper.getHttpGetResponse(getBaseURL() + "/" + WebTestHelper.stripContextPath(getAttribute(Locator.linkWithText(getProjectName()), "href")));
-        }
-        catch (NoSuchElementException | IOException ignore){/*No link or bad response*/}
-
-        if (HttpStatus.SC_OK != response)
-        {
-            _containerHelper.createProject(getProjectName(), null);
-        }
+        goToProjectHome();
     }
 
     @Test
-    public void testSearch()
+    public void testSearch() throws Exception
     {
         SearchAdminAPIHelper.setDirectoryType(directoryType(), getDriver());
         connection = createDefaultConnection(true);
@@ -120,11 +120,6 @@ public class DataClassSearchTest extends StudyTest
         modifySearchableDataClasses();
         deleteSearchableDataClasses();
         // TODO: add moving to another folder and verifying that data classes are still indexed (in their new location)
-    }
-
-    public void runApiTests() throws Exception
-    {
-        /* No API tests */
     }
 
     @Override
@@ -139,7 +134,7 @@ public class DataClassSearchTest extends StudyTest
         }
     }
 
-    private void addSearchableDataClasses()
+    private void addSearchableDataClasses() throws Exception
     {
         log("Testing adding searchable data classes.");
 
@@ -169,17 +164,7 @@ public class DataClassSearchTest extends StudyTest
         domainOptions.put("nameExpression", DATA_CLASS_DOMAIN_EXPRESSION);  // not tested currently
         domainJson.put("options", domainOptions);
         createDomainCommand.setJsonObject(domainJson);
-        CommandResponse commandResponse;
-        try
-        {
-            commandResponse = createDomainCommand.execute(connection, getCurrentContainerPath());
-        }
-        catch (CommandException | IOException fail)
-        {
-            throw new RuntimeException(fail);
-        }
-        dataClassDomainId = commandResponse.getProperty("domainId");
-        dataClassDomainUri = commandResponse.getProperty("domainURI");
+        createDomainCommand.execute(connection, getCurrentContainerPath());
 
         // create second domain with same fields as first
         createDomainCommand = new PostCommand("property", "createDomain");
@@ -207,52 +192,30 @@ public class DataClassSearchTest extends StudyTest
         domainOptions.put("nameExpression", DATA_CLASS_DOMAIN_EXPRESSION);  // not tested currently
         domainJson.put("options", domainOptions);
         createDomainCommand.setJsonObject(domainJson);
-        try
-        {
-            commandResponse = createDomainCommand.execute(connection, getCurrentContainerPath());
-        }
-        catch (CommandException | IOException fail)
-        {
-            throw new RuntimeException(fail);
-        }
+        createDomainCommand.execute(connection, getCurrentContainerPath());
 
         // create data classes using first domain above
-        PostCommand insertRowsCommand = new PostCommand("query", "insertRows");
-        domainJson = new JSONObject();
-        domainJson.put("schemaName", DATA_CLASS_SCHEMA);
-        domainJson.put("queryName", DATA_CLASS_DOMAIN_1);
-        JSONArray domainRowsJson = new JSONArray();
-        JSONObject firstDomainRowJson = new JSONObject();
-        firstDomainRowJson.put("name", DATA_CLASS_1_NAME_1);
-        firstDomainRowJson.put("description", DATA_CLASS_1_DESCRIPTION_1);
-        firstDomainRowJson.put("alias", DATA_CLASS_1_ALIAS_1);
-        firstDomainRowJson.put("comment", DATA_CLASS_1_COMMENT_1);
-        firstDomainRowJson.put("iceCreamFlavor", "strawberry");
-        firstDomainRowJson.put("foodColor", "pink");
-        firstDomainRowJson.put("sequence", "hachi\nroku");
-        domainRowsJson.add(firstDomainRowJson);
-        JSONObject secondDomainRowJson = new JSONObject();
-        secondDomainRowJson.put("name", DATA_CLASS_2_NAME);
-        secondDomainRowJson.put("iceCreamFlavor", "vanilla");
-        secondDomainRowJson.put("foodColor", "white");
-        secondDomainRowJson.put("sequence", "ichi\nni\nsan");
-        domainRowsJson.add(secondDomainRowJson);
-        domainJson.put("rows", domainRowsJson);
-        insertRowsCommand.setJsonObject(domainJson);
-        try
-        {
-            commandResponse = insertRowsCommand.execute(connection, getCurrentContainerPath());
-        }
-        catch (CommandException | IOException fail)
-        {
-            throw new RuntimeException(fail);
-        }
+        InsertRowsCommand insertRowsCommand = new InsertRowsCommand(DATA_CLASS_SCHEMA, DATA_CLASS_DOMAIN_1);
+        insertRowsCommand.setRequiredVersion(9.1);
+        Map<String, Object> row1 = new HashMap<>();
+        row1.put("name", DATA_CLASS_1_NAME_1);
+        row1.put("description", DATA_CLASS_1_DESCRIPTION_1);
+        row1.put("alias", DATA_CLASS_1_ALIAS_1);
+        row1.put("comment", DATA_CLASS_1_COMMENT_1);
+        row1.put("iceCreamFlavor", "strawberry");
+        row1.put("foodColor", "pink");
+        row1.put("sequence", "hachi\nroku");
+        Map<String, Object> row2 = new HashMap<>();
+        row2.put("name", DATA_CLASS_2_NAME);
+        row2.put("iceCreamFlavor", "vanilla");
+        row2.put("foodColor", "white");
+        row2.put("sequence", "ichi\nni\nsan");
+        insertRowsCommand.setRows(new ArrayList<>(Arrays.asList(row1, row2)));
+        SaveRowsResponse insertResponse = insertRowsCommand.execute(connection, getCurrentContainerPath());
 
-        JSONArray rows = commandResponse.getProperty("rows");
-        JSONObject firstRow = (JSONObject)rows.get(0);
-        //JSONObject secondRow = (JSONObject)rows.get(1);
-        dataClassRowIds[0] = (Long)firstRow.get("rowid");
-        //dataClassRowIds[1] = (Long)secondRow.get("rowid");
+        List<Map<String, Object>> responseRows = insertResponse.getRows();
+        dataClassRowIds[0] = (Long)responseRows.get(0).get("rowid");
+        dataClassRowIds[1] = (Long)responseRows.get(1).get("rowid");
 
         // verify searchable data classes
         _searchHelper.clearSearchQueue();  // get rid of other searches
@@ -265,37 +228,23 @@ public class DataClassSearchTest extends StudyTest
         _searchHelper.clearSearchQueue();  // so we don't use these queries again
     }
 
-    private void modifySearchableDataClasses()
+    private void modifySearchableDataClasses() throws Exception
     {
         log("Testing modifying searchable data classes.");
 
         // update data classes
-        PostCommand updateRowsCommand = new PostCommand("query", "updateRows");
-        JSONObject domainJson = new JSONObject();
-        domainJson.put("schemaName", DATA_CLASS_SCHEMA);
-        domainJson.put("queryName", DATA_CLASS_DOMAIN_1);
-        JSONArray domainRowsJson = new JSONArray();
-        JSONObject firstDomainRowJson = new JSONObject();
-        firstDomainRowJson.put("rowId", dataClassRowIds[0]);
-        firstDomainRowJson.put("name", DATA_CLASS_1_NAME_2);
-        firstDomainRowJson.put("description", DATA_CLASS_1_DESCRIPTION_2);
-        firstDomainRowJson.put("alias", DATA_CLASS_1_ALIAS_2);
-        firstDomainRowJson.put("comment", DATA_CLASS_1_COMMENT_2);
-        firstDomainRowJson.put("iceCreamFlavor", DATA_CLASS_ICE_CREAM);
-        firstDomainRowJson.put("foodColor", "speckled");
-        firstDomainRowJson.put("sequence", "ek\ndo\nteen");
-        domainRowsJson.add(firstDomainRowJson);
-        domainJson.put("rows", domainRowsJson);
-        updateRowsCommand.setJsonObject(domainJson);
-        CommandResponse commandResponse;
-        try
-        {
-            commandResponse = updateRowsCommand.execute(connection, getCurrentContainerPath());
-        }
-        catch (CommandException | IOException fail)
-        {
-            throw new RuntimeException(fail);
-        }
+        UpdateRowsCommand updateRowsCommand = new UpdateRowsCommand(DATA_CLASS_SCHEMA, DATA_CLASS_DOMAIN_1);
+        Map<String, Object> updatedRow = new HashMap<>();
+        updatedRow.put("rowId", dataClassRowIds[0]);
+        updatedRow.put("name", DATA_CLASS_1_NAME_2);
+        updatedRow.put("description", DATA_CLASS_1_DESCRIPTION_2);
+        updatedRow.put("alias", DATA_CLASS_1_ALIAS_2);
+        updatedRow.put("comment", DATA_CLASS_1_COMMENT_2);
+        updatedRow.put("iceCreamFlavor", DATA_CLASS_ICE_CREAM);
+        updatedRow.put("foodColor", "speckled");
+        updatedRow.put("sequence", "ek\ndo\nteen");
+        updateRowsCommand.addRow(updatedRow);
+        updateRowsCommand.execute(connection, getCurrentContainerPath());
 
         _searchHelper.enqueueSearchItem("strawberry");  // these six items should no longer be found, as data class was modified
         _searchHelper.enqueueSearchItem("hachi \nroku");
@@ -312,28 +261,14 @@ public class DataClassSearchTest extends StudyTest
         _searchHelper.clearSearchQueue();
 
         // create data class using second domain above and test domain ID indexing
-        PostCommand insertRowsCommand = new PostCommand("query", "insertRows");
-        domainJson = new JSONObject();
-        domainJson.put("schemaName", DATA_CLASS_SCHEMA);
-        domainJson.put("queryName", DATA_CLASS_DOMAIN_2);
-        domainRowsJson = new JSONArray();
-        firstDomainRowJson = new JSONObject();
-        firstDomainRowJson.put("name", DATA_CLASS_3_NAME);
-        firstDomainRowJson.put("iceCreamFlavor", "raspberry");
-        domainRowsJson.add(firstDomainRowJson);
-        domainJson.put("rows", domainRowsJson);
-        insertRowsCommand.setJsonObject(domainJson);
-        try
-        {
-            commandResponse = insertRowsCommand.execute(connection, getCurrentContainerPath());
-        }
-        catch (CommandException | IOException fail)
-        {
-            throw new RuntimeException(fail);
-        }
-        JSONArray rows = commandResponse.getProperty("rows");
-        JSONObject firstRow = (JSONObject)rows.get(0);
-        dataClassRowIds[2] = (Long)firstRow.get("rowid");
+        InsertRowsCommand insertRowsCommand = new InsertRowsCommand(DATA_CLASS_SCHEMA, DATA_CLASS_DOMAIN_2);
+        Map<String, Object> row1 = new HashMap<>();
+        row1.put("name", DATA_CLASS_3_NAME);
+        row1.put("iceCreamFlavor", "raspberry");
+        insertRowsCommand.addRow(row1);
+        SaveRowsResponse insertResponse = insertRowsCommand.execute(connection, getCurrentContainerPath());
+        List<Map<String, Object>> responseRows = insertResponse.getRows();
+        dataClassRowIds[2] = (Long)responseRows.get(0).get("rowid");
 
         _searchHelper.enqueueSearchItem("dataclass:" + DATA_CLASS_DOMAIN_1 + " AND " + DATA_CLASS_ICE_CREAM,
                 Locator.linkContainingText(DATA_CLASS_1_NAME_1));
@@ -342,24 +277,11 @@ public class DataClassSearchTest extends StudyTest
         _searchHelper.clearSearchQueue();
 
         // delete data class with second domain (to avoid messing up later tests)
-        PostCommand deleteRowsCommand = new PostCommand("query", "deleteRows");
-        domainJson = new JSONObject();
-        domainJson.put("schemaName", DATA_CLASS_SCHEMA);
-        domainJson.put("queryName", DATA_CLASS_DOMAIN_2);
-        domainRowsJson = new JSONArray();
-        firstDomainRowJson = new JSONObject();
-        firstDomainRowJson.put("rowId", dataClassRowIds[2]);
-        domainRowsJson.add(firstDomainRowJson);
-        domainJson.put("rows", domainRowsJson);
-        deleteRowsCommand.setJsonObject(domainJson);
-        try
-        {
-            commandResponse = deleteRowsCommand.execute(connection, getCurrentContainerPath());
-        }
-        catch (CommandException | IOException fail)
-        {
-            throw new RuntimeException(fail);
-        }
+        DeleteRowsCommand deleteRowsCommand = new DeleteRowsCommand(DATA_CLASS_SCHEMA, DATA_CLASS_DOMAIN_2);
+        Map<String, Object> deletedRow = new HashMap<>();
+        deletedRow.put("rowId", dataClassRowIds[2]);
+        deleteRowsCommand.addRow(deletedRow);
+        deleteRowsCommand.execute(connection, getCurrentContainerPath());
 
         // alter domain
         // errors probably caused by Issue 26116, disable for now TODO: re-enable when Issue 26116 is fixed
@@ -429,40 +351,21 @@ public class DataClassSearchTest extends StudyTest
         */
     }
 
-    private void deleteSearchableDataClasses()
+    private void deleteSearchableDataClasses() throws Exception
     {
         log("Testing deleting searchable data classes.");
 
         // delete data classes with first domain
-        PostCommand deleteRowsCommand = new PostCommand("query", "deleteRows");
-        JSONObject domainJson = new JSONObject();
-        domainJson.put("schemaName", DATA_CLASS_SCHEMA);
-        domainJson.put("queryName", DATA_CLASS_DOMAIN_1);
-        JSONArray domainRowsJson = new JSONArray();
-        JSONObject firstDomainRowJson = new JSONObject();
-        firstDomainRowJson.put("rowId", dataClassRowIds[0]);
-        domainRowsJson.add(firstDomainRowJson);
-        domainJson.put("rows", domainRowsJson);
-        deleteRowsCommand.setJsonObject(domainJson);
-        CommandResponse commandResponse;
-        try
-        {
-            commandResponse = deleteRowsCommand.execute(connection, getCurrentContainerPath());
-        }
-        catch (CommandException | IOException fail)
-        {
-            throw new RuntimeException(fail);
-        }
+        DeleteRowsCommand deleteRowsCommand = new DeleteRowsCommand(DATA_CLASS_SCHEMA, DATA_CLASS_DOMAIN_1);
+        Map<String, Object> deletedRow = new HashMap<>();
+        deletedRow.put("rowId", dataClassRowIds[0]);
+        deleteRowsCommand.addRow(deletedRow);
+        deleteRowsCommand.execute(connection, getCurrentContainerPath());
+
         _searchHelper.enqueueSearchItem(DATA_CLASS_1_NAME_2);  // this and remaining search items should no longer be found, as data classes were removed
         //_searchHelper.enqueueSearchItem("yellow");  // TODO: re-enable this and following line when Issue 26116 is fixed
         //_searchHelper.enqueueSearchItem("ein \nzwei \ndrei");
         _searchHelper.verifySearchResults("/" + getProjectName(), false);
         _searchHelper.clearSearchQueue();
-    }
-
-    @Override @Test @Ignore
-    public void testSteps() throws Exception
-    {
-        // Mask parent test
     }
 }
