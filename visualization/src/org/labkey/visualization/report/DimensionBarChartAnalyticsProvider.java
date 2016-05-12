@@ -61,6 +61,7 @@ public class DimensionBarChartAnalyticsProvider extends ColumnAnalyticsProvider
     {
         dependencies.add(ClientDependency.fromPath("vis/vis"));
         dependencies.add(ClientDependency.fromPath("vis/ColumnVisualizationAnalytics.js"));
+        dependencies.add(ClientDependency.fromPath("vis/ColumnVisualizationAnalytics.css"));
     }
 
     @Override

@@ -1,0 +1,10 @@
+
+.labkey-dataregion-msg-plot-analytic svg
+{
+    margin-right: 3px;
+}
+
+.labkey-dataregion-msg-plot-analytic svg:hover
+{
+    background-color: #EEEEEE;
+}

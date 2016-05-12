@@ -22,7 +22,15 @@
                 {
                     var regionColumnNames = $.map(region.columns, function(c) { return c.name; }),
                         colIndex = regionColumnNames.indexOf(columnName),
+                        mainLabel = columnName,
+                        scale = 'LINEAR',
                         plotDivId = _appendPlotDiv(region);
+
+                    if (colIndex > -1)
+                    {
+                        mainLabel = region.columns[colIndex].caption;
+                        scale = region.columns[colIndex].defaultScale;
+                    }
 
                     var min = null, max = null;
                     $.each(data.rows, function(index, row)
@@ -47,13 +55,13 @@
                         fontFamily: 'Roboto, arial',
                         margins: {
                             top: 35,
-                            bottom: 20,
+                            bottom: 25,
                             left: 50,
                             right: 50
                         },
                         labels: {
                             main: {
-                                value: colIndex > -1 ? region.columns[colIndex].caption : columnName,
+                                value: mainLabel,
                                 position: 20,
                                 fontSize: 14
                             }
@@ -81,7 +89,7 @@
                             },
                             yLeft: {
                                 scaleType: 'continuous',
-                                trans: 'linear',
+                                trans: scale.toLowerCase(),
                                 domain: [min, null]
                             }
                         }
@@ -125,7 +133,10 @@
                     {
                         if (categoryCountMap.hasOwnProperty(category))
                         {
-                            categoryData.push({label: category, value: categoryCountMap[category]})
+                            categoryData.push({
+                                label: _truncateLabel(category),
+                                value: categoryCountMap[category]
+                            });
                         }
                     }
 
@@ -134,13 +145,13 @@
                         var plot = new LABKEY.vis.BarPlot({
                             renderTo: plotDivId,
                             rendererType: 'd3',
-                            width: categoryData.length > 5 ? 600 : 300,
+                            width: categoryData.length > 5 ? 605 : 300,
                             height: 200,
                             data: data.rows,
                             fontFamily: 'Roboto, arial',
                             margins: {
                                 top: 35,
-                                bottom: 20,
+                                bottom: 25,
                                 left: 50,
                                 right: 50
                             },
@@ -156,7 +167,7 @@
                                 fill: '#64A1C6'
                             },
                             xAes: function(row){
-                                return row[columnName].value
+                                return _truncateLabel(row[columnName].value);
                             }
                         });
 
@@ -233,16 +244,23 @@
             if (!$('.' + plotAnalyticsCls).length)
             {
                 dataRegion.addMessage({
-                    html: '<div class="' + plotAnalyticsCls + '"><span id="' + plotDivId + '"></span></div>',
+                    html: '<div class="' + plotAnalyticsCls + '">'
+                        + '<span id="' + plotDivId + '" class="labkey-dataregion-msg-plot-analytic"></span>'
+                        + '</div>',
                     part: 'plotAnalyticsProvider'
                 });
             }
             else
             {
-                $('.' + plotAnalyticsCls).append('<span id="' + plotDivId + '"></span>');
+                $('.' + plotAnalyticsCls).append('<span id="' + plotDivId + '" class="labkey-dataregion-msg-plot-analytic"></span>');
             }
 
             return plotDivId;
+        };
+
+        var _truncateLabel = function(value)
+        {
+            return value != null && value.length > 10 ? value.substring(0, 10) + '...' : value;
         };
 
         return {
