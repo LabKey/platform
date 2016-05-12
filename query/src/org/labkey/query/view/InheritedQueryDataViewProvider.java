@@ -36,6 +36,12 @@ public class InheritedQueryDataViewProvider extends AbstractQueryDataViewProvide
     }
 
     @Override
+    protected boolean includeInheritable()
+    {
+        return true;
+    }
+
+    @Override
     protected boolean includeView(ViewContext context, CustomView view)
     {
         return ReportUtil.isInherited(view, context.getContainer());

@@ -570,7 +570,7 @@ public class QueryServiceImpl extends QueryService
         }
         else
         {
-            views = getCustomViewMap(user, container, owner, schemaName, queryName, includeInherited, sharedOnly, true).values();
+            views = getCustomViewMap(user, container, owner, schemaName, queryName, includeInherited, sharedOnly, alwaysUseTitlesForLoadingCustomViews).values();
         }
 
         if (views == null || views.isEmpty())

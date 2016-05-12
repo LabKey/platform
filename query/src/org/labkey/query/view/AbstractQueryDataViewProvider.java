@@ -131,12 +131,15 @@ public abstract class AbstractQueryDataViewProvider implements DataViewProvider
         return getCustomViews(context, true);
     }
 
+    protected boolean includeInheritable() {
+        return false;
+    }
 
     protected List<CustomView> getCustomViews(ViewContext context, boolean alwaysUseTitlesForLoadingCustomViews)
     {
         List<CustomView> views = new ArrayList<>();
 
-        for (CustomView view : QueryService.get().getCustomViews(context.getUser(), context.getContainer(), context.getUser(), null, null, true, alwaysUseTitlesForLoadingCustomViews))
+        for (CustomView view : QueryService.get().getCustomViews(context.getUser(), context.getContainer(), context.getUser(), null, null, includeInheritable(), alwaysUseTitlesForLoadingCustomViews))
         {
             // issue : 21711 add the ability to hide module custom views from data views
             if (view instanceof ModuleCustomView)
@@ -169,7 +172,7 @@ public abstract class AbstractQueryDataViewProvider implements DataViewProvider
             if (null != svc.resolveDataset(c, view.getQueryName()))
                 dataregionName = "Dataset";
         }
-        return QueryService.get().urlFor(user, c,
+        return QueryService.get().urlDefault(c,
                 QueryAction.executeQuery, view.getSchemaName(), view.getQueryName()).
                 addParameter(dataregionName + "." + QueryParam.viewName.name(), view.getName());
     }
