@@ -2632,7 +2632,7 @@ if (!LABKEY.DataRegions) {
             }
 
             if (region.sort) {
-                json.filters[region.dataRegionName + ".sort"] = region.sort;
+                json.filters[region.dataRegionName + SORT_PREFIX] = region.sort;
             }
 
             if (region.aggregates) {
