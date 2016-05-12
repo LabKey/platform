@@ -25,6 +25,7 @@ import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyA;
+import org.labkey.test.components.CustomizeView;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.LogMethod;
@@ -460,11 +461,12 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         }
         for (String colFieldKey : colFieldKeys) // verify joined fields in column select
         {
-            assertElementPresent(Locator.xpath("//td[@title = '" + colFieldKey + "']"));
+            CustomizeView.FieldKey fieldKey = new CustomizeView.FieldKey(colFieldKey);
+            assertElementPresent(Locator.xpath("//td[@title = '" + fieldKey.toString() + "']"));
         }
         _customizeViewsHelper.openCustomizeViewPanel();
         assertTextNotPresent("not found", "Field not found");
-        _customizeViewsHelper.applyCustomView();
+        _customizeViewsHelper.closeCustomizeViewPanel();
     }
 
     @LogMethod
