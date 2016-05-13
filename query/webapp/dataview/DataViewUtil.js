@@ -344,7 +344,7 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
                                 y: box.y,
                                 autoShow : true,
                                 cls : 'data-window',
-                                title : 'Subcategories',
+                                title : 'Manage Subcategories',
                                 draggable : false,
                                 resizable : false,
                                 closable: false,
@@ -484,6 +484,7 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
 
         return Ext4.create('Ext.grid.Panel', {
             id : gridid || Ext4.id(),
+            border: false,
             store: store,
             columns : [{
                 xtype    : 'templatecolumn',
