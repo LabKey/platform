@@ -72,7 +72,9 @@ public class ExpSchema extends AbstractExpSchema
         {
             public TableInfo createTable(ExpSchema expSchema, String queryName)
             {
-                ExpMaterialTable result = expSchema.getSamplesSchema().getSampleTable(null);
+                SamplesSchema schema = new SamplesSchema(expSchema.getPath(), expSchema.getUser(), expSchema.getContainer(), null);
+                schema.setContainerFilter(expSchema._containerFilter);
+                ExpMaterialTable result = schema.getSampleTable(null);
                 return result;
             }
         },
