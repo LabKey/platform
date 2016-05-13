@@ -81,6 +81,7 @@ public class NotificationService
          * Return a count of the number of notification records updated.
          */
         int markAsRead(Container container, User user, @Nullable String objectId, @NotNull List<String> types, int notifyUserId);
+        int markAsRead(@NotNull User user, int rowid);
 
         /*
          * Remove a single notification, if it exists, for a specific user based on the specified objectId and types,

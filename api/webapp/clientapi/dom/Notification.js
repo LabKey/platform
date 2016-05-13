@@ -111,7 +111,7 @@
             if (id)
             {
                 LABKEY.Ajax.request({
-                    url: LABKEY.ActionURL.buildURL('core', 'markNotificationAsRead.api'),
+                    url: LABKEY.ActionURL.buildURL('notification', 'markNotificationAsRead.api'),
                     params: {rowIds: [id]},
                     success: LABKEY.Utils.getCallbackWrapper(function (response)
                     {
@@ -158,7 +158,7 @@
                 if (rowIds.length > 0)
                 {
                     LABKEY.Ajax.request({
-                        url: LABKEY.ActionURL.buildURL('core', 'markNotificationAsRead.api'),
+                        url: LABKEY.ActionURL.buildURL('notification', 'markNotificationAsRead.api'),
                         params: {rowIds: rowIds},
                         success: LABKEY.Utils.getCallbackWrapper(function (response)
                         {
@@ -195,7 +195,10 @@
                     && !event.target.classList.contains("labkey-notification-toggle")
                     && !event.target.classList.contains("labkey-notification-close"))
                 {
-                    window.location = LABKEY.notifications[id].ActionLinkUrl;
+                    var goto = LABKEY.ActionURL.buildURL("notification", "goto",
+                            LABKEY.notifications[id].ContainerId || LABKEY.ActionURL.getContainer(),
+                            {rowid:LABKEY.notifications[id].RowId, returnUrl:LABKEY.notifications[id].ActionLinkUrl});
+                    window.location = goto;
                 }
             }
         };
@@ -206,7 +209,7 @@
          */
         var goToViewAll = function ()
         {
-            window.location = LABKEY.ActionURL.buildURL('core', 'userNotifications');
+            window.location = LABKEY.ActionURL.buildURL('notification', 'userNotifications');
         };
 
         var _addCheckHandlers = function()
