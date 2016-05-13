@@ -60,102 +60,105 @@ Ext4.define('LABKEY.query.browser.view.SchemaDetails', {
     onQueries : function(schemaNodeChildren) {
         this.removeAll();
 
-        var items = [],
-            schema = this.cache.getSchema(this.schemaName),
-            links = this.formatSchemaLinks(schema),
-            childSchemaNames = [],
-            userDefined = [],
-            builtIn = [],
-            rows = [];
+        this.cache.getSchema(this.schemaName, function(schema) {
 
-        if (links) {
-            items.push(links);
-        }
+            var items = [],
+                links = this.formatSchemaLinks(schema),
+                childSchemaNames = [],
+                userDefined = [],
+                builtIn = [],
+                rows = [];
 
-        items.push({
-            xtype: 'box',
-            autoEl: {
-                tag: 'div',
-                cls: 'lk-qd-name',
-                html: Ext4.htmlEncode(this.schemaName.toDisplayString() + ' Schema')
+            if (links) {
+                items.push(links);
             }
-        });
-        items.push({
-            xtype: 'box',
-            autoEl: {
-                tag: 'div',
-                cls: 'lk-qd-description',
-                html: Ext4.htmlEncode(schema.description)
-            }
-        });
 
-        Ext4.iterate(schema.schemas, function(childSchemaName) {
-            childSchemaNames.push(childSchemaName);
-        });
-        if (!Ext4.isEmpty(childSchemaNames)) {
-            childSchemaNames.sort(function(a, b) { return a.toLowerCase().localeCompare(b.toLowerCase()); });
-        }
-
-        // Each schemaNode has grouped the queries (built-in vs user-defined). Iterate through each group
-        // and add the query node's data to the appropriate category.
-        Ext4.each(schemaNodeChildren, function(schemaNodeChild)
-        {
-            Ext4.each(schemaNodeChild.childNodes, function(queryNode)
-            {
-                if (schemaNodeChild.get('text') === "user-defined queries")
-                    userDefined.push(Ext4.clone(queryNode.data));
-                else if (schemaNodeChild.get('text') === "built-in queries &amp; tables")
-                    builtIn.push(Ext4.clone(queryNode.data));
-            });
-        });
-
-        if (userDefined.length > 0) {
-            userDefined.sort(function(a, b) { return a.queryName.localeCompare(b.queryName); });
-        }
-        if (builtIn.length > 0) {
-            builtIn.sort(function(a, b) { return a.queryName.localeCompare(b.queryName); });
-        }
-
-        if (childSchemaNames.length > 0) {
-            rows.push(this.formatSchemaList(childSchemaNames, schema.schemas, 'Child Schemas'));
-        }
-        if (userDefined.length > 0) {
-            rows.push(this.formatQueryList(userDefined, 'User-Defined Queries'));
-        }
-        if (builtIn.length > 0) {
-            rows.push(this.formatQueryList(builtIn, 'Built-In Queries and Tables'));
-        }
-
-        items.push({
-            xtype: 'box',
-            autoEl: {
-                tag: 'table',
-                cls: 'lk-qd-coltable',
-                children: [{
-                    tag: 'tbody',
-                    children: rows
-                }]
-            },
-            listeners: {
-                afterrender: {
-                    fn: function(box) {
-                        // bind links
-                        var nameLinks = Ext4.DomQuery.select('tbody tr td span', box.getEl().id);
-                        if (!Ext4.isEmpty(nameLinks)) {
-                            for (var i = 0; i < nameLinks.length; i++) {
-                                Ext4.get(nameLinks[i]).on('click', function(evt, t) {
-                                    this.fireEvent('queryclick', this.schemaName, Ext4.htmlDecode(t.innerHTML));
-                                }, this);
-                            }
-                        }
-                    },
-                    scope: this,
-                    single: true
+            items.push({
+                xtype: 'box',
+                autoEl: {
+                    tag: 'div',
+                    cls: 'lk-qd-name',
+                    html: Ext4.htmlEncode(this.schemaName.toDisplayString() + ' Schema')
                 }
-            }
-        });
+            });
+            items.push({
+                xtype: 'box',
+                autoEl: {
+                    tag: 'div',
+                    cls: 'lk-qd-description',
+                    html: Ext4.htmlEncode(schema.description)
+                }
+            });
 
-        this.add(items);
+            Ext4.iterate(schema.schemas, function(childSchemaName) {
+                childSchemaNames.push(childSchemaName);
+            });
+            if (!Ext4.isEmpty(childSchemaNames)) {
+                childSchemaNames.sort(function(a, b) { return a.toLowerCase().localeCompare(b.toLowerCase()); });
+            }
+
+            // Each schemaNode has grouped the queries (built-in vs user-defined). Iterate through each group
+            // and add the query node's data to the appropriate category.
+            Ext4.each(schemaNodeChildren, function(schemaNodeChild)
+            {
+                Ext4.each(schemaNodeChild.childNodes, function(queryNode)
+                {
+                    if (schemaNodeChild.get('text') === "user-defined queries")
+                        userDefined.push(Ext4.clone(queryNode.data));
+                    else if (schemaNodeChild.get('text') === "built-in queries &amp; tables")
+                        builtIn.push(Ext4.clone(queryNode.data));
+                });
+            });
+
+            if (userDefined.length > 0) {
+                userDefined.sort(function(a, b) { return a.queryName.localeCompare(b.queryName); });
+            }
+            if (builtIn.length > 0) {
+                builtIn.sort(function(a, b) { return a.queryName.localeCompare(b.queryName); });
+            }
+
+            if (childSchemaNames.length > 0) {
+                rows.push(this.formatSchemaList(childSchemaNames, schema.schemas, 'Child Schemas'));
+            }
+            if (userDefined.length > 0) {
+                rows.push(this.formatQueryList(userDefined, 'User-Defined Queries'));
+            }
+            if (builtIn.length > 0) {
+                rows.push(this.formatQueryList(builtIn, 'Built-In Queries and Tables'));
+            }
+
+            items.push({
+                xtype: 'box',
+                autoEl: {
+                    tag: 'table',
+                    cls: 'lk-qd-coltable',
+                    children: [{
+                        tag: 'tbody',
+                        children: rows
+                    }]
+                },
+                listeners: {
+                    afterrender: {
+                        fn: function(box) {
+                            // bind links
+                            var nameLinks = Ext4.DomQuery.select('tbody tr td span', box.getEl().id);
+                            if (!Ext4.isEmpty(nameLinks)) {
+                                for (var i = 0; i < nameLinks.length; i++) {
+                                    Ext4.get(nameLinks[i]).on('click', function(evt, t) {
+                                        this.fireEvent('queryclick', this.schemaName, Ext4.htmlDecode(t.innerHTML));
+                                    }, this);
+                                }
+                            }
+                        },
+                        scope: this,
+                        single: true
+                    }
+                }
+            });
+
+            this.add(items);
+
+        }, this);
     },
 
     formatSchemaLinks : function(schema) {
