@@ -67,7 +67,7 @@
     Ext4.onReady(function()
     {
         LABKEY.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('core', 'getUserNotifications.api'),
+            url: LABKEY.ActionURL.buildURL('notification', 'getUserNotifications.api'),
             success: LABKEY.Utils.getCallbackWrapper(function(response)
             {
                 Ext4.create('LABKEY.core.NotificationViewAll', {

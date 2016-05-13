@@ -217,6 +217,32 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
     }
 
     @Override
+    public int markAsRead(@NotNull User user, int rowid)
+    {
+        SimpleFilter filter = getNotificationUpdateFilter(user.getUserId(), rowid);
+        filter.addCondition(FieldKey.fromParts("ReadOn"), null, CompareType.ISBLANK);
+
+        TableSelector selector = new TableSelector(getTable(), filter, null);
+        List<Notification> notifications = selector.getArrayList(Notification.class);
+
+        // update the ReadOn date to current date
+        Map<String, Object> fields = new HashMap<>();
+        fields.put("ReadOn", new Date());
+
+        try(DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
+        {
+            for (Notification notification : notifications)
+            {
+                Table.update(user, getTable(), fields, notification.getRowId());
+            }
+            transaction.commit();
+        }
+
+        return notifications.size();
+    }
+
+
+    @Override
     public int removeNotifications(Container container, @Nullable String objectId, @NotNull List<String> types, int notifyUserId)
     {
         SimpleFilter filter = getNotificationUpdateFilter(container, objectId, types, notifyUserId);
@@ -240,6 +266,15 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
             filter.addCondition(FieldKey.fromParts("ObjectId"), objectId);
         return filter;
     }
+
+    private SimpleFilter getNotificationUpdateFilter(int userid, int rowid)
+    {
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("UserID"), userid);
+        filter.addCondition(FieldKey.fromParts("RowId"), rowid);
+        return filter;
+    }
+
 
     @Override
     public void registerNotificationType(@NotNull String type, String label, @Nullable String iconCls)
