@@ -15,21 +15,16 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView"%>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
-<%
-    String dataRegionName = ((JspView<String>)HttpView.currentView()).getModelBean();
-%>
 <script type="text/javascript"><!--
 
-var requestedURLs = new Object();
+var requestedURLs = {};
 
-function toggleNestedGrid(url, elementName)
+function toggleNestedGrid(dataRegionName, url, elementName)
 {
-    var contentElement = document.getElementById("<%=dataRegionName%>-Content" + elementName);
-    var rowElement = document.getElementById("<%=dataRegionName%>-Row" + elementName);
-    var toggleElement = document.getElementById("<%=dataRegionName%>-Handle" + elementName);
+    var contentElement = document.getElementById(dataRegionName + "-Content" + elementName);
+    var rowElement = document.getElementById(dataRegionName + "-Row" + elementName);
+    var toggleElement = document.getElementById(dataRegionName + "-Handle" + elementName);
 
     if (contentElement.innerHTML == "" && url)
     {
@@ -43,9 +38,9 @@ function toggleNestedGrid(url, elementName)
                 {
                     if (success && response.status == 200)
                     {
-                        var rowElement = document.getElementById("<%=dataRegionName%>-Row" + elementName);
-                        var toggleElement = document.getElementById("<%=dataRegionName%>-Handle" + elementName);
-                        var contentElement = document.getElementById("<%=dataRegionName%>-Content" + elementName);
+                        var rowElement = document.getElementById(dataRegionName + "-Row" + elementName);
+                        var toggleElement = document.getElementById(dataRegionName + "-Handle" + elementName);
+                        var contentElement = document.getElementById(dataRegionName + "-Content" + elementName);
 
                         contentElement.innerHTML = response.responseText;
                         toggleElement.src = "<%=getWebappURL("_images/minus.gif")%>";

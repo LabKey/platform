@@ -75,6 +75,8 @@ public abstract class AbstractNestableDataRegion extends DataRegion
     {
         String value = getUniqueColumnValue(ctx);
         out.write("<a onclick=\"return toggleNestedGrid(");
+        out.write(PageFlowUtil.jsString(getName()));
+        out.write(", ");
         out.write(_ajaxNestedGridURL == null ? "null" : PageFlowUtil.jsString(PageFlowUtil.filter(_ajaxNestedGridURL + value)));
         out.write(", '");
         out.write(value);
