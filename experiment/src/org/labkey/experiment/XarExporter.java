@@ -472,6 +472,14 @@ public class XarExporter
         {
             xSampleSet.setDescription(sampleSet.getDescription());
         }
+        for (DomainProperty keyCol : sampleSet.getIdCols())
+        {
+            xSampleSet.addKeyField(keyCol.getName());
+        }
+        if (sampleSet.getParentCol() != null)
+        {
+            xSampleSet.setParentField(sampleSet.getParentCol().getName());
+        }
         
         Domain domain = sampleSet.getType();
         queueDomain(domain);

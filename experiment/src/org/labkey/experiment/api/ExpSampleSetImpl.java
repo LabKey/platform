@@ -134,6 +134,31 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         return ExpMaterialTable.Column.Name.name().equals(_object.getIdCol1());
     }
 
+    public void setParentColName(@Nullable String parentColumnName)
+    {
+        _object.setParentCol(parentColumnName);
+    }
+
+    public void setIdColNames(@NotNull List<String> names)
+    {
+        if (names.size() > 0)
+        {
+            _object.setIdCol1(names.get(0));
+            if (names.size() > 1)
+            {
+                _object.setIdCol2(names.get(1));
+                if (names.size() > 2)
+                {
+                    _object.setIdCol3(names.get(2));
+                    if (names.size() > 3)
+                    {
+                        throw new IllegalArgumentException("Only three ID columns are supported, but " + names.size() + " were requested: " + names);
+                    }
+                }
+            }
+        }
+    }
+
     @Nullable
     public DomainProperty getIdCol1()
     {

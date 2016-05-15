@@ -357,6 +357,14 @@ public class XarReader extends AbstractXarImporter
         materialSource.setLSID(lsid);
         materialSource.setContainer(getContainer());
         materialSource.setMaterialLSIDPrefix(LsidUtils.resolveLsidFromTemplate(sampleSet.getMaterialLSIDPrefix(), getRootContext(), "Material"));
+        if (sampleSet.getKeyFieldArray() != null && sampleSet.getKeyFieldArray().length > 0)
+        {
+            materialSource.setIdColNames(Arrays.asList(sampleSet.getKeyFieldArray()));
+        }
+        if (sampleSet.getParentField() != null)
+        {
+            materialSource.setParentColName(sampleSet.getParentField());
+        }
 
         if (existingMaterialSource != null)
         {
