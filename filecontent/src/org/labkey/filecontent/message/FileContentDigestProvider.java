@@ -19,6 +19,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -47,6 +48,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewServlet;
+import org.labkey.api.webdav.FileSystemBatchAuditProvider;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 
@@ -184,7 +186,7 @@ public class FileContentDigestProvider implements MessageDigest.Provider
                 svc.sendMessage(messages, null, c);
             }
 
-            FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(c.getId(), events.size() + " Files modified");
+            AuditTypeEvent event = new AuditTypeEvent(FileSystemBatchAuditProvider.EVENT_TYPE, c, events.size() + " file modifications processed as batch for digest notifications");
             AuditLogService.get().addEvent(null, event);
        }
         catch (Exception e)
