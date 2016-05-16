@@ -111,6 +111,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.issue.experimental.actions.AbstractIssueAction;
+import org.labkey.issue.experimental.actions.NewAdminAction;
 import org.labkey.issue.experimental.actions.NewCloseAction;
 import org.labkey.issue.experimental.actions.NewDetailsAction;
 import org.labkey.issue.experimental.actions.NewInsertAction;
@@ -118,6 +119,7 @@ import org.labkey.issue.experimental.actions.NewListAction;
 import org.labkey.issue.experimental.actions.NewReopenAction;
 import org.labkey.issue.experimental.actions.NewResolveAction;
 import org.labkey.issue.experimental.actions.NewUpdateAction;
+import org.labkey.issue.experimental.actions.IssueServiceAction;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.CustomColumn;
@@ -170,7 +172,9 @@ public class IssuesController extends SpringActionController
             NewResolveAction.class,
             NewReopenAction.class,
             NewCloseAction.class,
-            NewInsertAction.class);
+            NewInsertAction.class,
+            NewAdminAction.class,
+            IssueServiceAction.class);
 
     private static final int MAX_STRING_FIELD_LENGTH = 200;
 

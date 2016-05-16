@@ -19,5 +19,6 @@
       </library>
     </orderEntry>
     <orderEntry type="module" module-name="Issue-API" />
+    <orderEntry type="module" module-name="IssueGWT" />
   </component>
 </module>

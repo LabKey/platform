@@ -961,7 +961,14 @@ filecontent/webapp/File/system/Abstract.js -text
 filecontent/webapp/File/system/Webdav.js -text
 filecontent/webapp/File/util/IconUtil.js -text
 issues/Issue-API.iml -text svneol=unset#application/xml
+issues/IssueGWT.iml -text
 issues/api-src/org/labkey/api/issues/IssuesUrls.java -text
+issues/gwtsrc/org/labkey/issues/Designer.gwt.xml -text
+issues/gwtsrc/org/labkey/issues/client/GWTIssueDefinition.java -text
+issues/gwtsrc/org/labkey/issues/client/IssueDesigner.java -text
+issues/gwtsrc/org/labkey/issues/client/IssueDesignerLoader.java -text
+issues/gwtsrc/org/labkey/issues/client/IssueService.java -text
+issues/gwtsrc/org/labkey/issues/client/IssueServiceAsync.java -text
 issues/module.properties -text
 issues/resources/data/priority.tsv -text
 issues/resources/data/type.tsv -text
@@ -1004,6 +1011,8 @@ issues/src/org/labkey/issue/experimental/IssuesListView.java -text
 issues/src/org/labkey/issue/experimental/IssuesWebPartFactory.java -text
 issues/src/org/labkey/issue/experimental/actions/AbstractIssueAction.java -text
 issues/src/org/labkey/issue/experimental/actions/ChangeSummary.java -text
+issues/src/org/labkey/issue/experimental/actions/IssueServiceAction.java -text
+issues/src/org/labkey/issue/experimental/actions/NewAdminAction.java -text
 issues/src/org/labkey/issue/experimental/actions/NewCloseAction.java -text
 issues/src/org/labkey/issue/experimental/actions/NewDetailsAction.java -text
 issues/src/org/labkey/issue/experimental/actions/NewInsertAction.java -text

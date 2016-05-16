@@ -23,6 +23,8 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.issue.IssuesController;
+import org.labkey.issue.experimental.IssuesListView;
+import org.labkey.issue.experimental.actions.NewAdminAction;
 import org.labkey.issue.model.IssueListDef;
 import org.springframework.validation.BindException;
 
@@ -75,8 +77,7 @@ public class IssuesQueryView extends QueryView
             Domain domain = _issueDef.getDomain(getUser());
             if (domain != null)
             {
-                // for now just attach the domain editor to the admin button, eventually build this out to the final admin UI
-                ActionURL url = domain.getDomainKind().urlEditDefinition(domain, getViewContext());
+                ActionURL url = new ActionURL(NewAdminAction.class, getContainer()).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, _issueDef.getName());
                 ActionButton adminButton = new ActionButton(url, "Admin", DataRegion.MODE_GRID, ActionButton.Action.LINK);
                 adminButton.setDisplayPermission(AdminPermission.class);
 
