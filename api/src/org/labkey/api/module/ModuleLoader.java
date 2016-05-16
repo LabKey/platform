@@ -424,19 +424,19 @@ public class ModuleLoader implements Filter
     {
         if (!AppProps.getInstance().isDevMode())
         {
-            if (isProductionBuild(getCoreModule()))
+            if (isDevelopmentBuild(getCoreModule()))
                 throw new ConfigurationException("This server does not appear to be compiled for production mode");
 
             getModules()
                 .stream()
-                .filter(module -> module.getBuildType() != null && isProductionBuild(module))
+                .filter(module -> module.getBuildType() != null && isDevelopmentBuild(module))
                 .forEach(module -> {
                     addModuleFailure(module.getName(), new IllegalStateException("Module " + module + " was not compiled in production mode"));
                 });
         }
     }
 
-    private boolean isProductionBuild(Module module)
+    private boolean isDevelopmentBuild(Module module)
     {
         return !PRODUCTION_BUILD_TYPE.equalsIgnoreCase(module.getBuildType());
     }
