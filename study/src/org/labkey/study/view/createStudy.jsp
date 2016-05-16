@@ -160,7 +160,7 @@
 <%}%>
 
         <tr>
-            <td><br><br><%= button("Create Study").submit(true) %>&nbsp;<%= generateBackButton()%></td>
+            <td><br><br><%= button("Create Study").disableOnClick(true).submit(true) %>&nbsp;<%= generateBackButton()%></td>
             <td>&nbsp;</td>
         </tr>
     </table>
