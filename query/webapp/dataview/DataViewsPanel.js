@@ -210,7 +210,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             hidden: true,
             preventHeader: true,
             border: false, frame: false,
-            height: 220,
+            height: 250,
             items: [ this.customPanel ]
         },{
             xtype: 'panel',
