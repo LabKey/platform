@@ -40,7 +40,7 @@
                 for (var id in LABKEY.notifications)
                 {
                     if (LABKEY.notifications.hasOwnProperty(id) && LABKEY.notifications[id].RowId
-                        && LABKEY.notifications[id].ReadOn == null)
+                        && LABKEY.notifications[id].ReadOn == null && LABKEY.notifications[id].Deleted == undefined)
                     {
                         count++;
                     }
@@ -138,6 +138,43 @@
         };
 
         /**
+         * Dismiss, i.e. delete, a given notification based on the RowId
+         * @param id - notification RowId
+         * @param callback - function to call on success
+         * @private
+         */
+        var dismiss = function (id, callback)
+        {
+            if (id)
+            {
+                LABKEY.Ajax.request({
+                    url: LABKEY.ActionURL.buildURL('notification', 'dismissNotification.api'),
+                    params: {rowIds: [id]},
+                    success: LABKEY.Utils.getCallbackWrapper(function (response)
+                    {
+                        if (response.success && response.numDeleted == 1)
+                        {
+                            if (NOTIFICATION_PANEL_EL && id && LABKEY.notifications && LABKEY.notifications[id])
+                            {
+                                LABKEY.notifications[id].Deleted = true;
+                                NOTIFICATION_PANEL_EL.find('#notification-' + id).slideUp(250, _updateGroupDisplay);
+                                updateUnreadCount();
+                            }
+
+                            if (callback)
+                                callback.call(this, id);
+                        }
+                    }),
+                    failure: function(response)
+                    {
+                        var responseText = LABKEY.Utils.decode(response.responseText);
+                        LABKEY.Utils.alert('Error', responseText.exception);
+                    }
+                });
+            }
+        };
+
+        /**
          * Mark all notifications as read and clear the notification panel
          * @private
          */
@@ -149,7 +186,7 @@
                 for (var id in LABKEY.notifications)
                 {
                     if (LABKEY.notifications.hasOwnProperty(id) && LABKEY.notifications[id].RowId
-                            && LABKEY.notifications[id].ReadOn == null)
+                        && LABKEY.notifications[id].ReadOn == null && LABKEY.notifications[id].Deleted == undefined)
                     {
                         rowIds.push(LABKEY.notifications[id].RowId);
                     }
@@ -165,7 +202,9 @@
                             if (response.success && response.numUpdated == rowIds.length)
                             {
                                 for(var i = 0; i < rowIds.length; i++)
+                                {
                                     LABKEY.notifications[rowIds[i]].ReadOn = new Date();
+                                }
                                 updateUnreadCount();
 
                                 NOTIFICATION_PANEL_EL.find('.labkey-notification-area').slideUp(100, _showNotificationsNone);
@@ -258,7 +297,7 @@
 
                         for (var i = 0; i < groupRowIds.length; i++)
                         {
-                            if (LABKEY.notifications[groupRowIds[i]].ReadOn == null)
+                            if (LABKEY.notifications[groupRowIds[i]].ReadOn == null && LABKEY.notifications[groupRowIds[i]].Deleted == undefined)
                             {
                                 hasUnread = true;
                                 break;
@@ -304,6 +343,7 @@
             hidePanel: hidePanel,
             toggleBody: toggleBody,
             markAsRead: markAsRead,
+            dismiss: dismiss,
             clearAllUnread: clearAllUnread,
             goToActionLink: goToActionLink,
             goToViewAll: goToViewAll
