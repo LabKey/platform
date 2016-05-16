@@ -1139,6 +1139,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         });
 
         var panel = Ext4.create('Ext.panel.Panel',{
+            minHeight : 250,
             bodyPadding : 10,
             layout : 'fit',
             items : [formPanel],
