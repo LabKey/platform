@@ -11,8 +11,11 @@ import org.labkey.api.admin.notification.Notification;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.URLHelper;
@@ -85,21 +88,8 @@ public class NotificationController extends SpringActionController
         @Override
         public void validateForm(RowIdsForm form, Errors errors)
         {
-            if (form.getRowIds() == null || form.getRowIds().isEmpty())
-            {
-                errors.reject(ERROR_MSG, "No notification rowIds provided.");
-            }
-            else
-            {
-                for (Integer rowId : form.getRowIds())
-                {
-                    Notification notification = NotificationService.get().getNotification(rowId);
-                    if (notification == null || notification.getUserId() != getUser().getUserId())
-                        errors.reject(ERROR_MSG, "You do not have permissions to update this notification: " + rowId);
-                    else
-                        _notifications.add(notification);
-                }
-            }
+            List<Notification> validNotifications = validateNotificationRowIdsForUser(getUser(), form, errors);
+            _notifications.addAll(validNotifications);
         }
 
         @Override
@@ -107,14 +97,19 @@ public class NotificationController extends SpringActionController
         {
             int totalUpdated = 0;
 
-            for (Notification notification : _notifications)
+            try(DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
             {
-                Container c = ContainerManager.getForId(notification.getContainer());
-                int numUpdated = NotificationService.get().markAsRead(c, getUser(), notification.getObjectId(),
-                        Collections.singletonList(notification.getType()), notification.getUserId()
-                );
+                for (Notification notification : _notifications)
+                {
+                    Container c = ContainerManager.getForId(notification.getContainer());
+                    int numUpdated = NotificationService.get().markAsRead(c, getUser(), notification.getObjectId(),
+                            Collections.singletonList(notification.getType()), notification.getUserId()
+                    );
 
-                totalUpdated += numUpdated;
+                    totalUpdated += numUpdated;
+                }
+
+                transaction.commit();
             }
 
             ApiSimpleResponse response = new ApiSimpleResponse();
@@ -122,6 +117,68 @@ public class NotificationController extends SpringActionController
             response.put("success", true);
             return response;
         }
+    }
+
+    @RequiresPermission(ReadPermission.class) @RequiresLogin
+    public class DismissNotificationAction extends ApiAction<RowIdsForm>
+    {
+        private List<Notification> _notifications = new ArrayList<>();
+
+        @Override
+        public void validateForm(RowIdsForm form, Errors errors)
+        {
+            List<Notification> validNotifications = validateNotificationRowIdsForUser(getUser(), form, errors);
+            _notifications.addAll(validNotifications);
+        }
+
+        @Override
+        public ApiResponse execute(RowIdsForm form, BindException errors) throws Exception
+        {
+            int totalDeleted = 0;
+
+            try(DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
+            {
+                for (Notification notification : _notifications)
+                {
+                    Container c = ContainerManager.getForId(notification.getContainer());
+                    int numDeleted = NotificationService.get().removeNotifications(c, notification.getObjectId(),
+                            Collections.singletonList(notification.getType()), notification.getUserId()
+                    );
+
+                    totalDeleted += numDeleted;
+                }
+
+                transaction.commit();
+            }
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("numDeleted", totalDeleted);
+            response.put("success", true);
+            return response;
+        }
+    }
+
+    private List<Notification> validateNotificationRowIdsForUser(User user, RowIdsForm form, Errors errors)
+    {
+        List<Notification> notifications = new ArrayList<>();
+
+        if (form.getRowIds() == null || form.getRowIds().isEmpty())
+        {
+            errors.reject(ERROR_MSG, "No notification rowIds provided.");
+        }
+        else
+        {
+            for (Integer rowId : form.getRowIds())
+            {
+                Notification notification = NotificationService.get().getNotification(rowId);
+                if (notification == null || notification.getUserId() != user.getUserId())
+                    errors.reject(ERROR_MSG, "You do not have permissions to update this notification: " + rowId);
+                else
+                    notifications.add(notification);
+            }
+        }
+
+        return notifications;
     }
 
     public static class RowIdsForm

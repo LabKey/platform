@@ -37,8 +37,6 @@ import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.PortalBackgroundImageCache;
-import org.labkey.api.admin.notification.Notification;
-import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentParent;
@@ -1878,109 +1876,6 @@ public class CoreController extends SpringActionController
         public void setContainerId(String containerId)
         {
             _containerId = containerId;
-        }
-    }
-
-    @RequiresPermission(ReadPermission.class) @RequiresLogin
-    public class MarkNotificationAsReadAction extends ApiAction<RowIdsForm>
-    {
-        private List<Notification> _notifications = new ArrayList<>();
-
-        @Override
-        public void validateForm(RowIdsForm form, Errors errors)
-        {
-            if (form.getRowIds() == null || form.getRowIds().isEmpty())
-            {
-                errors.reject(ERROR_MSG, "No notification rowIds provided.");
-            }
-            else
-            {
-                for (Integer rowId : form.getRowIds())
-                {
-                    Notification notification = NotificationService.get().getNotification(rowId);
-                    if (notification == null || notification.getUserId() != getUser().getUserId())
-                        errors.reject(ERROR_MSG, "You do not have permissions to update this notification: " + rowId);
-                    else
-                        _notifications.add(notification);
-                }
-            }
-        }
-
-        @Override
-        public ApiResponse execute(RowIdsForm form, BindException errors) throws Exception
-        {
-            int totalUpdated = 0;
-
-            for (Notification notification : _notifications)
-            {
-                Container c = ContainerManager.getForId(notification.getContainer());
-                int numUpdated = NotificationService.get().markAsRead(c, getUser(), notification.getObjectId(),
-                        Collections.singletonList(notification.getType()), notification.getUserId()
-                );
-
-                totalUpdated += numUpdated;
-            }
-
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            response.put("numUpdated", totalUpdated);
-            response.put("success", true);
-            return response;
-        }
-    }
-
-    public static class RowIdsForm
-    {
-        private List<Integer> _rowIds;
-
-        public List<Integer> getRowIds()
-        {
-            return _rowIds;
-        }
-
-        public void setRowIds(List<Integer> rowIds)
-        {
-            _rowIds = rowIds;
-        }
-    }
-
-    @RequiresPermission(ReadPermission.class) @RequiresLogin
-    public class UserNotificationsAction extends SimpleViewAction
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            return new JspView<>("/org/labkey/core/notification/userNotifications.jsp");
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("User Notifications");
-        }
-    }
-
-    @RequiresPermission(ReadPermission.class) @RequiresLogin
-    public class GetUserNotificationsAction extends ApiAction<Object>
-    {
-        @Override
-        public ApiResponse execute(Object form, BindException errors) throws Exception
-        {
-            NotificationService.Service service = NotificationService.get();
-
-            List<Map<String, Object>> notificationList = new ArrayList<>();
-            for (Notification notification : service.getNotificationsByUser(null, getUser().getUserId(), false))
-            {
-                Map<String, Object> notifPropMap = notification.asPropMap();
-                notifPropMap.put("CreatedBy", UserManager.getDisplayName((Integer)notifPropMap.get("CreatedBy"), getUser()));
-                notifPropMap.put("TypeLabel", service.getNotificationTypeLabel(notification.getType()));
-                notifPropMap.put("IconCls", service.getNotificationTypeIconCls(notification.getType()));
-                notificationList.add(notifPropMap);
-            }
-
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            response.put("notifications", notificationList);
-            response.put("success", true);
-            return response;
         }
     }
 }
