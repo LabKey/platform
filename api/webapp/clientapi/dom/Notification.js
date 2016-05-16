@@ -46,6 +46,8 @@
                     }
                 }
                 NOTIFICATION_COUNT_EL.html(count);
+
+                _updateGroupDisplay();
             }
         };
 
@@ -300,7 +302,10 @@
                             if (LABKEY.notifications[groupRowIds[i]].ReadOn == null && LABKEY.notifications[groupRowIds[i]].Deleted == undefined)
                             {
                                 hasUnread = true;
-                                break;
+                            }
+                            else
+                            {
+                                NOTIFICATION_PANEL_EL.find('#notification-' + groupRowIds[i]).hide();
                             }
                         }
 
