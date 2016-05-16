@@ -168,6 +168,7 @@ import org.labkey.core.dialect.PostgreSqlDialectFactory;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.LoginController;
+import org.labkey.core.notification.NotificationController;
 import org.labkey.core.notification.NotificationMenuView;
 import org.labkey.core.notification.NotificationServiceImpl;
 import org.labkey.core.portal.PortalJUnitTest;
@@ -273,6 +274,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         addController("logger", LoggerController.class);
         addController("mini-profiler", MiniProfilerController.class);
         addController("ldap", LdapController.class);
+        addController("notification", NotificationController.class);
 
         AuthenticationManager.registerProvider(new DbLoginAuthenticationProvider(), Priority.Low);
         AttachmentService.register(new AttachmentServiceImpl());
