@@ -236,10 +236,13 @@
                     && !event.target.classList.contains("labkey-notification-toggle")
                     && !event.target.classList.contains("labkey-notification-close"))
                 {
-                    var goto = LABKEY.ActionURL.buildURL("notification", "goto",
-                            LABKEY.notifications[id].ContainerId || LABKEY.ActionURL.getContainer(),
-                            {rowid:LABKEY.notifications[id].RowId, returnUrl:LABKEY.notifications[id].ActionLinkUrl});
-                    window.location = goto;
+                    window.location = LABKEY.ActionURL.buildURL("notification", "goto",
+                        LABKEY.notifications[id].ContainerId || LABKEY.container.id,
+                        {
+                            rowid: LABKEY.notifications[id].RowId,
+                            returnUrl: LABKEY.notifications[id].ActionLinkUrl
+                        }
+                    );
                 }
             }
         };
