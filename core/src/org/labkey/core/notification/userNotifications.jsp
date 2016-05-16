@@ -61,6 +61,11 @@
     .notification-empty-group {
         font-style: italic;
     }
+
+    .notification-all-actions {
+        padding-bottom: 10px;
+        text-align: right;
+    }
 </style>
 
 <script type="text/javascript">
@@ -93,6 +98,10 @@
             if (!Ext4.isArray(this.notifications) || this.notifications.length == 0)
             {
                 this.createNoneDisplay();
+            }
+            else
+            {
+                this.insert(0, this.getActionsForAllCmp());
             }
         },
 
@@ -209,6 +218,62 @@
             });
         },
 
+        markAllNotificationsAsRead : function(event, target)
+        {
+            var rowIds = [];
+            Ext4.Object.each(this.rowIdToGroupMap, function(rowId, groupName)
+            {
+                if (Ext4.isDefined(LABKEY.notifications[rowId]) && LABKEY.notifications[rowId].ReadOn == null)
+                    rowIds.push(rowId);
+            });
+
+            if (rowIds.length > 0)
+            {
+                LABKEY.Ajax.request({
+                    url: LABKEY.ActionURL.buildURL('notification', 'markNotificationAsRead.api'),
+                    params: {rowIds: rowIds},
+                    success: LABKEY.Utils.getCallbackWrapper(function (response)
+                    {
+                        if (response.success)
+                        {
+                            Ext4.Object.each(this.groupPanelMap, function(key, value)
+                            {
+                                // set the ReadOn value for the notification objects
+                                Ext4.each(rowIds, function(rowId)
+                                {
+                                    LABKEY.notifications[rowId].ReadOn = new Date();
+                                });
+
+                                // update the read-on display for the panel elements
+                                Ext4.each(value.panel.getEl().query('.notification-readon'), function(readOnEl)
+                                {
+                                    Ext4.get(readOnEl).update('Read On: Today');
+                                });
+
+                                // clear the unread class for the panel elements
+                                Ext4.each(value.panel.getEl().query('.notification-header'), function(headerEl)
+                                {
+                                    Ext4.get(headerEl).removeCls('notification-header-unread');
+                                });
+
+                                Ext4.get(target.id).hide();
+                                LABKEY.Notification.updateUnreadCount();
+                            });
+                        }
+                    }, this),
+                    failure: function(response)
+                    {
+                        var responseText = LABKEY.Utils.decode(response.responseText);
+                        LABKEY.Utils.alert('Error', responseText.exception);
+                    }
+                });
+            }
+            else
+            {
+                Ext4.get(target.id).hide();
+            }
+        },
+
         dismissNotification : function(event, target)
         {
             var rowId = target.getAttribute('notificationRowId'),
@@ -226,6 +291,34 @@
                     }
                 });
             });
+        },
+
+        dismissAllNotifications : function()
+        {
+            var rowIds = Object.keys(this.rowIdToGroupMap);
+            if (rowIds.length > 0)
+            {
+                LABKEY.Ajax.request({
+                    url: LABKEY.ActionURL.buildURL('notification', 'dismissNotification.api'),
+                    params: {rowIds: rowIds},
+                    success: LABKEY.Utils.getCallbackWrapper(function (response)
+                    {
+                        if (response.success)
+                        {
+                            window.location.reload();
+                        }
+                    }, this),
+                    failure: function(response)
+                    {
+                        var responseText = LABKEY.Utils.decode(response.responseText);
+                        LABKEY.Utils.alert('Error', responseText.exception);
+                    }
+                });
+            }
+            else
+            {
+                this.getActionsForAllCmp().hide();
+            }
         },
 
         removeNotificationByRowId : function(rowId)
@@ -265,6 +358,28 @@
                     html: 'No data to show.'
                 }]
             }));
+        },
+
+        getActionsForAllCmp : function()
+        {
+            if (!this.actionsForAllCmp)
+            {
+                this.actionsForAllCmp = Ext4.create('Ext.Component', {
+                    cls: 'notification-all-actions',
+                    html: '<a class="labkey-text-link notification-all-read">Mark All As Read</a> '
+                        + '<a class="labkey-text-link notification-all-dismiss">Dismiss All</a>',
+                    listeners: {
+                        scope: this,
+                        render: function(cmp)
+                        {
+                            cmp.getEl().down('.notification-all-read').on('click', this.markAllNotificationsAsRead, this);
+                            cmp.getEl().down('.notification-all-dismiss').on('click', this.dismissAllNotifications, this);
+                        }
+                    }
+                });
+            }
+
+            return this.actionsForAllCmp;
         }
     });
 </script>
