@@ -6,7 +6,6 @@
         <script path="clientapi/dom/Chart.js"/>
         <script path="clientapi/dom/Form.js"/>
         <script path="clientapi/dom/NavTrail.js"/>
-        <script path="clientapi/dom/Notification.js"/>
 
         <script path="clientapi/dom/Portal.js"/>
         <script path="clientapi/dom/Query.js"/>
