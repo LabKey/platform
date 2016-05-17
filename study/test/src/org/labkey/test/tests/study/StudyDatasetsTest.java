@@ -25,13 +25,13 @@ import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyA;
-import org.labkey.test.components.CustomizeView;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
 import org.labkey.test.util.PortalHelper;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -371,7 +371,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
 
         // create a private custom view with dataset joins
         createPrivateCustomView();
-        verifyCustomViewWithDatasetJoins("CPS-1: Screening Chemistry Panel", CUSTOM_VIEW_PRIVATE, false, false, "DataSets/DEM-1/DEMbdt", "DataSets/DEM-1/DEMsex");
+        verifyCustomViewWithDatasetJoins("CPS-1: Screening Chemistry Panel", CUSTOM_VIEW_PRIVATE, false, false, "DATASETS/DEM-1/DEMbdt", "DATASETS/DEM-1/DEMsex");
 
         // rename and relabel the datasets related to these reports and views
         renameDataset("DEM-1", "demo", "DEM-1: Demographics", "Demographics");
@@ -382,7 +382,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         // verify the reports and views dataset label/name references after dataset rename and relabel
         //verifyExpectedReportsAndViewsExist();
         verifyCustomViewWithDatasetJoins("Screening Chemistry Panel", CUSTOM_VIEW_WITH_DATASET_JOINS, true, true, "DataSets/eligcrit/ECIelig", "DataSets/demo/DEMbdt", "DataSets/demo/DEMsex");
-        verifyCustomViewWithDatasetJoins("Screening Chemistry Panel", CUSTOM_VIEW_PRIVATE, false, false, "DataSets/eligcrit/ECIelig", "DataSets/demo/DEMbdt", "DataSets/demo/DEMsex");
+        verifyCustomViewWithDatasetJoins("Screening Chemistry Panel", CUSTOM_VIEW_PRIVATE, false, false, "DATASETS/ELIGCRIT/ECIelig", "DATASETS/DEMO/DEMbdt", "DATASETS/DEMO/DEMsex");
         verifyTimeChart("abbrphy", "Abbreviated Physical Exam");
         verifyScatterPlot("Abbreviated Physical Exam");
         verifyParticipantReport("demo: 1.Date of Birth", "demo: 2.What is your sex?", "abbrphy: 1. Weight", "abbrphy: 2. Body Temp", "eligcrit: 1.Meet eligible criteria?");
@@ -448,25 +448,29 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         clickAndWait(getViewLocator(viewName));
         waitForElement(Locator.tagWithText("span", viewName));
 
+        DataRegionTable drt = new DataRegionTable("Dataset", this);
         if (checkSort)
         {
             assertTextPresentInThisOrder("Male", "Female"); // verify joined fields in sort
         }
         if (checkAggregates)
         {
-            DataRegionTable drt = new DataRegionTable("Dataset", this); // verify joined fields in filter
             assertEquals("Unexpected number of rows, filter was not applied correctly", 3, drt.getDataRowCount()); // 3 data rows + aggregates
             assertTrue("Expected aggregate row", drt.hasAggregateRow());
             assertTextPresentInThisOrder("Avg Cre:", "Agg Count:"); // verify joined fields in aggregates
         }
-        for (String colFieldKey : colFieldKeys) // verify joined fields in column select
-        {
-            CustomizeView.FieldKey fieldKey = new CustomizeView.FieldKey(colFieldKey);
-            assertElementPresent(Locator.xpath("//td[@title = '" + fieldKey.toString() + "']"));
-        }
+
         _customizeViewsHelper.openCustomizeViewPanel();
         assertTextNotPresent("not found", "Field not found");
         _customizeViewsHelper.closeCustomizeViewPanel();
+
+        if (colFieldKeys.length > 0)
+        {
+            List<String> columnNames = drt.getColumnNames();
+            List<String> missingColumnNames = new ArrayList<>(Arrays.asList(colFieldKeys));
+            missingColumnNames.removeAll(columnNames);
+            assertTrue("Missing columns: " + String.join(", ", missingColumnNames), missingColumnNames.isEmpty());
+        }
     }
 
     @LogMethod
