@@ -25,6 +25,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.experimental.IssuesListView;
 import org.labkey.issue.experimental.actions.NewAdminAction;
+import org.labkey.issue.experimental.actions.NewDetailsListAction;
 import org.labkey.issue.model.IssueListDef;
 import org.springframework.validation.BindException;
 
@@ -59,7 +60,8 @@ public class IssuesQueryView extends QueryView
         {
             ViewContext context = getViewContext();
 
-            ActionURL viewDetailsURL = context.cloneActionURL().setAction(IssuesController.DetailsListAction.class);
+            ActionURL viewDetailsURL = context.cloneActionURL().setAction(NewDetailsListAction.class);
+            viewDetailsURL.replaceParameter(IssuesListView.ISSUE_LIST_DEF_NAME, _issueDef.getName());
             ActionButton listDetailsButton = new ActionButton(viewDetailsURL, "View Details");
             listDetailsButton.setActionType(ActionButton.Action.POST);
             listDetailsButton.setRequiresSelection(true);

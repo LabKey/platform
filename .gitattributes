@@ -1015,6 +1015,7 @@ issues/src/org/labkey/issue/experimental/actions/IssueServiceAction.java -text
 issues/src/org/labkey/issue/experimental/actions/NewAdminAction.java -text
 issues/src/org/labkey/issue/experimental/actions/NewCloseAction.java -text
 issues/src/org/labkey/issue/experimental/actions/NewDetailsAction.java -text
+issues/src/org/labkey/issue/experimental/actions/NewDetailsListAction.java -text
 issues/src/org/labkey/issue/experimental/actions/NewInsertAction.java -text
 issues/src/org/labkey/issue/experimental/actions/NewListAction.java -text
 issues/src/org/labkey/issue/experimental/actions/NewReopenAction.java -text
@@ -1022,6 +1023,7 @@ issues/src/org/labkey/issue/experimental/actions/NewResolveAction.java -text
 issues/src/org/labkey/issue/experimental/actions/NewUpdateAction.java -text
 issues/src/org/labkey/issue/experimental/query/IssuesQueryView.java -text
 issues/src/org/labkey/issue/experimental/query/IssuesTable.java -text
+issues/src/org/labkey/issue/experimental/view/detailList.jsp -text
 issues/src/org/labkey/issue/experimental/view/detailView.jsp -text
 issues/src/org/labkey/issue/experimental/view/issueListWebPartConfig.jsp -text
 issues/src/org/labkey/issue/experimental/view/list.jsp -text

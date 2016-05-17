@@ -20,10 +20,9 @@
 <%@ page import="org.labkey.api.security.permissions.InsertPermission"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.issue.IssuesController" %>
-<%@ page import="org.labkey.issue.model.IssueManager" %>
-<%@ page import="org.labkey.issue.experimental.actions.NewInsertAction" %>
-<%@ page import="org.labkey.issue.model.IssueListDef" %>
 <%@ page import="org.labkey.issue.experimental.IssuesListView" %>
+<%@ page import="org.labkey.issue.experimental.actions.NewInsertAction" %>
+<%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%

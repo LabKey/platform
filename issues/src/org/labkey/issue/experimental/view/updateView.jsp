@@ -77,18 +77,6 @@
         cancelURL = IssuesController.issueURL(c, NewListAction.class).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issue.getIssueDefName()).addParameter(DataRegion.LAST_FILTER_PARAM, "true");
     }
 
-    List<ColumnTypeEnum> extraOptions = new ArrayList<>();
-    for (ColumnTypeEnum type : Arrays.asList(ColumnTypeEnum.TYPE, ColumnTypeEnum.AREA, ColumnTypeEnum.PRIORITY, ColumnTypeEnum.MILESTONE))
-    {
-        //if (bean.hasKeywords(type))
-        {
-            extraOptions.add(type);
-        }
-    }
-
-    //this is the rowspan used for the 2nd and 3rd columns
-    int rowSpan = 2 + extraOptions.size();
-
     // create collections for additional custom columns and distribute them evenly in the form
     List<NewColumnType> columnTypes1 = new ArrayList<>();
     List<NewColumnType> columnTypes2 = new ArrayList<>();
@@ -96,8 +84,18 @@
     if (issueListDef == null)
         issueListDef = IssueManager.getIssueListDef(issue);
 
-    int i=0;
+    List<NewColumnType> extraColumns = new ArrayList<>();
+    for (ColumnTypeEnum type : Arrays.asList(ColumnTypeEnum.TYPE, ColumnTypeEnum.AREA, ColumnTypeEnum.PRIORITY, ColumnTypeEnum.MILESTONE))
+    {
+        //if (bean.hasKeywords(type))
+        {
+            extraColumns.add(AbstractIssueAction.ColumnTypeImpl.fromColumnType(issue, type, issueListDef, user));
+        }
+    }
+    //this is the rowspan used for the 2nd and 3rd columns
+    int rowSpan = 2 + extraColumns.size();
 
+    int i=0;
     for (CustomColumn col : bean.getCustomColumnConfiguration().getCustomColumns(getUser()))
     {
         if ((i++ % 2) == 0)
@@ -279,9 +277,9 @@
         </tr>
         <tr><td class="labkey-form-label"><%=text(bean.getLabel("AssignedTo", true))%></td><td><%=bean.writeSelect("assignedTo", String.valueOf(issue.getAssignedTo()), issue.getAssignedToName(user), bean.getUserOptions(), 1)%></td></tr>
         <%
-            for (ColumnTypeEnum type : extraOptions)
+            for (NewColumnType col : extraColumns)
             {%>
-            <tr><td class="labkey-form-label"><%=text(bean.getLabel(type, true))%></td><td><%=text(bean.writeSelect(type, 1))%></td></tr><%
+            <%=text(bean.renderCustomColumn(col, getViewContext()))%><%
             }
         %>
         <tr><td class="labkey-form-label"><%=bean.getLabel("Comment", bean.isInsert())%></td>

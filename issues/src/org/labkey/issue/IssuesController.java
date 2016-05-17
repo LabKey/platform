@@ -114,6 +114,7 @@ import org.labkey.issue.experimental.actions.AbstractIssueAction;
 import org.labkey.issue.experimental.actions.NewAdminAction;
 import org.labkey.issue.experimental.actions.NewCloseAction;
 import org.labkey.issue.experimental.actions.NewDetailsAction;
+import org.labkey.issue.experimental.actions.NewDetailsListAction;
 import org.labkey.issue.experimental.actions.NewInsertAction;
 import org.labkey.issue.experimental.actions.NewListAction;
 import org.labkey.issue.experimental.actions.NewReopenAction;
@@ -174,7 +175,8 @@ public class IssuesController extends SpringActionController
             NewCloseAction.class,
             NewInsertAction.class,
             NewAdminAction.class,
-            IssueServiceAction.class);
+            IssueServiceAction.class,
+            NewDetailsListAction.class);
 
     private static final int MAX_STRING_FIELD_LENGTH = 200;
 
@@ -433,6 +435,7 @@ public class IssuesController extends SpringActionController
     }
 
 
+    @Deprecated
     @RequiresPermission(ReadPermission.class)
     public class DetailsListAction extends SimpleViewAction<ListForm>
     {

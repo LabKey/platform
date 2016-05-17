@@ -86,7 +86,6 @@
         else
             columnTypes2.add(AbstractIssueAction.ColumnTypeImpl.fromCustomColumn(issue, col, issueDef, user));
     }
-
 %>
 <% if (!bean.isPrint())
 {

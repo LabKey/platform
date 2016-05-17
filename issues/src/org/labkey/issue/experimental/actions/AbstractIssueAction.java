@@ -1,6 +1,7 @@
 package org.labkey.issue.experimental.actions;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -45,6 +46,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.issue.ColumnType;
 import org.labkey.issue.ColumnTypeEnum;
 import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.IssueUpdateEmailTemplate;
@@ -58,12 +60,14 @@ import org.labkey.issue.query.IssuesQuerySchema;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.MapBindingResult;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.mail.Address;
 import javax.mail.Message;
 import javax.mail.internet.AddressException;
 import javax.servlet.ServletException;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -73,6 +77,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import static org.labkey.api.action.SpringActionController.getActionName;
 
@@ -140,11 +145,8 @@ public abstract class AbstractIssueAction extends FormViewAction<IssuesControlle
         // get previous related issue ids before updating
         Set<Integer> prevRelatedIds = prevIssue.getRelatedIssues();
 
-        // todo handle related issues
-/*
         boolean ret = relatedIssueHandler(issue, user, errors);
         if (!ret) return false;
-*/
 
         ChangeSummary changeSummary;
         try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
@@ -178,7 +180,7 @@ public abstract class AbstractIssueAction extends FormViewAction<IssuesControlle
             {
                 StringBuilder sb = new StringBuilder();
                 sb.append("<em>Issue ").append(issue.getIssueId()).append(" marked as duplicate of this issue.</em>");
-                Issue.Comment dupComment = duplicateOf.addComment(user, sb.toString());
+                duplicateOf.addComment(user, sb.toString());
                 IssueManager.newSaveIssue(user, c, duplicateOf);
             }
 
@@ -188,16 +190,14 @@ public abstract class AbstractIssueAction extends FormViewAction<IssuesControlle
             Collection<Integer> newIssues = new ArrayList<>();
             newIssues.addAll(newRelatedIds);
             newIssues.removeAll(prevRelatedIds);
-/*
+
             for (int curIssueId : newIssues)
             {
                 Issue relatedIssue = relatedIssueCommentHandler(issue.getIssueId(), curIssueId, user, false);
-                IssueManager.saveIssue(user, getContainer(), relatedIssue);
+                IssueManager.newSaveIssue(user, getContainer(), relatedIssue);
             }
-*/
 
             // this list represents all the ids which will need related handling for a droping a relatedIssue entry
-/*
             if(!prevRelatedIds.equals(newRelatedIds))
             {
                 Collection<Integer> prevIssues = new ArrayList<>();
@@ -206,21 +206,17 @@ public abstract class AbstractIssueAction extends FormViewAction<IssuesControlle
                 for (int curIssueId : prevIssues)
                 {
                     Issue relatedIssue = relatedIssueCommentHandler(issue.getIssueId(), curIssueId, user, true);
-                    IssueManager.saveIssue(user, getContainer(), relatedIssue);
+                    IssueManager.newSaveIssue(user, getContainer(), relatedIssue);
                 }
             }
-*/
-
             transaction.commit();
         }
-/*
         catch (IOException x)
         {
             String message = x.getMessage() == null ? x.toString() : x.getMessage();
             errors.addError(new ObjectError("main", new String[] {"Error"}, new Object[] {message}, message));
             return false;
         }
-*/
 
         // Send update email...
         //    ...if someone other than "created by" is closing a bug
@@ -710,24 +706,103 @@ public abstract class AbstractIssueAction extends FormViewAction<IssuesControlle
             users.add(user);
     }
 
+    private boolean relatedIssueHandler(Issue issue, User user, BindException errors)
+    {
+        String textInput = issue.getRelated();
+        Set<Integer> newRelatedIssues = new TreeSet<>();
+        if (textInput != null)
+        {
+            String[] textValues = issue.getRelated().split("[\\s,;]+");
+            int relatedId;
+            // for each issue id we need to validate
+            for (String relatedText : textValues)
+            {
+                relatedId = NumberUtils.toInt(relatedText.trim(), 0);
+                if (relatedId == 0)
+                {
+                    errors.rejectValue("Related", SpringActionController.ERROR_MSG, "Invalid issue id in related string.");
+                    return false;
+                }
+                if (issue.getIssueId() == relatedId)
+                {
+                    errors.rejectValue("Related", SpringActionController.ERROR_MSG, "As issue may not be related to itself");
+                    return false;
+                }
+
+                Issue related = IssueManager.getNewIssue(null, getUser(), relatedId);
+                if (related == null)
+                {
+                    errors.rejectValue("Related", SpringActionController.ERROR_MSG, "Related issue '" + relatedId + "' not found");
+                    return false;
+                }
+                newRelatedIssues.add(relatedId);
+            }
+        }
+
+        // Fetch from IssueManager to make sure the related issues are populated
+        Issue originalIssue = IssueManager.getNewIssue(null, getUser(), issue.getIssueId());
+        Set<Integer> originalRelatedIssues = originalIssue == null ? Collections.emptySet() : originalIssue.getRelatedIssues();
+
+        // Only check permissions if
+        if (!originalRelatedIssues.equals(newRelatedIssues))
+        {
+            for (Integer relatedId : newRelatedIssues)
+            {
+                Issue related = IssueManager.getIssue(null, relatedId);
+                if (!related.lookupContainer().hasPermission(user, ReadPermission.class))
+                {
+                    errors.rejectValue("Related", SpringActionController.ERROR_MSG, "User does not have Read Permission for related issue '" + relatedId + "'");
+                    return false;
+                }
+            }
+        }
+
+        // this sets the collection of integer ids for all related issues
+        issue.setRelatedIssues(newRelatedIssues);
+        return true;
+    }
+
+    private Issue relatedIssueCommentHandler(int issueId, int relatedIssueId, User user, boolean drop)
+    {
+        StringBuilder sb = new StringBuilder();
+        Issue relatedIssue = IssueManager.getNewIssue(null, getUser(), relatedIssueId);
+        Set<Integer> prevRelated = relatedIssue.getRelatedIssues();
+        Set<Integer> newRelated = new TreeSet<>();
+        newRelated.addAll(prevRelated);
+
+        if (drop)
+            newRelated.remove(new Integer(issueId));
+        else
+            newRelated.add(issueId);
+
+        sb.append("<div class=\"wiki\"><table class=issues-Changes>");
+        sb.append(String.format("<tr><td>Related</td><td>%s</td><td>&raquo;</td><td>%s</td></tr>", StringUtils.join(prevRelated, ", "), StringUtils.join(newRelated, ", ")));
+        sb.append("</table></div>");
+
+        relatedIssue.addComment(user, sb.toString());
+        relatedIssue.setRelatedIssues(newRelated);
+
+        return relatedIssue;
+    }
+
     public static class NewCustomColumnConfiguration implements CustomColumnConfiguration
     {
         private Map<String, CustomColumn> _columnMap = new LinkedHashMap<>();
         private Map<String, String> _captionMap = new LinkedHashMap<>();
+        private Set<String> _baseNames = new CaseInsensitiveHashSet();
 
         public NewCustomColumnConfiguration(Container c, User user, IssueListDef issueDef)
         {
             if (issueDef != null)
             {
                 Domain domain = issueDef.getDomain(user);
-                Set<String> baseNames = new CaseInsensitiveHashSet();
-                baseNames.addAll(domain.getDomainKind().getMandatoryPropertyNames(domain));
+                _baseNames.addAll(domain.getDomainKind().getMandatoryPropertyNames(domain));
 
                 if (domain != null)
                 {
                     for (DomainProperty prop : domain.getProperties())
                     {
-                        if (!baseNames.contains(prop.getName()))
+                        if (!_baseNames.contains(prop.getName()))
                         {
                             CustomColumn col = new CustomColumn(c,
                                     prop.getName().toLowerCase(),
@@ -774,6 +849,11 @@ public abstract class AbstractIssueAction extends FormViewAction<IssuesControlle
             if (col != null)
             {
                 return col.getContainer().hasPermission(user, col.getPermission());
+            }
+            else if (_baseNames.contains(name))
+            {
+                // short term hack
+                return true;
             }
             return false;
         }
@@ -906,6 +986,19 @@ public abstract class AbstractIssueAction extends FormViewAction<IssuesControlle
             columnType._issue = issue;
             columnType._name = customColumn.getName();
             columnType._allowBlank = true;
+            columnType._issueListDef = issueListDef;
+            columnType._user = user;
+
+            return columnType;
+        }
+
+        public static NewColumnType fromColumnType(Issue issue, ColumnType col, IssueListDef issueListDef, User user)
+        {
+            ColumnTypeImpl columnType = new ColumnTypeImpl();
+
+            columnType._issue = issue;
+            columnType._name = col.getColumnName();
+            columnType._allowBlank = col.allowBlank();
             columnType._issueListDef = issueListDef;
             columnType._user = user;
 

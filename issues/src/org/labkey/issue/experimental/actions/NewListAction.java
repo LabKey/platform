@@ -1,5 +1,6 @@
 package org.labkey.issue.experimental.actions;
 
+import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.security.RequiresPermission;
@@ -10,6 +11,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.experimental.IssuesListView;
+import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.query.IssuesQuerySchema;
 import org.springframework.validation.BindException;
@@ -49,14 +51,32 @@ public class NewListAction extends SimpleViewAction<IssuesController.ListForm>
         return new IssuesListView(issueDefName);
     }
 
+    private String getIssueDefName()
+    {
+        String issueDefName = getViewContext().getActionURL().getParameter(IssuesListView.ISSUE_LIST_DEF_NAME);
+        if (issueDefName == null)
+        {
+            String issueId = getViewContext().getActionURL().getParameter("issueId");
+            if (issueId != null)
+            {
+                Issue issue = IssueManager.getNewIssue(getContainer(), getUser(), NumberUtils.toInt(issueId));
+                if (issue != null)
+                {
+                    issueDefName = IssueManager.getIssueListDef(issue).getName();
+                }
+            }
+        }
+        return issueDefName;
+    }
+
     public NavTree appendNavTrail(NavTree root)
     {
         IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
-        return root.addChild(names.pluralName + " List", getURL());
-    }
 
-    public ActionURL getURL()
-    {
-        return new ActionURL(NewListAction.class, getContainer()).addParameter(DataRegion.LAST_FILTER_PARAM, "true");
+        ActionURL url = new ActionURL(NewListAction.class, getContainer()).
+                addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, getIssueDefName()).
+                addParameter(DataRegion.LAST_FILTER_PARAM, "true");
+
+        return root.addChild(names.pluralName + " List", url);
     }
 }

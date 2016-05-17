@@ -207,33 +207,41 @@ public class IssueManager
         return issue;
     }
 
-    public static Issue getNewIssue(Container c, User user, int issueId)
+    public static Issue getNewIssue(@Nullable Container c, User user, int issueId)
     {
         Issue issue = getIssue(c, issueId);
 
-        IssueListDef issueListDef = getIssueListDef(issue.getIssueDefId());
-        UserSchema userSchema = QueryService.get().getUserSchema(user, c, IssuesQuerySchema.SCHEMA_NAME);
-        TableInfo table = userSchema.getTable(issueListDef.getName());
-
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("IssueId"), issueId);
-
-        try (Results rs = QueryService.get().select(table, table.getColumns(), filter, null, null, false))
+        if (issue != null)
         {
-            Map<String, Object> rowMap = new CaseInsensitiveHashMap<>();
-            if (rs.next())
+            // container may initially be null if we don't care about a specific folder, but we need the
+            // correct domain for the provisioned table properties associated with the issue
+            if (c == null)
+                c = ContainerManager.getForId(issue.getContainerId());
+
+            IssueListDef issueListDef = getIssueListDef(issue.getIssueDefId());
+            UserSchema userSchema = QueryService.get().getUserSchema(user, c, IssuesQuerySchema.SCHEMA_NAME);
+            TableInfo table = userSchema.getTable(issueListDef.getName());
+
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("IssueId"), issueId);
+
+            try (Results rs = QueryService.get().select(table, table.getColumns(), filter, null, null, false))
             {
-                for (String colName : table.getColumnNameSet())
+                Map<String, Object> rowMap = new CaseInsensitiveHashMap<>();
+                if (rs.next())
                 {
-                    Object value = rs.getObject(colName);
-                    if (value != null)
-                        rowMap.put(colName, value);
+                    for (String colName : table.getColumnNameSet())
+                    {
+                        Object value = rs.getObject(colName);
+                        if (value != null)
+                            rowMap.put(colName, value);
+                    }
                 }
+                issue.setExtraProperties(rowMap);
             }
-            issue.setExtraProperties(rowMap);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeException(e);
+            catch (SQLException e)
+            {
+                throw new RuntimeException(e);
+            }
         }
         return issue;
     }
