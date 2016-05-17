@@ -16,7 +16,9 @@
 
 package org.labkey.test.tests.study;
 
+import org.junit.Rule;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.Timeout;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
@@ -26,6 +28,7 @@ import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -48,6 +51,9 @@ public class StudyExportTest extends StudyManualTest
     protected static final String GROUP_2 = "Group 2"; // protected so that CohortStudyExportTest can use it
     private static final String COLUMN_DESC = "Test Column Description";
     private static final String MODIFIED_VISIT = "Cycle 2";
+
+    @Rule
+    public Timeout testTimeout = new Timeout(40, TimeUnit.MINUTES);
 
     @Override
     protected void doCreateSteps()
