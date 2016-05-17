@@ -1,0 +1,54 @@
+.x4-panel-header-text {
+    font-size: 120%;
+}
+
+.notification-group-panel {
+    border: solid #c0c0c0 1px;
+    border-top-width: 0;
+}
+
+.notification-group-view {
+    padding: 10px 10px 0 10px;
+}
+
+.notification-body {
+    background-color: #eeeeee;
+    border: solid #c0c0c0 1px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+.notification-header {
+    background-color: #c0c0c0;
+    padding: 5px;
+}
+
+.notification-header-unread {
+    font-weight: bold;
+}
+
+.notification-content {
+    padding: 5px;
+}
+
+.notification-readon, .notification-link {
+    float: right;
+}
+
+.notification-header span.fa {
+    color: #555555;
+}
+
+.notification-header-unread span.fa {
+    color: #000000;
+}
+
+.notification-empty-group {
+    font-style: italic;
+}
+
+.notification-all-actions {
+    padding-bottom: 10px;
+    text-align: right;
+    background-color: transparent;
+}

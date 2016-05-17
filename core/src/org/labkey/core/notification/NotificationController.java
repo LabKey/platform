@@ -202,7 +202,7 @@ public class NotificationController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return new JspView<>("/org/labkey/core/notification/userNotifications.jsp");
+            return new JspView<>("/org/labkey/core/notification/userNotifications.jsp", o);
         }
 
         @Override
