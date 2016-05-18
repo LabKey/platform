@@ -168,9 +168,10 @@ Ext4.define('LABKEY.ext4.data.Store', {
         baseParams.schemaName = config.schemaName;
         baseParams.apiVersion = 9.1;
 
-        if (config.parameters){
-            for (var n in oconfig.parameters)
-                baseParams["query.param." + n] = config.parameters[n];
+        if (config.parameters) {
+            Ext4.iterate(config.parameters, function(param, value) {
+                baseParams['query.param.' + param] = value;
+            });
         }
 
         if (config.containerFilter){
