@@ -27,6 +27,7 @@ import org.labkey.test.tests.AbstractAssayTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.PortalHelper;
+import org.openqa.selenium.By;
 
 import java.io.File;
 import java.util.Random;
@@ -205,20 +206,23 @@ public class TargetStudyTest extends AbstractAssayTest
         clickButton("Copy to Study");
 
         log("** Check TargetStudy dropdowns");
-        assertOptionEquals(table.xpath(0, 0).child("select[@name='targetStudy']"), "/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY1 + " (" + _study1Label + ")");
-        assertOptionEquals(table.xpath(1, 0).child("select[@name='targetStudy']"), "/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY1 + " (" + _study1Label + ")");
-        assertOptionEquals(table.xpath(2, 0).child("select[@name='targetStudy']"), "/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY1 + " (" + _study1Label + ")");
-        assertOptionEquals(table.xpath(3, 0).child("select[@name='targetStudy']"), "[None]");
-        assertOptionEquals(table.xpath(4, 0).child("select[@name='targetStudy']"), "/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY2 + " (" + _study2Label + ")");
-        assertOptionEquals(table.xpath(5, 0).child("select[@name='targetStudy']"), "/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY3 + " (" + _study3Label + ")");
+        final String study1OptionText = "/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY1 + " (" + _study1Label + ")";
+        final String study2OptionText = "/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY2 + " (" + _study2Label + ")";
+        final String study3OptionText = "/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY3 + " (" + _study3Label + ")";
+        assertEquals(study1OptionText, getSelectedOptionText(table.findCell(0, 0).findElement(By.xpath("select[@name='targetStudy']"))));
+        assertEquals(study1OptionText, getSelectedOptionText(table.findCell(1, 0).findElement(By.xpath("select[@name='targetStudy']"))));
+        assertEquals(study1OptionText, getSelectedOptionText(table.findCell(2, 0).findElement(By.xpath("select[@name='targetStudy']"))));
+        assertEquals("[None]", getSelectedOptionText(table.findCell(3, 0).findElement(By.xpath("select[@name='targetStudy']"))));
+        assertEquals(study2OptionText, getSelectedOptionText(table.findCell(4, 0).findElement(By.xpath("select[@name='targetStudy']"))));
+        assertEquals(study3OptionText, getSelectedOptionText(table.findCell(5, 0).findElement(By.xpath("select[@name='targetStudy']"))));
 
         log("** Check ptid/visit matches for rows 0-2 and 4, no match for rows 3 and 5");
-        assertAttributeContains(table.xpath(0, 1).child("img"), "src", "check.png");
-        assertAttributeContains(table.xpath(1, 1).child("img"), "src", "check.png");
-        assertAttributeContains(table.xpath(2, 1).child("img"), "src", "check.png");
-        assertAttributeContains(table.xpath(3, 1).child("img"), "src", "cancel.png");
-        assertAttributeContains(table.xpath(4, 1).child("img"), "src", "check.png");
-        assertAttributeContains(table.xpath(5, 1).child("img"), "src", "cancel.png");
+        assertAttributeContains(table.findCell(0, 1).findElement(By.xpath("img")), "src", "check.png");
+        assertAttributeContains(table.findCell(1, 1).findElement(By.xpath("img")), "src", "check.png");
+        assertAttributeContains(table.findCell(2, 1).findElement(By.xpath("img")), "src", "check.png");
+        assertAttributeContains(table.findCell(3, 1).findElement(By.xpath("img")), "src", "cancel.png");
+        assertAttributeContains(table.findCell(4, 1).findElement(By.xpath("img")), "src", "check.png");
+        assertAttributeContains(table.findCell(5, 1).findElement(By.xpath("img")), "src", "cancel.png");
 
         clickButton("Re-Validate");
         assertTextPresent("You must specify a Target Study for all selected rows.");

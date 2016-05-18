@@ -985,7 +985,7 @@ public class StudyPublishTest extends StudyProtectedExportTest
         clickAndWait(Locator.linkWithText("Manage Datasets"));
         clickAndWait(Locator.linkWithText(dataset));
         clickButton("View Data");
-        _customizeViewsHelper.createRReport(name, shareView);
+        new RReportHelper(this).createRReport(name, shareView);
     }
 
     private void createWiki(String name, String title)

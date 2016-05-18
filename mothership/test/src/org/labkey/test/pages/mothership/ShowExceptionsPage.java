@@ -41,14 +41,14 @@ public class ShowExceptionsPage extends BaseMothershipPage
 
     private class Elements extends BaseMothershipPage.Elements
     {
-        ExceptionSummaryDataRegion exceptionSummary = new ExceptionSummaryDataRegion();
+        ExceptionSummaryDataRegion exceptionSummary = new ExceptionSummaryDataRegion(getDriver());
     }
 
     public class ExceptionSummaryDataRegion extends DataRegionTable
     {
-        public ExceptionSummaryDataRegion()
+        public ExceptionSummaryDataRegion(WebDriver driver)
         {
-            super("ExceptionSummary", getDriver());
+            super("ExceptionSummary", driver);
         }
 
         public void ignoreSelected()
