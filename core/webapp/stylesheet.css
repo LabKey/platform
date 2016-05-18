@@ -1661,7 +1661,6 @@ td.labkey-proj
 /* search results page */
 .labkey-search-filter
 {
-    font-family: arial, helvetica, sans-serif;
     font-size:10pt;
     vertical-align: bottom;
     color: #000000;
@@ -1670,7 +1669,6 @@ td.labkey-proj
 
 .labkey-search-filter A, .labkey-search-filter A:visited
 {
-    font-family: arial, helvetica, sans-serif;
     font-size:10pt;
     vertical-align: bottom;
     color: #676767;
@@ -2293,6 +2291,10 @@ div.labkey-wiki h1
     border: 1px solid #CCC;
     color: #2020BE;
     font-family: "Bitstream Vera Sans Mono", "Courier New", monospace;
+}
+
+.CodeMirror pre {
+    font-family: monospace !important;
 }
 
 .labkey-webpart-menu {

@@ -651,7 +651,6 @@ li.labkey-tab-inactive a
 
 .themed-panel2 .x4-panel-header-text-container-default {
     font-size: <%= fontSize %>;
-    font-family: tahoma,arial,verdana,sans-serif;
     color: #000000;
 }
 

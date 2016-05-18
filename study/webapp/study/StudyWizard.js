@@ -756,22 +756,16 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         {
             formItems.push({
                 xtype: 'displayfield',
-                fieldLabel: 'Previous Child Study', // uh, better name?
-                labelStyle: 'padding: 0px;',
-                style: 'font: normal 12px tahoma, arial, helvetica, sans-serif;',
+                fieldLabel: 'Previous Child Study',
                 value: this.previousStudy
             },{
                 xtype: 'displayfield',
                 fieldLabel: 'Created By',
-                labelStyle: 'padding: 0px;',
-                style: 'font: normal 12px tahoma, arial, helvetica, sans-serif;',
                 value: this.createdBy
             },
             {
                 xtype: 'displayfield',
                 fieldLabel: 'Created',
-                labelStyle: 'padding: 0px;',
-                style: 'font: normal 12px tahoma, arial, helvetica, sans-serif;',
                 value: new Date(this.created).format(LABKEY.extDefaultDateFormat)
             });
 
@@ -780,7 +774,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 width: 600,
                 html: 'Since you are republishing a study, settings in this wizard are preset to the values selected when the previous '
                       + (this.mode == 'publish' ? 'published' : this.mode) + ' study was created.',
-                style: 'font: normal 12px tahoma, arial, helvetica, sans-serif; margin-bottom: 15px;'
+                style: 'margin-bottom: 15px;'
             });
         }
 

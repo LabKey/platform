@@ -186,7 +186,6 @@
                                 title: {
                                     text: mainLabel,
                                     fontSize: 14,
-                                    font: 'Roboto, arial',
                                     color: '#000000'
                                 }
                             },
