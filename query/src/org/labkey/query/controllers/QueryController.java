@@ -1021,22 +1021,6 @@ public class QueryController extends SpringActionController
                 else
                 {
                     _queryDef.setMetadataXml(form.ff_metadataText);
-                    /* if query definition has parameters set hidden==true by default */
-                    ArrayList<QueryException> qerrors = new ArrayList<>();
-                    try
-                    {
-                        TableInfo t = _queryDef.getTable(qerrors, false);
-                        if (null != t && qerrors.isEmpty())
-                        {
-                            boolean hasParams = !t.getNamedParameters().isEmpty();
-                            if (hasParams)
-                                _queryDef.setIsHidden(true);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        /* continue and save anyway */
-                    }
                     _queryDef.save(getUser(), getContainer());
 
                     // the query was successfully saved, validate the query but return any errors in the success response
