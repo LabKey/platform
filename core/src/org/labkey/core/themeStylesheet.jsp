@@ -736,6 +736,31 @@ span.labkey-file-icon {
     color: #<%= link %>;
 }
 
-.labkey-notification-clear-all, .labkey-notification-footer {
+.labkey-notification-panel, .labkey-notification-footer {
+    background-color: #<%= webpart %>;
+}
+.labkey-notification-icon {
+    background-color: #<%= primary %>;
     color: #<%= link %>;
+}
+.labkey-notification-title, .labkey-notification-type, .labkey-notification-createdby {
+    color: #<%= link %>;
+}
+.labkey-notification-type {
+    border-bottom-color: #<%= borderTitle %> !important;
+}
+.labkey-notification-close {
+    border-left-color: #<%= borderTitle %> !important;
+}
+.labkey-notification-clear-all, .labkey-notification-footer,
+.labkey-notification-times, .labkey-notification-toggle {
+    color: #<%= borderTitle %>;
+}
+.labkey-notification, .labkey-notification-none, .labkey-notification-body,
+.labkey-notification-clear-all:hover, .labkey-notification-footer span:hover,
+.labkey-notification-times:hover, .labkey-notification-toggle:hover, .labkey-notification-panel a:hover {
+    color: #<%= text %>;
+}
+.labkey-notification:hover {
+    background-color: #<%= grid %>;
 }

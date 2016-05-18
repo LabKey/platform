@@ -533,6 +533,7 @@ core/webapp/fileBrowser.js -text
 core/webapp/fonts/Roboto/LICENSE.txt -text
 core/webapp/fonts/Roboto/Roboto-Regular.ttf -text
 core/webapp/login.js -text
+core/webapp/notification/Notification.css -text
 core/webapp/notification/Notification.js -text
 core/webapp/notification/NotificationViewAll.css -text
 core/webapp/notification/NotificationViewAll.js -text

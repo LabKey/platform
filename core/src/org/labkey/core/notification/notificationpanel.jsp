@@ -8,6 +8,7 @@
 <script type="text/javascript">
 (function($)
 {
+    LABKEY.requiresCss('notification/Notification.css');
     LABKEY.requiresScript('notification/Notification.js', function()
     {
         LABKEY.Utils.onReady(function ()
