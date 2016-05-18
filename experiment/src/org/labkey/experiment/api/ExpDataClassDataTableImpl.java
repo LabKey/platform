@@ -16,7 +16,6 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -27,7 +26,25 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.*;
+import org.labkey.api.data.AttachmentParentEntity;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbSequence;
+import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.LookupColumn;
+import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.Parameter;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableExtension;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
@@ -75,7 +92,6 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
@@ -368,6 +384,12 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
         return Collections.unmodifiableMap(indices);
     }
 
+    @Override
+    public boolean hasDbTriggers()
+    {
+        return super.hasDbTriggers() || _dataClass.getTinfo().hasDbTriggers();
+    }
+
     //
     // UpdatableTableInfo
     //
@@ -594,7 +616,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             DataIteratorBuilder step6 = step5;
             if (colNameMap.containsKey("alias"))
             {
-                SimpleTranslator st = new SimpleTranslator(step4.getDataIterator(context), context);
+                SimpleTranslator st = new SimpleTranslator(step5.getDataIterator(context), context);
                 st.selectAll();
                 ColumnInfo aliasCol = getColumn(FieldKey.fromParts("alias"));
                 st.addColumn(aliasCol, new Supplier(){
