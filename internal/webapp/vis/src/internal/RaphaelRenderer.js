@@ -292,7 +292,7 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
         if (this.paper && plot.labels[name] && plot.labels[name].value) {
             var x, y, labelEl;
             var fontSize = plot.labels[name].fontSize;
-            var fontFamily = plot.fontFamily ? plot.fontFamily : "verdana, arial, helvetica, sans-serif";
+            var fontFamily = plot.fontFamily ? plot.fontFamily : "Roboto, arial, helvetica, sans-serif";
 
             if (labelElements[name] && labelElements[name].text) {
                 labelElements[name].text.remove();
@@ -757,7 +757,7 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
             defaultColor = '#333333',
             defaultPath = "M" + -5 + "," + -2.5 + "L" + 5 + "," + -2.5 + " " + 5 + "," + 2.5 + " " + -5 + "," + 2.5 + "Z",
             legendData = plot.legendData || plot.getLegendData(),
-            fontFamily = plot.fontFamily ? plot.fontFamily : "verdana, arial, helvetica, sans-serif";
+            fontFamily = plot.fontFamily ? plot.fontFamily : "Roboto, arial, helvetica, sans-serif";
 
         if (legendData.length > 0) {
             for (i = 0; i < legendData.length; i++) {

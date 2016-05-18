@@ -1399,6 +1399,16 @@ boxPlot.render();
         config.size.canvasWidth = config.width || config.size.canvasWidth;
         config.size.canvasHeight = config.height || config.size.canvasHeight;
 
+        // apply default font, it not explicitly set
+        if (!config.header) config.header = {};
+        if (!config.header.title) config.header.title = {};
+        if (!config.header.title.font) config.header.title.font = 'Roboto, arial';
+        if (!config.labels) config.labels = {};
+        if (!config.labels.mainLabel) config.labels.mainLabel = {};
+        if (!config.labels.mainLabel.font) config.labels.mainLabel.font = 'Roboto, arial';
+        if (!config.labels.percentage) config.labels.percentage = {};
+        if (!config.labels.percentage.font) config.labels.percentage.font = 'Roboto, arial';
+
         return new d3pie(config.renderTo, config);
     };
 })();

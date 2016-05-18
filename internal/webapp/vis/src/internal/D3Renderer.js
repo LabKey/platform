@@ -16,7 +16,7 @@ LABKEY.vis.internal.Axis = function() {
         borderSel, grid, scalesList = [], gridLinesVisible = 'both', tickDigits, tickLabelMax,
         tickColor = '#000000', tickTextColor = '#000000', gridLineColor = '#DDDDDD', borderColor = '#000000',
         tickPadding = 0, tickLength = 8, tickWidth = 1, tickOverlapRotation = 15, gridLineWidth = 1, borderWidth = 1,
-        fontFamily = 'verdana, arial, helvetica, sans-serif', fontSize = 10, adjustedStarts, adjustedEnds, xLogGutterBorder = 0, yLogGutterBorder = 0,
+        fontFamily = 'Roboto, arial, helvetica, sans-serif', fontSize = 11, adjustedStarts, adjustedEnds, xLogGutterBorder = 0, yLogGutterBorder = 0,
         yGutterXOffset = 0, xGutterYOffset = 0, addLogGutterLabel = false, xGridExtension = 0, yGridExtension = 0, logGutterSel;
 
     var lowerEqualThanZero = '\u22640', emptyDrawing='M0,0L0,0Z', logGutterWidth = 30;
@@ -611,7 +611,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
     var initLabelElements = function() {
         labelElements = {}; labelBkgds = {};
-        var fontFamily = plot.fontFamily ? plot.fontFamily : 'verdana, arial, helvetica, sans-serif';
+        var fontFamily = plot.fontFamily ? plot.fontFamily : 'Roboto, arial, helvetica, sans-serif';
         var labelBkgd = null;
         var labels = this.canvas.append('g').attr('class', plot.renderTo + '-labels');
 
@@ -1770,7 +1770,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     var renderLegendItem = function(selection, plot) {
         var i, xPad, glyphX, textX, yAcc, colorAcc, shapeAcc, textNodes, currentItem, cBBox, pBBox;
 
-        var fontFamily = plot.fontFamily ? plot.fontFamily : 'verdana, arial, helvetica, sans-serif';
+        var fontFamily = plot.fontFamily ? plot.fontFamily : 'Roboto, arial, helvetica, sans-serif';
         selection.attr('font-family', fontFamily).attr('font-size', '10px');
 
         xPad = plot.scales.yRight && plot.scales.yRight.scale ? 50 : 0;
