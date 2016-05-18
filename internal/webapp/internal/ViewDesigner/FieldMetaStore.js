@@ -19,6 +19,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaTreeStore', {
 
     viewName: undefined,
 
+    autoLoad: false,
+
     constructor : function(config) {
 
         if (!config.schemaName || !config.queryName) {
@@ -100,6 +102,18 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaStore', {
         this.on('beforeload', this.onBeforeLoad, this);
         this.on('load', this.onLoad, this);
         this.on('loadexception', this.onLoadException, this);
+    },
+
+    getById : function(id) {
+        var _id;
+        if (Ext4.isString(id)) {
+            _id = id.toUpperCase();
+        }
+        else {
+            _id = id;
+        }
+
+        return this.callParent([_id]);
     },
 
     onBeforeLoad : function() {

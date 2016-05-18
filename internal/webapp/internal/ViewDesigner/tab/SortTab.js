@@ -3,6 +3,23 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
+Ext4.define('LABKEY.internal.ViewDesigner.model.Sort', {
+
+    extend: 'LABKEY.internal.ViewDesigner.model.FieldKey',
+
+    fields: [
+        {name: 'dir'},
+        {name: 'urlParameter', type: 'boolean', defaultValue: false}
+    ],
+
+    proxy: {
+        type: 'memory',
+        reader: {
+            type: 'json',
+            root: 'sort'
+        }
+    }
+});
 
 Ext4.define('LABKEY.internal.ViewDesigner.tab.SortTab', {
 
@@ -14,20 +31,9 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.SortTab', {
     
     getSortStore : function() {
         if (!this.sortStore) {
-            this.sortStore = Ext4.create('Ext.data.Store', {
-                fields: ['fieldKey', 'dir', {name: 'urlParameter', type: 'boolean', defaultValue: false}],
+            this.sortStore = Ext4.create('LABKEY.internal.ViewDesigner.store.FieldKey', {
+                model: 'LABKEY.internal.ViewDesigner.model.Sort',
                 data: this.customView,
-                remoteSort: true,
-                proxy: {
-                    type: 'memory',
-                    reader: {
-                        type: 'json',
-                        root: 'sort',
-                        idProperty: function(json) {
-                            return json.fieldKey.toUpperCase()
-                        }
-                    }
-                },
                 listeners: {
                     load: this.bindTitle,
                     add: this.bindTitle,

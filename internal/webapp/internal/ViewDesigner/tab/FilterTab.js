@@ -3,6 +3,22 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
+Ext4.define('LABKEY.internal.ViewDesigner.model.Filter', {
+    extend: 'LABKEY.internal.ViewDesigner.model.FieldKey',
+
+    fields: [
+        {name: 'items'},
+        {name: 'urlParameter'}
+    ],
+
+    proxy: {
+        type: 'memory',
+        reader: {
+            type: 'json',
+            root: 'filter'
+        }
+    }
+});
 
 Ext4.define('LABKEY.internal.ViewDesigner.tab.FilterTab', {
 
@@ -96,7 +112,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.FilterTab', {
 
                 // Issue 14318: Migrate non-date filter ops to their date equivalents
                 // CONSIDER: Perhaps we should do this on the server as the CustomView is constructed
-                var fieldMetaRecord = this.fieldMetaStore.getById(filter.fieldKey.toUpperCase());
+                var fieldMetaRecord = this.fieldMetaStore.getById(filter.fieldKey);
                 if (fieldMetaRecord)
                 {
                     var jsonType = fieldMetaRecord.data.jsonType;
@@ -113,20 +129,9 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.FilterTab', {
                 }
             }
 
-            this.filterStore = Ext4.create('Ext.data.Store', {
-                fields: ['fieldKey', 'items', 'urlParameter'],
+            this.filterStore = Ext4.create('LABKEY.internal.ViewDesigner.store.FieldKey', {
+                model: 'LABKEY.internal.ViewDesigner.model.Filter',
                 data: { filter: filters },
-                remoteSort: true,
-                proxy: {
-                    type: 'memory',
-                    reader: {
-                        type: 'json',
-                        root: 'filter',
-                        idProperty: function(json) {
-                            return json.fieldKey.toUpperCase()
-                        }
-                    }
-                },
                 listeners: {
                     load: this.bindTitle,
                     add: this.bindTitle,
@@ -274,9 +279,10 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.FilterTab', {
         // Issue 12334: initialize with default filter based on the field's type.
         var defaultFilter = LABKEY.Filter.Types.EQUAL;
 
-        var fieldMetaRecord = this.fieldMetaStore.getById(fieldKey.toUpperCase());
-        if (fieldMetaRecord)
+        var fieldMetaRecord = this.fieldMetaStore.getById(fieldKey);
+        if (fieldMetaRecord) {
             defaultFilter = LABKEY.Filter.getDefaultFilterForType(fieldMetaRecord.get('jsonType'));
+        }
 
         return {
             fieldKey: fieldKey,
@@ -334,7 +340,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.FilterTab', {
                     {
                         getFieldCaption : function(values) {
                             var fieldKey = values.fieldKey;
-                            var fieldMeta = me.fieldMetaStore.getById(fieldKey.toUpperCase());
+                            var fieldMeta = me.fieldMetaStore.getById(fieldKey);
                             if (fieldMeta) {
                                 // caption is already htmlEncoded
                                 var caption = fieldMeta.get('caption');
@@ -411,7 +417,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.FilterTab', {
                 return false;
             }
 
-            var fieldMetaRecord = this.fieldMetaStore.getById(fieldKey.toUpperCase());
+            var fieldMetaRecord = this.fieldMetaStore.getById(fieldKey);
             if (!fieldMetaRecord) {
                 if (confirm("Field not found for fieldKey '" + fieldKey + "'.\nContinue to save custom view with invalid filter?")) {
                     continue;
@@ -460,7 +466,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.FilterTab', {
                 return;
             }
 
-            var fieldMetaRecord = this.fieldMetaStore.getById(fieldKey.toUpperCase());
+            var fieldMetaRecord = this.fieldMetaStore.getById(fieldKey);
             if (!fieldMetaRecord) {
                 return;
             }

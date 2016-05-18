@@ -3,6 +3,24 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
+Ext4.define('LABKEY.internal.ViewDesigner.model.Column', {
+
+    extend: 'LABKEY.internal.ViewDesigner.model.FieldKey',
+
+    fields: [
+        {name: 'name'},
+        {name: 'title'},
+        {name: 'aggregate'}
+    ],
+
+    proxy: {
+        type: 'memory',
+        reader: {
+            type: 'json',
+            root: 'columns'
+        }
+    }
+});
 
 Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
 
@@ -27,7 +45,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
                 if (!agg.fieldKey && !agg.type) {
                     continue;
                 }
-                var columnRecord = columnStore.getById(agg.fieldKey.toUpperCase());
+                var columnRecord = columnStore.getById(agg.fieldKey);
                 if (!columnRecord) {
                     continue;
                 }
@@ -49,20 +67,9 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
 
     getColumnStore : function() {
         if (!this.columnStore) {
-            this.columnStore = Ext4.create('Ext.data.Store', {
-                fields: ['name', 'fieldKey', 'title', 'aggregate'],
-                data: this.customView,
-                remoteSort: true,
-                proxy: {
-                    type: 'memory',
-                    reader: {
-                        type: 'json',
-                        root: 'columns',
-                        idProperty: function(json) {
-                            return json.fieldKey.toUpperCase();
-                        }
-                    }
-                }
+            this.columnStore = Ext4.create('LABKEY.internal.ViewDesigner.store.FieldKey', {
+                model: 'LABKEY.internal.ViewDesigner.model.Column',
+                data: this.customView
             });
         }
 
@@ -107,8 +114,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
                                 return Ext4.htmlEncode(values.title);
                             }
 
-                            var fieldKey = values.fieldKey;
-                            var fieldMeta = me.fieldMetaStore.getById(fieldKey.toUpperCase());
+                            var fieldMeta = me.fieldMetaStore.getById(values.fieldKey);
                             if (fieldMeta) {
                                 var caption = fieldMeta.get('caption');
                                 if (caption && caption != '&nbsp;') {
@@ -174,16 +180,16 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
 
     onToolGear : function(index) {
         var columnRecord = this.getColumnStore().getAt(index);
-        var fieldKey = columnRecord.data.fieldKey;
-        var metadataRecord = this.fieldMetaStore.getById(fieldKey.toUpperCase());
+        var metadataRecord = this.fieldMetaStore.getById(columnRecord.get('id'));
 
         var aggregateStoreCopy = this.createAggregateStore(); //NOTE: we deliberately create a separate store to use with this window.
         var aggregateStore = this.aggregateStore;
         var columnsList = this.getList();
 
-        var aggregateOptions = [];
-        aggregateOptions.push({value: "", name: "[None]"});
-        Ext4.each(LABKEY.Query.getAggregatesForType(metadataRecord.get('jsonType')), function(key){
+        var aggregateOptions = [
+            {value: '', name: '[None]'}
+        ];
+        Ext4.each(LABKEY.Query.getAggregatesForType(metadataRecord.get('jsonType')), function(key) {
             aggregateOptions.push({value: key.toUpperCase(), name: key.toUpperCase()});
         }, this);
 
@@ -246,9 +252,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
                             items: [{
                                 icon: LABKEY.contextPath + '/_images/delete.png',
                                 tooltip: 'Remove',
-                                handler: function(grid, rowIndex, colIndex) {
-                                    var record = grid.getStore().getAt(rowIndex);
-                                    grid.getStore().remove(record);
+                                handler: function(grid, index) {
+                                    grid.getStore().remove(index);
                                 }
                             }]
                         }],
@@ -284,7 +289,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
                         else if (!rec.get('type'))
                         {
                             error = true;
-                            alert('Aggregate is missing a type');
+                            Ext4.Msg.alert('Aggregate is missing a type');
                             return false;
                         }
                     }, this);
@@ -296,9 +301,10 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
                     //remove existing records matching this field
                     var recordsToRemove = [];
                     aggregateStore.each(function(rec) {
-                        if (fieldKey == rec.get('fieldKey'))
+                        if (fieldKey == rec.get('fieldKey')) {
                             recordsToRemove.push(rec);
-                    }, this);
+                        }
+                    });
                     if (recordsToRemove.length > 0) {
                         aggregateStore.remove(recordsToRemove);
                     }
@@ -310,7 +316,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
                             type: rec.get('type'),
                             label: rec.get('label')
                         });
-                    }, this);
+                    });
 
                     columnsList.refresh();
                     win.hide();
@@ -329,9 +335,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
 
                 //NOTE: we make a copy of the data so we can avoid committing updates until the user clicks OK
                 aggregateStoreCopy.removeAll();
-                aggregateStore.each(function(rec){
-                    if (rec.get('fieldKey') == this.columnRecord.get('fieldKey'))
-                    {
+                aggregateStore.each(function(rec) {
+                    if (rec.get('fieldKey') == this.columnRecord.get('fieldKey')) {
                         aggregateStoreCopy.add({
                             fieldKey: rec.get('fieldKey'),
                             label: rec.get('label'),
@@ -357,7 +362,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
         if (fieldKey) {
             o.fieldKey = fieldKey;
             var fk = LABKEY.FieldKey.fromString(fieldKey);
-            var record = this.fieldMetaStore.getById(fieldKey.toUpperCase());
+            var record = this.fieldMetaStore.getById(fieldKey);
             if (record) {
                 o.name = record.caption || fk.name;
             }

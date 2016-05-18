@@ -3,6 +3,64 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
+Ext4.define('LABKEY.internal.ViewDesigner.model.FieldKey', {
+
+    extend: 'Ext.data.Model',
+
+    fields: [
+        {
+            name: 'id',
+            mapping: 'fieldKey',
+            convert : function(fieldKey, rec) {
+                if (Ext4.isString(fieldKey)) {
+                    return fieldKey.toUpperCase();
+                }
+
+                if (rec && rec.raw && Ext4.isString(rec.raw.fieldKey)) {
+                    return rec.raw.fieldKey.toUpperCase();
+                }
+
+                throw new Error('LABKEY.internal.ViewDesigner.model.FieldKey: unable to generate id due to missing fieldKey.');
+            }
+        },
+        {name: 'fieldKey'}
+    ],
+
+    statics: {
+        getById: function(id) {
+            var _id;
+            if (Ext4.isString(id)) {
+                _id = id.toUpperCase();
+            }
+            else {
+                _id = id;
+            }
+
+            return this.callParent([_id]);
+        }
+    }
+});
+
+Ext4.define('LABKEY.internal.ViewDesigner.store.FieldKey', {
+    extend: 'Ext.data.Store',
+
+    model: 'LABKEY.internal.ViewDesigner.model.FieldKey',
+
+    remoteSort: true,
+
+    getById: function(id) {
+        var _id;
+        if (Ext4.isString(id)) {
+            _id = id.toUpperCase();
+        }
+        else {
+            _id = id;
+        }
+
+        return this.callParent([_id]);
+    }
+});
+
 Ext4.define('LABKEY.internal.ViewDesigner.tab.BaseTab', {
 
     extend: 'Ext.panel.Panel',
@@ -153,7 +211,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.BaseTab', {
 
 
     getFieldMetaRecord : function(fieldKey) {
-        return this.fieldMetaStore.getById(fieldKey.toUpperCase());
+        return this.fieldMetaStore.getById(fieldKey);
     },
 
     onListBeforeToolTipShow : function(list, qt, record) {
@@ -229,7 +287,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.BaseTab', {
                 this.getList().select(i);
             }
 
-            this.fireEvent('recordremoved', record.get('fieldKey').toUpperCase());
+            this.fireEvent('recordremoved', record.get('id'));
         }
     },
 

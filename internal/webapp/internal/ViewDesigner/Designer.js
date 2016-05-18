@@ -413,12 +413,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
             fieldMetaStore: this.fieldMetaStore,
             customView: this.customView,
             listeners: {
-                recordremoved: function(fieldKey) {
-                    var node = this.getColumnTree().getStore().getNodeById(fieldKey);
-                    if (node) {
-                        node.set('checked', false);
-                    }
-                },
+                recordremoved: this.onRemoveColumn,
                 scope: this
             }
         });
@@ -429,12 +424,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
             fieldMetaStore: this.fieldMetaStore,
             customView: this.customView,
             listeners: {
-                recordremoved: function(fieldKey) {
-                    var node = this.getColumnTree().getStore().getNodeById(fieldKey);
-                    if (node) {
-                        node.set('checked', false);
-                    }
-                },
+                recordremoved: this.onRemoveColumn,
                 scope: this
             }
         });
@@ -445,12 +435,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
             fieldMetaStore: this.fieldMetaStore,
             customView: this.customView,
             listeners: {
-                recordremoved: function(fieldKey) {
-                    var node = this.getColumnTree().getStore().getNodeById(fieldKey);
-                    if (node) {
-                        node.set('checked', false);
-                    }
-                },
+                recordremoved: this.onRemoveColumn,
                 scope: this
             }
         });
@@ -1050,16 +1035,16 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         if (tab instanceof LABKEY.internal.ViewDesigner.tab.BaseTab) {
             // get the checked fields from the new tab's store
             var columns = tab.getList().getStore().getRange(),
-                checkedFieldKeys = {},
+                checked = {},
                 treeView = this.getColumnTree().getView(),
                 nodeEl;
 
             for (var i = 0; i < columns.length; i++) {
-                checkedFieldKeys[columns[i].get('fieldKey').toUpperCase()] = true;
+                checked[columns[i].get('id')] = true;
             }
 
             this.getColumnTree().getRootNode().cascadeBy(function(node) {
-                node.set('checked', node.internalId in checkedFieldKeys);
+                node.set('checked', node.internalId in checked);
 
                 // yup, we have to manually do the disabled state ourselves! hooray!
                 if (node.get('disabled') === true) {
@@ -1113,6 +1098,13 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         }
         else {
             this._deleteCustomView(true, true);
+        }
+    },
+
+    onRemoveColumn : function(id) {
+        var node = this.getColumnTree().getStore().getNodeById(id);
+        if (node) {
+            node.set('checked', false);
         }
     },
 

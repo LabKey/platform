@@ -132,7 +132,9 @@ Ext4.define('LABKEY.internal.ViewDesigner.QueryDetailsProxy', {
             // see if the 'node' parameter is in-use, could be a tree store
             if (!Ext4.isEmpty(request.params.node) &&
                     request.params.node !== LABKEY.internal.ViewDesigner.FieldMetaTreeStore.ROOT_ID) {
-                params.fk = request.params.node;
+                if (operation.node && operation.node.get('fieldKey') !== undefined) {
+                    params.fk = operation.node.get('fieldKey');
+                }
             }
         }
 

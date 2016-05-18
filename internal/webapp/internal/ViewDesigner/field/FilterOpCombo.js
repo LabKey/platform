@@ -43,12 +43,9 @@ Ext4.define('LABKEY.internal.ViewDesigner.field.FilterOpCombo', {
         this.clauseIndex = clauseIndex;
         var jsonType = undefined;
         var mvEnabled = false;
-        if (this.record)
-        {
-            var fieldKey = this.record.data.fieldKey;
-            var fieldMetaRecord = this.fieldMetaStore.getById(fieldKey.toUpperCase());
-            if (fieldMetaRecord)
-            {
+        if (this.record) {
+            var fieldMetaRecord = this.fieldMetaStore.getById(this.record.get('fieldKey'));
+            if (fieldMetaRecord) {
                 jsonType = fieldMetaRecord.data.jsonType;
                 mvEnabled = fieldMetaRecord.data.mvEnabled;
             }
