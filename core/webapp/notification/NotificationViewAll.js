@@ -96,7 +96,7 @@ Ext4.define('LABKEY.core.notification.NotificationViewAll', {
                             '</span>',
                         '</div>',
                         '<div class="notification-content">',
-                            '<span class="notification-link"><a class="labkey-text-link notification-dismiss" notificationRowId="{RowId}">Dismiss</a></span>',
+                            '<span class="notification-link"><a class="labkey-text-link notification-delete" notificationRowId="{RowId}">Delete</a></span>',
                             '<span class="notification-link"><a href="{ActionLinkUrl}" class="labkey-text-link">{ActionLinkText}</a></span>',
                             '<div>{HtmlContent}</div>',
                         '</div>',
@@ -113,10 +113,10 @@ Ext4.define('LABKEY.core.notification.NotificationViewAll', {
                         Ext4.get(markAsReadEl).on('click', this.markNotificationAsRead, this);
                     }, this);
 
-                    // attach click listeners for the "dismiss" text links
-                    Ext4.each(view.getEl().query('.notification-dismiss'), function(markAsReadEl)
+                    // attach click listeners for the "delete" text links
+                    Ext4.each(view.getEl().query('.notification-delete'), function(deleteEl)
                     {
-                        Ext4.get(markAsReadEl).on('click', this.dismissNotification, this);
+                        Ext4.get(deleteEl).on('click', this.deleteNotification, this);
                     }, this);
                 }
             }
@@ -196,12 +196,12 @@ Ext4.define('LABKEY.core.notification.NotificationViewAll', {
         }
     },
 
-    dismissNotification : function(event, target)
+    deleteNotification : function(event, target)
     {
         var rowId = target.getAttribute('notificationRowId'),
             me = this;
 
-        LABKEY.Notification.dismiss(rowId, function()
+        LABKEY.Notification.deleteNotification(rowId, function()
         {
             Ext4.get('notification-body-' + rowId).fadeOut({
                 duration: 750,
@@ -215,13 +215,13 @@ Ext4.define('LABKEY.core.notification.NotificationViewAll', {
         });
     },
 
-    dismissAllNotifications : function()
+    deleteAllNotifications : function()
     {
         var rowIds = Object.keys(this.rowIdToGroupMap);
         if (rowIds.length > 0)
         {
             LABKEY.Ajax.request({
-                url: LABKEY.ActionURL.buildURL('notification', 'dismissNotification.api'),
+                url: LABKEY.ActionURL.buildURL('notification', 'deleteNotification.api'),
                 params: {rowIds: rowIds},
                 success: LABKEY.Utils.getCallbackWrapper(function (response)
                 {
@@ -290,13 +290,13 @@ Ext4.define('LABKEY.core.notification.NotificationViewAll', {
             this.actionsForAllCmp = Ext4.create('Ext.Component', {
                 cls: 'notification-all-actions',
                 html: '<a class="labkey-text-link notification-all-read">Mark All As Read</a> '
-                + '<a class="labkey-text-link notification-all-dismiss">Dismiss All</a>',
+                + '<a class="labkey-text-link notification-all-delete">Delete All</a>',
                 listeners: {
                     scope: this,
                     render: function(cmp)
                     {
                         cmp.getEl().down('.notification-all-read').on('click', this.markAllNotificationsAsRead, this);
-                        cmp.getEl().down('.notification-all-dismiss').on('click', this.dismissAllNotifications, this);
+                        cmp.getEl().down('.notification-all-delete').on('click', this.deleteAllNotifications, this);
                     }
                 }
             });

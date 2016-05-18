@@ -140,17 +140,17 @@
         };
 
         /**
-         * Dismiss, i.e. delete, a given notification based on the RowId
+         * Delete a given notification based on the RowId
          * @param id - notification RowId
          * @param callback - function to call on success
          * @private
          */
-        var dismiss = function (id, callback)
+        var deleteNotification = function (id, callback)
         {
             if (id)
             {
                 LABKEY.Ajax.request({
-                    url: LABKEY.ActionURL.buildURL('notification', 'dismissNotification.api'),
+                    url: LABKEY.ActionURL.buildURL('notification', 'deleteNotification.api'),
                     params: {rowIds: [id]},
                     success: LABKEY.Utils.getCallbackWrapper(function (response)
                     {
@@ -351,7 +351,7 @@
             hidePanel: hidePanel,
             toggleBody: toggleBody,
             markAsRead: markAsRead,
-            dismiss: dismiss,
+            deleteNotification: deleteNotification,
             clearAllUnread: clearAllUnread,
             goToActionLink: goToActionLink,
             goToViewAll: goToViewAll

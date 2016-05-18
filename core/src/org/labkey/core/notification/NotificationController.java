@@ -120,7 +120,7 @@ public class NotificationController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class) @RequiresLogin
-    public class DismissNotificationAction extends ApiAction<RowIdsForm>
+    public class DeleteNotificationAction extends ApiAction<RowIdsForm>
     {
         private List<Notification> _notifications = new ArrayList<>();
 
