@@ -7,6 +7,14 @@
     border-top-width: 0;
 }
 
+.notification-group-panel .x4-tool-img {
+    background-image: none;
+}
+
+.notification-group-panel .fa-chevron-up, .notification-group-panel .fa-chevron-down {
+    color: #ffffff;
+}
+
 .notification-group-view {
     padding: 10px 10px 0 10px;
 }
@@ -33,6 +41,10 @@
 
 .notification-readon, .notification-link {
     float: right;
+}
+
+.notification-readon span {
+    padding-right: 15px;
 }
 
 .notification-header span.fa {

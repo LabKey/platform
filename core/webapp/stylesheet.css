@@ -3951,13 +3951,13 @@ a div.x4-menu-item-icon.fa-users
     cursor: default;
     white-space: nowrap;
     width: 300px;
-    height: 18px;
+    height: 16px;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 .labkey-notification-body-expand
 {
-    height: 100px;
+    height: 105px;
     word-wrap: break-word;
     white-space: normal;
     padding-left: 40px;
@@ -3981,6 +3981,10 @@ a div.x4-menu-item-icon.fa-users
     font-size: 16px;
     color: #aaaaaa;
     cursor: default;
+}
+.labkey-notification-times
+{
+    padding-bottom: 3px;
 }
 .labkey-notification-times:hover, .labkey-notification-toggle:hover
 {

@@ -65,7 +65,25 @@ Ext4.define('LABKEY.core.notification.NotificationViewAll', {
                 collapsible: true,
                 titleCollapse: true,
                 collapsed: notificationGroups.length > 4,
-                items: [this.createGroupNotificationsView(notificationDataArr)]
+                items: [this.createGroupNotificationsView(notificationDataArr)],
+                listeners: {
+                    render: function(p)
+                    {
+                        // add css cls to the collapse tool to use font-awesome icons
+                        p.on('collapse', function(){
+                            p.getHeader().getTools()[0].removeCls('fa-chevron-up');
+                            p.getHeader().getTools()[0].addCls('fa-chevron-down');
+                        });
+                        p.on('expand', function(){
+                            p.getHeader().getTools()[0].removeCls('fa-chevron-down');
+                            p.getHeader().getTools()[0].addCls('fa-chevron-up');
+                        });
+                        if (notificationGroups.length > 4)
+                            p.getHeader().getTools()[0].addCls('fa fa-chevron-down');
+                        else
+                            p.getHeader().getTools()[0].addCls('fa fa-chevron-up');
+                    }
+                }
             });
 
             this.groupPanelMap[group.name] = {
@@ -91,7 +109,8 @@ Ext4.define('LABKEY.core.notification.NotificationViewAll', {
                             '<span class="notification-readon">',
                                 '<tpl if="ReadOn == null">',
                                     '<a class="labkey-text-link notification-mark-as-read" notificationRowId="{RowId}">Mark As Read</a>',
-                                '<tpl else>Read On: {ReadOnDisplay}',
+                                '<tpl else>',
+                                    '<span>Read On: {ReadOnDisplay}</span>',
                                 '</tpl>',
                             '</span>',
                         '</div>',
@@ -129,7 +148,7 @@ Ext4.define('LABKEY.core.notification.NotificationViewAll', {
         LABKEY.Notification.markAsRead(rowId, function()
         {
             // replace the clicked text link with the "Read On: Today" text and remove the "unread" class from the header
-            Ext4.get(target.id).up('.notification-readon').update('Read On: Today');
+            Ext4.get(target.id).up('.notification-readon').update('<span>Read On: Today</span>');
             Ext4.get('notification-body-' + rowId).down('.notification-header').removeCls('notification-header-unread');
         });
     },
@@ -169,7 +188,7 @@ Ext4.define('LABKEY.core.notification.NotificationViewAll', {
                             // update the read-on display for the panel elements
                             Ext4.each(value.panel.getEl().query('.notification-readon'), function(readOnEl)
                             {
-                                Ext4.get(readOnEl).update('Read On: Today');
+                                Ext4.get(readOnEl).update('<span>Read On: Today</span>');
                             });
 
                             // clear the unread class for the panel elements
