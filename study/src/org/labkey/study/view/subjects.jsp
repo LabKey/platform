@@ -120,7 +120,7 @@
     }
 
     .themed-panel .filter-description {
-        font-size: 11px;
+        font-size: 14px;
     }
 
     .themed-panel div.x4-panel-header {

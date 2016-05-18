@@ -6,20 +6,31 @@ html, body
 body, div, td, th, table, img, form, input, select, .gwt-TextBox
 {
     font-family: 'Roboto', arial, helvetica, sans-serif;
-    font-size: 13px;
+    font-size: 14px;
     margin: 0;
     color: #000000;
     letter-spacing: .3px;
+    line-height: 125%;
 }
 
-.x-body, .x-btn {
-    font-family: 'Roboto', arial, helvetica, sans-serif !important;
+.x-btn, .x4-btn {
+    font-family: 'Roboto-Bold', arial, helvetica, sans-serif !important;
+    font-size: 12px;
     letter-spacing: .5px;
+}
+
+strong, b {
+    font-family: 'Roboto-Bold', arial, helvetica, sans-serif;
 }
 
 @font-face {
     font-family: 'Roboto';
     src: url('fonts/Roboto/Roboto-Regular.ttf');
+}
+
+@font-face {
+    font-family: 'Roboto-Bold';
+    src: url('fonts/Roboto/Roboto-Bold.ttf');
 }
 
 img
@@ -101,11 +112,6 @@ a:hover, a:visited:hover, .labkey-link:hover, .labkey-link:visited:hover
 h3
 {
 	font-size: 14px;
-}
-
-input, select, .gwt-TextBox
-{
-	font-size:10pt;
 }
 
 fieldset
@@ -385,6 +391,7 @@ table.labkey-button-bar
 .labkey-disabled-menu-button,
 .labkey-wp-text-buttons a
 {
+    font-family:  'Roboto-Bold', arial, helvetica, sans-serif !important;
     font-size: 12px;
     letter-spacing: .5px;
 }
@@ -1576,6 +1583,7 @@ td.labkey-main-title-area
     vertical-align: bottom;
     color: #676767;
     text-decoration: none;
+    line-height: 125%;
 }
 
 .labkey-main-title-area .labkey-main-title:hover {
@@ -1910,6 +1918,7 @@ td.labkey-crumb-trail {
     font-size: 26px;
     font-weight: normal;
     color: #000000;
+    line-height: 125%;
 }
 
 /* This is the table that contains each web part in the portal view */
@@ -1948,7 +1957,8 @@ tr.labkey-wp-header
 
 .labkey-wp-header th.labkey-wp-title-left, .labkey-wp-header td.labkey-wp-title-left
 {
-    font-weight: bold;
+    font-family: roboto-Bold, arial, helvetica, sans-serif;
+    letter-spacing: .5px;
     padding: 0 0 4px 4px;
     text-align: left;
     white-space:nowrap;
@@ -2067,6 +2077,7 @@ a.no-arrow {
 
 .labkey-text-link, a.labkey-text-link-noarrow, .labkey-disabled-text-link
 {
+    font-family: roboto-Bold, arial, helvetica, sans-serif;
     font-size: 11px;
     letter-spacing: .5px;
 }
@@ -2842,6 +2853,7 @@ div.note {
 
 .tool-icon a,
 .tool-icon a:visited {
+    font-family: roboto-Bold, arial, helvetica, sans-serif;
 	text-transform: uppercase;
 	text-decoration: none;
 	color: #126495;
@@ -2952,6 +2964,8 @@ input[type="checkbox"], input[type="radio"] {
 
 /* tabs */
 .labkey-app-bar ul li a {
+    font-family: roboto-Bold, arial, helvetica, sans-serif;
+    letter-spacing: .5px;
     font-weight: bold;
 }
 
