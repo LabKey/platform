@@ -1718,10 +1718,8 @@ boxPlot.render();
                     var seriesDataArr = [];
                     for(var i in groupedTrendlineSeriesData) {
                         if (groupedTrendlineSeriesData.hasOwnProperty(i)) {
-                            var d = {
-                                seqValue: groupedTrendlineSeriesData[i].seqValue,
-                                sequence: groupedTrendlineSeriesData[i].sequence + (hasYRightMetric ? '|' + valueName : '')
-                            };
+                            var d = { seqValue: groupedTrendlineSeriesData[i].seqValue };
+                            d[config.properties.groupBy] = groupedTrendlineSeriesData[i][config.properties.groupBy] + (hasYRightMetric ? '|' + valueName : '');
                             d[valueName] = groupedTrendlineSeriesData[i][valueName];
                             seriesDataArr.push(d);
                         }
