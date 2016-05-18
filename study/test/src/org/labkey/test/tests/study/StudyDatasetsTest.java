@@ -448,7 +448,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         clickAndWait(getViewLocator(viewName));
         waitForElement(Locator.tagWithText("span", viewName));
 
-        DataRegionTable drt = new DataRegionTable("Dataset", this);
+        DataRegionTable drt = new DataRegionTable("query", this);
         if (checkSort)
         {
             assertTextPresentInThisOrder("Male", "Female"); // verify joined fields in sort
