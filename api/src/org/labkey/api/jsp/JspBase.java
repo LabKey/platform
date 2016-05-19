@@ -53,7 +53,6 @@ import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Base class for nearly all JSP pages that we use.
@@ -634,26 +633,14 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return full + query;
     }
 
-    // Overriding this is @Deprecated. JSPs should override addClientDependencies() instead.
+    // Note: JSPs should override addClientDependencies() to add their own dependencies. TODO: This becomes final in 16.3
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> dependencies = new LinkedHashSet<>();
         ClientDependencies clientDependencies = new ClientDependencies(dependencies);
         addClientDependencies(clientDependencies);
 
-        // TODO: Very temporary... delete this
-        LinkedHashSet<String> resources = new LinkedHashSet<>();
-        addClientDependencies(resources);
-        resources.forEach(clientDependencies::add);
-
         return dependencies;
-    }
-
-    // Override to add client dependency paths
-    @SuppressWarnings("UnusedParameters")
-    @Deprecated // TODO: Delete this
-    public void addClientDependencies(Set<String> resources)
-    {
     }
 
     // Override to add client dependencies
