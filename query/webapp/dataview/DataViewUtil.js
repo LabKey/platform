@@ -9,6 +9,7 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
     alternateClassName : ['LABKEY.study.DataViewUtil'],
 
     constructor : function(config) {
+
         this.callParent([config]);
 
         this.defineModels();
@@ -461,7 +462,7 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
 
         var store = this.initializeCategoriesStore({categoryId : categoryid});
 
-        function syncSaveAndLoad() {
+        function categoriesSyncSaveAndLoad() {
             store.sync({
                 success : function() {
                     store.load();
@@ -527,13 +528,13 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
                             rec.setDirty();
                         });
 
-                        syncSaveAndLoad();
+                        categoriesSyncSaveAndLoad();
                     }
                 }
             },
             listeners : {
                 edit : function(editor, e) {
-                    syncSaveAndLoad();
+                    categoriesSyncSaveAndLoad();
                 }
             },
             mutliSelect : false,
@@ -553,6 +554,7 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
      * @param subcategory
      */
     onDeleteCategory : function(grid, store, idx, idxMgr, subcategory) {
+
         var label = store.getAt(idx).get('label');
 
         // hide subcategory
@@ -626,5 +628,341 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
                 load : function(s) { s.sort('displayOrder', 'ASC'); }
             }
         });
+    },
+
+    getReorderReportsDialog: function () {
+
+        var dialog = Ext4.create('Ext.window.Window', {
+            width       : 550,
+            height      : 300,
+            title       : "Reorder Reports and Charts",
+            cls         : 'data-window',
+            modal       : true,
+            layout      : 'border',
+            closable    : false,
+            draggable   : false,
+            defaults    : {
+                frame : false
+            },
+            items   : [
+                this.getCategoryTreePanel(),
+                this.getReportsPanel()
+            ],
+            renderTo: Ext4.getBody()
+        });
+
+        return dialog;
+    },
+
+    getCategoryTreePanel: function () {
+        if(!this.categoryTreePanel) {
+            this.categoryTreePanel = this.makeCategoryTreePanel();
+        }
+
+        return this.categoryTreePanel;
+    },
+
+    makeCategoryTreePanel: function () {
+
+        var categoryTreePanel = Ext4.create('Ext.tree.Panel', {
+            store: this.getCategoryTreeStore(),
+            cls: 'themed-panel treenav-panel',
+            region: 'west',
+            height: 250,
+            width: 250,
+            split: true,
+            header: false,
+            rootVisible: true,
+            autoScroll: true,
+            containerScroll: true,
+            collapsible: false,
+            collapsed: false,
+            cmargins: '0 0 0 0',
+            border: true,
+            stateful: false,
+            pathSeparator: ';',
+            useArrows: true,
+            listeners: {
+                selectionChange : {
+                    fn: function() {
+                        // select 0th element because this returns an array, but we will only ever have one selection
+                        var selectedMenuItem = this.getCategoryTreePanel().view.getSelectionModel().getSelection()[0];
+                        this.updateReportsStore(selectedMenuItem);
+                    }
+                },
+                scope: this
+            }
+        });
+
+        categoryTreePanel.on('render', function(cmp){
+            this.getCategoryTreePanel().getEl().mask('Loading...');
+            LABKEY.Ajax.request({
+                url: LABKEY.ActionURL.buildURL('reports', 'browseDataTree.api'),
+                params: {parent : -1},
+                success: LABKEY.Utils.getCallbackWrapper(function (response) {
+                    if (response && response.children) {
+                        var children = [];
+                        var root = {text : 'Categories', expanded : true, children : children};
+
+                        Ext4.each(response.children, function(cat){
+                            var subcategories = [];
+                            // just handle a single level of subcategories
+
+                            Ext4.each(cat.children, function(sub){
+                                if(sub.children && sub.children.length > 0) {
+                                    subcategories.push({
+                                        text: sub.name,
+                                        expanded: false,
+                                        leaf: true,
+                                        rowId: sub.rowId
+                                    })
+                                }
+                            });
+
+                            if(cat.children && cat.children.length > 0) {
+                                children.push({
+                                    text: cat.name,
+                                    expanded: false,
+                                    leaf: subcategories.length == 0,
+                                    children: subcategories,
+                                    rowId: cat.rowId
+                                })
+                            }
+                        });
+
+                        if (cmp && cmp.store){
+                            cmp.store.setRootNode(root);
+                        }
+                    }
+                    this.getCategoryTreePanel().getEl().unmask();
+                }, this),
+                failure: function(response)
+                {
+                    var responseText = LABKEY.Utils.decode(response.responseText);
+                    LABKEY.Utils.alert('Error', responseText.exception);
+                }
+            });
+        }, this);
+
+        return categoryTreePanel;
+    },
+
+    getCategoryTreeStore: function (opts) {
+
+        var categoryTreeStore = Ext4.create('Ext.data.TreeStore', {
+            pageSize: 100,
+            autoSync: false,
+
+            proxy: {
+                type: 'ajax',
+                reader: {type: 'json'}
+            },
+        });
+
+        return categoryTreeStore;
+    },
+
+    getReportsPanel: function () {
+
+        if(!this.reportsPanel) {
+            this.reportsPanel = this.makeReportsPanel();
+        }
+        return this.reportsPanel;
+    },
+
+    makeReportsPanel: function () {
+
+        var cellEditing = Ext4.create('Ext.grid.plugin.CellEditing', {
+            pluginId : 'subcategorycell',
+            clicksToEdit : 2
+        });
+
+        function reportsSyncSaveAndLoad(store) {
+            store.sync({
+                success : function() {
+                    store.load();
+                },
+                failure : function(batch) {
+                    if (batch.operations && batch.operations.length > 0) {
+                        if (!batch.operations[0].request.scope.reader.jsonData.success) {
+                            var mb = Ext4.Msg.alert('Reorder Reports and Charts', batch.operations[0].request.scope.reader.jsonData.message);
+                            idxMgr.register(mb);
+                        }
+                    }
+                    else {
+                        Ext4.Msg.alert('Reorder Reports and Charts', 'Failed to save updates.');
+                        idxMgr.register(mb);
+                    }
+                    store.load();
+                }
+            });
+        }
+
+        var reportsPanel = Ext4.create('Ext.grid.Panel', {
+            id : Ext4.id(),
+            border: true,
+            store: this.getReportsStore(),
+            region: 'center',
+            width    : 250,
+            height   : 250,
+            columns : [{
+                xtype    : 'templatecolumn',
+                text     : 'Report',
+                flex     : 1,
+                sortable : true,
+                dataIndex: 'name',
+                tpl      : '{name:htmlEncode}',
+                editor   : {
+                    xtype:'textfield',
+                    allowBlank:false
+                }
+            }],
+
+            viewConfig : {
+                stripRows : true,
+                plugins   : [{
+                    ptype : 'gridviewdragdrop',
+                    dragText: 'Drag and drop to reorganize'
+                }],
+                listeners : {
+                    drop : function(node, data) {
+
+                        // update the displayOrder in the subCategory store
+                        data.view.getStore().each(function(rec, i) {
+                            rec.set('displayOrder', i+1);
+                            rec.setDirty();
+                        });
+
+                        reportsSyncSaveAndLoad(this.getReportsStore());
+                    },
+                    scope : this
+                }
+            },
+            listeners : {
+                edit : function(editor, e) {
+                    reportsSyncSaveAndLoad(this.getReportsStore());
+                },
+                scope : this
+            },
+            mutliSelect : false,
+            cls     : 'iScroll',
+            plugins : [cellEditing],
+            selType : 'rowmodel',
+            scope   : this
+        });
+
+        reportsPanel.on('render', function(){
+            this.getReportsPanel().getEl().mask('Loading...');
+            var fullTreeStore = this.getFullTreeStore();
+            fullTreeStore.load({
+                scope: this,
+                callback: function (records, operation, success) {
+                    var reportsArray = [];
+
+                    // category level
+                    Ext4.each(fullTreeStore.getRootNode().childNodes, function(category){  // some of these may be reports instead
+                        var subcategories = category.childNodes;
+                        if (subcategories.length > 0) {
+
+                            // subcategory level
+                            Ext4.each(subcategories, function (subcategory) {  // some of these may be reports instead
+                                var reports = subcategory.childNodes;
+                                if (reports.length > 0) {
+
+                                    // report level
+                                    Ext4.each(reports, function (report) {  // all of these are reports
+                                        reportsArray.push(report);
+                                    }, this);
+                                }
+                                else {  // no children, so might be a report -- let's check
+                                    if (subcategory.dataType !== "") {  // not a subcategory, actually a report instead
+                                        reportsArray.push(subcategory)
+                                    }
+                                }
+                            });
+                        }
+                        else {  // no children, so might be a report -- let's check
+                            if (category.dataType !== "") {  // not a category, actually a report instead
+                                reportsArray.push(category);
+                            }
+                        }
+                    });
+
+                    this.getReportsPanel().getEl().unmask();
+
+                    this.reportsArray = reportsArray;
+                }
+            });
+        }, this);
+
+        return reportsPanel;
+    },
+
+    getReportsStore : function() {
+        if(!this.reportsStore) {
+            this.reportsStore = Ext4.create('Ext.data.Store', {
+                pageSize: 100,
+                autoSync: false,
+
+                proxy: {
+                    type: 'ajax',
+                    reader: {type: 'json'}
+                },
+
+                model: 'Dataset.Browser.View',
+            });
+        }
+
+        return this.reportsStore;
+    },
+
+    updateReportsStore : function(menuItem) {
+
+        var reportsStore = this.getReportsStore();
+
+        reportsStore.clearFilter();
+        if(reportsStore.data.items.length === 0) {  // (probably) never loaded before
+            reportsStore.add(this.reportsArray);  // so load with initial data
+        }
+        reportsStore.sort('displayOrder', 'ASC');  // TODO: this probably belongs somewhere different after implementing displayOrder population
+        reportsStore.filterBy(function (record) {
+            if(record.get('category').rowid === menuItem.raw.rowId)
+                return true;
+            else
+                return false;
+        });
+    },
+
+    // This store has all categories, subcategories, and reports in it, and is used to build the two backing stores for the window
+    getFullTreeStore: function() {
+        if(!this.fullTreeStore) {
+            var options = Ext4.apply({}, null, {index : 1});
+
+            var extraParams = {
+                // These parameters are required for specific webpart filtering
+                pageId : options.pageId,
+                index  : options.index,
+                parent : options.categoryId
+            };
+
+            if (extraParams.parent == undefined)
+            {
+                extraParams.parent = -1;
+            }
+
+            this.fullTreeStore = Ext4.create('Ext.data.TreeStore', {
+                pageSize: 100,
+                model   : 'Dataset.Browser.View',
+                proxy   : {
+                    type   : 'ajax',
+                    url    : LABKEY.ActionURL.buildURL('reports', 'browseDataTree.api'),
+                    extraParams : extraParams,
+                    reader : 'json'
+                },
+                sortRoot : 'displayOrder'
+            });
+        }
+
+        return this.fullTreeStore;
     }
 });

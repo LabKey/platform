@@ -146,6 +146,10 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
                     manageViews.setScript("manageCategories(" + webPart.getRowId() + ");");
                     menu.addChild(manageViews);
 
+                    NavTree reorderReportsAndCharts = new NavTree("Reorder Reports And Charts");
+                    reorderReportsAndCharts.setScript("reorderReports(" + webPart.getRowId() + ");");
+                    menu.addChild(reorderReportsAndCharts);
+
     /*
                     String deleteScript = "deleteDataViews(" + webPart.getRowId() + ");";
                     NavTree deleteViews = new NavTree("Delete Selected");

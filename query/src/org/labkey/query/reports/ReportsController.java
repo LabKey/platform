@@ -3233,6 +3233,7 @@ public class ReportsController extends SpringActionController
                 category.put("expanded", true);
                 category.put("cls", "dvcategory");
                 category.put("children", processChildren(vc, groups, tree));
+                category.put("rowId", vc.getRowId());
 
                 rootChildren.put(category);
             }
@@ -3260,6 +3261,7 @@ public class ReportsController extends SpringActionController
                     category.put("expanded", true);
                     category.put("cls", "dvcategory");
                     category.put("children", processChildren(v, groups, tree));
+                    category.put("rowId", v.getRowId());
 
                     children.put(category);
                 }

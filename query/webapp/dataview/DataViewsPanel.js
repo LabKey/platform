@@ -1364,6 +1364,13 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         window.show();
     },
 
+    onReorderReports : function() {
+
+        var window = LABKEY.study.DataViewUtil.getReorderReportsDialog();
+
+        window.show();
+    },
+
     accessRenderer : function(value, meta, rec) {
 
         var tpl = new Ext4.XTemplate(
