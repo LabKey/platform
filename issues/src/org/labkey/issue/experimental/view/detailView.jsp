@@ -17,27 +17,25 @@
 %>
 
 <%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.exp.property.DomainProperty"%>
 <%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.security.permissions.InsertPermission"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.issue.ColumnType" %>
 <%@ page import="org.labkey.issue.ColumnTypeEnum" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
 <%@ page import="org.labkey.issue.IssuesController.EmailPrefsAction" %>
 <%@ page import="org.labkey.issue.experimental.IssuesListView" %>
-<%@ page import="org.labkey.issue.experimental.actions.AbstractIssueAction" %>
 <%@ page import="org.labkey.issue.experimental.actions.NewCloseAction" %>
 <%@ page import="org.labkey.issue.experimental.actions.NewInsertAction" %>
 <%@ page import="org.labkey.issue.experimental.actions.NewListAction" %>
 <%@ page import="org.labkey.issue.experimental.actions.NewReopenAction" %>
 <%@ page import="org.labkey.issue.experimental.actions.NewResolveAction" %>
 <%@ page import="org.labkey.issue.experimental.actions.NewUpdateAction" %>
-<%@ page import="org.labkey.issue.model.CustomColumn" %>
 <%@ page import="org.labkey.issue.model.Issue" %>
 <%@ page import="org.labkey.issue.model.IssueListDef" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
@@ -45,7 +43,6 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.issue.NewColumnType" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -66,25 +63,25 @@
     final boolean hasUpdatePerms = bean.getHasUpdatePermissions();
     IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c);
 
-    // Create Issue from a Ticket
-    Container relatedIssueContainer = IssueManager.getRelatedIssuesList(c);
-    ActionURL insertURL = relatedIssueContainer == null ? null : new ActionURL(NewInsertAction.class, relatedIssueContainer);
-    boolean showRelatedIssuesButton = relatedIssueContainer == null ? false : relatedIssueContainer.hasPermission(user, InsertPermission.class);
-
     List<Issue.Comment> commentLinkedList = IssueManager.getCommentsForRelatedIssues(issue, user);
     IssueListDef issueDef = IssueManager.getIssueListDef(issue);
 
+    // Create Issue from a Ticket
+    Container relatedIssueContainer = IssueManager.getRelatedIssuesList(c);
+    ActionURL insertURL = relatedIssueContainer == null ? null : new ActionURL(NewInsertAction.class, relatedIssueContainer).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDef.getName());
+    boolean showRelatedIssuesButton = relatedIssueContainer == null ? false : relatedIssueContainer.hasPermission(user, InsertPermission.class);
+
     // create collections for additional custom columns and distribute them evenly in the form
-    List<NewColumnType> columnTypes1 = new ArrayList<>();
-    List<NewColumnType> columnTypes2 = new ArrayList<>();
+    List<DomainProperty> column1Props = new ArrayList<>();
+    List<DomainProperty> column2Props = new ArrayList<>();
     int i=0;
 
-    for (CustomColumn col : bean.getCustomColumnConfiguration().getCustomColumns(getUser()))
+    for (DomainProperty prop : bean.getCustomColumnConfiguration().getCustomProperties())
     {
         if ((i++ % 2) == 0)
-            columnTypes1.add(AbstractIssueAction.ColumnTypeImpl.fromCustomColumn(issue, col, issueDef, user));
+            column1Props.add(prop);
         else
-            columnTypes2.add(AbstractIssueAction.ColumnTypeImpl.fromCustomColumn(issue, col, issueDef, user));
+            column2Props.add(prop);
     }
 %>
 <% if (!bean.isPrint())
@@ -215,9 +212,9 @@
             {%>
             <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnTypeEnum.RELATED, false))%></td><td><%=bean.renderRelatedIssues(issue.getRelatedIssues())%></td></tr><%
             }
-            for (NewColumnType col : columnTypes1)
+            for (DomainProperty prop : column1Props)
             {%>
-            <%=text(bean.renderCustomColumn(col, getViewContext()))%><%
+            <%=text(bean.renderColumn(prop, getViewContext()))%><%
             }%>
         </table></td>
         <td valign="top" width="33%"><table>
@@ -228,9 +225,9 @@
             <tr><td class="labkey-form-label">Notify</td><td><%=bean.getNotifyList()%></td></tr><%
             }
 
-            for (NewColumnType col : columnTypes2)
+            for (DomainProperty prop : column2Props)
             {%>
-            <%=text(bean.renderCustomColumn(col, getViewContext()))%><%
+            <%=text(bean.renderColumn(prop, getViewContext()))%><%
             }%>
         </table></td>
     </tr>

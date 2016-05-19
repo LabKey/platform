@@ -22,8 +22,9 @@ public class IssuesListView extends VBox
 
     public IssuesListView(String issueDefName)
     {
+        String dataRegionName = IssuesQuerySchema.TableType.Issues.name() + "-" + issueDefName;
         UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), IssuesQuerySchema.SCHEMA_NAME);
-        QuerySettings settings = schema.getSettings(getViewContext(), IssuesQuerySchema.TableType.Issues.name(), issueDefName);
+        QuerySettings settings = schema.getSettings(getViewContext(), dataRegionName, issueDefName);
         QueryView queryView = schema.createView(getViewContext(), settings, null);
 
         // add the header for buttons and views

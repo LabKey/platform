@@ -3,20 +3,19 @@ package org.labkey.issue.experimental.actions;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
@@ -24,8 +23,6 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
@@ -45,18 +42,14 @@ import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.ViewContext;
-import org.labkey.issue.ColumnType;
 import org.labkey.issue.ColumnTypeEnum;
 import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.IssueUpdateEmailTemplate;
 import org.labkey.issue.IssuesController;
-import org.labkey.issue.NewColumnType;
 import org.labkey.issue.model.CustomColumn;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
-import org.labkey.issue.query.IssuesQuerySchema;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.MapBindingResult;
@@ -790,6 +783,8 @@ public abstract class AbstractIssueAction extends FormViewAction<IssuesControlle
         private Map<String, CustomColumn> _columnMap = new LinkedHashMap<>();
         private Map<String, String> _captionMap = new LinkedHashMap<>();
         private Set<String> _baseNames = new CaseInsensitiveHashSet();
+        private Map<String, DomainProperty> _propertyMap = new CaseInsensitiveHashMap<>();
+        private List<DomainProperty> _customProperties = new ArrayList<>();
 
         public NewCustomColumnConfiguration(Container c, User user, IssueListDef issueDef)
         {
@@ -802,8 +797,10 @@ public abstract class AbstractIssueAction extends FormViewAction<IssuesControlle
                 {
                     for (DomainProperty prop : domain.getProperties())
                     {
+                        _propertyMap.put(prop.getName(), prop);
                         if (!_baseNames.contains(prop.getName()))
                         {
+                            _customProperties.add(prop);
                             CustomColumn col = new CustomColumn(c,
                                     prop.getName().toLowerCase(),
                                     prop.getLabel() != null ? prop.getLabel() : prop.getName(),
@@ -816,6 +813,18 @@ public abstract class AbstractIssueAction extends FormViewAction<IssuesControlle
                     }
                 }
             }
+        }
+
+        @Override
+        public Map<String, DomainProperty> getPropertyMap()
+        {
+            return _propertyMap;
+        }
+
+        @Override
+        public Collection<DomainProperty> getCustomProperties()
+        {
+            return _customProperties;
         }
 
         @Override
@@ -877,132 +886,6 @@ public abstract class AbstractIssueAction extends FormViewAction<IssuesControlle
         public Map<String, String> getColumnCaptions()
         {
             return _captionMap;
-        }
-    }
-
-    /**
-     * Temporary shim to allow new and legacy Issue UI's to work at the same time
-     */
-    @Deprecated
-    public static class ColumnTypeImpl implements NewColumnType
-    {
-        String _name;
-        boolean _allowBlank;
-        List<String> _intialValues = new ArrayList<>();
-        String _defaultValue;
-        IssueListDef _issueListDef;
-        User _user;
-        Issue _issue;
-
-        @Override
-        public int getOrdinal()
-        {
-            return 0;
-        }
-
-        @Override
-        public String getColumnName()
-        {
-            return _name;
-        }
-
-        @Override
-        public boolean isStandard()
-        {
-            return false;
-        }
-
-        @Override
-        public boolean isCustomString()
-        {
-            return false;
-        }
-
-        @Override
-        public boolean isCustomInteger()
-        {
-            return false;
-        }
-
-        @Override
-        public boolean isCustom()
-        {
-            return false;
-        }
-
-        @Override
-        public boolean allowBlank()
-        {
-            return _allowBlank;
-        }
-
-        @NotNull
-        @Override
-        public String[] getInitialValues()
-        {
-            return _intialValues.toArray(new String[0]);
-        }
-
-        @NotNull
-        @Override
-        public String getInitialDefaultValue()
-        {
-            return _defaultValue;
-        }
-
-        @Override
-        public String getValue(Issue issue)
-        {
-            return null;
-        }
-
-        @Override
-        public void setValue(Issue issue, String value)
-        {
-
-        }
-
-        @Override
-        public void setDefaultValue(Issue issue, Map<ColumnTypeEnum, String> defaults)
-        {
-
-        }
-
-        @Override
-        public DisplayColumn getRenderer(ViewContext context)
-        {
-            UserSchema userSchema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), IssuesQuerySchema.SCHEMA_NAME);
-            TableInfo table = userSchema.getTable(_issueListDef.getName());
-
-            ColumnInfo column = table.getColumn(FieldKey.fromParts(_name));
-
-            return column.getRenderer();
-        }
-
-        public static NewColumnType fromCustomColumn(Issue issue, CustomColumn customColumn, IssueListDef issueListDef, User user)
-        {
-            ColumnTypeImpl columnType = new ColumnTypeImpl();
-
-            columnType._issue = issue;
-            columnType._name = customColumn.getName();
-            columnType._allowBlank = true;
-            columnType._issueListDef = issueListDef;
-            columnType._user = user;
-
-            return columnType;
-        }
-
-        public static NewColumnType fromColumnType(Issue issue, ColumnType col, IssueListDef issueListDef, User user)
-        {
-            ColumnTypeImpl columnType = new ColumnTypeImpl();
-
-            columnType._issue = issue;
-            columnType._name = col.getColumnName();
-            columnType._allowBlank = col.allowBlank();
-            columnType._issueListDef = issueListDef;
-            columnType._user = user;
-
-            return columnType;
         }
     }
 }

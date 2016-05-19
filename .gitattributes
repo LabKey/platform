@@ -1011,7 +1011,6 @@ issues/src/org/labkey/issue/IssueUserListener.java -text
 issues/src/org/labkey/issue/IssuesListView.java -text
 issues/src/org/labkey/issue/IssuesModule.java -text
 issues/src/org/labkey/issue/IssuesWebPartFactory.java -text
-issues/src/org/labkey/issue/NewColumnType.java -text
 issues/src/org/labkey/issue/experimental/IssuesListView.java -text
 issues/src/org/labkey/issue/experimental/IssuesWebPartFactory.java -text
 issues/src/org/labkey/issue/experimental/actions/AbstractIssueAction.java -text
@@ -1021,6 +1020,7 @@ issues/src/org/labkey/issue/experimental/actions/NewAdminAction.java -text
 issues/src/org/labkey/issue/experimental/actions/NewCloseAction.java -text
 issues/src/org/labkey/issue/experimental/actions/NewDetailsAction.java -text
 issues/src/org/labkey/issue/experimental/actions/NewDetailsListAction.java -text
+issues/src/org/labkey/issue/experimental/actions/NewGetMoveDestinationAction.java -text
 issues/src/org/labkey/issue/experimental/actions/NewInsertAction.java -text
 issues/src/org/labkey/issue/experimental/actions/NewListAction.java -text
 issues/src/org/labkey/issue/experimental/actions/NewReopenAction.java -text
@@ -1058,6 +1058,7 @@ issues/src/org/labkey/issue/view/summaryWebpart.jsp -text
 issues/src/org/labkey/issue/view/updateView.jsp -text
 issues/webapp/issues/admin.js -text
 issues/webapp/issues/detail.js -text
+issues/webapp/issues/experimental/move.js -text
 list/List.iml -text
 list/ListGWT.iml -text
 list/gwtsrc/org/labkey/list/Designer.gwt.xml -text

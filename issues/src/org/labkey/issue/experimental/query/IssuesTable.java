@@ -141,30 +141,36 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         addColumn(folder);
 
 //        addWrapColumn(_rootTable.getColumn("Title"));
+/*
         ColumnInfo assignedTo = wrapColumn("AssignedTo", _rootTable.getColumn("AssignedTo"));
         assignedTo.setFk(new UserIdForeignKey(getUserSchema()));
         assignedTo.setDisplayColumnFactory(UserIdRenderer.GuestAsBlank::new);
         addColumn(assignedTo);
+*/
 
-//        addColumn(new AliasedColumn(this, "Priority", _rootTable.getColumn("Priority")));
+//        addWrapColumn(_rootTable.getColumn("Status"));
 
-        addWrapColumn(_rootTable.getColumn("Status"));
-
+/*
         ColumnInfo modifiedBy = wrapColumn(_rootTable.getColumn("ModifiedBy"));
         UserIdForeignKey.initColumn(modifiedBy);
         addColumn(modifiedBy);
         addWrapColumn(_rootTable.getColumn("Modified"));
+*/
 
+/*
         ColumnInfo createdBy = wrapColumn(_rootTable.getColumn("CreatedBy"));
         UserIdForeignKey.initColumn(createdBy);
         addColumn(createdBy);
         addWrapColumn(_rootTable.getColumn("Created"));
+*/
 
+/*
         ColumnInfo resolvedBy = wrapColumn(_rootTable.getColumn("ResolvedBy"));
         UserIdForeignKey.initColumn(resolvedBy);
         addColumn(resolvedBy);
+*/
 
-        addWrapColumn(_rootTable.getColumn("Resolved"));
+//        addWrapColumn(_rootTable.getColumn("Resolved"));
         //addColumn(new AliasedColumn(this, "Resolution", _rootTable.getColumn("Resolution")));
 
         ColumnInfo entityId = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("EntityId")));
@@ -182,7 +188,12 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
             if (colName.equalsIgnoreCase(_extension.getLookupColumnName()) || colName.equalsIgnoreCase("container"))
                 continue;
 
-            cols.add(_extension.addExtensionColumn(col, colName));
+            ColumnInfo extensionCol = _extension.addExtensionColumn(col, colName);
+            if (colName.equalsIgnoreCase("CreatedBy") || colName.equalsIgnoreCase("ModifiedBy") || colName.equalsIgnoreCase("ResolvedBy"))
+            {
+                UserIdForeignKey.initColumn(extensionCol);
+            }
+            cols.add(extensionCol);
         }
 
         HashMap<String,DomainProperty> properties = new HashMap<>();
@@ -412,7 +423,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
             ColumnInfo issueDefCol = IssuesSchema.getInstance().getTableInfoIssues().getColumn("issueDefId");
             step0.addColumn(issueDefCol, new SimpleTranslator.ConstantColumn(_issueDef.getRowId()));
 
-            // Insert into exp.data then the provisioned table
+            // Insert into issues.issues then the provisioned table
             DataIteratorBuilder step2 = TableInsertDataIterator.create(DataIteratorBuilder.wrap(step0), IssuesSchema.getInstance().getTableInfoIssues(), c, context);
             DataIteratorBuilder step3 = TableInsertDataIterator.create(step2, _issueDef.createTable(getUserSchema().getUser()), c, context);
 

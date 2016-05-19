@@ -18,11 +18,13 @@ package org.labkey.issue.model;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections15.comparators.ReverseComparator;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.cache.CacheLoader;
@@ -32,6 +34,7 @@ import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
@@ -84,6 +87,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -107,6 +111,7 @@ import static org.labkey.api.search.SearchService.PROPERTY.categories;
  */
 public class IssueManager
 {
+    private static final Logger _log = Logger.getLogger(IssueManager.class);
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("issue", "Issues");
     // UNDONE: Keywords, Summary, etc.
 
@@ -343,6 +348,12 @@ public class IssueManager
         {
             try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
             {
+                // if this is an existing issue, we want the container the issue is associated with, otherwise use the
+                // passed in container
+                Container c = ContainerManager.getForId(issue.getContainerId());
+                if (c != null)
+                    container = c;
+
                 UserSchema userSchema = QueryService.get().getUserSchema(user, container, IssuesQuerySchema.SCHEMA_NAME);
                 TableInfo table = userSchema.getTable(issueDef.getName());
                 QueryUpdateService qus = table.getUpdateService();
@@ -370,7 +381,7 @@ public class IssueManager
                 }
 
                 saveComments(user, issue);
-                //saveRelatedIssues(user, issue);
+                saveRelatedIssues(user, issue);
 
                 indexIssue(null, issue);
 
@@ -609,6 +620,18 @@ public class IssueManager
         public CustomColumn getCustomColumn(String name)
         {
             return _map.get(name);
+        }
+
+        @Override
+        public Map<String, DomainProperty> getPropertyMap()
+        {
+            throw new UnsupportedOperationException("Only implemented for the experimental issues list");
+        }
+
+        @Override
+        public Collection<DomainProperty> getCustomProperties()
+        {
+            throw new UnsupportedOperationException("Only implemented for the experimental issues list");
         }
 
         @Override
@@ -946,6 +969,59 @@ public class IssueManager
             PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, CAT_DEFAULT_MOVE_TO_LIST, true);
             props.put(PROP_DEFAULT_MOVE_TO_CONTAINER, propsValue);
             props.save();
+    }
+
+    public static void moveIssues(User user, List<Integer> issueIds, Container dest) throws IOException
+    {
+        DbSchema schema = IssuesSchema.getInstance().getSchema();
+        try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
+        {
+            List<AttachmentParent> attachmentParents = new ArrayList<>();
+            Set<Integer> issueDefs = new HashSet<>();
+            List<String> entityIds = new ArrayList<>();
+            for (int issueId : issueIds)
+            {
+                Issue issue = IssueManager.getIssue(null, issueId);
+                if (issue != null)
+                {
+                    if (issue.getIssueDefId() != null)
+                        issueDefs.add(issue.getIssueDefId());
+                    entityIds.add(issue.getEntityId());
+
+                    for (Issue.Comment comment : issue.getComments())
+                        attachmentParents.add(comment);
+                }
+            }
+            SQLFragment update = new SQLFragment("UPDATE issues.issues SET container = ? ", dest);
+            update.append("WHERE issueId ");
+            schema.getSqlDialect().appendInClauseSql(update, issueIds);
+            new SqlExecutor(schema).execute(update);
+
+            // change the container for the provisioned table provided all issues are moving within
+            // the same domain
+            if (!issueDefs.isEmpty())
+            {
+                IssueListDef issueDef = getIssueListDef(issueDefs.iterator().next());
+                if (issueDef != null)
+                {
+                    TableInfo table = issueDef.createTable(user);
+                    SQLFragment sql = new SQLFragment("UPDATE ").append(table, "").
+                            append("SET container = ? WHERE entityId ");
+                    schema.getSqlDialect().appendInClauseSql(sql, entityIds);
+                    sql.add(dest);
+
+                    new SqlExecutor(schema).execute(sql);
+                }
+                else
+                    _log.warn("Attempting to move an issue not associated with a domain");
+            }
+            else
+            {
+                _log.warn("Attempting to move an issue not all within the same domain");
+            }
+            AttachmentService.get().moveAttachments(dest, attachmentParents, user);
+            transaction.commit();
+        }
     }
 
     /**

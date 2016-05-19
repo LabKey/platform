@@ -38,7 +38,6 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AttachmentParentEntity;
@@ -50,15 +49,12 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
-import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -111,19 +107,20 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.issue.experimental.actions.AbstractIssueAction;
+import org.labkey.issue.experimental.actions.IssueServiceAction;
 import org.labkey.issue.experimental.actions.NewAdminAction;
 import org.labkey.issue.experimental.actions.NewCloseAction;
 import org.labkey.issue.experimental.actions.NewDetailsAction;
 import org.labkey.issue.experimental.actions.NewDetailsListAction;
+import org.labkey.issue.experimental.actions.NewGetMoveDestinationAction;
 import org.labkey.issue.experimental.actions.NewInsertAction;
 import org.labkey.issue.experimental.actions.NewListAction;
 import org.labkey.issue.experimental.actions.NewReopenAction;
 import org.labkey.issue.experimental.actions.NewResolveAction;
 import org.labkey.issue.experimental.actions.NewUpdateAction;
-import org.labkey.issue.experimental.actions.IssueServiceAction;
+import org.labkey.issue.model.CustomColumn;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
-import org.labkey.issue.model.CustomColumn;
 import org.labkey.issue.model.IssueManager.CustomColumnConfigurationImpl;
 import org.labkey.issue.model.IssueManager.EntryTypeNames;
 import org.labkey.issue.model.IssuePage;
@@ -176,7 +173,8 @@ public class IssuesController extends SpringActionController
             NewInsertAction.class,
             NewAdminAction.class,
             IssueServiceAction.class,
-            NewDetailsListAction.class);
+            NewDetailsListAction.class,
+            NewGetMoveDestinationAction.class);
 
     private static final int MAX_STRING_FIELD_LENGTH = 200;
 
@@ -1665,31 +1663,15 @@ public class IssuesController extends SpringActionController
         @Override
         public ApiResponse execute(MoveIssueForm form, BindException errors) throws Exception
         {
-            DbSchema schema = IssuesSchema.getInstance().getSchema();
-
-            try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
+            try
             {
-                List<AttachmentParent> attachmentParents = new ArrayList<>();
-                for (int issueId : form.getIssueIds())
-                    for (Issue.Comment comment : IssueManager.getIssue(null, issueId).getComments())
-                        attachmentParents.add(comment);
-
-                SQLFragment update = new SQLFragment("UPDATE issues.issues SET container = ? ", form.getContainerId());
-                update.append("WHERE issueId ");
-                schema.getSqlDialect().appendInClauseSql(update, Arrays.asList(form.getIssueIds()));
-                new SqlExecutor(schema).execute(update);
-
-                Container newContainer = ContainerManager.getForId(form.getContainerId());
-                AttachmentService.get().moveAttachments(newContainer, attachmentParents, getUser());
-
-                transaction.commit();
+                IssueManager.moveIssues(getUser(), Arrays.asList(form.getIssueIds()), ContainerManager.getForId(form.getContainerId()));
             }
             catch (IOException x)
             {
                 // TODO: do we want to do anything with the message here?
                 return new ApiSimpleResponse("success", false);
             }
-
             return new ApiSimpleResponse("success", true);
         }
     }

@@ -66,11 +66,23 @@ public class IssueDefDomainKind extends AbstractDomainKind
     {
         BASE_PROPERTIES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
                 new PropertyStorageSpec("EntityId", JdbcType.VARCHAR).setEntityId(true).setNullable(false),
-                new PropertyStorageSpec("Container", JdbcType.VARCHAR).setNullable(false)
+                new PropertyStorageSpec("Container", JdbcType.VARCHAR).setEntityId(true).setNullable(false),
+                new PropertyStorageSpec("Status", JdbcType.VARCHAR, 60).setNullable(false),
+                new PropertyStorageSpec("Created", JdbcType.TIMESTAMP),
+                new PropertyStorageSpec("CreatedBy", JdbcType.INTEGER).setNullable(false),
+                new PropertyStorageSpec("Modified", JdbcType.TIMESTAMP),
+                new PropertyStorageSpec("ModifiedBy", JdbcType.INTEGER).setNullable(false),
+                new PropertyStorageSpec("Resolved", JdbcType.TIMESTAMP),
+                new PropertyStorageSpec("ResolvedBy", JdbcType.INTEGER),
+                new PropertyStorageSpec("Closed", JdbcType.TIMESTAMP),
+                new PropertyStorageSpec("ClosedBy", JdbcType.INTEGER),
+                new PropertyStorageSpec("Duplicate", JdbcType.INTEGER),
+                new PropertyStorageSpec("Lastindexed", JdbcType.TIMESTAMP)
         )));
 
         // required property descriptors, initialized at domain creation time
         REQUIRED_PROPERTIES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
+                new PropertyStorageSpec("AssignedTo", JdbcType.INTEGER),
                 new PropertyStorageSpec("Title", JdbcType.VARCHAR, 255).setNullable(false),
                 new PropertyStorageSpec("Type", JdbcType.VARCHAR, 200),
                 new PropertyStorageSpec("Area", JdbcType.VARCHAR, 200),

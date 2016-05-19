@@ -1,6 +1,7 @@
 package org.labkey.issue.experimental.actions;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
@@ -68,7 +69,7 @@ public class NewInsertAction extends AbstractIssueAction
             setNewIssueDefaults(_issue);
         }
 
-        if (form.getPriority() != null)
+        if (NumberUtils.isNumber(form.getPriority()))
             _issue.setPriority(Integer.parseInt(form.getPriority()));
 
         IssuePage page = new IssuePage(getContainer(), getUser());

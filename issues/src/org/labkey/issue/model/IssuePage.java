@@ -22,22 +22,22 @@ import com.google.common.collect.Collections2;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.Results;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -46,7 +46,6 @@ import org.labkey.issue.ColumnType;
 import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.IssuesController.DownloadAction;
-import org.labkey.issue.NewColumnType;
 import org.labkey.issue.query.IssuesQuerySchema;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.mvc.Controller;
@@ -59,7 +58,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static org.labkey.api.util.PageFlowUtil.filter;
@@ -89,8 +87,10 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     private String _dataRegionSelectionKey;
     private boolean _print = false;
     private boolean _moveDestinations;
+
     private IssueListDef _issueListDef;
     private RenderContext _renderContext;
+    private TableInfo _tableInfo;
     private int _mode = DataRegion.MODE_DETAILS;
 
     public IssuePage(Container c, User user)
@@ -316,28 +316,50 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return  _renderContext;
     }
 
-    public String renderCustomColumn(NewColumnType type, ViewContext context) throws IOException
+    private TableInfo getIssueTable(ViewContext context)
     {
-        if (_ccc.shouldDisplay(_user, type.getColumnName()))
+        if (_tableInfo == null)
+        {
+            UserSchema userSchema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), IssuesQuerySchema.SCHEMA_NAME);
+            _tableInfo = userSchema.getTable(_issueListDef.getName());
+        }
+        return _tableInfo;
+    }
+
+    public String renderColumn(DomainProperty prop, ViewContext context) throws IOException
+    {
+        if (prop != null && shouldDisplay(prop, context))
         {
             final StringBuilder sb = new StringBuilder();
-
-            sb.append("<tr><td class=\"labkey-form-label\">");
-            sb.append(getLabel(type, getMode() != DataRegion.MODE_DETAILS));
-            sb.append("</td><td>");
-
-            RenderContext renderContext = getRenderContext(context);
-            try (Writer writer = new StringWriter())
+            TableInfo table = getIssueTable(context);
+            if (table != null)
             {
-                DisplayColumn dc = type.getRenderer(context);
+                ColumnInfo col = table.getColumn(FieldKey.fromParts(prop.getName()));
+                if (col != null)
+                {
+                    DisplayColumn dc = col.getRenderer();
+                    RenderContext renderContext = getRenderContext(context);
 
-                dc.render(renderContext, writer);
-                sb.append(writer);
+                    try (Writer writer = new StringWriter())
+                    {
+                        writer.append("<tr>");
+                        dc.renderDetailsCaptionCell(renderContext, writer);
+                        writer.append("<td>");
+                        dc.render(renderContext, writer);
+                        writer.append("</td></tr>");
+                        sb.append(writer);
+                    }
+                    return sb.toString();
+                }
             }
-            sb.append("</td></tr>");
-            return sb.toString();
         }
         return "";
+    }
+
+    private boolean shouldDisplay(DomainProperty prop, ViewContext context)
+    {
+        Class<? extends Permission> permission = prop.isProtected() ? InsertPermission.class : ReadPermission.class;
+        return context.getContainer().hasPermission(context.getUser(), permission);
     }
 
     // Field is always standard column name, which is HTML safe
@@ -575,5 +597,4 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         Collection<Integer> dups = Collections.singletonList(dup);
         return renderDuplicates(dups);
     }
-
 }

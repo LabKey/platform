@@ -15,8 +15,10 @@
      * limitations under the License.
      */
 %>
+<%@ page import="org.apache.commons.lang3.StringUtils"%>
 <%@ page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.api.data.DataRegion"%>
+<%@ page import="org.labkey.api.data.DataRegion" %>
+<%@ page import="org.labkey.api.exp.property.DomainProperty" %>
 <%@ page import="org.labkey.api.security.SecurityUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
@@ -25,14 +27,13 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.issue.ColumnType" %>
 <%@ page import="org.labkey.issue.ColumnTypeEnum" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
-<%@ page import="org.labkey.issue.experimental.actions.AbstractIssueAction" %>
+<%@ page import="org.labkey.issue.experimental.IssuesListView" %>
 <%@ page import="org.labkey.issue.experimental.actions.NewDetailsAction" %>
 <%@ page import="org.labkey.issue.experimental.actions.NewListAction" %>
-<%@ page import="org.labkey.issue.model.CustomColumn" %>
 <%@ page import="org.labkey.issue.model.Issue" %>
+<%@ page import="org.labkey.issue.model.IssueListDef" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="org.labkey.issue.model.IssueManager.EntryTypeNames" %>
 <%@ page import="org.labkey.issue.model.IssuePage" %>
@@ -41,10 +42,7 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.issue.experimental.IssuesListView" %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
-<%@ page import="org.labkey.issue.NewColumnType" %>
-<%@ page import="org.labkey.issue.model.IssueListDef" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -78,30 +76,32 @@
     }
 
     // create collections for additional custom columns and distribute them evenly in the form
-    List<NewColumnType> columnTypes1 = new ArrayList<>();
-    List<NewColumnType> columnTypes2 = new ArrayList<>();
+    Map<String, DomainProperty> propertyMap = bean.getCustomColumnConfiguration().getPropertyMap();
+    List<DomainProperty> column1Props = new ArrayList<>();
+    List<DomainProperty> column2Props = new ArrayList<>();
     IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issue.getIssueDefName());
     if (issueListDef == null)
         issueListDef = IssueManager.getIssueListDef(issue);
 
-    List<NewColumnType> extraColumns = new ArrayList<>();
-    for (ColumnTypeEnum type : Arrays.asList(ColumnTypeEnum.TYPE, ColumnTypeEnum.AREA, ColumnTypeEnum.PRIORITY, ColumnTypeEnum.MILESTONE))
+    List<DomainProperty> extraColumns = new ArrayList<>();
+    for (String name : Arrays.asList("type", "area", "priority", "milestone"))
     {
-        //if (bean.hasKeywords(type))
+        // todo: don't include if the lookup is empty (was previously IssuePage.hasKeywords)
+        if (propertyMap.containsKey(name))
         {
-            extraColumns.add(AbstractIssueAction.ColumnTypeImpl.fromColumnType(issue, type, issueListDef, user));
+            extraColumns.add(propertyMap.get(name));
         }
     }
     //this is the rowspan used for the 2nd and 3rd columns
     int rowSpan = 2 + extraColumns.size();
 
     int i=0;
-    for (CustomColumn col : bean.getCustomColumnConfiguration().getCustomColumns(getUser()))
+    for (DomainProperty prop : bean.getCustomColumnConfiguration().getCustomProperties())
     {
         if ((i++ % 2) == 0)
-            columnTypes1.add(AbstractIssueAction.ColumnTypeImpl.fromCustomColumn(issue, col, issueListDef, user));
+            column1Props.add(prop);
         else
-            columnTypes2.add(AbstractIssueAction.ColumnTypeImpl.fromCustomColumn(issue, col, issueListDef, user));
+            column2Props.add(prop);
     }
 %>
 
@@ -236,9 +236,9 @@
                         Ext4.EventManager.on(document.getElementsByName('related')[0], 'keypress', filterCommaSepNumber);
                     </script><%
 
-                    for (NewColumnType col : columnTypes1)
+                    for (DomainProperty prop : column1Props)
                     {%>
-                    <%=text(bean.renderCustomColumn(col, getViewContext()))%><%
+                    <%=text(bean.renderColumn(prop, getViewContext()))%><%
                     }%>
                 </table>
             </td>
@@ -269,19 +269,18 @@
                 {%>
                 <tr><td class="labkey-form-label">Notify</td><td><%=text(bean.getNotifyList())%></td></tr><%
                 }
-                for (NewColumnType col : columnTypes2)
+                for (DomainProperty prop : column2Props)
                 {%>
-                <%=text(bean.renderCustomColumn(col, getViewContext()))%><%
+                <%=text(bean.renderColumn(prop, getViewContext()))%><%
                 }%>
             </table></td>
         </tr>
         <tr><td class="labkey-form-label"><%=text(bean.getLabel("AssignedTo", true))%></td><td><%=bean.writeSelect("assignedTo", String.valueOf(issue.getAssignedTo()), issue.getAssignedToName(user), bean.getUserOptions(), 1)%></td></tr>
         <%
-            for (NewColumnType col : extraColumns)
-            {%>
-            <%=text(bean.renderCustomColumn(col, getViewContext()))%><%
-            }
-        %>
+        for (DomainProperty prop : extraColumns)
+        {%>
+        <%=text(bean.renderColumn(prop, getViewContext()))%><%
+        }%>
         <tr><td class="labkey-form-label"><%=bean.getLabel("Comment", bean.isInsert())%></td>
             <td colspan="3">
                 <textarea id="comment" name="comment" cols="150" rows="20" style="width: 99%;" onchange="LABKEY.setDirty(true);return true;" tabindex="1"><%=h(bean.getBody())%></textarea>

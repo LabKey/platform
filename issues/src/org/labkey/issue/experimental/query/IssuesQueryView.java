@@ -1,5 +1,6 @@
 package org.labkey.issue.experimental.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.CompareType;
@@ -22,6 +23,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.template.ClientDependency;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.experimental.IssuesListView;
 import org.labkey.issue.experimental.actions.NewAdminAction;
@@ -32,6 +34,7 @@ import org.springframework.validation.BindException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 /**
@@ -52,6 +55,16 @@ public class IssuesQueryView extends QueryView
         setShowUpdateColumn(false);
     }
 
+    @NotNull
+    @Override
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = super.getClientDependencies();
+        resources.add(ClientDependency.fromPath("Ext4"));
+        resources.add(ClientDependency.fromPath("issues/experimental/move.js"));
+        return resources;
+    }
+
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
         super.populateButtonBar(view, bar);
@@ -69,13 +82,12 @@ public class IssuesQueryView extends QueryView
             listDetailsButton.setNoFollow(true);
             bar.add(listDetailsButton);
 
-/*
             ActionButton moveButton = new ActionButton("Move");
             moveButton.setRequiresSelection(true);
             moveButton.setDisplayPermission(AdminPermission.class);
-            moveButton.setScript("Issues.window.MoveIssue.create(LABKEY.DataRegions['" + view.getDataRegion().getName() + "'].getChecked());");
+            moveButton.setScript("Issues.window.NewMoveIssue.create(LABKEY.DataRegions['" + view.getDataRegion().getName() + "'].getChecked(), " + PageFlowUtil.jsString(_issueDef.getName()) + ");");
             bar.add(moveButton);
-*/
+
             Domain domain = _issueDef.getDomain(getUser());
             if (domain != null)
             {

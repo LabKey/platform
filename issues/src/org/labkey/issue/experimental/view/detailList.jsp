@@ -19,19 +19,17 @@
 <%@ page import="org.labkey.api.data.ContainerManager"%>
 <%@ page import="org.labkey.api.data.DataRegion"%>
 <%@ page import="org.labkey.api.data.DataRegionSelection"%>
+<%@ page import="org.labkey.api.exp.property.DomainProperty"%>
 <%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
-<%@ page import="org.labkey.issue.NewColumnType" %>
 <%@ page import="org.labkey.issue.experimental.IssuesListView" %>
-<%@ page import="org.labkey.issue.experimental.actions.AbstractIssueAction" %>
 <%@ page import="org.labkey.issue.experimental.actions.NewInsertAction" %>
 <%@ page import="org.labkey.issue.experimental.actions.NewListAction" %>
-<%@ page import="org.labkey.issue.model.CustomColumn" %>
 <%@ page import="org.labkey.issue.model.Issue" %>
 <%@ page import="org.labkey.issue.model.IssueListDef" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
@@ -81,16 +79,16 @@
         bean.setIssue(issue);
 
         // create collections for additional custom columns and distribute them evenly in the form
-        List<NewColumnType> columnTypes1 = new ArrayList<>();
-        List<NewColumnType> columnTypes2 = new ArrayList<>();
+        List<DomainProperty> column1Props = new ArrayList<>();
+        List<DomainProperty> column2Props = new ArrayList<>();
         int i=0;
 
-        for (CustomColumn col : bean.getCustomColumnConfiguration().getCustomColumns(getUser()))
+        for (DomainProperty prop : bean.getCustomColumnConfiguration().getCustomProperties())
         {
             if ((i++ % 2) == 0)
-                columnTypes1.add(AbstractIssueAction.ColumnTypeImpl.fromCustomColumn(issue, col, issueDef, user));
+                column1Props.add(prop);
             else
-                columnTypes2.add(AbstractIssueAction.ColumnTypeImpl.fromCustomColumn(issue, col, issueDef, user));
+                column2Props.add(prop);
         }
 %>
 <table width=640>
@@ -118,9 +116,9 @@
             </td></tr>
             <%
             }
-            for (NewColumnType col : columnTypes1)
+            for (DomainProperty prop : column1Props)
             {%>
-            <%=text(bean.renderCustomColumn(col, getViewContext()))%><%
+            <%=text(bean.renderColumn(prop, getViewContext()))%><%
             }%>
         </table></td>
         <td valign="top" width="33%"><table>
@@ -129,9 +127,9 @@
             <tr><td class="labkey-form-label">Closed&nbsp;By</td><td><%=h(issue.getClosedByName(user))%></td></tr>
             <tr><td class="labkey-form-label">Closed</td><td><%=h(bean.writeDate(issue.getClosed()))%></td></tr>
             <%
-            for (NewColumnType col : columnTypes2)
+            for (DomainProperty prop : column2Props)
             {%>
-            <%=text(bean.renderCustomColumn(col, getViewContext()))%><%
+            <%=text(bean.renderColumn(prop, getViewContext()))%><%
             }%>
         </table></td>
     </tr>
