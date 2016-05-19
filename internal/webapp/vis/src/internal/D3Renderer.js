@@ -1771,7 +1771,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         var i, xPad, glyphX, textX, yAcc, colorAcc, shapeAcc, textNodes, currentItem, cBBox, pBBox;
 
         var fontFamily = plot.fontFamily ? plot.fontFamily : 'Roboto, arial, helvetica, sans-serif';
-        selection.attr('font-family', fontFamily).attr('font-size', '10px');
+        selection.attr('font-family', fontFamily).attr('font-size', '11px');
 
         xPad = plot.scales.yRight && plot.scales.yRight.scale ? 50 : 0;
         glyphX = plot.grid.rightEdge + 30 + xPad;
