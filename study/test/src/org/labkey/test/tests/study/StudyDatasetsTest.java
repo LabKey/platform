@@ -25,11 +25,12 @@ import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyA;
+import org.labkey.test.components.ext4.Window;
 import org.labkey.test.util.DataRegionTable;
-import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
 import org.labkey.test.util.PortalHelper;
+import org.openqa.selenium.WebElement;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,7 +38,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @Category({DailyA.class})
 public class StudyDatasetsTest extends BaseWebDriverTest
@@ -292,7 +295,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     @LogMethod
     private void verifyFilterPanelOnDemographics(String regionName)
     {
-        DataRegionTable dataregion = new DataRegionTable(regionName, this);
+        DataRegionTable dataregion = new DataRegionTable(regionName, getDriver());
         dataregion.openSideFilterPanel();
 
         waitForElement(Locator.paginationText(24));
@@ -300,7 +303,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         waitForElementToDisappear(Locator.css(".labkey-pagination"), WAIT_FOR_JAVASCRIPT);
         waitForElement(Locator.linkWithText(PTIDS[0]));
         assertElementPresent(Locator.linkWithText(PTIDS[1]));
-        dataregion = new DataRegionTable(regionName, this);
+        dataregion = new DataRegionTable(regionName, getDriver());
         assertEquals("Wrong number of rows after filter", 2, dataregion.getDataRowCount());
 
         _ext4Helper.checkGridRowCheckbox(GROUP1B); // GROUP1A OR GROUP1B
@@ -308,20 +311,20 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         assertElementPresent(Locator.linkWithText(PTIDS[0]));
         assertElementPresent(Locator.linkWithText(PTIDS[1]));
         assertElementPresent(Locator.linkWithText(PTIDS[3]));
-        dataregion = new DataRegionTable(regionName, this);
+        dataregion = new DataRegionTable(regionName, getDriver());
         assertEquals("Wrong number of rows after filter", 4, dataregion.getDataRowCount());
 
         _ext4Helper.clickParticipantFilterGridRowText(GROUP2A, 0);// (GROUP1A OR GROUP1B) AND GROUP2A
         waitForElementToDisappear(Locator.linkWithText(PTIDS[2]));
         waitForElement(Locator.linkWithText(PTIDS[1]));
         assertElementPresent(Locator.linkWithText(PTIDS[3]));
-        dataregion = new DataRegionTable(regionName, this);
+        dataregion = new DataRegionTable(regionName, getDriver());
         assertEquals("Wrong number of rows after filter", 2, dataregion.getDataRowCount());
 
         _ext4Helper.clickParticipantFilterGridRowText("Not in any group", 1); // (GROUP1A OR GROUP1B) AND (CATEGORY2 = NULL)
         waitForElementToDisappear(Locator.linkWithText(PTIDS[1]));
         waitForElement(Locator.linkWithText(PTIDS[0]));
-        dataregion = new DataRegionTable(regionName, this);
+        dataregion = new DataRegionTable(regionName, getDriver());
         assertEquals("Wrong number of rows after filter", 1, dataregion.getDataRowCount());
 
         _ext4Helper.clickParticipantFilterCategory(CATEGORY2); // (GROUP1A OR GROUP1B)
@@ -329,27 +332,27 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         assertElementPresent(Locator.linkWithText(PTIDS[0]));
         assertElementPresent(Locator.linkWithText(PTIDS[1]));
         assertElementPresent(Locator.linkWithText(PTIDS[3]));
-        dataregion = new DataRegionTable(regionName, this);
+        dataregion = new DataRegionTable(regionName, getDriver());
         assertEquals("Wrong number of rows after filter", 4, dataregion.getDataRowCount());
 
         _ext4Helper.uncheckGridRowCheckbox("Group 1"); // (GROUP1A OR GROUP1B) AND (NOT(COHORT 1))
         waitForElementToDisappear(Locator.linkWithText(PTIDS[0]));
         waitForElement(Locator.linkWithText(PTIDS[1]));
         assertElementPresent(Locator.linkWithText(PTIDS[2]));
-        dataregion = new DataRegionTable(regionName, this);
+        dataregion = new DataRegionTable(regionName, getDriver());
         assertEquals("Wrong number of rows after filter", 2, dataregion.getDataRowCount());
 
         dataregion.toggleAllFacetsCheckbox();
         waitForElement(Locator.linkWithText(PTIDS[5]));
-        dataregion = new DataRegionTable(regionName, this);
+        dataregion = new DataRegionTable(regionName, getDriver());
         assertEquals("Wrong number of rows after filter", 24, dataregion.getDataRowCount());
 
         _extHelper.clickMenuButton(false, "Groups", "Create Mouse Group", "From All Mice");
-        final Locator.XPathLocator window = Ext4Helper.Locators.window("Define Mouse Group");
-        final Locator.XPathLocator groupLabelInput = window.append(Locator.id("groupLabel-inputEl").notHidden());
-        waitForElement(groupLabelInput);
+        Window window = Window.builder().withTitle("Define Mouse Group").build(getDriver());
+        final WebElement groupLabelInput = Locator.id("groupLabel-inputEl").notHidden().waitForElement(window, 10000);
         setFormElement(groupLabelInput, EXTRA_GROUP);
-        _ext4Helper.clickWindowButton("Define Mouse Group", "Save", 0, 0);
+        window.clickButton("Save", 0);
+        window.waitForClose();
         waitForElement(DataRegionTable.Locators.facetRow(EXTRA_GROUP, EXTRA_GROUP));
     }
 
@@ -371,7 +374,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
 
         // create a private custom view with dataset joins
         createPrivateCustomView();
-        verifyCustomViewWithDatasetJoins("CPS-1: Screening Chemistry Panel", CUSTOM_VIEW_PRIVATE, false, false, "DATASETS/DEM-1/DEMbdt", "DATASETS/DEM-1/DEMsex");
+        verifyCustomViewWithDatasetJoins("CPS-1: Screening Chemistry Panel", CUSTOM_VIEW_PRIVATE, false, false, "DataSets/DEM-1/DEMbdt", "DataSets/DEM-1/DEMsex");
 
         // rename and relabel the datasets related to these reports and views
         renameDataset("DEM-1", "demo", "DEM-1: Demographics", "Demographics");
@@ -382,7 +385,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         // verify the reports and views dataset label/name references after dataset rename and relabel
         //verifyExpectedReportsAndViewsExist();
         verifyCustomViewWithDatasetJoins("Screening Chemistry Panel", CUSTOM_VIEW_WITH_DATASET_JOINS, true, true, "DataSets/eligcrit/ECIelig", "DataSets/demo/DEMbdt", "DataSets/demo/DEMsex");
-        verifyCustomViewWithDatasetJoins("Screening Chemistry Panel", CUSTOM_VIEW_PRIVATE, false, false, "DATASETS/ELIGCRIT/ECIelig", "DATASETS/DEMO/DEMbdt", "DATASETS/DEMO/DEMsex");
+        verifyCustomViewWithDatasetJoins("Screening Chemistry Panel", CUSTOM_VIEW_PRIVATE, false, false, "DataSets/eligcrit/ECIelig", "DataSets/demo/DEMbdt", "DataSets/demo/DEMsex");
         verifyTimeChart("abbrphy", "Abbreviated Physical Exam");
         verifyScatterPlot("Abbreviated Physical Exam");
         verifyParticipantReport("demo: 1.Date of Birth", "demo: 2.What is your sex?", "abbrphy: 1. Weight", "abbrphy: 2. Body Temp", "eligcrit: 1.Meet eligible criteria?");
@@ -448,7 +451,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         clickAndWait(getViewLocator(viewName));
         waitForElement(Locator.tagWithText("span", viewName));
 
-        DataRegionTable drt = new DataRegionTable("query", this);
+        DataRegionTable drt = new DataRegionTable("query", getDriver());
         if (checkSort)
         {
             assertTextPresentInThisOrder("Male", "Female"); // verify joined fields in sort
