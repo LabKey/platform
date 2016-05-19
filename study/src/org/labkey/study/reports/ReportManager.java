@@ -256,7 +256,7 @@ public class ReportManager implements DatasetManager.DatasetListener
     }
 
 
-    public void deleteReports(Container c, Set<TableInfo> set) throws SQLException
+    public void deleteReports(Container c, Set<TableInfo> set)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ContainerId"), c.getId());
         Table.delete(getTable(), filter);

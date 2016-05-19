@@ -1662,7 +1662,7 @@ public class SpecimenController extends BaseStudyController
             return _inputs;
         }
 
-        public String getValue(int inputIndex) throws SQLException
+        public String getValue(int inputIndex) throws ValidationException
         {
             if (_inputValues != null && inputIndex < _inputValues.length && _inputValues[inputIndex] != null)
                 return _inputValues[inputIndex];

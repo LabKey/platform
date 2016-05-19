@@ -21,6 +21,7 @@ import gwt.client.org.labkey.study.designer.client.model.GWTTimepoint;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -271,7 +272,7 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
                 defGroup.setCohortId(cohort.getRowId());
             }
         }
-        catch(SQLException|ServletException e)
+        catch(ValidationException e)
         {
             throw UnexpectedException.wrap(e);
         }

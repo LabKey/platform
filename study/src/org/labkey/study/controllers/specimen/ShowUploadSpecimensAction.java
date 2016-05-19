@@ -22,6 +22,7 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
@@ -245,11 +246,12 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         {
             errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
         }
-        catch (SQLException e)
+        catch (RuntimeSQLException e)
         {
-            if (e instanceof BatchUpdateException && null != e.getNextException())
-                e = e.getNextException();
-            errors.reject(SpringActionController.ERROR_MSG, "A database error was reported during import: " + e.getMessage());
+            String message = e.getMessage();
+            if (e.getSQLException() instanceof BatchUpdateException && null != e.getSQLException().getNextException())
+                message = e.getSQLException().getNextException().getMessage();
+            errors.reject(SpringActionController.ERROR_MSG, "A database error was reported during import: " + message);
         }
         return !errors.hasErrors();
     }

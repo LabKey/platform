@@ -21,6 +21,7 @@ import org.apache.commons.beanutils.PropertyUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.OntologyManager;
@@ -296,7 +297,7 @@ public class DatasetServiceImpl extends DomainEditorServiceBase implements Datas
 
             return errors;
         }
-        catch (SQLException e)
+        catch (RuntimeSQLException e)
         {
             errors.add("Additional key column must have unique values.");
             return errors;

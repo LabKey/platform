@@ -55,7 +55,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.ServletException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -436,7 +435,7 @@ public class CohortController extends BaseStudyController
                     errors.reject(SpringActionController.ERROR_MSG, PageFlowUtil.filter(error.getMessage()));
                 return false;
             }
-            catch (ServletException | IllegalStateException e)
+            catch (IllegalStateException e)
             {
                 errors.reject("insertCohort", e.getMessage());
                 return false;

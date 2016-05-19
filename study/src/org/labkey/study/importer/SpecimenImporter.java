@@ -1250,7 +1250,7 @@ public class SpecimenImporter
         return specimenColumns;
     }
 
-    private void resyncStudy() throws SQLException
+    private void resyncStudy()
     {
         TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
         TableInfo tableSpecimen = getTableInfoSpecimen();
@@ -1269,7 +1269,7 @@ public class SpecimenImporter
         info("Subject/visit update complete.");
     }
 
-    private void updateAllStatistics() throws SQLException
+    private void updateAllStatistics()
     {
         updateStatistics(ExperimentService.get().getTinfoMaterial());
         updateStatistics(getTableInfoSpecimen());
@@ -1277,7 +1277,7 @@ public class SpecimenImporter
         updateStatistics(getTableInfoSpecimenEvent());
     }
 
-    private boolean updateStatistics(TableInfo tinfo) throws SQLException
+    private boolean updateStatistics(TableInfo tinfo)
     {
         info("Updating statistics for " + tinfo + "...");
         boolean updated = tinfo.getSqlDialect().updateStatistics(tinfo);
@@ -1295,7 +1295,7 @@ public class SpecimenImporter
         process(sifMap, merge, logger, job);
     }
 
-    protected void process(Map<SpecimenTableType, SpecimenImportFile> sifMap, boolean merge, Logger logger, @Nullable PipelineJob job) throws SQLException, IOException, ValidationException
+    protected void process(Map<SpecimenTableType, SpecimenImportFile> sifMap, boolean merge, Logger logger, @Nullable PipelineJob job) throws IOException, ValidationException
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         _logger = logger;
@@ -1407,7 +1407,7 @@ public class SpecimenImporter
     }
 
 
-    private SpecimenLoadInfo populateTempSpecimensTable(SpecimenImportFile file, boolean merge) throws SQLException, IOException, ValidationException
+    private SpecimenLoadInfo populateTempSpecimensTable(SpecimenImportFile file, boolean merge) throws IOException, ValidationException
     {
         TempTablesHolder tempTablesHolder = createTempTable();
 
@@ -1423,7 +1423,7 @@ public class SpecimenImporter
     }
 
 
-    private void populateSpecimenTables(SpecimenLoadInfo info, boolean merge) throws SQLException, IOException, ValidationException
+    private void populateSpecimenTables(SpecimenLoadInfo info, boolean merge) throws IOException, ValidationException
     {
         setStatus(GENERAL_JOB_STATUS_MSG + " (populate tables)");
         _iTimer.setPhase(ImportPhases.DeleteOldData);
@@ -1624,7 +1624,7 @@ public class SpecimenImporter
         info("Complete.");
     }
 
-    private void markOrphanedRequestVials() throws SQLException
+    private void markOrphanedRequestVials()
     {
         // Mark those global unique IDs that are in requests but are no longer found in the vial table:
         TableInfo vialTable = getTableInfoVial();
@@ -1663,7 +1663,7 @@ public class SpecimenImporter
         info("Complete.");
     }
 
-    private void setLockedInRequestStatus() throws SQLException
+    private void setLockedInRequestStatus()
     {
         TableInfo vialTable = getTableInfoVial();
         String vialTableSelectName = vialTable.getSelectName();
@@ -1681,7 +1681,7 @@ public class SpecimenImporter
         info("Complete.");
     }
 
-    private void updateSpecimenProcessingInfo() throws SQLException
+    private void updateSpecimenProcessingInfo()
     {
         TableInfo specimenTable = getTableInfoSpecimen();
         String specimenTableSelectName = specimenTable.getSelectName();
@@ -1714,7 +1714,7 @@ public class SpecimenImporter
     private static final int CURRENT_SITE_UPDATE_LOGGING_SIZE = 10000;   // Can choose to log at a less frequent rate than the update batch size
 
     // UNDONE: add vials in-clause to only update data for rows that changed
-    private void updateCalculatedSpecimenData(final boolean merge) throws SQLException
+    private void updateCalculatedSpecimenData(final boolean merge)
     {
         setStatus(GENERAL_JOB_STATUS_MSG + " (update)");
         _iTimer.setPhase(ImportPhases.PrepareQcComments);
@@ -1994,6 +1994,10 @@ public class SpecimenImporter
                 }
             }, CURRENT_SITE_UPDATE_SIZE);
         }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
 
 //        if (!merge)
 //            new SpecimenTablesProvider(getContainer(), getUser(), null).addTableIndices(SpecimenTablesProvider.VIAL_TABLENAME);
@@ -2195,7 +2199,7 @@ public class SpecimenImporter
         return _vialEventColsSql;
     }
 
-    private void populateMaterials(SpecimenLoadInfo info, boolean merge) throws SQLException
+    private void populateMaterials(SpecimenLoadInfo info, boolean merge)
     {
         String columnName = null;
 
@@ -2345,7 +2349,7 @@ public class SpecimenImporter
     }
 
 
-    private void populateSpecimens(SpecimenLoadInfo info, boolean merge, boolean seenVisitValue) throws IOException, SQLException, ValidationException
+    private void populateSpecimens(SpecimenLoadInfo info, boolean merge, boolean seenVisitValue) throws IOException, ValidationException
     {
         String participantSequenceNumExpr = VisitManager.getParticipantSequenceNumExpr(info._schema, "PTID", "VisitValue");
 
@@ -2381,6 +2385,10 @@ public class SpecimenImporter
                     ResultSetUtil.logData(rs, _logger);
                 DataIteratorBuilder dib = new DataIteratorBuilder.Wrapper(new ResultsImpl(rs));
                 mergeTable(info.getSchema(), specimenTableSelectName, specimenTable, cols, dib, false, false);
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
             }
         }
         else
@@ -2445,7 +2453,7 @@ public class SpecimenImporter
         return vialListSql;
     }
 
-    private void populateVials(SpecimenLoadInfo info, boolean merge, boolean seenVisitValue) throws SQLException, ValidationException
+    private void populateVials(SpecimenLoadInfo info, boolean merge, boolean seenVisitValue) throws ValidationException
     {
         TableInfo specimenTable = getTableInfoSpecimen();
         String specimenTableSelectName = specimenTable.getSelectName();
@@ -2498,6 +2506,10 @@ public class SpecimenImporter
                 DataIteratorBuilder dib = new DataIteratorBuilder.Wrapper(new ResultsImpl(rs));
                 mergeTable(info.getSchema(), vialTableSelectName, vialTable, cols, dib, false, false);
             }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
         }
         else
         {
@@ -2524,7 +2536,7 @@ public class SpecimenImporter
             info(param.toString());
     }
 
-    private void populateSpecimenEvents(SpecimenLoadInfo info, boolean merge) throws SQLException, ValidationException
+    private void populateSpecimenEvents(SpecimenLoadInfo info, boolean merge) throws ValidationException
     {
         TableInfo specimenEventTable = getTableInfoSpecimenEvent();
         String specimenEventTableSelectName = specimenEventTable.getSelectName();
@@ -2565,6 +2577,10 @@ public class SpecimenImporter
                 DataIteratorBuilder dib = new DataIteratorBuilder.Wrapper(new ResultsImpl(rs));
                 mergeTable(info.getSchema(), specimenEventTableSelectName, specimenEventTable, cols, dib, false, false);
             }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
         }
         else
         {
@@ -2598,7 +2614,7 @@ public class SpecimenImporter
     private <T extends ImportableColumn> Pair<List<T>, Integer> mergeTable(
             DbSchema schema, String tableName, @Nullable TableInfo target,
             Collection<T> potentialColumns, DataIteratorBuilder values, boolean addEntityId, boolean hasContainerColumn)
-            throws SQLException, ValidationException
+            throws ValidationException
     {
         ComputedColumn entityIdCol = null;
         if (addEntityId)
@@ -2610,7 +2626,7 @@ public class SpecimenImporter
     }
 
     private void mergeTable(DbSchema schema, SpecimenImportFile file, TableInfo target, boolean addEntityId, boolean hasContainerColumn)
-            throws SQLException, ValidationException, IOException
+            throws ValidationException, IOException
     {
         SpecimenTableType type = file.getTableType();
 
@@ -2650,14 +2666,13 @@ public class SpecimenImporter
      * @param schema The dbschema.
      * @param idCol The computed column.
      * @return A pair of the columns actually found in the data values and a total row count.
-     * @throws SQLException
      * @throws org.labkey.api.query.ValidationException
      */
     private <T extends ImportableColumn> Pair<List<T>, Integer> mergeTable(
             DbSchema schema, String tableName, @Nullable TableInfo target,
             Collection<T> potentialColumns, DataIteratorBuilder values,
             ComputedColumn idCol, boolean hasContainerColumn)
-            throws SQLException, ValidationException
+            throws ValidationException
     {
         // tests  SpecimenTest, LuminexUploadAndCopyTest, VaccineProtocolTest, FlowSpecimenTest, SpecimenImportTest, CreateVialsTest, ViabilityTest
         if (values == null)
@@ -2741,7 +2756,7 @@ public class SpecimenImporter
 
 
     private void replaceTable(DbSchema schema, SpecimenImportFile file, TableInfo target, boolean addEntityId, boolean hasContainerColumn)
-        throws IOException, SQLException, ValidationException
+        throws IOException, ValidationException
     {
         ComputedColumn entityIdCol = null;
         if (addEntityId)
@@ -2764,14 +2779,13 @@ public class SpecimenImporter
      * @param drawDate DrawDate column or null
      * @param drawTime DrawTime column or null
      * @return A pair of the columns actually found in the data values and a total row count.
-     * @throws SQLException
      * @throws IOException
      */
     public <T extends ImportableColumn> Pair<List<T>, Integer> replaceTable(
             DbSchema schema, SpecimenImportFile file, String tableName, @Nullable TableInfo target,
             boolean generateGlobaluniqueIds, boolean hasContainerColumn, ComputedColumn drawDate, ComputedColumn drawTime,
             ComputedColumn... computedColumnsAddl)
-            throws IOException, SQLException, ValidationException
+            throws IOException, ValidationException
     {
         if (file == null)
         {
@@ -3072,7 +3086,7 @@ public class SpecimenImporter
 
 
     private Pair<List<SpecimenColumn>, Integer> populateTempTable(TempTablesHolder tempTablesHolder, SpecimenImportFile file, boolean merge)
-            throws SQLException, IOException, ValidationException
+            throws IOException, ValidationException
     {
         info("Populating specimen temp table...");
         TempTableInfo tempTableInfo = tempTablesHolder.getTempTableInfo();
@@ -3235,7 +3249,6 @@ public class SpecimenImporter
     }
 
     protected void remapTempTableLookupIndexes(DbSchema schema, String tempTable, List<SpecimenColumn> loadedColumns)
-            throws SQLException
     {
         String sep = "";
         SQLFragment remapExternalIdsSql = new SQLFragment("UPDATE ").append(tempTable).append(" SET ");
@@ -3398,7 +3411,6 @@ public class SpecimenImporter
     }
 
     private void updateTempTableSpecimenHash(TempTablesHolder tempTablesHolder, List<SpecimenColumn> loadedColumns)
-            throws SQLException
     {
         DbSchema schema = tempTablesHolder.getTempTableInfo().getSchema();
         String tempTableName = tempTablesHolder.getTempTableInfo().getSelectName();

@@ -19,7 +19,6 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
@@ -29,7 +28,6 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.beans.PropertyChangeEvent;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -47,20 +45,14 @@ public class StudyContainerListener extends ContainerManager.AbstractContainerLi
     @Override
     public void containerDeleted(Container c, User user)
     {
-        try
+        StudyManager.getInstance().deleteAllStudyData(c, user);
+        for (StudyImpl ancillaryStudy : StudyManager.getInstance().getAncillaryStudies(c))
         {
-            StudyManager.getInstance().deleteAllStudyData(c, user);
-            for (StudyImpl ancillaryStudy : StudyManager.getInstance().getAncillaryStudies(c))
-            {
-                // Explicitly break the link between any ancillary studies dependent on this container:
-                ancillaryStudy.setSourceStudyContainerId(null);
-                StudyManager.getInstance().updateStudy(user, ancillaryStudy);
-            }
+            // Explicitly break the link between any ancillary studies dependent on this container:
+            ancillaryStudy.setSourceStudyContainerId(null);
+            StudyManager.getInstance().updateStudy(user, ancillaryStudy);
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+
         // Changing the container tree can change what assays are in scope
         AssayManager.get().clearProtocolCache();
     }

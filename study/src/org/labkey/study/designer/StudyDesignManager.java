@@ -67,7 +67,6 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -117,7 +116,7 @@ public class StudyDesignManager
         return new TableSelector(getStudyDesignTable(), filter, null).getObject(StudyDesignInfo.class);
     }
 
-    public StudyDesignInfo[] getStudyDesigns(Container c) throws SQLException
+    public StudyDesignInfo[] getStudyDesigns(Container c)
     {
         SimpleFilter filter = new SimpleFilter();
         filter.addWhereClause("(Container = ? OR SourceContainer = ?)", new Object[] {c, c} , FieldKey.fromParts("Container"), FieldKey.fromParts("SourceContainer"));
@@ -125,7 +124,7 @@ public class StudyDesignManager
         return new TableSelector(getStudyDesignTable(), filter, null).getArray(StudyDesignInfo.class);
     }
 
-    public StudyDesignInfo[] getStudyDesignsForAllFolders(User u, Container root) throws SQLException
+    public StudyDesignInfo[] getStudyDesignsForAllFolders(User u, Container root)
     {
         SimpleFilter filter = new SimpleFilter();
         ContainerFilter cf = new ContainerFilter.CurrentAndSubfolders(u);
@@ -135,7 +134,8 @@ public class StudyDesignManager
     }
 
 
-    public StudyDesignInfo moveStudyDesign(User user, StudyDesignInfo design, Container newContainer) throws SQLException {
+    public StudyDesignInfo moveStudyDesign(User user, StudyDesignInfo design, Container newContainer)
+    {
         Container oldContainer = design.getContainer();
         design.setContainer(newContainer);
         Table.update(user, getStudyDesignTable(), design, design.getStudyId());
@@ -153,7 +153,8 @@ public class StudyDesignManager
      * @param newName Label for this study design
      * @return
      */
-    public StudyDesignInfo copyStudyDesign(User user, StudyDesignInfo source, Container newContainer, String newName) throws SaveException, SQLException {
+    public StudyDesignInfo copyStudyDesign(User user, StudyDesignInfo source, Container newContainer, String newName) throws SaveException
+    {
         StudyDesignInfo dest = new StudyDesignInfo();
         dest.setLabel(newName);
         dest.setContainer(newContainer);
@@ -310,7 +311,7 @@ public class StudyDesignManager
         return version;
     }
 
-    public void deleteStudyDesigns(Container c, Set<TableInfo> deletedTables) throws SQLException
+    public void deleteStudyDesigns(Container c, Set<TableInfo> deletedTables)
     {
         inactivateStudyDesign(c);
         Filter filter = SimpleFilter.createContainerFilter(c);
@@ -323,7 +324,7 @@ public class StudyDesignManager
         new SqlExecutor(getSchema()).execute(updateContainers);
     }
 
-    public void deleteStudyDesignLookupValues(Container c, Set<TableInfo> deletedTables) throws SQLException
+    public void deleteStudyDesignLookupValues(Container c, Set<TableInfo> deletedTables)
     {
         Filter filter = SimpleFilter.createContainerFilter(c);
         Table.delete(StudySchema.getInstance().getTableInfoStudyDesignImmunogenTypes(), filter);
@@ -344,7 +345,7 @@ public class StudyDesignManager
         deletedTables.add(StudySchema.getInstance().getTableInfoStudyDesignLabs());
     }
 
-    public void inactivateStudyDesign(Container c) throws SQLException
+    public void inactivateStudyDesign(Container c)
     {
         //If designs were sourced from another folder. Just move ownership back so new studies can be created
         Study study = StudyManager.getInstance().getStudy(c);
@@ -362,7 +363,7 @@ public class StudyDesignManager
         }
     }
 
-    public void deleteStudyDesign(Container container, int studyId) throws SQLException
+    public void deleteStudyDesign(Container container, int studyId)
     {
         SimpleFilter deleteVersionsFilter = SimpleFilter.createContainerFilter(container);
         deleteVersionsFilter.addCondition(FieldKey.fromParts("studyId"), studyId);
@@ -375,7 +376,7 @@ public class StudyDesignManager
 
     public Study generateStudyFromDesign(User user, Container parent, String folderName, Date startDate,
                                          String subjectNounSingular, String subjectNounPlural, String subjectColumnName, StudyDesignInfo info,
-                                         List<Map<String,Object>> participantDataset, List<Map<String,Object>> specimens) throws SQLException, XmlException, IOException, ServletException, ValidationException
+                                         List<Map<String,Object>> participantDataset, List<Map<String,Object>> specimens) throws XmlException, IOException, ServletException, ValidationException
     {
         Container studyFolder = parent.getChild(folderName);
         if (null == studyFolder)
@@ -468,7 +469,6 @@ public class StudyDesignManager
     }
 
     public List<Map<String, Object>> generateParticipantDataset(User user, GWTStudyDefinition def)
-            throws SQLException
     {
         List<GWTCohort> cohorts = def.getGroups();
         int count = 0;

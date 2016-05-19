@@ -710,12 +710,12 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(updateSql);
     }
 
-    public void updateVialCounts(Container container, User user) throws SQLException
+    public void updateVialCounts(Container container, User user)
     {
         updateVialCounts(container, user, null);
     }
 
-    private void updateRequestabilityAndCounts(List<Vial> vials, User user) throws SQLException, RequestabilityManager.InvalidRuleException
+    private void updateRequestabilityAndCounts(List<Vial> vials, User user) throws RequestabilityManager.InvalidRuleException
     {
         if (vials.size() == 0)
             return;
@@ -1029,7 +1029,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         return event;
     }
 
-    private void deleteRequestEvents(User user, SpecimenRequest request) throws SQLException
+    private void deleteRequestEvents(User user, SpecimenRequest request)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RequestId"), request.getRowId());
         List<SpecimenRequestEvent> events = _requestEventHelper.get(request.getContainer(), filter);
@@ -1244,7 +1244,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             _required = required;
         }
 
-        public Map<Integer,String> getDefaultSiteValues(Container container) throws SQLException
+        public Map<Integer,String> getDefaultSiteValues(Container container) throws ValidationException
         {
             if (!isRememberSiteValue())
                 throw new UnsupportedOperationException("Only those inputs set to remember site values can be queried for a site default.");
@@ -1346,32 +1346,26 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         return new Lsid(StudyService.SPECIMEN_NAMESPACE_PREFIX, "Folder-" + container.getRowId(), "RequestInputDefault").toString();
     }
 
-    private static String ensureOntologyManagerSetItem(Container container, String lsidBase, String uniqueItemId) throws SQLException
+    private static String ensureOntologyManagerSetItem(Container container, String lsidBase, String uniqueItemId) throws ValidationException
     {
-        try {
-            Integer listParentObjectId = OntologyManager.ensureObject(container, lsidBase);
-            String listItemReferenceLsidPrefix = lsidBase + "#objectResource.";
-            String listItemObjectLsid = lsidBase + "#" + uniqueItemId;
-            String listItemPropertyReferenceLsid = listItemReferenceLsidPrefix + uniqueItemId;
+        Integer listParentObjectId = OntologyManager.ensureObject(container, lsidBase);
+        String listItemReferenceLsidPrefix = lsidBase + "#objectResource.";
+        String listItemObjectLsid = lsidBase + "#" + uniqueItemId;
+        String listItemPropertyReferenceLsid = listItemReferenceLsidPrefix + uniqueItemId;
 
-            // ensure the object that corresponds to a single list item:
-            OntologyManager.ensureObject(container, listItemObjectLsid, listParentObjectId);
+        // ensure the object that corresponds to a single list item:
+        OntologyManager.ensureObject(container, listItemObjectLsid, listParentObjectId);
 
-            // check to make sure that the list item is wired up to the top-level list object via a property:
-            Map<String, ObjectProperty> properties = OntologyManager.getPropertyObjects(container, lsidBase);
-            if (!properties.containsKey(listItemPropertyReferenceLsid))
-            {
-                // create the resource property that links the parent object to the list item object:
-                ObjectProperty resourceProperty = new ObjectProperty(lsidBase, container,
-                        listItemPropertyReferenceLsid, listItemObjectLsid, PropertyType.RESOURCE);
-                OntologyManager.insertProperties(container, lsidBase, resourceProperty);
-            }
-            return listItemObjectLsid;
-        }
-        catch (ValidationException ve)
+        // check to make sure that the list item is wired up to the top-level list object via a property:
+        Map<String, ObjectProperty> properties = OntologyManager.getPropertyObjects(container, lsidBase);
+        if (!properties.containsKey(listItemPropertyReferenceLsid))
         {
-            throw new SQLException(ve.getMessage());
+            // create the resource property that links the parent object to the list item object:
+            ObjectProperty resourceProperty = new ObjectProperty(lsidBase, container,
+                    listItemPropertyReferenceLsid, listItemObjectLsid, PropertyType.RESOURCE);
+            OntologyManager.insertProperties(container, lsidBase, resourceProperty);
         }
+        return listItemObjectLsid;
     }
 
     public void saveNewSpecimenRequestInputs(Container container, SpecimenRequestInput[] inputs) throws SQLException
@@ -2039,7 +2033,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             clearCaches(vial.getContainer());
     }
 
-    public void deleteAllSampleData(Container c, Set<TableInfo> set) throws SQLException
+    public void deleteAllSampleData(Container c, Set<TableInfo> set)
     {
         // UNDONE: use transaction?
         SimpleFilter containerFilter = SimpleFilter.createContainerFilter(c);

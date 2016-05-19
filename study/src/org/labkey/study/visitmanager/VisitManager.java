@@ -156,14 +156,7 @@ public abstract class VisitManager
                 cohortDatasetId != null &&
                 changedDatasets.contains(StudyManager.getInstance().getDatasetDefinition(_study, cohortDatasetId)))
         {
-            try
-            {
-                CohortManager.getInstance().updateParticipantCohorts(user, getStudy());
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            CohortManager.getInstance().updateParticipantCohorts(user, getStudy());
         }
 
         info(logger, "Clearing participant visit caches");

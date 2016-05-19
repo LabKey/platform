@@ -94,7 +94,7 @@ public class EditableSpecimenImporter extends SpecimenImporter
         {
             super.process(sifMap, merge, logger, null);
         }
-        catch (SQLException | ValidationException ex)
+        catch (ValidationException ex)
         {
             if (logger != null)
                 logger.error("Error during import", ex);
@@ -207,7 +207,6 @@ public class EditableSpecimenImporter extends SpecimenImporter
 
     @Override
     protected void remapTempTableLookupIndexes(DbSchema schema, String tempTable, List<SpecimenColumn> loadedColumns)
-            throws SQLException
     {
         // do nothing
     }

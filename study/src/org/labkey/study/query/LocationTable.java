@@ -193,7 +193,14 @@ public class LocationTable extends BaseStudyTable
                     continue;
                 }
 
-                StudyManager.getInstance().deleteLocation(loc);
+                try
+                {
+                    StudyManager.getInstance().deleteLocation(loc);
+                }
+                catch (ValidationException e)
+                {
+                    validationExceptions.add(e);
+                }
             }
 
             if (!validationExceptions.isEmpty())

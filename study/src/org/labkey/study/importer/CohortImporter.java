@@ -20,6 +20,7 @@ import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
@@ -54,7 +55,7 @@ public class CohortImporter implements InternalStudyImporter
 
     public String getDataType() { return StudyArchiveDataTypes.COHORT_SETTINGS; }
 
-    public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws IOException, SQLException, ServletException, ImportException
+    public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws IOException, ValidationException, ImportException
     {
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
@@ -120,7 +121,7 @@ public class CohortImporter implements InternalStudyImporter
         return null;
     }
 
-    private Map<String, Integer> importCohortSettings(StudyImportContext ctx, VirtualFile root, StudyImpl study, String cohortFileName) throws IOException, SQLException, ImportException, ServletException
+    private Map<String, Integer> importCohortSettings(StudyImportContext ctx, VirtualFile root, StudyImpl study, String cohortFileName) throws IOException, ValidationException, ImportException
     {
         //
         // ITN12.2 branch and newer releases will always export a separate cohorts.xml table to

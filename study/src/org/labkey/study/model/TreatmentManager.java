@@ -32,6 +32,7 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
@@ -471,7 +472,7 @@ public class TreatmentManager
                 assertEquals("Unexpected product lookup value", _lookups.get("ImmunogenType"), immunogen.getType());
         }
 
-        private void populateTreatmentSchedule() throws SQLException, ServletException
+        private void populateTreatmentSchedule() throws ValidationException
         {
             _cohorts.add(CohortManager.getInstance().createCohort(_junitStudy, _user, "Cohort1", true, 10, null));
             _cohorts.add(CohortManager.getInstance().createCohort(_junitStudy, _user, "Cohort2", true, 20, null));

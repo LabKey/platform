@@ -996,7 +996,7 @@ public class StudyManager
         return true;
     }
 
-    public boolean isDataUniquePerParticipant(DatasetDefinition dataset) throws SQLException
+    public boolean isDataUniquePerParticipant(DatasetDefinition dataset)
     {
         // don't use dataset.getTableInfo() since this method is called during updateDatasetDefinition`() and may be in an inconsistent state
         TableInfo t = dataset.getStorageTableInfo();
@@ -1434,7 +1434,7 @@ public class StudyManager
     }
 
 
-    public Integer createVisitTagMapEntry(User user, Container container, String visitTagName, @NotNull Integer visitId, @Nullable Integer cohortId) throws SQLException
+    public Integer createVisitTagMapEntry(User user, Container container, String visitTagName, @NotNull Integer visitId, @Nullable Integer cohortId)
     {
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitTagMap();
         Map<String, Object> map = new CaseInsensitiveHashMap<>();
@@ -1564,9 +1564,9 @@ public class StudyManager
     }
 
 
-    public void createCohort(Study study, User user, CohortImpl cohort) throws SQLException
+    public void createCohort(Study study, User user, CohortImpl cohort)
     {
-        if (cohort.getContainer() != null && !cohort.getContainer().getId().equals(study.getContainer().getId()))
+        if (cohort.getContainer() != null && !cohort.getContainer().equals(study.getContainer()))
             throw new IllegalArgumentException("Cohort container does not match study");
         cohort.setContainer(study.getContainer());
 
@@ -1584,7 +1584,7 @@ public class StudyManager
     }
 
 
-    public void deleteVisit(StudyImpl study, VisitImpl visit, User user) throws SQLException
+    public void deleteVisit(StudyImpl study, VisitImpl visit, User user)
     {
         deleteVisits(study, Collections.singleton(visit), user, false);
     }
@@ -1592,7 +1592,7 @@ public class StudyManager
     /*
         Delete multiple visits; more efficient than calling deleteVisit() in a loop.
     */
-    public void deleteVisits(StudyImpl study, Collection<VisitImpl> visits, User user, boolean unused) throws SQLException
+    public void deleteVisits(StudyImpl study, Collection<VisitImpl> visits, User user, boolean unused)
     {
         // Short circuit on empty
         if (visits.isEmpty())
@@ -1853,7 +1853,7 @@ public class StudyManager
         //vials and events use a column called fr_container instead of normal container.
     }
 
-    public void deleteLocation(LocationImpl location) throws SQLException
+    public void deleteLocation(LocationImpl location) throws ValidationException
     {
         StudySchema schema = StudySchema.getInstance();
         if (!isLocationInUse(location))
@@ -1872,7 +1872,7 @@ public class StudyManager
         }
         else
         {
-            throw new SQLException("Locations currently in use cannot be deleted");
+            throw new ValidationException("Locations currently in use cannot be deleted");
         }
     }
 
@@ -1924,7 +1924,7 @@ public class StudyManager
                 Collections.singleton("VisitId"), filter, new Sort("VisitId")).getArrayList(Integer.class);
     }
 
-    public void deleteAssaySpecimenVisits(Container container, int rowId) throws SQLException
+    public void deleteAssaySpecimenVisits(Container container, int rowId)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("VisitId"), rowId);
@@ -1957,13 +1957,13 @@ public class StudyManager
         return label;
     }
 
-    public void createVisitDatasetMapping(User user, Container container, int visitId, int datasetId, boolean isRequired) throws SQLException
+    public void createVisitDatasetMapping(User user, Container container, int visitId, int datasetId, boolean isRequired)
     {
         VisitDataset vds = new VisitDataset(container, datasetId, visitId, isRequired);
         Table.insert(user, SCHEMA.getTableInfoVisitMap(), vds);
     }
 
-    public VisitDataset getVisitDatasetMapping(Container container, int visitRowId, int datasetId) throws SQLException
+    public VisitDataset getVisitDatasetMapping(Container container, int visitRowId, int datasetId)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("VisitRowId"), visitRowId);
@@ -2061,7 +2061,7 @@ public class StudyManager
         return new SqlSelector(StudySchema.getInstance().getSchema(), f).exists();
     }
 
-    public QCState insertQCState(User user, QCState state) throws SQLException
+    public QCState insertQCState(User user, QCState state)
     {
         List<QCState> preInsertStates = getQCStates(state.getContainer());
         _qcStateCache.remove(state.getContainer().getId());
@@ -2073,13 +2073,13 @@ public class StudyManager
         return newState;
     }
 
-    public QCState updateQCState(User user, QCState state) throws SQLException
+    public QCState updateQCState(User user, QCState state)
     {
         _qcStateCache.remove(state.getContainer().getId());
         return Table.update(user, StudySchema.getInstance().getTableInfoQCState(), state, state.getRowId());
     }
 
-    public void deleteQCState(QCState state) throws SQLException
+    public void deleteQCState(QCState state)
     {
         List<QCState> preDeleteStates = getQCStates(state.getContainer());
         _qcStateCache.remove(state.getContainer().getId());
@@ -2382,7 +2382,7 @@ public class StudyManager
                 isCohortInUse(cohort, visitStudy.getContainer(), StudySchema.getInstance().getTableInfoVisit(), "CohortId");
     }
 
-    public void deleteCohort(CohortImpl cohort) throws SQLException
+    public void deleteCohort(CohortImpl cohort)
     {
         StudySchema schema = StudySchema.getInstance();
 
@@ -2821,7 +2821,7 @@ public class StudyManager
 
 
     public void updateVisitDatasetMapping(User user, Container container, int visitId,
-                                          int datasetId, VisitDatasetType type) throws SQLException
+                                          int datasetId, VisitDatasetType type)
     {
         VisitDataset vds = getVisitDatasetMapping(container, visitId, datasetId);
         if (vds == null)
@@ -2971,7 +2971,7 @@ public class StudyManager
             clearCaches(substudy.getContainer(), unmaterializeDatasets);
     }
 
-    public void deleteAllStudyData(Container c, User user) throws SQLException
+    public void deleteAllStudyData(Container c, User user)
     {
         // Cancel any reload timer
         StudyReload.cancelTimer(c);
@@ -3227,7 +3227,7 @@ public class StudyManager
         return true;
     }
 
-    public ParticipantDataset[] getParticipantDatasets(Container container, Collection<String> lsids) throws SQLException
+    public ParticipantDataset[] getParticipantDatasets(Container container, Collection<String> lsids)
     {
         SimpleFilter filter = new SimpleFilter();
         filter.addClause(new SimpleFilter.InClause(FieldKey.fromParts("LSID"), lsids));
@@ -3258,6 +3258,11 @@ public class StudyManager
                 pds.add(pd);
             }
         }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+
 
         return pds.toArray(new ParticipantDataset[pds.size()]);
     }
@@ -4238,7 +4243,7 @@ public class StudyManager
     }
 
 
-    public CustomParticipantView getCustomParticipantView(Study study) throws SQLException
+    public CustomParticipantView getCustomParticipantView(Study study)
     {
         if (study == null)
             return null;
@@ -4265,7 +4270,7 @@ public class StudyManager
         return new TableSelector(StudySchema.getInstance().getTableInfoParticipantView(), containerFilter, null).getObject(CustomParticipantView.class);
     }
 
-    public CustomParticipantView saveCustomParticipantView(Study study, User user, CustomParticipantView view) throws SQLException
+    public CustomParticipantView saveCustomParticipantView(Study study, User user, CustomParticipantView view)
     {
         if (view.isModuleParticipantView())
             throw new IllegalArgumentException("Module-defined participant views should not be saved to the database.");
@@ -4745,7 +4750,7 @@ public class StudyManager
      * Convert a placeholder or 'ghost' dataset to an actual dataset by renaming the target dataset to the placeholder's name,
      * transferring all timepoint requirements from the placeholder to the target and deleting the placeholder dataset.
      */
-    public DatasetDefinition linkPlaceHolderDataset(StudyImpl study, User user, DatasetDefinition expectationDataset, DatasetDefinition targetDataset) throws SQLException
+    public DatasetDefinition linkPlaceHolderDataset(StudyImpl study, User user, DatasetDefinition expectationDataset, DatasetDefinition targetDataset)
     {
         if (expectationDataset == null || targetDataset == null)
             throw new IllegalArgumentException("Both expectation DataSet and target DataSet must exist");
@@ -4917,7 +4922,7 @@ public class StudyManager
         StudyImpl _studyVisitBased = null;
 
 //        @BeforeClass
-        public void createStudy() throws SQLException
+        public void createStudy()
         {
             _context = TestContext.get();
             Container junit = JunitUtil.getTestContainer();
@@ -6071,7 +6076,7 @@ public class StudyManager
             assertEquals(_assays.size(), 2);
         }
 
-        private void populateLookupTables() throws SQLException
+        private void populateLookupTables()
         {
             String name, label;
 
@@ -6093,7 +6098,7 @@ public class StudyManager
             _lookups.put("SampleType", name);
         }
 
-        private void createStudy() throws SQLException
+        private void createStudy()
         {
             _context = TestContext.get();
             Container junit = JunitUtil.getTestContainer();

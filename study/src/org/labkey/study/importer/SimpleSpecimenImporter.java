@@ -205,13 +205,13 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         return cols;
     }
 
-    public void process(List<Map<String, Object>> rows, boolean merge) throws SQLException, IOException, ValidationException
+    public void process(List<Map<String, Object>> rows, boolean merge) throws IOException, ValidationException
     {
         _process(rows, merge, Logger.getLogger(getClass()));
     }
 
     // Avoid conflict with SpecimenImporter.process() (has similar signature)
-    private void _process(List<Map<String, Object>> rows, boolean merge, Logger logger) throws SQLException, IOException, ValidationException
+    private void _process(List<Map<String, Object>> rows, boolean merge, Logger logger) throws IOException, ValidationException
     {
         //Map from column name to
         Container container = getContainer();
@@ -261,7 +261,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         {
             super.process(sifMap, merge, logger, null);
         }
-        catch (SQLException | ValidationException ex)
+        catch (ValidationException ex)
         {
             if (logger != null)
                 logger.error("Error during import", ex);
@@ -294,7 +294,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         private int minId = 0;
         private int lastId = 0;
 
-        LookupTable(TableInfo table, Container c, SpecimenTableType tableType, String foreignKeyCol, String tsvIdCol, String tsvLabelCol, String dbLabelCol) throws SQLException
+        LookupTable(TableInfo table, Container c, SpecimenTableType tableType, String foreignKeyCol, String tsvIdCol, String tsvLabelCol, String dbLabelCol)
         {
             this.tableType = tableType;
             this.foreignKeyCol = foreignKeyCol;
@@ -305,7 +305,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
             getKeyMap(table, c);
         }
 
-        private void getKeyMap(TableInfo table, Container c) throws SQLException
+        private void getKeyMap(TableInfo table, Container c)
         {
             final List<Map<String, Object>> missingExternalId = new ArrayList<>();
             Filter filter = SimpleFilter.createContainerFilter(c);
@@ -409,7 +409,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         static final String DEFAULT_LAB = "Not Specified";
         private final Integer defaultLabId;
 
-        LabLookupTable(TableInfo tableInfo, Container c, SpecimenTableType tableType) throws SQLException
+        LabLookupTable(TableInfo tableInfo, Container c, SpecimenTableType tableType)
         {
             super(tableInfo, c, tableType, "lab_id", "lab_id", "lab_name", "Label");
             defaultLabId = getVal(DEFAULT_LAB);

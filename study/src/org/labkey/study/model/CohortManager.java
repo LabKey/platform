@@ -32,6 +32,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Study;
@@ -77,7 +78,7 @@ public class CohortManager
     //
     // used when importing a folder with automatic cohorts
     //
-    public void setAutomaticCohortAssignment(StudyImpl study, User user, Integer participantCohortDatasetId, String participantCohortProperty, boolean advancedCohorts, boolean reassignParticipants) throws SQLException
+    public void setAutomaticCohortAssignment(StudyImpl study, User user, Integer participantCohortDatasetId, String participantCohortProperty, boolean advancedCohorts, boolean reassignParticipants)
     {
         study = study.createMutable();
         setCohortProperties(study, user, false, advancedCohorts, participantCohortDatasetId, participantCohortProperty );
@@ -145,7 +146,7 @@ public class CohortManager
     }
 
     // TODO: Check for null label here?
-    public CohortImpl createCohort(Study study, User user, String newLabel, boolean enrolled, Integer subjectCount, String description) throws ServletException, SQLException
+    public CohortImpl createCohort(Study study, User user, String newLabel, boolean enrolled, Integer subjectCount, String description) throws ValidationException
     {
         CohortImpl cohort = new CohortImpl();
 
@@ -153,7 +154,7 @@ public class CohortManager
         Cohort existingCohort = StudyManager.getInstance().getCohortByLabel(study.getContainer(), user, newLabel);
 
         if (existingCohort != null)
-            throw new ServletException("A cohort with the label '" + newLabel + "' already exists");
+            throw new ValidationException("A cohort with the label '" + newLabel + "' already exists");
 
         cohort.setLabel(newLabel);
         cohort.setEnrolled(enrolled);
@@ -165,7 +166,7 @@ public class CohortManager
         return cohort;
     }
 
-    public CohortImpl ensureCohort(Study study, User user, String newLabel, boolean enrolled, Integer subjectCount, String description) throws ServletException, SQLException
+    public CohortImpl ensureCohort(Study study, User user, String newLabel, boolean enrolled, Integer subjectCount, String description) throws ValidationException
     {
         CohortImpl existingCohort = StudyManager.getInstance().getCohortByLabel(study.getContainer(), user, newLabel);
         if (existingCohort != null)
@@ -296,7 +297,7 @@ public class CohortManager
     }
 
 
-    public void updateParticipantCohorts(User user, StudyImpl study) throws SQLException, UnauthorizedException
+    public void updateParticipantCohorts(User user, StudyImpl study) throws UnauthorizedException
     {
         if (study.isManualCohortAssignment() ||
                 study.getParticipantCohortDatasetId() == null ||
