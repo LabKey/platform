@@ -20,6 +20,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
@@ -55,8 +57,8 @@ public class QueryDefCache
 
         private QueryDefCollections(Container c)
         {
-            Map<String, Map<String, QueryDef>> queryDefs = new HashMap<>();
-            Map<String, Map<String, QueryDef>> customQueryDefs = new HashMap<>();
+            Map<String, Map<String, QueryDef>> queryDefs = new CaseInsensitiveHashMap<>();
+            Map<String, Map<String, QueryDef>> customQueryDefs = new CaseInsensitiveHashMap<>();
             Map<Integer, QueryDef> queryDefIdMap = new HashMap<>();
 
             new TableSelector(QueryManager.get().getTableInfoQueryDef(), SimpleFilter.createContainerFilter(c), null).forEach(queryDef -> {
@@ -84,7 +86,7 @@ public class QueryDefCache
         {
             if (!queryDefs.containsKey(schemaName))
             {
-                queryDefs.put(schemaName, new LinkedHashMap<>());
+                queryDefs.put(schemaName, new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>()));
             }
             return queryDefs.get(schemaName);
         }
