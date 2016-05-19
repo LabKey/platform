@@ -23,7 +23,6 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.Pair;
 
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -145,7 +144,7 @@ public class MvUtil
      * Sets the indicators and labels for this container.
      * Map should be value -> label.
      */
-    public static void assignMvIndicators(@NotNull Container c, @NotNull String[] indicators, @NotNull String[] labels) throws SQLException
+    public static void assignMvIndicators(@NotNull Container c, @NotNull String[] indicators, @NotNull String[] labels)
     {
         assert indicators.length > 0 : "No indicators provided";
         assert indicators.length == labels.length : "Different number of indicators and labels provided";
