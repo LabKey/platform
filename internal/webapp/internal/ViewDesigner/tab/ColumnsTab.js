@@ -249,13 +249,11 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
                             width: 30,
                             menuDisabled: true,
                             sortable: false,
-                            items: [{
-                                icon: LABKEY.contextPath + '/_images/delete.png',
-                                tooltip: 'Remove',
-                                handler: function(grid, index) {
-                                    grid.getStore().remove(index);
-                                }
-                            }]
+                            icon: LABKEY.contextPath + '/_images/delete.png',
+                            tooltip: 'Remove',
+                            handler: function(grid, index) {
+                                grid.getStore().removeAt(index);
+                            }
                         }],
                     buttons: [{
                         text: 'Add Aggregate',
