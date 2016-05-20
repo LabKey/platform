@@ -467,6 +467,12 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps.In
     }
 
     @Override
+    public boolean isSetUseContainerRelativeURL()
+    {
+        return null != lookupStringValue(USE_CONTAINER_RELATIVE_URL, null);
+    }
+
+    @Override
     public boolean isAllowSessionKeys()
     {
         return lookupBooleanValue(ALLOW_SESSION_KEYS, false);
