@@ -321,12 +321,22 @@ table.labkey-no-spacing
     padding: 5px;
 }
 
-.labkey-dataregion-msgbox hr
+.labkey-dataregion-msg-sep
 {
-    border: none 0;
     border-top: 1px solid #EEEEEE;
-    height: 1px;
-    margin: 1px 2px;
+}
+
+.labkey-dataregion-msg-toggle
+{
+    float: right;
+    padding-right: 5px;
+    color: #777777;
+    cursor: pointer;
+}
+
+.labkey-dataregion-msg-toggle:hover
+{
+    color: #000000;
 }
 
 /* Make spacer row 'transparent' */

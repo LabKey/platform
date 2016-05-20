@@ -15,7 +15,7 @@ public class AggregatesAverageAnalyticsProvider extends BaseAggregatesAnalyticsP
     @Override
     public boolean isApplicable(@NotNull ColumnInfo col)
     {
-        return col.isNumericType();
+        return col.isNumericType() && !col.isKeyField() && !col.isLookup();
     }
 
     @Override

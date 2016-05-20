@@ -52,7 +52,6 @@
                         width: 300,
                         height: 200,
                         data: data.rows,
-                        fontFamily: 'Roboto, arial',
                         margins: {
                             top: 35,
                             bottom: 15,
@@ -124,9 +123,12 @@
                     var categoryCountMap = {};
                     $.each(data.rows, function (index, row)
                     {
-                        if (!categoryCountMap[row[columnName].value])
-                            categoryCountMap[row[columnName].value] = 0;
-                        categoryCountMap[row[columnName].value]++;
+                        var val = row[columnName].displayValue || row[columnName].value;
+
+                        if (!categoryCountMap[val])
+                            categoryCountMap[val] = 0;
+
+                        categoryCountMap[val]++;
                     });
 
                     var categoryData = [];
@@ -149,7 +151,6 @@
                             width: categoryData.length > 5 ? 605 : 300,
                             height: 200,
                             data: data.rows,
-                            fontFamily: 'Roboto, arial',
                             margins: {
                                 top: 35,
                                 bottom: 35,
@@ -168,7 +169,8 @@
                                 fill: '#64A1C6'
                             },
                             xAes: function(row){
-                                return _truncateLabel(row[columnName].value, 7);
+                                var val = row[columnName].displayValue || row[columnName].value;
+                                return _truncateLabel(val, 7);
                             }
                         });
 
@@ -238,22 +240,13 @@
 
         var _appendPlotDiv = function(dataRegion)
         {
-            var plotAnalyticsCls = 'labkey-dataregion-msg-plot-analytics-' + dataRegion.name,
-                plotDivId = LABKEY.Utils.id();
+            var plotDivId = LABKEY.Utils.id();
 
-            if (!$('.' + plotAnalyticsCls).length)
-            {
-                dataRegion.addMessage({
-                    html: '<div class="' + plotAnalyticsCls + '">'
-                        + '<span id="' + plotDivId + '" class="labkey-dataregion-msg-plot-analytic"></span>'
-                        + '</div>',
-                    part: 'plotAnalyticsProvider'
-                });
-            }
-            else
-            {
-                $('.' + plotAnalyticsCls).append('<span id="' + plotDivId + '" class="labkey-dataregion-msg-plot-analytic"></span>');
-            }
+            dataRegion.addMessage({
+                html: '<span id="' + plotDivId + '" class="labkey-dataregion-msg-plot-analytic"></span>',
+                part: 'plotAnalyticsProvider',
+                append: true
+            });
 
             return plotDivId;
         };
