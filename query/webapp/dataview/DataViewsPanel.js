@@ -991,8 +991,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         var cbItems = [],
             cbColumns = [],
-            sizeItems = []
-            reportOrderItems = [];
+            sizeItems = [];
 
         var heights = {
             450 : 'small',
@@ -1037,25 +1036,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             }
         }, scope : this});
 
-        reportOrderItems.push({
-            boxLabel: 'Alphabetical', name: 'sortOrder', inputValue: 'ALPHABETICAL', checked: false, handler: function (grp){
-                if (grp.getValue()) {
-                    this.updateConfig = true;
-                }
-        }, scope : this  });
-        reportOrderItems.push({
-            boxLabel: 'By Display Order', name: 'sortOrder', inputValue: 'BY_DISPLAY_ORDER', checked: false, handler: function (grp){
-                if (grp.getValue()) {
-                    this.updateConfig = true;
-                }
-        }, scope : this  });
-        if (this.sortOrder === 'ALPHABETICAL') {
-            reportOrderItems[0].checked = true;
-        }
-        else if (this.sortOrder === 'BY_DISPLAY_ORDER') {
-            reportOrderItems[1].checked = true;
-        }
-
         var namePanel = Ext4.create('Ext.form.Panel', {
             border : false,
             fieldDefaults  : {
@@ -1094,7 +1074,19 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 columns    : 2,
                 height     : 50,
                 width      : 250,
-                items      : reportOrderItems
+                items      : [{
+                    boxLabel: 'Alphabetical', name: 'sortOrder', inputValue: 'ALPHABETICAL', checked: this.sortOrder === 'ALPHABETICAL', handler: function (grp){
+                        if (grp.getValue()) {
+                            this.updateConfig = true;
+                        }
+                    }, scope : this
+                },{
+                    boxLabel: 'By Display Order', name: 'sortOrder', inputValue: 'BY_DISPLAY_ORDER', checked: this.sortOrder === 'BY_DISPLAY_ORDER', handler: function (grp){
+                        if (grp.getValue()) {
+                            this.updateConfig = true;
+                        }
+                    }, scope : this
+                }]
             }]
         });
 

@@ -2819,7 +2819,7 @@ public class ReportsController extends SpringActionController
             {
                 sortOrder = SortOrder.BY_DISPLAY_ORDER;  // default
             }
-            response.put("sortOrder", sortOrder.toString());
+            response.put("sortOrder", sortOrder.name());
 
             List<DataViewProvider.Type> visibleDataTypes = new ArrayList<>();
             for (DataViewProvider.Type type : DataViewService.get().getDataTypes(getContainer(), getUser()))
@@ -2999,7 +2999,7 @@ public class ReportsController extends SpringActionController
                 props.put(typeName, "0");
         }
 
-        props.put("sortOrder", SortOrder.BY_DISPLAY_ORDER.toString());
+        props.put("sortOrder", SortOrder.BY_DISPLAY_ORDER.name());
 
         // visible columns
         props.put("Type", "1");
@@ -3279,13 +3279,8 @@ public class ReportsController extends SpringActionController
                 views.add(viewJson);
             }
 
-            Comparator<JSONObject>naturalOrderComparator = new Comparator<JSONObject>() {
-                @Override
-                public int compare(JSONObject a, JSONObject b)
-                {
-                    return SortHelpers.compare(a.get("name"), b.get("name"));
-                }
-            };
+            Comparator<JSONObject>naturalOrderComparator = (JSONObject a, JSONObject b) ->
+                SortHelpers.compareNatural(a.get("name"), b.get("name"));
             if(_sortOrder == SortOrder.ALPHABETICAL)
             {
                 views.sort(naturalOrderComparator);

@@ -924,7 +924,6 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
         if(reportsStore.data.items.length === 0) {  // (probably) never loaded before
             reportsStore.add(this.reportsArray);  // so load with initial data
         }
-        reportsStore.sort('displayOrder', 'ASC');  // TODO: this probably belongs somewhere different after implementing displayOrder population
         reportsStore.filterBy(function (record) {
             if(record.get('category').rowid === menuItem.raw.rowId)
                 return true;
