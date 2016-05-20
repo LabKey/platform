@@ -1,7 +1,6 @@
 package org.labkey.api.util;
 
 import java.util.Comparator;
-import java.util.regex.Pattern;
 
 /**
  * Created by eyounske on 5/10/16.
@@ -9,20 +8,33 @@ import java.util.regex.Pattern;
 public class SortHelpers
 {
     // Natural sort ordering
-    public static int compare(Object obj1, Object obj2)
+    public static int compareNatural(Object obj1, Object obj2)
     {
-        String s1 = obj1.toString();
-        String s2 = obj2.toString();
+        // converts null values to "null" for comparison purposes
+        String s1 = String.valueOf(obj1);
+        String s2 = String.valueOf(obj2);
 
-        if (s1.equals(s2)) return 0;
-
-        return compare(s1, s2);
+        return compareNatural(s1, s2);
     }
 
     // Natural sort ordering, mostly taken from http://stackoverflow.com/a/27530518
-    // Possibly improve by deleting spaces and/or leading zeroes?
-    public static int compare (String s1, String s2)
+    // Possibly improve by deleting spaces and/or leading zeroes and/or trailing zeroes?
+    public static int compareNatural(String s1, String s2)
     {
+        // assume null is less than any String value
+        if(s1 == null)
+        {
+            if(s2 == null)
+                return 0;
+            else
+                return -1;
+        }
+        else
+        {
+            if(s2 == null)
+                return 1;
+        }
+
         // Skip all identical characters
         int len1 = s1.length();
         int len2 = s2.length();
@@ -57,5 +69,15 @@ public class SortHelpers
 
         // No digits
         return(c1 - c2);
+    }
+
+    public static Comparator<String> getNaturalOrderStringComparator()
+    {
+        return (String s1, String s2) -> compareNatural(s1, s2);
+    }
+
+    public static Comparator<Object> getNaturalOrderObjectComparator()
+    {
+        return (Object obj1, Object obj2) -> compareNatural(obj1, obj2);
     }
 }
