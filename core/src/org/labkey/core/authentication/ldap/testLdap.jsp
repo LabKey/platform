@@ -17,8 +17,8 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.authentication.ldap.LdapController" %>
-<%@ page import="org.labkey.authentication.ldap.LdapController.TestLdapForm" %>
+<%@ page import="org.labkey.core.authentication.ldap.LdapController" %>
+<%@ page import="org.labkey.core.authentication.ldap.LdapController.TestLdapForm" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -29,9 +29,8 @@
     if (null != form.getMessage() && 0 != form.getMessage().length())
         out.print(form.getMessage() + "<br><br>");
 %>
-Use this page to test your LDAP authentication settings.  If you're unfamiliar with LDAP or your organization's directory
-services configuration you should consult with your network administrator.  You may also want to download an LDAP
-client browser.
+Use this page to test your LDAP authentication settings. If you're unfamiliar with LDAP or your organization's directory services
+configuration you should consult with your network administrator. You may also want to download an LDAP client browser.
 <ul>
 <li>Server URL is typically of the form ldap://servername.domain.org:389</li>
 <li>Security Principal varies widely by vendor and configuration.  A couple starting points:

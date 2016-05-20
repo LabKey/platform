@@ -1,4 +1,3 @@
-<%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%
 /*
  * Copyright (c) 2015 LabKey Corporation
@@ -16,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%

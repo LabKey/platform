@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.authentication.ldap;
+package org.labkey.core.authentication.ldap;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.FormViewAction;
@@ -67,7 +67,7 @@ public class LdapController extends SpringActionController
         public ModelAndView getView(Config form, boolean reshow, BindException errors) throws Exception
         {
             form.setSASL(LdapAuthenticationManager.useSASL());
-            return new JspView<>("/org/labkey/authentication/ldap/configure.jsp", form, errors);
+            return new JspView<>("/org/labkey/core/authentication/ldap/configure.jsp", form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -184,7 +184,7 @@ public class LdapController extends SpringActionController
             if (!reshow)
                 form.setSASL(LdapAuthenticationManager.useSASL());
 
-            HttpView view = new JspView<>("/org/labkey/authentication/ldap/testLdap.jsp", form, errors);
+            HttpView view = new JspView<>("/org/labkey/core/authentication/ldap/testLdap.jsp", form, errors);
             PageConfig page = getPageConfig();
             if (null == form.getMessage() || form.getMessage().length() < 200)
                 page.setFocusId("server");

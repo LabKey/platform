@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.authentication.test;
+package org.labkey.core.authentication.test;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;

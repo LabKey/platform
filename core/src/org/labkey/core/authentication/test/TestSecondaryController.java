@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.authentication.test;
+package org.labkey.core.authentication.test;
 
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -85,7 +85,7 @@ public class TestSecondaryController extends SpringActionController
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             getPageConfig().setIncludeLoginLink(false);
-            return new JspView<>("/org/labkey/authentication/test/testSecondary.jsp", null, errors);
+            return new JspView<>("/org/labkey/core/authentication/test/testSecondary.jsp", null, errors);
         }
 
         @Override
