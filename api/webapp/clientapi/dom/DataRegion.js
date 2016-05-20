@@ -1061,17 +1061,20 @@ if (!LABKEY.DataRegions) {
      *          <li><strong>part</strong>: {String} The part of the message area to render the message to.</li>
      *          <li><strong>duration</strong>: {Integer} The amount of time (in milliseconds) the message will stay visible.</li>
      *          <li><strong>hideButtonPanel</strong>: {Boolean} If true the button panel (customize view, export, etc.) will be hidden if visible.</li>
+     *          <li><strong>append</strong>: {Boolean} If true the msg is appended to any existing content for the given part.</li>
      *      </ul>
      * @param part The part of the message area to render the message to. Used to scope messages so they can be added
      *      and removed without clearing other messages.
      * @return {Ext.Element} The Ext.Element of the newly created message div.
      */
     Proto.addMessage = function(config, part) {
+        this.hidePanel();
+
         if (LABKEY.Utils.isString(config)) {
             this.msgbox.addMessage(config, part);
         }
         else if (LABKEY.Utils.isObject(config)) {
-            this.msgbox.addMessage(config.html, config.part || part);
+            this.msgbox.addMessage(config.html, config.part || part, config.append);
 
             if (config.hideButtonPanel) {
                 this.hideButtonPanel();
@@ -1114,11 +1117,27 @@ if (!LABKEY.DataRegions) {
 
     /**
      * If a message is currently showing, hide it and clear out its contents
+     * @param keepContent If true don't remove the message area content
      */
-    Proto.hideMessage = function() {
+    Proto.hideMessage = function(keepContent) {
         if (this.msgbox) {
             this.msgbox.hide();
-            this.removeAllMessages();
+
+            if (!keepContent)
+                this.removeAllMessages();
+        }
+    };
+
+    /**
+     * Toggle expand/collapse state for the message area content.
+     */
+    Proto.toggleMessageArea = function() {
+        if (this.msgbox && this.msgbox.isVisible()) {
+
+            if (this.msgbox.getToggleEl().hasClass('fa-minus'))
+                this.msgbox.collapse();
+            else
+                this.msgbox.expand();
         }
     };
 
@@ -1187,8 +1206,8 @@ if (!LABKEY.DataRegions) {
     };
 
     Proto.showMessageArea = function() {
-        if (this.msgbox) {
-            this.msgbox.render();
+        if (this.msgbox && this.msgbox.hasContent()) {
+            this.msgbox.show();
         }
     };
 
@@ -1471,19 +1490,16 @@ if (!LABKEY.DataRegions) {
     Proto.hideCustomizeView = function() {
         if (this.activePanelId === CUSTOM_VIEW_PANELID) {
             this.hidePanel();
+            this.showMessageArea();
         }
     };
 
     /**
      * Show the customize view interface.
      * @param activeTab {[String]} Optional. One of "ColumnsTab", "FilterTab", or "SortTab".  If no value is specified (or undefined), the ColumnsTab will be shown.
-     * @param {Boolean} [hideMessage=false] True to hide the DataRegion message bar when showing.
      */
-    Proto.showCustomizeView = function(activeTab, hideMessage) {
+    Proto.showCustomizeView = function(activeTab) {
         var region = this;
-        if (hideMessage) {
-            region.hideMessage();
-        }
 
         var panelConfig = this.getPanelConfiguration(CUSTOM_VIEW_PANELID);
 
@@ -1663,6 +1679,8 @@ if (!LABKEY.DataRegions) {
             return;
         }
 
+        this.hideMessage(true);
+
         this.hidePanel(function() {
             this.activePanelId = panelId;
 
@@ -1799,6 +1817,7 @@ if (!LABKEY.DataRegions) {
      */
     Proto.hideButtonPanel = function() {
         this.hidePanel();
+        this.showMessageArea();
     };
 
     /**
@@ -1831,6 +1850,7 @@ if (!LABKEY.DataRegions) {
             // allow for toggling the state
             if (panelId === this.activePanelId) {
                 this.hidePanel();
+                this.showMessageArea();
             }
             else {
                 // determine if the content needs to be moved to the ribbon
@@ -2277,7 +2297,7 @@ if (!LABKEY.DataRegions) {
     };
 
     var _buttonBind = function(region, cls, fn) {
-        region.msgbox.find('.labkey-button' + cls).on('click', $.proxy(function() {
+        region.msgbox.find('.labkey-button' + cls).off('click').on('click', $.proxy(function() {
             fn.call(this);
         }, region));
     };
@@ -2294,7 +2314,7 @@ if (!LABKEY.DataRegions) {
             }
             else if (parts['customizeview']) {
                 _buttonBind(region, '.unsavedview-revert', function() { _revertCustomView(this); });
-                _buttonBind(region, '.unsavedview-edit', function() { this.showCustomizeView(undefined, true); });
+                _buttonBind(region, '.unsavedview-edit', function() { this.showCustomizeView(undefined); });
                 _buttonBind(region, '.unsavedview-save', function() { _saveSessionCustomView(this); });
             }
         }
@@ -3402,10 +3422,22 @@ if (!LABKEY.DataRegions) {
         return this.parts;
     };
 
-    MsgProto.addMessage = function(msg, part) {
+    MsgProto.addMessage = function(msg, part, append) {
         part = part || 'info';
-        this.parts[part.toLowerCase()] = msg;
-        this.render();
+
+        var p = part.toLowerCase();
+        if (append && this.parts.hasOwnProperty(p))
+        {
+            this.parts[p] += msg;
+            this.render(p, msg);
+        }
+        else
+        {
+            this.parts[p] = msg;
+            this.render(p);
+        }
+
+        this.expand();
     };
 
     MsgProto.getMessage = function(part) {
@@ -3416,6 +3448,10 @@ if (!LABKEY.DataRegions) {
         return this.getMessage(part) !== undefined;
     };
 
+    MsgProto.hasContent = function() {
+        return this.parts && Object.keys(this.parts).length > 0;
+    };
+
     MsgProto.removeAll = function() {
         this.parts = {};
         this.render();
@@ -3424,7 +3460,7 @@ if (!LABKEY.DataRegions) {
     MsgProto.removeMessage = function(part) {
         var p = part.toLowerCase();
         if (this.parts.hasOwnProperty(p)) {
-            delete this.parts[p];
+            this.parts[p] = undefined;
             this.render();
         }
     };
@@ -3449,30 +3485,75 @@ if (!LABKEY.DataRegions) {
         return parent;
     };
 
-    MsgProto.render = function() {
-        var parent = this.getParent(),
-            hasMsg = false,
-            html = '';
+    MsgProto.render = function(partToUpdate, appendMsg) {
+        var parentCt = this.getParent().find('.dataregion_msgbox_ct'),
+            hasMsg = false, msgCls = '',
+            partCls, partEl,
+            me = this;
+
+        MSGPARTS = this.parts;
 
         $.each(this.parts, function(part, msg) {
+            partCls = 'labkey-dataregion-msg-part-' + part;
+
             if (msg) {
-                if (hasMsg) {
-                    html += '<hr>';
+
+                partEl = parentCt.find('.' + partCls);
+                if (partEl.length == 0) {
+
+                    msgCls = 'labkey-dataregion-msg ' + partCls + (hasMsg ? ' labkey-dataregion-msg-sep' : '');
+                    parentCt.append('<div class="' + msgCls + '">' + msg + '</div>');
                 }
+                else if (partToUpdate != undefined && partToUpdate == part) {
+
+                    if (appendMsg != undefined)
+                        partEl.append(appendMsg);
+                    else
+                        partEl.html(msg)
+                }
+
                 hasMsg = true;
-                html += '<div class="labkey-dataregion-msg">' + msg + '</div>';
+            }
+            else {
+                parentCt.find('.' + partCls).remove();
+                delete me.parts[part];
             }
         });
 
         if (hasMsg) {
-            parent.find('.dataregion_msgbox_ct').html(html);
             this.show();
             $(this).trigger('rendermsg', [this, this.parts]);
         }
         else {
             this.hide();
-            parent.find('.dataregion_msgbox_ct').html('');
+            parentCt.html('');
         }
+    };
+
+    MsgProto.expand = function() {
+        if (this.isVisible()) {
+            this.getParent().find('.labkey-dataregion-msg').show();
+
+            var toggle = this.getToggleEl();
+            toggle.removeClass('fa-plus');
+            toggle.addClass('fa-minus');
+            toggle.prop('title', 'Collapse message');
+        }
+    };
+
+    MsgProto.collapse = function() {
+        if (this.isVisible()) {
+            this.getParent().find('.labkey-dataregion-msg').hide();
+
+            var toggle = this.getToggleEl();
+            toggle.removeClass('fa-minus');
+            toggle.addClass('fa-plus');
+            toggle.prop('title', 'Expand message');
+        }
+    };
+
+    MsgProto.getToggleEl = function() {
+        return this.getParent().find('.labkey-dataregion-msg-toggle');
     };
 
     MsgProto.show = function() { this.getParent().show(); };

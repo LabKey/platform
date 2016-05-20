@@ -1232,7 +1232,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
 
     close : function() {
         if (this.dataRegion) {
-            this.dataRegion.hideCustomizeView(true);
+            this.dataRegion.hideCustomizeView();
         }
         else {
             // If we're not attached to a grid, just remove from the DOM

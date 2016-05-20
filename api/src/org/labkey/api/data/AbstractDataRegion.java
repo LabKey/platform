@@ -398,10 +398,10 @@ public abstract class AbstractDataRegion extends DisplayElement
     protected void renderMessageBox(RenderContext ctx, Writer out, int colCount) throws IOException
     {
         out.write("<tr id=\"" + PageFlowUtil.filter(getDomId() + "-msgbox") + "\" style=\"display:none\">");
-        out.write("<td colspan=\"");
-        out.write("2");
-        out.write("\" class=\"labkey-dataregion-msgbox\">");
-        out.write("<span class=\"labkey-tool labkey-tool-close\" style=\"float:right;\" onclick=\"LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].hideMessage();\" title=\"Close this message\" alt=\"close\"></span>");
+        out.write("<td colspan=\"2\" class=\"labkey-dataregion-msgbox\">");
+        out.write("<span class=\"labkey-dataregion-msg-toggle fa fa-minus\" "
+                + "onclick=\"LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].toggleMessageArea();\" "
+                + "title=\"Collapse message\" alt=\"close\"></span>");
         out.write("<div></div>");
         out.write("</td>");
         out.write("</tr>\n");
