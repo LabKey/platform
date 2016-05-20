@@ -521,8 +521,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         else
         {
             WriteableAppProps app = AppProps.getWriteableInstance();
-            Map<String, String> props = app.getProperties(ContainerManager.getRoot());
-            if (null == props || null == props.get("USE_CONTAINER_RELATIVE_URL"))
+
+            if (!app.isSetUseContainerRelativeURL())
             {
                 app.setUseContainerRelativeURL(false);
                 app.save();
