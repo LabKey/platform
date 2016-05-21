@@ -6840,28 +6840,28 @@ public class AdminController extends SpringActionController
     public class LogClientExceptionAction extends SimpleViewAction<ExceptionForm>
     {
         @Override
-        public ModelAndView getView(ExceptionForm exceptionForm, BindException errors) throws Exception
+        public ModelAndView getView(ExceptionForm form, BindException errors) throws Exception
         {
             if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP))
             {
                 ExceptionUtil.logClientExceptionToMothership(
-                        exceptionForm.getStackTrace(),
-                        exceptionForm.getExceptionMessage(),
-                        exceptionForm.getBrowser(),
+                        form.getStackTrace(),
+                        form.getExceptionMessage(),
+                        form.getBrowser(),
                         null,
-                        exceptionForm.getRequestURL(),
-                        exceptionForm.getReferrerURL(),
-                        exceptionForm.getUsername()
+                        form.getRequestURL(),
+                        form.getReferrerURL(),
+                        form.getUsername()
                 );
             }
             else if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER))
             {
                 LOG.error("Client exception detected:\n" +
-                        exceptionForm.getRequestURL() + "\n" +
-                        exceptionForm.getReferrerURL() + "\n" +
-                        exceptionForm.getBrowser() + "\n" +
-                        exceptionForm.getUsername() + "\n" +
-                        exceptionForm.getStackTrace()
+                        form.getRequestURL() + "\n" +
+                        form.getReferrerURL() + "\n" +
+                        form.getBrowser() + "\n" +
+                        form.getUsername() + "\n" +
+                        form.getStackTrace()
                 );
             }
 
