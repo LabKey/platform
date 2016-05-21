@@ -210,7 +210,9 @@
                     _partConfig["webpart.title"] = _title;
                 if (_titleHref)
                     _partConfig["webpart.titleHref"] = _titleHref;
-                _partConfig.returnURL = encodeURI(_partConfig.returnURL || (window.location.pathname + window.location.search));
+                if (_partConfig.returnURL) {
+                    _partConfig.returnURL = encodeURI(_partConfig.returnURL);
+                }
 
                 if (!_errorCallback)
                     _errorCallback = handleLoadError;
