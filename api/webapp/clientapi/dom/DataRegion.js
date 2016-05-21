@@ -1872,18 +1872,29 @@ if (!LABKEY.DataRegions) {
 
         var region = this;
 
-        LABKEY.requiresExt4Sandbox(function() {
-            LABKEY.requiresScript([
-                '/study/ReportFilterPanel.js',
-                '/study/ParticipantFilterPanel.js',
-                '/dataregion/panel/Facet.js'
-            ], function() {
-                region.facetLoaded = true;
-                if ($.isFunction(cb)) {
-                    cb.call(scope || this);
-                }
-            });
-        });
+        var onLoad = function() {
+            region.facetLoaded = true;
+            if ($.isFunction(cb)) {
+                cb.call(scope || this);
+            }
+        };
+
+        LABKEY.requiresExt4ClientAPI(function() {
+            if (LABKEY.devMode) {
+                // should match study/ParticipantFilter.lib.xml
+                LABKEY.requiresScript([
+                    '/study/ReportFilterPanel.js',
+                    '/study/ParticipantFilterPanel.js'
+                ], function() {
+                    LABKEY.requiresScript('/dataregion/panel/Facet.js', onLoad);
+                });
+            }
+            else {
+                LABKEY.requiresScript('/study/ParticipantFilter.min.js', function() {
+                    LABKEY.requiresScript('/dataregion/panel/Facet.js', onLoad);
+                });
+            }
+        }, this);
     };
 
     Proto.showFaceting = function() {
