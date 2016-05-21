@@ -239,6 +239,9 @@ public class ExperimentService
         Pair<Set<ExpData>, Set<ExpMaterial>> getParents(ExpProtocolOutput start);
         Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(ExpProtocolOutput start);
 
+        Set<ExpMaterial> getRelatedChildSamples(ExpData start);
+        Set<ExpData> getNearestParentDatas(ExpMaterial start);
+
         ExpLineage getLineage(ExpProtocolOutput start, ExpLineageOptions options);
 
         SimpleFilter.FilterClause createChildOfClause(@NotNull FieldKey fieldKey, Object value);

@@ -305,5 +305,11 @@ public class ExpLineage
             return _role.equals(edge._role);
 
         }
+
+        @Override
+        public String toString()
+        {
+            return "[" + parent + "] -(" + _role + ")-> [" + child + "]";
+        }
     }
 }
