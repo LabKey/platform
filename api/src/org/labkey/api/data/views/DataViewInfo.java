@@ -86,6 +86,7 @@ public interface DataViewInfo
     URLHelper getThumbnailUrl();        // the url to display a thumbnail image
     @Nullable
     ActionURL getDetailsUrl();          // the url to display extra details about a view
+    int getDisplayOrder();              // display ordering in UI of report relative to other reports in its category or subcategory
 
     /**
      * Returns the list of additional properties that may be associated with this object, each

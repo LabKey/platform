@@ -71,6 +71,8 @@ public class DefaultViewInfo implements DataViewInfo
     private String _schemaName;
     private String _queryName;
 
+    private int _displayOrder;
+
     private List<Pair<DomainProperty, Object>> _tags = Collections.emptyList();
 
     public DefaultViewInfo(DataViewProvider.Type dataType, String id, String name, Container container)
@@ -365,4 +367,8 @@ public class DefaultViewInfo implements DataViewInfo
     {
         _queryName = queryName;
     }
+
+    public int getDisplayOrder() {return _displayOrder; }
+
+    public void setDisplayOrder(int displayOrder) {_displayOrder = displayOrder; }
 }

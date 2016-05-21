@@ -752,6 +752,10 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         if (d.getDescription() != null)
             setReportDescription(d.getDescription());
 
+        if(d.isSetDisplayOrder())
+            setDisplayOrder(d.getDisplayOrder());
+
+
         setHidden(d.getHidden()); // not sure
 
         return d;
