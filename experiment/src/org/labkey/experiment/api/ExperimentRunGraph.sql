@@ -77,7 +77,7 @@ $EDGES$ AS
 $PARENTS$ AS
 (
 	SELECT
-		0 AS depth, -- TODO: need to add a 'path' and a column to check for cycles
+		0 AS depth,
 		lsid AS self_lsid,
 		rowid AS self_rowid,
 		container AS parent_container,
@@ -99,7 +99,7 @@ $PARENTS$ AS
 	UNION ALL
 
 	SELECT
-		_Graph.depth - 1 AS depth, -- TODO: need to add a 'path' and a column to check for cycles
+		_Graph.depth - 1 AS depth,
 		_Graph.self_lsid,
 		_Graph.self_rowid,
 		_Edges.parent_container,
@@ -124,7 +124,7 @@ $PARENTS$ AS
 $CHILDREN$ AS
 (
 	SELECT
-		0 AS depth, -- TODO: need to add a 'path' and a column to check for cycles
+		0 AS depth,
 		lsid AS self_lsid,
 		rowid AS self_rowid,
 		container AS parent_container,
@@ -146,7 +146,7 @@ $CHILDREN$ AS
 	UNION ALL
 
 	SELECT
-		_Graph.depth + 1 AS depth, -- TODO: need to add a 'path' and a column to check for cycles
+		_Graph.depth + 1 AS depth,
 		_Graph.self_lsid,
 		_Graph.self_rowid,
 		_Edges.parent_container,

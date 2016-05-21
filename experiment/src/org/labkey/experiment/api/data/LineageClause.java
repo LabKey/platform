@@ -8,7 +8,6 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpProtocolOutput;
-import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.query.FieldKey;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
@@ -62,7 +61,7 @@ public abstract class LineageClause extends CompareType.CompareClause
 
         ExperimentServiceImpl svc = ExperimentServiceImpl.get();
         ExpLineageOptions options = createOptions();
-        List<ExpRun> runsToInvestigate = svc.collectRunsToInvestigate(start, options);
+        List<String> runsToInvestigate = svc.collectRunsToInvestigate(start, options);
         if (runsToInvestigate.isEmpty())
             return new SQLFragment("(1 = 2)");
 

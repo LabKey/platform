@@ -36,7 +36,6 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.BeanObjectFactory;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -1649,6 +1648,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return Pair.of(lineage.getDatas(), lineage.getMaterials());
     }
 
+    @Override
     public Set<ExpMaterial> getRelatedChildSamples(ExpData start)
     {
         ExpLineageOptions options = new ExpLineageOptions();
@@ -1658,6 +1658,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return lineage.findRelatedChildSamples();
     }
 
+    @Override
     public Set<ExpData> getNearestParentDatas(ExpMaterial start)
     {
         ExpLineageOptions options = new ExpLineageOptions();
@@ -1686,7 +1687,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public List<ExpRun> collectRunsToInvestigate(ExpProtocolOutput start, ExpLineageOptions options)
+    public List<ExpRun> oldCollectRunsToInvestigate(ExpProtocolOutput start, ExpLineageOptions options)
     {
         List<ExpRun> runsToInvestigate = new ArrayList<>();
         boolean up = options.isParents();
@@ -1706,8 +1707,71 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 runsToInvestigate.addAll(ExperimentServiceImpl.get().getRunsUsingMaterials(start.getRowId()));
             runsToInvestigate.remove(start.getRun());
         }
-
         return runsToInvestigate;
+    }
+
+    // Get lisd of ExpRun LSIDs for the start Data or Material
+    public List<String> collectRunsToInvestigate(ExpProtocolOutput start, ExpLineageOptions options)
+    {
+        Pair<Map<String, String>, Map<String, String>> pair = collectRunsAndRolesToInvestigate(start, options);
+        List<String> runs = new ArrayList<>();
+        List<String> runLsids = new ArrayList<>(pair.first.size() + pair.second.size());
+        runLsids.addAll(pair.first.keySet());
+        runLsids.addAll(pair.second.keySet());
+
+        return runs;
+    }
+
+    // Get up and down maps of ExpRun LSID to Role
+    public Pair<Map<String, String>, Map<String, String>> collectRunsAndRolesToInvestigate(ExpProtocolOutput start, ExpLineageOptions options)
+    {
+        Map<String, String> runsUp = new HashMap<>();
+        Map<String, String> runsDown = new HashMap<>();
+        boolean up = options.isParents();
+        boolean down = options.isChildren();
+
+        ExpRun parentRun = start.getRun();
+        if (up)
+        {
+            if (parentRun != null)
+                runsUp.put(parentRun.getLSID(), start instanceof Data ? "Data" : "Material");
+        }
+        if (down)
+        {
+            if (start instanceof ExpData)
+                runsDown.putAll(flattenPairs(ExperimentServiceImpl.get().getRunsAndRolesUsingDataIds(Arrays.asList(start.getRowId()))));
+            else if (start instanceof ExpMaterial)
+                runsDown.putAll(flattenPairs(ExperimentServiceImpl.get().getRunsAndRolesUsingMaterialIds(Arrays.asList(start.getRowId()))));
+
+            if (parentRun != null)
+            {
+                runsUp.remove(parentRun.getLSID());
+                runsDown.remove(parentRun.getLSID());
+            }
+        }
+
+        assert checkRunsAndRoles(start, options, runsUp, runsDown);
+
+        return Pair.of(runsUp, runsDown);
+    }
+
+    // Reduce a list of run LSID and role pairs to a single map
+    // Only use this when there is a single input Data or Material.
+    private Map<String, String> flattenPairs(List<Pair<String, String>> runsAndRoles)
+    {
+        Map<String, String> runLsidToRoleMap = new HashMap<>();
+        runsAndRoles.stream().forEach(pair -> runLsidToRoleMap.put(pair.first, pair.second));
+        return runLsidToRoleMap;
+    }
+
+    private boolean checkRunsAndRoles(ExpProtocolOutput start, ExpLineageOptions options, Map<String, String> runsUp, Map<String, String> runsDown)
+    {
+        List<ExpRun> runs = new ArrayList<>();
+        runsUp.keySet().stream().map(this::getExpRun).forEach(runs::add);
+        runsDown.keySet().stream().map(this::getExpRun).forEach(runs::add);
+
+        List<ExpRun> oldRuns = oldCollectRunsToInvestigate(start, options);
+        return runs.equals(oldRuns);
     }
 
     @Override
@@ -1716,16 +1780,27 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         if (isUnknownMaterial(start))
             return new ExpLineage(start);
 
-        List<ExpRun> runsToInvestigate = collectRunsToInvestigate(start, options);
-
-        if (runsToInvestigate.isEmpty())
+        Pair<Map<String, String>, Map<String, String>> pair = collectRunsAndRolesToInvestigate(start, options);
+        List<String> runLsids = new ArrayList<>(pair.first.size() + pair.second.size());
+        runLsids.addAll(pair.first.keySet());
+        runLsids.addAll(pair.second.keySet());
+        if (runLsids.isEmpty())
             return new ExpLineage(start);
 
-        SQLFragment sqlf = generateExperimentTreeSQL(runsToInvestigate, options);
+        SQLFragment sqlf = generateExperimentTreeSQL(runLsids, options);
         Set<Integer> dataids = new HashSet<>();
         Set<Integer> materialids = new HashSet<>();
         Set<Integer> runids = new HashSet<>();
         Set<ExpLineage.Edge> edges = new HashSet<>();
+
+        // add edges for initial runs and roles up
+        for (Map.Entry<String, String> runAndRole : pair.first.entrySet())
+            edges.add(new ExpLineage.Edge(runAndRole.getKey(), start.getLSID(), runAndRole.getValue()));
+
+        // add edges for initial runs and roles down
+        for (Map.Entry<String, String> runAndRole : pair.second.entrySet())
+            edges.add(new ExpLineage.Edge(start.getLSID(), runAndRole.getKey(), runAndRole.getValue()));
+
         new SqlSelector(getExpSchema(), sqlf).forEachMap((m)->
         {
             String parentLSID = (String)m.get("parent_lsid");
@@ -1782,9 +1857,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     }
 
 
-    public SQLFragment generateExperimentTreeSQL(List<? extends ExpObject> objects, ExpLineageOptions options)
+    public SQLFragment generateExperimentTreeSQL(List<String> lsids, ExpLineageOptions options)
     {
-        List<String> lsids = objects.stream().map((o)->o.getLSID()).collect(Collectors.toList());
         String comma="";
         SQLFragment sqlf = new SQLFragment();
         for (String lsid : lsids)
@@ -1794,7 +1868,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
         return generateExperimentTreeSQL(sqlf, options);
     }
-
 
     /* return <ParentsQuery,ChildrenQuery> */
     private Pair<String,String> getRunGraphCommonTableExpressions(SQLFragment ret, SqlDialect d, SQLFragment lsidsFrag)
@@ -3069,6 +3142,40 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return ExpRunImpl.fromRuns(new SqlSelector(getExpSchema(), sql).getArrayList(ExperimentRun.class));
     }
 
+    // Get a map of run LSIDs to Roles used by the Data ids.
+    public List<Pair<String, String>> getRunsAndRolesUsingDataIds(List<Integer> ids)
+    {
+        SQLFragment sql = new SQLFragment(
+                "SELECT r.LSID, di.Role\n" +
+                "FROM exp.ExperimentRun r\n" +
+                "INNER JOIN exp.ProtocolApplication pa ON pa.RunId = r.RowId\n" +
+                "INNER JOIN exp.DataInput di ON di.targetApplicationId = pa.RowId\n" +
+                "WHERE di.dataId ");
+        getExpSchema().getSqlDialect().appendInClauseSql(sql, ids);
+        sql.append("\n");
+        sql.append("OR pa.RowId IN (SELECT d.sourceApplicationID FROM exp.Data d WHERE d.RowId ");
+        getExpSchema().getSqlDialect().appendInClauseSql(sql, ids);
+        sql.append(")\n");
+        sql.append("ORDER BY Created DESC");
+
+        Set<String> runLsids = new HashSet<>();
+        List<Pair<String, String>> runsAndRoles = new ArrayList<>(ids.size());
+        new SqlSelector(getExpSchema(), sql).forEachMap(row -> {
+            String runLsid = (String)row.get("lsid");
+            String role = (String)row.get("role");
+            runsAndRoles.add(Pair.of(runLsid, role));
+            runLsids.add(runLsid);
+        });
+
+        assert checkRunsMatch(runLsids, getRunsUsingDataIds(ids));
+        return runsAndRoles;
+    }
+
+    private boolean checkRunsMatch(Set<String> lsids, List<ExpRunImpl> runs)
+    {
+        return runs.stream().allMatch(r -> lsids.contains(r.getLSID()));
+    }
+
     @Override
     public List<ExpRunImpl> getRunsUsingMaterials(List<ExpMaterial> materials)
     {
@@ -3088,6 +3195,36 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         return ExpRunImpl.fromRuns(getRunsForMaterialList(getExpSchema().getSqlDialect().appendInClauseSql(new SQLFragment(), Arrays.asList(ArrayUtils.toObject(ids)))));
     }
+
+    // Get a map of run LSIDs to Roles used by the Material ids.
+    public List<Pair<String, String>> getRunsAndRolesUsingMaterialIds(List<Integer> ids)
+    {
+        SQLFragment sql = new SQLFragment(
+                "SELECT r.LSID, mi.Role\n" +
+                "FROM exp.ExperimentRun r\n" +
+                "INNER JOIN exp.ProtocolApplication pa ON pa.RunId = r.RowId\n" +
+                "INNER JOIN exp.MaterialInput mi ON mi.targetApplicationId = pa.RowId\n" +
+                "WHERE mi.materialId ");
+        getExpSchema().getSqlDialect().appendInClauseSql(sql, ids);
+        sql.append("\n");
+        sql.append("OR pa.RowId IN (SELECT m.sourceApplicationID FROM exp.Material m WHERE m.RowId ");
+        getExpSchema().getSqlDialect().appendInClauseSql(sql, ids);
+        sql.append(")\n");
+        sql.append("ORDER BY Created DESC");
+
+        Set<String> runLsids = new HashSet<>();
+        List<Pair<String, String>> runsAndRoles = new ArrayList<>(ids.size());
+        new SqlSelector(getExpSchema(), sql).forEachMap(row -> {
+            String runLsid = (String)row.get("lsid");
+            String role = (String)row.get("role");
+            runsAndRoles.add(Pair.of(runLsid, role));
+            runLsids.add(runLsid);
+        });
+
+        assert checkRunsMatch(runLsids, getRunsUsingMaterials(ids.stream().mapToInt(Integer::intValue).toArray()));
+        return runsAndRoles;
+    }
+
 
     public List<? extends ExpRun> runsDeletedWithInput(List<? extends ExpRun> runs)
     {
