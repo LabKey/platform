@@ -242,6 +242,8 @@ public class ReportViewProvider implements DataViewProvider
 
                 info.setTags(ReportPropsManager.get().getProperties(descriptor.getEntityId(), c));
 
+                info.setDisplayOrder(descriptor.getDisplayOrder());
+
                 views.add(info);
             }
         }

@@ -136,6 +136,8 @@ public class DatasetViewProvider implements DataViewProvider
                         view.setSchemaName("study");
                         view.setQueryName(ds.getName());
 
+                        view.setDisplayOrder(ds.getDisplayOrder());  // NOTE: not used currently in UI, but populating in case we need it someday
+
                         datasets.add(view);
                     }
                 }
