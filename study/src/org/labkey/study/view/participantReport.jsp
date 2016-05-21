@@ -30,10 +30,7 @@
 <%!
     public void addClientDependencies(ClientDependencies dependencies)
     {
-        dependencies.add("Ext4");
-        dependencies.add("TemplateHelper.js");
-        dependencies.add("/study/ParticipantReport.js");
-        dependencies.add("/study/MeasurePicker.js");
+        dependencies.add("study/ParticipantReport");
     }
 %>
 <%

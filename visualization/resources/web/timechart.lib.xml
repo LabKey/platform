@@ -23,5 +23,7 @@
         <dependency path="Ext4ClientApi"/>
         <dependency path="vis/vis"/>
         <dependency path="codemirror"/>
+        <dependency path="study/MeasurePicker.js"/> <!-- Required by timeChartPanel.js -->
+        <dependency path="study/ParticipantFilter"/> <!-- Required by timeChartPanel.js -->
     </dependencies>
 </libraries>

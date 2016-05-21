@@ -1,0 +1,11 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="true">
+        <script path="study/MeasurePicker.js"/>
+        <script path="study/ParticipantReport.js"/>
+    </library>
+    <dependencies>
+        <dependency path="Ext4" />
+        <dependency path="study/ParticipantFilter" />
+        <dependency path="TemplateHelper.js" />
+    </dependencies>
+</libraries>

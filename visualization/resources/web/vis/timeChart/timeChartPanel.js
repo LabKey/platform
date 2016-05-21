@@ -7,9 +7,6 @@
 LABKEY.requiresCss("_images/icons.css");
 LABKEY.requiresCss("dataview/DataViewsPanel.css");
 
-LABKEY.requiresScript("study/ParticipantFilterPanel.js");
-LABKEY.requiresScript("study/MeasurePicker.js");
-
 Ext4.define('LABKEY.vis.TimeChartPanel', {
 
     extend : 'Ext.panel.Panel',

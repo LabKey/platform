@@ -53,8 +53,7 @@
 <%!
     public void addClientDependencies(ClientDependencies dependencies)
     {
-        dependencies.add("Ext4");
-        dependencies.add("study/ParticipantFilterPanel.js");
+        dependencies.add("study/ParticipantFilter");
     }
 %>
 <%

@@ -3,8 +3,6 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-LABKEY.requiresScript("study/ParticipantFilterPanel.js");
-
 Ext4.define('LABKEY.ext4.ParticipantReport', {
 
     extend : 'Ext.panel.Panel',
@@ -701,7 +699,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             this.reportDescription.setValue(config.description);
 
         if (this.reportPermission)
-            this.reportPermission.setValue({public : config.public});
+            this.reportPermission.setValue({'public' : config['public']});
 
         if (this.gridFieldStore) {
 
@@ -1193,7 +1191,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             name        : this.reportName.getValue(),
             reportId    : this.reportId,
             description : this.reportDescription.getValue(),
-            public      : this.reportPermission.getValue().public || false,
+            'public'    : this.reportPermission.getValue()['public'] || false,
             schemaName  : 'study',
             measures    : this.getMeasures()
         };
@@ -1406,7 +1404,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
                             data.name = values.name;
                             data.description = values.description;
-                            data.public = values.public || false;
+                            data['public'] = values['public'] || false;
                             data.reportId = null;
 
                             this.saveReport(data);
