@@ -20,7 +20,7 @@ public class AuthenticationProviderCache
 {
     // We have just a single object to cache (a global AuthenticationProviderCollection), but use standard cache (blocking cache wrapping the
     // shared cache) for convenience and to ensure that configuration changes will get propagated once multiple application servers are supported.
-    private static final BlockingCache<String, AuthenticationProviderCollection> CACHE = new BlockingStringKeyCache<>(CacheManager.getSharedCache(), (key, argument) -> new AuthenticationProviderCollection());
+    private static final BlockingCache<String, AuthenticationProviderCollections> CACHE = new BlockingStringKeyCache<>(CacheManager.getSharedCache(), (key, argument) -> new AuthenticationProviderCollections());
     private static final String CACHE_KEY = AuthenticationProviderCache.class.getName();
 
     static
@@ -29,7 +29,7 @@ public class AuthenticationProviderCache
         CACHE.setCacheTimeChooser((key, argument) -> CacheManager.YEAR);
     }
 
-    private static class AuthenticationProviderCollection
+    private static class AuthenticationProviderCollections
     {
         private final MultiValueMap<Class<? extends AuthenticationProvider>, AuthenticationProvider> _allMap = new MultiValueMap<Class<? extends AuthenticationProvider>, AuthenticationProvider>(new LinkedHashMap<>()) {
             @Override
@@ -47,7 +47,7 @@ public class AuthenticationProviderCache
             }
         };
 
-        private AuthenticationProviderCollection()
+        private AuthenticationProviderCollections()
         {
             List<AuthenticationProvider> allProviders = AuthenticationManager.getAllProviders();
             Set<String> activeNames = AuthenticationManager.getActiveProviderNames();
