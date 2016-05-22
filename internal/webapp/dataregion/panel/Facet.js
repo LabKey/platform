@@ -21,8 +21,7 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         }
 
         this.dataRegion = config.dataRegion;
-        // TODO: Ensure the region is setup for async handling
-        //this.dataRegion.async = true;
+        this.dataRegion.async = true;
         var renderTarget = config.dataRegion.domId + '-facet';
         var topEl = this.getContainerEl(config.dataRegion);
         var tableEl = this.getDataRegionTableEl(config.dataRegion);
@@ -77,15 +76,17 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         }, this);
 
         this.on('afterrender', function() {
-            this.getWrappedDataRegion();
+            this.getDataRegion();
             task.delay(200); // animation time
         }, this, {single: true});
 
         this.on('beforeexpand', function() {
-            this._beforeShow(); this.show();
+            this._beforeShow();
+            this.show();
         }, this);
         this.on('collapse', function() {
-            this.hide(); this._afterHide();
+            this.hide();
+            this._afterHide();
         }, this);
 
         // Attach resize event listeners
@@ -109,9 +110,10 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
     },
 
     _beforeShow : function() {
-        var el = this.getContainerEl(this.dataRegion);
+        var region = this.getDataRegion();
+        var el = this.getContainerEl(region);
         if (el) {
-            var reqWidth = this.getRequiredWidth(this.dataRegion);
+            var reqWidth = this.getRequiredWidth(region);
             if (el.getBox().width < reqWidth) {
                 el.setWidth(reqWidth);
             }
@@ -119,7 +121,7 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
     },
 
     _afterHide : function() {
-        var el = this.getContainerEl(this.dataRegion);
+        var el = this.getContainerEl(this.getDataRegion());
         if (el) { el.setWidth(null); }
     },
 
@@ -127,43 +129,22 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         return this.width + 10 + this.getDataRegionTableEl(dr).getBox().width;
     },
 
-    getWrappedDataRegion : function() {
-        //if (!this.qwp) {
-        //
-        //    if (this.dataRegion.getQWP()) {
-        //        this.qwp = this.dataRegion.getQWP();
-        //        this.qwp.updateRenderElement(this.dataRegion);
-        //        this.qwp.on('success', this.onQueryWebPartSuccess, this);
-        //    }
-        //    else {
-        //        // Wrap the corresponding Data Region with a QWP
-        //        this.qwp = new LABKEY.QueryWebPart({
-        //            dataRegion : this.dataRegion,
-        //            success : this.onQueryWebPartSuccess,
-        //            scope : this
-        //        });
-        //    }
-        //
-        //    this.qwp.on('beforeclearallfilters', function(dr) {
-        //        this.filterPanel.getFilterPanel().selectAll(true);
-        //    }, this);
-        //    this.qwp.on('beforerefresh', function(dr) {
-        //        this.remove(0);
-        //        this.filterPanel = undefined;
-        //        this.add(this.getFilterCfg());
-        //    }, this);
-        //}
-        //
-        //return this.qwp;
+    getDataRegion : function() {
+
+        var region = LABKEY.DataRegions[this.regionName];
+
+        if (region && !this._isRegionBound) {
+            this._isRegionBound = true;
+            region.on('success', this.onRegionSuccess, this);
+        }
+
+        return region;
     },
 
-    onQueryWebPartSuccess : function(dr) {
+    onRegionSuccess : function(dr) {
         // Give access to to this filter panel to the Data Region
         if (dr) {
-            this.dataRegion = LABKEY.DataRegions[dr.name];
-            LABKEY.DataRegions[dr.name].setFacet(this);
-
-            var tableEl = this.getDataRegionTableEl(this.dataRegion);
+            var tableEl = this.getDataRegionTableEl(dr);
             if (tableEl) {
                 tableEl.setWidth(tableEl.getBox().width);
             }
@@ -173,9 +154,11 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
 
             // Filters might have been updated outside of facet
             if (this.filterChangeCounter == 0 && this.filterPanel) {
-                var fp = this.filterPanel.getFilterPanel();
-                if (fp) {
-                    fp.initSelection();
+                if (dr.getUserFilterArray().length === 0) {
+                    this.filterPanel.getFilterPanel().selectAll(true);
+                }
+                else {
+                    this.filterPanel.getFilterPanel().initSelection();
                 }
             }
             else {
@@ -187,34 +170,28 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
     getFilterCfg : function() {
 
         return {
-            xtype: 'box',
-            style: 'text-align: center',
-            padding: '50 0',
-            html: 'Hey! We\'re working hard to update the filter experience.\nStay tuned.'
+           xtype: 'participantfilter',
+           width: this.width,
+           layout: 'fit',
+           bodyStyle: 'padding: 8px;',
+           normalWrap: true,
+           overCls: 'iScroll',
+
+           // Filter specific config
+           filterType: 'group',
+           subjectNoun: this.subjectNoun,
+           defaultSelectUncheckedCategory : true,
+
+           listeners: {
+               afterrender: function(p) { this.filterPanel = p; },
+               selectionchange: this.onFilterChange,
+               beforeInitGroupConfig: this.applyFilters,
+               buffer: 1000,
+               scope: this
+           },
+
+           scope : this
         };
-        //return {
-        //    xtype : 'participantfilter',
-        //    width     : this.width,
-        //    layout    : 'fit',
-        //    bodyStyle : 'padding: 8px;',
-        //    normalWrap : true,
-        //    overCls   : 'iScroll',
-        //
-        //    // Filter specific config
-        //    filterType  : 'group',
-        //    subjectNoun : this.subjectNoun,
-        //    defaultSelectUncheckedCategory : true,
-        //
-        //    listeners : {
-        //        afterrender : this.onFilterRender,
-        //        selectionchange : this.onFilterChange,
-        //        beforeInitGroupConfig : this.applyFilters,
-        //        buffer : 1000,
-        //        scope : this
-        //    },
-        //
-        //    scope : this
-        //};
     },
 
     onResize : function(panel, w, h, oldW, oldH) {
@@ -222,10 +199,10 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
     },
 
     // DO NOT CALL DIRECTLY. Use resizeTask.delay
-    _resizeTask : function(panel, w, h, oldW, oldH) {
+    _resizeTask : function(panel, w, h) {
 
         // Resize data region wrapper
-        var wrap = this.getDataRegionTableEl(this.dataRegion);
+        var wrap = this.getDataRegionTableEl(this.getDataRegion());
 
         if (wrap)
             wrap = wrap.parent('div.labkey-data-region-wrap');
@@ -269,33 +246,28 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
                 }
                 filterMap[filterPrefix].push(filters[f].data.label);
             }
-            // deal with participant case
         }
 
-        this.onResolveFilter(filterMap);
-    },
+        filters = [];
+        Ext4.iterate(filterMap, function(column, values) {
+            var filter;
+            if (values.length > 1) {
+                filter = LABKEY.Filter.create(column, values.join(';'), LABKEY.Filter.Types.IN);
+            }
+            else {
+                filter = LABKEY.Filter.create(column, values);
+            }
+            filters.push(filter);
+        });
 
-    onFilterRender : function(panel) {
-        this.filterPanel = panel;
-    },
-
-    onResolveFilter : function(filterMap) {
-
-        var qwp = this.getWrappedDataRegion();
-
-        var dr = LABKEY.DataRegions[this.regionName];
-        // Have a QWP, Ajax as a normal filter
-        if (dr) {
-            var valueArray = this.constructFilter(filterMap, dr, qwp.userFilters);
-            this.filterChangeCounter++;
-            dr.fireEvent("beforefilterchange", dr, valueArray);
-        }
+        this.filterChangeCounter++;
+        this.getDataRegion().replaceFilters(filters, [this.SUBJECT_PREFIX, this.COHORT_PREFIX]);
     },
 
     // This will get called for each separate group in the Filter Display
     applyFilters : function(fp, store) {
         if (store && store.getCount() > 0) {
-            var userFilters = LABKEY.DataRegions[this.regionName].getUserFilterArray();
+            var userFilters = this.getDataRegion().getUserFilterArray();
             if (userFilters && userFilters.length > 0) {
 
                 var uf, selection = [], rec, u, s;
@@ -331,90 +303,5 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
                 }
             }
         }
-    },
-
-    constructFilter : function(filterMap, dr, urlParameters) {
-
-        var newValues = [];
-        var urlFilters = [];
-        var NOT = 'Not in any group';
-
-        // Build LABKEY.Filters from filterMap
-        for (var f in filterMap) {
-            if (filterMap.hasOwnProperty(f)) {
-                var type, value;
-                if (filterMap[f].length > 1) {
-                    type = LABKEY.Filter.Types.IN;
-                    value = filterMap[f].join(';');
-                }
-                else {
-                    type = LABKEY.Filter.Types.EQUAL;
-                    value = filterMap[f][0];
-                }
-
-                value = value.replace(NOT, ''); // 17279: Working for 'Not in any group'
-                var filter = LABKEY.Filter.create(f, value, type);
-                urlFilters.push(filter);
-            }
-        }
-
-        // Using the set of filters, merge this against the urlParameters
-        var filterFound;
-        for (var u in urlParameters) {
-            if (urlParameters.hasOwnProperty(u)) {
-
-                filterFound = false;
-                var columnFilter = u.split('~');
-                if (columnFilter.length > 1) {
-
-                    columnFilter = columnFilter[0];
-                    columnFilter = columnFilter.replace(dr.name + '.', '');
-
-                    if (filterMap[columnFilter]) {
-                        filterFound = true;
-                    }
-                }
-
-                if (!filterFound) {
-                    // 17280: Can't remove facet for one category
-                    // Drop any matching filters related to Groups or Cohorts
-                    if (u.indexOf(this.SUBJECT_PREFIX) < 0 && u.indexOf(this.COHORT_PREFIX) < 0) {
-                        newValues.push([u, urlParameters[u]]);
-                    }
-                }
-            }
-        }
-
-        // Now iterate across the urlFilters and add each to the value array
-        var fa;
-        for (f=0; f < urlFilters.length; f++) {
-            fa = urlFilters[f];
-            newValues.push([fa.getURLParameterName(dr.name), fa.getURLParameterValue()]);
-        }
-
-        return newValues;
-    },
-
-    onFailure : function(resp) {
-        var o;
-        try {
-            o = Ext4.decode(resp.responseText);
-        }
-        catch (error) {
-            Ext4.Msg.alert('Failure', 'An unknown error occurred.');
-        }
-
-        var msg = "";
-        if(resp.status == 401){
-            msg = resp.statusText || "Unauthorized";
-        }
-        else if(o != undefined && o.exception){
-            msg = o.exception;
-        }
-        else {
-            msg = "There was a failure. If the problem persists please contact your administrator.";
-        }
-        this.unmask();
-        Ext4.Msg.alert('Failure', msg);
     }
 });
