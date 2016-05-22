@@ -18,7 +18,7 @@ package org.labkey.core.authentication.ldap;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.security.AuthenticationProvider;
+import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.URLHelper;
@@ -32,7 +32,7 @@ import javax.servlet.http.HttpServletRequest;
  * Date: Oct 12, 2007
  * Time: 1:31:18 PM
  */
-public class LdapAuthenticationProvider implements AuthenticationProvider.LoginFormAuthenticationProvider
+public class LdapAuthenticationProvider implements LoginFormAuthenticationProvider
 {
     private static final Logger LOG = Logger.getLogger(LdapAuthenticationProvider.class);
 

@@ -18,20 +18,19 @@
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ page import="org.labkey.api.security.AuthenticationProvider" %>
+<%@ page import="org.labkey.api.security.AuthenticationProvider.PrimaryAuthenticationProvider" %>
 <%@ page import="org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider" %>
 <%@ page import="org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider" %>
 <%@ page import="org.labkey.api.security.LoginUrls" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="java.io.IOException" %>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
-<%@ page import="org.labkey.api.settings.WriteableAppProps" %>
+<%@ page import="java.util.Collection" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    List<AuthenticationProvider> primary = AuthenticationManager.getAllPrimaryProviders();
-    List<SecondaryAuthenticationProvider> secondary = AuthenticationManager.getAllSecondaryProviders();
+    Collection<PrimaryAuthenticationProvider> primary = AuthenticationManager.getAllPrimaryProviders();
+    Collection<SecondaryAuthenticationProvider> secondary = AuthenticationManager.getAllSecondaryProviders();
     boolean isExternalProviderEnabled = AuthenticationManager.isExternalProviderEnabled();
 
     LoginUrls urls = urlProvider(LoginUrls.class);
@@ -59,9 +58,9 @@
         <td>&nbsp;&nbsp;</td>
         <td>Auto-create authenticated users</td>
         <% if (AuthenticationManager.isAutoCreateAccountsEnabled()) { %>
-        <td><%=isExternalProviderEnabled ? PageFlowUtil.textLink("Disable", urls.getDisableConfigParameterURL(AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY)) : "&nbsp;"%></td>
+        <td><%=text(isExternalProviderEnabled ? textLink("Disable", urls.getDisableConfigParameterURL(AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY)) : "&nbsp;")%></td>
         <% } else { %>
-        <td><%=isExternalProviderEnabled ? PageFlowUtil.textLink("Enable", urls.getEnableConfigParameterURL(AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY)) : "&nbsp;" %></td>
+        <td><%=text(isExternalProviderEnabled ? textLink("Enable", urls.getEnableConfigParameterURL(AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY)) : "&nbsp;")%></td>
         <% } %>
         <td colspan="3">Accounts are created automatically for users authenticated via LDAP, SSO, etc.</td>
     </tr>
@@ -96,7 +95,7 @@
 </table>
 
 <%!
-    private static void appendProviders(JspWriter out, List<? extends AuthenticationProvider> providers, LoginUrls urls) throws IOException
+    private static void appendProviders(JspWriter out, Collection<? extends AuthenticationProvider> providers, LoginUrls urls) throws IOException
     {
         for (AuthenticationProvider authProvider : providers)
         {
