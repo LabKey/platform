@@ -251,19 +251,19 @@ public class WikiTOC extends NavTreeMenu
 
                 //if it's not the first page in the list, display the previous link
                 if (pageIndex > 0)
-        {
-            prevURL = WikiController.getPageURL(_cToc, nameList.get(pageIndex - 1));
+                {
+                    prevURL = WikiController.getPageURL(_cToc, nameList.get(pageIndex - 1));
+                }
+
+                //if it's not the last page in the list, display the next link
+                if (pageIndex < nameList.size() - 1)
+                {
+                    nextURL = WikiController.getPageURL(_cToc, nameList.get(pageIndex + 1));
+                }
+            }
         }
 
-        //if it's not the last page in the list, display the next link
-        if (pageIndex < nameList.size() - 1)
-        {
-            nextURL = WikiController.getPageURL(_cToc, nameList.get(pageIndex + 1));
-        }
-    }
-}
-
-out.println("<div id=\"NavTree-"+ getId() +"\">");
+        out.println("<div id=\"NavTree-"+ getId() +"\">");
         super.renderView(model, out);
         out.println("</div>");
 
