@@ -151,15 +151,16 @@ public class WikiSelectManager
     }
 
 
+    // TODO: Does every caller need a deep copy?
     static List<NavTree> getNavTree(Container c, User u)
     {
         List<NavTree> toc;
 
         // if admin get unfiltered, else filter navtree
         if (c.hasPermission(u, AdminPermission.class))
-            toc = getWikiCollections(c).getNavTree();
+            toc = getWikiCollections(c).getAdminNavTree();
         else
-            toc = getWikiCollections(c).createNavTree(c, false);
+            toc = getWikiCollections(c).getNonAdminNavTree();
 
         //need to make a deep copy of the NavTree so that
         //the caller can apply per-session expand state
@@ -173,8 +174,8 @@ public class WikiSelectManager
     }
 
 
-    // Return a collection of WikiTrees representing all wikis that are possible parents for this wiki.  The set omits
-    // the wiki itself plus all its descendents
+    // Return a collection of WikiTrees representing all wikis that are possible parents for this wiki. The set omits
+    // the wiki itself plus all its descendants
     public static Set<WikiTree> getPossibleParents(Container c, @Nullable Wiki wiki)
     {
         WikiCollections wc = getWikiCollections(c);

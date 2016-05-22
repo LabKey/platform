@@ -54,8 +54,8 @@ public class WikiCollections
     private final List<String> _names = new ArrayList<>();
     private final int _pageCount;
     private final Map<String, String> _nameTitleMap = new LinkedHashMap<>();
-    private final List<NavTree> _navTree;
-
+    private final List<NavTree> _adminNavTree;
+    private final List<NavTree> _nonAdminNavTree;
 
     private static final StringBuilder SQL = new StringBuilder();
 
@@ -112,7 +112,8 @@ public class WikiCollections
         for (String name : _names)
             _nameTitleMap.put(name, _treesByName.get(name).getTitle());
 
-        _navTree = createNavTree(c, true);
+        _adminNavTree = createNavTree(c, true);
+        _nonAdminNavTree = createNavTree(c, false);
     }
 
 
@@ -146,10 +147,10 @@ public class WikiCollections
         }
     }
 
-    protected List<NavTree> createNavTree(Container c, boolean showHidden)
+    private List<NavTree> createNavTree(Container c, boolean showHidden)
     {
         String rootId = createRootId(c);
-        return createNavTree(c, rootId, _root, showHidden);
+        return Collections.unmodifiableList(createNavTree(c, rootId, _root, showHidden));
     }
 
     private String createRootId(Container c)
@@ -162,18 +163,17 @@ public class WikiCollections
         ArrayList<NavTree> elements = new ArrayList<>();
 
         //add all pages to the nav tree
-        for (WikiTree child : tree.getChildren())
-        {
-            if (!child.getName().startsWith("_") || showHidden)
-            {
+        tree.getChildren()
+            .stream()
+            .filter(child -> !child.getName().startsWith("_") || showHidden)
+            .forEach(child -> {
                 NavTree node = new NavTree(child.getTitle(), WikiController.getPageURL(c, child.getName()), true);
                 node.addChildren(createNavTree(c, rootId, child, showHidden));
                 node.setId(rootId);
                 elements.add(node);
-            }
-        }
+            });
 
-        return Collections.unmodifiableList(elements);
+        return elements;
     }
 
 
@@ -197,9 +197,14 @@ public class WikiCollections
     }
 
     /** this gets the unfiltered version of the tree. */
-    List<NavTree>  getNavTree()
+    List<NavTree> getAdminNavTree()
     {
-        return _navTree;
+        return _adminNavTree;
+    }
+
+    List<NavTree> getNonAdminNavTree()
+    {
+        return _nonAdminNavTree;
     }
 
     // Returns null for non-existent wiki
