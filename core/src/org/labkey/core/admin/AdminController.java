@@ -3508,7 +3508,7 @@ public class AdminController extends SpringActionController
             else if (loader.isUpgradeRequired() || loader.isUpgradeInProgress())
                 bean.verb = "Upgrade";
             else
-                bean.verb = "Startup";
+                bean.verb = "Start";
 
             if (loader.isNewInstall())
                 bean.verbing = "Installing";
@@ -3711,7 +3711,7 @@ public class AdminController extends SpringActionController
         }
         else
         {
-            navTrail.add(new NavTree("Startup Modules"));
+            navTrail.add(new NavTree("Start Modules"));
         }
         navTrail.add(new NavTree("Complete"));
         return navTrail;
