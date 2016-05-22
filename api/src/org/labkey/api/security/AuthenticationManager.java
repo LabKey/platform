@@ -36,6 +36,8 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
+import org.labkey.api.security.AuthenticationProvider.PrimaryAuthenticationProvider;
+import org.labkey.api.security.AuthenticationProvider.RequestAuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.ResetPasswordProvider;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider;
@@ -62,12 +64,13 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
@@ -84,14 +87,27 @@ public class AuthenticationManager
     private static final Logger _log = Logger.getLogger(AuthenticationManager.class);
     // All registered authentication providers (DbLogin, LDAP, SSO, etc.)
     private static final List<AuthenticationProvider> _allProviders = new CopyOnWriteArrayList<>();
-    private static final List<AuthenticationProvider> _activeProviders = new CopyOnWriteArrayList<>();
-    // Map of user id to login provider.  This is needed to handle clean up on logout.
+    // Map of user id to login provider. This is needed to handle clean up on logout.
     private static final Map<Integer, AuthenticationProvider> _userProviders = new ConcurrentHashMap<>();
-
-    private static final Map<String, Boolean> _authConfigProperties = new ConcurrentHashMap<>();
 
     public static final String HEADER_LOGO_PREFIX = "auth_header_logo_";
     public static final String LOGIN_PAGE_LOGO_PREFIX = "auth_login_page_logo_";
+
+    public static @Nullable User attemptRequestAuthentication(HttpServletRequest request)
+    {
+        for (RequestAuthenticationProvider provider : AuthenticationManager.getActiveProviders(RequestAuthenticationProvider.class))
+        {
+            AuthenticationResponse response = provider.authenticate(request);
+
+            if (response.isAuthenticated())
+            {
+                PrimaryAuthenticationResult result = finalizePrimaryAuthentication(request, provider, response.getValidEmail());
+                return result.getUser();
+            }
+        }
+
+        return null;
+    }
 
     public enum Priority { High, Low }
 
@@ -108,11 +124,10 @@ public class AuthenticationManager
         _ldapDomain = StringUtils.trimToNull(ldapDomain);
     }
 
-
     public static void initialize()
     {
-        // Load active providers and authentication logos.  Each active provider is initialized at load time. 
-        loadProperties();
+        // Activate all the currently enabled providers
+        AuthenticationProviderCache.getActiveProviders(AuthenticationProvider.class).forEach(AuthenticationProvider::activate);
     }
 
     public static boolean isRegistrationEnabled()
@@ -129,13 +144,18 @@ public class AuthenticationManager
 
     public static boolean getAuthConfigProperty(String key, Boolean defaultValue)
     {
-        return _authConfigProperties.get(key) == null ? defaultValue : _authConfigProperties.get(key);
+        Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
+        String value = props.get(key);
+
+        return value == null ? defaultValue : Boolean.valueOf(value);
     }
 
     public static void setAuthConfigProperty(User user, String key, boolean value)
     {
-        _authConfigProperties.put(key, value);
-        saveAuthConfigProperties();
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
+        props.put(key, Boolean.toString(value));
+        props.save();
+
         addConfigurationAuditEvent(user, key, value ? "enabled" : "disabled");
     }
 
@@ -159,40 +179,40 @@ public class AuthenticationManager
         return config;
     }
 
-    private static Boolean hasSSOAuthenticationProvider()
+    static List<AuthenticationProvider> getAllProviders()
     {
-        for (AuthenticationProvider provider : getActiveProviders())
-            if (provider instanceof SSOAuthenticationProvider)
-                return true;
-        return false;
+        return _allProviders;
+    }
 
+    private static boolean hasSSOAuthenticationProvider()
+    {
+        return !AuthenticationProviderCache.getActiveProviders(SSOAuthenticationProvider.class).isEmpty();
     }
 
     private static @Nullable String getAuthLogoHtml(ActionURL currentURL, String prefix)
     {
+        Collection<SSOAuthenticationProvider> ssoProviders = AuthenticationProviderCache.getActiveProviders(SSOAuthenticationProvider.class);
+
+        if (ssoProviders.isEmpty())
+            return null;
+
         StringBuilder html = new StringBuilder();
 
-        for (AuthenticationProvider provider : getActiveProviders())
+        for (SSOAuthenticationProvider provider : ssoProviders)
         {
-            if (provider instanceof SSOAuthenticationProvider)
+            LinkFactory factory = provider.getLinkFactory();
+            String link = factory.getLink(currentURL, prefix);
+
+            if (null != link)
             {
-                LinkFactory factory = ((SSOAuthenticationProvider) provider).getLinkFactory();
-                String link = factory.getLink(currentURL, prefix);
+                if (html.length() > 0)
+                    html.append("&nbsp;");
 
-                if (null != link)
-                {
-                    if (html.length() > 0)
-                        html.append("&nbsp;");
-
-                    html.append(link);
-                }
+                html.append(link);
             }
         }
 
-        if (html.length() > 0)
-            return html.toString();
-        else
-            return null;
+        return html.toString();
     }
 
 
@@ -258,43 +278,57 @@ public class AuthenticationManager
     }
 
 
-    public static List<AuthenticationProvider> getActiveProviders()
+    public static Collection<AuthenticationProvider> getActiveProviders()
     {
-        return _activeProviders;
+        return AuthenticationProviderCache.getActiveProviders(AuthenticationProvider.class);
+    }
+
+
+    public static <T extends AuthenticationProvider> Collection<T> getActiveProviders(Class<T> clazz)
+    {
+        return AuthenticationProviderCache.getActiveProviders(clazz);
     }
 
 
     public static void enableProvider(String name, User user)
     {
         AuthenticationProvider provider = getProvider(name);
-        try
-        {
-            provider.activate();
-        }
-        catch (Exception e)
-        {
-            _log.error("Can't initialize provider " + provider.getName(), e);
-        }
-        _activeProviders.add(provider);
+        Set<String> activeNames = getActiveProviderNames();
 
-        saveActiveProviders();
-        addProviderAuditEvent(user, name, "enabled");
+        if (!activeNames.contains(name))
+        {
+            try
+            {
+                provider.activate();
+                activeNames.add(name);
+                saveActiveProviders(activeNames);
+                addProviderAuditEvent(user, name, "enabled");
+            }
+            catch (Exception e)
+            {
+                _log.error("Can't initialize provider " + provider.getName(), e);
+            }
+        }
     }
 
     public static void disableProvider(String name, User user)
     {
         AuthenticationProvider provider = getProvider(name);
-        provider.deactivate();
-        _activeProviders.remove(provider);
+        Set<String> activeNames = getActiveProviderNames();
 
-        saveActiveProviders();
-        addProviderAuditEvent(user, name, "disabled");
+        if (activeNames.contains(name))
+        {
+            provider.deactivate();
+            activeNames.remove(name);
+            saveActiveProviders(activeNames);
+            addProviderAuditEvent(user, name, "disabled");
+        }
     }
 
     private static void addConfigurationAuditEvent(User user, String name, String action)
     {
         AuthenticationProviderConfigAuditTypeProvider.AuthProviderConfigAuditEvent event = new AuthenticationProviderConfigAuditTypeProvider.AuthProviderConfigAuditEvent(
-                ContainerManager.getRoot().getId(), new StringBuilder(name).append(" was ").append(action).toString());
+                ContainerManager.getRoot().getId(), name + " was " + action);
         event.setChanges(action);
         AuditLogService.get().addEvent(user, event);
     }
@@ -302,7 +336,7 @@ public class AuthenticationManager
     private static void addProviderAuditEvent(User user, String name,  String action)
     {
         AuthenticationProviderConfigAuditTypeProvider.AuthProviderConfigAuditEvent event = new AuthenticationProviderConfigAuditTypeProvider.AuthProviderConfigAuditEvent(
-                ContainerManager.getRoot().getId(), new StringBuilder(name).append(" provider was ").append(action).toString());
+                ContainerManager.getRoot().getId(), name + " provider was " + action);
         event.setChanges(action);
         AuditLogService.get().addEvent(user, event);
     }
@@ -313,48 +347,29 @@ public class AuthenticationManager
     @NotNull
     public static AuthenticationProvider getProvider(String name)
     {
-        for (AuthenticationProvider provider : _allProviders)
-            if (provider.getName().equals(name))
-                return provider;
+        AuthenticationProvider provider = AuthenticationProviderCache.getProvider(AuthenticationProvider.class, name);
 
-        throw new NotFoundException("No such AuthenticationProvider available: " + name);
+        if (null != provider)
+            return provider;
+        else
+            throw new NotFoundException("No such AuthenticationProvider available: " + name);
     }
 
 
     public static @Nullable SSOAuthenticationProvider getActiveSSOProvider(String name)
     {
-        for (AuthenticationProvider provider : _activeProviders)
-        {
-            if (provider.getName().equals(name))
-            {
-                if (provider instanceof SSOAuthenticationProvider)
-                    return (SSOAuthenticationProvider)provider;
-                else
-                    return null; // Not an SSO provider
-            }
-        }
-
-        return null;
+        return AuthenticationProviderCache.getActiveProvider(SSOAuthenticationProvider.class, name);
     }
 
 
     public static @Nullable SSOAuthenticationProvider getSSOProvider(String name)
     {
-        AuthenticationProvider provider = getProvider(name);
-
-        if (provider instanceof SSOAuthenticationProvider)
-            return (SSOAuthenticationProvider)provider;
-        else
-            return null; // Not an SSO provider
+        return AuthenticationProviderCache.getProvider(SSOAuthenticationProvider.class, name);
     }
 
     public static @Nullable ResetPasswordProvider getResetPasswordProvider(String name)
     {
-        for (AuthenticationProvider provider : _allProviders)
-            if (provider.getName().equals(name) && provider instanceof ResetPasswordProvider)
-                return (ResetPasswordProvider)provider;
-
-        return null;
+        return AuthenticationProviderCache.getProvider(ResetPasswordProvider.class, name);
     }
 
     private static final String AUTHENTICATION_CATEGORY = "Authentication";
@@ -364,75 +379,34 @@ public class AuthenticationManager
     public static final String AUTO_CREATE_ACCOUNTS_KEY = "AutoCreateAccounts";
     public static final String SELF_SERVICE_EMAIL_CHANGES_KEY = "SelfServiceEmailChanges";
 
-    public static void saveActiveProviders()
+    private static void saveActiveProviders(Set<String> activeNames)
     {
         StringBuilder sb = new StringBuilder();
         String sep = "";
 
-        for (AuthenticationProvider provider : _activeProviders)
+        for (String name : activeNames)
         {
             sb.append(sep);
-            sb.append(provider.getName());
+            sb.append(name);
             sep = PROP_SEPARATOR;
         }
 
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
         props.put(PROVIDERS_KEY, sb.toString());
         props.save();
-        loadProperties();
+        AuthenticationProviderCache.clear();
     }
 
-
-    public static void saveAuthConfigProperties()
-    {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
-        for (Map.Entry<String, Boolean> entry : _authConfigProperties.entrySet())
-        {
-            props.put(entry.getKey(), entry.getValue().toString());
-        }
-        props.save();
-        loadProperties();
-    }
-
-    public static void loadProperties()
+    static Set<String> getActiveProviderNames()
     {
         Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
         String activeProviderProp = props.get(PROVIDERS_KEY);
-        List<String> activeNames = Arrays.asList(null != activeProviderProp ? activeProviderProp.split(PROP_SEPARATOR) : new String[0]);
-        List<AuthenticationProvider> activeProviders = new ArrayList<>(_allProviders.size());
 
-        // For now, auth providers are always handled in order of registration: LDAP, OpenSSO, DB.  TODO: Provide admin with mechanism for ordering
+        Set<String> set = new HashSet<>();
+        Collections.addAll(set, null != activeProviderProp ? activeProviderProp.split(PROP_SEPARATOR) : new String[0]);
 
-        // Add all permanent & active providers to the activeProviders list
-        for (AuthenticationProvider provider : _allProviders)
-            if (provider.isPermanent() || activeNames.contains(provider.getName()))
-                addProvider(activeProviders, provider);
-
-        _activeProviders.clear();
-        _activeProviders.addAll(activeProviders);
-
-        if (props.get(SELF_REGISTRATION_KEY) != null)
-            _authConfigProperties.put(SELF_REGISTRATION_KEY, Boolean.valueOf(props.get(SELF_REGISTRATION_KEY)));
-        if (props.get(AUTO_CREATE_ACCOUNTS_KEY) != null)
-            _authConfigProperties.put(AUTO_CREATE_ACCOUNTS_KEY, Boolean.valueOf(props.get(AUTO_CREATE_ACCOUNTS_KEY)));
-        if (props.get(SELF_SERVICE_EMAIL_CHANGES_KEY) != null)
-            _authConfigProperties.put(SELF_SERVICE_EMAIL_CHANGES_KEY, Boolean.valueOf(props.get(SELF_SERVICE_EMAIL_CHANGES_KEY)));
+        return set;
     }
-
-
-    private static void addProvider(List<AuthenticationProvider> providers, AuthenticationProvider provider)
-    {
-        try
-        {
-            provider.activate();
-            providers.add(provider);
-        }
-        catch (Exception e)
-        {
-            _log.error("Couldn't initialize provider", e);
-        }
-    }
-
 
     public enum AuthenticationStatus {Success, BadCredentials, InactiveUser, LoginPaused, UserCreationError, UserCreationNotAllowed, PasswordExpired, Complexity}
 
@@ -533,16 +507,13 @@ public class AuthenticationManager
         {
             AuthenticationResponse firstFailure = null;
 
-            for (AuthenticationProvider authProvider : getActiveProviders())
+            for (LoginFormAuthenticationProvider authProvider : getActiveProviders(LoginFormAuthenticationProvider.class))
             {
-                AuthenticationResponse authResponse = null;
+                AuthenticationResponse authResponse;
 
                 try
                 {
-                    if (authProvider instanceof LoginFormAuthenticationProvider)
-                    {
-                        authResponse = ((LoginFormAuthenticationProvider) authProvider).authenticate(id, password, returnURL);
-                    }
+                    authResponse = authProvider.authenticate(id, password, returnURL);
                 }
                 catch (RedirectException e)
                 {
@@ -707,33 +678,12 @@ public class AuthenticationManager
 
 
     // limit one bad login per second averaged out over 60sec
-    private static final Cache<Integer,RateLimiter> addrLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "login limiter");
-    private static final Cache<Integer,RateLimiter> userLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "user limiter");
-    private static final Cache<Integer,RateLimiter> pwdLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "password limiter");
-    private static final CacheLoader<Integer,RateLimiter> addrLoader = new CacheLoader<Integer,RateLimiter>()
-        {
-            @Override
-            public RateLimiter load(Integer key, @Nullable Object request)
-            {
-                return new RateLimiter("Addr limiter: " + String.valueOf(key), new Rate(60,TimeUnit.MINUTES));
-            }
-        };
-    static final CacheLoader<Integer,RateLimiter> pwdLoader = new CacheLoader<Integer,RateLimiter>()
-        {
-            @Override
-            public RateLimiter load(Integer key, @Nullable Object request)
-            {
-                return new RateLimiter("Pwd limiter: " + String.valueOf(key), new Rate(20,TimeUnit.MINUTES));
-            }
-        };
-    static final CacheLoader<Integer,RateLimiter> userLoader = new CacheLoader<Integer,RateLimiter>()
-        {
-            @Override
-            public RateLimiter load(Integer key, @Nullable Object request)
-            {
-                return new RateLimiter("User limiter: " + String.valueOf(key), new Rate(20,TimeUnit.MINUTES));
-            }
-        };
+    private static final Cache<Integer, RateLimiter> addrLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "login limiter");
+    private static final Cache<Integer, RateLimiter> userLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "user limiter");
+    private static final Cache<Integer, RateLimiter> pwdLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "password limiter");
+    private static final CacheLoader<Integer, RateLimiter> addrLoader = (key, request) -> new RateLimiter("Addr limiter: " + String.valueOf(key), new Rate(60,TimeUnit.MINUTES));
+    static final CacheLoader<Integer, RateLimiter> pwdLoader = (key, request) -> new RateLimiter("Pwd limiter: " + String.valueOf(key), new Rate(20,TimeUnit.MINUTES));
+    static final CacheLoader<Integer, RateLimiter> userLoader = (key, request) -> new RateLimiter("User limiter: " + String.valueOf(key), new Rate(20,TimeUnit.MINUTES));
 
 
     private static Integer _toKey(String s)
@@ -843,39 +793,21 @@ public class AuthenticationManager
     }
 
 
-    public static List<AuthenticationProvider> getAllPrimaryProviders()
+    public static Collection<PrimaryAuthenticationProvider> getAllPrimaryProviders()
     {
-        List<AuthenticationProvider> list = new LinkedList<>();
-
-        for (AuthenticationProvider provider : _allProviders)
-            if (!(provider instanceof SecondaryAuthenticationProvider))
-                list.add(provider);
-
-        return list;
+        return AuthenticationProviderCache.getProviders(PrimaryAuthenticationProvider.class);
     }
 
 
-    public static List<SecondaryAuthenticationProvider> getAllSecondaryProviders()
+    public static Collection<SecondaryAuthenticationProvider> getAllSecondaryProviders()
     {
-        List<SecondaryAuthenticationProvider> list = new LinkedList<>();
-
-        for (AuthenticationProvider provider : _allProviders)
-            if (provider instanceof SecondaryAuthenticationProvider)
-                list.add((SecondaryAuthenticationProvider)provider);
-
-        return list;
+        return AuthenticationProviderCache.getProviders(SecondaryAuthenticationProvider.class);
     }
 
 
-    public static List<SecondaryAuthenticationProvider> getActiveSecondaryProviders()
+    public static Collection<SecondaryAuthenticationProvider> getActiveSecondaryProviders()
     {
-        List<SecondaryAuthenticationProvider> list = new LinkedList<>();
-
-        for (AuthenticationProvider provider : getActiveProviders())
-            if (provider instanceof SecondaryAuthenticationProvider)
-                list.add((SecondaryAuthenticationProvider)provider);
-
-        return list;
+        return AuthenticationProviderCache.getActiveProviders(SecondaryAuthenticationProvider.class);
     }
 
 

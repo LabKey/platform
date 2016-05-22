@@ -25,6 +25,8 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * User: adam
@@ -33,6 +35,17 @@ import javax.servlet.http.HttpServletRequest;
  */
 public interface AuthenticationProvider
 {
+    // All the AuthenticationProvider interfaces. This list is used by AuthenticationProviderCache to filter collections of providers.
+    List<Class<? extends AuthenticationProvider>> ALL_PROVIDER_INTERFACES = Arrays.asList(
+        AuthenticationProvider.class,
+            PrimaryAuthenticationProvider.class,
+                LoginFormAuthenticationProvider.class,
+                SSOAuthenticationProvider.class,
+                RequestAuthenticationProvider.class,
+            SecondaryAuthenticationProvider.class,
+            ResetPasswordProvider.class
+    );
+
     @Nullable ActionURL getConfigurationLink();
     String getName();
     String getDescription();
@@ -41,7 +54,17 @@ public interface AuthenticationProvider
     void deactivate();
     boolean isPermanent();
 
-    interface SSOAuthenticationProvider extends AuthenticationProvider
+    interface PrimaryAuthenticationProvider extends AuthenticationProvider
+    {
+    }
+
+    interface LoginFormAuthenticationProvider extends PrimaryAuthenticationProvider
+    {
+        // id and password will not be blank (not null, not empty, not whitespace only)
+        AuthenticationResponse authenticate(@NotNull String id, @NotNull String password, URLHelper returnURL) throws InvalidEmailException;
+    }
+
+    interface SSOAuthenticationProvider extends PrimaryAuthenticationProvider
     {
         /**
          * Return the external service's URL.
@@ -51,10 +74,9 @@ public interface AuthenticationProvider
         LinkFactory getLinkFactory();
     }
 
-    interface LoginFormAuthenticationProvider extends AuthenticationProvider
+    interface RequestAuthenticationProvider extends PrimaryAuthenticationProvider
     {
-        // id and password will not be blank (not null, not empty, not whitespace only)
-        AuthenticationResponse authenticate(@NotNull String id, @NotNull String password, URLHelper returnURL) throws InvalidEmailException;
+        AuthenticationResponse authenticate(@NotNull HttpServletRequest request);
     }
 
     interface ResetPasswordProvider extends AuthenticationProvider

@@ -170,14 +170,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
     @Override
     public void put(K key, final V value)
     {
-        get(key, null, new CacheLoader<K, V>()
-        {
-            @Override
-            public V load(K key, @Nullable Object argument)
-            {
-                return value;
-            }
-        });
+        get(key, null, (key1, argument) -> value);
     }
 
 
@@ -257,30 +250,20 @@ public class BlockingCache<K, V> implements Cache<K, V>
                 @Override public TrackingCache getTrackingCache() { throw new UnsupportedOperationException(); }
             };
             final AtomicInteger calls = new AtomicInteger();
-            CacheLoader<Integer,Integer> loader = new CacheLoader<Integer, Integer>()
-            {
-                @Override
-                public Integer load(Integer key, @Nullable Object argument)
-                {
-                    calls.incrementAndGet();
-                    try {Thread.sleep(1000);}catch(InterruptedException x){/* */}
-                    return key*key;
-                }
+            CacheLoader<Integer, Integer> loader = (key, argument) -> {
+                calls.incrementAndGet();
+                try {Thread.sleep(1000);}catch(InterruptedException x){/* */}
+                return key*key;
             };
             final BlockingCache<Integer,Integer> bc = new BlockingCache<>(cache,loader);
             final Object start = new Object();
-            Runnable r = new Runnable()
-            {
-                @Override
-                public void run()
+            Runnable r = () -> {
+                Random r1 = new Random();
+                synchronized (start) { try{start.wait(1000);}catch(InterruptedException x){/* */} }
+                for (int i=0 ; i<100 ; i++)
                 {
-                    Random r = new Random();
-                    synchronized (start) { try{start.wait(1000);}catch(InterruptedException x){/* */} }
-                    for (int i=0 ; i<100 ; i++)
-                    {
-                        int k = r.nextInt();
-                        bc.get(Math.abs(k % 5));
-                    }
+                    int k = r1.nextInt();
+                    bc.get(Math.abs(k % 5));
                 }
             };
             Thread[] threads = new Thread[10];

@@ -44,6 +44,8 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
+import org.labkey.api.security.AuthenticationProvider.RequestAuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.ResetPasswordProvider;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.impersonation.DisallowGlobalRolesContext;
@@ -442,6 +444,11 @@ public class SecurityManager
                 u = UserManager.getUser(TRANSFORM_SESSIONID_MAP.get(transformSessionId));
                 SecurityManager.setAuthenticatedUser(request, u);
             }
+        }
+
+        if (null == u)
+        {
+            u = AuthenticationManager.attemptRequestAuthentication(request);
         }
 
         return null == u || u.isGuest() ? null : u;
