@@ -42,7 +42,15 @@
 
     LABKEY.Query.experimental = LABKEY.Query.experimental || {};
 
-    var CountStarAggregator = function() {};
+    var sortValues = function(values)
+    {
+        if (1 < values.length)
+            crossfilter.quicksort(values, 0, values.length);
+    };
+
+    var CountStarAggregator = function() {
+        this.values = [];
+    };
 
     CountStarAggregator.prototype = {
         count: 0,
@@ -52,19 +60,30 @@
             return this.count;
         },
 
+        getValues : function()
+        {
+            return this.values;
+        },
+
         getCount : function()
         {
             return this.count;
         },
 
-        addTo : function()
+        addTo : function(value)
         {
             this.count++;
+            this.values.push(value);
+            sortValues(this.values);
         },
 
-        removeFrom : function()
+        removeFrom : function(value)
         {
             this.count--;
+            if (null == value)
+                return;
+            var b = crossfilter.bisectRight(this.values, value, 0, this.values.length);
+            this.values.splice(b, 1);
         },
 
         supports : function()
@@ -78,6 +97,7 @@
         this.valueHasBeenSet = false;
         this.isUnique = true;
         this.value = null;
+        this.values = [];
     };
 
     UniqueValueAggregator.prototype = {
@@ -92,8 +112,21 @@
             return this.isUnique && this.valueHasBeenSet ? this.value : undefined;
         },
 
+        getValues : function()
+        {
+            return this.values.filter(function(value, index, self) {
+                return self.indexOf(value) === index;
+            });
+        },
+
         addTo : function(value, record)
         {
+            if (value != undefined && value != null)
+            {
+                this.values.push(value);
+                sortValues(this.values);
+            }
+
             if (!this.isUnique)
                 return this;
             if (null == value)
@@ -116,7 +149,10 @@
 
         removeFrom : function(value, record)
         {
-            // not supported
+            if (null == value)
+                return;
+            var b = crossfilter.bisectRight(this.values, value, 0, this.values.length);
+            this.values.splice(b, 1);
         },
 
         supports : function()
@@ -138,7 +174,7 @@
     CollectNonNullValuesAggregator.prototype = {
 
         values: null,
-        _isSorted: false,
+        _isSorted: true,
         sum: null,
 
         valueOf : function()
@@ -213,7 +249,6 @@
 
         getMedian : function()
         {
-            this._sort();
             var values = this.values;
             var length = values.length;
             if (0 == length)
@@ -256,7 +291,6 @@
             var length = values.length;
             if (length <= 1)
                 return length;
-            this._sort();
             var count = 1;
             var v = values[0];
             for (var i = 1; i < length; i++)
@@ -275,7 +309,7 @@
             if (null == value)
                 return;
             this.values.push(value);
-            this._isSorted = false;
+            sortValues(this.values);
             return this;
         },
 
@@ -283,20 +317,12 @@
         {
             if (null == value)
                 return;
-            this._sort();
             var b = crossfilter.bisectRight(this.values, value, 0, this.values.length);
             if (this.values[b] != measure.values[i])
                 throw "IllegalState";
             this.values.splice(b, 1);
             this.sum = null;
             return this;
-        },
-
-        _sort : function()
-        {
-            if (!this._isSorted && 1 < this.values.length)
-                crossfilter.quicksort(this.values, 0, this.values.length);
-            this._isSorted = true;
         },
 
         supports : function()
@@ -329,9 +355,15 @@
         this.sumOfSquares = 0;
         this.min = null;
         this.max = null;
+        this.values = [];
     };
 
     CollectPreAggregatedValues.prototype = {
+
+        getValues : function()
+        {
+            return this.values;
+        },
 
         addTo : function(value, record)
         {
@@ -352,6 +384,8 @@
                 if (this.max === null || v < this.max)
                     this.max = v;
             }
+            this.values.push(value);
+            sortValues(this.values);
             return this;
         },
 
@@ -364,6 +398,11 @@
                 this.sum -= v;
             if (this.sumOfSquaresColumn && null !== (v = record[this.sumOfSquaresColumn]))
                 this.sumOfSquares -= v;
+
+            if (null != value) {
+                var b = crossfilter.bisectRight(this.values, value, 0, this.values.length);
+                this.values.splice(b, 1);
+            }
             return this;
         },
 
@@ -1361,7 +1400,7 @@
              {
              },
              */
-            flattenJoinEntry : function(dim, entry)
+            flattenJoinEntry : function(dim, entry, includeAllDimensions)
             {
                 var measures = this.measures,
                     r = {},
@@ -1383,6 +1422,9 @@
                         // TODO: the given measure might not be defined for all axes, should we set it to null or ...?
                         if (entry.value[i]) {
                             r[label] = entry.value[i][measureName];
+                            if (includeAllDimensions) {
+                                r[label].rawRecord = entry.value[i];
+                            }
                         }
                     }
                 }
@@ -1417,7 +1459,7 @@
             /*
              * Select records from this AxisMeasureStore based on grouping by the selected dimName.
              */
-            select : function(dimName)
+            select : function(dimName, includeAllDimensions)
             {
                 var dimArray = [],
                     results,
@@ -1485,7 +1527,7 @@
                 results = results.map(function(entry)
                 {
                     // expand the key value, and select the x and y measure
-                    return me.flattenJoinEntry(dim, entry);
+                    return me.flattenJoinEntry(dim, entry, includeAllDimensions);
                 });
 
                 //
