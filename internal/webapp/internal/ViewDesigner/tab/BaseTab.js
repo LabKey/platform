@@ -68,6 +68,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.BaseTab', {
     layout: 'fit',
 
     baseTitle: '',
+    
+    border: false,
 
     customView: undefined,
 
