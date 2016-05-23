@@ -89,7 +89,7 @@
                             yLeft: {
                                 scaleType: 'continuous',
                                 trans: scale.toLowerCase(),
-                                domain: [min, null],
+                                domain: data.rows.length > 0 ? [min, null] : [0,1],
                                 tickDigits: 6
                             }
                         }
@@ -131,7 +131,7 @@
                         categoryCountMap[val]++;
                     });
 
-                    var categoryData = [];
+                    var categoryData = [], hasData = false;
                     for (var category in categoryCountMap)
                     {
                         if (categoryCountMap.hasOwnProperty(category))
@@ -140,6 +140,8 @@
                                 label: _truncateLabel(category, 10),
                                 value: categoryCountMap[category]
                             });
+
+                            hasData = true;
                         }
                     }
 
@@ -150,10 +152,10 @@
                             rendererType: 'd3',
                             width: categoryData.length > 5 ? 605 : 300,
                             height: 200,
-                            data: data.rows,
+                            data: hasData ? data.rows : [],
                             margins: {
                                 top: 35,
-                                bottom: 35,
+                                bottom: 15 + (hasData ? 20 : 0),
                                 left: 50,
                                 right: 50
                             },
@@ -164,12 +166,16 @@
                                     fontSize: 14
                                 }
                             },
+                            scales: {
+                                x: {scaleType: 'discrete'},
+                                yLeft: {domain: [0,(hasData ? null : 1)]}
+                            },
                             options: {
                                 color: '#000000',
                                 fill: '#64A1C6'
                             },
                             xAes: function(row){
-                                var val = row[columnName].displayValue || row[columnName].value;
+                                var val = row[columnName] ? row[columnName].displayValue || row[columnName].value : '';
                                 return _truncateLabel(val, 7);
                             }
                         });
@@ -181,7 +187,7 @@
                         new LABKEY.vis.PieChart({
                             renderTo: plotDivId,
                             rendererType: 'd3',
-                            data: categoryData,
+                            data: hasData ? categoryData : [{label: '', value: 1}],
                             width: 300,
                             height: 200,
                             header: {
@@ -191,11 +197,17 @@
                                     color: '#000000'
                                 }
                             },
+                            footer: {
+                                text: hasData ? undefined : 'No data to display',
+                                location: 'bottom-center',
+                                fontSize: 10
+                            },
                             labels: {
                                 outer: {
                                     pieDistance: 10
                                 },
                                 inner: {
+                                    format: hasData ? 'percentage' : 'none',
                                     hideWhenLessThanPercentage: 10
                                 },
                                 lines: {
@@ -203,10 +215,14 @@
                                     color: 'black'
                                 }
                             },
+                            size: {
+                                pieInnerRadius: hasData ? '0%' : '100%',
+                                pieOuterRadius: hasData ? '76%' : '100%'
+                            },
                             misc: {
                                 colors: {
                                     segments: LABKEY.vis.Scale.ColorDiscrete(),
-                                    segmentStroke: '#a1a1a1'
+                                    segmentStroke: '#222222'
                                 }
                             },
                             effects: {
