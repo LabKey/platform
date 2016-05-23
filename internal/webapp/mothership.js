@@ -226,7 +226,10 @@ LABKEY.Mothership = (function () {
 
         // Check for string error type
         if (!msg.indexOf) {
-            msg = 'Other error: ' + (typeof msg);
+            var s = msg.toString();
+            if (s == '[object Object]')
+                s = JSON.stringify(msg);
+            msg = 'Other error: ' + s;
         }
 
         // Filter out some errors
