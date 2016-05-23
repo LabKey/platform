@@ -1403,6 +1403,8 @@ boxPlot.render();
         if (!config.header) config.header = {};
         if (!config.header.title) config.header.title = {};
         if (!config.header.title.font) config.header.title.font = 'Roboto, arial';
+        if (!config.footer) config.footer = {};
+        if (!config.footer.font) config.footer.font = 'Roboto, arial';
         if (!config.labels) config.labels = {};
         if (!config.labels.mainLabel) config.labels.mainLabel = {};
         if (!config.labels.mainLabel.font) config.labels.mainLabel.font = 'Roboto, arial';
