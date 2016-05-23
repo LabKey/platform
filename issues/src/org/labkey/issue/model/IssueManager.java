@@ -1475,7 +1475,8 @@ public class IssueManager
 
     public static List<IssueListDef> getIssueListDefs(Container container)
     {
-        List<IssueListDef> classes = new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), SimpleFilter.createContainerFilter(container), null).getArrayList(IssueListDef.class);
+        SimpleFilter filter = container == null ? null : SimpleFilter.createContainerFilter(container);
+        List<IssueListDef> classes = new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), filter, null).getArrayList(IssueListDef.class);
 
         return classes;
     }

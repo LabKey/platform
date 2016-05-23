@@ -50,6 +50,7 @@
     {
         dependencies.add("Ext4");
         dependencies.add("issues/detail.js");
+        dependencies.add("issues/experimental/createRelated.js");
     }
 %>
 <%
@@ -83,6 +84,39 @@
         else
             column2Props.add(prop);
     }
+
+    int commentCount = issue.getComments().size();
+    boolean hasAttachments = false;
+
+    // Determine if the comment has attachments
+    for (Issue.Comment comment : commentLinkedList)
+    {
+        // Determine if the comment has attachments
+        hasAttachments = hasAttachments ? true : !bean.renderAttachments(context, comment).isEmpty();
+    }
+
+    String commentTextStr="The related issue has " + commentCount;
+    if (commentCount==1)
+        commentTextStr += " comment";
+    else
+        commentTextStr += " comments";
+    if (hasAttachments)
+        commentTextStr += " and includes attachments."; // no nice way to count these as of now
+    else
+        commentTextStr +=".";
+
+    StringBuilder relatedIssues = new StringBuilder("javascript:createRelatedIssue(");
+    relatedIssues.append(q(issueDef.getName())).append(",");
+
+    relatedIssues.append("{");
+    relatedIssues.append("callbackURL : ").append(bean.getCallbackURL() == null ? null : q(bean.getCallbackURL()));
+    relatedIssues.append(", body :").append(q(commentTextStr));
+    relatedIssues.append(", title :").append(q(issue.getTitle()));
+    relatedIssues.append(", skipPost :").append(true);
+    relatedIssues.append(", assignedTo :").append(issue.getAssignedTo() == null ? null : issue.getAssignedTo());
+    relatedIssues.append(", priority :").append(issue.getPriority() == null ? null : issue.getPriority());
+    relatedIssues.append(", related :").append(issue.getIssueId());
+    relatedIssues.append("})");
 %>
 <% if (!bean.isPrint())
 {
@@ -95,11 +129,11 @@
      * Create a Related Issue - prompt with a warning before creating the issue
      * if one is not careful one might post sensitive data from a private list to a public one
      */
-    function createRelatedIssue() {
-        var response = window.confirm("Warning:  When creating a related issue in a public list, one may potentially expose private data.  Are you sure that you wish to continue?");
-        if (response == true) {
-            document.forms.CreateIssue.submit();
-        }
+    function createRelatedIssue(issueDefName, params) {
+        Ext4.create('Issues.window.CreateRelatedIssue', {
+            issueDefName : issueDefName,
+            params : params
+        }).show();
     }
 
     /**
@@ -157,11 +191,8 @@
 
         if (!getUser().isGuest())
         {%>
-        <td><%= textLink("email prefs", IssuesController.issueURL(c, EmailPrefsAction.class).addParameter("issueId", issueId))%></td><%
-        }
-        if (showRelatedIssuesButton)
-        {%>
-        <td><%= textLink("create related issue", "javascript:createRelatedIssue()") %></td><%
+        <td><%= textLink("email prefs", IssuesController.issueURL(c, EmailPrefsAction.class).addParameter("issueId", issueId))%></td>
+        <td><%= textLink("create related issue", relatedIssues.toString()) %></td><%
         }
         if ( IssueManager.hasRelatedIssues(issue, user))
         {%>
@@ -238,9 +269,6 @@
     <input type="hidden" name="callbackURL" value="<%=bean.getCallbackURL()%>"/><%
     }
 
-    int commentCount = issue.getComments().size();
-    boolean hasAttachments = false;
-
     for (Issue.Comment comment : commentLinkedList)
     {
         if (!issue.getComments().contains(comment))
@@ -264,27 +292,5 @@
         <%=comment.getComment()%>
         <%=bean.renderAttachments(context, comment)%>
         </div><%
-
-        // Determine if the comment has attachments
-        hasAttachments = hasAttachments ? true : !bean.renderAttachments(context, comment).isEmpty();
     }
-    String commentTextStr="The related issue has " + commentCount;
-    if (commentCount==1)
-        commentTextStr += " comment";
-    else
-        commentTextStr += " comments";
-    if (hasAttachments)
-        commentTextStr += " and includes attachments."; // no nice way to count these as of now
-    else
-        commentTextStr +=".";
     %>
-
-<labkey:form method="POST" id="CreateIssue" action="<%=insertURL%>">
-    <input type="hidden" name="callbackURL" value="<%=h(bean.getCallbackURL())%>"/>
-    <input type="hidden" name="body" value="<%=text(commentTextStr)%>"/>
-    <input type="hidden" name="title" value="<%=h(issue.getTitle())%>"/>
-    <input type="hidden" name="skipPost" value="true"/>
-    <input type="hidden" name="assignedTo" value="<%=text(issue.getAssignedTo() == null ? "" : issue.getAssignedTo().toString())%>"/>
-    <input type="hidden" name="priority" value="<%=text(issue.getPriority() == null ? "" : issue.getPriority().toString())%>"/>
-    <input type="hidden" name="related" value="<%=issue.getIssueId()%>"/>
-</labkey:form>

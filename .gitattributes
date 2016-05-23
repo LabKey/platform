@@ -1015,6 +1015,7 @@ issues/src/org/labkey/issue/experimental/IssuesListView.java -text
 issues/src/org/labkey/issue/experimental/IssuesWebPartFactory.java -text
 issues/src/org/labkey/issue/experimental/actions/AbstractIssueAction.java -text
 issues/src/org/labkey/issue/experimental/actions/ChangeSummary.java -text
+issues/src/org/labkey/issue/experimental/actions/GetRelatedFolder.java -text
 issues/src/org/labkey/issue/experimental/actions/IssueServiceAction.java -text
 issues/src/org/labkey/issue/experimental/actions/NewAdminAction.java -text
 issues/src/org/labkey/issue/experimental/actions/NewCloseAction.java -text
@@ -1058,6 +1059,7 @@ issues/src/org/labkey/issue/view/summaryWebpart.jsp -text
 issues/src/org/labkey/issue/view/updateView.jsp -text
 issues/webapp/issues/admin.js -text
 issues/webapp/issues/detail.js -text
+issues/webapp/issues/experimental/createRelated.js -text
 issues/webapp/issues/experimental/move.js -text
 list/List.iml -text
 list/ListGWT.iml -text

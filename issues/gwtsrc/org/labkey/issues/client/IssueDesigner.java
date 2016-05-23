@@ -402,7 +402,7 @@ public class IssueDesigner implements EntryPoint, Saveable<GWTDomain>
             createItemNameConfiguration(table);
             createCommentSortDirectinConfiguration(table);
             setWidget(0, 0, table);
-            setWidget(0, 2, createFolderMoveConfiguration());
+            //setWidget(0, 2, createFolderMoveConfiguration());
         }
 
         public void validate(List<String> errors)

@@ -27,6 +27,10 @@ public class NewInsertAction extends AbstractIssueAction
     public ModelAndView getView(IssuesController.IssuesForm form, boolean reshow, BindException errors) throws Exception
     {
         _issue = reshow ? form.getBean() : new Issue();
+        if (_issue.getExtraProperties().isEmpty())
+        {
+            _issue.getExtraProperties().putAll(form.getStrings());
+        }
         _issue.setIssueDefName(form.getIssueDefName());
         // if we have errors, then form.getBean() is likely to throw, but try anyway
 /*

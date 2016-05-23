@@ -424,31 +424,9 @@ public abstract class AbstractIssueAction extends FormViewAction<IssuesControlle
 
     private void validateRequiredFields(IssuesController.IssuesForm form, Errors errors)
     {
-        String requiredFields = IssueManager.getRequiredIssueFields(getContainer());
+        String requiredFields = "";
         final Map<String, String> newFields = form.getStrings();
-        if (!"0".equals(newFields.get("issueId")) && requiredFields.contains("comment"))
-        {
-            // When updating an existing issue (which will have a unique IssueId), never require a comment
-            requiredFields = requiredFields.replace("comment", "");
-        }
-        if (requiredFields.isEmpty())
-            return;
-
         MapBindingResult requiredErrors = new MapBindingResult(newFields, errors.getObjectName());
-        if (newFields.containsKey("title"))
-            validateRequired("title", newFields.get("title"), requiredFields, requiredErrors);
-        if (newFields.containsKey("assignedTo") && !(Issue.statusCLOSED.equals(form.getBean().getStatus())))
-            validateRequired("assignedto", newFields.get("assignedTo"), requiredFields, requiredErrors);
-        if (newFields.containsKey("type"))
-            validateRequired("type", newFields.get("type"), requiredFields, requiredErrors);
-        if (newFields.containsKey("area"))
-            validateRequired("area", newFields.get("area"), requiredFields, requiredErrors);
-        if (newFields.containsKey("priority"))
-            validateRequired("priority", newFields.get("priority"), requiredFields, requiredErrors);
-        if (newFields.containsKey("milestone"))
-            validateRequired("milestone", newFields.get("milestone"), requiredFields, requiredErrors);
-        if (newFields.containsKey("notifyList"))
-            validateRequired("notifylist", newFields.get("notifyList"), requiredFields, requiredErrors);
 
         // handle custom field types
         IssueListDef issueListDef = getIssueListDef();

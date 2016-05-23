@@ -107,6 +107,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.issue.experimental.actions.AbstractIssueAction;
+import org.labkey.issue.experimental.actions.GetRelatedFolder;
 import org.labkey.issue.experimental.actions.IssueServiceAction;
 import org.labkey.issue.experimental.actions.NewAdminAction;
 import org.labkey.issue.experimental.actions.NewCloseAction;
@@ -174,7 +175,8 @@ public class IssuesController extends SpringActionController
             NewAdminAction.class,
             IssueServiceAction.class,
             NewDetailsListAction.class,
-            NewGetMoveDestinationAction.class);
+            NewGetMoveDestinationAction.class,
+            GetRelatedFolder.class);
 
     private static final int MAX_STRING_FIELD_LENGTH = 200;
 
