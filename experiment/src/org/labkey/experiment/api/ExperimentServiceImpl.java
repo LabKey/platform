@@ -1714,12 +1714,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public List<String> collectRunsToInvestigate(ExpProtocolOutput start, ExpLineageOptions options)
     {
         Pair<Map<String, String>, Map<String, String>> pair = collectRunsAndRolesToInvestigate(start, options);
-        List<String> runs = new ArrayList<>();
         List<String> runLsids = new ArrayList<>(pair.first.size() + pair.second.size());
         runLsids.addAll(pair.first.keySet());
         runLsids.addAll(pair.second.keySet());
 
-        return runs;
+        return runLsids;
     }
 
     // Get up and down maps of ExpRun LSID to Role
@@ -1744,10 +1743,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 runsDown.putAll(flattenPairs(ExperimentServiceImpl.get().getRunsAndRolesUsingMaterialIds(Arrays.asList(start.getRowId()))));
 
             if (parentRun != null)
-            {
-                runsUp.remove(parentRun.getLSID());
                 runsDown.remove(parentRun.getLSID());
-            }
         }
 
         assert checkRunsAndRoles(start, options, runsUp, runsDown);
@@ -1771,7 +1767,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         runsDown.keySet().stream().map(this::getExpRun).forEach(runs::add);
 
         List<ExpRun> oldRuns = oldCollectRunsToInvestigate(start, options);
-        return runs.equals(oldRuns);
+        if (!runs.equals(oldRuns))
+        {
+            Logger.getLogger(ExperimentServiceImpl.class).warn("Mismatch between collectRunsAndRolesToInvestigate and oldCollectRunsToInvestiate. start: " + start + "\nruns: " + runs + "\nold runs:" + oldRuns);
+            return false;
+        }
+        return true;
     }
 
     @Override
