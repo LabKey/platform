@@ -3426,6 +3426,7 @@ if (!LABKEY.DataRegions) {
     var MsgProto = MessageArea.prototype;
 
     MsgProto.bindRegion = function(region) {
+        this.parentDataRegion = region;
         this.parentSel = '#' + region.domId + '-msgbox';
     };
 
@@ -3502,8 +3503,6 @@ if (!LABKEY.DataRegions) {
             partCls, partEl,
             me = this;
 
-        MSGPARTS = this.parts;
-
         $.each(this.parts, function(part, msg) {
             partCls = 'labkey-dataregion-msg-part-' + part;
 
@@ -3549,6 +3548,8 @@ if (!LABKEY.DataRegions) {
             toggle.removeClass('fa-plus');
             toggle.addClass('fa-minus');
             toggle.prop('title', 'Collapse message');
+
+            _getHeaderSelector(this.parentDataRegion).trigger('resize');
         }
     };
 
@@ -3560,6 +3561,8 @@ if (!LABKEY.DataRegions) {
             toggle.removeClass('fa-minus');
             toggle.addClass('fa-plus');
             toggle.prop('title', 'Expand message');
+
+            _getHeaderSelector(this.parentDataRegion).trigger('resize');
         }
     };
 
