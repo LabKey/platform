@@ -40,8 +40,8 @@ LABKEY.Mothership = (function () {
     var _filterStacktrace = true;
 
     // Allow hooking Ext3 and Ext4 callbacks
-    var _hookExt3 = true;
-    var _hookExt4 = true;
+    var _hookExt3 = false;
+    var _hookExt4 = false;
     var _hookLabKey = true;
 
     // Wait 10 milliseconds between hook install attempts.
