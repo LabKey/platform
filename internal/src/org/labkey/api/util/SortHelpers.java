@@ -67,7 +67,7 @@ public class SortHelpers
         if (Character.isDigit(c2))
             return((i > 0) && Character.isDigit(s2.charAt(i - 1)) ? -1 : c1 - c2);
 
-        // No digits
+        // No digits, so let's compare chars like Java does
         return(c1 - c2);
     }
 
