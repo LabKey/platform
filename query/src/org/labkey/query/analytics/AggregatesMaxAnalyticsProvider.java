@@ -15,7 +15,7 @@ public class AggregatesMaxAnalyticsProvider extends BaseAggregatesAnalyticsProvi
     @Override
     public boolean isApplicable(@NotNull ColumnInfo col)
     {
-        return col.isNumericType() || col.isDateTimeType();
+        return (col.isNumericType() && !col.isLookup()) || col.isDateTimeType();
     }
 
     @Override

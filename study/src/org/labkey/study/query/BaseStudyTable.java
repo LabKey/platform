@@ -345,6 +345,15 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         }
 
         @Override
+        public Object getDisplayValue(RenderContext ctx)
+        {
+            Object value = super.getDisplayValue(ctx);
+            if (value == null)
+                value = getFormattedValue(ctx);
+            return value;
+        }
+
+        @Override
         public String getTsvFormattedValue(RenderContext ctx)
         {
             return getFormattedValue(ctx);

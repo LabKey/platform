@@ -1,6 +1,5 @@
 package org.labkey.query.analytics;
 
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.analytics.ColumnAnalyticsProvider;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.ColumnInfo;
@@ -10,7 +9,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.template.ClientDependency;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 

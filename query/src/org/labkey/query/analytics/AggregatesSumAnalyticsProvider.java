@@ -15,7 +15,8 @@ public class AggregatesSumAnalyticsProvider extends BaseAggregatesAnalyticsProvi
     @Override
     public boolean isApplicable(@NotNull ColumnInfo col)
     {
-        return col.isNumericType() && !col.isKeyField() && !col.isLookup();
+        return col.isNumericType() && !col.isKeyField() && !col.isLookup()
+                && !"serial".equalsIgnoreCase(col.getSqlTypeName());
     }
 
     @Override
