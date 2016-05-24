@@ -133,6 +133,7 @@ public final class RhinoService
             // Load script.
             String js = "scripts/validationTest/exportTest.js";
             ScriptService svc = ServiceRegistry.get().getService(ScriptService.class);
+            assertNotNull("RhinoService$TestCase requires module 'simpletest'", ModuleLoader.getInstance().getModule("simpletest"));
             Resource r = ModuleLoader.getInstance().getModule("simpletest").getModuleResource(js);
             ScriptReference script = svc.compile(r);
 
