@@ -102,8 +102,10 @@ public class ReportService
         Report getReportByEntityId(Container c, String entityId);
 
         Collection<Report> getReports(@Nullable User user, @NotNull Container c);
-
         Collection<Report> getReports(User user, Container c, String key);
+
+        // update the data views display order for this report
+        void setReportDisplayOrder(ContainerUser context, Report report, int displayOrder);
 
         // TODO: This is only used by ReportUtils... remove from interface?
         Collection<Report> getInheritableReports(User user, Container c, String reportKey);
