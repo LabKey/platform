@@ -1762,11 +1762,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     private boolean checkRunsAndRoles(ExpProtocolOutput start, ExpLineageOptions options, Map<String, String> runsUp, Map<String, String> runsDown)
     {
-        List<ExpRun> runs = new ArrayList<>();
+        Set<ExpRun> runs = new HashSet<>();
         runsUp.keySet().stream().map(this::getExpRun).forEach(runs::add);
         runsDown.keySet().stream().map(this::getExpRun).forEach(runs::add);
 
-        List<ExpRun> oldRuns = oldCollectRunsToInvestigate(start, options);
+        Set<ExpRun> oldRuns = new HashSet<>(oldCollectRunsToInvestigate(start, options));
         if (!runs.equals(oldRuns))
         {
             Logger.getLogger(ExperimentServiceImpl.class).warn("Mismatch between collectRunsAndRolesToInvestigate and oldCollectRunsToInvestiate. start: " + start + "\nruns: " + runs + "\nold runs:" + oldRuns);
