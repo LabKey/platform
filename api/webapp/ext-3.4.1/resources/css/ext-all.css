@@ -3285,7 +3285,7 @@ table.x-date-inner {
 
 .x-date-mp td {
     padding:2px;
-	font:normal 11px 'Roboto', arial, helvetica,tahoma,sans-serif;
+	font:normal 11px 'Roboto, arial, helvetica,tahoma,sans-serif;
 }
 
 td.x-date-mp-month,td.x-date-mp-year,td.x-date-mp-ybtn {
@@ -7330,9 +7330,9 @@ li.x-menu-item-active a.x-menu-item {
 }
 
 .x-btn-text {
-    font-size: 12px !important;
-    font-family: 'Roboto-bold', Arial, sans serif;
-    letter-spacing: .5px;
+    font-size: 10px !important;
+    font-family: 'Roboto', Arial, sans serif;
+    letter-spacing: .3px;
 }
 
 
