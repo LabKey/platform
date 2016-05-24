@@ -1967,7 +1967,7 @@ tr.labkey-wp-header
 
 .labkey-wp-header th.labkey-wp-title-left, .labkey-wp-header td.labkey-wp-title-left
 {
-    font-family: roboto-Bold, arial, helvetica, sans-serif;
+    font-family: 'Roboto-Bold', arial, helvetica, sans-serif;
     letter-spacing: .5px;
     padding: 0 0 4px 4px;
     text-align: left;
@@ -2087,7 +2087,7 @@ a.no-arrow {
 
 .labkey-text-link, a.labkey-text-link-noarrow, .labkey-disabled-text-link
 {
-    font-family: roboto-Bold, arial, helvetica, sans-serif;
+    font-family: 'Roboto-Bold', arial, helvetica, sans-serif;
     font-size: 11px;
     letter-spacing: .5px;
 }
@@ -2863,7 +2863,7 @@ div.note {
 
 .tool-icon a,
 .tool-icon a:visited {
-    font-family: roboto-Bold, arial, helvetica, sans-serif;
+    font-family: 'Roboto-Bold', arial, helvetica, sans-serif;
 	text-transform: uppercase;
 	text-decoration: none;
 	color: #126495;
@@ -2974,7 +2974,7 @@ input[type="checkbox"], input[type="radio"] {
 
 /* tabs */
 .labkey-app-bar ul li a {
-    font-family: roboto-Bold, arial, helvetica, sans-serif;
+    font-family: 'Roboto-Bold', arial, helvetica, sans-serif;
     letter-spacing: .5px;
     font-weight: bold;
 }
