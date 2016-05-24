@@ -177,4 +177,42 @@ became:
    // padding: 0; removed
 }
 
+Adjusted font size
+
+.x4-panel-header-text-container-default {
+  color: white;
+  font-size: 11px;
+  font-weight: bold;
+  font-family: 'Roboto', Arial, Helvetica, sans serif;
+  line-height: 15px;
+  padding: 0 2px 1px;
+  text-transform: none;
+}
+
+became:
+
+.x4-panel-header-text-container-default {
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+  font-family: 'Roboto', Arial, Helvetica, sans serif;
+  line-height: 15px;
+  padding: 0 2px 1px;
+  text-transform: none;
+}
+
+Removed font def:
+.x4-form-item-label {
+  color: black;
+  font: normal 12px/14px 'Roboto', Arial, Helvetica, sans serif;
+  margin-top: 4px;
+}
+
+became:
+
+.x4-form-item-label {
+  color: black;
+  margin-top: 4px;
+}
+
 */
