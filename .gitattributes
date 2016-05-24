@@ -1013,6 +1013,7 @@ issues/src/org/labkey/issue/IssuesModule.java -text
 issues/src/org/labkey/issue/IssuesWebPartFactory.java -text
 issues/src/org/labkey/issue/experimental/IssuesListView.java -text
 issues/src/org/labkey/issue/experimental/IssuesWebPartFactory.java -text
+issues/src/org/labkey/issue/experimental/NewIssueUpdateEmailTemplate.java -text
 issues/src/org/labkey/issue/experimental/actions/AbstractIssueAction.java -text
 issues/src/org/labkey/issue/experimental/actions/ChangeSummary.java -text
 issues/src/org/labkey/issue/experimental/actions/GetRelatedFolder.java -text

@@ -9,9 +9,9 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GWTView;
 import org.labkey.api.view.NavTree;
-import org.labkey.issue.IssueUpdateEmailTemplate;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.experimental.IssuesListView;
+import org.labkey.issue.experimental.NewIssueUpdateEmailTemplate;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 import org.springframework.validation.BindException;
@@ -37,7 +37,7 @@ public class NewAdminAction extends SimpleViewAction<IssuesController.AdminForm>
         props.put("typeURI", domain.getTypeURI());
 
         props.put("issueListUrl", new ActionURL(NewListAction.class, getContainer()).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDefName).getLocalURIString());
-        props.put("customizeEmailUrl", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(getContainer(), IssueUpdateEmailTemplate.class, getViewContext().getActionURL()).getLocalURIString());
+        props.put("customizeEmailUrl", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(getContainer(), NewIssueUpdateEmailTemplate.class, getViewContext().getActionURL()).getLocalURIString());
         props.put("instructions", domain.getDomainKind().getDomainEditorInstructions());
 
         return new GWTView("org.labkey.issues.Designer", props);

@@ -45,6 +45,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.issue.experimental.IssuesWebPartFactory;
+import org.labkey.issue.experimental.NewIssueUpdateEmailTemplate;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.query.IssueDefDomainKind;
@@ -146,12 +147,16 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
         if (null != ss)
         {
             ss.addSearchCategory(IssueManager.searchCategory);
-            ss.addResourceResolver("issue",IssueManager.getSearchResolver());
+            ss.addResourceResolver("issue", IssueManager.getSearchResolver());
             ss.addDocumentProvider(this);
             ss.addSearchResultTemplate(new IssuesController.IssueSearchResultTemplate());
         }
-    }
 
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(IssueManager.NEW_ISSUES_EXPERIMENTAL_FEATURE))
+        {
+            EmailTemplateService.get().registerTemplate(NewIssueUpdateEmailTemplate.class);
+        }
+    }
 
     @NotNull
     @Override

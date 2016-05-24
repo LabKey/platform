@@ -44,8 +44,8 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.issue.ColumnTypeEnum;
 import org.labkey.issue.CustomColumnConfiguration;
-import org.labkey.issue.IssueUpdateEmailTemplate;
 import org.labkey.issue.IssuesController;
+import org.labkey.issue.experimental.NewIssueUpdateEmailTemplate;
 import org.labkey.issue.model.CustomColumn;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueListDef;
@@ -580,7 +580,7 @@ public abstract class AbstractIssueAction extends FormViewAction<IssuesControlle
 
                 if (addresses != null && addresses.length > 0)
                 {
-                    IssueUpdateEmailTemplate template = EmailTemplateService.get().getEmailTemplate(IssueUpdateEmailTemplate.class, getContainer());
+                    NewIssueUpdateEmailTemplate template = EmailTemplateService.get().getEmailTemplate(NewIssueUpdateEmailTemplate.class, getContainer());
                     template.init(issue, detailsURL, change, comment, fieldChanges, allAddresses, attachments, user);
 
                     m.setSubject(template.renderSubject(getContainer()));
