@@ -83,10 +83,12 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.RserveScriptEngine;
 import org.labkey.api.reports.actions.ReportForm;
 import org.labkey.api.reports.model.DataViewEditForm;
+import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.model.ViewInfo;
 import org.labkey.api.reports.report.AbstractReport;
+import org.labkey.api.reports.report.AbstractReportIdentifier;
 import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.ChartReport;
 import org.labkey.api.reports.report.QueryReport;
@@ -3920,6 +3922,81 @@ public class ReportsController extends SpringActionController
             digestThread.start();
 
             return new ActionURL(ManageViewsAction.class, getContainer());
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class UpdateReportDisplayOrderAction extends ApiAction<ReportsForm>
+    {
+        public ApiResponse execute(ReportsForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            DbScope scope = QueryManager.get().getDbSchema().getScope();
+
+            try (DbScope.Transaction transaction = scope.ensureTransaction())
+            {
+                int displayOrder = 0;
+                for (Report report : form.getReports())
+                {
+                    ReportService.get().setReportDisplayOrder(getViewContext(), report, displayOrder++);
+                }
+                transaction.commit();
+
+                response.put("success", true);
+                return response;
+            }
+            catch (Exception e)
+            {
+                response.put("success", false);
+                response.put("message", e.getMessage());
+            }
+            return response;
+        }
+    }
+
+    public static class ReportsForm implements CustomApiForm, HasViewContext
+    {
+        private List<Report> _reports = new ArrayList<>();
+        private ViewContext _context;
+
+        public List<Report> getReports()
+        {
+            return _reports;
+        }
+
+        @Override
+        public void bindProperties(Map<String, Object> props)
+        {
+            Object reportsProp = props.get("reports");
+            if (reportsProp != null)
+            {
+                for (JSONObject reportInfo : ((JSONArray) reportsProp).toJSONObjectArray())
+                {
+                    ReportIdentifier reportId = AbstractReportIdentifier.fromString(reportInfo.getString("reportId"));
+                    if (reportId != null)
+                    {
+                        Report report = reportId.getReport(getViewContext());
+
+                        // for now only support reordering reports in the database
+                        if (report != null && !report.getDescriptor().isModuleBased())
+                        {
+                            _reports.add(report);
+                        }
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void setViewContext(ViewContext context)
+        {
+            _context = context;
+        }
+
+        @Override
+        public ViewContext getViewContext()
+        {
+            return _context;
         }
     }
 }

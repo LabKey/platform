@@ -780,7 +780,8 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
         function reportsSyncSaveAndLoad(store) {
             store.sync({
                 success : function() {
-                    store.load();
+                    // can't really reload the store because we are populating it manually, not via the proxy
+                    //store.load();
                 },
                 failure : function(batch) {
                     if (batch.operations && batch.operations.length > 0) {
@@ -906,9 +907,17 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
 
                 proxy: {
                     type: 'ajax',
-                    reader: {type: 'json'}
+                    reader: {type: 'json'},
+                    api : {
+                        update  : LABKEY.ActionURL.buildURL('reports', 'updateReportDisplayOrder.api'),
+                        read    : LABKEY.ActionURL.buildURL('reports', 'updateReportDisplayOrder.api')
+                    },
+                    writer: {
+                        type : 'json',
+                        root : 'reports',
+                        allowSingle : false
+                    }
                 },
-
                 model: 'Dataset.Browser.View',
             });
         }

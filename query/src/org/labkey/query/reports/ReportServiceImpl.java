@@ -31,7 +31,9 @@ import org.labkey.api.data.ContainerManager.AbstractContainerListener;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -682,6 +684,23 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         }
 
         return null;
+    }
+
+    @Override
+    public void setReportDisplayOrder(ContainerUser context, Report report, int displayOrder)
+    {
+        ReportIdentifier reportIdentifier = report.getDescriptor().getReportId();
+        if (reportIdentifier != null && reportIdentifier.getRowId() != 0)
+        {
+            TableInfo table = getTable();
+            SQLFragment sql = new SQLFragment("UPDATE ").append(table, "");
+            sql.append(" SET DisplayOrder = ? WHERE RowId = ?");
+            sql.addAll(displayOrder, reportIdentifier.getRowId());
+
+            new SqlExecutor(table.getSchema()).execute(sql);
+
+            ReportCache.uncache(context.getContainer());
+        }
     }
 
     public Report getReportByEntityId(Container c, String entityId)
