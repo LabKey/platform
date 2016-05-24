@@ -28,6 +28,7 @@
   padding: 0;
   border: 0;
   font-size: 100%;
+  font: inherit;
   vertical-align: baseline;
   background-color: transparent;
   overflow: visible;
@@ -78,6 +79,7 @@
 .profiler-result code,
 .profiler-result .profiler-number,
 .profiler-result .profiler-unit {
+  font-family: Consolas, monospace, serif;
 }
 .profiler-result .profiler-number {
   color: #111111;
@@ -107,6 +109,7 @@
   display: none;
 }
 .profiler-result .profiler-timings .profiler-duration {
+  font-family: Consolas, monospace, serif;
   color: #111111;
   text-align: right;
 }
@@ -153,6 +156,7 @@ float:right;
   margin-bottom: 15px;
 }
 .profiler-result .profiler-queries pre {
+  font-family: Consolas, monospace, serif;
   white-space: pre-wrap;
 }
 .profiler-result .profiler-queries th {
@@ -337,6 +341,7 @@ float:right;
 .profiler-results .profiler-controls {
   display: block;
   font-size: 12px;
+  font-family: Consolas, monospace, serif;
   cursor: default;
   text-align: center;
 }
