@@ -1065,33 +1065,37 @@ LABKEY.Query = new function()
 
         /**
         * Return an array of the allowable aggregates for the supplied data type.
-        * @param {String} jsonType The type of data.  This should match the jsonType property of LABKEY.
+        * @param {Object|String} metadata Object, the column metadata. If String, the json type of data. This should match the jsonType property of LABKEY.
         * @returns {Array} An array of strings
         */
 
-        getAggregatesForType: function(jsonType)
+        getAggregatesForType: function(metadata)
         {
-            jsonType = jsonType.toLowerCase();
+            var jsonType = null, isKeyField = false, isLookup = false, isNumericType = false;
 
-            var aggregates = [
-                LABKEY.AggregateTypes.COUNT
-            ];
+            if (typeof metadata == 'object')
+            {
+                jsonType = metadata.jsonType.toLowerCase();
+                isKeyField = metadata.keyField;
+                isLookup = typeof metadata.lookup == 'object';
+            }
+            else
+            {
+                jsonType = metadata.toLowerCase();
+            }
+            isNumericType = jsonType == 'int' || jsonType == 'float';
 
-            switch(jsonType){
-                case 'int':
-                case 'float':
-                    aggregates.push(LABKEY.AggregateTypes.SUM);
-                    aggregates.push(LABKEY.AggregateTypes.AVG);
-                    aggregates.push(LABKEY.AggregateTypes.MIN);
-                    aggregates.push(LABKEY.AggregateTypes.MAX);
-                    break;
-                case 'date':
-                    aggregates.push(LABKEY.AggregateTypes.MIN);
-                    aggregates.push(LABKEY.AggregateTypes.MAX);
-                    break;
-                case 'string':
-                case 'boolean':
-                    break;
+            // See matching logic for subclasses of BaseAggregatesAnalyticsProvider
+            var aggregates = [LABKEY.AggregateTypes.COUNT];
+            if (isNumericType && !isKeyField && !isLookup)
+            {
+                aggregates.push(LABKEY.AggregateTypes.SUM);
+                aggregates.push(LABKEY.AggregateTypes.AVG);
+            }
+            if ((isNumericType && !isLookup) || jsonType == 'date')
+            {
+                aggregates.push(LABKEY.AggregateTypes.MIN);
+                aggregates.push(LABKEY.AggregateTypes.MAX);
             }
 
             return aggregates;

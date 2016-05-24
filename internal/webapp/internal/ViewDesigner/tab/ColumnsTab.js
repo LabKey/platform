@@ -187,7 +187,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
         var aggregateOptions = [
             {value: '', name: '[None]'}
         ];
-        Ext4.each(LABKEY.Query.getAggregatesForType(metadataRecord.get('jsonType')), function(key) {
+        Ext4.each(LABKEY.Query.getAggregatesForType(metadataRecord.data), function(key) {
             aggregateOptions.push({value: key.toUpperCase(), name: key.toUpperCase()});
         }, this);
 
