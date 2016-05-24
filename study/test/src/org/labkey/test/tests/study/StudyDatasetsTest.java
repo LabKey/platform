@@ -41,6 +41,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.labkey.test.components.ext4.Window.Window;
 
 @Category({DailyA.class})
 public class StudyDatasetsTest extends BaseWebDriverTest
@@ -348,7 +349,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         assertEquals("Wrong number of rows after filter", 24, dataregion.getDataRowCount());
 
         _extHelper.clickMenuButton(false, "Groups", "Create Mouse Group", "From All Mice");
-        Window window = Window.builder().withTitle("Define Mouse Group").build(getDriver());
+        Window window = Window().withTitle("Define Mouse Group").waitFor(getDriver());
         final WebElement groupLabelInput = Locator.id("groupLabel-inputEl").notHidden().waitForElement(window, 10000);
         setFormElement(groupLabelInput, EXTRA_GROUP);
         window.clickButton("Save", 0);
