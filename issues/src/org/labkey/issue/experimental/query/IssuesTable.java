@@ -21,12 +21,16 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.Parameter;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableExtension;
@@ -64,10 +68,11 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.view.ActionURL;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.experimental.actions.NewDetailsAction;
+import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.query.IssuesQuerySchema;
@@ -192,6 +197,10 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
             if (colName.equalsIgnoreCase("CreatedBy") || colName.equalsIgnoreCase("ModifiedBy") || colName.equalsIgnoreCase("ResolvedBy"))
             {
                 UserIdForeignKey.initColumn(extensionCol);
+            }
+            else if (colName.equalsIgnoreCase("AssignedTo"))
+            {
+                AssignedToForeignKey.initColumn(extensionCol);
             }
             cols.add(extensionCol);
         }
@@ -428,6 +437,43 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
             DataIteratorBuilder step3 = TableInsertDataIterator.create(step2, _issueDef.createTable(getUserSchema().getUser()), c, context);
 
             return LoggingDataIterator.wrap(step3.getDataIterator(context));
+        }
+    }
+
+    static class AssignedToForeignKey extends UserIdForeignKey
+    {
+        UserSchema _schema;
+
+        static public ColumnInfo initColumn(ColumnInfo column)
+        {
+            column.setFk(new AssignedToForeignKey(column.getParentTable().getUserSchema()));
+            column.setDisplayColumnFactory(colInfo -> new UserIdRenderer(colInfo));
+            return column;
+        }
+
+        public AssignedToForeignKey(UserSchema schema)
+        {
+            super(schema);
+            _schema = schema;
+        }
+
+        @Override
+        public NamedObjectList getSelectList(RenderContext ctx)
+        {
+            NamedObjectList objectList = new NamedObjectList();
+            Integer issueId = ctx.get(FieldKey.fromParts("IssueId"), Integer.class);
+            Issue issue = null;
+
+            if (issueId != null)
+            {
+                issue = IssueManager.getNewIssue(_schema.getContainer(), _schema.getUser(), issueId);
+            }
+
+            for (User user : IssueManager.getAssignedToList(ctx.getContainer(), issue))
+            {
+                objectList.put(new SimpleNamedObject(String.valueOf(user.getUserId()), user.getDisplayName(_schema.getUser())));
+            }
+            return objectList;
         }
     }
 }
