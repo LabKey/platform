@@ -244,9 +244,6 @@ public class ExperimentService
 
         ExpLineage getLineage(ExpProtocolOutput start, ExpLineageOptions options);
 
-        SimpleFilter.FilterClause createChildOfClause(@NotNull FieldKey fieldKey, Object value);
-        SimpleFilter.FilterClause createParentOfClause(@NotNull FieldKey fieldKey, Object value);
-
         /**
          * The following methods return TableInfo's suitable for using in queries.
          * These TableInfo's initially have no columns, but have methods to
