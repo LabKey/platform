@@ -70,7 +70,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
             var warnedAboutMoving = false;
 
             var win = Ext4.create('Ext.window.Window', {
-                title: "Save Custom Grid View" + (viewName ? ": " + Ext4.htmlEncode(viewName) : ""),
+                title: "Save Custom Grid View",
                 cls: "labkey-customview-save",
                 border: false,
                 autoShow: true,
