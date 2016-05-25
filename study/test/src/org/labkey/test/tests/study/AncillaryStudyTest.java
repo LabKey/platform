@@ -69,7 +69,7 @@ public class AncillaryStudyTest extends StudyBaseTest
     @Override
     public void doCleanup(boolean afterTest) throws TestTimeoutException
     {
-        deleteProject(getProjectName(), afterTest);
+        _containerHelper.deleteProject(getProjectName(), afterTest);
         TestFileUtils.deleteDir(new File(getPipelinePath(), "export"));
     }
 
@@ -130,9 +130,9 @@ public class AncillaryStudyTest extends StudyBaseTest
         waitForElement(Locator.xpath("//div[contains(@class, 'studyWizardDatasetList')]"), WAIT_FOR_JAVASCRIPT);
         click(Locator.xpath("//label/span[text()='Data Refresh:']"));
         waitForElement(Locator.xpath("//div["+Locator.NOT_HIDDEN+" and @class='g-tip-header']//span[text()='Data Refresh']"), WAIT_FOR_JAVASCRIPT);
-        for(int i = 0; i < DATASETS.length; i++)
+        for (String dataset : DATASETS)
         {
-            _extHelper.selectExtGridItem("Label", DATASETS[i], -1, "studyWizardDatasetList", true);
+            _extHelper.selectExtGridItem("Label", dataset, -1, "studyWizardDatasetList", true);
         }
         assertWizardError("Finish", "A study already exists in the destination folder.");
 
@@ -220,7 +220,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         _extHelper.clickMenuButton("Grid Views", "Edit Snapshot");
         clickButton("Update Snapshot", 0);
         assertAlert("Updating will replace all existing data with a new set of data. Continue?");
-        DataRegionTable table = new DataRegionTable("Dataset", this);
+        DataRegionTable table = new DataRegionTable("Dataset", getDriver());
         assertEquals("Dataset does not reflect changes in source study.", 21, table.getDataRowCount());
         assertTextPresent(SEQ_NUMBER + ".0");
         table.getColumnDataAsText("Sequence Num");
@@ -242,7 +242,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         clickButton("Update Snapshot", 0);
         assertAlert("Updating will replace all existing data with a new set of data. Continue?");
         waitForElement(Locator.tagWithClass("table", "labkey-data-region"));
-        table = new DataRegionTable("Dataset", this);
+        table = new DataRegionTable("Dataset", getDriver());
         assertEquals("Dataset does not reflect changes in source study.", 21, table.getDataRowCount());
         assertTextPresent(SEQ_NUMBER2 + ".0");
         assertTextNotPresent(SEQ_NUMBER + ".0");
@@ -265,7 +265,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         clickButton("Update Snapshot", 0);
         assertAlert("Updating will replace all existing data with a new set of data. Continue?");
         waitForElement(Locator.tagWithClass("table", "labkey-data-region"));
-        table = new DataRegionTable("Dataset", this);
+        table = new DataRegionTable("Dataset", getDriver());
         assertEquals("Dataset does not reflect changes in source study.", 20, table.getDataRowCount());
         assertTextNotPresent(SEQ_NUMBER + ".0", SEQ_NUMBER2 + ".0");
     }
@@ -330,13 +330,13 @@ public class AncillaryStudyTest extends StudyBaseTest
         waitAndClickAndWait(Locator.linkWithText("Specimen Data"));
         sleep(2000); // the link moves while the specimen search form finishes layout
         waitAndClickAndWait(Locator.linkWithText("By Vial Group"));
-        DataRegionTable table = new DataRegionTable("SpecimenSummary", this);
+        DataRegionTable table = new DataRegionTable("SpecimenSummary", getDriver());
         assertEquals("Did not find expected number of specimens.", specimenCount, table.getDataRowCount());
         assertEquals("Incorrect total vial count.", String.valueOf(vialCount), table.getTotal("Vial Count"));
         waitAndClickAndWait(Locator.linkWithText("Specimen Data"));
         sleep(2000); // the link moves while the specimen search form finishes layout
         waitAndClickAndWait(Locator.linkWithText("By Individual Vial"));
-        table = new DataRegionTable("SpecimenDetail", this);
+        table = new DataRegionTable("SpecimenDetail", getDriver());
         assertEquals("Did not find expected number of vials.", vialCount, table.getDataRowCount());
 
         log("Verify that Ancillary study doesn't support requests.");
@@ -359,11 +359,10 @@ public class AncillaryStudyTest extends StudyBaseTest
     public void verifyContainerPathFilter()
     {
         clickFolder(getFolderName());
-        clickTab("Mice");
-        addWebPart("Wiki");
+        goToModule("Wiki");
         WikiHelper wh = new WikiHelper(this);
         wh.createWikiPage("17021", "17021 Regression", new File(TestFileUtils.getApiScriptFolder(), "filterTest.html"));
-        DataRegionTable regressionTable = new DataRegionTable("test17021", this); // wait for data region
+        DataRegionTable regressionTable = new DataRegionTable("test17021", getDriver()); // wait for data region
         regressionTable.setUpFacetedFilter("PrimaryType", "Blood (Whole)");
         assertElementNotPresent(Locator.linkWithText("Semen"));
         clickButton("CANCEL",0);
