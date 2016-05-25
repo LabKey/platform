@@ -135,10 +135,9 @@ public class IssueDesigner implements EntryPoint, Saveable<GWTDomain>
                 _buttons = new FlexTable();
                 _buttons.getElement().setClassName("gwt-ButtonBar");
                 _saveButton = new SubmitButton();
-                _buttons.setWidget(0, 0, new LinkButton("Back to Issues", _issueListUrl));
-                _buttons.setWidget(0, 1, new LinkButton("Customize Email Template", _customizeEmailUrl));
-                _buttons.setWidget(0, 2, _saveButton);
-                _buttons.setWidget(0, 3, new LinkButton("Cancel", _issueListUrl));
+                _buttons.setWidget(0, 0, new LinkButton("Customize Email Template", _customizeEmailUrl));
+                _buttons.setWidget(0, 1, _saveButton);
+                _buttons.setWidget(0, 2, new LinkButton("Cancel", _issueListUrl));
 
                 _root.add(_buttons);
             }
@@ -170,7 +169,20 @@ public class IssueDesigner implements EntryPoint, Saveable<GWTDomain>
         {
             public void saveSuccessful(GWTDomain issue, String designerUrl)
             {
-                asyncGetDomainDescriptor(_typeURI, "Save Successful, loading...");
+                getService().getDomainDescriptor(_typeURI, new ErrorDialogAsyncCallback<GWTDomain>()
+                {
+                    public void handleFailure(String message, Throwable caught)
+                    {
+                        _loading.setText("ERROR: " + message);
+                    }
+
+                    public void onSuccess(GWTDomain domain)
+                    {
+                        setDomain(domain);
+                        // just return back to the issues list
+                        navigate(_issueListUrl);
+                    }
+                });
             }
         });
     }
@@ -400,7 +412,7 @@ public class IssueDesigner implements EntryPoint, Saveable<GWTDomain>
             table.setCellSpacing(0);
 
             createItemNameConfiguration(table);
-            createCommentSortDirectinConfiguration(table);
+            createCommentSortDirectionConfiguration(table);
             setWidget(0, 0, table);
             //setWidget(0, 2, createFolderMoveConfiguration());
         }
@@ -424,7 +436,7 @@ public class IssueDesigner implements EntryPoint, Saveable<GWTDomain>
         /**
          * Create the widget to handle the comment sort direction configuration
          */
-        private void createCommentSortDirectinConfiguration(FlexTable table)
+        private void createCommentSortDirectionConfiguration(FlexTable table)
         {
             FlexCellFormatter cellFormatter = getFlexCellFormatter();
             table.setWidget(0, 2, new Label("Comment sort direction"));

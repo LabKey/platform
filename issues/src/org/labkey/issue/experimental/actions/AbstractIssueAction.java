@@ -45,6 +45,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.issue.ColumnTypeEnum;
 import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.IssuesController;
+import org.labkey.issue.experimental.IssuesListView;
 import org.labkey.issue.experimental.NewIssueUpdateEmailTemplate;
 import org.labkey.issue.model.CustomColumn;
 import org.labkey.issue.model.Issue;
@@ -252,7 +253,15 @@ public abstract class AbstractIssueAction extends FormViewAction<IssuesControlle
     public ActionURL getSuccessURL(IssuesController.IssuesForm form)
     {
         if (getIssue(form.getIssueId(), false).getStatus().equals("closed"))
-            return new ActionURL(NewListAction.class, getContainer()).addParameter(DataRegion.LAST_FILTER_PARAM, "true");
+        {
+            ActionURL url = new ActionURL(NewListAction.class, getContainer()).addParameter(DataRegion.LAST_FILTER_PARAM, "true");
+            IssueListDef issueListDef = getIssueListDef();
+
+            if (issueListDef != null)
+                url.addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueListDef.getName());
+
+            return url;
+        }
 
         return form.getForwardURL();
     }

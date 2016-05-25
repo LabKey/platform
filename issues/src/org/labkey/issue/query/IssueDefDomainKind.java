@@ -61,6 +61,7 @@ public class IssueDefDomainKind extends AbstractDomainKind
     private static final String TYPE_LOOKUP = "type";
     private static final String AREA_LOOKUP = "area";
     private static final String MILESTONE_LOOKUP = "milestone";
+    private static final String RESOLUTION_LOOKUP = "resolution";
 
     static
     {
@@ -82,7 +83,7 @@ public class IssueDefDomainKind extends AbstractDomainKind
 
         // required property descriptors, initialized at domain creation time
         REQUIRED_PROPERTIES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
-                new PropertyStorageSpec("AssignedTo", JdbcType.INTEGER),
+                new PropertyStorageSpec("AssignedTo", JdbcType.INTEGER).setNullable(false),
                 new PropertyStorageSpec("Title", JdbcType.VARCHAR, 255).setNullable(false),
                 new PropertyStorageSpec("Type", JdbcType.VARCHAR, 200),
                 new PropertyStorageSpec("Area", JdbcType.VARCHAR, 200),
@@ -96,7 +97,8 @@ public class IssueDefDomainKind extends AbstractDomainKind
                 new PropertyStorageSpec.ForeignKey(PRIORITY_LOOKUP, "Lists", PRIORITY_LOOKUP, "value", null, false),
                 new PropertyStorageSpec.ForeignKey(TYPE_LOOKUP, "Lists", TYPE_LOOKUP, "value", null, false),
                 new PropertyStorageSpec.ForeignKey(AREA_LOOKUP, "Lists", AREA_LOOKUP, "value", null, false),
-                new PropertyStorageSpec.ForeignKey(MILESTONE_LOOKUP, "Lists", MILESTONE_LOOKUP, "value", null, false)
+                new PropertyStorageSpec.ForeignKey(MILESTONE_LOOKUP, "Lists", MILESTONE_LOOKUP, "value", null, false),
+                new PropertyStorageSpec.ForeignKey(RESOLUTION_LOOKUP, "Lists", RESOLUTION_LOOKUP, "value", null, false)
         )));
 
         RESERVED_NAMES = BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet());
@@ -231,6 +233,7 @@ public class IssueDefDomainKind extends AbstractDomainKind
             deleteLookup(domain, user, AREA_LOOKUP);
             deleteLookup(domain, user, TYPE_LOOKUP);
             deleteLookup(domain, user, MILESTONE_LOOKUP);
+            deleteLookup(domain, user, RESOLUTION_LOOKUP);
             domain.delete(user);
         }
         catch (DomainNotFoundException e)
@@ -271,6 +274,9 @@ public class IssueDefDomainKind extends AbstractDomainKind
 
         DomainTemplate milestoneTemplate = templateGroup.getTemplate(MILESTONE_LOOKUP);
         milestoneTemplate.createAndImport(domainContainer, user, getLookupTableName(domainName, MILESTONE_LOOKUP), true, false);
+
+        DomainTemplate resolutionTemplate = templateGroup.getTemplate(RESOLUTION_LOOKUP);
+        resolutionTemplate.createAndImport(domainContainer, user, getLookupTableName(domainName, RESOLUTION_LOOKUP), true, true);
     }
 }
 

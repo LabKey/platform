@@ -178,7 +178,8 @@
                     <tr><td class="labkey-form-label"><%=text(bean.getLabel("Opened", true))%></td><td nowrap="true"><%=h(bean.writeDate(issue.getCreated()))%> by <%=h(issue.getCreatedByName(user))%></td></tr>
                     <tr><td class="labkey-form-label">Changed</td><td nowrap="true"><%=h(bean.writeDate(issue.getModified()))%> by <%=h(issue.getModifiedByName(user))%></td></tr>
                     <tr><td class="labkey-form-label"><%=text(bean.getLabel("Resolved", true))%></td><td nowrap="true"><%=h(bean.writeDate(issue.getResolved()))%><%=text(issue.getResolvedBy() != null ? " by " : "")%> <%=h(issue.getResolvedByName(user))%></td></tr>
-                    <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnTypeEnum.RESOLUTION, true))%></td><td><%=text(bean.writeSelect(ColumnTypeEnum.RESOLUTION, 2))%></td></tr><%
+                    <%=text(bean.renderColumn(propertyMap.get("resolution"), getViewContext(), bean.isEditable("resolution")))%>
+                    <%
                     if (bean.isEditable("resolution") || !"open".equals(issue.getStatus()))
                     {%>
                     <tr><td class="labkey-form-label">Duplicate</td><td><%
@@ -275,7 +276,7 @@
                 }%>
             </table></td>
         </tr>
-        <tr><td class="labkey-form-label"><%=text(bean.getLabel("AssignedTo", true))%></td><td><%=bean.writeSelect("assignedTo", String.valueOf(issue.getAssignedTo()), issue.getAssignedToName(user), bean.getUserOptions(), 1)%></td></tr>
+        <%=text(bean.renderColumn(propertyMap.get("assignedTo"), getViewContext(), bean.isEditable("assignedTo")))%>
         <%
         for (DomainProperty prop : extraColumns)
         {%>

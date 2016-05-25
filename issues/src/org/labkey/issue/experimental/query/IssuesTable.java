@@ -26,8 +26,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RenderContext;
@@ -145,39 +143,6 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         ContainerForeignKey.initColumn(folder, _userSchema);
         addColumn(folder);
 
-//        addWrapColumn(_rootTable.getColumn("Title"));
-/*
-        ColumnInfo assignedTo = wrapColumn("AssignedTo", _rootTable.getColumn("AssignedTo"));
-        assignedTo.setFk(new UserIdForeignKey(getUserSchema()));
-        assignedTo.setDisplayColumnFactory(UserIdRenderer.GuestAsBlank::new);
-        addColumn(assignedTo);
-*/
-
-//        addWrapColumn(_rootTable.getColumn("Status"));
-
-/*
-        ColumnInfo modifiedBy = wrapColumn(_rootTable.getColumn("ModifiedBy"));
-        UserIdForeignKey.initColumn(modifiedBy);
-        addColumn(modifiedBy);
-        addWrapColumn(_rootTable.getColumn("Modified"));
-*/
-
-/*
-        ColumnInfo createdBy = wrapColumn(_rootTable.getColumn("CreatedBy"));
-        UserIdForeignKey.initColumn(createdBy);
-        addColumn(createdBy);
-        addWrapColumn(_rootTable.getColumn("Created"));
-*/
-
-/*
-        ColumnInfo resolvedBy = wrapColumn(_rootTable.getColumn("ResolvedBy"));
-        UserIdForeignKey.initColumn(resolvedBy);
-        addColumn(resolvedBy);
-*/
-
-//        addWrapColumn(_rootTable.getColumn("Resolved"));
-        //addColumn(new AliasedColumn(this, "Resolution", _rootTable.getColumn("Resolution")));
-
         ColumnInfo entityId = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("EntityId")));
         entityId.setHidden(true);
 
@@ -194,7 +159,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
                 continue;
 
             ColumnInfo extensionCol = _extension.addExtensionColumn(col, colName);
-            if (colName.equalsIgnoreCase("CreatedBy") || colName.equalsIgnoreCase("ModifiedBy") || colName.equalsIgnoreCase("ResolvedBy"))
+            if (isUserId(colName))
             {
                 UserIdForeignKey.initColumn(extensionCol);
             }
@@ -235,6 +200,14 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
                 }
             }
         }
+    }
+
+    private boolean isUserId(String colName)
+    {
+        return colName.equalsIgnoreCase("CreatedBy") ||
+                colName.equalsIgnoreCase("ModifiedBy") ||
+                colName.equalsIgnoreCase("ClosedBy") ||
+                colName.equalsIgnoreCase("ResolvedBy");
     }
 
     private void setDefaultColumns()

@@ -22,11 +22,13 @@ import com.google.common.collect.Collections2;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.DomainProperty;
@@ -58,6 +60,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.labkey.api.util.PageFlowUtil.filter;
@@ -309,9 +312,14 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     {
         if (_renderContext == null)
         {
+            Map<String, Object> row = new CaseInsensitiveHashMap<>();
+            ObjectFactory factory = ObjectFactory.Registry.getFactory(Issue.class);
+            factory.toMap(_issue, row);
+            row.putAll(_issue.getExtraProperties());
+
             _renderContext = new RenderContext(context);
             _renderContext.setMode(_mode);
-            _renderContext.setRow(_issue.getExtraProperties());
+            _renderContext.setRow(row);
         }
         return  _renderContext;
     }
@@ -327,6 +335,11 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     }
 
     public String renderColumn(DomainProperty prop, ViewContext context) throws IOException
+    {
+        return renderColumn(prop, context, true);
+    }
+
+    public String renderColumn(DomainProperty prop, ViewContext context, boolean editable) throws IOException
     {
         if (prop != null && shouldDisplay(prop, context))
         {
@@ -344,9 +357,13 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                     {
                         writer.append("<tr>");
                         dc.renderDetailsCaptionCell(renderContext, writer);
-                        writer.append("<td>");
-                        dc.render(renderContext, writer);
-                        writer.append("</td></tr>");
+                        if (editable)
+                        {
+                            writer.append("<td>");
+                            dc.render(renderContext, writer);
+                            writer.append("</td>");
+                        }
+                        writer.append("</tr>");
                         sb.append(writer);
                     }
                     return sb.toString();

@@ -978,6 +978,7 @@ issues/gwtsrc/org/labkey/issues/client/IssueService.java -text
 issues/gwtsrc/org/labkey/issues/client/IssueServiceAsync.java -text
 issues/module.properties -text
 issues/resources/data/priority.tsv -text
+issues/resources/data/resolution.tsv -text
 issues/resources/data/type.tsv -text
 issues/resources/domain-templates/issue-lookup.template.xml -text
 issues/resources/queries/issues/Issues/mine.qview.xml -text

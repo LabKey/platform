@@ -60,4 +60,20 @@
             <keyCol>value</keyCol>
         </options>
     </template>
+    <template xsi:type="ListTemplateType">
+        <table tableName="resolution" tableDbType="NOT_IN_DB">
+            <dat:columns>
+                <dat:column columnName="value">
+                    <dat:datatype>varchar</dat:datatype>
+                    <dat:scale>50</dat:scale>
+                </dat:column>
+            </dat:columns>
+        </table>
+        <initialData>
+            <file>/data/resolution.tsv</file>
+        </initialData>
+        <options>
+            <keyCol>value</keyCol>
+        </options>
+    </template>
 </templates>
