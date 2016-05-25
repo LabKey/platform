@@ -32,11 +32,11 @@ if (!LABKEY.DataRegions) {
     //
     var _paneCache = {};
 
-    LABKEY.DataRegion2 = function(config) {
+    LABKEY.DataRegion = function(config) {
         this._init(config, true);
     };
 
-    var Proto = LABKEY.DataRegion2.prototype;
+    var Proto = LABKEY.DataRegion.prototype;
 
     Proto.toJSON = function() {
         return {
@@ -483,7 +483,7 @@ if (!LABKEY.DataRegions) {
 
     /**
      *
-     * @returns {LABKEY.DataRegion2}
+     * @returns {LABKEY.DataRegion}
      */
     Proto.getDataRegion = function() {
         return this;
@@ -648,7 +648,7 @@ if (!LABKEY.DataRegions) {
         _onSelectionChange(this);
 
         if (config.selectionKey) {
-            LABKEY.DataRegion2.clearSelected(config);
+            LABKEY.DataRegion.clearSelected(config);
         }
 
         if (this.showRows == 'selected') {
@@ -706,7 +706,7 @@ if (!LABKEY.DataRegions) {
 
         config = config || {};
         config.selectionKey = this.selectionKey;
-        LABKEY.DataRegion2.getSelected(config);
+        LABKEY.DataRegion.getSelected(config);
     };
 
     /**
@@ -771,7 +771,7 @@ if (!LABKEY.DataRegions) {
 
             config = _chainSelectionCountCallback(this, config);
 
-            LABKEY.DataRegion2.selectAll(config);
+            LABKEY.DataRegion.selectAll(config);
 
             if (this.showRows === "selected") {
                 // keep "SHOW_ROWS_PREFIX=selected" parameter
@@ -897,7 +897,7 @@ if (!LABKEY.DataRegions) {
         }
 
         if (config.selectionKey) {
-            LABKEY.DataRegion2.setSelected(config);
+            LABKEY.DataRegion.setSelected(config);
         }
         else if ($.isFunction(config.success)) {
             // Don't send the selection change to the server if there is no selectionKey.
@@ -1511,7 +1511,7 @@ if (!LABKEY.DataRegions) {
                 region.showLoadingMessage("Opening custom view designer...");
             }, 500);
 
-            LABKEY.DataRegion2.loadViewDesigner(function() {
+            LABKEY.DataRegion.loadViewDesigner(function() {
 
                 var success = function(queryDetails, viewName, userColumns, userFilter, userSort) {
                     timerId > 0 ? clearTimeout(timerId) : this.hideLoadingMessage();
@@ -2394,7 +2394,7 @@ if (!LABKEY.DataRegions) {
             allowableContainerFilters: region.allowableContainerFilters,
             targetContainers: queryDetails.targetContainers,
             canEditSharedViews: queryDetails.canEditSharedViews,
-            canEdit: LABKEY.DataRegion2.getCustomViewEditableErrors(config).length == 0,
+            canEdit: LABKEY.DataRegion.getCustomViewEditableErrors(config).length == 0,
             success: function (win, o) {
                 var timerId = setTimeout(function() {
                     timerId = 0;
@@ -2437,7 +2437,7 @@ if (!LABKEY.DataRegions) {
             scope: region
         }, region.view);
 
-        LABKEY.DataRegion2.loadViewDesigner(function() {
+        LABKEY.DataRegion.loadViewDesigner(function() {
             LABKEY.internal.ViewDesigner.Designer.saveCustomizeViewPrompt(config);
         });
     };
@@ -3186,7 +3186,7 @@ if (!LABKEY.DataRegions) {
     //
     // LOADER
     //
-    LABKEY.DataRegion2.create = function(config) {
+    LABKEY.DataRegion.create = function(config) {
 
         var region = LABKEY.DataRegions[config.name];
 
@@ -3199,14 +3199,14 @@ if (!LABKEY.DataRegions) {
         }
         else {
             // instantiate a new region
-            region = new LABKEY.DataRegion2(config);
+            region = new LABKEY.DataRegion(config);
             LABKEY.DataRegions[region.name] = region;
         }
 
         return region;
     };
 
-    LABKEY.DataRegion2.loadViewDesigner = function(cb, scope) {
+    LABKEY.DataRegion.loadViewDesigner = function(cb, scope) {
         LABKEY.requiresExt4Sandbox(function() {
             if (LABKEY.devMode) {
                 LABKEY.requiresScript([
@@ -3239,7 +3239,7 @@ if (!LABKEY.DataRegions) {
         });
     };
 
-    LABKEY.DataRegion2.getCustomViewEditableErrors = function(customView) {
+    LABKEY.DataRegion.getCustomViewEditableErrors = function(customView) {
         var errors = [];
         if (customView && !customView.editable) {
             errors.push("The view is read-only and cannot be edited.");
@@ -3247,7 +3247,7 @@ if (!LABKEY.DataRegions) {
         return errors;
     };
 
-    LABKEY.DataRegion2.registerPane = function(regionName, callback, scope) {
+    LABKEY.DataRegion.registerPane = function(regionName, callback, scope) {
         var region = LABKEY.DataRegions[regionName];
         if (region) {
             callback.call(scope || region, region);
@@ -3260,7 +3260,7 @@ if (!LABKEY.DataRegions) {
         _paneCache[regionName].push({cb: callback, scope: scope});
     };
 
-    LABKEY.DataRegion2.selectAll = function(config) {
+    LABKEY.DataRegion.selectAll = function(config) {
         var params = {};
         if (!config.url) {
             // DataRegion doesn't have selectAllURL so generate url and query parameters manually
@@ -3330,7 +3330,7 @@ if (!LABKEY.DataRegions) {
      * @see LABKEY.DataRegion#getSelected
      * @see LABKEY.DataRegion#clearSelected
      */
-    LABKEY.DataRegion2.setSelected = function(config) {
+    LABKEY.DataRegion.setSelected = function(config) {
         // Formerly LABKEY.DataRegion.setSelected
         var url = LABKEY.ActionURL.buildURL("query", "setSelected.api", config.containerPath,
                 { 'key': config.selectionKey, 'checked': config.checked });
@@ -3368,7 +3368,7 @@ if (!LABKEY.DataRegions) {
      * @see LABKEY.DataRegion#setSelected
      * @see LABKEY.DataRegion#getSelected
      */
-    LABKEY.DataRegion2.clearSelected = function(config) {
+    LABKEY.DataRegion.clearSelected = function(config) {
         var url = LABKEY.ActionURL.buildURL('query', 'clearSelected.api', config.containerPath,
                 { 'key': config.selectionKey });
 
@@ -3398,7 +3398,7 @@ if (!LABKEY.DataRegions) {
      * @see LABKEY.DataRegion#setSelected
      * @see LABKEY.DataRegion#clearSelected
      */
-    LABKEY.DataRegion2.getSelected = function(config) {
+    LABKEY.DataRegion.getSelected = function(config) {
         var url = LABKEY.ActionURL.buildURL('query', 'getSelected.api', config.containerPath,
                 { 'key': config.selectionKey });
 
@@ -3578,9 +3578,9 @@ if (!LABKEY.DataRegions) {
     };
     MsgProto.on = function(evt, callback, scope) { $(this).bind(evt, $.proxy(callback, scope)); };
 
-    LABKEY.QueryWebPart2 = function(config) {
+    LABKEY.QueryWebPart = function(config) {
         config._useQWPDefaults = true;
-        return LABKEY.DataRegion2.create(config);
+        return LABKEY.DataRegion.create(config);
     };
 
     if (!$.fn.tab) {
@@ -3744,7 +3744,7 @@ if (!LABKEY.DataRegions) {
  * @name standardButtons
  * @memberOf LABKEY.QueryWebPart#
  */
-LABKEY.QueryWebPart2.standardButtons = {
+LABKEY.QueryWebPart.standardButtons = {
     query: 'query',
     views: 'grid views',
     insertNew: 'insert new',
@@ -3776,7 +3776,3 @@ LABKEY.AggregateTypes = {
      */
     MAX: 'max'
 };
-
-// Be sure to comment out DataRegion.js, QueryWebPart.js in clientapi/ext3.lib.xml and labkey.js
-LABKEY.DataRegion = LABKEY.DataRegion2;
-LABKEY.QueryWebPart = LABKEY.QueryWebPart2;
