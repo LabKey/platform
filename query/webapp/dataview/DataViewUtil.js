@@ -645,27 +645,26 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
                 frame : false
             },
             items   : [
-                this.getCategoryTreePanel(),
-                this.getReportsPanel()
+                this.makeCategoryTreePanel(),
+                this.makeReportsPanel()
             ],
+            buttons : [{
+                text: 'Done',
+                handler: function() {
+                    dialog.close();
+                },
+                scope: this
+            }],
             renderTo: Ext4.getBody()
         });
 
         return dialog;
     },
 
-    getCategoryTreePanel: function () {
-        if(!this.categoryTreePanel) {
-            this.categoryTreePanel = this.makeCategoryTreePanel();
-        }
-
-        return this.categoryTreePanel;
-    },
-
     makeCategoryTreePanel: function () {
 
         var categoryTreePanel = Ext4.create('Ext.tree.Panel', {
-            store: this.getCategoryTreeStore(),
+            store: this.makeCategoryTreeStore(),
             cls: 'themed-panel treenav-panel',
             region: 'west',
             height: 250,
@@ -686,7 +685,7 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
                 selectionChange : {
                     fn: function() {
                         // select 0th element because this returns an array, but we will only ever have one selection
-                        var selectedMenuItem = this.getCategoryTreePanel().view.getSelectionModel().getSelection()[0];
+                        var selectedMenuItem = categoryTreePanel.view.getSelectionModel().getSelection()[0];
                         this.updateReportsStore(selectedMenuItem);
                     }
                 },
@@ -695,46 +694,42 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
         });
 
         categoryTreePanel.on('render', function(cmp){
-            this.getCategoryTreePanel().getEl().mask('Loading...');
+            categoryTreePanel.getEl().mask('Loading...');
             LABKEY.Ajax.request({
-                url: LABKEY.ActionURL.buildURL('reports', 'browseDataTree.api'),
-                params: {parent : -1},
+                url: LABKEY.ActionURL.buildURL('reports', 'getCategories.api'),
+                params: {parent : -1, includeUncategorized : true },
                 success: LABKEY.Utils.getCallbackWrapper(function (response) {
-                    if (response && response.children) {
+                    if (response && response.categories) {
                         var children = [];
                         var root = {text : 'Categories', expanded : true, children : children};
 
-                        Ext4.each(response.children, function(cat){
+                        Ext4.each(response.categories, function(cat){
                             var subcategories = [];
                             // just handle a single level of subcategories
 
-                            Ext4.each(cat.children, function(sub){
-                                if(sub.children && sub.children.length > 0) {
-                                    subcategories.push({
-                                        text: sub.name,
-                                        expanded: false,
-                                        leaf: true,
-                                        rowId: sub.rowId
-                                    })
-                                }
+                            Ext4.each(cat.subCategories, function(sub){
+                                subcategories.push({
+                                    text: sub.label,
+                                    expanded: false,
+                                    leaf: true,
+                                    rowId: sub.rowid
+                                })
                             });
 
-                            if(cat.children && cat.children.length > 0) {
-                                children.push({
-                                    text: cat.name,
-                                    expanded: false,
-                                    leaf: subcategories.length == 0,
-                                    children: subcategories,
-                                    rowId: cat.rowId
-                                })
-                            }
+                            children.push({
+                                text: cat.label,
+                                expanded: false,
+                                leaf: subcategories.length == 0,
+                                children: subcategories,
+                                rowId: cat.rowid
+                            })
                         });
 
                         if (cmp && cmp.store){
                             cmp.store.setRootNode(root);
                         }
                     }
-                    this.getCategoryTreePanel().getEl().unmask();
+                    categoryTreePanel.getEl().unmask();
                 }, this),
                 failure: function(response)
                 {
@@ -747,9 +742,9 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
         return categoryTreePanel;
     },
 
-    getCategoryTreeStore: function (opts) {
+    makeCategoryTreeStore: function () {
 
-        var categoryTreeStore = Ext4.create('Ext.data.TreeStore', {
+         return Ext4.create('Ext.data.TreeStore', {
             pageSize: 100,
             autoSync: false,
 
@@ -758,30 +753,14 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
                 reader: {type: 'json'}
             },
         });
-
-        return categoryTreeStore;
-    },
-
-    getReportsPanel: function () {
-
-        if(!this.reportsPanel) {
-            this.reportsPanel = this.makeReportsPanel();
-        }
-        return this.reportsPanel;
     },
 
     makeReportsPanel: function () {
 
-        var cellEditing = Ext4.create('Ext.grid.plugin.CellEditing', {
-            pluginId : 'subcategorycell',
-            clicksToEdit : 2
-        });
-
         function reportsSyncSaveAndLoad(store) {
             store.sync({
                 success : function() {
-                    // can't really reload the store because we are populating it manually, not via the proxy
-                    //store.load();
+                    // do nothing
                 },
                 failure : function(batch) {
                     if (batch.operations && batch.operations.length > 0) {
@@ -802,7 +781,7 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
         var reportsPanel = Ext4.create('Ext.grid.Panel', {
             id : Ext4.id(),
             border: true,
-            store: this.getReportsStore(),
+            store: this.makeReportsStore(),
             region: 'center',
             width    : 250,
             height   : 250,
@@ -828,33 +807,28 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
                 listeners : {
                     drop : function(node, data) {
 
-                        // update the displayOrder in the subCategory store
-                        data.view.getStore().each(function(rec, i) {
+                        var store = data.view.getStore();
+                        // update the displayOrder in the category store
+                        store.each(function(rec, i = 1) {
+
                             rec.set('displayOrder', i+1);
                             rec.setDirty();
                         });
 
-                        reportsSyncSaveAndLoad(this.getReportsStore());
+                        reportsSyncSaveAndLoad(store);
                     },
                     scope : this
                 }
             },
-            listeners : {
-                edit : function(editor, e) {
-                    reportsSyncSaveAndLoad(this.getReportsStore());
-                },
-                scope : this
-            },
-            mutliSelect : false,
+            multiSelect : false,
             cls     : 'iScroll',
-            plugins : [cellEditing],
             selType : 'rowmodel',
             scope   : this
         });
 
-        reportsPanel.on('render', function(){
-            this.getReportsPanel().getEl().mask('Loading...');
-            var fullTreeStore = this.getFullTreeStore();
+        reportsPanel.on('render', function() {
+            reportsPanel.getEl().mask('Loading...');
+            var fullTreeStore = this.makeFullTreeStore();
             fullTreeStore.load({
                 scope: this,
                 callback: function (records, operation, success) {
@@ -867,29 +841,31 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
 
                             // subcategory level
                             Ext4.each(subcategories, function (subcategory) {  // some of these may be reports instead
-                                var reports = subcategory.childNodes;
-                                if (reports.length > 0) {
+                                var views = subcategory.childNodes;
+                                if (views.length > 0) {
 
                                     // report level
-                                    Ext4.each(reports, function (report) {  // all of these are reports
-                                        reportsArray.push(report);
+                                    Ext4.each(views, function (view) {  // no categories/subcategories here, but not all are reports
+                                        if(view.raw.dataType === 'reports') {
+                                            reportsArray.push(view);
+                                        }
                                     }, this);
                                 }
                                 else {  // no children, so might be a report -- let's check
-                                    if (subcategory.dataType !== "") {  // not a subcategory, actually a report instead
+                                    if ((subcategory.raw.dataType === 'reports')) {  // not a subcategory, actually a report instead
                                         reportsArray.push(subcategory)
                                     }
                                 }
                             });
                         }
                         else {  // no children, so might be a report -- let's check
-                            if (category.dataType !== "") {  // not a category, actually a report instead
+                            if (category.raw.dataType === 'reports') {  // not a category, actually a report instead
                                 reportsArray.push(category);
                             }
                         }
                     });
 
-                    this.getReportsPanel().getEl().unmask();
+                    reportsPanel.getEl().unmask();
 
                     this.reportsArray = reportsArray;
                 }
@@ -899,41 +875,39 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
         return reportsPanel;
     },
 
-    getReportsStore : function() {
-        if(!this.reportsStore) {
-            this.reportsStore = Ext4.create('Ext.data.Store', {
-                pageSize: 100,
-                autoSync: false,
+    makeReportsStore : function() {
 
-                proxy: {
-                    type: 'ajax',
-                    reader: {type: 'json'},
-                    api : {
-                        update  : LABKEY.ActionURL.buildURL('reports', 'updateReportDisplayOrder.api'),
-                        read    : LABKEY.ActionURL.buildURL('reports', 'updateReportDisplayOrder.api')
-                    },
-                    writer: {
-                        type : 'json',
-                        root : 'reports',
-                        allowSingle : false
-                    }
+        this.reportsStore = Ext4.create('Ext.data.Store', {
+            pageSize: 100,
+            autoSync: false,
+
+            proxy: {
+                type: 'ajax',
+                reader: {type: 'json'},
+                api : {
+                    update  : LABKEY.ActionURL.buildURL('reports', 'updateReportDisplayOrder.api')
                 },
-                model: 'Dataset.Browser.View',
-            });
-        }
+                writer: {
+                    type : 'json',
+                    root : 'reports',
+                    allowSingle : false
+                }
+            },
+            model: 'Dataset.Browser.View',
+        });
 
         return this.reportsStore;
     },
 
     updateReportsStore : function(menuItem) {
 
-        var reportsStore = this.getReportsStore();
+        var reportsStore = this.reportsStore;  // should have been set by makeReportsPanel() when the dialog rendered
 
         reportsStore.clearFilter();
         if(reportsStore.data.items.length === 0) {  // (probably) never loaded before
             reportsStore.add(this.reportsArray);  // so load with initial data
         }
-        reportsStore.filterBy(function (record) {
+        reportsStore.filterBy(function (record) {  // filter out all reports except the ones in the selected category
             if(record.get('category').rowid === menuItem.raw.rowId)
                 return true;
             else
@@ -941,36 +915,18 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
         });
     },
 
-    // This store has all categories, subcategories, and reports in it, and is used to build the two backing stores for the window
-    getFullTreeStore: function() {
-        if(!this.fullTreeStore) {
-            var options = Ext4.apply({}, null, {index : 1});
+    // This store has all categories, subcategories, and reports in it, and is used to build the backing store for the report panel part of the window
+    makeFullTreeStore: function() {
 
-            var extraParams = {
-                // These parameters are required for specific webpart filtering
-                pageId : options.pageId,
-                index  : options.index,
-                parent : options.categoryId
-            };
-
-            if (extraParams.parent == undefined)
-            {
-                extraParams.parent = -1;
-            }
-
-            this.fullTreeStore = Ext4.create('Ext.data.TreeStore', {
-                pageSize: 100,
-                model   : 'Dataset.Browser.View',
-                proxy   : {
-                    type   : 'ajax',
-                    url    : LABKEY.ActionURL.buildURL('reports', 'browseDataTree.api'),
-                    extraParams : extraParams,
-                    reader : 'json'
-                },
-                sortRoot : 'displayOrder'
-            });
-        }
-
-        return this.fullTreeStore;
+        return Ext4.create('Ext.data.TreeStore', {
+            pageSize: 100,
+            model   : 'Dataset.Browser.View',
+            proxy   : {
+                type   : 'ajax',
+                url    : LABKEY.ActionURL.buildURL('reports', 'browseDataTree.api'),
+                reader : 'json'
+            },
+            sortRoot : 'displayOrder'
+        });
     }
 });

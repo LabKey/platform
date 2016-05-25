@@ -2694,6 +2694,7 @@ public class ReportsController extends SpringActionController
         private boolean manageView;
         private int _parent = -2;
         Map<String, Object> _props;
+        private boolean includeUncategorized = false;
 
         private ViewInfo.DataType[] _dataTypes = new ViewInfo.DataType[]{ViewInfo.DataType.reports, ViewInfo.DataType.datasets, ViewInfo.DataType.queries};
 
@@ -2766,6 +2767,10 @@ public class ReportsController extends SpringActionController
         {
             this.manageView = manageView;
         }
+
+        public boolean includeUncategorized() { return includeUncategorized; }
+
+        public void setIncludeUncategorized(boolean includeUncategorized) { this.includeUncategorized = includeUncategorized; }
 
         @Override
         public void bindProperties(Map<String, Object> props)
@@ -3384,7 +3389,7 @@ public class ReportsController extends SpringActionController
             List<ViewCategory> categoriesWithDisplayOrder = new ArrayList<>();
             List<ViewCategory> categoriesWithoutDisplayOrder = new ArrayList<>();
 
-            final List<ViewCategory> categories;
+            List<ViewCategory> categories;
             int parent = form.getParent();
 
             switch (parent)
@@ -3406,6 +3411,24 @@ public class ReportsController extends SpringActionController
                     else
                         categories = Collections.emptyList();
                     break;
+            }
+
+            // add dummy category for uncategorized if requested
+
+            if(form.includeUncategorized())
+            {
+                // need to copy categories locally to modify
+                List<ViewCategory> categoriesPlusUncategorized = new ArrayList<>(categories);
+
+                ViewCategory uncategorizedCategory = new ViewCategory();
+                uncategorizedCategory.setRowId(0);
+                uncategorizedCategory.setLabel("Uncategorized");
+                uncategorizedCategory.setDisplayOrder(Integer.MAX_VALUE);  // always sort after other categories
+                uncategorizedCategory.setContainerId(getContainer().getId());
+                categoriesPlusUncategorized.add(uncategorizedCategory);
+
+                // retain unmodifiable property of list
+                categories = Collections.unmodifiableList(categoriesPlusUncategorized);
             }
 
             for (ViewCategory c : categories)
@@ -3935,7 +3958,7 @@ public class ReportsController extends SpringActionController
 
             try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
-                int displayOrder = 0;
+                int displayOrder = 1;
                 for (Report report : form.getReports())
                 {
                     ReportService.get().setReportDisplayOrder(getViewContext(), report, displayOrder++);

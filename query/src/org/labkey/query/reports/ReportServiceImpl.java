@@ -741,7 +741,9 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
 
     public Collection<Report> getReports(@Nullable User user, @NotNull Container c)
     {
-        return getReadableReports(ReportCache.getReports(c), user);
+        List<Report> reportsList = new ArrayList<>();
+        reportsList.addAll(ReportCache.getReports(c));
+        return getSortedReadableReports(reportsList, user);
     }
 
     public Collection<Report> getReports(@Nullable User user, @NotNull Container c, @Nullable String key)
@@ -787,7 +789,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             reports.addAll(ReportCache.getReportsByReportKey(c, key));
         }
 
-        return getReadableReports(reports, user);
+        return getSortedReadableReports(reports, user);
     }
 
     @Deprecated
@@ -803,12 +805,15 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
                 .collect(Collectors.toList());
         }
 
-        return getReadableReports(inheritable, user);
+        List<Report> reportsList = new ArrayList<>();
+        reportsList.addAll(inheritable);
+
+        return getSortedReadableReports(reportsList, user);
     }
 
-    private Collection<Report> getReadableReports(Collection<Report> reports, @Nullable User user)
+    private Collection<Report> getSortedReadableReports(List<Report> reports, @Nullable User user)
     {
-        Collection<Report> readableReports;
+        List<Report> readableReports;
 
         if (null == user)
         {
@@ -816,7 +821,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         }
         else
         {
-            readableReports = new LinkedList<>();
+            readableReports = new ArrayList<>();
 
             for (Report report : reports)
             {
@@ -826,6 +831,12 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
                 }
             }
         }
+
+        // must re-sort to allow file-based reports to show in proper positions
+        // NOTE: currently, the only way for file-based reports to appear in the middle of a category is to share a
+        //       displayOrder number with a report already in the cache (all indices in a range are used when
+        //       persisting); therefore the file-based report's order can never be fully guaranteed
+        readableReports.sort((r1, r2) -> r1.getDescriptor().getDisplayOrder() - r2.getDescriptor().getDisplayOrder());
 
         return readableReports;
     }
