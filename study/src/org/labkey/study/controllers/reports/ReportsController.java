@@ -67,6 +67,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
+import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -1074,6 +1075,7 @@ public class ReportsController extends BaseStudyController
             out.write("</select></td>");
 
             out.write("<td>" + PageFlowUtil.button("Save").submit(true));
+            out.write("<input type=hidden name='" + CSRFUtil.csrfName + "' value='" + PageFlowUtil.filter(CSRFUtil.getExpectedToken(getViewContext())) + "'>");
             out.write("</form>");
 
             if (confirm)
