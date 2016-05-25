@@ -243,12 +243,17 @@
 
         var _queryColumnData = function(dataRegion, columnName, successCallback)
         {
+            // Issue 26594: get the base filter for the QueryView and any user applied URL filters
+            // using the data region's selectAllURL. See QueryView.java getSettings().getBaseFilter().applyToURL().
+            var filterArray = LABKEY.Filter.getFiltersFromUrl(dataRegion.selectAllURL, 'query');
+
             LABKEY.Query.selectRows({
+                containerFilter: dataRegion.getContainerFilter(),
                 schemaName: dataRegion.schemaName,
                 queryName: dataRegion.queryName,
                 viewName: dataRegion.viewName,
                 columns: columnName,
-                filterArray: LABKEY.Filter.getFiltersFromUrl(window.location.search, dataRegion.name),
+                filterArray: filterArray,
                 requiredVersion: '9.1',
                 success: successCallback
             });
