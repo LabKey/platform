@@ -1354,6 +1354,8 @@ query/resources/schemas/dbscripts/sqlserver/obsolete/query-14.20-14.21.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-0.00-13.20.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-14.20-14.30.sql -text
 query/resources/schemas/query.xml -text
+query/resources/views/QWPDemo.html -text
+query/resources/views/QWPDemo.view.xml -text
 query/resources/views/SearchPanel.html -text
 query/resources/views/SearchPanel.view.xml -text
 query/resources/views/importData.html -text
@@ -1629,6 +1631,8 @@ query/src/org/labkey/query/view/propertiesQuery.jsp -text
 query/src/org/labkey/query/view/sourceQuery.jsp -text
 query/src/org/labkey/query/view/testRemoteConnectionsFailure.jsp -text
 query/src/org/labkey/query/view/testRemoteConnectionsSuccess.jsp -text
+query/webapp/QWPDemo.js -text
+query/webapp/QWPDemoData.js -text
 query/webapp/dataview/DataViewPropertiesPanel.js -text
 query/webapp/dataview/DataViewUtil.js -text
 query/webapp/dataview/DataViewsPanel.css -text

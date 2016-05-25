@@ -1,0 +1,36 @@
+<div id="testRegion1">
+</div>
+<br>
+<div id="testRegion2">
+</div>
+<br>
+<div id="testRegion3">
+</div>
+<br>
+<div id="testRegion4">
+</div>
+<br>
+<div id="testRegion5">
+</div>
+<br>
+<div id="testRegion6">
+</div>
+
+<script type="text/javascript">
+ LABKEY.Domain.get(function() {
+     LABKEY.Domain.get(function() {
+         LABKEY.Domain.get(function() {
+             runTests();
+         }, function() {
+             setUpDomains();
+         }, 'Samples', 'sampleDataTest3');
+     }, function() {
+         setUpDomains();
+     }, 'Samples', 'sampleDataTest2');
+ }, function() {
+     setUpDomains();
+ }, 'Samples', 'sampleDataTest1');
+
+</script>
+<br><br>
+<button onclick="dropDomains()">Drop schema and clear test data</button>
