@@ -157,8 +157,6 @@ import org.labkey.experiment.ExperimentAuditProvider;
 import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.XarExportType;
 import org.labkey.experiment.XarReader;
-import org.labkey.experiment.api.data.ChildOfClause;
-import org.labkey.experiment.api.data.ParentOfClause;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.pipeline.ExpGeneratorHelper;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
@@ -2027,18 +2025,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 result.add(material);
         }
         return result;
-    }
-
-    @Override
-    public SimpleFilter.FilterClause createChildOfClause(@NotNull FieldKey fieldKey, Object value)
-    {
-        return new ChildOfClause(fieldKey, value);
-    }
-
-    @Override
-    public SimpleFilter.FilterClause createParentOfClause(@NotNull FieldKey fieldKey, Object value)
-    {
-        return new ParentOfClause(fieldKey, value);
     }
 
     /**

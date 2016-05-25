@@ -273,32 +273,26 @@ public class QWhere extends QNode
                 value = new QString(literal);
         }
 
-        switch (op)
-        {
-            case EQUAL:
-            case DATE_EQUAL:
-                return Operator.eq.expr(field, value);
-            case NEQ:
-            case NEQ_OR_NULL:
-            case DATE_NOT_EQUAL:
-                return Operator.ne.expr(field, value);
-            case GT:
-                return Operator.gt.expr(field, value);
-            case LT:
-                return Operator.lt.expr(field, value);
-            case GTE:
-                return Operator.ge.expr(field, value);
-            case LTE:
-                return Operator.le.expr(field, value);
-            case ISBLANK:
-                return Operator.is.expr(field, new QNull());
-            case NONBLANK:
-                return Operator.is_not.expr(field, new QNull());
-            case STARTS_WITH:
-                return Operator.like.expr(field, new QString(literal + "%"));
-            case CONTAINS:
-                return Operator.like.expr(field, new QString("%" + literal + "%"));
-        }
+        if (op == CompareType.EQUAL || op == CompareType.DATE_EQUAL)
+            return Operator.eq.expr(field, value);
+        if (op == CompareType.NEQ || op == CompareType.NEQ_OR_NULL || op == CompareType.DATE_NOT_EQUAL)
+            return Operator.ne.expr(field, value);
+        if (op == CompareType.GT)
+            return Operator.gt.expr(field, value);
+        if (op == CompareType.LT)
+            return Operator.lt.expr(field, value);
+        if (op == CompareType.GTE)
+            return Operator.ge.expr(field, value);
+        if (op == CompareType.LTE)
+            return Operator.le.expr(field, value);
+        if (op == CompareType.ISBLANK)
+            return Operator.is.expr(field, new QNull());
+        if (op == CompareType.NONBLANK)
+            return Operator.is_not.expr(field, new QNull());
+        if (op == CompareType.STARTS_WITH)
+            return Operator.like.expr(field, new QString(literal + "%"));
+        if (op == CompareType.CONTAINS)
+            return Operator.like.expr(field, new QString("%" + literal + "%"));
         return null;
     }
 

@@ -829,8 +829,10 @@ experiment/src/org/labkey/experiment/api/ProtocolOutput.java -text
 experiment/src/org/labkey/experiment/api/SampleSetDomainKind.java -text
 experiment/src/org/labkey/experiment/api/SampleSetUpdateService.java -text
 experiment/src/org/labkey/experiment/api/data/ChildOfClause.java -text
+experiment/src/org/labkey/experiment/api/data/ChildOfCompareType.java -text
 experiment/src/org/labkey/experiment/api/data/LineageClause.java -text
 experiment/src/org/labkey/experiment/api/data/ParentOfClause.java -text
+experiment/src/org/labkey/experiment/api/data/ParentOfCompareType.java -text
 experiment/src/org/labkey/experiment/api/property/DomainImpl.java -text
 experiment/src/org/labkey/experiment/api/property/DomainPropertyImpl.java -text
 experiment/src/org/labkey/experiment/api/property/DomainPropertyManager.java -text

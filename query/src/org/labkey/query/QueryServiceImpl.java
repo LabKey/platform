@@ -36,6 +36,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnLogging;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -157,6 +158,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 
@@ -170,6 +172,39 @@ public class QueryServiceImpl extends QueryService
 
     private static final Cache<String, List<String>> NAMED_SET_CACHE = CacheManager.getCache(100, CacheManager.DAY, "Named sets for IN clause cache");
     private static final String NAMED_SET_CACHE_ENTRY = "NAMEDSETS:";
+
+    private final List<CompareType> COMPARE_TYPES = new CopyOnWriteArrayList<>(Arrays.asList(
+            CompareType.EQUAL,
+            CompareType.DATE_EQUAL,
+            CompareType.NEQ,
+            CompareType.DATE_NOT_EQUAL,
+            CompareType.NEQ_OR_NULL,
+            CompareType.GT,
+            CompareType.DATE_GT,
+            CompareType.LT,
+            CompareType.DATE_LT,
+            CompareType.GTE,
+            CompareType.DATE_GTE,
+            CompareType.LTE,
+            CompareType.DATE_LTE,
+            CompareType.STARTS_WITH,
+            CompareType.DOES_NOT_START_WITH,
+            CompareType.CONTAINS,
+            CompareType.DOES_NOT_CONTAIN,
+            CompareType.CONTAINS_ONE_OF,
+            CompareType.CONTAINS_NONE_OF,
+            CompareType.IN,
+            CompareType.NOT_IN,
+            CompareType.IN_NS,
+            CompareType.NOT_IN_NS,
+            CompareType.BETWEEN,
+            CompareType.NOT_BETWEEN,
+            CompareType.MEMBER_OF,
+            CompareType.ISBLANK,
+            CompareType.NONBLANK,
+            CompareType.MV_INDICATOR,
+            CompareType.NO_MV_INDICATOR
+    ));
 
     static public QueryServiceImpl get()
     {
@@ -2266,6 +2301,31 @@ public class QueryServiceImpl extends QueryService
                 return column;
         }
         return null;
+    }
+
+    @Override
+    public void addCompareType(CompareType type)
+    {
+        COMPARE_TYPES.forEach(ct -> {
+            if (type.name().equalsIgnoreCase(ct.name()))
+                throw new IllegalArgumentException("CompareType with name '" + ct.name() + "' already registered");
+
+            if (type.getScriptName().equalsIgnoreCase(ct.getScriptName()))
+                throw new IllegalArgumentException("CompareType with script name '" + ct.getScriptName() + "' already registered");
+
+            if (type.getPreferredUrlKey().equalsIgnoreCase(ct.getPreferredUrlKey()))
+                throw new IllegalArgumentException("CompareType with URL key '" + ct.getPreferredUrlKey() + "' already registered");
+
+            if (type.getDisplayValue().equalsIgnoreCase(ct.getDisplayValue()))
+                throw new IllegalArgumentException("CompareType with display value '" + ct.getDisplayValue() + "' already registered");
+        });
+        COMPARE_TYPES.add(type);
+    }
+
+    @Override
+    public Collection<CompareType> getCompareTypes()
+    {
+        return Collections.unmodifiableCollection(COMPARE_TYPES);
     }
 
     @Override

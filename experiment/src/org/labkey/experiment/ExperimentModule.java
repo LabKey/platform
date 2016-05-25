@@ -42,6 +42,7 @@ import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -61,6 +62,8 @@ import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.SampleSetDomainKind;
+import org.labkey.experiment.api.data.ChildOfCompareType;
+import org.labkey.experiment.api.data.ParentOfCompareType;
 import org.labkey.experiment.api.property.DomainPropertyImpl;
 import org.labkey.experiment.api.property.LengthValidator;
 import org.labkey.experiment.api.property.LookupValidator;
@@ -120,6 +123,9 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         ExpSchema.register(this);
         PropertyService.get().registerDomainKind(new SampleSetDomainKind());
         PropertyService.get().registerDomainKind(new DataClassDomainKind());
+
+        QueryService.get().addCompareType(new ChildOfCompareType());
+        QueryService.get().addCompareType(new ParentOfCompareType());
     }
 
     public boolean hasScripts()
