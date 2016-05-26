@@ -109,7 +109,8 @@ public class IssueServiceAction extends GWTServiceAction
                 IssueManager.saveDefaultAssignedToUser(getContainer(), user);
 
                 List<String> errors = super.updateDomainDescriptor(orig, dd);
-                transaction.commit();
+                if (errors.isEmpty())
+                    transaction.commit();
 
                 return errors;
             }

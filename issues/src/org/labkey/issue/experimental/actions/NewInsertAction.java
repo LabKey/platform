@@ -66,12 +66,6 @@ public class NewInsertAction extends AbstractIssueAction
             _issue.setAssignedTo(defaultUser.getUserId());
 
         _issue.open(getContainer(), getUser());
-        if (!reshow || form.getSkipPost())
-        {
-            // Set the defaults if we're not reshowing after an error, or if this is a request to open an issue
-            // from a mothership which comes in as a POST and is therefore considered a reshow
-            setNewIssueDefaults(_issue);
-        }
 
         if (NumberUtils.isNumber(form.getPriority()))
             _issue.setPriority(Integer.parseInt(form.getPriority()));

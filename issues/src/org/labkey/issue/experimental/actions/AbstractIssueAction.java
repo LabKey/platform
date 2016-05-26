@@ -42,7 +42,6 @@ import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.issue.ColumnTypeEnum;
 import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.experimental.IssuesListView;
@@ -62,7 +61,6 @@ import javax.mail.Message;
 import javax.mail.internet.AddressException;
 import javax.servlet.ServletException;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -406,29 +404,6 @@ public abstract class AbstractIssueAction extends FormViewAction<IssuesControlle
             url.addParameter("issueId", issueId.toString());
 
         return url;
-    }
-
-    protected Issue setNewIssueDefaults(Issue issue) throws SQLException, ServletException
-    {
-        Map<ColumnTypeEnum, String> defaults = IssueManager.getAllDefaults(getContainer());
-
-        ColumnTypeEnum.AREA.setDefaultValue(issue, defaults);
-        ColumnTypeEnum.TYPE.setDefaultValue(issue, defaults);
-        ColumnTypeEnum.MILESTONE.setDefaultValue(issue, defaults);
-        ColumnTypeEnum.PRIORITY.setDefaultValue(issue, defaults);
-
-        CustomColumnConfiguration config = getColumnConfiguration();
-
-        // For each of the string configurable columns,
-        // only set the default if the column is currently configured as a pick list
-        for (ColumnTypeEnum stringColumn : ColumnTypeEnum.getCustomStringColumns())
-        {
-            if (config.hasPickList(stringColumn.getColumnName()))
-            {
-                stringColumn.setDefaultValue(issue, defaults);
-            }
-        }
-        return issue;
     }
 
     private void validateRequiredFields(IssuesController.IssuesForm form, Errors errors)

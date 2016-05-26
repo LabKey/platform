@@ -8,7 +8,9 @@ import org.labkey.api.data.Entity;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
@@ -16,6 +18,7 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.security.User;
@@ -23,6 +26,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.issue.query.IssueDefDomainKind;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -146,7 +150,7 @@ public class IssueListDef extends Entity
                     ensureDomainProperties(domain, domainKind, domainKind.getRequiredProperties(), domainKind.getPropertyForeignKeys(domainContainer));
                     domain.save(user);
                 }
-                catch (ChangePropertyDescriptorException | BatchValidationException e)
+                catch (BatchValidationException | ExperimentException e)
                 {
                     throw new UnexpectedException(e);
                 }
@@ -180,7 +184,8 @@ public class IssueListDef extends Entity
         return domain;
     }
 
-    private void ensureDomainProperties(Domain domain, IssueDefDomainKind domainKind, Collection<PropertyStorageSpec> requiredProps, Set<PropertyStorageSpec.ForeignKey> foreignKeys)
+    private void ensureDomainProperties(Domain domain, IssueDefDomainKind domainKind, Collection<PropertyStorageSpec> requiredProps,
+                                        Set<PropertyStorageSpec.ForeignKey> foreignKeys) throws ExperimentException
     {
         String typeUri = domain.getTypeURI();
         Map<String, PropertyStorageSpec.ForeignKey> foreignKeyMap = new CaseInsensitiveHashMap<>();
@@ -199,6 +204,13 @@ public class IssueListDef extends Entity
             prop.setRangeURI(PropertyType.getFromJdbcType(spec.getJdbcType()).getTypeUri());
             prop.setScale(spec.getSize());
             prop.setRequired(!spec.isNullable());
+
+            // kind of a hack, if there is a default value for now assume it is of type fixed_editable
+            if (spec.getDefaultValue() != null)
+            {
+                prop.setDefaultValueTypeEnum(DefaultValueType.FIXED_EDITABLE);
+                DefaultValueService.get().setDefaultValues(domain.getContainer(), Collections.singletonMap(prop, spec.getDefaultValue()));
+            }
 
             if (foreignKeyMap.containsKey(spec.getName()))
             {

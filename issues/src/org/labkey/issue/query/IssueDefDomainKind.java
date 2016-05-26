@@ -10,7 +10,9 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.DomainNotFoundException;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
@@ -19,6 +21,7 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
@@ -33,6 +36,8 @@ import org.quartz.ListenerManager;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -88,7 +93,7 @@ public class IssueDefDomainKind extends AbstractDomainKind
                 new PropertyStorageSpec("Type", JdbcType.VARCHAR, 200),
                 new PropertyStorageSpec("Area", JdbcType.VARCHAR, 200),
                 new PropertyStorageSpec("NotifyList", JdbcType.VARCHAR),
-                new PropertyStorageSpec("Priority", JdbcType.INTEGER).setNullable(false),
+                new PropertyStorageSpec("Priority", JdbcType.INTEGER).setNullable(false).setDefaultValue(3),
                 new PropertyStorageSpec("Milestone", JdbcType.VARCHAR, 200),
                 new PropertyStorageSpec("Resolution", JdbcType.VARCHAR, 200)
         )));
@@ -277,6 +282,14 @@ public class IssueDefDomainKind extends AbstractDomainKind
 
         DomainTemplate resolutionTemplate = templateGroup.getTemplate(RESOLUTION_LOOKUP);
         resolutionTemplate.createAndImport(domainContainer, user, getLookupTableName(domainName, RESOLUTION_LOOKUP), true, true);
+    }
+
+    public void setDefaultValues(Container domainContainer, Domain domain) throws ExperimentException
+    {
+        Map<DomainProperty, Object> defaultValues = new HashMap<>();
+
+        DomainProperty prop = domain.getPropertyByName("Priority");
+        DefaultValueService.get().setDefaultValues(domainContainer, defaultValues);
     }
 }
 

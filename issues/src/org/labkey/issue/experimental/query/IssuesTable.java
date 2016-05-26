@@ -26,6 +26,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RenderContext;
@@ -34,6 +35,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableExtension;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
@@ -41,8 +43,11 @@ import org.labkey.api.etl.DataIteratorUtil;
 import org.labkey.api.etl.LoggingDataIterator;
 import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.etl.TableInsertDataIterator;
+import org.labkey.api.etl.WrapperDataIterator;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.AliasedColumn;
@@ -310,7 +315,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
         DataIteratorBuilder step0 = new IssuesDataIteratorBuilder(data, context, getUserSchema().getUser());
-        return step0;
+        return new DefaultValuesIteratorBuilder(step0, context, getUserSchema().getUser());
     }
 
     @Override
@@ -355,21 +360,45 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         @Override
         protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException
         {
-            // entityId is not the pk but is needed to update the issuedefs provisioned table
-            String entityId = (String)oldRow.get("entityid");
-            if (entityId == null)
-                throw new ValidationException("entityid required to update row");
+            try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
+            {
+                // entityId is not the pk but is needed to update the issuedefs provisioned table
+                String entityId = (String)oldRow.get("entityid");
+                if (entityId == null)
+                    throw new ValidationException("entityid required to update row");
 
-            // update issues.issues
-            Map<String, Object> ret = new CaseInsensitiveHashMap<>(super._update(user, c, row, oldRow, keys));
+                // update issues.issues
+                Map<String, Object> ret = new CaseInsensitiveHashMap<>(super._update(user, c, row, oldRow, keys));
 
-            // update provisioned table -- note that entityId isn't the PK so we need to use the filter to update the correct row instead
-            keys = new Object[] {};
-            TableInfo t = _issueDef.createTable(user);
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("EntityId"), entityId);
-            ret.putAll(Table.update(user, t, row, keys, filter, Level.DEBUG));
+                // update provisioned table -- note that entityId isn't the PK so we need to use the filter to update the correct row instead
+                keys = new Object[] {};
+                TableInfo t = _issueDef.createTable(user);
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("EntityId"), entityId);
+                ret.putAll(Table.update(user, t, row, keys, filter, Level.DEBUG));
 
-            return ret;
+                // save default values
+                Domain domain = _issueDef.getDomain(user);
+                Map<DomainProperty, Object> defaultValues = new HashMap<>();
+                for (DomainProperty prop : domain.getProperties())
+                {
+                    if (row.containsKey(prop.getName()) && (row.get(prop.getName()) != null))
+                    {
+                        defaultValues.put(prop, row.get(prop.getName()));
+                    }
+                }
+
+                try
+                {
+                    DefaultValueService.get().setDefaultValues(c, defaultValues, user);
+                }
+                catch (ExperimentException e)
+                {
+                    throw new RuntimeException(e);
+                }
+                transaction.commit();
+
+                return ret;
+            }
         }
     }
 
@@ -410,6 +439,92 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
             DataIteratorBuilder step3 = TableInsertDataIterator.create(step2, _issueDef.createTable(getUserSchema().getUser()), c, context);
 
             return LoggingDataIterator.wrap(step3.getDataIterator(context));
+        }
+    }
+
+    /**
+     * Data iterator to handle issues default values
+     */
+    private class DefaultValuesIteratorBuilder implements DataIteratorBuilder
+    {
+        private DataIteratorContext _context;
+        private final DataIteratorBuilder _in;
+        private User _user;
+
+        DefaultValuesIteratorBuilder(@NotNull DataIteratorBuilder in, DataIteratorContext context, User user)
+        {
+            _context = context;
+            _in = in;
+            _user = user;
+        }
+
+        @Override
+        public DataIterator getDataIterator(DataIteratorContext context)
+        {
+            DataIterator pre = _in.getDataIterator(context);
+            return LoggingDataIterator.wrap(new DefaultValuesDataIterator(pre, context, _user));
+        }
+    }
+
+    private class DefaultValuesDataIterator extends WrapperDataIterator
+    {
+        final DataIteratorContext _context;
+        final User _user;
+        Map<DomainProperty, Object> _defaultValues = new HashMap<>();
+        Map<String, Integer> _columnMap;
+        Domain _domain;
+
+        protected DefaultValuesDataIterator(DataIterator di, DataIteratorContext context, User user)
+        {
+            super(di);
+            _context = context;
+
+            _columnMap = DataIteratorUtil.createColumnNameMap(di);
+            _domain = _issueDef.getDomain(user);
+
+            _user = user;
+        }
+
+        private BatchValidationException getErrors()
+        {
+            return _context.getErrors();
+        }
+
+        @Override
+        public boolean next() throws BatchValidationException
+        {
+            boolean hasNext = super.next();
+
+            // skip processing if there are errors upstream
+            if (getErrors().hasErrors())
+                return hasNext;
+
+            // for each iteration collect the default values, only save the single set
+            for (DomainProperty prop : _domain.getProperties())
+            {
+                Integer idx = _columnMap.get(prop.getName());
+                if (idx != null)
+                {
+                    Object value = get(idx);
+                    if (value != null)
+                    {
+                        _defaultValues.put(prop, value);
+                    }
+                }
+            }
+
+            if (!hasNext)
+            {
+                try
+                {
+                    DefaultValueService.get().setDefaultValues(getContainer(), _defaultValues, _user);
+                }
+                catch (ExperimentException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
+            return hasNext;
         }
     }
 

@@ -31,6 +31,8 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.defaults.DefaultValueService;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.FieldKey;
@@ -313,8 +315,24 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         if (_renderContext == null)
         {
             Map<String, Object> row = new CaseInsensitiveHashMap<>();
+            IssueListDef issueListDef = getIssueListDef();
+            Domain domain = issueListDef.getDomain(context.getUser());
+
             ObjectFactory factory = ObjectFactory.Registry.getFactory(Issue.class);
             factory.toMap(_issue, row);
+
+            // apply any default values
+            if (null != domain)
+            {
+                Map<DomainProperty, Object> domainDefaults = DefaultValueService.get().getDefaultValues(context.getContainer(), domain, context.getUser());
+                for (Map.Entry<DomainProperty, Object> entry : domainDefaults.entrySet())
+                {
+                    if (row.get(entry.getKey()) == null)
+                    {
+                        row.put(entry.getKey().getName(), entry.getValue());
+                    }
+                }
+            }
             row.putAll(_issue.getExtraProperties());
 
             _renderContext = new RenderContext(context);
