@@ -341,9 +341,10 @@ public class PropertyStorageSpec
         return defaultValue;
     }
 
-    public void setDefaultValue(Object defaultValue)
+    public PropertyStorageSpec setDefaultValue(Object defaultValue)
     {
         this.defaultValue = defaultValue;
+        return this;
     }
 
     public static class Index
