@@ -39,29 +39,6 @@ if (typeof LABKEY == "undefined")
         // private variables not configurable
         var _requestedCssFiles = {};
 
-        // prepare null console to avoid errors in old versions of IE
-        (function(){
-            var method;
-            var noop = function () {};
-            var methods = [
-                'assert', 'clear', 'count', 'debug', 'dir', 'dirxml', 'error',
-                'exception', 'group', 'groupCollapsed', 'groupEnd', 'info', 'log',
-                'markTimeline', 'profile', 'profileEnd', 'table', 'time', 'timeEnd',
-                'timeStamp', 'trace', 'warn'
-            ];
-            var length = methods.length;
-            var console = (window.console = window.console || {});
-
-            while (length--) {
-                method = methods[length];
-
-                // Only stub undefined methods.
-                if (!console[method]) {
-                    console[method] = noop;
-                }
-            }
-        })();
-
         // private caching mechanism for script loading
         var ScriptCache = function()
         {
@@ -249,27 +226,6 @@ if (typeof LABKEY == "undefined")
             }
             if ("Security" in LABKEY)
                 LABKEY.Security.currentUser = LABKEY.user;
-        };
-
-        //private (Deprecated)
-        //Pull in the required JS files and invoke the callback when they're loaded
-        var initializeExt3ViewDesigner = function(cb, scope)
-        {
-            // TODO: This can be removed with the old Data Region
-            var scripts = [
-                'query/queryDesigner.js',
-                'ComponentDataView.js',
-                'Ext.ux.dd.GridDragDropRowOrder.js'
-            ];
-
-            requiresExt3ClientAPI(function() {
-                requiresScript(scripts, function() {
-                    requiresScript('designer/designer2.js', cb, scope)
-                });
-            });
-
-            requiresCss("groupTabPanel/GroupTab.css");
-            requiresCss("groupTabPanel/UngroupedTab.css");
         };
 
         var isArray = function(value)
@@ -832,7 +788,6 @@ if (typeof LABKEY == "undefined")
             getSubmit: getSubmit,
             id: id,
             init: init,
-            initializeExt3ViewDesigner: initializeExt3ViewDesigner,
             isDirty: isDirty,
             loadScripts: loadScripts,
             loadedScripts: loadedScripts,
