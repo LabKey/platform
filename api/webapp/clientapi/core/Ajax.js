@@ -81,7 +81,16 @@ LABKEY.Ajax = new function () {
 
         // configure params
         if (params !== undefined && params !== null) {
-            url += (url.indexOf('?') === -1 ? '?' : '&') + LABKEY.ActionURL.queryString(params);
+
+            var qs = LABKEY.ActionURL.queryString(params);
+
+            // 26617: backwards compatibility to append params to the body in the case of a POST without form/jsonData
+            if (method === 'POST' && (data === undefined || data === null)) {
+                data = qs;
+            }
+            else {
+                url += (url.indexOf('?') === -1 ? '?' : '&') + qs;
+            }
         }
 
         return {
