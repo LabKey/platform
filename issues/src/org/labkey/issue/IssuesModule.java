@@ -40,6 +40,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
+import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
@@ -109,7 +110,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
 
         if (AppProps.getInstance().isExperimentalFeatureEnabled(IssueManager.NEW_ISSUES_EXPERIMENTAL_FEATURE))
         {
-            result.add(new AlwaysAvailableWebPartFactory("Issue Definitions")
+            result.add(new BaseWebPartFactory("Issue Definitions")
             {
                 @Override
                 public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)

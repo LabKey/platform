@@ -124,24 +124,5 @@ Ext4.define('Issues.window.CreateRelatedIssue', {
                 standardSubmit : true
             })
         }
-/*
-        Ext4.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('issues', 'newInsert.view', this.createCombo.getValue()),
-            method: 'POST',
-            params: this.params,
-            scope: this,
-            success: function(response) {
-                window.location.reload();
-            },
-            failure: function(response){
-                var jsonResp = LABKEY.Utils.decode(response.responseText);
-                if (jsonResp && jsonResp.errors)
-                {
-                    var errorHTML = jsonResp.errors[0].message;
-                    Ext4.Msg.alert('Error', errorHTML);
-                }
-            }
-        });
-*/
     }
 });

@@ -1,7 +1,9 @@
 package org.labkey.issue.experimental;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.Container;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
+import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
@@ -12,7 +14,7 @@ import java.util.Map;
 /**
  * Created by klum on 5/2/2016.
  */
-public class IssuesWebPartFactory extends AlwaysAvailableWebPartFactory
+public class IssuesWebPartFactory extends BaseWebPartFactory
 {
 
     public IssuesWebPartFactory()

@@ -92,7 +92,7 @@ public class IssueListDef extends Entity
                 Container container = ContainerManager.getForId(id);
                 if (container != null)
                 {
-                    Domain domain = findExistingDomain(container, user);
+                    Domain domain = findExistingDomain(container, user, getName());
 
                     // if a domain already existing for this definition, return the domain container, else
                     // create the domain in the current container
@@ -112,14 +112,14 @@ public class IssueListDef extends Entity
 
     public Domain getDomain(User user)
     {
-        String uri = generateDomainURI(getDomainContainer(user), user);
+        String uri = generateDomainURI(getDomainContainer(user), user, getName());
         return PropertyService.get().getDomain(getDomainContainer(user), uri);
     }
 
-    private String generateDomainURI(Container c, User user)
+    private static String generateDomainURI(Container c, User user, String name)
     {
         DomainKind domainKind = PropertyService.get().getDomainKindByName(IssueDefDomainKind.NAME);
-        return domainKind.generateDomainURI(IssuesSchema.getInstance().getSchemaName(), getName(), c, user);
+        return domainKind.generateDomainURI(IssuesSchema.getInstance().getSchemaName(), name, c, user);
     }
 
     public boolean isNew()
@@ -135,7 +135,7 @@ public class IssueListDef extends Entity
         {
             // need to transact this
             def = Table.insert(user, IssuesSchema.getInstance().getTableInfoIssueListDef(), this);
-            String uri = generateDomainURI(getDomainContainer(user), user);
+            String uri = generateDomainURI(getDomainContainer(user), user, getName());
             Container domainContainer = getDomainContainer(user);
 
             Domain domain = PropertyService.get().getDomain(domainContainer, uri);
@@ -165,19 +165,19 @@ public class IssueListDef extends Entity
      * @return null if no domain was located
      */
     @Nullable
-    private Domain findExistingDomain(Container c, User user)
+    public static Domain findExistingDomain(Container c, User user, String name)
     {
         Domain domain;
-        String uri = generateDomainURI(c, user);
+        String uri = generateDomainURI(c, user, name);
         domain = PropertyService.get().getDomain(c, uri);
 
         if (domain == null)
         {
-            uri = generateDomainURI(c.getProject(), user);
+            uri = generateDomainURI(c.getProject(), user, name);
             domain = PropertyService.get().getDomain(c.getProject(), uri);
             if (domain == null)
             {
-                uri = generateDomainURI(ContainerManager.getSharedContainer(), user);
+                uri = generateDomainURI(ContainerManager.getSharedContainer(), user, name);
                 domain = PropertyService.get().getDomain(ContainerManager.getSharedContainer(), uri);
             }
         }

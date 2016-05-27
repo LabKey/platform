@@ -28,6 +28,8 @@ import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -268,20 +270,25 @@ public class IssueDefDomainKind extends AbstractDomainKind
     {
         DomainTemplateGroup templateGroup = DomainTemplateGroup.get(domainContainer, ISSUE_LOOKUP_TEMPLATE_GROUP);
 
-        DomainTemplate priorityTemplate = templateGroup.getTemplate(PRIORITY_LOOKUP);
-        priorityTemplate.createAndImport(domainContainer, user, getLookupTableName(domainName, PRIORITY_LOOKUP), true, true);
+        if (templateGroup != null)
+        {
+            DomainTemplate priorityTemplate = templateGroup.getTemplate(PRIORITY_LOOKUP);
+            priorityTemplate.createAndImport(domainContainer, user, getLookupTableName(domainName, PRIORITY_LOOKUP), true, true);
 
-        DomainTemplate typeTemplate = templateGroup.getTemplate(TYPE_LOOKUP);
-        typeTemplate.createAndImport(domainContainer, user, getLookupTableName(domainName, TYPE_LOOKUP), true, true);
+            DomainTemplate typeTemplate = templateGroup.getTemplate(TYPE_LOOKUP);
+            typeTemplate.createAndImport(domainContainer, user, getLookupTableName(domainName, TYPE_LOOKUP), true, true);
 
-        DomainTemplate areaTemplate = templateGroup.getTemplate(AREA_LOOKUP);
-        areaTemplate.createAndImport(domainContainer, user, getLookupTableName(domainName, AREA_LOOKUP), true, false);
+            DomainTemplate areaTemplate = templateGroup.getTemplate(AREA_LOOKUP);
+            areaTemplate.createAndImport(domainContainer, user, getLookupTableName(domainName, AREA_LOOKUP), true, false);
 
-        DomainTemplate milestoneTemplate = templateGroup.getTemplate(MILESTONE_LOOKUP);
-        milestoneTemplate.createAndImport(domainContainer, user, getLookupTableName(domainName, MILESTONE_LOOKUP), true, false);
+            DomainTemplate milestoneTemplate = templateGroup.getTemplate(MILESTONE_LOOKUP);
+            milestoneTemplate.createAndImport(domainContainer, user, getLookupTableName(domainName, MILESTONE_LOOKUP), true, false);
 
-        DomainTemplate resolutionTemplate = templateGroup.getTemplate(RESOLUTION_LOOKUP);
-        resolutionTemplate.createAndImport(domainContainer, user, getLookupTableName(domainName, RESOLUTION_LOOKUP), true, true);
+            DomainTemplate resolutionTemplate = templateGroup.getTemplate(RESOLUTION_LOOKUP);
+            resolutionTemplate.createAndImport(domainContainer, user, getLookupTableName(domainName, RESOLUTION_LOOKUP), true, true);
+        }
+        else
+            throw new BatchValidationException(new ValidationException("Unable to load the issue-lookup domain template group. The issue module many not be enabled for this folder."));
     }
 
     public void setDefaultValues(Container domainContainer, Domain domain) throws ExperimentException

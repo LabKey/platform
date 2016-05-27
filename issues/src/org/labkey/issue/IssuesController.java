@@ -108,6 +108,7 @@ import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.issue.experimental.actions.AbstractIssueAction;
 import org.labkey.issue.experimental.actions.GetRelatedFolder;
+import org.labkey.issue.experimental.actions.InsertIssueDefAction;
 import org.labkey.issue.experimental.actions.IssueServiceAction;
 import org.labkey.issue.experimental.actions.NewAdminAction;
 import org.labkey.issue.experimental.actions.NewCloseAction;
@@ -119,6 +120,7 @@ import org.labkey.issue.experimental.actions.NewListAction;
 import org.labkey.issue.experimental.actions.NewReopenAction;
 import org.labkey.issue.experimental.actions.NewResolveAction;
 import org.labkey.issue.experimental.actions.NewUpdateAction;
+import org.labkey.issue.experimental.actions.ValidateIssueDefNameAction;
 import org.labkey.issue.model.CustomColumn;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
@@ -176,7 +178,9 @@ public class IssuesController extends SpringActionController
             IssueServiceAction.class,
             NewDetailsListAction.class,
             NewGetMoveDestinationAction.class,
-            GetRelatedFolder.class);
+            GetRelatedFolder.class,
+            InsertIssueDefAction.class,
+            ValidateIssueDefNameAction.class);
 
     private static final int MAX_STRING_FIELD_LENGTH = 200;
 

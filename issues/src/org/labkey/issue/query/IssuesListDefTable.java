@@ -9,6 +9,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.queryprofiler.Query;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
@@ -16,6 +17,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdForeignKey;
@@ -27,6 +29,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
+import org.labkey.issue.experimental.actions.InsertIssueDefAction;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 
@@ -45,7 +48,16 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
     {
         super(IssuesSchema.getInstance().getTableInfoIssueListDef(), schema);
 
+        ActionURL url = new ActionURL(InsertIssueDefAction.class, getContainer()).
+                addParameter(QueryParam.schemaName, IssuesSchema.getInstance().getSchemaName()).
+                addParameter(QueryParam.queryName, IssuesQuerySchema.TableType.IssueListDef.name());
+        setInsertURL(new DetailsURL(url));
         addAllColumns();
+    }
+
+    public static String nameFromLabel(String label)
+    {
+        return label.toLowerCase();
     }
 
     private void addAllColumns()
@@ -120,7 +132,7 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
             try
             {
                 IssueListDef def = new IssueListDef();
-                def.setName(label.toLowerCase());
+                def.setName(nameFromLabel(label));
                 def.setLabel(label);
                 BeanUtils.populate(def, row);
 
