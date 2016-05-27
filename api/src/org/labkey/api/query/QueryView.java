@@ -1764,6 +1764,7 @@ public class QueryView extends WebPartView<Object>
                 String chartId = chart.getDescriptor().getReportId().toString();
                 NavTree item = new NavTree(chart.getDescriptor().getReportName(), (String) null);
                 item.setImageSrc(ReportUtil.getIconUrl(getContainer(), chart));
+                item.setImageCls(ReportUtil.getIconCls(chart));
                 item.setScript(getChangeReportScript(chartId));
 
                 if (chart.getDescriptor().getReportId().equals(getSettings().getReportId()))
