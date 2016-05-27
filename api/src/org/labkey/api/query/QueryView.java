@@ -1216,15 +1216,15 @@ public class QueryView extends WebPartView<Object>
                 DataRegion rgn = ctx.getCurrentRegion();
                 if (rgn.getShowRecordSelectors(ctx) || showingSelected || showingUnselected)
                 {
-                    NavTree item = addMenuItem("Show Selected", "#",
+                    NavTree item = addMenuItem("Show Selected", null,
                             "LABKEY.DataRegions[" + PageFlowUtil.jsString(rgn.getName()) + "].showSelected()", showingSelected);
                     item.setId("Page Size:Selected");
-                    item = addMenuItem("Show Unselected", "#",
+                    item = addMenuItem("Show Unselected", null,
                             "LABKEY.DataRegions[" + PageFlowUtil.jsString(rgn.getName()) + "].showUnselected()", showingUnselected);
                     item.setId("Page Size:Unselected");
                 }
 
-                NavTree item = addMenuItem("Show All", "#",
+                NavTree item = addMenuItem("Show All", null,
                         "LABKEY.DataRegions[" + PageFlowUtil.jsString(rgn.getName()) + "].showAll()", showingAll);
                 item.setId("Page Size:All");
 
@@ -1260,7 +1260,7 @@ public class QueryView extends WebPartView<Object>
         for (Integer pageSize : sizes)
         {
             boolean checked = (pageSize == maxRows);
-            NavTree item = pageSizeMenu.addMenuItem(String.valueOf(pageSize) + " per page", "#",
+            NavTree item = pageSizeMenu.addMenuItem(String.valueOf(pageSize) + " per page", null,
                     "LABKEY.DataRegions[" + PageFlowUtil.jsString(regionName) + "].setMaxRows(" + String.valueOf(pageSize) + ")", checked);
             item.setId("Page Size:" + pageSize);
         }

@@ -196,7 +196,7 @@ if (!LABKEY.DataRegions) {
 
                 reportId: undefined,
 
-                requestURL: undefined,
+                requestURL: isQWP ? window.location.href : undefined,
 
                 returnURL: isQWP ? window.location.href : undefined,
 
@@ -318,7 +318,7 @@ if (!LABKEY.DataRegions) {
         }
 
         if (LABKEY.Utils.isString(this.removeableSort)) {
-            this._userSort = this.removeableSort + this._userSort;
+            this._userSort = this.removeableSort + (this._userSort ? this._userSort : '');
             delete this.removeableSort;
         }
 
@@ -1343,7 +1343,8 @@ if (!LABKEY.DataRegions) {
             return;
         }
 
-        this.offset = rowOffset;
+        // clear sibling parameters
+        this.showRows = undefined;
 
         _setParameter(this, OFFSET_PREFIX, rowOffset, [OFFSET_PREFIX, SHOW_ROWS_PREFIX]);
     };
@@ -1359,6 +1360,10 @@ if (!LABKEY.DataRegions) {
         if (event.isDefaultPrevented()) {
             return;
         }
+
+        // clear sibling parameters
+        this.showRows = undefined;
+        this.offset = 0;
 
         _setParameter(this, MAX_ROWS_PREFIX, newmax, [OFFSET_PREFIX, MAX_ROWS_PREFIX, SHOW_ROWS_PREFIX]);
     };
@@ -1410,13 +1415,20 @@ if (!LABKEY.DataRegions) {
             newSort = [],
             skipPrefixes = [OFFSET_PREFIX, SHOW_ROWS_PREFIX, VIEWNAME_PREFIX, REPORTID_PREFIX];
 
+        // clear sibling parameters
+        this.viewName = undefined;
+        this.reportId = undefined;
+
         if (view) {
-            if (view.type == 'report')
-                paramValPairs.push([REPORTID_PREFIX, view.reportId]);
-            else if (view.type == 'view' && view.viewName)
-                paramValPairs.push([VIEWNAME_PREFIX, view.viewName]);
-            else if (LABKEY.Utils.isString(view))
+            if (LABKEY.Utils.isString(view)) {
                 paramValPairs.push([VIEWNAME_PREFIX, view]);
+            }
+            else if (view.type == 'report') {
+                paramValPairs.push([REPORTID_PREFIX, view.reportId]);
+            }
+            else if (view.type == 'view' && view.viewName) {
+                paramValPairs.push([VIEWNAME_PREFIX, view.viewName]);
+            }
         }
 
         if (urlParameters) {
@@ -1784,14 +1796,19 @@ if (!LABKEY.DataRegions) {
             dataRegionName: this.name,
             dataRegionSelectionKey: this.selectionKey,
             schemaName: this.schemaName,
-            // TODO: handle this.sql ?
-            queryName: this.queryName,
             viewName: this.viewName,
             sort: this.getParameter(this.name + SORT_PREFIX),
             // NOTE: The parameterized query values from QWP are included
             parameters: this.getParameters(false),
             containerFilter: this.containerFilter
         };
+
+        if (this.queryName) {
+            config.queryName = this.queryName;
+        }
+        else if (this.sql) {
+            config.sql = this.sql;
+        }
 
         var filters = this.getUserFilterArray();
         if (filters.length > 0) {
@@ -1982,7 +1999,20 @@ if (!LABKEY.DataRegions) {
     //
     var _applyOptionalParameters = function(region, params, optionalParams) {
         $.each(optionalParams, function(i, p) {
-            if (region[p] !== undefined) {
+            if (LABKEY.Utils.isObject(p)) {
+                if (region[p.name] !== undefined) {
+                    if (p.check && !p.check.call(region, region[p.name])) {
+                        return;
+                    }
+                    if (p.prefix) {
+                        params[region.name + '.' + p.name] = region[p.name];
+                    }
+                    else {
+                        params[p.name] = region[p.name];
+                    }
+                }
+            }
+            else if (region[p] !== undefined) {
                 params[p] = region[p];
             }
         });
@@ -1992,7 +2022,7 @@ if (!LABKEY.DataRegions) {
         fieldKey = _resolveFieldKey(region, fieldKey);
 
         var columnName = fieldKey.toString(),
-                newSorts = [];
+            newSorts = [];
 
         if (current != null) {
             var sorts = current.split(',');
@@ -2096,6 +2126,7 @@ if (!LABKEY.DataRegions) {
         if (region.async) {
             region.offset = 0;
 
+            // TODO: Stop modifying here, rather call _setParameters and let it handle parameter loading
             // reset the user filters
             region.userFilters = {};
             $.each(filterPairs, function(i, fp) {
@@ -2448,6 +2479,8 @@ if (!LABKEY.DataRegions) {
 
     var _setParameters = function(region, newParamValPairs, skipPrefixes /* optional */) {
 
+        // prepend region name
+        // e.g. ['.hello', '.goodbye'] becomes ['aqwp19.hello', 'aqwp19.goodbye']
         if ($.isArray(skipPrefixes)) {
             $.each(skipPrefixes, function(i, skip) {
                 skipPrefixes[i] = region.name + skip;
@@ -2472,18 +2505,12 @@ if (!LABKEY.DataRegions) {
                     }
 
                     params.push([param, value]);
-                    if (region.async) {
-                        if (!region.parameters) {
-                            region.parameters = {};
-                        }
-                        region.parameters[param] = value;
-                    }
                 }
             });
         }
 
         if (region.async) {
-            _load(region);
+            _load(region, undefined, undefined, params);
         }
         else {
             region.setSearchString.call(region, region.name, _buildQueryString(region, params));
@@ -2492,6 +2519,11 @@ if (!LABKEY.DataRegions) {
 
     var _showRows = function(region, showRowsEnum) {
         if (_beforeRowsChange(region, showRowsEnum)) {
+
+            // clear sibling parameters, could we do this with events?
+            this.maxRows = undefined;
+            this.offset = 0;
+
             _setParameter(region, SHOW_ROWS_PREFIX, showRowsEnum, [OFFSET_PREFIX, MAX_ROWS_PREFIX, SHOW_ROWS_PREFIX]);
         }
     };
@@ -2531,9 +2563,9 @@ if (!LABKEY.DataRegions) {
         return ids;
     };
 
-    var _load = function(region, callback, scope) {
+    var _load = function(region, callback, scope, newParams) {
 
-        var params = _getAsyncParams(region);
+        var params = _getAsyncParams(region, newParams ? newParams : _getParametersSearch(region));
         var jsonData = _getAsyncBody(region, params);
 
         // TODO: This should be done in _getAsyncParams, but is not since _getAsyncBody relies on it. Refactor it.
@@ -2591,36 +2623,38 @@ if (!LABKEY.DataRegions) {
             jsonData: jsonData,
             success: function(response) {
 
-                if (target.length) {
+                this.hidePanel(function() {
+                    if (target.length) {
 
-                    this.destroy();
+                        this.destroy();
 
-                    LABKEY.Utils.loadAjaxContent(response, target, function() {
+                        LABKEY.Utils.loadAjaxContent(response, target, function() {
 
-                        if (LABKEY.Utils.isFunction(callback)) {
-                            callback.call(scope);
-                        }
+                            if (LABKEY.Utils.isFunction(callback)) {
+                                callback.call(scope);
+                            }
 
-                        if ($.isFunction(this._success)) {
-                            this._success.call(this.scope || this, this, response);
-                        }
+                            if ($.isFunction(this._success)) {
+                                this._success.call(this.scope || this, this, response);
+                            }
 
-                        $(this).trigger('success', [this, response]);
+                            $(this).trigger('success', [this, response]);
 
-                        this.RENDER_LOCK = true;
-                        $(this).trigger('render', this);
-                        this.RENDER_LOCK = false;
-                    }, this, useReplace);
-                }
-                else {
-                    // not finding element considered a failure
-                    if ($.isFunction(this._failure)) {
-                        this._failure.call(this.scope || this, response /* json */, response, undefined /* options */, target);
+                            this.RENDER_LOCK = true;
+                            $(this).trigger('render', this);
+                            this.RENDER_LOCK = false;
+                        }, this, useReplace);
                     }
-                    else if (!this.suppressRenderErrors) {
-                        LABKEY.Utils.alert('Rendering Error', 'The element "' + renderEl + '" does not exist in the document. You may need to specify "renderTo".');
+                    else {
+                        // not finding element considered a failure
+                        if ($.isFunction(this._failure)) {
+                            this._failure.call(this.scope || this, response /* json */, response, undefined /* options */, target);
+                        }
+                        else if (!this.suppressRenderErrors) {
+                            LABKEY.Utils.alert('Rendering Error', 'The element "' + renderEl + '" does not exist in the document. You may need to specify "renderTo".');
+                        }
                     }
-                }
+                }, this);
             },
             failure: LABKEY.Utils.getCallbackWrapper(function(json, response, options) {
 
@@ -2708,48 +2742,10 @@ if (!LABKEY.DataRegions) {
         }
     };
 
-    var _getAsyncParams = function(region) {
-        var params = {
-            dataRegionName: region.name,
-            "webpart.name": 'Query',
-            schemaName: region.schemaName,
-            returnURL: window.location.href
-        }, name = region.name;
+    var _getAsyncParams = function(region, newParams) {
 
-        if (region.queryName) {
-            params.queryName = region.queryName;
-        }
-        else if (region.sql) {
-            params.sql = region.sql;
-        }
-
-        if (region.viewName) {
-            params[name + VIEWNAME_PREFIX] = region.viewName;
-        }
-        if (region.reportId) {
-            params[name + REPORTID_PREFIX] = region.reportId;
-        }
-
-        var cf = region.getContainerFilter.call(region);
-        if (cf) {
-            params[name + CONTAINER_FILTER_NAME] = cf;
-        }
-
-        if (region.showRows) {
-            params[name + SHOW_ROWS_PREFIX] = region.showRows;
-        }
-
-        if (region.maxRows > 0) { // lol, what?
-            params[name + MAX_ROWS_PREFIX] = region.maxRows;
-        }
-
-        if (region.offset) {
-            params[name + OFFSET_PREFIX] = region.offset;
-        }
-
-        if (region.disableAnalytics) {
-            params[name + DISABLE_ANALYTICS] = region.disableAnalytics;
-        }
+        var params = {};
+        var name = region.name;
 
         //
         // Certain parameters are only included if the region is 'async'. These
@@ -2795,7 +2791,13 @@ if (!LABKEY.DataRegions) {
                 'showSurroundingBorder',
                 'showUpdateColumn',
                 'showViewPanel',
-                'timeout'
+                'timeout',
+                {name: 'disableAnalytics', prefix: true},
+                {name: 'maxRows', prefix: true, check: function(v) { return v > 0; }},
+                {name: 'showRows', prefix: true},
+                {name: 'offset', prefix: true},
+                {name: 'reportId', prefix: true},
+                {name: 'viewName', prefix: true}
             ]);
 
             // Sorts configured by the user when interacting with the grid. We need to pass these as URL parameters.
@@ -2823,6 +2825,38 @@ if (!LABKEY.DataRegions) {
                     params[p] = value;
                 });
             }
+        }
+
+        //
+        // apply all parameters
+        //
+
+        if (newParams) {
+            $.each(newParams, function(i, pair) {
+                params[pair[0]] = pair[1];
+            });
+        }
+
+        //
+        // Properties that cannot be modified
+        //
+
+        params.dataRegionName = region.name;
+        params.schemaName = region.schemaName;
+        params.returnURL = window.location.href;
+        params['webpart.name'] = 'Query';
+
+        if (region.queryName) {
+            params.queryName = region.queryName;
+        }
+        else if (region.sql) {
+            params.sql = region.sql;
+        }
+
+        var key = region.name + CONTAINER_FILTER_NAME;
+        var cf = region.getContainerFilter.call(region);
+        if (cf && !(key in params)) {
+            params[key] = cf;
         }
 
         return params;
