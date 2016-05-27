@@ -23,7 +23,7 @@ function testQueryOnly() {
             //TODO
     },
     failure: function() {
-        alert('Failed test: Query sampleDataTest1');
+        alert('Failed test: Show default view for query sampleDataTest');
     }
     });
 }
@@ -39,7 +39,7 @@ function testFilterArray() {
             //TODO
         },
         failure: function() {
-            alert('Failed test: Query sampleDataTest1');
+            alert('Failed test: Filter by Tag = blue');
         }
     });
 }
@@ -55,7 +55,7 @@ function testSort() {
             //TODO
         },
         failure: function() {
-            alert('Failed test: Query sampleDataTest1');
+            alert('Failed test: Sort by Tag');
         }
     });
 }
@@ -76,7 +76,7 @@ function testHideButtons() {
             //TODO
         },
         failure: function() {
-            alert('Failed test: Query sampleDataTest1');
+            alert('Failed test: Hide buttons');
         }
     });
 }
@@ -93,7 +93,33 @@ function testHideColumns() {
             //TODO
         },
         failure: function() {
-            alert('Failed test: Query sampleDataTest1');
+            alert('Failed test: Hide Edit and Details columns');
+        }
+    });
+}
+
+var MAX_ROWS = 3;
+function testSetPaging() {
+    new LABKEY.QueryWebPart({
+        title: 'Set Paging to 2 with API',
+        schemaName: 'Samples',
+        queryName: 'sampleDataTest1',
+        renderTo: 'testRegion7',
+        maxRows: MAX_ROWS,
+        failure: function() {
+            alert('Failed test: Failed test: Set Paging to 2 with API');
+        },
+        listeners: {
+            render: function(dr) {
+                if (dr.maxRows !== MAX_ROWS) {
+                    throw new Error('Failed to apply maxRows');
+                }
+                else if (MAX_ROWS != 2) {
+                    // change the maxRows
+                    MAX_ROWS = 2;
+                    dr.setMaxRows(MAX_ROWS);
+                }
+            }
         }
     });
 }
@@ -106,4 +132,5 @@ function runTests()
     testSort();
     testHideButtons();
     testHideColumns();
+    testSetPaging();
 }
