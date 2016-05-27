@@ -150,6 +150,7 @@ Ext.define('LABKEY.app.model.Filter', {
             var requestConfig = {
                 url: LABKEY.ActionURL.buildURL('participant-group', 'createParticipantCategory'),
                 method: 'POST',
+                headers:{'X-LABKEY-CSRF': LABKEY.CSRF},
                 success: config.success,
                 failure: config.failure || LABKEY.app.model.Filter.getErrorCallback(),
                 jsonData: {
