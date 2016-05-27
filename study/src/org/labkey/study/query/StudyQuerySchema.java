@@ -1186,14 +1186,13 @@ public class StudyQuerySchema extends UserSchema
 
 
 
-
     private class DatasetSchema extends StudyQuerySchema
     {
         final StudyQuerySchema _parentSchema;
 
         DatasetSchema(StudyQuerySchema parent)
         {
-            super(parent.getStudy(), parent.getUser(), parent._mustCheckPermissions);
+            super(parent.getStudy(), parent.getContainer(), parent.getUser(), parent._mustCheckPermissions);
             this._name = "Datasets";
             this._path = new SchemaKey(parent.getSchemaPath(),this._name);
             _parentSchema = parent;
@@ -1252,7 +1251,7 @@ public class StudyQuerySchema extends UserSchema
 
         SpecimenSchema(StudyQuerySchema parent)
         {
-            super(parent.getStudy(), parent.getUser(), parent._mustCheckPermissions);
+            super(parent.getStudy(), parent.getContainer(), parent.getUser(), parent._mustCheckPermissions);
             this._name = "Specimens";
             this._path = new SchemaKey(parent.getSchemaPath(),this._name);
             _parentSchema = parent;
@@ -1321,7 +1320,7 @@ public class StudyQuerySchema extends UserSchema
 
         DesignSchema(StudyQuerySchema parent)
         {
-            super(parent.getStudy(), parent.getUser(), parent._mustCheckPermissions);
+            super(parent.getStudy(), parent.getContainer(), parent.getUser(), parent._mustCheckPermissions);
             this._name = "Design";
             this._path = new SchemaKey(parent.getSchemaPath(),this._name);
             _parentSchema = parent;
