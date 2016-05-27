@@ -211,8 +211,8 @@ Ext.define('LABKEY.app.controller.View', {
 
     lastSignedIn : null,
 
-    routeView : function(controller, view, viewContext) {
-
+    routeView : function(newHash, oldHash) {
+        var controller = newHash.controller, view = newHash.view, viewContext = newHash.viewContext, params = newHash.params;
         if (this.lastSignedIn != LABKEY.user.isSignedIn) {
             this.lastSignedIn = LABKEY.user.isSignedIn;
             this.application.fireEvent('userChanged');
@@ -248,6 +248,11 @@ Ext.define('LABKEY.app.controller.View', {
             if (Ext.isString(viewContext)) {
                 viewContext = [viewContext];
             }
+            viewContext = Ext.Array.filter(viewContext, function(ctx) {
+                if (ctx) {
+                    return true;
+                }
+            });
             _context = Ext.Array.clone(viewContext);
         }
 
@@ -262,7 +267,7 @@ Ext.define('LABKEY.app.controller.View', {
             //
             // Ask the controller to parse the view context
             //
-            localContext = control.parseContext(_context);
+            localContext = control.parseContext(_context, params, newHash, oldHash);
         }
         else {
             //
@@ -322,9 +327,10 @@ Ext.define('LABKEY.app.controller.View', {
      * @param {String} controller The name/target of the destination controller
      * @param {String} view the xtype of the destination view
      * @param {Array} viewContext url-based context (optional)
+     * @param {Object} params Parameter name and value pairs(optional)
      */
-    changeView : function(controller, view, viewContext) {
-        var hashDelimiter = '/';
+    changeView : function(controller, view, viewContext, params) {
+        var hashDelimiter = '/', parameterDelimiter = '?';
         var hash = encodeURIComponent(controller);
 
         this.fireEvent('beforechangeview', controller, view, this.activeContext, viewContext);
@@ -338,6 +344,17 @@ Ext.define('LABKEY.app.controller.View', {
                     hash += hashDelimiter + encodeURIComponent(token.toString());
                 });
             }
+        }
+
+        if (params) {
+            hash += parameterDelimiter;
+            Ext.iterate(params, function(name, value) {
+                if (Ext.isString(value) && value.length) {
+                    hash += encodeURIComponent(name);
+                    hash += '=';
+                    hash += encodeURIComponent(value);
+                }
+            })
         }
 
         // route

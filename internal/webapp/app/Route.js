@@ -14,21 +14,22 @@ Ext.define('LABKEY.app.controller.Route', {
     init : function() {
 
         var me = this;
-        var popState = false;
+        var popState = false, oldUrl;
 
         var pathChangeTask = new Ext.util.DelayedTask(function() {
-            me.route(me.getHashValue(location.hash), popState);
+            me.route(me.getHashValue(location.hash), popState, me.getHashValue(oldUrl));
             popState = false;
         });
 
-        var pathChange = function() { pathChangeTask.delay(50); };
-
-        Ext.EventManager.on(window, 'hashchange', pathChange);
+        Ext.EventManager.on(window, 'hashchange', function(e) {
+            oldUrl = e.browserEvent.oldURL;
+            pathChangeTask.delay(50);
+        });
 
         if (Ext.supports.History) {
             Ext.EventManager.on(window, 'popstate', function() {
                 popState = true;
-                pathChange();
+                pathChangeTask.delay(50);
             });
         }
     },
@@ -37,41 +38,79 @@ Ext.define('LABKEY.app.controller.Route', {
         this.route(this.getHashValue(location.hash), false);
     },
 
-    route : function(fragments, popState) {
+    route : function(fragments, popState, oldFragments) {
+        var newFragments = this.getHashFragments(fragments);
+        if (newFragments.controller !== undefined) {
+            this.application.fireEvent('route', newFragments, this.getHashFragments(oldFragments, true));
+        }
+        else {
+            alert('Router failed to find resolve view context from route.');
+        }
+    },
 
-        if (!Ext.isString(fragments))
+    getHashFragments: function(hash, noWarning) {
+        if (!Ext.isString(hash))
         {
-            console.warn('invalid route fragment supplied.');
-            fragments = '';
+            if (!noWarning) {
+                console.warn('invalid route fragment supplied.');
+            }
+            hash = '';
         }
 
-        var splitFragments = fragments.split('/');
-
-        var urlContext = [];
+        var fragmentSplits = hash.split('?');
+        var splitFragments = fragmentSplits[0].split('/');
+        var urlContext = [], parameters, parsedFragment = {
+            controller  : undefined,
+            view : undefined,
+            viewContext: undefined,
+            params: undefined
+        };
 
         Ext.each(splitFragments, function(frag) {
             urlContext.push(decodeURIComponent(frag));
         });
 
-        if (urlContext.length > 0) {
-            var controller = urlContext[0];
+        if (urlContext.length > 0)
+        {
+            parsedFragment.controller = urlContext[0];
             var viewContext = null, view;
-            if (urlContext.length > 1) {
+            if (urlContext.length > 1)
+            {
                 urlContext.shift(); // drop the controller
-                view = urlContext[0];
-                if (urlContext.length > 1) {
+                parsedFragment.view = urlContext[0];
+                if (urlContext.length > 1)
+                {
                     urlContext.shift(); // drop the view
-                    viewContext = urlContext;
+                    parsedFragment.viewContext = urlContext;
                 }
             }
-//            console.log('control:', controller);
-//            console.log('view:', view);
-//            console.log('viewcontext:', viewContext);
-            this.application.fireEvent('route', controller, view, viewContext);
+            if (fragmentSplits.length > 1)
+            {
+                parsedFragment.params = this.getHashParameters(fragmentSplits[1]);
+            }
         }
-        else {
-            alert('Router failed to find resolve view context from route.');
+        return parsedFragment;
+    },
+
+    getHashParameters: function(fragment) {
+        var params = {};
+        var query = fragment;
+        var vars = query.split("&");
+        for (var i=0;i<vars.length;i++) {
+            var pair = vars[i].split("=");
+            // If first entry with this name
+            if (typeof params[pair[0]] === "undefined") {
+                params[pair[0]] = decodeURIComponent(pair[1]);
+                // If second entry with this name
+            } else if (typeof params[pair[0]] === "string") {
+                var arr = [ params[pair[0]],decodeURIComponent(pair[1]) ];
+                params[pair[0]] = arr;
+                // If third or later entry with this name
+            } else {
+                params[pair[0]].push(decodeURIComponent(pair[1]));
+            }
         }
+        return params;
     },
 
     /**
