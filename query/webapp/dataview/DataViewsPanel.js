@@ -155,16 +155,40 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             '<div><span>Are you sure you want to delete the selected view(s)?</span></div><br/>' +
             '<tpl for=".">' +
                 '<tpl if="data.type">' +
-                    '<div><span><img src="{data.icon}" alt="{data.type}">&nbsp;&nbsp;{data.name}</span></div>' +
+                    '<div><span' +
+                    '<tpl if="data.iconCls">' +
+                        ' class="{data.iconCls}"></span><span>' +
+                    '<tpl else>' +
+                        '><img src="{[this.getBlankImage()]}" style="background-image:url({data.icon})" class="x4-tree-icon dataview-icon">' +
+                    '</tpl>' +
+                    '&nbsp;&nbsp;{data.name}</span></div>' +
                 '</tpl>' +
-            '</tpl>'),
+            '</tpl>',
+            {
+                getBlankImage : function() {
+                    return Ext4.BLANK_IMAGE_URL;
+                }
+            }
+    ),
 
     // delete unsupported template
     unsupportedDeleteTpl: new Ext4.XTemplate(
             '<div><span>Delete is not allowed for the following view type(s), please omit them from your selection.</span></div><br/>' +
             '<tpl for=".">' +
-                '<div><span><img src="{data.icon}" alt="{data.type}">&nbsp;&nbsp;{data.name}</span></div>' +
-            '</tpl>'),
+                '<div><span' +
+                '<tpl if="data.iconCls">' +
+                    ' class="{data.iconCls}"></span><span>' +
+                '<tpl else>' +
+                    '><img src="{[this.getBlankImage()]}" style="background-image:url({data.icon})" class="x4-tree-icon dataview-icon">' +
+                '</tpl>' +
+                '&nbsp;&nbsp;{data.name}</span></div>' +
+            '</tpl>',
+            {
+                getBlankImage : function() {
+                    return Ext4.BLANK_IMAGE_URL;
+                }
+            }
+    ),
 
     constructor : function(config) {
         LABKEY.ext4.DataViewUtil.defineModels();
