@@ -15,12 +15,14 @@
  */
 package org.labkey.query.sql;
 
+import org.apache.commons.collections15.map.HashedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ColumnLogging;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ForeignKey;
@@ -490,24 +492,24 @@ public class QueryTable extends QueryRelation
     }
 
 
-    private void addSuggestedColumns(Set<RelationColumn> suggested, Set<FieldKey> ks)
+    private void addSuggestedColumns(Set<RelationColumn> suggested, Set<FieldKey> ks, Map<FieldKey, RelationColumn> selectedColumnMap)
     {
         if (ks == null || ks.isEmpty())
             return;
 
         for (FieldKey k : ks)
-            addSuggestedColumn(suggested, k);
+            addSuggestedColumn(suggested, k, selectedColumnMap);
     }
 
 
     // return column if it is newly added to the suggested list
-    private RelationColumn addSuggestedColumn(Set<RelationColumn> suggested, FieldKey k)
+    private RelationColumn addSuggestedColumn(Set<RelationColumn> suggested, FieldKey k, Map<FieldKey, RelationColumn> selectedColumnMap)
     {
-        boolean existed = _selectedColumns.containsKey(k);
-
         RelationColumn tc = _resolve(k);
         if (null == tc)
             return null;
+
+        boolean existed = selectedColumnMap.containsKey(tc.getFieldKey());
 
         if (!existed && tc instanceof TableColumn)
         {
@@ -522,7 +524,7 @@ public class QueryTable extends QueryRelation
     }
 
 
-    private void addSuggestedContainerColumn(Set<RelationColumn> suggested, TableColumn sibling)
+    private void addSuggestedContainerColumn(Set<RelationColumn> suggested, TableColumn sibling, Map<FieldKey, RelationColumn> selectedColumnMap)
     {
         // UNDONE: let tableinfo specify the container column in some way
         // foreignKey().createLookupContainerColumn()
@@ -535,7 +537,7 @@ public class QueryTable extends QueryRelation
             FieldKey k = ((AbstractTableInfo)_tableInfo).getContainerFieldKey();
             if (null != k)
             {
-                addSuggestedColumn(suggested, k);
+                addSuggestedColumn(suggested, k, selectedColumnMap);
                 return;
             }
         }
@@ -543,8 +545,8 @@ public class QueryTable extends QueryRelation
         FieldKey fkContainer = new FieldKey(sibling.getFieldKey().getParent(), "container");
         FieldKey fkFolder = new FieldKey(sibling.getFieldKey().getParent(), "folder");
 
-        if (null == addSuggestedColumn(suggested, fkFolder))
-            addSuggestedColumn(suggested, fkContainer);
+        if (null == addSuggestedColumn(suggested, fkFolder, selectedColumnMap))
+            addSuggestedColumn(suggested, fkContainer, selectedColumnMap);
     }
 
 
@@ -573,6 +575,10 @@ public class QueryTable extends QueryRelation
         if (_query._strictColumnList)
             return Collections.emptySet();
 
+        Map<FieldKey, RelationColumn> selectedColumnMap = new HashedMap<>(selected.size());
+        for (RelationColumn column : selected)
+            selectedColumnMap.put(column.getFieldKey(), column);
+
         Set<RelationColumn> suggested = new LinkedHashSet<>();
         Set<FieldKey> suggestedContainerColumns = new HashSet<>();
 
@@ -582,27 +588,37 @@ public class QueryTable extends QueryRelation
             FieldKey fk = tc._col.getFieldKey();
 
             if (suggestedContainerColumns.add(fk.getParent()))
-                addSuggestedContainerColumn(suggested, tc);
+                addSuggestedContainerColumn(suggested, tc, selectedColumnMap);
 
             if (null != tc._col.getMvColumnName())
-                addSuggestedColumn(suggested, tc._col.getMvColumnName());
+                addSuggestedColumn(suggested, tc._col.getMvColumnName(), selectedColumnMap);
 
             StringExpression se = tc._col.getURL();
             if (se instanceof StringExpressionFactory.FieldKeyStringExpression)
             {
                 Set<FieldKey> keys = ((StringExpressionFactory.FieldKeyStringExpression) se).getFieldKeys();
                 for (FieldKey key : keys)
-                    addSuggestedColumn(suggested, key);
+                    addSuggestedColumn(suggested, key, selectedColumnMap);
             }
 
             if (tc._col.getFk() != null)
-                addSuggestedColumns(suggested, tc._col.getFk().getSuggestedColumns());
+                addSuggestedColumns(suggested, tc._col.getFk().getSuggestedColumns(), selectedColumnMap);
 
             if (tc._col.getSortFieldKeys() != null)
             {
                 for (FieldKey key : tc._col.getSortFieldKeys())
                 {
-                    addSuggestedColumn(suggested, key);
+                    addSuggestedColumn(suggested, key, selectedColumnMap);
+                }
+            }
+
+            ColumnInfo column = getTableInfo().getColumn(tc.getFieldKey());
+            if (null != column)
+            {
+                ColumnLogging columnLogging = column.getColumnLogging();
+                for (FieldKey fieldKey : columnLogging.getDataLoggingColumns())
+                {
+                    addSuggestedColumn(suggested, fieldKey, selectedColumnMap);
                 }
             }
         }
