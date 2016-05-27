@@ -3366,7 +3366,7 @@ public class IssuesController extends SpringActionController
 
             try
             {
-                bean.bugs = IssueManager.getSummary(c);
+                bean.bugs = IssueManager.getSummary(c, null);
             }
             catch (SQLException x)
             {

@@ -1015,6 +1015,7 @@ issues/src/org/labkey/issue/IssuesListView.java -text
 issues/src/org/labkey/issue/IssuesModule.java -text
 issues/src/org/labkey/issue/IssuesWebPartFactory.java -text
 issues/src/org/labkey/issue/experimental/IssuesListView.java -text
+issues/src/org/labkey/issue/experimental/IssuesSummaryWebPartFactory.java -text
 issues/src/org/labkey/issue/experimental/IssuesWebPartFactory.java -text
 issues/src/org/labkey/issue/experimental/NewIssueUpdateEmailTemplate.java -text
 issues/src/org/labkey/issue/experimental/actions/AbstractIssueAction.java -text
@@ -1035,6 +1036,7 @@ issues/src/org/labkey/issue/experimental/actions/NewUpdateAction.java -text
 issues/src/org/labkey/issue/experimental/actions/ValidateIssueDefNameAction.java -text
 issues/src/org/labkey/issue/experimental/query/IssuesQueryView.java -text
 issues/src/org/labkey/issue/experimental/query/IssuesTable.java -text
+issues/src/org/labkey/issue/experimental/view/SummaryWebPart.java -text
 issues/src/org/labkey/issue/experimental/view/detailList.jsp -text
 issues/src/org/labkey/issue/experimental/view/detailView.jsp -text
 issues/src/org/labkey/issue/experimental/view/issueListWebPartConfig.jsp -text

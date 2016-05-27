@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.issue.experimental.IssuesListView" %>
+<%@ page import="org.labkey.issue.experimental.IssuesSummaryWebPartFactory" %>
 <%@ page import="org.labkey.issue.model.IssueListDef" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="java.util.HashSet" %>
@@ -38,6 +39,8 @@
     Set<String> issueDefs = new HashSet<>();
     issueDefs.addAll(IssueManager.getIssueListDefs(getContainer()).stream().map(IssueListDef::getName).collect(Collectors.toSet()));
     String selected = pm.get(IssuesListView.ISSUE_LIST_DEF_NAME);
+    String title = pm.get("title");
+    String singularName = IssueManager.getEntryTypeNames(getContainer()).singularName;
 %>
 
 <labkey:form method="post" action="<%=h(webPart.getCustomizePostURL(context))%>">
@@ -49,7 +52,17 @@
                     <labkey:options value="<%=selected%>" set="<%=issueDefs%>"/>
                 </select>
             </td>
-        </tr>
+        </tr><%
+        if (webPart.getName().equalsIgnoreCase(IssuesSummaryWebPartFactory.NAME))
+        {
+        %>
+        <tr>
+            <td class="labkey-form-label">Enter title for the Issues Summary web part.</td>
+            <td>
+                <input name="title" size="25" type="text" value="<%=text(null == title ? h(singularName) + " Summary" : h(title) )%>">
+            </td>
+        </tr><%
+        }%>
     </table><p/>
     <labkey:button text="Submit"/>
 </labkey:form>

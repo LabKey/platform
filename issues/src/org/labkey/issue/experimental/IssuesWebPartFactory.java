@@ -16,7 +16,6 @@ import java.util.Map;
  */
 public class IssuesWebPartFactory extends BaseWebPartFactory
 {
-
     public IssuesWebPartFactory()
     {
         super("New Issues List", true, true);

@@ -1,14 +1,17 @@
 package org.labkey.issue.experimental;
 
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.VBox;
 import org.labkey.issue.IssuesController;
+import org.labkey.issue.experimental.actions.NewListAction;
 import org.labkey.issue.query.IssuesQuerySchema;
 
 import java.io.PrintWriter;
@@ -28,10 +31,12 @@ public class IssuesListView extends VBox
         QueryView queryView = schema.createView(getViewContext(), settings, null);
 
         // add the header for buttons and views
-        addView(new JspView<String>("/org/labkey/issue/experimental/view/list.jsp", issueDefName));
+        addView(new JspView<>("/org/labkey/issue/experimental/view/list.jsp", issueDefName));
         addView(queryView);
 
-        setTitleHref(IssuesController.getListURL(getViewContext().getContainer()));
+        setTitleHref(new ActionURL(NewListAction.class, getViewContext().getContainer()).
+                addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDefName).
+                addParameter(DataRegion.LAST_FILTER_PARAM, true));
     }
 
 

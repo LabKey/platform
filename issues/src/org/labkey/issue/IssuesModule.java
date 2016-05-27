@@ -45,6 +45,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
+import org.labkey.issue.experimental.IssuesSummaryWebPartFactory;
 import org.labkey.issue.experimental.IssuesWebPartFactory;
 import org.labkey.issue.experimental.NewIssueUpdateEmailTemplate;
 import org.labkey.issue.model.Issue;
@@ -127,6 +128,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
             });
 
             result.add(new IssuesWebPartFactory());
+            result.add(new IssuesSummaryWebPartFactory());
         }
         return result;
     }

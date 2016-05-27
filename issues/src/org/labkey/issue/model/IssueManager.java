@@ -236,7 +236,7 @@ public class IssueManager
                 {
                     for (String colName : table.getColumnNameSet())
                     {
-                        Object value = rs.getObject(colName);
+                        Object value = rs.getObject(FieldKey.fromParts(colName));
                         if (value != null)
                             rowMap.put(colName, value);
                     }
@@ -698,16 +698,25 @@ public class IssueManager
     }
 
 
-    public static Map[] getSummary(Container c) throws SQLException
+    public static Map[] getSummary(Container c, @Nullable IssueListDef issueListDef) throws SQLException
     {
+        Collection<Object> params = new ArrayList<>();
+
         SQLFragment sql = new SQLFragment("SELECT DisplayName, SUM(CASE WHEN Status='open' THEN 1 ELSE 0 END) AS " +
             _issuesSchema.getSqlDialect().makeLegalIdentifier("Open") + ", SUM(CASE WHEN Status='resolved' THEN 1 ELSE 0 END) AS " +
             _issuesSchema.getSqlDialect().makeLegalIdentifier("Resolved") + "\n" +
             "FROM " + _issuesSchema.getTableInfoIssues() + " LEFT OUTER JOIN " + CoreSchema.getInstance().getTableInfoUsers() +
             " ON AssignedTo = UserId\n" +
-                "WHERE Status in ('open', 'resolved') AND Container = ?\n" +
-                "GROUP BY DisplayName",
-                c.getId());
+                "WHERE Status in ('open', 'resolved') AND Container = ? ");
+
+        params.add(c);
+        if (issueListDef != null)
+        {
+            sql.append("AND IssueDefId = ? ");
+            params.add(issueListDef.getRowId());
+        }
+        sql.append("GROUP BY DisplayName");
+        sql.addAll(params);
 
         return new SqlSelector(_issuesSchema.getSchema(), sql).getMapArray();
     }
