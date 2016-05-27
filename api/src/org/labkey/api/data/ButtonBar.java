@@ -241,7 +241,7 @@ public class ButtonBar extends DisplayElement
                 DisplayElement elem = item.createButton(ctx, originalButtons);
                 if (null == elem)
                 {
-                    if (item instanceof BuiltInButtonConfig)
+                    if (item instanceof BuiltInButtonConfig && !((BuiltInButtonConfig) item).isSuppressWarning())
                     {
                         _missingOriginalCaptions.add(((BuiltInButtonConfig) item).getOriginalCaption());
                     }

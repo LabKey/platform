@@ -36,6 +36,8 @@ public class BuiltInButtonConfig implements ButtonConfig
     private String _insertAfter, _insertBefore;
     private Integer _insertPosition;
     private boolean _hidden = false;
+    /** Suppress warning when _originalCaption references to buttons that don't exist.*/
+    private boolean _suppressWarning = false;
     /** Permission that a user must have in order to see the button */
     private Class<? extends Permission> _permission;
 
@@ -140,8 +142,19 @@ public class BuiltInButtonConfig implements ButtonConfig
         ret.setInsertBefore(_insertBefore);
         ret.setInsertPosition(_insertPosition);
         ret.setHidden(_hidden);
+        ret.setSuppressWarning(_suppressWarning);
         ret.setPermission(_permission);
 
         return ret;
+    }
+
+    public boolean isSuppressWarning()
+    {
+        return _suppressWarning;
+    }
+
+    public void setSuppressWarning(boolean suppressWarning)
+    {
+        _suppressWarning = suppressWarning;
     }
 }

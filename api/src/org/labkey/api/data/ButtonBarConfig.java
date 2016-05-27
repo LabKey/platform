@@ -192,6 +192,10 @@ public class ButtonBarConfig
                     _hiddenStandardButtons.add(item.getOriginalText());
                 }
             }
+            if (item.isSetSuppressWarning())
+            {
+                buttonConfig.setSuppressWarning(item.getSuppressWarning());
+            }
             if (item.isSetInsertBefore())
                 buttonConfig.setInsertBefore(item.getInsertBefore());
             else if (item.isSetInsertAfter())

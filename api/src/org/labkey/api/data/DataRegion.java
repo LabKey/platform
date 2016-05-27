@@ -911,7 +911,7 @@ public class DataRegion extends AbstractDataRegion
 
     private void addMissingCaptionMessage(StringBuilder headerMessage)
     {
-        if (_gridButtonBar.getMissingOriginalCaptions() != null && _gridButtonBar.getMissingOriginalCaptions().size() > 0)
+        if (AppProps.getInstance().isDevMode() && _gridButtonBar.getMissingOriginalCaptions() != null && _gridButtonBar.getMissingOriginalCaptions().size() > 0)
         {
             headerMessage.append("\n").append("WARNING: button bar configuration contains reference to buttons that don't exist.");
             headerMessage.append("\n").append("Invalid original text: ");
