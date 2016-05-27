@@ -25,6 +25,7 @@ import org.labkey.api.data.views.DataViewProvider;
 import org.labkey.api.data.views.DefaultViewInfo;
 import org.labkey.api.data.views.ProviderType;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
@@ -120,7 +121,11 @@ public class DatasetViewProvider implements DataViewProvider
                         view.setType("Dataset");
                         view.setDescription(ds.getDescription());
                         view.setIconUrl(new ResourceURL("/reports/grid.gif"));
-                        view.setIconCls("fa fa-table");
+
+                        if(QueryService.get().isQuerySnapshot(container, "study", ds.getName()))
+                            view.setIconCls("fa fa-camera");
+                        else
+                            view.setIconCls("fa fa-table");
                         view.setVisible(ds.isShowByDefault());
 
                         ActionURL runUrl = new ActionURL(StudyController.DefaultDatasetReportAction.class, container).addParameter("datasetId", ds.getDatasetId());
