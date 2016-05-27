@@ -2973,31 +2973,16 @@ input[type="checkbox"], input[type="radio"] {
 }
 
 /* tabs */
-.labkey-app-bar ul li a {
-    font-family: 'Roboto-Bold', arial, helvetica, sans-serif;
-    letter-spacing: .5px;
-    font-weight: bold;
-}
-
-.labkey-app-bar .tab-nav {
+.labkey-app-bar ul {
     float: right;
     padding: 0;
     margin: 0;
     border-bottom: none;
     list-style-type: none;
-    white-space: nowrap;
-}
-
-.labkey-app-bar ul:hover.labkey-tab-strip { /* map bottom border and background color to Primary background color */
-    background-color: #f8f8f8;
-    opacity: 1.0;
-	color: #000;
-    border-bottom: 1px solid #f8f8f8;
 }
 
 .labkey-app-bar ul li {
     display: inline-block;
-    /*white-space: nowrap;*/
 
     padding:  8px 8px 8px 20px;
     line-height : 14px;
@@ -3009,6 +2994,19 @@ input[type="checkbox"], input[type="radio"] {
     -moz-box-shadow: 0 -2px 2px #ddd;
     -webkit-box-shadow: 0 -2px 2px #ddd;
     box-shadow: 0 -2px 2px #ddd;
+}
+
+.labkey-app-bar ul li a {
+    font-family: 'Roboto-Bold', arial, helvetica, sans-serif;
+    letter-spacing: .5px;
+    font-weight: bold;
+}
+
+.labkey-app-bar ul:hover.labkey-tab-strip { /* map bottom border and background color to Primary background color */
+    background-color: #f8f8f8;
+    opacity: 1.0;
+	color: #000;
+    border-bottom: 1px solid #f8f8f8;
 }
 
 .labkey-app-bar ul li.tab-nav-no-menu {
