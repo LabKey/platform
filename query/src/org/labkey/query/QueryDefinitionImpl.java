@@ -74,6 +74,7 @@ import org.labkey.query.persist.QueryManager;
 import org.labkey.query.sql.Query;
 import org.labkey.query.sql.QueryTableInfo;
 import org.labkey.query.view.CustomViewSetKey;
+import org.springframework.jdbc.BadSqlGrammarException;
 
 import javax.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
@@ -373,6 +374,10 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             {
                 /* ignore */
             }
+            catch (Query.QueryInternalException e)
+            {
+                errors.add(wrapParseException(e.getCause(), false));
+            }
             catch (Exception x)
             {
                 log.error("Unexpected error",  x);
@@ -384,14 +389,17 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         if (errors.isEmpty() && null != warnings)
             warnings.addAll(q.getParseWarnings());
 
-        List<QueryException> queryExceptions = new ArrayList<>();
-        getTable(queryExceptions, true);
-        for (QueryException e : queryExceptions)
+        if (errors.isEmpty())
         {
-            if (e instanceof MetadataParseWarning)
-                warnings.add((MetadataParseWarning)e);
-            else
-                errors.add(wrapParseException(e, true));
+            List<QueryException> queryExceptions = new ArrayList<>();
+            getTable(queryExceptions, true);
+            for (QueryException e : queryExceptions)
+            {
+                if (e instanceof MetadataParseWarning)
+                    warnings.add((MetadataParseWarning)e);
+                else
+                    errors.add(wrapParseException(e, true));
+            }
         }
         return errors.isEmpty();
     }
@@ -407,6 +415,10 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         if (e instanceof QueryParseException)
         {
             return (QueryParseException) e;
+        }
+        if (e instanceof BadSqlGrammarException)
+        {
+            return new QueryParseException(e.getMessage(), e, 0, 0);
         }
         return new QueryParseException("Unexpected exception", e, 0, 0);
     }

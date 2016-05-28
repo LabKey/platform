@@ -600,7 +600,7 @@ public class Query
     }
 
 
-    static class QueryInternalException extends RuntimeException
+    public static class QueryInternalException extends RuntimeException
     {
         QueryInternalException(RuntimeException cause, String sql)
         {
