@@ -18,6 +18,7 @@ package org.labkey.study.controllers.specimen;
 
 import gwt.client.org.labkey.study.StudyApplication;
 import org.apache.commons.io.Charsets;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -3599,9 +3600,23 @@ public class SpecimenController extends BaseStudyController
         {
             Map<String, Map<String, Long>> pvMap = new TreeMap<>();
 
+            if (TimepointType.CONTINUOUS == study.getTimepointType())
+                return Collections.emptyMap();
+
+            boolean isDateStudy = TimepointType.DATE == study.getTimepointType();
+            Date startDate = isDateStudy ? study.getStartDate() : new Date();
+
             for (Vial vial : vials)
             {
-                Double visit = vial.getVisitValue();
+                Double visit;
+                if (isDateStudy)
+                    if (null != vial.getDrawTimestamp())
+                        visit = new Double((vial.getDrawTimestamp().getTime() - startDate.getTime()) / DateUtils.MILLIS_PER_DAY);
+                    else
+                        visit = null;
+                else
+                    visit = vial.getVisitValue();
+
                 if (visit != null)
                 {
                     String ptid = vial.getPtid();
