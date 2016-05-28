@@ -395,7 +395,7 @@ public class RenderContext implements Map<String, Object>, Serializable
         Set<String> selected = getAllSelected();
         SimpleFilter.FilterClause clause;
 
-        if (selected.isEmpty())
+        if (selected.isEmpty() || selectorColumns.isEmpty())
         {
             clause = new SimpleFilter.SQLClause("1 = 0", null);
         }
