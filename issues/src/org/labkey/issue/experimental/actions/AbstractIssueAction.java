@@ -765,7 +765,7 @@ public abstract class AbstractIssueAction extends FormViewAction<IssuesControlle
                             _customProperties.add(prop);
                             CustomColumn col = new CustomColumn(c,
                                     prop.getName().toLowerCase(),
-                                    prop.getLabel() != null ? prop.getLabel() : prop.getName(),
+                                    prop.getLabel() != null ? prop.getLabel() : ColumnInfo.labelFromName(prop.getName()),
                                     prop.getLookup() != null,
                                     prop.isProtected() ? InsertPermission.class : ReadPermission.class);
 
@@ -841,7 +841,7 @@ public abstract class AbstractIssueAction extends FormViewAction<IssuesControlle
         public String getCaption(String name)
         {
             CustomColumn col = _columnMap.get(name);
-            return col != null ? col.getCaption() : null;
+            return col != null ? col.getCaption() : ColumnInfo.labelFromName(name);
         }
 
         @Override

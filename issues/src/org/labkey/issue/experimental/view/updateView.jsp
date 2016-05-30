@@ -162,7 +162,7 @@
         <tr><%
             if (bean.isInsert())
             {%>
-            <td class="labkey-form-label"><%=text(bean.getLabel("Title", true))%></td><%
+            <%=text(bean.renderLabel(propertyMap.get("Title"), getViewContext()))%><%
             }
             else
             {%>

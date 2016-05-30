@@ -368,20 +368,66 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                 ColumnInfo col = table.getColumn(FieldKey.fromParts(prop.getName()));
                 if (col != null)
                 {
+                    try (Writer writer = new StringWriter())
+                    {
+                        writer.append("<tr>");
+                        writer.append(renderLabel(prop, context));
+                        writer.append(renderInput(prop, context, editable));
+                        writer.append("</tr>");
+                        sb.append(writer);
+                    }
+                    return sb.toString();
+                }
+            }
+        }
+        return "";
+    }
+
+    public String renderLabel(DomainProperty prop, ViewContext context) throws IOException
+    {
+        if (prop != null && shouldDisplay(prop, context))
+        {
+            final StringBuilder sb = new StringBuilder();
+            TableInfo table = getIssueTable(context);
+            if (table != null)
+            {
+                ColumnInfo col = table.getColumn(FieldKey.fromParts(prop.getName()));
+                if (col != null)
+                {
                     DisplayColumn dc = col.getRenderer();
                     RenderContext renderContext = getRenderContext(context);
 
                     try (Writer writer = new StringWriter())
                     {
-                        writer.append("<tr>");
                         dc.renderDetailsCaptionCell(renderContext, writer);
-                        if (editable)
-                        {
-                            writer.append("<td>");
-                            dc.render(renderContext, writer);
-                            writer.append("</td>");
-                        }
-                        writer.append("</tr>");
+                        sb.append(writer);
+                    }
+                    return sb.toString();
+                }
+            }
+        }
+        return "";
+    }
+
+    public String renderInput(DomainProperty prop, ViewContext context, boolean editable) throws IOException
+    {
+        if (prop != null && shouldDisplay(prop, context) && editable)
+        {
+            final StringBuilder sb = new StringBuilder();
+            TableInfo table = getIssueTable(context);
+            if (table != null)
+            {
+                ColumnInfo col = table.getColumn(FieldKey.fromParts(prop.getName()));
+                if (col != null)
+                {
+                    DisplayColumn dc = col.getRenderer();
+                    RenderContext renderContext = getRenderContext(context);
+
+                    try (Writer writer = new StringWriter())
+                    {
+                        writer.append("<td>");
+                        dc.render(renderContext, writer);
+                        writer.append("</td>");
                         sb.append(writer);
                     }
                     return sb.toString();
@@ -550,7 +596,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         String label = PageFlowUtil.filter(StringUtils.isEmpty(name) ? capitalizedColumnName : name).replaceAll(" ", "&nbsp;");
 
         if (markIfRequired && _requiredFields != null && _requiredFields.contains(columnName.toLowerCase()))
-            return label + "<span class=\"labkey-error\">*</span>";
+            return label + "&nbsp*";
         else
             return label;
     }
