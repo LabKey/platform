@@ -587,7 +587,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             menuDisabled : true,
             sortable : false,
             tdCls    : 'x4-name-column-cell',
-            renderer : Ext4.util.Format.htmlEncode,
+            renderer : Ext4.htmlEncode,
             scope    : this
         },{
             id       : 'category-column-' + this.webpartId,
@@ -596,7 +596,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             menuDisabled : true,
             sortable : false,
             dataIndex: 'categorylabel',
-            renderer : Ext4.util.Format.htmlEncode,
+            renderer : Ext4.htmlEncode,
             hidden   : true
         }];
 
@@ -646,17 +646,17 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         if (visibleColumns['Status'] && visibleColumns['Status'].checked) {
             var statusTpl = '<tpl if="status == \'Draft\'">' +
-                    '<span class="fa fa-pencil-square"</span>' +
+                    '<span class="fa fa-pencil-square"></span>' +
                     '</tpl>' +
                     '<tpl if="status == \'Final\'">' +
-                    '<span class="fa fa-check-square"</span>' +
+                    '<span class="fa fa-check-square"></span>' +
                     '</tpl>' +
                     '<tpl if="status == \'Locked\'">' +
                     '<span class="fa fa-lock"</span>' +
                     '</tpl>' +
                     '<tpl if="status == \'Unlocked\'">' +
-                    '<span class="fa fa-unlock-alt"</span>' +
-                    '</tpl>'
+                    '<span class="fa fa-unlock-alt"></span>' +
+                    '</tpl>';
 
             _columns.push({
                 xtype    : 'templatecolumn',
