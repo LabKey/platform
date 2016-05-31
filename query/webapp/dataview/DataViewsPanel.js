@@ -1377,12 +1377,20 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             this.gridPanel.getStore().load();
         }, this);
 
+        window.on('close', function(cmp) {
+            this.gridPanel.getStore().reload();
+        }, this);
+
         window.show();
     },
 
     onReorderReports : function() {
 
         var window = LABKEY.study.DataViewUtil.getReorderReportsDialog();
+        
+        window.on('close', function(rrp) {
+            this.gridPanel.getStore().reload();
+        }, this);
 
         window.show();
     },
