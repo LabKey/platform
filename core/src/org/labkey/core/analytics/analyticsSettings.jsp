@@ -45,9 +45,9 @@
             <td><p style="margin-top:0">Add Google Analytics tracking script to pages on this web site.
                 <p>If you have opted to use Google Analytics, you must provide an Account ID.
                     If you use the Account ID <code><%=h(AnalyticsServiceImpl.DEFAULT_ACCOUNT_ID)%></code>,
-                    your data will be sent to the LabKey Software Foundation. They would love to see how your users are using your
+                    your data will be sent to LabKey. They would love to see how your users are using your
                     server.  However, if you would like to see this data yourself, or you would like to keep this information private
-                    from the LabKey Software Foundation, you should sign up for your own
+                    from LabKey, you should sign up for your own
                     <a href="http://www.google.com/analytics">Google Analytics</a> account and use the Account ID that they give you.
                 </p><p>Google Analytics Account ID:<br>
                     <input type="text" name="ff_accountId" value="<%=h(settingsForm.ff_accountId)%>"/>
