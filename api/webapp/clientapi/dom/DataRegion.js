@@ -3011,7 +3011,7 @@ if (!LABKEY.DataRegions) {
                 o = (me.hdrLocked ? me.colHeaderRowSpacer : me.colHeaderRow);
             }
 
-            pos = o.position();
+            pos = o.offset();
             curbottom = pos.top + me.table.height() - (o.height() * 2);
 
             return [ pos.left, pos.top, curbottom, hdrOffset ];
