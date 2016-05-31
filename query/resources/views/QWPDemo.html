@@ -1,29 +1,55 @@
-<div id="testRegion1">
-</div>
-<br>
-<div id="testRegion2">
-</div>
-<br>
-<div id="testRegion3">
-</div>
-<br>
-<div id="testRegion4">
-</div>
-<br>
-<div id="testRegion5">
-</div>
-<br>
-<div id="testRegion6">
-</div>
-<br>
-<div id="testRegion7">
-</div>
+<style type="text/css">
+
+    .qwp-demo a {
+        margin: 10px;
+    }
+
+    .tab {
+        padding: 5px;
+        border: 1px solid #c0c0c0;
+        border-top-width: 0;
+    }
+
+    .tab2 {
+        border: 1px solid #c0c0c0;
+        width: 902px;
+        height: 505px;
+    }
+
+    .tab-first {
+        border-top: 1px solid #c0c0c0;
+    }
+
+    .active-tab {
+        background-color: #e0e6ea;
+    }
+</style>
+
+
+<table class="qwp-demo">
+    <tr>
+        <td valign="top">
+            <div class="tab tab-first"><a href="#testSchemaOnly">List out all queries in schema</a></div>
+            <div class="tab"><a href="#testQueryOnly">Show default view for query</a></div>
+            <div class="tab"><a href="#testFilterArray">Filter by Tag equals blue</a></div>
+            <div class="tab"><a href="#testSort">Sort by Tag</a></div>
+            <div class="tab"><a href="#testHideButtons">Hide buttons</a></div>
+            <div class="tab"><a href="#testHideColumns">Hide Edit and Details columns</a></div>
+            <div class="tab"><a href="#testPagingConfig">Set Paging to 3 with config</a></div>
+            <div class="tab"><a href="#testSetPaging">Set Paging to 2 with API</a></div>
+        </td>
+        <td>
+            <div id="qwpDiv" class="tab2"></div>
+        </td>
+    </tr>
+</table>
+
 
 <script type="text/javascript">
  LABKEY.Domain.get(function() {
      LABKEY.Domain.get(function() {
          LABKEY.Domain.get(function() {
-             runTests();
+
          }, function() {
              setUpDomains();
          }, 'Samples', 'sampleDataTest3');

@@ -1,136 +1,234 @@
-function testSchemaOnly() {
-    new LABKEY.QueryWebPart({
-        title: 'List out all queries in Samples schema',
-        schemaName: 'Samples',
-        renderTo: 'testRegion1',
-        success: function() {
-            //TODO validate result
-        },
-        failure: function() {
-           alert('Failed test: List out all queries in schema');
-        }
-    });
-}
+(function($) {
 
+    // Document Ready
+    $(function() {
+        var RENDERTO = "qwpDiv";
+        var REGIONS = {
+            testSchemaOnly: testSchemaOnly,
+            testQueryOnly: testQueryOnly,
+            testFilterArray: testFilterArray,
+            testSort: testSort,
+            testHideButtons: testHideButtons,
+            testHideColumns: testHideColumns,
+            testPagingConfig: testPagingConfig,
+            testSetPaging: testSetPaging
+        };
 
-function testQueryOnly() {
-    new LABKEY.QueryWebPart({
-        title: 'Show default view for query sampleDataTest1',
-        schemaName: 'Samples',
-        queryName: 'sampleDataTest1',
-        renderTo: 'testRegion2',
-        success: function() {
-            //TODO
-    },
-    failure: function() {
-        alert('Failed test: Show default view for query sampleDataTest');
-    }
-    });
-}
+        var tabsSel = '.qwp-demo .tab',
+                activeCls = 'active-tab';
 
-function testFilterArray() {
-    new LABKEY.QueryWebPart({
-        title: 'Filter by Tag = blue',
-        schemaName: 'Samples',
-        queryName: 'sampleDataTest1',
-        filterArray: [LABKEY.Filter.create('tag', 'blue', LABKEY.Filter.Types.EQUAL)],
-        renderTo: 'testRegion3',
-        success: function() {
-            //TODO
-        },
-        failure: function() {
-            alert('Failed test: Filter by Tag = blue');
-        }
-    });
-}
+        $(tabsSel).click(function() {
+            $(tabsSel).removeClass(activeCls);
+            $(this).addClass(activeCls);
+        });
 
-function testSort() {
-    new LABKEY.QueryWebPart({
-        title: 'Sort by Tag',
-        schemaName: 'Samples',
-        queryName: 'sampleDataTest1',
-        sort: 'tag',
-        renderTo: 'testRegion4',
-        success: function() {
-            //TODO
-        },
-        failure: function() {
-            alert('Failed test: Sort by Tag');
-        }
-    });
-}
-
-function testHideButtons() {
-    new LABKEY.QueryWebPart({
-        title: 'Hide buttons',
-        schemaName: 'Samples',
-        queryName: 'sampleDataTest1',
-        showExportButtons: false,
-        showInsertNewButton: false,
-        showPagination: false,
-        allowChooseQuery: false,
-        allowChooseView: false,
-        showDeleteButton: false,
-        renderTo: 'testRegion5',
-        success: function() {
-            //TODO
-        },
-        failure: function() {
-            alert('Failed test: Hide buttons');
-        }
-    });
-}
-
-function testHideColumns() {
-    new LABKEY.QueryWebPart({
-        title: 'Hide Edit and Details columns',
-        schemaName: 'Samples',
-        queryName: 'sampleDataTest1',
-        showDetailsColumn: false,
-        showUpdateColumn: false,
-        renderTo: 'testRegion6',
-        success: function() {
-            //TODO
-        },
-        failure: function() {
-            alert('Failed test: Hide Edit and Details columns');
-        }
-    });
-}
-
-var MAX_ROWS = 3;
-function testSetPaging() {
-    new LABKEY.QueryWebPart({
-        title: 'Set Paging to 2 with API',
-        schemaName: 'Samples',
-        queryName: 'sampleDataTest1',
-        renderTo: 'testRegion7',
-        maxRows: MAX_ROWS,
-        failure: function() {
-            alert('Failed test: Failed test: Set Paging to 2 with API');
-        },
-        listeners: {
-            render: function(dr) {
-                if (dr.maxRows !== MAX_ROWS) {
-                    throw new Error('Failed to apply maxRows');
+        function onHashChange(initial)
+        {
+            var hash = location.hash;
+            if (initial === true) {
+                if (hash) {
+                    hash = hash.split('#')[1];
                 }
-                else if (MAX_ROWS != 2) {
-                    // change the maxRows
-                    MAX_ROWS = 2;
-                    dr.setMaxRows(MAX_ROWS);
+            }
+            else {
+                hash = hash.split('#')[1];
+            }
+
+            if (hash && REGIONS.hasOwnProperty(hash)) {
+                $('#qwpDiv').html('');
+                LABKEY.Domain.get(function() {
+                    LABKEY.Domain.get(function() {
+                        LABKEY.Domain.get(function() {
+                            REGIONS[hash]();
+                        }, function() {
+                            setUpDomains();
+                        }, 'Samples', 'sampleDataTest3');
+                    }, function() {
+                        setUpDomains();
+                    }, 'Samples', 'sampleDataTest2');
+                }, function() {
+                    setUpDomains();
+                }, 'Samples', 'sampleDataTest1');
+
+                if (initial === true) {
+                    $(tabsSel + ' a[href="' + '#' + hash + '"]').parent().addClass(activeCls);
                 }
             }
         }
-    });
-}
 
-function runTests()
-{
-    testSchemaOnly();
-    testQueryOnly();
-    testFilterArray();
-    testSort();
-    testHideButtons();
-    testHideColumns();
-    testSetPaging();
-}
+        window.addEventListener('hashchange', onHashChange, false);
+        onHashChange(true);
+
+        function testSchemaOnly() {
+            new LABKEY.QueryWebPart({
+                title: 'List out all queries in Samples schema',
+                schemaName: 'Samples',
+                renderTo: RENDERTO,
+                success: function() {
+                    var results = $("a:contains('sampleDataTest')");
+                    if (!results || results.length < 3) {
+                        alert('Failed to list out all queries in Samples schema');
+                    }
+                },
+                failure: function() {
+                   alert('Failed test: List out all queries in schema');
+                }
+            });
+        }
+
+
+        function testQueryOnly() {
+            new LABKEY.QueryWebPart({
+                title: 'Show default view for query sampleDataTest1',
+                schemaName: 'Samples',
+                queryName: 'sampleDataTest1',
+                renderTo: RENDERTO,
+                failure: function() {
+                    alert('Failed test: Show default view for query sampleDataTest');
+                }
+            });
+        }
+
+        function testFilterArray() {
+            new LABKEY.QueryWebPart({
+                title: 'Filter by Tag = blue',
+                schemaName: 'Samples',
+                queryName: 'sampleDataTest1',
+                filterArray: [LABKEY.Filter.create('tag', 'blue', LABKEY.Filter.Types.EQUAL)],
+                renderTo: RENDERTO,
+                success: function() {
+                    var results = $('tr.labkey-alternate-row, tr.labkey-row');
+                    if (results && results.length > 0) {
+                        for (var i = 0; i < results.length; i++) {
+                            if (results[i].lastChild.innerHTML !== 'blue') {
+                                alert('Failed test: Filter by Tag = blue');
+                            }
+                        }
+                    }
+                },
+                failure: function() {
+                    alert('Failed test: Filter by Tag = blue');
+                }
+            });
+        }
+
+        function testSort() {
+            new LABKEY.QueryWebPart({
+                title: 'Sort by Tag',
+                schemaName: 'Samples',
+                queryName: 'sampleDataTest1',
+                sort: 'tag',
+                renderTo: RENDERTO,
+                success: function() {
+                    var results = $('tr.labkey-alternate-row, tr.labkey-row');
+                    if (results && results.length > 5) {
+                        var result1 = results[0].lastChild.innerHTML;
+                        var result2 = results[1].lastChild.innerHTML;
+                        var result3 = results[2].lastChild.innerHTML;
+
+                        if (result1.localeCompare(result2) > 0 || result2.localeCompare(result3) > 0) {
+                            alert('Failed test: Sort by Tag');
+                        }
+                    }
+                },
+                failure: function() {
+                    alert('Failed test: Sort by Tag');
+                }
+            });
+        }
+
+        function testHideButtons() {
+            new LABKEY.QueryWebPart({
+                title: 'Hide buttons',
+                schemaName: 'Samples',
+                queryName: 'sampleDataTest1',
+                showExportButtons: false,
+                showInsertNewButton: false,
+                showPagination: false,
+                allowChooseQuery: false,
+                allowChooseView: false,
+                showDeleteButton: false,
+                renderTo: RENDERTO,
+                success: function() {
+                    var results = $("a.labkey-menu-button");
+                    if (results && results.length > 0) {
+                        alert('Failed to hide buttons');
+                    }
+                },
+                failure: function() {
+                    alert('Failed test: Hide buttons');
+                }
+            });
+        }
+
+        function testHideColumns() {
+            new LABKEY.QueryWebPart({
+                title: 'Hide Edit and Details columns',
+                schemaName: 'Samples',
+                queryName: 'sampleDataTest1',
+                showDetailsColumn: false,
+                showUpdateColumn: false,
+                renderTo: RENDERTO,
+                success: function() {
+                    var editLinks = $("a.labkey-text-link:contains('edit')");
+                    var detailsLinks = $("a.labkey-text-link:contains('details')");
+                    if ((editLinks && editLinks.length > 0) || (detailsLinks && detailsLinks.length > 0)) {
+                        alert('Failed test: Hide Edit and Details columns');
+                    }
+                },
+                failure: function() {
+                    alert('Failed test: Hide Edit and Details columns');
+                }
+            });
+        }
+
+        function testPagingConfig() {
+            new LABKEY.QueryWebPart({
+                title: 'Set Paging to 3 with config',
+                schemaName: 'Samples',
+                queryName: 'sampleDataTest1',
+                renderTo: RENDERTO,
+                maxRows: 3,
+                success: function(dr) {
+                    if (dr.maxRows !== 3) {
+                        alert('Failed test: Set Paging to 3 with maxRows config');
+                    }
+                    var results = $("a:contains('sampleDataTest1')");
+                    if (!results || results.length != 3) {
+                        alert('Failed to set Paging to 3 with maxRows config');
+                    }
+                },
+                failure: function() {
+                    alert('Failed test: Set Paging to 3 with config');
+                }
+            });
+        }
+
+        function testSetPaging() {
+            new LABKEY.QueryWebPart({
+                title: 'Set Paging to 2 with API',
+                schemaName: 'Samples',
+                queryName: 'sampleDataTest1',
+                renderTo: RENDERTO,
+                failure: function() {
+                    alert('Failed test: Failed test: Set Paging to 2 with API');
+                },
+                listeners: {
+                    render: function(dr) {
+                        if (dr.maxRows != 2) {
+                            dr.setMaxRows(2);
+                        }
+                        else {
+                            var results = $("a:contains('sampleDataTest1')");
+                            if (!results || results.length != 2) {
+                                alert('Failed to set Paging to 2 with API');
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+    });
+
+})(jQuery);
