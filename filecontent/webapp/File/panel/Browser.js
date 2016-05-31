@@ -2395,7 +2395,7 @@ Ext4.define('File.panel.Browser', {
                         },
                         failure : function(response, options) {
                             var extraErrorInfo = response.errors && response.errors.length ? response.errors[0] : null;
-                            var message;
+                            var message = '';
                             if (response.status == 405)
                                 message = 'Failed to create directory on server. This directory already exists.';
                             else if (extraErrorInfo && extraErrorInfo.message)
@@ -2506,7 +2506,7 @@ Ext4.define('File.panel.Browser', {
                                 },
                                 failure : function(response) {
                                     var extraErrorInfo = response.errors && response.errors.length ? response.errors[0] : null;
-                                    var message = null;
+                                    var message = '';
                                     if (extraErrorInfo && extraErrorInfo.message)
                                     {
                                         if (extraErrorInfo.resourceName)
@@ -2707,7 +2707,7 @@ Ext4.define('File.panel.Browser', {
                 },
                 failure: function(response) {
                     var extraErrorInfo = response.errors && response.errors.length ? response.errors[0] : null;
-                    var message = null;
+                    var message = '';
                     if (response.status == 412)
                         message = 'Failed to move file on server. File already exists in destination folder. Please remove the file in the destination folder and try again.';
                     else if (extraErrorInfo && extraErrorInfo.message)

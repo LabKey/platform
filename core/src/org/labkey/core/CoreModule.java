@@ -835,7 +835,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 Encryption.TestCase.class,
                 NotificationServiceImpl.TestCase.class,
                 JspTemplate.TestCase.class,
-                SQLFragment.TestCase.class
+                SQLFragment.TestCase.class,
+                DavController.TestCase.class
         ));
 
         testClasses.addAll(SqlDialectManager.getAllJUnitTests());

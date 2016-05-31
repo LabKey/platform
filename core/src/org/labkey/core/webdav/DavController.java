@@ -29,6 +29,8 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONWriter;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.HasViewContext;
@@ -63,6 +65,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -153,6 +156,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import static org.labkey.api.action.ApiJsonWriter.CONTENT_TYPE_JSON;
+import static org.labkey.api.test.TestWhen.When.BVT;
 
 
 /**
@@ -1136,6 +1140,8 @@ public class DavController extends SpringActionController
                 WebdavResource dest = resource.find(filename);
                 if (null == dest)
                     return WebdavStatus.SC_METHOD_NOT_ALLOWED;
+                if (!dest.exists())
+                    checkAllowedFileName(dest.getName());
                 setFileStream(stream);
 
                 setResource(dest);
@@ -2763,6 +2769,8 @@ public class DavController extends SpringActionController
                 throw new DavException(WebdavStatus.SC_METHOD_NOT_ALLOWED);
             }
 
+            checkAllowedFileName(resource.getName());
+
             try (InputStream is = new ReadAheadInputStream(getRequest().getInputStream()))
             {
                 if (is.available() > 0)
@@ -2907,8 +2915,9 @@ public class DavController extends SpringActionController
             WebdavResource resource = getResource();
             if (resource == null)
                 return notFound();
-            boolean exists = resource.exists();
+            checkAllowedFileName(resource.getName());
 
+            boolean exists = resource.exists();
             boolean deleteFileOnFail = false;
             boolean temp = false;
 
@@ -3380,6 +3389,7 @@ public class DavController extends SpringActionController
             WebdavResource dest = resolvePath(destinationPath);
             if (null == dest || dest.getPath().equals(src.getPath()))
                 throw new DavException(WebdavStatus.SC_FORBIDDEN);
+            checkAllowedFileName(dest.getName());
 
             boolean overwrite = getOverwriteParameter(false);
             boolean exists = dest.exists();
@@ -4895,7 +4905,7 @@ public class DavController extends SpringActionController
         {
             String str = getUrlResourcePathStr();
             if (null == str)
-                return null;
+                return Path.rootPath;
             Path p = Path.parse(str).normalize();
             Path urlDirectory = p.isDirectory() ? p : p.getParent();
             if (StringUtils.equalsIgnoreCase("GET",getViewContext().getActionURL().getAction()))
@@ -5606,6 +5616,7 @@ public class DavController extends SpringActionController
         WebdavResource destination = resolvePath(destinationPath);
         if (null == destination)
             throw new DavException(WebdavStatus.SC_FORBIDDEN);
+        checkAllowedFileName(destination.getName());
         WebdavStatus successStatus = destination.exists() ? WebdavStatus.SC_NO_CONTENT : WebdavStatus.SC_CREATED;
 
         if (null != resource.getFile() && null != destination.getFile())
@@ -6553,6 +6564,65 @@ public class DavController extends SpringActionController
         {
             access();
             return super.read(bytes, i, i1);
+        }
+    }
+
+
+    void checkAllowedFileName(String s) throws DavException
+    {
+        String msg = isAllowedFileName(s);
+        if (null == msg)
+            return;
+        throw new DavException(WebdavStatus.SC_BAD_REQUEST, msg);
+    }
+
+
+    static private final String windowsRestricted = "\\/:*?\"<>|`";
+    // and ` seems like a bad idea for linux?
+    static private final String linuxRestricted = "`";
+    static private final String restrictedPrintable = windowsRestricted + linuxRestricted;
+
+    public static String isAllowedFileName(String s)
+    {
+        if (StringUtils.isBlank(s))
+            return "Filename must not be blank";
+        if (!ViewServlet.validChars(s))
+            return "Filename must contain only valid unicode characters.";
+        if (StringUtils.containsAny(s, restrictedPrintable))
+            return "Filename may not contain any of these characters: " + restrictedPrintable;
+        if (StringUtils.containsAny(s, "\t\n\r"))
+            return "Filename may not contain 'tab', 'new line', or 'return' characters.";
+        if (s.startsWith("-") || Pattern.matches(".*\\s-.*",s))
+            return "Filename may not start with dash or contain space followed by dash.";
+        return null;
+    }
+
+
+    @TestWhen(TestWhen.When.BVT)
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testAllowedFileName()
+        {
+            assertNull(isAllowedFileName("a"));
+            assertNull(isAllowedFileName("a-b"));
+            assertNull(isAllowedFileName("a b"));
+            assertNotNull(isAllowedFileName(null));
+            assertNotNull(isAllowedFileName(""));
+            assertNotNull(isAllowedFileName(" "));
+            assertNotNull(isAllowedFileName("a\tb"));
+            assertNotNull(isAllowedFileName("-a"));
+            assertNotNull(isAllowedFileName("a -b"));
+            assertNotNull(isAllowedFileName("a/b"));
+            assertNotNull(isAllowedFileName("a\b"));
+            assertNotNull(isAllowedFileName("a:b"));
+            assertNotNull(isAllowedFileName("a*b"));
+            assertNotNull(isAllowedFileName("a?b"));
+            assertNotNull(isAllowedFileName("a<b"));
+            assertNotNull(isAllowedFileName("a>b"));
+            assertNotNull(isAllowedFileName("a\"b"));
+            assertNotNull(isAllowedFileName("a|b"));
+            assertNotNull(isAllowedFileName("a`b"));
         }
     }
 }

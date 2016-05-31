@@ -418,12 +418,15 @@
                 headers.Overwrite = 'T';
             }
 
-            Ext4.Ajax.request({
+            var me = this;
+            Ext4.Ajax.request(ajaxRequestConfig ={
                 method: "MOVE",
                 url: resourcePath + "?pageId=" + this.pageId,
                 failure: function (response, options)
                 {
                     File.system.Abstract.processAjaxResponse(response);
+                    // handleFailureCallback is expecting full URL in config.path
+                    config.path = resourcePath;
                     me.handleFailureCallback(config, response, options);
 
                     if (Ext4.isFunction(config.failure))
