@@ -61,7 +61,7 @@
 
         function testSchemaOnly() {
             new LABKEY.QueryWebPart({
-                title: 'List out all queries in Samples schema',
+                title: 'List out all queries in schema',
                 schemaName: 'Samples',
                 renderTo: RENDERTO,
                 success: function() {

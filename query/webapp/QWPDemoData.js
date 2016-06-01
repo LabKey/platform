@@ -72,9 +72,11 @@ function dropDomains()
 {
     var dropSuccess = function() {
         console.log('dropped');
+        location.reload(); // add page refresh for automated test
     };
     var dropFailure = function() {
         console.log('drop failed');
+        location.reload(); // add page refresh for automated test
     };
     LABKEY.Domain.drop({success: dropSuccess, failure: dropFailure, schemaName: 'Samples', queryName: 'sampleDataTest1'});
     LABKEY.Domain.drop({success: dropSuccess, failure: dropFailure, schemaName: 'Samples', queryName: 'sampleDataTest2'});
