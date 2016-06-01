@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -221,6 +222,46 @@ public interface SearchService
         public String summary;
         public String url;
         public String navtrail;
+
+        public String normalizeHref(Path contextPath)
+        {
+            Container c = ContainerManager.getForId(container);
+            return normalizeHref(contextPath, c);
+        }
+
+        public String normalizeHref(Path contextPath, Container c)
+        {
+            // see issue #11481
+            String href = url;
+            if (href.startsWith("files/"))
+                href = "/" + href;
+
+            try
+            {
+                if (null != c && href.startsWith("/"))
+                {
+                    URLHelper url = new URLHelper(href);
+                    Path path = url.getParsedPath();
+                    if (path.startsWith(contextPath))
+                    {
+                        int pos = contextPath.size() + 1;
+                        if (path.size() > pos && c.getId().equals(path.get(pos)))
+                        {
+                            path = path.subpath(0,pos)
+                                    .append(c.getParsedPath())
+                                    .append(path.subpath(pos+1,path.size()));
+                            url.setPath(path);
+                            return url.getLocalURIString(false);
+                        }
+                    }
+                }
+            }
+            catch (Exception x)
+            {
+                //
+            }
+            return href;
+        }
     }
 
     String getIndexFormatDescription();
