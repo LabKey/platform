@@ -70,7 +70,7 @@ public class ClusterStartup extends AbstractPipelineStartup
         {
             PipelineJob job = PipelineJob.readFromFile(file);
 
-            System.out.println("Starting to run task for job " + job);
+            System.out.println("Starting to run task for job " + job + " on host: " + hostName);
             //this is debugging to verify jms.
             job.setStatus("RUNNING ON CLUSTER");
             try
@@ -78,7 +78,7 @@ public class ClusterStartup extends AbstractPipelineStartup
                 job.runActiveTask();
                 System.out.println("Finished running task for job " + job);
             }
-            catch (Exception e)
+            catch (Throwable e)
             {
                 System.out.println("Error running job");
                 job.error(String.valueOf(e.getMessage()), e);

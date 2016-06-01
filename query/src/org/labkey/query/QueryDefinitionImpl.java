@@ -267,6 +267,12 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             {
                 CustomViewImpl v = new CustomViewImpl(this, view);
                 v.isSession(true);
+                CustomView existing = ret.get(view.getName());
+                if (existing instanceof ModuleCustomView)
+                    v.setOverridesModuleView(true);
+                else if (existing instanceof  CustomViewInfoImpl)
+                    v.setOverridesModuleView(((CustomViewInfoImpl) existing).isOverridesModuleView());
+
                 ret.put(view.getName(), v);
             }
         }

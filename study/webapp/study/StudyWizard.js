@@ -191,7 +191,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             },
             visits: {
                 panelType: 'visits',
-                active: this.mode == 'publish'
+                active: this.mode == 'publish' && this.studyType != 'CONTINUOUS'
             },
             specimens: {
                 panelType: 'specimens',
