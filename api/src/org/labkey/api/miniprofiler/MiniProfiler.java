@@ -161,6 +161,19 @@ public class MiniProfiler
         return sb.toString();
     }
 
+    public static void addObject(Object object)
+    {
+        RequestInfo requestInfo = MemTracker.getInstance().current();
+        if (requestInfo == null || requestInfo.isIgnored())
+            return;
+
+        // NOTE: Can't check the server has finished startup since some startup tasks may allocate objects and cause deadlock between MemTracker._put and ModuleLoader.STARTUP_LOCK
+//        if (!(ModuleLoader.getInstance().isStartupComplete() && getSettings().isEnabled()))
+//            return;
+
+        requestInfo.addObject(object);
+    }
+
     /**
      * Returns a {@link Timing} that will time the code between its creation and disposal.
      * @param name descriptive name for the code that is encapsulated by the resulting AutoCloseable's lifetime.

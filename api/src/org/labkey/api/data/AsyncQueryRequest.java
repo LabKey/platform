@@ -99,9 +99,8 @@ public class AsyncQueryRequest<T>
         {
             public void run()
             {
-                RequestInfo req = null;
                 if (current != null)
-                     req = MemTracker.get().startProfiler("async query");
+                     MemTracker.get().startProfiler("async query");
 
                 qs.copyEnvironment(state);
                 try
@@ -115,7 +114,7 @@ public class AsyncQueryRequest<T>
                 finally
                 {
                     if (current != null)
-                        current.merge(req);
+                        MemTracker.get().merge(current);
                     qs.clearEnvironment();
                 }
             }

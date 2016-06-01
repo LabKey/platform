@@ -49,9 +49,11 @@ public class RequestInfo implements AutoCloseable
     // User that initiated the request.
     private Principal _user;
 
-    // The ignore flag may be set after profiling starts.  Timings will still be collected, but will be marked as already viewed.
+    // The ignore flag may be set after profiling starts.  Timings won't be collected and will be marked as already viewed when the request is complete.
     private boolean _ignored = false;
 
+    // The current Timing instance will collect child Timing, CustomTiming, and object allocations.
+    // Will be null when the request is complete or cancelled.
     /*package*/ Timing _current;
 
     public RequestInfo(@Nullable String url, @Nullable Principal user, @Nullable String name)
@@ -65,13 +67,21 @@ public class RequestInfo implements AutoCloseable
     @Override
     public void close()
     {
-        MemTracker.getInstance().requestComplete();
+        MemTracker.getInstance().requestComplete(this);
         _root.close();
+        assert _current == null;
     }
 
-    public void addObject(Object object)
+    public void cancel()
     {
-        if (object != null)
+        _ignored = true;
+        _root.close();
+        assert _current == null;
+    }
+
+    protected void addObject(Object object)
+    {
+        if (!_ignored && _current != null && object != null)
         {
             String s;
             if (object instanceof MemTrackable)
@@ -93,16 +103,26 @@ public class RequestInfo implements AutoCloseable
     /** Create new timed CustomTiming and add it to the current Timing step. */
     protected CustomTiming custom(String category, String msg)
     {
-        CustomTiming custom = new CustomTiming(_current, category, msg, null);
-        _current.addCustomTiming(category, custom);
-        return custom;
+        if (!_ignored && _current != null)
+        {
+            CustomTiming custom = new CustomTiming(_current, category, msg, null);
+            _current.addCustomTiming(category, custom);
+            return custom;
+        }
+        else
+        {
+            return null;
+        }
     }
 
     /** Create a completed CustomTiming and add it to the current Timing step. */
     protected void addCustomTiming(String category, long duration, String message, @Nullable String detailsUrl, @Nullable StackTraceElement[] stackTrace)
     {
-        CustomTiming custom = new CustomTiming(_current, category, duration, message, detailsUrl, stackTrace);
-        _current.addCustomTiming(category, custom);
+        if (!_ignored && _current != null)
+        {
+            CustomTiming custom = new CustomTiming(_current, category, duration, message, detailsUrl, stackTrace);
+            _current.addCustomTiming(category, custom);
+        }
     }
 
     /**
@@ -111,7 +131,7 @@ public class RequestInfo implements AutoCloseable
      */
     public void merge(RequestInfo other)
     {
-        if (_current == null || other == null)
+        if (_ignored || _current == null || other == null)
             return;
         _current.addChild(other.getRoot());
     }

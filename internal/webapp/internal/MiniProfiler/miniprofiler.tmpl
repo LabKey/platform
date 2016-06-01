@@ -167,7 +167,7 @@
 
   <tr class="{{? it.timing.isTrivial }}profiler-trivial{{?}}">
     <td class="profiler-label" {{? it.timing.name && it.timing.name.length > 45 }}title="{{! it.timing.name }}"{{?}}>
-      <span class="profiler-indent">{{! renderIndent(it.timing.depth) }}</span> {{= it.timing.name.slice(0,45) }}{{? it.timing.name && it.timing.name.length > 45 }}...{{?}}
+      <span class="profiler-indent">{{! renderIndent(it.timing.depth) }}</span>{{= it.timing.name.slice(0,45) }}{{? it.timing.name && it.timing.name.length > 45 }}...{{?}}{{? it.timing.overflow }}<span class="profiler-warning" title="Too many timings captured for this step. Results are limited to only include the most recent timings.">*</span>{{?}}
     </td>
     <td class="profiler-duration" title="duration of this step without any children's durations">
       {{= this.formatDuration(it.timing.durationExclusive) }}

@@ -17,6 +17,7 @@ package org.labkey.api.miniprofiler;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import org.apache.log4j.Logger;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.GUID;
 
@@ -34,7 +35,7 @@ import java.util.TreeMap;
 @JsonPropertyOrder({"name", "id", "duration", "durationExclusive", "children"})
 public class Timing implements AutoCloseable
 {
-    private static final int MAX_TIMINGS = 1000;
+    private static final int MAX_TIMINGS = 500;
 
     private final GUID _id;
     private final RequestInfo _req;
@@ -46,9 +47,9 @@ public class Timing implements AutoCloseable
     private long _duration;
 
     private final Map<String, Integer> _objects = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-    private List<Timing> _children;
+    private final List<Timing> _children = new LinkedList<>();
 
-    private Map<String, List<CustomTiming>> _customTimings;
+    private final Map<String, List<CustomTiming>> _customTimings = new HashMap<>();
     private boolean _overflow;
 
     public Timing(RequestInfo req, Timing parent, String name)
@@ -102,8 +103,8 @@ public class Timing implements AutoCloseable
         {
             _timer.stop();
             _duration = _timer.getTotalMilliseconds();
-            _req._current = _parent;
         }
+        _req._current = _parent;
     }
 
     private void limitList(List<?> list)
@@ -111,14 +112,14 @@ public class Timing implements AutoCloseable
         if (list.size() > MAX_TIMINGS)
         {
             _overflow = true;
-            list.subList(0, list.size() - 1000).clear();
+            list.subList(0, list.size() - MAX_TIMINGS).clear();
         }
     }
 
     protected void addChild(Timing timing)
     {
-        if (_children == null)
-            _children = new LinkedList<>();
+        if (!_timer.started())
+            return;
 
         limitList(_children);
         _children.add(timing);
@@ -126,20 +127,33 @@ public class Timing implements AutoCloseable
 
     protected void addCustomTiming(String category, CustomTiming custom)
     {
+        if (!_timer.started())
+            return;
+
         assert custom._parent == this;
-        if (_customTimings == null)
-            _customTimings = new HashMap<>();
         List<CustomTiming> timings = _customTimings.get(category);
         if (timings == null)
             _customTimings.put(category, timings = new LinkedList<>());
 
+        collapseDuplicate(timings, custom);
         limitList(timings);
         timings.add(custom);
     }
 
+    private CustomTiming collapseDuplicate(List<CustomTiming> timings, CustomTiming custom)
+    {
+        for (CustomTiming t : timings)
+        {
+            if (t.shareTrace(custom))
+                return t;
+        }
+
+        return null;
+    }
+
     public Map<String, List<CustomTiming>> getCustomTimings()
     {
-        if (_customTimings == null)
+        if (_customTimings.isEmpty())
             return null;
         return Collections.unmodifiableMap(_customTimings);
     }
@@ -203,13 +217,16 @@ public class Timing implements AutoCloseable
 
     public List<Timing> getChildren()
     {
-        if (_children == null)
+        if (_children.isEmpty())
             return null;
         return Collections.unmodifiableList(_children);
     }
 
     protected void addObject(String s)
     {
+        if (!_timer.started())
+            return;
+
         Integer count = _objects.get(s);
         _objects.put(s, count == null ? 1 : count.intValue() + 1);
     }

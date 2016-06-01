@@ -22,7 +22,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.RequestInfo;
+import org.labkey.api.security.User;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
@@ -186,15 +188,14 @@ public class MemTracker
     }
 
     /**
-     * Create new RequestInfo for the current thread and request and mark it as {@link org.labkey.api.miniprofiler.RequestInfo#setIgnored(boolean)}.
+     * Create new RequestInfo for the current thread.
      * Used for profiling background requests that will be merged into a parent profiler.
+     * @see #merge(RequestInfo)
      */
     @NotNull
     public RequestInfo startProfiler(@Nullable String name)
     {
-        RequestInfo req = startProfiler(null, null, name);
-        req.setIgnored(true);
-        return req;
+        return startProfiler(null, null, name);
     }
 
     /**
@@ -204,6 +205,8 @@ public class MemTracker
     public synchronized RequestInfo startProfiler(String url, Principal user, @Nullable String name)
     {
         RequestInfo req = new RequestInfo(url, user, name);
+        if ((user instanceof User) && ((User) user).isSearchUser())
+            req.setIgnored(true);
         _requestTracker.set(req);
         return req;
     }
@@ -212,6 +215,21 @@ public class MemTracker
     public RequestInfo current()
     {
         return _requestTracker.get();
+    }
+
+    /**
+     * Finish the current profiling session and merge it's results into the <code>to</code> RequestInfo.
+     * Unlike <code>requestComplete</code>, the current timing will not be added to the list of recent requests.
+     */
+    public void merge(@NotNull RequestInfo to)
+    {
+        RequestInfo requestInfo = _requestTracker.get();
+        if (requestInfo != null)
+        {
+            requestInfo.getRoot().stop();
+            to.merge(requestInfo);
+        }
+        _requestTracker.remove();
     }
 
     /**
@@ -227,9 +245,17 @@ public class MemTracker
     /**
      * Finish the current profiling session.
      */
-    public synchronized void requestComplete()
+    public synchronized void requestComplete(RequestInfo req)
     {
         RequestInfo requestInfo = _requestTracker.get();
+        _requestTracker.remove();
+        if (req != requestInfo)
+            _complete(requestInfo);
+        _complete(req);
+    }
+
+    private void _complete(RequestInfo requestInfo)
+    {
         boolean shouldTrack = requestInfo != null && !requestInfo.isIgnored();
         if (requestInfo != null)
         {
@@ -248,14 +274,16 @@ public class MemTracker
                     setViewed(requestInfo.getUser(), requestInfo.getId());
             }
         }
-        _requestTracker.remove();
     }
 
     private void trimOlderRequests()
     {
         if (_recentRequests.size() > MAX_TRACKED_REQUESTS)
         {
-            _recentRequests.subList(0, _recentRequests.size() - MAX_TRACKED_REQUESTS).clear();
+            List<RequestInfo> reqs = _recentRequests.subList(0, _recentRequests.size() - MAX_TRACKED_REQUESTS);
+            for (RequestInfo r : reqs)
+                r.cancel();
+            reqs.clear();
         }
     }
 
@@ -380,11 +408,7 @@ public class MemTracker
     {
         if (object != null)
             _references.put(object, new AllocationInfo());
-        RequestInfo requestInfo = _requestTracker.get();
-        if (requestInfo != null)
-        {
-            requestInfo.addObject(object);
-        }
+        MiniProfiler.addObject(object);
         return true;
     }
 

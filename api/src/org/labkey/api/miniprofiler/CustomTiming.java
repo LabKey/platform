@@ -21,6 +21,9 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.ExceptionUtil;
 
+import java.lang.ref.SoftReference;
+import java.util.Objects;
+
 /**
  * User: kevink
  */
@@ -29,9 +32,11 @@ public class CustomTiming implements AutoCloseable
 {
     /*package*/ final Timing _parent;
     private final String _category;
-    private final String _message; // TODO: collapse duplicate message or just have reference to QueryTracker
+    // almost final except when we share with a previously reported CustomTiming in shareTrace()
+    private String _message;
     private final @Nullable String _url;
-    private final @Nullable StackTraceElement[] _stackTrace; // TODO: collapse duplicate stacktrace or just have reference to QueryTracker
+    // almost final except when we share with a previously reported CustomTiming in shareTrace()
+    private @Nullable SoftReference<String> _stackTrace;
 
     private final CPUTimer _timer;
     private final long _startOffset;
@@ -45,7 +50,7 @@ public class CustomTiming implements AutoCloseable
         _category = category;
         _message = message;
         _url = url;
-        _stackTrace = stackTrace;
+        _stackTrace = stackTrace == null ? null : new SoftReference<>(ExceptionUtil.renderStackTrace(stackTrace));
 
         if (parent != null)
         {
@@ -72,7 +77,7 @@ public class CustomTiming implements AutoCloseable
         _category = category;
         _message = message;
         _url = url;
-        _stackTrace = stackTrace;
+        _stackTrace = stackTrace == null ? null : new SoftReference<>(ExceptionUtil.renderStackTrace(stackTrace));
 
         if (parent != null)
         {
@@ -130,8 +135,20 @@ public class CustomTiming implements AutoCloseable
 
     public String getStackTrace()
     {
-        if (_stackTrace == null)
-            return null;
-        return ExceptionUtil.renderStackTrace(_stackTrace);
+        return _stackTrace == null ? null : _stackTrace.get();
+    }
+
+    // Attempt to share message and stack trace with a previously reported CustomTiming within the same parent Timing
+    boolean shareTrace(CustomTiming timing)
+    {
+        assert _parent == timing._parent;
+        if (_message.equals(timing.getMessage()) && Objects.equals(getStackTrace(), timing.getStackTrace()))
+        {
+            timing._message = _message;
+            timing._stackTrace = _stackTrace;
+            return true;
+        }
+
+        return false;
     }
 }
