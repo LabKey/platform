@@ -496,7 +496,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/picard-lib-1.138.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/picard-lib-2.2.4.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -514,7 +514,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/htsjdk-1.138.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/htsjdk-2.2.4.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
