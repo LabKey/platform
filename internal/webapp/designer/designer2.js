@@ -258,7 +258,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
         var deleteEnabled = canEdit && this.customView.deletable && this.customView.name && !this.customView.doesNotExist;
 
         // enabled for saved (non-session) editable views or customized default view (not new) views.
-        var revertEnabled = canEdit && (this.customView.revertable || this.customView.session || (!this.customView.name && !this.customView.doesNotExist));
+        var revertEnabled = canEdit && (this.customView.revertable || this.customView.session);
 
         // Issue 11188: Don't use friendly id for grouptabs (eg., "ColumnsTab") -- breaks showing two customize views on the same page.
         // Provide mapping from friendly tab names to tab index.
