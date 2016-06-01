@@ -86,7 +86,7 @@ public class ValidateQueryAction extends ApiAction<ValidateQueryAction.ValidateQ
         QueryManager.get().validateQuery(table, form.isIncludeAllColumns(), parseErrors, parseWarnings);
         for (QueryParseException e : parseErrors)
         {
-            errors.reject(SpringActionController.ERROR_MSG, "ERROR: " + e.getMessage());
+            errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
         }
 
         for (QueryParseException e : parseWarnings)

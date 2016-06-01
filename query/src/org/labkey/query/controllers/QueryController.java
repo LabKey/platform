@@ -5667,7 +5667,7 @@ public class QueryController extends SpringActionController
             {
                 for (QueryParseException e : parseErrors)
                 {
-                    errors.reject(ERROR_MSG, "ERROR: " + e.getMessage());
+                    errors.reject(ERROR_MSG, e.getMessage());
                 }
                 return response;
             }
@@ -5678,7 +5678,7 @@ public class QueryController extends SpringActionController
 
             for (QueryParseException e : parseErrors)
             {
-                errors.reject(ERROR_MSG, "ERROR: " + e.getMessage());
+                errors.reject(ERROR_MSG, e.getMessage());
             }
 
             for (QueryParseException e : parseWarnings)
