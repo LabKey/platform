@@ -3,6 +3,7 @@ package org.labkey.test.pages.mothership;
 import org.labkey.test.WebDriverWrapper;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.util.DataRegionTable;
+import org.labkey.test.util.mothership.MothershipHelper;
 import org.openqa.selenium.WebDriver;
 
 public class ShowInstallationsPage extends BaseMothershipPage
@@ -16,7 +17,7 @@ public class ShowInstallationsPage extends BaseMothershipPage
 
     public static ShowInstallationsPage beginAt(WebDriverWrapper driver)
     {
-        return beginAt(driver, driver.getCurrentContainerPath());
+        return beginAt(driver, MothershipHelper.MOTHERSHIP_PROJECT);
     }
 
     public static ShowInstallationsPage beginAt(WebDriverWrapper driver, String containerPath)

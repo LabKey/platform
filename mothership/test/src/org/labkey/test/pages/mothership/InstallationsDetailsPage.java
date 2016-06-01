@@ -6,6 +6,7 @@ import org.labkey.test.WebTestHelper;
 import org.labkey.test.components.ComponentElements;
 import org.labkey.test.pages.LabKeyPage;
 import org.labkey.test.selenium.LazyWebElement;
+import org.labkey.test.util.mothership.MothershipHelper;
 import org.openqa.selenium.SearchContext;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -21,7 +22,7 @@ public class InstallationsDetailsPage extends LabKeyPage
 
     public static InstallationsDetailsPage beginAt(WebDriverWrapper driver)
     {
-        return beginAt(driver, driver.getCurrentContainerPath());
+        return beginAt(driver, MothershipHelper.MOTHERSHIP_PROJECT);
     }
 
     public static InstallationsDetailsPage beginAt(WebDriverWrapper driver, String containerPath)

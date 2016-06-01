@@ -2,6 +2,7 @@ package org.labkey.test.pages.mothership;
 
 import org.labkey.test.WebDriverWrapper;
 import org.labkey.test.WebTestHelper;
+import org.labkey.test.util.mothership.MothershipHelper;
 import org.openqa.selenium.WebDriver;
 
 public class ReportsPage extends BaseMothershipPage
@@ -15,7 +16,7 @@ public class ReportsPage extends BaseMothershipPage
 
     public static ReportsPage beginAt(WebDriverWrapper driver)
     {
-        return beginAt(driver, driver.getCurrentContainerPath());
+        return beginAt(driver, MothershipHelper.MOTHERSHIP_PROJECT);
     }
 
     public static ReportsPage beginAt(WebDriverWrapper driver, String containerPath)

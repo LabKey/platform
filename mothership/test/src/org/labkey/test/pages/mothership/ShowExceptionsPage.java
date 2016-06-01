@@ -1,11 +1,11 @@
 package org.labkey.test.pages.mothership;
 
+import org.labkey.test.Locator;
 import org.labkey.test.WebDriverWrapper;
-import org.labkey.test.WebDriverWrapperImpl;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.util.DataRegionTable;
+import org.labkey.test.util.mothership.MothershipHelper;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
 
 public class ShowExceptionsPage extends BaseMothershipPage
 {
@@ -18,7 +18,7 @@ public class ShowExceptionsPage extends BaseMothershipPage
 
     public static ShowExceptionsPage beginAt(WebDriverWrapper driver)
     {
-        return beginAt(driver, driver.getCurrentContainerPath());
+        return beginAt(driver, MothershipHelper.MOTHERSHIP_PROJECT);
     }
 
     public static ShowExceptionsPage beginAt(WebDriverWrapper driver, String containerPath)
@@ -49,6 +49,12 @@ public class ShowExceptionsPage extends BaseMothershipPage
         public ExceptionSummaryDataRegion(WebDriver driver)
         {
             super("ExceptionSummary", driver);
+        }
+
+        public StackTraceDetailsPage clickStackTrace(int stackTraceId)
+        {
+            clickAndWait(Locator.linkWithHref("exceptionStackTraceId=" + stackTraceId).findElement(getComponentElement()));
+            return new StackTraceDetailsPage(getDriver().getDriver());
         }
 
         public void ignoreSelected()

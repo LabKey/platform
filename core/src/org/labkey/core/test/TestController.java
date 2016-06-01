@@ -20,6 +20,7 @@ import org.labkey.api.action.FormArrayList;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
@@ -487,7 +488,22 @@ public class TestController extends SpringActionController
         }
     }
 
-    
+
+    @CSRF @RequiresNoPermission
+    public class CSRFAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new HtmlView("SUCCESS - CSRF");
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return navTrail(root, "CSRF test");
+        }
+    }
+
+
     public abstract class PermAction extends SimpleViewAction
     {
         String _action;
@@ -589,8 +605,8 @@ public class TestController extends SpringActionController
     }
 
 
-    // NpeAction, ConfigurationExceptionAction, NotFoundAction, and UnauthorizedAction allow simple testing of exception
-    // logging and display, both with and without a message
+    // NpeAction, IllegalStateAction, ConfigurationExceptionAction, NotFoundAction, and UnauthorizedAction
+    // allow simple testing of exception logging and display, both with and without a message
 
     @RequiresSiteAdmin
     public class NpeAction extends SimpleViewAction<ExceptionForm>
@@ -604,6 +620,48 @@ public class TestController extends SpringActionController
                 npe = new NullPointerException(form.getMessage());
             ExceptionUtil.decorateException(npe, ExceptionUtil.ExceptionInfo.ExtraMessage, "testing", true);
             throw npe;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class NpeOtherAction extends SimpleViewAction<ExceptionForm>
+    {
+        public ModelAndView getView(ExceptionForm form, BindException errors) throws Exception
+        {
+            NullPointerException npe;
+            if (null == form.getMessage())
+                npe = new NullPointerException();
+            else
+                npe = new NullPointerException(form.getMessage());
+            ExceptionUtil.decorateException(npe, ExceptionUtil.ExceptionInfo.ExtraMessage, "testing", true);
+            throw npe;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class IllegalStateAction extends SimpleViewAction<ExceptionForm>
+    {
+        public ModelAndView getView(ExceptionForm form, BindException errors) throws Exception
+        {
+            IllegalStateException ise;
+            if (null == form.getMessage())
+                ise = new IllegalStateException();
+            else
+                ise = new IllegalStateException(form.getMessage());
+            ExceptionUtil.decorateException(ise, ExceptionUtil.ExceptionInfo.ExtraMessage, "testing", true);
+            throw ise;
         }
 
         public NavTree appendNavTrail(NavTree root)
