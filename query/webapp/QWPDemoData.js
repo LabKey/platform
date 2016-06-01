@@ -28,7 +28,6 @@ function sampleSetDomainTypeTest(queryName, rows, description) {
             console.log('Successfully created the \'' + queryName + '\' Sample Set.');
             LABKEY.Domain.get(function(_dd){
 
-                _dd.description = 'An updated description via the Client JavaScript API';
                 LABKEY.Query.insertRows({
                     containerPath: LABKEY.containerPath,
                     schemaName: 'Samples',

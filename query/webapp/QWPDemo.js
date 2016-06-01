@@ -211,7 +211,7 @@
                 queryName: 'sampleDataTest1',
                 renderTo: RENDERTO,
                 failure: function() {
-                    alert('Failed test: Failed test: Set Paging to 2 with API');
+                    alert('Failed test: Set Paging to 2 with API');
                 },
                 listeners: {
                     render: function(dr) {
