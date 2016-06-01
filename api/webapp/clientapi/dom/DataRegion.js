@@ -2160,7 +2160,7 @@ if (!LABKEY.DataRegions) {
     var _deleteTimer;
 
     var _beforeViewDelete = function(region, revert) {
-        var _deleteTimer = setTimeout(function() {
+        _deleteTimer = setTimeout(function() {
             _deleteTimer = 0;
             region.showLoadingMessage(revert ? 'Reverting view...' : 'Deleting view...');
         }, 500);
@@ -2453,7 +2453,7 @@ if (!LABKEY.DataRegions) {
                         if (timerId > 0)
                             clearTimeout(timerId);
                         win.close();
-                        Ext4.Msg.hide();
+                        //Ext4.Msg.hide(); //Doesn't seem needed. Also there is bug with Msg.hide() for extjs v4.2.1
                     },
                     success: function() {
                         region.showSuccessMessage.call(region);
@@ -3229,6 +3229,10 @@ if (!LABKEY.DataRegions) {
             $.each(config, function(key, value) {
                 region[key] = value;
             });
+            if (!config.view) {
+                // when switching back to 'default' view, needs to clear region.view
+                region.view = undefined;
+            }
             region._init(config);
         }
         else {
