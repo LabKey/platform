@@ -155,10 +155,10 @@ public class ReportingApiQueryResponse extends ExtendedApiQueryResponse
                 row.put("data", new HashMap<>());
             }
 
-            Map<ColMapEntry, Object> colMap = createColMap(dc);
+            Object data = createColMap(dc);
 
             //put the column map into the data map using the column name as the key
-            ((HashMap)row.get("data")).put(columnName, colMap);
+            ((HashMap)row.get("data")).put(columnName, data);
         }
     }
 

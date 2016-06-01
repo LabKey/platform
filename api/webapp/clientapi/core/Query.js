@@ -73,7 +73,7 @@ LABKEY.Query = new function()
 
     function getSuccessCallbackWrapper(callbackFn, stripHiddenCols, scope, requiredVersion)
     {
-        if (requiredVersion && (requiredVersion === 13.2 || requiredVersion === "13.2")) {
+        if (requiredVersion && (requiredVersion === 13.2 || requiredVersion === "13.2" || requiredVersion === 16.2)) {
             return LABKEY.Utils.getCallbackWrapper(function(data, response, options){
                 if (data && callbackFn)
                     callbackFn.call(scope || this, new LABKEY.Query.Response(data), response, options);
@@ -2200,9 +2200,10 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
 
     /**
      * Gets the requested column from the row. Includes extended values such as display value, URL, etc.
+     * When requested version is >16.2, multi-value columns will return an array of objects containing "value" and other properties.
      * @param {String} columnName The column name requested. Used to do a case-insensitive match to find the column.
-     * @returns {Object} Returns an object for the given columnName passed in. The object will always contain a property
-     * named "value" that is the column's value, but it may also contain other properties about that column's value. For
+     * @returns {Object} For the given columnName, returns an object in the common case or an array of objects for multi-value columns.
+     * The object will always contain a property named "value" that is the column's value, but it may also contain other properties about that column's value. For
      * example, if the column was setup to track missing value information, it will also contain a property named mvValue
      * (which is the raw value that is considered suspect), and a property named mvIndicator, which will be the string MV
      * indicator (e.g., "Q").
@@ -2221,6 +2222,7 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
 
     /**
      * Gets the simple value for the requested column. Equivalent of doing Row.get(columnName).value.
+     * For multi-value columns, the result is an array of values.
      * @param {String} columnName The column name requested. Used to do a case-insensitive match to find the column.
      * @returns {*} Returns the simple value for the given column.
      */
@@ -2229,7 +2231,10 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
 
         for (var attr in this) {
             if (attr.toLowerCase() === columnName && this.hasOwnProperty(attr) && !(this[attr] instanceof Function)) {
-                if (this[attr].value) {
+                if (LABKEY.Utils.isArray(this[attr])) {
+                    return this[attr].map(function (i) { return i.value; });
+                }
+                if (this[attr].hasOwnProperty('value')) {
                     return this[attr].value;
                 }
             }

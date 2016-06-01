@@ -19,10 +19,12 @@ import org.labkey.api.query.FieldKey;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Wraps any DisplayColumn and causes it to render each value separately. Often used in conjunction with
@@ -31,10 +33,12 @@ import java.util.Set;
  * User: adam
  * Date: Sep 14, 2010
  */
-
 public class MultiValuedDisplayColumn extends DisplayColumnDecorator
 {
     private final Set<FieldKey> _fieldKeys = new HashSet<>();
+    private final Set<FieldKey> _additionalFieldKeys = new HashSet<>();
+    private final ColumnInfo _boundCol;
+    private final ColumnInfo _lookupCol;
 
     public MultiValuedDisplayColumn(DisplayColumn dc)
     {
@@ -45,6 +49,23 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator
     public MultiValuedDisplayColumn(DisplayColumn dc, boolean boundColumnIsNotMultiValued)
     {
         super(dc);
+
+        _boundCol = dc.getColumnInfo();
+        ColumnInfo lookupCol = null;
+        if (_boundCol.getFk() instanceof MultiValuedForeignKey)
+        {
+            // Retrieve the value column so it can be used when rendering json or tsv values.
+            MultiValuedForeignKey mvfk = (MultiValuedForeignKey)_boundCol.getFk();
+            ColumnInfo childKey = mvfk.createJunctionLookupColumn(_boundCol);
+            if (childKey != null && childKey.getFk() != null)
+            {
+                lookupCol = childKey.getFk().createLookupColumn(childKey, childKey.getFk().getLookupColumnName());
+                // Remove the intermediate junction table from the FieldKey
+                lookupCol.setFieldKey(new FieldKey(_boundCol.getFieldKey(), lookupCol.getFieldKey().getName()));
+                _additionalFieldKeys.add(lookupCol.getFieldKey());
+            }
+        }
+        _lookupCol = lookupCol;
 
         addQueryFieldKeys(_fieldKeys);
         assert _fieldKeys.contains(getColumnInfo().getFieldKey());
@@ -57,16 +78,60 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator
     }
 
     @Override
+    public void addQueryFieldKeys(Set<FieldKey> keys)
+    {
+        super.addQueryFieldKeys(keys);
+        keys.addAll(_additionalFieldKeys);
+    }
+
+    private <K> List<K> values(RenderContext ctx, Function<RenderContext, K> fn)
+    {
+        ArrayList<K> values = new ArrayList<>();
+        try
+        {
+            if (_lookupCol != null && _column instanceof DataColumn)
+                ((DataColumn)_column).setBoundColumn(_lookupCol);
+            MultiValuedRenderContext mvCtx = new MultiValuedRenderContext(ctx, _fieldKeys);
+
+            while (mvCtx.next())
+            {
+                values.add(fn.apply(mvCtx));
+            }
+            return values;
+        }
+        finally
+        {
+            if (_lookupCol != null && _column instanceof DataColumn)
+                ((DataColumn)_column).setBoundColumn(_boundCol);
+        }
+    }
+
+    public List<String> renderURLs(RenderContext ctx)
+    {
+        return values(ctx, super::renderURL);
+    }
+
+    @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        MultiValuedRenderContext mvCtx = new MultiValuedRenderContext(ctx, _fieldKeys);
-        String sep = "";
-
-        while (mvCtx.next())
+        try
         {
-            out.append(sep);
-            super.renderGridCellContents(mvCtx, out);
-            sep = ", ";
+            if (_lookupCol != null && _column instanceof DataColumn)
+                ((DataColumn) _column).setBoundColumn(_lookupCol);
+            MultiValuedRenderContext mvCtx = new MultiValuedRenderContext(ctx, _fieldKeys);
+            String sep = "";
+
+            while (mvCtx.next())
+            {
+                out.append(sep);
+                super.renderGridCellContents(mvCtx, out);
+                sep = ", ";
+            }
+        }
+        finally
+        {
+            if (_lookupCol != null && _column instanceof DataColumn)
+                ((DataColumn)_column).setBoundColumn(_boundCol);
         }
 
         // TODO: Call super in empty values case?
@@ -86,47 +151,28 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator
     @Override
     public Object getDisplayValue(RenderContext ctx)
     {
-        MultiValuedRenderContext mvCtx = new MultiValuedRenderContext(ctx, _fieldKeys);
-        String sep = "";
-        StringBuilder sb = new StringBuilder();
+        return getDisplayValues(ctx).stream().map(Object::toString).collect(Collectors.joining(", "));
+    }
 
-        while (mvCtx.next())
-        {
-            sb.append(sep);
-            sep = ", ";
-            sb.append(super.getDisplayValue(mvCtx));
-        }
-        return sb.toString();
+    public List<Object> getDisplayValues(RenderContext ctx)
+    {
+        return values(ctx, super::getDisplayValue);
     }
 
     @Override
     public String getTsvFormattedValue(RenderContext ctx)
     {
-        MultiValuedRenderContext mvCtx = new MultiValuedRenderContext(ctx, _fieldKeys);
-        String sep = "";
-        StringBuilder sb = new StringBuilder();
-
-        while (mvCtx.next())
-        {
-            sb.append(sep);
-            sep = ", ";
-            sb.append(super.getTsvFormattedValue(mvCtx));
-        }
-        return sb.toString();
+        return getTsvFormattedValues(ctx).stream().collect(Collectors.joining(", "));
     }
 
-    public Object getJsonValue(RenderContext ctx)
+    public List<String> getTsvFormattedValues(RenderContext ctx)
     {
-        List<Object> values = new LinkedList<>();
+        return values(ctx, super::getTsvFormattedValue);
+    }
 
-        MultiValuedRenderContext mvCtx = new MultiValuedRenderContext(ctx, _fieldKeys);
-        while (mvCtx.next())
-        {
-            Object v = super.getJsonValue(mvCtx);
-            values.add(v);
-        }
-
-        return values;
+    public List<Object> getJsonValue(RenderContext ctx)
+    {
+        return values(ctx, super::getJsonValue);
     }
 
     @Override
@@ -146,16 +192,7 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator
     @Override
     public Object getInputValue(RenderContext ctx)
     {
-        List<Object> values = new LinkedList<>();
-
-        MultiValuedRenderContext mvCtx = new MultiValuedRenderContext(ctx, _fieldKeys);
-        while (mvCtx.next())
-        {
-            Object v = super.getInputValue(mvCtx);
-            values.add(v);
-        }
-
-        return values;
+        return values(ctx, super::getInputValue);
     }
 
 }

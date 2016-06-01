@@ -31,7 +31,6 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -498,7 +497,7 @@ public class DataColumn extends DisplayColumn
 
             if (formatted.length() == 0)
                 formatted = "&nbsp;";
-            else if (_preserveNewlines)
+            else if (isPreserveNewlines())
                 formatted = formatted.replaceAll("\\n", "<br>\n");
             else if (value instanceof Date)
                 formatted = "<nobr>" + formatted + "</nobr>";

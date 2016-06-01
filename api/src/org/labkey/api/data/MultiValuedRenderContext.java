@@ -63,12 +63,12 @@ public class MultiValuedRenderContext extends RenderContextDecorator
                     throw new IllegalStateException("Expected all columns to have the same number of values, but '" + fieldKey + "' has " + values.length + " and " + _iterators.keySet() + " had " + length);
                 }
                 length = values.length;
-                _iterators.put(fieldKey, new ArrayIterator<String>(values));
+                _iterators.put(fieldKey, new ArrayIterator<>(values));
             }
 
             for (FieldKey nullFieldKey : nullFieldKeys)
             {
-                _iterators.put(nullFieldKey, new ArrayIterator<String>(new String[length == -1 ? 0 : length]));
+                _iterators.put(nullFieldKey, new ArrayIterator<>(new String[length == -1 ? 0 : length]));
             }
         }
     }
@@ -104,10 +104,14 @@ public class MultiValuedRenderContext extends RenderContextDecorator
         {
             ColumnInfo columnInfo = getFieldMap().get(key);
             // The value was concatenated with others, so it's become a string.
-            // Do conversion to switch it back to the expected type. 
+            // Do conversion to switch it back to the expected type.
             if (columnInfo != null && !columnInfo.getJavaClass().isInstance(value))
             {
-                value = ConvertUtils.convert(value.toString(), columnInfo.getJavaClass());
+                // empty string values map to null
+                if ("".equals(value))
+                    value = null;
+                else
+                    value = ConvertUtils.convert(value.toString(), columnInfo.getJavaClass());
             }
         }
         else

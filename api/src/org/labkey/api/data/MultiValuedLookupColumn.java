@@ -42,7 +42,8 @@ public class MultiValuedLookupColumn extends LookupColumn
         _junctionKey = junctionKey;
         copyAttributesFrom(display);
         copyURLFrom(display, parentPkColumn.getFieldKey(), null);
-        setJdbcType(JdbcType.VARCHAR);
+        // NOTE: Changing the type to a VARCHAR cases MultiValueRenderContext.get() type conversion to be skipped.
+        //setJdbcType(JdbcType.VARCHAR);
     }
 
     // We don't traverse FKs from a multi-valued column
