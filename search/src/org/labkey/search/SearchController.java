@@ -53,6 +53,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -69,9 +70,9 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.search.audit.SearchAuditProvider;
 import org.labkey.search.model.AbstractSearchService;
-import org.labkey.search.model.LuceneAnalyzer;
 import org.labkey.search.model.ExternalIndexProperties;
 import org.labkey.search.model.IndexInspector;
+import org.labkey.search.model.LuceneAnalyzer;
 import org.labkey.search.model.LuceneSearchServiceImpl;
 import org.labkey.search.model.SearchPropertyManager;
 import org.springframework.validation.BindException;
@@ -751,8 +752,9 @@ public class SearchController extends SpringActionController
                 throw new NotFoundException();
             }
 
-            String query = form.getQueryString();
-            JSONObject response = new JSONObject();
+            final Path contextPath = Path.parse(getViewContext().getContextPath());
+            final String query = form.getQueryString();
+            final JSONObject response = new JSONObject();
             Object[] arr = new Object[0];
             int totalHits = 0;
 
@@ -785,7 +787,7 @@ public class SearchController extends SpringActionController
                     o.put("id", id);
                     o.put("title", hit.title);
                     o.put("container", hit.container);
-                    o.put("url", hit.url);
+                    o.put("url", form.isNormalizeUrls() ? hit.normalizeHref(contextPath) : hit.url);
                     o.put("summary", StringUtils.trimToEmpty(hit.summary));
                     arr[i++] = o;
                 }
@@ -1168,6 +1170,7 @@ public class SearchController extends SpringActionController
         private SearchConfiguration _config = new InternalSearchConfiguration();    // Assume internal search (for webparts, etc.)
         private String _template = null;
         private SearchScope _scope = SearchScope.All;
+        private boolean _normalizeUrls = false;
 
         public void setConfiguration(SearchConfiguration config)
         {
@@ -1333,6 +1336,16 @@ public class SearchController extends SpringActionController
         {
             SearchService ss = ServiceRegistry.get().getService(SearchService.class);
             return ss.getSearchResultTemplate(getTemplate());
+        }
+
+        public boolean isNormalizeUrls()
+        {
+            return _normalizeUrls;
+        }
+
+        public void setNormalizeUrls(boolean normalizeUrls)
+        {
+            _normalizeUrls = normalizeUrls;
         }
     }
 

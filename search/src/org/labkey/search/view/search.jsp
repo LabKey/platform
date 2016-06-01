@@ -34,7 +34,6 @@
 <%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Path" %>
-<%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -44,6 +43,7 @@
 <%@ page import="org.labkey.api.webdav.WebdavResource" %>
 <%@ page import="org.labkey.search.SearchController" %>
 <%@ page import="org.labkey.search.SearchController.SearchForm" %>
+<%@ page import="org.labkey.search.model.AbstractSearchService" %>
 <%@ page import="java.io.IOException" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
@@ -222,7 +222,7 @@
             {
                 Container documentContainer = ContainerManager.getForId(hit.container);
 
-                String href = normalizeHref(documentContainer, contextPath, hit.url);
+                String href = hit.normalizeHref(contextPath, documentContainer);
                 %>
                 <div class="labkey-search-result">
                 <a class="labkey-search-title" href="<%=h(href)%>"><%=h(hit.title)%></a><div style='margin-left:10px; width:600px;'><%
@@ -493,39 +493,6 @@ String getResultsSummary(int totalHits, @Nullable String description, @NotNull S
     return sb.toString();
 }
 
-
-String normalizeHref(Container c, Path contextPath, String href)
-{
-    // see issue #11481
-    if (href.startsWith("files/"))
-        href = "/" + href;
-        
-    try
-    {
-        if (null != c && href.startsWith("/"))
-        {
-            URLHelper url = new URLHelper(href);
-            Path path = url.getParsedPath();
-            if (path.startsWith(contextPath))
-            {
-                int pos = contextPath.size() + 1;
-                if (path.size() > pos && c.getId().equals(path.get(pos)))
-                {
-                    path = path.subpath(0,pos)
-                            .append(c.getParsedPath())
-                            .append(path.subpath(pos+1,path.size()));
-                    url.setPath(path);
-                    return url.getLocalURIString(false);
-                }
-            }
-        }
-    }
-    catch (Exception x)
-    {
-        //
-    }
-    return href;
-}
 
 %>
 <%
