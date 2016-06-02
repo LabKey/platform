@@ -256,19 +256,14 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
                     filterPrefix = this.COHORT_PREFIX;
                 }
 
-                // Not in any cohort/group
-                // NOTE: This filter is exclusively outside the set of any other value filters for this
-                // cohort/group as we cannot express IN=1;NULL;2;3. Rather IN=1;2;3 AND ISBLANK is created
-                // which is not logically the same. We cannot express ORs explicitly outside of an IN clause.
-                if (filter.get('id') === -1) {
-                    filters.push(LABKEY.Filter.create(filterPrefix, undefined, LABKEY.Filter.Types.MISSING));
-                    return;
-                }
-
                 if (!filterMap[filterPrefix]) {
                     filterMap[filterPrefix] = [];
                 }
-                filterMap[filterPrefix].push(filter.get('label'));
+
+                if (filter.get('id') !== -1) {
+                    filterMap[filterPrefix].push(filter.get('label'));
+                }
+                // else Not in any cohort/group
             }
         }, this);
 
@@ -277,8 +272,15 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
             if (values.length > 1) {
                 filter = LABKEY.Filter.create(column, values.join(';'), LABKEY.Filter.Types.IN);
             }
-            else {
+            else if (values.length == 1) {
                 filter = LABKEY.Filter.create(column, values);
+            }
+            else {
+                // Not in any cohort/group
+                // NOTE: This filter is exclusively outside the set of any other value filters for this
+                // cohort/group as we cannot express IN=1;NULL;2;3. Rather IN=1;2;3 AND ISBLANK is created
+                // which is not logically the same. We cannot express ORs explicitly outside of an IN clause.
+                filter = LABKEY.Filter.create(column, undefined, LABKEY.Filter.Types.MISSING);
             }
             filters.push(filter);
         });
