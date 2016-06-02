@@ -1,4 +1,4 @@
-function sampleSetDomainTypeTest(queryName, rows, description) {
+function sampleSetDomainTypeTest(queryName, rows, description, additionalCallBack) {
 
     function getSuccessHandler(dd, queryName) {
         console.log('The Sample Set \'' + queryName + '\' already exists.', true);
@@ -41,6 +41,7 @@ function sampleSetDomainTypeTest(queryName, rows, description) {
             }, function(response) {
                 console.log('Failed to update the \'' + queryName + '\' Sample Set');
             }, 'Samples', queryName);
+            additionalCallBack.call();
         }
 
         function createErrorHandler(response) {
@@ -64,9 +65,11 @@ function setUpDomains()
                 {"Alias":  'alias 6', "Id": 6, "Tag": 'blue'}];
     var rows2 =[ {"Alias":  'alias 2-1', "Id": 201, "Tag": 'square'}];
     var rows3 =[ {"Alias":  'alias 3-1', "Id": 301, "Tag": 'Hispanic'}];
-    sampleSetDomainTypeTest('sampleDataTest1', rows1, 'A sample set with color tags');
-    sampleSetDomainTypeTest('sampleDataTest2', rows2, 'A sample set with shape tags');
-    sampleSetDomainTypeTest('sampleDataTest3', rows3, 'A sample set with race tags');
+    sampleSetDomainTypeTest('sampleDataTest1', rows1, 'A sample set with color tags', function(){
+        sampleSetDomainTypeTest('sampleDataTest2', rows2, 'A sample set with shape tags', function(){
+            sampleSetDomainTypeTest('sampleDataTest3', rows3, 'A sample set with race tags');
+        });
+    });
 }
 function dropDomains()
 {

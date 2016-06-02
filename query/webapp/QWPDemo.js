@@ -42,13 +42,13 @@
                         LABKEY.Domain.get(function() {
                             REGIONS[hash]();
                         }, function() {
-                            setUpDomains();
+                            alert('Test data is not populated!');
                         }, 'Samples', 'sampleDataTest3');
                     }, function() {
-                        setUpDomains();
+                        alert('Test data is not populated!');
                     }, 'Samples', 'sampleDataTest2');
                 }, function() {
-                    setUpDomains();
+                    alert('Test data is not populated!');
                 }, 'Samples', 'sampleDataTest1');
 
                 if (initial === true) {

@@ -45,6 +45,35 @@
     </tr>
 </table>
 
+<script type="text/javascript">
+    function showPopulateButton(isShow) {
+        var button = document.getElementById('populatedata');
+        if (isShow) {
+            button.style.display = 'inline';
+        } else {
+            button.style.display = 'none';
+        }
+    }
 
+    LABKEY.Domain.get(function() {
+        LABKEY.Domain.get(function() {
+            LABKEY.Domain.get(function() {
+
+            }, function() {
+                showPopulateButton(true);
+            }, 'Samples', 'sampleDataTest3');
+        }, function() {
+            showPopulateButton(true);
+        }, 'Samples', 'sampleDataTest2');
+    }, function() {
+        showPopulateButton(true);
+    }, 'Samples', 'sampleDataTest1');
+
+</script>
 <br><br>
+<div id='populatedata' style="display:none; color: red;" >
+    <b>Test data is not populated!</b><br>
+    <button onclick="setUpDomains()">Populate test data</button><br>
+</div>
+<br>
 <button onclick="dropDomains()">Drop schema and clear test data</button>
