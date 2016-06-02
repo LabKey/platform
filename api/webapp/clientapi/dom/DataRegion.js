@@ -2023,7 +2023,7 @@ if (!LABKEY.DataRegions) {
                     }
                 }
             }
-            else if (region[p] !== undefined) {
+            else if (p && region[p] !== undefined) {
                 params[p] = region[p];
             }
         });
@@ -2229,51 +2229,53 @@ if (!LABKEY.DataRegions) {
                 qString = qString.substring(qmIdx + 1);
             }
 
-            var pairs = qString.split('&'), p, key,
-                LAST = '.lastFilter', lastIdx, skip = $.isArray(skipPrefixSet);
+            if (qString.length > 1) {
+                var pairs = qString.split('&'), p, key,
+                    LAST = '.lastFilter', lastIdx, skip = $.isArray(skipPrefixSet);
 
-            $.each(pairs, function(i, pair) {
-                p = pair.split('=', 2);
-                key = p[0] = decodeURIComponent(p[0]);
-                lastIdx = key.indexOf(LAST);
+                $.each(pairs, function(i, pair) {
+                    p = pair.split('=', 2);
+                    key = p[0] = decodeURIComponent(p[0]);
+                    lastIdx = key.indexOf(LAST);
 
-                if (lastIdx > -1 && lastIdx == (key.length - LAST.length)) {
-                    return;
-                }
-
-                var stop = false;
-                if (skip) {
-                    $.each(skipPrefixSet, function(j, skipPrefix) {
-                        if (LABKEY.Utils.isString(skipPrefix)) {
-
-                            // Special prefix that should remove all filters, but no other parameters
-                            if (skipPrefix.indexOf(ALL_FILTERS_SKIP_PREFIX) == (skipPrefix.length - 2)) {
-                                if (key.indexOf('~') > 0) {
-                                    stop = true;
-                                    return false;
-                                }
-                            }
-                            else if (key.indexOf(skipPrefix) == 0) {
-                                // only skip filters, parameters, and sorts
-                                if (key == skipPrefix ||
-                                        key.indexOf("~") > 0 ||
-                                        key.indexOf(PARAM_PREFIX) > 0 ||
-                                        key == (skipPrefix + "sort")) {
-                                    stop = true;
-                                    return false;
-                                }
-                            }
-                        }
-                    });
-                }
-
-                if (!stop) {
-                    if (p.length > 1) {
-                        p[1] = decodeURIComponent(p[1]);
+                    if (lastIdx > -1 && lastIdx == (key.length - LAST.length)) {
+                        return;
                     }
-                    params.push(p);
-                }
-            });
+
+                    var stop = false;
+                    if (skip) {
+                        $.each(skipPrefixSet, function(j, skipPrefix) {
+                            if (LABKEY.Utils.isString(skipPrefix)) {
+
+                                // Special prefix that should remove all filters, but no other parameters
+                                if (skipPrefix.indexOf(ALL_FILTERS_SKIP_PREFIX) == (skipPrefix.length - 2)) {
+                                    if (key.indexOf('~') > 0) {
+                                        stop = true;
+                                        return false;
+                                    }
+                                }
+                                else if (key.indexOf(skipPrefix) == 0) {
+                                    // only skip filters, parameters, and sorts
+                                    if (key == skipPrefix ||
+                                            key.indexOf("~") > 0 ||
+                                            key.indexOf(PARAM_PREFIX) > 0 ||
+                                            key == (skipPrefix + "sort")) {
+                                        stop = true;
+                                        return false;
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    if (!stop) {
+                        if (p.length > 1) {
+                            p[1] = decodeURIComponent(p[1]);
+                        }
+                        params.push(p);
+                    }
+                });
+            }
         }
 
         return params;
@@ -2475,7 +2477,7 @@ if (!LABKEY.DataRegions) {
                 value = newPair[1];
 
                 // Allow value to be null/undefined to support no-value filter types (Is Blank, etc)
-                if (LABKEY.Utils.isString(param)) {
+                if (LABKEY.Utils.isString(param) && param.length > 1) {
                     if (param.indexOf(region.name) !== 0) {
                         param = region.name + param;
                     }
