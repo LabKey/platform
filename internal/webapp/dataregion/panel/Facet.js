@@ -10,8 +10,26 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
     width : 260,
 
     statics : {
-        LOADED : true
+        LOADED : true,
+
+        display : function(dataRegion) {
+            return Ext4.create('LABKEY.dataregion.panel.Facet', {
+                dataRegion: dataRegion
+            });
+        }
     },
+
+    collapsed : true,
+    collapsible : true,
+    collapseDirection : 'left',
+    hidden : true,
+    collapseMode : 'mini',
+    frameHeader : false,
+    autoScroll : true,
+    bodyStyle : 'overflow-x: hidden !important;',
+    cls : 'labkey-data-region-facet',
+    minHeight : 450,
+    style: 'padding-right: 5px;',
 
     constructor : function(config) {
 
@@ -31,35 +49,27 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
             topEl.insertHtml('beforeBegin', targetHTML);
         }
 
+        Ext4.apply(config, {
+            renderTo: renderTarget,
+            regionName: config.dataRegion.name,
+            height: tableEl.getBox().height
+        });
+
         Ext4.applyIf(config, {
-            renderTo : renderTarget,
-            collapsed : true,
-            collapsible : true,
-            collapseDirection : 'left',
-            hidden : true,
-            collapseMode : 'mini',
-            frameHeader : false,
-            regionName : config.dataRegion.name,
-            style : { paddingRight : '5px' },
-            autoScroll : true,
-            bodyStyle : 'overflow-x: hidden !important;',
-            header : {
-                xtype : 'header',
-                title : 'Filter',
-                cls : 'facet_header'
-            },
-            cls : 'labkey-data-region-facet',
-            height : tableEl.getBox().height,
-            minHeight : 450
+            header: {
+                xtype: 'header',
+                title: 'Filter',
+                cls: 'facet_header'
+            }
         });
 
         var studyCtx = LABKEY.getModuleContext('study');
         this.SUBJECT_PREFIX = studyCtx.subject.columnName + '/';
         this.COHORT_PREFIX  = studyCtx.subject.columnName + '/Cohort/Label';
 
-        this.resizeTask = new Ext4.util.DelayedTask(this._resizeTask, this);
-
         this.callParent([config]);
+
+        this.resizeTask = new Ext4.util.DelayedTask(this._resizeTask, this);
     },
 
     initComponent : function() {
@@ -71,13 +81,36 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
 
         this.callParent(arguments);
 
-        var task = new Ext4.util.DelayedTask(function() {
-            this.add(this.getFilterCfg());
-        }, this);
-
+        // bind the data region and add the filter panel. This is done
+        // after render to allow for animations to not interfere with layout.
         this.on('afterrender', function() {
-            this.getDataRegion();
-            task.delay(200); // animation time
+            this._bindDataRegion();
+            Ext4.defer(function() {
+                this.add({
+                    xtype: 'participantfilter',
+                    itemId: 'filterPanel',
+                    width: this.width,
+                    layout: 'fit',
+                    bodyStyle: 'padding: 8px;',
+                    normalWrap: true,
+                    overCls: 'iScroll',
+
+                    // Filter specific config
+                    filterType: 'group',
+                    subjectNoun: this.subjectNoun,
+                    defaultSelectUncheckedCategory : true,
+
+                    listeners: {
+                        selectionchange: {
+                            fn: this.onSelectionChange.bind(this),
+                            buffer: 750
+                        },
+                        beforeInitGroupConfig: this.onBeforeInitGroupConfig.bind(this)
+                    },
+
+                    scope : this
+                });
+            }, 225, this); // animation time
         }, this, {single: true});
 
         this.on('beforeexpand', function() {
@@ -90,7 +123,7 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         }, this);
 
         // Attach resize event listeners
-        this.on('resize', this.onResize, this);
+        this.on('resize', function() { this.resizeTask.delay(100, null, null, arguments); }, this);
         Ext4.EventManager.onWindowResize(this._beforeShow, this);
     },
 
@@ -122,7 +155,18 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
 
     _afterHide : function() {
         var el = this.getContainerEl(this.getDataRegion());
-        if (el) { el.setWidth(null); }
+        if (el) {
+            el.setWidth(null);
+        }
+    },
+
+    _bindDataRegion : function() {
+        var dr = this.getDataRegion();
+
+        if (dr && !this._isRegionBound) {
+            this._isRegionBound = true;
+            dr.on('render', this.onRegionRender, this);
+        }
     },
 
     getRequiredWidth : function(dr) {
@@ -130,18 +174,14 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
     },
 
     getDataRegion : function() {
-
-        var region = LABKEY.DataRegions[this.regionName];
-
-        if (region && !this._isRegionBound) {
-            this._isRegionBound = true;
-            region.on('success', this.onRegionSuccess, this);
-        }
-
-        return region;
+        return LABKEY.DataRegions[this.regionName];
     },
 
-    onRegionSuccess : function(dr) {
+    /**
+     * Called when the Data Region 'render' event fires.
+     * @param dr
+     */
+    onRegionRender : function(dr) {
         // Give access to to this filter panel to the Data Region
         if (dr) {
             var tableEl = this.getDataRegionTableEl(dr);
@@ -153,49 +193,19 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
             this._resizeTask(this, box.width, box.height);
 
             // Filters might have been updated outside of facet
-            if (this.filterChangeCounter == 0 && this.filterPanel) {
+            var filterPanel = this.getComponent('filterPanel');
+            if (this.filterChangeCounter == 0 && filterPanel) {
                 if (dr.getUserFilterArray().length === 0) {
-                    this.filterPanel.getFilterPanel().selectAll(true);
+                    filterPanel.getFilterPanel().selectAll(true /* stopEvents */);
                 }
                 else {
-                    this.filterPanel.getFilterPanel().initSelection();
+                    filterPanel.getFilterPanel().initSelection();
                 }
             }
             else {
                 this.filterChangeCounter--;
             }
         }
-    },
-
-    getFilterCfg : function() {
-
-        return {
-           xtype: 'participantfilter',
-           width: this.width,
-           layout: 'fit',
-           bodyStyle: 'padding: 8px;',
-           normalWrap: true,
-           overCls: 'iScroll',
-
-           // Filter specific config
-           filterType: 'group',
-           subjectNoun: this.subjectNoun,
-           defaultSelectUncheckedCategory : true,
-
-           listeners: {
-               afterrender: function(p) { this.filterPanel = p; },
-               selectionchange: this.onFilterChange,
-               beforeInitGroupConfig: this.applyFilters,
-               buffer: 1000,
-               scope: this
-           },
-
-           scope : this
-        };
-    },
-
-    onResize : function(panel, w, h, oldW, oldH) {
-        this.resizeTask.delay(100, null, null, arguments);
     },
 
     // DO NOT CALL DIRECTLY. Use resizeTask.delay
@@ -223,32 +233,45 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         this._beforeShow();
     },
 
-    onFilterChange : function() {
+    /**
+     * Event listener for the 'selectionchange' event on the
+     */
+    onSelectionChange : function() {
         // Current all being selected === none being selected
-        var filters = this.filterPanel.getSelection(true, true),
-            filterMap = {},
-            filterPrefix, f=0;
+        var filterPanel = this.getComponent('filterPanel'),
+            filters = [],
+            filterMap = {};
 
-        for (; f < filters.length; f++) {
-            if (filters[f].get('type') != 'participant') {
+        Ext4.each(filterPanel.getSelection(true /* collapsed */, true /* skipIfAllSelected */), function(filter) {
+            if (filter.get('type') != 'participant') {
+
+                var filterPrefix;
 
                 // Build what a filter might look like
-                if (filters[f].data.category) {
-                    filterPrefix = this.SUBJECT_PREFIX + filters[f].data.category.label;
+                if (filter.data.category) {
+                    filterPrefix = this.SUBJECT_PREFIX + filter.data.category.label;
                 }
                 else {
                     // Assume it is a cohort
                     filterPrefix = this.COHORT_PREFIX;
                 }
 
+                // Not in any cohort/group
+                // NOTE: This filter is exclusively outside the set of any other value filters for this
+                // cohort/group as we cannot express IN=1;NULL;2;3. Rather IN=1;2;3 AND ISBLANK is created
+                // which is not logically the same. We cannot express ORs explicitly outside of an IN clause.
+                if (filter.get('id') === -1) {
+                    filters.push(LABKEY.Filter.create(filterPrefix, undefined, LABKEY.Filter.Types.MISSING));
+                    return;
+                }
+
                 if (!filterMap[filterPrefix]) {
                     filterMap[filterPrefix] = [];
                 }
-                filterMap[filterPrefix].push(filters[f].data.label);
+                filterMap[filterPrefix].push(filter.get('label'));
             }
-        }
+        }, this);
 
-        filters = [];
         Ext4.iterate(filterMap, function(column, values) {
             var filter;
             if (values.length > 1) {
@@ -264,43 +287,65 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         this.getDataRegion().replaceFilters(filters, [this.SUBJECT_PREFIX, this.COHORT_PREFIX]);
     },
 
-    // This will get called for each separate group in the Filter Display
-    applyFilters : function(fp, store) {
+    /**
+     * How data region filters get reflected back into the filter panel.
+     * This is called during the initSelection() of a LABKEY.ext4.filter.SelectPanel giving listeners a
+     * chance to modify which records are selected. This could likely use a refactor but it
+     * is how the LABKEY.ext4.filter.SelectPanel operates.
+     */
+    onBeforeInitGroupConfig : function(fp, store) {
+
+        var regionFilters = this.getDataRegion().getUserFilterArray();
+
         if (store && store.getCount() > 0) {
-            var userFilters = this.getDataRegion().getUserFilterArray();
-            if (userFilters && userFilters.length > 0) {
 
-                var uf, selection = [], rec, u, s;
-                for (u=0; u < userFilters.length; u++) {
+            var selections = [];
+            var groupFilters = [];
+            var cohortFilters = [];
+            var cohortFieldKey = this.COHORT_PREFIX.toLowerCase();
+            var groupFieldKey = this.SUBJECT_PREFIX.toLowerCase();
 
-                    uf = userFilters[u];
+            Ext4.each(regionFilters, function(filter) {
+                var fieldKey = filter.getColumnName().toLowerCase();
+                if (fieldKey.indexOf(cohortFieldKey) === 0) {
+                    cohortFilters.push(filter);
+                }
+                else if (fieldKey.indexOf(groupFieldKey) === 0) {
+                    groupFilters.push(filter);
+                }
+            });
 
-                    for (s=0; s < store.getRange().length; s++) {
-                        rec = store.getAt(s);
+            // process cohort filters
+            Ext4.each(cohortFilters, function(filter) {
+                var values = filter.getValue().toLowerCase().split(';'); // EQ or IN
+                for (var s=0; s < store.getRange().length; s++) {
+                    var rec = store.getAt(s);
+                    if (values.indexOf(rec.get('label').toLowerCase()) > -1) {
+                        selections.push(rec);
+                    }
+                }
+            });
 
-                        if (rec.data.label.toLowerCase() == uf.getValue().toLowerCase()) {
+            // process group filters
+            Ext4.each(groupFilters, function(filter) {
+                var grpCategory = filter.getColumnName().split('/');
+                grpCategory = grpCategory[grpCategory.length-1].toLowerCase();
 
-                            // Check Cohorts
-                            if ((!rec.data.category || rec.data.category == '') && rec.data.type.toLowerCase() == 'cohort') {
-                                selection.push(rec);
-                            }
-                            else if (rec.data.category && rec.data.category.label) {
+                var values = filter.getValue().toLowerCase().split(';'); // EQ or IN
+                for (var s=0; s < store.getRange().length; s++) {
+                    var rec = store.getAt(s);
+                    var category = rec.get('category');
 
-                                // Check Participant Groups
-                                var groupName = uf.getColumnName().split('/');
-                                groupName = groupName[groupName.length-1];
-                                if (rec.data.category.label.toLowerCase() == groupName.toLowerCase()) {
-                                    selection.push(rec);
-                                }
-                            }
+                    if (Ext4.isObject(category) && category.label.toLowerCase() === grpCategory) {
+                        if (values.indexOf(rec.get('label') && rec.get('label').toLowerCase()) > -1) {
+                            selections.push(rec);
                         }
                     }
-
                 }
+            });
 
-                if (selection.length > 0) {
-                    fp.selection = selection;
-                }
+            if (selections.length > 0) {
+                fp.selection = selections;
             }
         }
     }

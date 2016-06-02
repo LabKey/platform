@@ -273,7 +273,7 @@ if (!LABKEY.DataRegions) {
 
                 userContainerFilter: undefined, // TODO: Incorporate this with the standard containerFilter
 
-                userFilters: {}, // TODO: Consider implement fix for 25337
+                userFilters: {},
 
                 /**
                  * Name of the custom view to which this DataRegion is bound, may be blank. Read-only.
@@ -310,6 +310,7 @@ if (!LABKEY.DataRegions) {
 
         if ($.isArray(this.removeableFilters)) {
             LABKEY.Filter.appendFilterParams(this.userFilters, this.removeableFilters, this.name);
+            delete this.removeableFilters; // they've been applied
         }
 
         // initialize sorting
@@ -541,7 +542,6 @@ if (!LABKEY.DataRegions) {
     Proto.replaceFilters = function(filters, columnNames) {
         var filterPrefixes = [],
             filterParams = [],
-            params,
             me = this;
 
         if ($.isArray(filters)) {
@@ -551,22 +551,30 @@ if (!LABKEY.DataRegions) {
             });
         }
 
+        var fieldKeys = [];
+
         if ($.isArray(columnNames)) {
+            fieldKeys = fieldKeys.concat(columnNames);
+        }
+        else if ($.isPlainObject(columnNames) && columnNames.fieldKey) {
+            fieldKeys.push(columnNames.fieldKey.toString());
+        }
+
+        // support fieldKeys (e.g. ["ColumnA", "ColumnA/Sub1"])
+        if (fieldKeys.length > 0) {
             $.each(_getParameters(this, this.requestURL), function(i, param) {
-                if (param[0].indexOf(me.name + '.') === 0 && param[0].indexOf('~') > -1) {
-                    $.each(columnNames, function(j, name) {
-                        if (param[0].indexOf(me.name + '.' + name) > -1) {
-                            filterPrefixes.push(param[0]);
+                var p = param[0];
+                if (p.indexOf(me.name + '.') === 0 && p.indexOf('~') > -1) {
+                    $.each(fieldKeys, function(j, name) {
+                        if (p.indexOf(me.name + '.' + name) > -1) {
+                            filterPrefixes.push(p);
                         }
                     });
                 }
             });
         }
 
-        $.unique(filterPrefixes);
-
-        params = _getParameters(this, this.requestURL, filterPrefixes).concat(filterParams);
-        _changeFilter(this, params);
+        _setParameters(this, filterParams, [OFFSET_PREFIX].concat($.unique(filterPrefixes)));
     };
 
     /**
@@ -1346,7 +1354,12 @@ if (!LABKEY.DataRegions) {
         // clear sibling parameters
         this.showRows = undefined;
 
-        _setParameter(this, OFFSET_PREFIX, rowOffset, [OFFSET_PREFIX, SHOW_ROWS_PREFIX]);
+        if (rowOffset) {
+            _setParameter(this, OFFSET_PREFIX, rowOffset, [OFFSET_PREFIX, SHOW_ROWS_PREFIX]);
+        }
+        else {
+            _removeParameters(this, [OFFSET_PREFIX, SHOW_ROWS_PREFIX]);
+        }
     };
     Proto.setOffset = Proto.setPageOffset;
 
@@ -1917,9 +1930,7 @@ if (!LABKEY.DataRegions) {
     Proto.showFaceting = function() {
         if (this.facetLoaded) {
             if (!this.facet) {
-                this.facet = Ext4.create('LABKEY.dataregion.panel.Facet', {
-                    dataRegion: this
-                });
+                this.facet = LABKEY.dataregion.panel.Facet.display(this);
             }
             this.facet.toggleCollapse();
         }
@@ -2103,42 +2114,6 @@ if (!LABKEY.DataRegions) {
         };
 
         return config;
-    };
-
-    var _changeFilter = function(region, newParamValPairs) {
-
-        var newQueryString = _buildQueryString(region, newParamValPairs);
-        //var event = $.Event('beforefilterchange');
-
-        var filterPairs = [], name, val;
-        $.each(newParamValPairs, function(i, pair) {
-            name = pair[0];
-            val = pair[1];
-            if (name.indexOf(region.name + '.') == 0 && name.indexOf('~') > -1) {
-                filterPairs.push([name, val]);
-            }
-        });
-
-        //$(region).trigger(event, region, filterPairs);
-        //if (event.isDefaultPrevented()) {
-        //    return;
-        //}
-        if (region.async) {
-            region.offset = 0;
-
-            // TODO: Stop modifying here, rather call _setParameters and let it handle parameter loading
-            // reset the user filters
-            region.userFilters = {};
-            $.each(filterPairs, function(i, fp) {
-                region.userFilters[fp[0]] = fp[1];
-            });
-
-            _load(region);
-        }
-        else {
-            var params = _getParameters(region, newQueryString, [region.name + OFFSET_PREFIX]);
-            region.setSearchString.call(region, region.name, _buildQueryString(region, params));
-        }
     };
 
     var _convertRenderTo = function(region, renderTo) {
@@ -2453,7 +2428,6 @@ if (!LABKEY.DataRegions) {
                         if (timerId > 0)
                             clearTimeout(timerId);
                         win.close();
-                        //Ext4.Msg.hide(); //Doesn't seem needed. Also there is bug with Msg.hide() for extjs v4.2.1
                     },
                     success: function() {
                         region.showSuccessMessage.call(region);
@@ -2483,7 +2457,9 @@ if (!LABKEY.DataRegions) {
         // e.g. ['.hello', '.goodbye'] becomes ['aqwp19.hello', 'aqwp19.goodbye']
         if ($.isArray(skipPrefixes)) {
             $.each(skipPrefixes, function(i, skip) {
-                skipPrefixes[i] = region.name + skip;
+                if (skip && skip.indexOf(region.name + '.') !== 0) {
+                    skipPrefixes[i] = region.name + skip;
+                }
             });
         }
 
@@ -2742,6 +2718,10 @@ if (!LABKEY.DataRegions) {
         }
     };
 
+    var _isFilter = function(region, parameter) {
+        return parameter && parameter.indexOf(region.name + '.') === 0 && parameter.indexOf('~') > 0;
+    };
+
     var _getAsyncParams = function(region, newParams) {
 
         var params = {};
@@ -2807,8 +2787,12 @@ if (!LABKEY.DataRegions) {
 
             if (region.userFilters) {
                 $.each(region.userFilters, function(filterExp, filterValue) {
-                    params[filterExp] = filterValue;
+                    if (params[filterExp] == undefined) {
+                        params[filterExp] = [];
+                    }
+                    params[filterExp].push(filterValue);
                 });
+                region.userFilters = {}; // they've been applied
             }
 
             // TODO: Get rid of this and incorporate it with the normal containerFilter checks
@@ -2833,7 +2817,21 @@ if (!LABKEY.DataRegions) {
 
         if (newParams) {
             $.each(newParams, function(i, pair) {
-                params[pair[0]] = pair[1];
+                //
+                // Filters may repeat themselves #25337
+                //
+                if (_isFilter(region, pair[0])) {
+                    if (params[pair[0]] == undefined) {
+                        params[pair[0]] = [];
+                    }
+                    else if (!$.isArray(params[pair[0]])) {
+                        params[pair[0]] = [params[pair[0]]];
+                    }
+                    params[pair[0]].push(pair[1]);
+                }
+                else {
+                    params[pair[0]] = pair[1];
+                }
             });
         }
 
@@ -2863,11 +2861,11 @@ if (!LABKEY.DataRegions) {
     };
 
     var _updateFilter = function(region, filter, skipPrefixes) {
-        var params = _getParameters(region, region.requestURL, skipPrefixes);
+        var params = [];
         if (filter) {
             params.push([filter.getURLParameterName(region.name), filter.getURLParameterValue()]);
         }
-        _changeFilter(region, params);
+        _setParameters(region, params, [OFFSET_PREFIX].concat(skipPrefixes));
     };
 
     var _updateRequiresSelectionButtons = function(region, selectedCount) {
