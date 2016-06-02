@@ -42,7 +42,9 @@ import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
 import org.postgresql.PGConnection;
 
 import javax.servlet.ServletException;
+import javax.sql.DataSource;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -60,6 +62,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -737,11 +740,32 @@ class PostgreSql91Dialect extends SqlDialect
     @Override
     public void prepare(DbScope scope)
     {
+        disablePreparedStatementCaching(scope);
         initializeUserDefinedTypes(scope);
         initializeInClauseGenerator(scope);
         determineSettings(scope);
         determineIfArraySortFunctionExists(scope);
         super.prepare(scope);
+    }
+
+    // PostgreSQL JDBC driver introduced caching of PreparedStatements starting with 9.4.1202, with no provision for uncaching.
+    // This has caused many problems, most recently #26116 (postgres error when changing varchar scale in domain editor). Use
+    // reflection to programmatically set a property that disables this caching on every PostgreSQL DataSource.
+    private void disablePreparedStatementCaching(DbScope scope)
+    {
+        DataSource ds = scope.getDataSource();
+
+        try
+        {
+            Field f = ds.getClass().getDeclaredField("connectionProperties");
+            f.setAccessible(true);
+            Properties props = (Properties) f.get(ds);
+            props.put("preparedStatementCacheQueries", "0");
+        }
+        catch (NoSuchFieldException | IllegalAccessException e)
+        {
+            LOG.error("Error attempting to set preparedStatementCacheQueries property", e);
+        }
     }
 
     // When a new PostgreSQL DbScope is created, we enumerate the domains (user-defined types) in the public schema
