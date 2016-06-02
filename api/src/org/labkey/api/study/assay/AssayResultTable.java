@@ -50,6 +50,7 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -217,15 +218,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         runIdSQL.append(".");
         runIdSQL.append(RUN_ID_ALIAS);
         ExprColumn runColumn = new ExprColumn(this, RUN_ID_ALIAS, runIdSQL, JdbcType.INTEGER);
-        runColumn.setFk(new LookupForeignKey("RowID")
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                ExpRunTable expRunTable = AssayService.get().createRunTable(_protocol, _provider, _userSchema.getUser(), _userSchema.getContainer());
-                expRunTable.setContainerFilter(getContainerFilter());
-                return expRunTable;
-            }
-        });
+        runColumn.setFk(new QueryForeignKey(_userSchema, null, AssayProtocolSchema.RUNS_TABLE_NAME, null, null));
         runColumn.setUserEditable(false);
         runColumn.setShownInInsertView(false);
         runColumn.setShownInUpdateView(false);
