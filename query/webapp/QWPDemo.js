@@ -11,7 +11,8 @@
             testHideButtons: testHideButtons,
             testHideColumns: testHideColumns,
             testPagingConfig: testPagingConfig,
-            testSetPaging: testSetPaging
+            testSetPaging: testSetPaging,
+            test25337: test25337
         };
 
         var tabsSel = '.qwp-demo .tab',
@@ -223,6 +224,41 @@
                             if (!results || results.length != 2) {
                                 alert('Failed to set Paging to 2 with API');
                             }
+                        }
+                    }
+                }
+            });
+        }
+
+        function test25337() {
+            var check = false;
+            new LABKEY.QueryWebPart({
+                title: 'Regression #25337',
+                schemaName: 'Samples',
+                queryName: 'sampleDataTest1',
+                renderTo: RENDERTO,
+                removeableFilters: [
+                    LABKEY.Filter.create('Name', undefined, LABKEY.Filter.Types.NONBLANK)
+                ],
+                failure: function() {
+                    alert('Failed test: Regression #25337');
+                },
+                listeners: {
+                    render: function(qwp) {
+                        if (check) {
+                            // confirm results
+                            var filters = qwp.getUserFilterArray();
+                            if (filters.length !== 3) {
+                                alert('Failed test: Regression #25337. Expected removeableFilters + two filters of the same column/type to be applied');
+                            }
+                        }
+                        else {
+                            check = true;
+                            var twoSameFilters = [
+                                LABKEY.Filter.create('tag', 'blue', LABKEY.Filter.Types.CONTAINS),
+                                LABKEY.Filter.create('tag', 'black', LABKEY.Filter.Types.CONTAINS)
+                            ];
+                            qwp.replaceFilters(twoSameFilters, {fieldKey: 'tag'});
                         }
                     }
                 }
