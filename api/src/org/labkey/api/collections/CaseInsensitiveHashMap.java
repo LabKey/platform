@@ -38,12 +38,12 @@ public class CaseInsensitiveHashMap<V> extends CaseInsensitiveMapWrapper<V> impl
 {
     public CaseInsensitiveHashMap()
     {
-        super(new HashMap<String, V>());
+        super(new HashMap<>());
     }
 
     public CaseInsensitiveHashMap(int count)
     {
-        super(new HashMap<String, V>(count));
+        super(new HashMap<>(count));
     }
 
     public CaseInsensitiveHashMap(Map<String, V> map)
@@ -66,7 +66,46 @@ public class CaseInsensitiveHashMap<V> extends CaseInsensitiveMapWrapper<V> impl
     /** Share the canonical key casing with the caseMapping instance */
     public CaseInsensitiveHashMap(int size, CaseInsensitiveMapWrapper<V> caseMapping)
     {
-        super(new HashMap<String, V>(size), caseMapping);
+        super(new HashMap<>(size), caseMapping);
+    }
+
+    public static <V> CaseInsensitiveHashMap<V> of()
+    {
+        return new CaseInsensitiveHashMap<>();
+    }
+
+    public static <V> CaseInsensitiveHashMap<V> of(String k1, V v1)
+    {
+        CaseInsensitiveHashMap<V> map = new CaseInsensitiveHashMap<>();
+        map.put(k1, v1);
+        return map;
+    }
+
+    public static <V> CaseInsensitiveHashMap<V> of(String k1, V v1, String k2, V v2)
+    {
+        CaseInsensitiveHashMap<V> map = new CaseInsensitiveHashMap<>();
+        map.put(k1, v1);
+        map.put(k2, v2);
+        return map;
+    }
+
+    public static <V> CaseInsensitiveHashMap<V> of(String k1, V v1, String k2, V v2, String k3, V v3)
+    {
+        CaseInsensitiveHashMap<V> map = new CaseInsensitiveHashMap<>();
+        map.put(k1, v1);
+        map.put(k2, v2);
+        map.put(k3, v3);
+        return map;
+    }
+
+    public static <V> CaseInsensitiveHashMap<V> of(String k1, V v1, String k2, V v2, String k3, V v3, String k4, V v4)
+    {
+        CaseInsensitiveHashMap<V> map = new CaseInsensitiveHashMap<>();
+        map.put(k1, v1);
+        map.put(k2, v2);
+        map.put(k3, v3);
+        map.put(k4, v4);
+        return map;
     }
 
     public static class TestCase extends Assert
