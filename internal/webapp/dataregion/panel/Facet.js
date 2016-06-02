@@ -128,12 +128,17 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
     },
 
     getContainerEl : function(dr) {
-        if (dr && dr.name) {
+        if (dr.renderTo) {
+            return Ext4.get(dr.renderTo);
+        }
+        else if (dr && dr.name) {
             var el = Ext4.get(dr.domId + '-form');
             if (el) {
                 return el.up('div');
             }
         }
+
+        throw this.$className + ': Unable to determine region container. Possibly newly supported layout?';
     },
 
     getDataRegionTableEl : function(dr) {
