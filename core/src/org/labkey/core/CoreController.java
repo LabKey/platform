@@ -109,6 +109,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.writer.Writer;
@@ -1876,6 +1877,73 @@ public class CoreController extends SpringActionController
         public void setContainerId(String containerId)
         {
             _containerId = containerId;
+        }
+    }
+
+    public static class LoadLibraryForm
+    {
+        private String[] _library;
+
+        public String[] getLibrary()
+        {
+            return _library;
+        }
+
+        @SuppressWarnings("UnusedDeclaration")
+        public void setLibrary(String[] library)
+        {
+            _library = library;
+        }
+    }
+
+    @RequiresNoPermission
+    public class LoadLibraryAction extends ApiAction<LoadLibraryForm>
+    {
+        @Override
+        public void validateForm(LoadLibraryForm form, Errors errors)
+        {
+            if (form.getLibrary() == null || form.getLibrary().length == 0)
+            {
+                errors.reject(ERROR_MSG, "Specify a \"library\" to load.");
+            }
+        }
+
+        @Override
+        public Object execute(LoadLibraryForm form, BindException errors) throws Exception
+        {
+            String[] requestLibraries = form.getLibrary();
+
+            ApiSimpleResponse response = new ApiSimpleResponse("success", true);
+
+            JSONArray resources;
+            JSONObject libraries = new JSONObject();
+
+            for (String library : requestLibraries)
+            {
+                if (library.length() > 0)
+                {
+                    ClientDependency cd = ClientDependency.fromPath(library);
+
+                    // only allow libs
+                    if (ClientDependency.TYPE.lib.equals(cd.getPrimaryType()))
+                    {
+                        Set<String> dependencies = cd.getCssPaths(getContainer());
+                        dependencies.addAll(cd.getJsPaths(getContainer()));
+
+                        resources = new JSONArray(dependencies);
+                    }
+                    else
+                    {
+                        resources = new JSONArray();
+                    }
+
+                    libraries.put(library, resources);
+                }
+            }
+
+            response.put("libraries", libraries);
+
+            return response;
         }
     }
 }
