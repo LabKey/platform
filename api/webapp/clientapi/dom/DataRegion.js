@@ -499,6 +499,38 @@ if (!LABKEY.DataRegions) {
     };
 
     /**
+     * Returns the user filter from the URL. The filter is represented as an Array of objects of the form:
+     * <ul>
+     *   <li><b>fieldKey</b>: {String} The field key of the filter.
+     *   <li><b>op</b>: {String} The filter operator (eg. "eq" or "in")
+     *   <li><b>value</b>: {String} Optional value to filter by.
+     * </ul>
+     * @returns {Object} Object representing the user filter.
+     * @deprecated 12.2 Use getUserFilterArray instead
+     */
+    Proto.getUserFilter = function() {
+
+        if (LABKEY.devMode) {
+            console.warn([
+                'LABKEY.DataRegion.getUserFilter() is deprecated since release 12.2.',
+                'Consider using getUserFilterArray() instead.'
+            ].join(' '));
+        }
+
+        var userFilter = [];
+
+        $.each(this.getUserFilterArray(), function(i, filter) {
+            userFilter.push({
+                fieldKey: filter.getColumnName(),
+                op: filter.getFilterType().getURLSuffix(),
+                value: filter.getValue()
+            });
+        });
+
+        return userFilter;
+    };
+
+    /**
      * Returns an Array of LABKEY.Filter instances constructed from the URL.
      * @returns {Array} Array of {@link LABKEY.Filter} objects that represent currently applied filters.
      */
