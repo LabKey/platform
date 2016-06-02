@@ -1169,17 +1169,12 @@ groupByLoop:
             @Override
             public String getTitleColumn()
             {
-                // Issue #26362: perhaps there's a better way. Problem is that thru LinkedTableInfo,
-                // we're not getting to the SchemaTableInfo that accessed the metadata. We don't propagate
-                // ALL of the metadata, which perhaps would be better. But this finds the SchemaTableInfo.
-                if (null != _relation && _relation instanceof QuerySelect)
-                {
-                    QueryRelation querySelect = ((QuerySelect)_relation).getTable(FieldKey.fromString(getName()));
-                    if (null != querySelect && null != querySelect.getTableInfo())
-                        return querySelect.getTableInfo().getTitleColumn();
-                }
+                SelectColumn sc = QuerySelect.this.getTitleColumn();
+                if (null != sc)
+                    return sc.getName();
                 return super.getTitleColumn();
             }
+
         };
 
         Collection<String> keys = getKeyColumns();
@@ -1707,6 +1702,21 @@ groupByLoop:
     }
 
 
+    SelectColumn getTitleColumn()
+    {
+        if (_tables.size() != 1)
+            return null;
+        QueryRelation in = _tables.values().iterator().next();
+        if (!(in instanceof QueryTable))
+            return null;
+        String title = in.getTableInfo().getTitleColumn();
+        if (null == title)
+            return null;
+        SelectColumn sc = findColumnInSelectList(in, title);
+        return sc;
+    }
+
+
     @Override
     Collection<String> getKeyColumns()
     {
@@ -1721,23 +1731,28 @@ groupByLoop:
         Collection<String> keys = in.getKeyColumns();
         if (keys.size() != 1)
             return Collections.emptyList();
-        List<String> ret = new ArrayList<>(1);
         String pkName = keys.iterator().next();
+        SelectColumn sc = findColumnInSelectList(in, pkName);
+        // OK find this column in the output and mark it as a key
+        if (null == sc)
+            return Collections.emptyList();
+        return Collections.singletonList(sc.getName());
+    }
+
+
+    private SelectColumn findColumnInSelectList(QueryRelation in, String colName)
+    {
         for (SelectColumn sc : _columns.values())
         {
             QExpr expr = sc.getResolvedField();
             if (expr instanceof QField)
             {
                 QField f = (QField) expr;
-                if (f.getName().equalsIgnoreCase(pkName))
-                {
-                    ret.add(sc.getName());
-                    break;
-                }
+                if (f.getTable()==in && f.getName().equalsIgnoreCase(colName))
+                    return sc;
             }
         }
-        // OK find this column in the output and mark it as a key
-        return ret;
+        return null;
     }
 
 
