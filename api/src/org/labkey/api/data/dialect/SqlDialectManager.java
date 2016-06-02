@@ -63,7 +63,7 @@ public class SqlDialectManager
 
     /**
      * @throws SqlDialectNotSupportedException if database is not supported
-     * @param primaryDataSource whether the data source is the primary LabKey Server database, or an external/seconday database
+     * @param primaryDataSource whether the data source is the primary LabKey Server database, or an external/secondary database
      */
     public static @NotNull SqlDialect getFromMetaData(DatabaseMetaData md, boolean logWarnings, boolean primaryDataSource) throws SQLException, SqlDialectNotSupportedException, DatabaseNotSupportedException
     {
@@ -72,7 +72,7 @@ public class SqlDialectManager
 
     /**
      * @throws SqlDialectNotSupportedException if database is not supported
-     * @param primaryDataSource whether the data source is the primary LabKey Server database, or an external/seconday database
+     * @param primaryDataSource whether the data source is the primary LabKey Server database, or an external/secondary database
      */
     public static @NotNull SqlDialect getFromProductName(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings, boolean primaryDataSource) throws SqlDialectNotSupportedException, DatabaseNotSupportedException
     {
