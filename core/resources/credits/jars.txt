@@ -60,6 +60,7 @@ rengine-0.6-8.jar|Rengine|0.6-8|{link:Rserve|http://www.rforge.net/Rserve}|{link
 rome-1.0.jar|ROME|1.0|{link:ROME|https://github.com/rometools/rome}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|nicka|Support for RSS and Atom aggregation
 rserve-0.6-8.jar|Rserve|0.6-8|{link:Rserve|http://www.rforge.net/Rserve}|{link:LGPL|http://www.gnu.org/licenses/lgpl.html}|cnathe|Library to connect to an R Server
 slf4j-api-1.7.5.jar|Simple Logging Facade for Java|1.7.5|{link:SLF4J|http://www.slf4j.org/}|{link:MIT|http://www.slf4j.org/license.html}|mbellew|Dependency for Tika, Ehcache, and other libraries
+slf4j-log4j12-1.7.5.jar|Simple Logging Facade for Java|1.7.5|{link:SLF4J|http://www.slf4j.org/}|{link:MIT|http://www.slf4j.org/license.html}|mbellew|Dependency for Tika, Ehcache, and other libraries
 spring-aop-4.0.6.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|spring-webmvc.jar dependency
 spring-beans-4.0.6.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|spring-webmvc.jar dependency
 spring-context-4.0.6.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|spring-webmvc.jar dependency
