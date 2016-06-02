@@ -473,6 +473,11 @@ public class ClientDependency
             return getProductionScripts(c, TYPE.css);
     }
 
+    public LinkedHashSet<String> getJsPaths(Container c)
+    {
+        return getJsPaths(c, AppProps.getInstance().isDevMode());
+    }
+
     public LinkedHashSet<String> getJsPaths(Container c, boolean devMode)
     {
         if (devMode)

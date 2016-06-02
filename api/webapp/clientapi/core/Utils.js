@@ -435,16 +435,22 @@ LABKEY.Utils = new function()
         },
 
         /**
-         * Includes a script file into the page. If the file was already included by some other code, this
-         * function will simply ignore the call. This may be used to include files defined in your module's web/ directory
-         * or any existing script file in the code web application (e.g., FileUploadField.js) 
-         * @param {String} filePath The path to the script file to include. This path should be relative to the web application
-         * root. So for example, if you wanted to include a file in your module's web/mymodule/scripts/ directory,
-         * the path would be "mymodule/scripts/myscript.js"
+         * Loads JavaScript file(s) from the server.
+         * @function
+         * @param {(string|string[])} file - A file or Array of files to load.
+         * @param {Function} [callback] - Callback for when all dependencies are loaded.
+         * @param {Object} [scope] - Scope of callback.
+         * @param {boolean} [inOrder=false] - True to load the scripts in the order they are passed in. Default is false.
+         * @example
+         &lt;script type="text/javascript"&gt;
+         LABKEY.requiresScript("myModule/myScript.js", true, function() {
+                    // your script is loaded
+                });
+         &lt;/script&gt;
          */
-        requiresScript : function(filePath)
+        requiresScript : function(file, callback, scope, inOrder)
         {
-            LABKEY.requiresScript(filePath);
+            LABKEY.requiresScript.call(this, arguments);
         },
 
         /**

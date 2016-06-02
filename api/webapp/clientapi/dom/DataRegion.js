@@ -3278,34 +3278,7 @@ if (!LABKEY.DataRegions) {
 
     LABKEY.DataRegion.loadViewDesigner = function(cb, scope) {
         LABKEY.requiresExt4Sandbox(function() {
-            if (LABKEY.devMode) {
-                LABKEY.requiresScript([
-                    // Should match internal/ViewDesigner.lib.xml
-                    'internal/ViewDesigner/data/Cache.js',
-                    'internal/ViewDesigner/ux/ComponentDataView.js',
-                    'internal/ViewDesigner/button/PaperclipButton.js',
-                    'internal/ViewDesigner/field/FilterOpCombo.js',
-                    'internal/ViewDesigner/field/FilterTextValue.js',
-                    'internal/ViewDesigner/tab/BaseTab.js'
-                ], function() {
-                    // These scripts depend BaseTab.js
-                    LABKEY.requiresScript([
-                        'internal/ViewDesigner/tab/ColumnsTab.js',
-                        'internal/ViewDesigner/tab/FilterTab.js',
-                        'internal/ViewDesigner/tab/SortTab.js'
-                    ], function() {
-                        // These scripts depend on each other -- inOrder
-                        LABKEY.requiresScript([
-                            'internal/ViewDesigner/FieldMetaRecord.js',
-                            'internal/ViewDesigner/FieldMetaStore.js',
-                            'internal/ViewDesigner/Designer.js'
-                        ], cb, scope, true);
-                    });
-                });
-            }
-            else {
-                LABKEY.requiresScript('internal/ViewDesigner.min.js', cb, scope);
-            }
+            LABKEY.requiresScript('internal/ViewDesigner', cb, scope);
         });
     };
 

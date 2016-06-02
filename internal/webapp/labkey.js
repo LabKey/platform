@@ -248,6 +248,11 @@ if (typeof LABKEY == "undefined")
             return typeof value === "function";
         };
 
+        var isLibrary = function(file)
+        {
+            return file && (file.indexOf('.') === -1 || file.indexOf('.lib.xml') > -1);
+        };
+
         var loadScripts = function()
         {
             configs.isDocumentClosed = true;
@@ -270,6 +275,67 @@ if (typeof LABKEY == "undefined")
                 }
             }
             return true;
+        };
+
+        var qs = function(params)
+        {
+            if (!params)
+                return '';
+
+            var qs = '', and = '', pv, p;
+
+            for (p in params)
+            {
+                if (params.hasOwnProperty(p))
+                {
+                    pv = params[p];
+
+                    if (pv === null || pv === undefined)
+                        pv = '';
+
+                    if (isArray(pv))
+                    {
+                        for (var i=0; i < pv.length; i++)
+                        {
+                            qs += and + encodeURIComponent(p) + '=' + encodeURIComponent(pv[i]);
+                            and = '&';
+                        }
+                    }
+                    else
+                    {
+                        qs += and + encodeURIComponent(p) + '=' + encodeURIComponent(pv);
+                        and = '&';
+                    }
+                }
+            }
+
+            return qs;
+        };
+
+        // So as not to confuse with native support for fetch()
+        var _fetch = function(url, params, success, failure)
+        {
+            var xhr = new XMLHttpRequest();
+            var _url = url + (url.indexOf('?') === -1 ? '?' : '&') + qs(params);
+
+            xhr.onreadystatechange = function()
+            {
+                if (xhr.readyState === 4)
+                {
+                    var _success = (xhr.status >= 200 && xhr.status < 300) || xhr.status == 304;
+                    _success ? success(xhr) : failure(xhr);
+                }
+            };
+
+            xhr.open('GET', _url, true);
+
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            if (LABKEY.CSRF)
+                xhr.setRequestHeader('X-LABKEY-CSRF', LABKEY.CSRF);
+
+            xhr.send(null);
+
+            return xhr;
         };
 
         var requiresCss = function(file)
@@ -330,57 +396,14 @@ if (typeof LABKEY == "undefined")
                 scope = arguments[2];
             }
 
-            var coreDone = function() {
+            requiresLib('clientapi', function()
+            {
                 requiresExt3ClientAPI(callback, scope);
-            };
-
-            if (configs.devMode)
-            {
-                var scripts = [
-                    // clientapi_core.lib.xml
-                    "clientapi/core/Utils.js",
-                    "clientapi/core/ActionURL.js",
-                    "clientapi/core/Ajax.js",
-                    "clientapi/core/Assay.js",
-                    "clientapi/core/Domain.js",
-                    "clientapi/core/Experiment.js",
-                    "clientapi/core/FieldKey.js",
-                    "clientapi/core/Filter.js",
-                    "clientapi/core/Message.js",
-                    "clientapi/core/MultiRequest.js",
-                    "clientapi/core/ParticipantGroup.js",
-                    "clientapi/core/Pipeline.js",
-                    "clientapi/core/Specimen.js",
-                    "clientapi/core/Query.js",
-                    "clientapi/core/GetData.js",
-                    "clientapi/core/Report.js",
-                    "clientapi/core/Security.js",
-                    "clientapi/core/Visualization.js",
-
-                    // clientapi.lib.xml
-                    "clientapi/dom/Utils.js",
-                    "clientapi/dom/Tour.js",
-                    "clientapi/dom/Chart.js",
-                    "clientapi/dom/Form.js",
-                    "clientapi/dom/NavTrail.js",
-                    "clientapi/dom/Portal.js",
-                    "clientapi/dom/Query.js",
-                    "clientapi/dom/Security.js",
-                    "clientapi/dom/GetData.js",
-                    "clientapi/dom/WebPart.js"
-                ];
-                requiresScript(scripts, coreDone);
-            }
-            else
-            {
-                requiresScript("clientapi.min.js", coreDone);
-            }
+            });
         };
 
         var requiresExt3 = function(callback, scope)
         {
-            // Mimic the results handed down by Ext3.lib.xml
-
             // backwards compat for 'immediate'
             if (arguments.length > 0 && isBoolean(arguments[0]))
             {
@@ -394,21 +417,13 @@ if (typeof LABKEY == "undefined")
             }
             else
             {
-                // Require that these CSS files be placed first in the <head> block so that they can be overridden by user customizations
                 requiresCss(configs.extJsRoot + '/resources/css/ext-all.css');
-
-                requiresScript([
-                    configs.extJsRoot + "/adapter/ext/ext-base" + (configs.devMode ?  "-debug.js" : ".js"),
-                    configs.extJsRoot + "/ext-all" + (configs.devMode ?  "-debug.js" : ".js"),
-                    configs.extJsRoot + "/ext-patches.js"
-                ], callback, scope, true);
+                requiresLib('Ext3', callback, scope);
             }
         };
 
         var requiresExt3ClientAPI = function(callback, scope)
         {
-            // Mimic the results handed down by clientapi/ext3.lib.xml
-
             // backwards compat for 'immediate'
             if (arguments.length > 0 && isBoolean(arguments[0]))
             {
@@ -416,51 +431,9 @@ if (typeof LABKEY == "undefined")
                 scope = arguments[2];
             }
 
-            var scripts;
-
-            if (configs.devMode)
-            {
-                scripts = [
-                    // groupTabPanel/groupTab.lib.xml
-                    "groupTabPanel/GroupTabPanel.js",
-                    "groupTabPanel/GroupTab.js",
-
-                    // GuidedTip
-                    "GuidedTip.js",
-
-                    // clientapi/ext3.lib.xml
-                    "clientapi/ext3/EditorGridPanel.js",
-                    "clientapi/ext3/ExtendedJsonReader.js",
-                    "clientapi/ext3/FieldKey.js",
-                    "clientapi/ext3/FileSystem.js",
-                    "clientapi/ext3/FilterDialog.js",
-                    "clientapi/ext3/FormPanel.js",
-                    "clientapi/ext3/GridView.js",
-                    "clientapi/ext3/HoverPopup.js",
-                    "clientapi/ext3/LongTextEditor.js",
-                    "clientapi/ext3/PersistentToolTip.js",
-                    "clientapi/ext3/SecurityPolicy.js",
-                    "clientapi/ext3/Store.js",
-                    "clientapi/ext3/Utils.js"
-                ];
-            }
-            else
-            {
-                scripts = [
-                    "groupTabPanel/groupTab.min.js",
-                    "GuidedTip.js",
-                    "clientapi/ext3.min.js"
-                ];
-            }
-
-            LABKEY.requiresCss('groupTabPanel/GroupTab.css');
-            LABKEY.requiresCss('groupTabPanel/UngroupedTab.css');
-            LABKEY.requiresCss('GuidedTip.css');
-
             requiresExt3(function()
             {
-                //load individual scripts so that they get loaded from source tree
-                requiresScript(scripts, callback, scope);
+                requiresLib('clientapi/ext3', callback, scope);
             });
         };
 
@@ -473,35 +446,9 @@ if (typeof LABKEY == "undefined")
                 scope = arguments[2];
             }
 
-            var scripts;
-            if (configs.devMode)
-            {
-                scripts = [
-                    // clientapi/ext4.lib.xml
-                    "clientapi/ext4/Util.js",
-                    "clientapi/ext4/data/Reader.js",
-                    "clientapi/ext4/data/Proxy.js",
-                    "clientapi/ext4/data/Store.js",
-
-                    // Ext4ClientApi.lib.xml
-                    "extWidgets/LabkeyCombo.js",
-                    "extWidgets/ExtComponents.js",
-                    "extWidgets/Ext4FormPanel.js",
-                    "extWidgets/Ext4GridPanel.js",
-                    "extWidgets/DetailsPanel.js"
-                ];
-            }
-            else
-            {
-                scripts = [
-                    "clientapi/ext4.min.js",
-                    "Ext4ClientApi.min.js"
-                ];
-            }
-
             requiresExt4Sandbox(function()
             {
-                requiresScript(scripts, callback, scope, true);
+                requiresLib('Ext4ClientApi', callback, scope);
             });
         };
 
@@ -520,14 +467,82 @@ if (typeof LABKEY == "undefined")
             }
             else
             {
-                var scripts = [
-                    configs.extJsRoot_42 + "/ext-all-sandbox" + (configs.devMode ?  "-debug.js" : ".js"),
-                    configs.extJsRoot_42 + "/ext-patches.js"
-                ];
-
                 requiresCss(configs.extThemeRoot_42 + "/" + configs.extThemeName_42 + "/ext-all.css");
-                requiresScript(scripts, callback, scope);
+                requiresLib('Ext4', callback, scope);
             }
+        };
+
+        var requiresLib = function(lib, callback, scope)
+        {
+            if (!lib)
+            {
+                handle(callback, scope);
+                return;
+            }
+
+            var _lib = lib.split('.lib.xml')[0];
+
+            // in case _lib is now empty
+            if (!_lib)
+            {
+                handle(callback, scope);
+                return;
+            }
+
+            if (scriptCache.inCache(_lib))
+            {
+                handle(callback, scope);
+                return;
+            }
+            else if (scriptCache.inFlightCache(_lib))
+            {
+                scriptCache.loadCache(_lib, callback, scope);
+                return;
+            }
+            else
+            {
+                scriptCache.loadCache(_lib, callback, scope);
+            }
+
+            var cacheLoader = function()
+            {
+                scriptCache.callbacksOnCache(_lib);
+            };
+
+            _fetch('core-loadLibrary.api', {
+                library: _lib
+            }, function(data) {
+                // success
+                var json = JSON.parse(data.responseText);
+                var definition = json['libraries'][_lib];
+
+                if (definition)
+                {
+                    var styles = [];
+                    var scripts = [];
+                    for (var d=0; d < definition.length; d++)
+                    {
+                        if (definition[d].indexOf('.css') > -1)
+                        {
+                            styles.push(definition[d]);
+                        }
+                        else
+                        {
+                            scripts.push(definition[d]);
+                        }
+                    }
+
+                    LABKEY.requiresCss(styles);
+                    LABKEY.requiresScript(scripts, cacheLoader, undefined, true /* inOrder, sadly */);
+                }
+                else
+                {
+                    throw new Error('Failed to retrieve library definition \"' + _lib + '\"');
+                }
+            }, function() {
+                // failure
+                throw new Error('Failed to load library: \"' + _lib + '\"');
+            });
         };
 
         var requiresScript = function(file, callback, scope, inOrder)
@@ -535,6 +550,10 @@ if (typeof LABKEY == "undefined")
             if (arguments.length === 0)
             {
                 throw "LABKEY.requiresScript() requires the 'file' parameter.";
+            }
+            else if (!file)
+            {
+                throw "LABKEY.requiresScript() invalid 'file' argument.";
             }
 
             // backwards compat for 'immediate'
@@ -591,6 +610,23 @@ if (typeof LABKEY == "undefined")
                         else
                             requiresScript(file[i], allDone);
                     }
+                }
+                return;
+            }
+
+            if (isLibrary(file))
+            {
+                if (file === 'Ext3')
+                {
+                    requiresExt3(callback, scope);
+                }
+                if (file === 'Ext4')
+                {
+                    requiresExt4Sandbox(callback, scope);
+                }
+                else
+                {
+                    requiresLib(file, callback, scope);
                 }
                 return;
             }
@@ -663,44 +699,7 @@ if (typeof LABKEY == "undefined")
 
         var requiresVisualization = function(callback, scope)
         {
-            // namespace check
-            if (!LABKEY.vis)
-            {
-                LABKEY.vis = {};
-            }
-
-            var scripts = [
-                '/vis/lib/patches.js',
-                '/vis/lib/d3-3.3.9.min.js',
-                '/vis/lib/d3pie.min.js',
-                '/vis/lib/hexbin.min.js',
-                '/vis/lib/sqbin.min.js',
-                '/vis/lib/raphael-min-2.1.0.js'
-            ];
-
-            if (configs.devMode)
-            {
-                scripts = scripts.concat([
-                    '/vis/src/utils.js',
-                    '/vis/src/geom.js',
-                    '/vis/src/stat.js',
-                    '/vis/src/scale.js',
-                    '/vis/src/layer.js',
-                    '/vis/src/internal/RaphaelRenderer.js',
-                    '/vis/src/internal/D3Renderer.js',
-                    '/vis/src/plot.js'
-                ]);
-
-                // NOTE: If adding a required file you must add to vis.lib.xml for proper packaging
-            }
-            else
-            {
-                scripts = scripts.concat([
-                    '/vis/vis.min.js'
-                ]);
-            }
-
-            requiresScript(scripts, callback, scope, true);
+            requiresLib('vis/vis', callback, scope);
         };
 
         var setDirty = function (dirty)
@@ -884,8 +883,7 @@ if (typeof LABKEY == "undefined")
              * Loads JavaScript file(s) from the server.
              * @function
              * @param {(string|string[])} file - A file or Array of files to load.
-             * @param {boolean} [immediate=true] - True to load the script immediately; false will defer script loading until the page has been downloaded.
-             * @param {requireCallback} [callback] - Callback for when all dependencies are loaded.
+             * @param {Function} [callback] - Callback for when all dependencies are loaded.
              * @param {Object} [scope] - Scope of callback.
              * @param {boolean} [inOrder=false] - True to load the scripts in the order they are passed in. Default is false.
              * @example
