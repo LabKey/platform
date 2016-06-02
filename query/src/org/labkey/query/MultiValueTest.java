@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.ImmutableList;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -28,8 +29,6 @@ import org.labkey.api.view.ViewServlet;
 import org.labkey.query.controllers.QueryController;
 import org.springframework.mock.web.MockHttpServletResponse;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -131,50 +130,59 @@ public class MultiValueTest
         // insert an Antigen
         BatchValidationException errors = new BatchValidationException();
         TableInfo antigensTable = QueryService.get().getUserSchema(getUser(), c, "reagent").getTable("antigens");
-        List<Map<String, Object>> insertedAntigens = antigensTable.getUpdateService().insertRows(getUser(), c, Arrays.asList(new CaseInsensitiveHashMap<>(Collections.singletonMap("name", "test"))), errors, null, null);
+        List<Map<String, Object>> antigenRows = ImmutableList.of(
+                CaseInsensitiveHashMap.of("name", "test")
+        );
+        List<Map<String, Object>> insertedAntigens = antigensTable.getUpdateService().insertRows(getUser(), c, antigenRows, errors, null, null);
         Assert.assertFalse(errors.hasErrors());
         Integer antigenId = (Integer)insertedAntigens.get(0).get("rowId");
 
         // insert a Label
         errors = new BatchValidationException();
         TableInfo labelsTable = QueryService.get().getUserSchema(getUser(), c, "reagent").getTable("labels");
-        List<Map<String, Object>> insertedLabels = labelsTable.getUpdateService().insertRows(getUser(), c, Arrays.asList(new CaseInsensitiveHashMap<>(Collections.singletonMap("name", "test"))), errors, null, null);
+        List<Map<String, Object>> labelRows = ImmutableList.of(
+                CaseInsensitiveHashMap.of("name", "test")
+        );
+        List<Map<String, Object>> insertedLabels = labelsTable.getUpdateService().insertRows(getUser(), c, labelRows, errors, null, null);
         Assert.assertFalse(errors.hasErrors());
         Integer labelId = (Integer)insertedLabels.get(0).get("rowId");
 
         // insert Species
         errors = new BatchValidationException();
         TableInfo speciesTable = QueryService.get().getUserSchema(getUser(), c, "reagent").getTable("species");
-        CaseInsensitiveHashMap<Object> row1 = new CaseInsensitiveHashMap<>();
-        row1.put("name", "foo1");
-        CaseInsensitiveHashMap<Object> row2 = new CaseInsensitiveHashMap<>();
-        row2.put("name", "foo2");
-        List<Map<String, Object>> insertedSpecies = speciesTable.getUpdateService().insertRows(getUser(), c, Arrays.asList(row1, row2), errors, null, null);
+        List<Map<String, Object>> speciesRows = ImmutableList.of(
+                CaseInsensitiveHashMap.of("name", "foo1"),
+                CaseInsensitiveHashMap.of("name", "foo2"),
+                CaseInsensitiveHashMap.of("name", "foo3"),
+                CaseInsensitiveHashMap.of("name", "foo4")
+        );
+        List<Map<String, Object>> insertedSpecies = speciesTable.getUpdateService().insertRows(getUser(), c, speciesRows, errors, null, null);
         Assert.assertFalse(errors.hasErrors());
         Integer speciesId1 = (Integer)insertedSpecies.get(0).get("rowId");
         Integer speciesId2 = (Integer)insertedSpecies.get(1).get("rowId");
+        Integer speciesId3 = (Integer)insertedSpecies.get(2).get("rowId");
+        Integer speciesId4 = (Integer)insertedSpecies.get(3).get("rowId");
 
         // insert Reagent
         errors = new BatchValidationException();
         TableInfo reagentsTable = QueryService.get().getUserSchema(getUser(), c, "reagent").getTable("reagents");
-        CaseInsensitiveHashMap<Object> row = new CaseInsensitiveHashMap<>();
-        row.put("antigenId", antigenId);
-        row.put("labelId", labelId);
-        row.put("clone", "foo");
-        List<Map<String, Object>> insertedReagents = reagentsTable.getUpdateService().insertRows(getUser(), c, Arrays.asList(row), errors, null, null);
+        List<Map<String, Object>> reagentRows = ImmutableList.of(
+                CaseInsensitiveHashMap.of("antigenId", antigenId, "labelId", labelId, "clone", "foo")
+        );
+        List<Map<String, Object>> insertedReagents = reagentsTable.getUpdateService().insertRows(getUser(), c, reagentRows, errors, null, null);
         Assert.assertFalse(errors.hasErrors());
         Integer reagentId = (Integer)insertedReagents.get(0).get("rowId");
 
         // insert ReagentSpecies
         errors = new BatchValidationException();
         TableInfo reagentSpeciesTable = QueryService.get().getUserSchema(getUser(), c, "reagent").getTable("reagentSpecies");
-        row1 = new CaseInsensitiveHashMap<>();
-        row1.put("reagentId", reagentId);
-        row1.put("speciesId", speciesId1);
-        row2 = new CaseInsensitiveHashMap<>();
-        row2.put("reagentId", reagentId);
-        row2.put("speciesId", speciesId2);
-        List<Map<String, Object>> insertedReagentSpecies = reagentSpeciesTable.getUpdateService().insertRows(getUser(), c, Arrays.asList(row1, row2), errors, null, null);
+        List<Map<String, Object>> reagentSpeciesRows = ImmutableList.of(
+                CaseInsensitiveHashMap.of("reagentId", reagentId, "speciesId", speciesId1),
+                CaseInsensitiveHashMap.of("reagentId", reagentId, "speciesId", speciesId2),
+                CaseInsensitiveHashMap.of("reagentId", reagentId, "speciesId", speciesId3),
+                CaseInsensitiveHashMap.of("reagentId", reagentId, "speciesId", speciesId4)
+        );
+        List<Map<String, Object>> insertedReagentSpecies = reagentSpeciesTable.getUpdateService().insertRows(getUser(), c, reagentSpeciesRows, errors, null, null);
         Assert.assertFalse(errors.hasErrors());
 
         //
@@ -203,6 +211,8 @@ public class MultiValueTest
 
         Integer verifySpecies1 = null;
         Integer verifySpecies2 = null;
+        Integer verifySpecies3 = null;
+        Integer verifySpecies4 = null;
 
         for (JsonNode node : row0species)
         {
@@ -210,14 +220,20 @@ public class MultiValueTest
                 verifySpecies1 = node.get("value").asInt();
             else if ("foo2".equals(node.get("displayValue").asText()))
                 verifySpecies2 = node.get("value").asInt();
+            else if ("foo3".equals(node.get("displayValue").asText()))
+                verifySpecies3 = node.get("value").asInt();
+            else if ("foo4".equals(node.get("displayValue").asText()))
+                verifySpecies4 = node.get("value").asInt();
         }
 
         Assert.assertNotNull("Expected to find species1 id", verifySpecies1);
         Assert.assertNotNull("Expected to find species2 id", verifySpecies2);
+        Assert.assertNotNull("Expected to find species3 id", verifySpecies3);
+        Assert.assertNotNull("Expected to find species4 id", verifySpecies4);
         Assert.assertEquals(speciesId1, verifySpecies1);
         Assert.assertEquals(speciesId2, verifySpecies2);
-        Assert.assertNotEquals("Value should not be the wrapped column value", verifySpecies1.intValue(), reagentId.intValue());
-
+        Assert.assertEquals(speciesId3, verifySpecies3);
+        Assert.assertEquals(speciesId4, verifySpecies4);
     }
 
 }
