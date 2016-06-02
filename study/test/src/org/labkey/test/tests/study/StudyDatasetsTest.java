@@ -132,7 +132,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
 
         checkFieldsPresent("Original A", "YTest", "ZTest");
 
-        //verifySideFilter(); // TODO: Re-enable once side-facet panel is re-enabled
+        verifySideFilter();
 
         verifyReportAndViewDatasetReferences();
 
@@ -336,7 +336,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         dataregion = new DataRegionTable(regionName, getDriver());
         assertEquals("Wrong number of rows after filter", 4, dataregion.getDataRowCount());
 
-        _ext4Helper.uncheckGridRowCheckbox("Group 1"); // (GROUP1A OR GROUP1B) AND (NOT(COHORT 1))
+        _ext4Helper.uncheckGridRowCheckbox("Group 1"); // (GROUP1A OR GROUP1B) AND (COHORT 2)
         waitForElementToDisappear(Locator.linkWithText(PTIDS[0]));
         waitForElement(Locator.linkWithText(PTIDS[1]));
         assertElementPresent(Locator.linkWithText(PTIDS[2]));
@@ -354,6 +354,9 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         setFormElement(groupLabelInput, EXTRA_GROUP);
         window.clickButton("Save", 0);
         window.waitForClose();
+        refresh();
+        dataregion = new DataRegionTable(regionName, getDriver());
+        dataregion.openSideFilterPanel();
         waitForElement(DataRegionTable.Locators.facetRow(EXTRA_GROUP, EXTRA_GROUP));
     }
 
