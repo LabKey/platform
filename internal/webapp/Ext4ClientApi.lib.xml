@@ -1,5 +1,4 @@
 <libraries xmlns="http://labkey.org/clientLibrary/xml/">
-    <!-- If you modify this file in any way, confirm the changes are reflected in labkey.js -->
     <library compileInProductionMode="true">
         <script path="extWidgets/LabkeyCombo.js"/>
         <script path="extWidgets/ExtComponents.js"/>

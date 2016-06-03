@@ -1,5 +1,4 @@
 <libraries xmlns="http://labkey.org/clientLibrary/xml/">
-    <!-- If you modify this file in any way, confirm the changes are reflected in labkey.js -->
     <library compileInProductionMode="true">
         <script path="clientapi/ext3/EditorGridPanel.js"/>
         <script path="clientapi/ext3/ExtendedJsonReader.js"/>
@@ -17,7 +16,6 @@
     </library>
     <dependencies>
         <dependency path="Ext3" />
-        <dependency path="groupTabPanel/GroupTab"/> <!-- depended on by DataRegion -->
         <dependency path="GuidedTip.js"/> <!-- depended on by FormPanel.js -->
         <dependency path="GuidedTip.css"/>
     </dependencies>
