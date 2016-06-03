@@ -41,7 +41,9 @@ function sampleSetDomainTypeTest(queryName, rows, description, additionalCallBac
             }, function(response) {
                 console.log('Failed to update the \'' + queryName + '\' Sample Set');
             }, 'Samples', queryName);
-            additionalCallBack.call();
+            if (additionalCallBack) {
+                additionalCallBack.call();
+            }
         }
 
         function createErrorHandler(response) {
