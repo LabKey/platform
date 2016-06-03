@@ -84,6 +84,7 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -784,11 +785,20 @@ public class SearchController extends SpringActionController
                 {
                     JSONObject o = new JSONObject();
                     String id = StringUtils.isEmpty(hit.docid) ? String.valueOf(i) : hit.docid;
+
                     o.put("id", id);
                     o.put("title", hit.title);
                     o.put("container", hit.container);
                     o.put("url", form.isNormalizeUrls() ? hit.normalizeHref(contextPath) : hit.url);
                     o.put("summary", StringUtils.trimToEmpty(hit.summary));
+
+                    if (form.isExperimentalCustomJson())
+                    {
+                        Map<String, Object> custom = ss.getCustomSearchJson(getUser(), hit.docid);
+                        if (custom != null)
+                            o.put("data", custom);
+                    }
+
                     arr[i++] = o;
                 }
             }
@@ -1171,6 +1181,7 @@ public class SearchController extends SpringActionController
         private String _template = null;
         private SearchScope _scope = SearchScope.All;
         private boolean _normalizeUrls = false;
+        private boolean _experimentalCustomJson = false;
 
         public void setConfiguration(SearchConfiguration config)
         {
@@ -1346,6 +1357,16 @@ public class SearchController extends SpringActionController
         public void setNormalizeUrls(boolean normalizeUrls)
         {
             _normalizeUrls = normalizeUrls;
+        }
+
+        public boolean isExperimentalCustomJson()
+        {
+            return _experimentalCustomJson;
+        }
+
+        public void setExperimentalCustomJson(boolean experimentalCustomJson)
+        {
+            _experimentalCustomJson = experimentalCustomJson;
         }
     }
 

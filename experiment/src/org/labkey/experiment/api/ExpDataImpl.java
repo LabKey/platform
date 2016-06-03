@@ -20,11 +20,17 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.MultiValuedLookupColumn;
+import org.labkey.api.data.MultiValuedRenderContext;
+import org.labkey.api.data.Results;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
@@ -34,10 +40,12 @@ import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchScope;
@@ -55,18 +63,25 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.webdav.SimpleDocumentResource;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements ExpData
 {
@@ -338,46 +353,75 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
 
     // Get all text strings from the data class for indexing
     @NotNull
-    public List<String> getIndexValues()
+    private List<String> getIndexValues()
     {
         ExpDataClassImpl dc = this.getDataClass();
-        List<String> values = Collections.emptyList();
-        if (null != dc)
-        {
-            values = new ArrayList<>();
-            TableInfo t = dc.getTinfo();
-            SQLFragment sql = new SQLFragment("SELECT ");
-            boolean first = true;
-            for (ColumnInfo ci : t.getColumns())
+        if (dc == null)
+            return Collections.emptyList();
+
+        TableInfo table = QueryService.get().getUserSchema(User.getSearchUser(), getContainer(), "exp.data").getTable(dc.getName());
+        if (table == null)
+            return Collections.emptyList();
+
+        // collect the set of columns to index
+        Set<ColumnInfo> columns = table.getExtendedColumns(true).values().stream().filter(col -> {
+            // skip the base-columns - they will be added to the index separately
+            final String name = col.getName();
+            try
             {
-                if (ci.getJdbcType().toString().equals("VARCHAR"))
+                ExpDataClassDataTable.Column x = ExpDataClassDataTable.Column.valueOf(name);
+                return false;
+            }
+            catch (IllegalArgumentException ex)
+            {
+                // ok
+            }
+
+            // skip non-text columns or columns that aren't lookups
+            if (!(col.getJdbcType().isText() || col.getFk() != null))
+                return false;
+
+            if (name.equalsIgnoreCase("container") || name.equalsIgnoreCase("folder"))
+                return false;
+
+            return true;
+        }).collect(Collectors.toCollection(LinkedHashSet::new));
+
+        List<String> values = new ArrayList<>();
+        TableSelector ts = new TableSelector(table, columns, new SimpleFilter("rowId", getRowId()), null);
+        ts.setForDisplay(true);
+        try (Results r = ts.getResults())
+        {
+            Map<FieldKey, ColumnInfo> fields = r.getFieldMap();
+            if (r.next())
+            {
+                Map<FieldKey, Object> map = r.getFieldKeyRowMap();
+                for (Map.Entry<FieldKey, ColumnInfo> entry : fields.entrySet())
                 {
-                    // Don't index lsid's
-                    if (ci.getName().equals("lsid"))
+                    FieldKey fieldKey = entry.getKey();
+                    ColumnInfo col = entry.getValue();
+                    if (!col.getJdbcType().isText())
                         continue;
 
-                    if (!first)
-                        sql.append(", ");
-                    else
-                        first = false;
+                    if (col.getName().equalsIgnoreCase("lsid") || col.getSqlTypeName().equalsIgnoreCase("lsidtype") || col.getSqlTypeName().equalsIgnoreCase("entityid"))
+                        continue;
 
-                    sql.append(ci.getName());
+                    Object o = map.get(fieldKey);
+                    if (!(o instanceof String))
+                        continue;
+
+                    String s = (String)o;
+                    if (col instanceof MultiValuedLookupColumn)
+                        values.addAll(Arrays.asList(s.split(MultiValuedRenderContext.VALUE_DELIMITER_REGEX)));
+                    else
+                        values.add(s);
                 }
             }
-            if (!first)
-            {
-                sql.append(" FROM expdataclass.").append(t.getName()).append(" WHERE LSID = ?");
-                sql.add(getLSID());
-                Map<String, Object> indexes = new SqlSelector(t.getSchema(), sql).getMap();
-                if (indexes != null)
-                {
-                    for (Object o : indexes.values())
-                    {
-                        if (null != o && o instanceof String)
-                            values.add((String) o);
-                    }
-                }
-            }
+
+        }
+        catch (SQLException e)
+        {
+            // ignore
         }
         return values;
     }
@@ -405,6 +449,37 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
         return "data:" + new Path(getContainer().getId(), dataClassName, Integer.toString(getRowId()));
     }
 
+    @Nullable
+    public static ExpDataImpl fromDocumentId(String resourceIdentifier)
+    {
+        if (resourceIdentifier.startsWith("data:"))
+            resourceIdentifier = resourceIdentifier.substring("data:".length());
+
+        Path path = Path.parse(resourceIdentifier);
+        if (path.size() != 3)
+            return null;
+        String containerId = path.get(0);
+        String dataClassName = path.get(1);
+        String rowIdString = path.get(2);
+
+        Container c = ContainerManager.getForId(containerId);
+        if (c == null)
+            return null;
+
+        ExpDataClass dc = ExperimentService.get().getDataClass(c, dataClassName);
+        Integer rowId;
+        try
+        {
+            rowId = Integer.parseInt(rowIdString);
+        }
+        catch (NumberFormatException ex)
+        {
+            return null;
+        }
+
+        return ExperimentServiceImpl.get().getExpData(dc, rowId);
+    }
+
     public void index(SearchService.IndexTask task)
     {
         if (task == null)
@@ -415,41 +490,38 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
             task = ss.defaultTask();
         }
 
+        WebdavResource doc = createDocument();
+        task.addResource(doc, SearchService.PRIORITY.item);
+    }
+
+    public WebdavResource createDocument()
+    {
         Map<String, Object> props = new HashMap<>();
-        StringBuilder keywords = new StringBuilder();
-        StringBuilder identifiers = new StringBuilder();
+        Set<String> keywords = new HashSet<>();
+        Set<String> identifiers = new HashSet<>();
 
         // Add name to title
         if (null != getDescription())
-            keywords.append(getDescription());
+            keywords.add(getDescription());
 
         String comment = getComment();
         if (comment != null)
-            keywords.append(" ").append(comment);
+            keywords.add(comment);
 
         StringBuilder title = new StringBuilder(getName());
+        identifiers.add(getName());
 
         // Add aliases in parenthesis in the title
         Collection<String> aliases = this.getAliases();
         if (!aliases.isEmpty())
         {
             title.append(" (").append(StringUtils.join(aliases, ", ")).append(")");
+            identifiers.addAll(aliases);
         }
 
-        boolean first = true;
-        List<String> dataClassText = getIndexValues();
-        for (String text : dataClassText)
-        {
-            if (text.contains("lsid"))
-                continue;
-
-            if (first)
-                first = false;
-            else
-                identifiers.append(", ");
-
-            identifiers.append(text);
-        }
+        List<String> indexValues = getIndexValues();
+        keywords.addAll(indexValues);
+        //identifiers.addAll(indexValues);
 
         ExpDataClass dc = this.getDataClass();
         if (null != dc)
@@ -464,40 +536,51 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
 
         props.put(SearchService.PROPERTY.categories.toString(), expDataCategory.toString());
         props.put(SearchService.PROPERTY.title.toString(), title.toString());
-        props.put(SearchService.PROPERTY.identifiersMed.toString(), identifiers.toString());
-        props.put(SearchService.PROPERTY.keywordsMed.toString(), keywords.toString());
+        props.put(SearchService.PROPERTY.identifiersMed.toString(), StringUtils.join(identifiers, " "));
+        props.put(SearchService.PROPERTY.keywordsMed.toString(), StringUtils.join(keywords, " "));
 
         ActionURL view = ExperimentController.ExperimentUrlsImpl.get().getDataDetailsURL(this);
         view.setExtraPath(getContainer().getId());
         String docId = getDocumentId();
-        final int id = getRowId();
-
-        StringBuilder body = new StringBuilder(title).append(" ").append(keywords);
 
         // All identifiers (indexable text values) in the body
-        if (identifiers.length() > 0)
-        {
-            if (identifiers.length() > 100)
-                body.append("\n").append(identifiers.substring(0, 100)).append("...");
-            else
-                body.append("\n").append(identifiers);
-        }
+        StringBuilder sb = new StringBuilder(title)
+                .append("\n")
+                .append(keywords.stream().map(s -> s.length() > 30 ? s.substring(0, 30) + "\u2026" : s).collect(Collectors.joining(", ")))
+                .append("\n")
+                .append(identifiers.stream().map(s -> s.length() > 30 ? s.substring(0, 30) + "\u2026" : s).collect(Collectors.joining(", ")));
+        String body;
+        if (sb.length() > 120)
+            body = sb.substring(0, 120) + "\u2026";
+        else
+            body = sb.toString();
 
-        SimpleDocumentResource r = new SimpleDocumentResource(
+        final int id = getRowId();
+        return new ExpDataResource(
+                id,
                 new Path(docId),
                 docId,
                 getContainer().getId(),
                 "text/plain",
-                body.toString().getBytes(),
-                view, props) {
-            @Override
-            public void setLastIndexed(long ms, long modified)
-            {
-                ExperimentServiceImpl.get().setDataLastIndexed(id, ms);
-            }
-        };
+                body.getBytes(),
+                view, props);
+    }
 
-        task.addResource(r, SearchService.PRIORITY.item);
+    private static class ExpDataResource extends SimpleDocumentResource
+    {
+        final int _rowId;
+
+        public ExpDataResource(int rowId, Path path, String documentId, String containerId, String contentType, byte[] body, URLHelper executeUrl, Map<String, Object> properties)
+        {
+            super(path, documentId, containerId, contentType, body, executeUrl, properties);
+            _rowId = rowId;
+        }
+
+        @Override
+        public void setLastIndexed(long ms, long modified)
+        {
+            ExperimentServiceImpl.get().setDataLastIndexed(_rowId, ms);
+        }
     }
 
     public static class DataSearchResultTemplate implements SearchResultTemplate

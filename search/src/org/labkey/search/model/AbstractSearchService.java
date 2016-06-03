@@ -629,6 +629,18 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         return res.getCustomSearchResult(user, resourceIdentifier.substring(i+1));
     }
 
+    @Override
+    public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
+    {
+        int i = resourceIdentifier.indexOf(":");
+        if (i == -1)
+            return null;
+        String prefix = resourceIdentifier.substring(0, i);
+        ResourceResolver res = _resolvers.get(prefix);
+        if (null == res)
+            return null;
+        return res.getCustomSearchJson(user, resourceIdentifier.substring(i+1));
+    }
 
     private final List<SearchResultTemplate> _templates = new CopyOnWriteArrayList<>();
     private final SearchResultTemplate _defaultTemplate = new DefaultSearchResultTemplate();

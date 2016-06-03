@@ -1337,7 +1337,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     }
 
     @Override
-    public ExpData getExpData(ExpDataClass dataClass, int rowId)
+    public ExpDataImpl getExpData(ExpDataClass dataClass, int rowId)
     {
         Domain d = dataClass.getDomain();
         if (d == null)

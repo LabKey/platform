@@ -29,6 +29,7 @@ import org.labkey.api.exp.ExperimentRunTypeSource;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.DefaultExperimentDataHandler;
+import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.ExperimentProperty;
@@ -55,6 +56,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.ExpDataClassDataTestCase;
 import org.labkey.experiment.api.ExpDataImpl;
@@ -83,9 +85,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -206,6 +210,45 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
             ss.addSearchCategory(ExpMaterialImpl.searchCategory);
             ss.addSearchCategory(ExpDataImpl.expDataCategory);
             ss.addSearchResultTemplate(new ExpDataImpl.DataSearchResultTemplate());
+            ss.addResourceResolver("data", new SearchService.ResourceResolver()
+            {
+                @Override
+                public WebdavResource resolve(@NotNull String resourceIdentifier)
+                {
+                    ExpDataImpl data = ExpDataImpl.fromDocumentId(resourceIdentifier);
+                    if (data == null)
+                        return null;
+
+                    return data.createDocument();
+                }
+
+                @Override
+                public HttpView getCustomSearchResult(User user, @NotNull String resourceIdentifier)
+                {
+                    return null;
+                }
+
+                @Override
+                public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
+                {
+                    ExpDataImpl data = ExpDataImpl.fromDocumentId(resourceIdentifier);
+                    if (data == null)
+                        return null;
+
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("rowId", data.getRowId());
+                    ExpDataClass dc = data.getDataClass();
+                    if (dc != null)
+                        map.put("dataClass", dc.getName());
+                    map.put("name", data.getName());
+                    map.put("lsid", data.getLSID());
+                    map.put("aliases", data.getAliases());
+                    map.put("description", data.getDescription());
+                    map.put("comment", data.getComment());
+
+                    return map;
+                }
+            });
             ss.addDocumentProvider(this);
         }
 

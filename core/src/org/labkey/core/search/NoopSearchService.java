@@ -37,6 +37,7 @@ import java.io.Reader;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -217,6 +218,12 @@ public class NoopSearchService implements SearchService
 
     @Override
     public HttpView getCustomSearchResult(User user, @NotNull String resourceIdentifier)
+    {
+        return null;
+    }
+
+    @Override
+    public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
     {
         return null;
     }
