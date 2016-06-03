@@ -68,6 +68,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchUtils;
@@ -92,6 +93,7 @@ import org.labkey.api.util.MultiPhaseCPUTimer.InvocationTimer;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
@@ -456,13 +458,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             assert null != props;
 
             String body = null;
-            String title = (String)props.get(PROPERTY.title.toString());
 
-            String keywordsMed = (String)props.get(PROPERTY.keywordsMed.toString());
-
-            // Search title can be null
-            if (null == keywordsMed)
-                keywordsMed = "";
+            String keywordsMed = "";
 
             try
             {
@@ -476,19 +473,20 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             }
             catch (UnauthorizedException ue)
             {
-                // Some QueryUpdateService implementations don't special case the search user.  Continue indexing in this
+                // Some QueryUpdateService implementations don't special case the search user. Continue indexing in this
                 // case, but skip the custom properties.
             }
 
-            // Fix #11393.  Can't append description to keywordMed in FileSystemResource() because constructor is too
-            // early to retrieve description.  TODO: Move description into properties, instead of exposing it as a
-            // top-level getter.  This is a bigger change, so we'll wait for 11.2.
+            // Fix #11393. Can't append description to keywordMed in FileSystemResource() because constructor is too
+            // early to retrieve description. TODO: Move description into properties, instead of exposing it as a
+            // top-level getter. This is a bigger change, so we'll wait for 11.2.
             String description = r.getDescription();
 
             if (null != description)
                 keywordsMed += " " + description;
 
             String type = r.getContentType();
+            String title = (String)props.get(PROPERTY.title.toString());
 
             // Don't load content of images or zip files (for now), but allow searching by name and properties
             if (isImage(type) || isZip(type))
@@ -1352,7 +1350,17 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     topDocs = searcher.search(query, hitsToRetrieve, new Sort(new SortField(sort, SortField.Type.STRING)));
 
                 iTimer.setPhase(SEARCH_PHASE.processHits);
-                return createSearchResult(offset, hitsToRetrieve, topDocs, searcher);
+                SearchResult result = createSearchResult(offset, hitsToRetrieve, topDocs, searcher);
+
+// Uncomment to log an explanation of each hit
+//                for (SearchHit hit : result.hits)
+//                {
+//                    Explanation e = searcher.explain(query, hit.doc);
+//                    _log.info(e.toString());
+//                }
+
+
+                return result;
             }
             finally
             {
@@ -1382,6 +1390,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             hit.docid = doc.get(FIELD_NAME.uniqueId.toString());
             hit.summary = doc.get(FIELD_NAME.summary.toString());
             hit.url = doc.get(FIELD_NAME.url.toString());
+            hit.doc = scoreDoc.doc;
 
             // BUG patch see 10734 : Bad URLs for files in search results
             // this is only a partial fix, need to rebuild index
@@ -1559,6 +1568,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         private static final int DOC_COUNT = 6;
 
         private final Container _c = JunitUtil.getTestContainer();
+        private final TestContext _context = TestContext.get();
+        private final ActionURL _url = PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(_c).setExtraPath(_c.getId());
         private final SearchCategory _category = new SearchCategory("SearchTest", "Just a test");
         private final SearchService _ss = ServiceRegistry.get(SearchService.class);
         private final CountDownLatch _latch = new CountDownLatch(DOC_COUNT);
@@ -1692,7 +1703,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             props.put(PROPERTY.categories.toString(), _category.getName());
             props.put(PROPERTY.title.toString(), title);
 
-            SimpleDocumentResource resource1 = new SimpleDocumentResource(new Path(docId), docId, _c.getId(), body, new ActionURL(), props) {
+            SimpleDocumentResource resource1 = new SimpleDocumentResource(new Path(docId), docId, _c.getId(), "text/plain", body, _url, props) {
                 @Override
                 public void setLastIndexed(long ms, long modified)
                 {
@@ -1704,7 +1715,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
         private List<SearchHit> search(String query) throws IOException
         {
-            SearchResult result = _ss.search(query, Collections.singletonList(_category), User.getSearchUser(), _c, SearchScope.Folder, 0, 100);
+            SearchResult result = _ss.search(query, Collections.singletonList(_category), _context.getUser(), _c, SearchScope.Folder, 0, 100);
 
             return result.hits;
         }
