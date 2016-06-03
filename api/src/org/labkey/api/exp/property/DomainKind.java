@@ -143,7 +143,7 @@ abstract public class DomainKind implements Handler<String>
 
     /**
      * If domains of this kind should get hard tables automatically provisioned, this returns
-     * the db schema where they reside. If it is null, hard tables are not to be provisioned for doamins of this kind.
+     * the db schema where they reside. If it is null, hard tables are not to be provisioned for domains of this kind.
      */
     abstract public DbScope getScope();
     abstract public String getStorageSchemaName();
