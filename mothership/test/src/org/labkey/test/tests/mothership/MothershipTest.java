@@ -2,8 +2,10 @@ package org.labkey.test.tests.mothership;
 
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.labkey.api.util.Pair;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestTimeoutException;
@@ -16,15 +18,19 @@ import org.labkey.test.pages.mothership.ShowExceptionsPage.ExceptionSummaryDataR
 import org.labkey.test.pages.mothership.StackTraceDetailsPage;
 import org.labkey.test.pages.test.TestActions;
 import org.labkey.test.util.ApiPermissionsHelper;
+import org.labkey.test.util.LogMethod;
+import org.labkey.test.util.LoggedParam;
 import org.labkey.test.util.PermissionsHelper.MemberType;
 import org.labkey.test.util.TextSearcher;
 import org.labkey.test.util.mothership.MothershipHelper;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.labkey.test.pages.test.TestActions.*;
 import static org.labkey.test.util.mothership.MothershipHelper.MOTHERSHIP_PROJECT;
 
 @Category({DailyB.class})
@@ -38,7 +44,6 @@ public class MothershipTest extends BaseWebDriverTest
 
     private MothershipHelper _mothershipHelper;
     private ApiPermissionsHelper permissionsHelper = new ApiPermissionsHelper(this);
-    private int _stackTraceId;
 
     @Override
     protected void doCleanup(boolean afterTest) throws TestTimeoutException
@@ -82,19 +87,18 @@ public class MothershipTest extends BaseWebDriverTest
     public void preTest() throws Exception
     {
         _mothershipHelper = new MothershipHelper(getDriver());
-        triggerExceptions(TestActions.ExceptionActions.npe);
-        _stackTraceId = _mothershipHelper.getLatestStackTraceId();
-        _mothershipHelper.resetStackTrace(_stackTraceId);
+        goToMothership();
     }
 
     @Test
     public void testCreateIssue() throws Exception
     {
         Integer highestIssueId = _mothershipHelper.getHighestIssueId();
+        Integer stackTraceId = ensureUnasignedException();
 
         ShowExceptionsPage showExceptionsPage = ShowExceptionsPage.beginAt(this);
         ExceptionSummaryDataRegion exceptionSummary = showExceptionsPage.exceptionSummary();
-        StackTraceDetailsPage detailsPage = exceptionSummary.clickStackTrace(_stackTraceId);
+        StackTraceDetailsPage detailsPage = exceptionSummary.clickStackTrace(stackTraceId);
         String stackDetailsUrl = getDriver().getCurrentUrl();
         InsertPage insertPage = detailsPage.clickCreateIssue();
         String expectedTitle = "NullPointerException in org.labkey.core.test.TestController$NpeAction.getView()";
@@ -112,7 +116,7 @@ public class MothershipTest extends BaseWebDriverTest
         assertNotEquals("Didn't create a new issue.", highestIssueId, newIssueId);
         showExceptionsPage = new ShowExceptionsPage(getDriver());
         exceptionSummary = showExceptionsPage.exceptionSummary();
-        detailsPage = exceptionSummary.clickStackTrace(_stackTraceId);
+        detailsPage = exceptionSummary.clickStackTrace(stackTraceId);
         Integer bugNumber = Integer.parseInt(detailsPage.bugNumber().getValue());
         assertEquals("Exception's related issue not set", newIssueId, bugNumber);
     }
@@ -120,10 +124,12 @@ public class MothershipTest extends BaseWebDriverTest
     @Test
     public void testAssignException() throws Exception
     {
+        Integer stackTraceId = ensureUnasignedException();
+
         ShowExceptionsPage showExceptionsPage = ShowExceptionsPage.beginAt(this);
         ExceptionSummaryDataRegion exceptionSummary = showExceptionsPage.exceptionSummary();
         exceptionSummary.uncheckAll();
-        exceptionSummary.checkCheckboxByPrimaryKey(_stackTraceId);
+        exceptionSummary.checkCheckboxByPrimaryKey(stackTraceId);
         exceptionSummary.assignSelectedTo(displayNameFromEmail(ASSIGNEE));
 
         impersonate(ASSIGNEE);
@@ -131,26 +137,79 @@ public class MothershipTest extends BaseWebDriverTest
             showExceptionsPage = goToMothership().clickMyExceptions();
             exceptionSummary = showExceptionsPage.exceptionSummary();
             assertEquals("Should be only one issue assigned to user", 1, exceptionSummary.getDataRowCount());
-            StackTraceDetailsPage detailsPage = exceptionSummary.clickStackTrace(_stackTraceId);
-            assertElementPresent(Locator.linkWithText("#" + _stackTraceId));
+            StackTraceDetailsPage detailsPage = exceptionSummary.clickStackTrace(stackTraceId);
+            assertElementPresent(Locator.linkWithText("#" + stackTraceId));
             assertEquals(displayNameFromEmail(ASSIGNEE), detailsPage.assignedTo().getFirstSelectedOption().getText());
         }
         stopImpersonating();
     }
 
     @Test
-    public void testCreateIssueForAssignedException() throws Exception
+    public void testIgnoreExceptionFromDataRegion() throws Exception
     {
+        Integer stackTraceId = ensureUnasignedException();
+
         ShowExceptionsPage showExceptionsPage = ShowExceptionsPage.beginAt(this);
         ExceptionSummaryDataRegion exceptionSummary = showExceptionsPage.exceptionSummary();
         exceptionSummary.uncheckAll();
-        exceptionSummary.checkCheckboxByPrimaryKey(_stackTraceId);
+        exceptionSummary.checkCheckboxByPrimaryKey(stackTraceId);
+        exceptionSummary.ignoreSelected();
+
+        StackTraceDetailsPage detailsPage = exceptionSummary.clickStackTrace(stackTraceId);
+        assertEquals("Ignoring exception should set bugNumber", "-1", detailsPage.bugNumber().getValue());
+    }
+
+    @Test
+    public void testCreateIssueForAssignedException() throws Exception
+    {
+        Integer stackTraceId = ensureUnasignedException();
+
+        ShowExceptionsPage showExceptionsPage = ShowExceptionsPage.beginAt(this);
+        ExceptionSummaryDataRegion exceptionSummary = showExceptionsPage.exceptionSummary();
+        exceptionSummary.uncheckAll();
+        exceptionSummary.checkCheckboxByPrimaryKey(stackTraceId);
         exceptionSummary.assignSelectedTo(displayNameFromEmail(ASSIGNEE));
 
-        StackTraceDetailsPage detailsPage = exceptionSummary.clickStackTrace(_stackTraceId);
+        StackTraceDetailsPage detailsPage = exceptionSummary.clickStackTrace(stackTraceId);
         InsertPage insertPage = detailsPage.clickCreateIssue();
         assertEquals("Exception assignment != New issue assignment",
                 displayNameFromEmail(ASSIGNEE), insertPage.assignedTo().getValue());
+    }
+
+    @Test
+    public void testCombiningIdenticalExceptions() throws Exception
+    {
+        List<Integer> exceptionIds = triggerExceptions(ExceptionActions.illegalState, ExceptionActions.illegalState);
+        assertEquals("Should group identical exceptions", exceptionIds.get(0), exceptionIds.get(1));
+    }
+
+    @Test @Ignore("These don't actually get grouped")
+    public void testCombiningSimilarExceptions() throws Exception
+    {
+        List<Pair<ExceptionActions, String>> actions = new ArrayList<>();
+        actions.add(new Pair<>(ExceptionActions.multiException, "NPE"));
+        actions.add(new Pair<>(ExceptionActions.multiException, "NPE2"));
+
+        List<Integer> exceptionIds = triggerExceptions(actions);
+        assertEquals("Should group same exception type from same action", exceptionIds.get(0), exceptionIds.get(1));
+    }
+
+    @Test
+    public void testNotCombiningDifferentExceptionTypes() throws Exception
+    {
+        List<Pair<ExceptionActions, String>> actions = new ArrayList<>();
+        actions.add(new Pair<>(ExceptionActions.multiException, "NPE"));
+        actions.add(new Pair<>(ExceptionActions.multiException, "ISE"));
+
+        List<Integer> exceptionIds = triggerExceptions(actions);
+        assertNotEquals("Should not group different exception types", exceptionIds.get(0), exceptionIds.get(1));
+    }
+
+    @Test
+    public void testNotCombiningFromDifferentActions() throws Exception
+    {
+        List<Integer> exceptionIds = triggerExceptions(ExceptionActions.npeother, ExceptionActions.npe);
+        assertNotEquals("Should not group exceptions from different actions", exceptionIds.get(0), exceptionIds.get(1));
     }
 
     private ShowExceptionsPage goToMothership()
@@ -159,14 +218,41 @@ public class MothershipTest extends BaseWebDriverTest
         return new ShowExceptionsPage(getDriver());
     }
 
-    protected void triggerExceptions(TestActions.ExceptionActions... actions)
+    protected int ensureUnasignedException()
     {
-        checkErrors();
-        for (TestActions.ExceptionActions action : actions)
+        int stackTraceId = triggerException(ExceptionActions.npe);
+        _mothershipHelper.resetStackTrace(stackTraceId);
+        return stackTraceId;
+    }
+
+    protected int triggerException(ExceptionActions action)
+    {
+        return triggerExceptions(action).get(0);
+    }
+
+    protected List<Integer> triggerExceptions(ExceptionActions... actions)
+    {
+        List<Pair<ExceptionActions, String>> actionsWithMessages = new ArrayList<>();
+        for (ExceptionActions action : actions)
         {
-            action.triggerException();
+            actionsWithMessages.add(new Pair<>(action, null));
         }
-        checkExpectedErrors(2 * actions.length);
+        return triggerExceptions(actionsWithMessages);
+    }
+
+    @LogMethod
+    protected List<Integer> triggerExceptions(@LoggedParam List<Pair<TestActions.ExceptionActions, String>> actionsWithMessages)
+    {
+        List<Integer> exceptionIds = new ArrayList<>();
+        checkErrors();
+        for (Pair<TestActions.ExceptionActions, String> action : actionsWithMessages)
+        {
+            action.first.triggerException(action.second);
+            sleep(100); // Wait for mothership to pick up exception
+            exceptionIds.add(_mothershipHelper.getLatestStackTraceId());
+        }
+        resetErrors();
+        return exceptionIds;
     }
 
     @Override

@@ -651,6 +651,37 @@ public class TestController extends SpringActionController
 
 
     @RequiresSiteAdmin
+    public class MultiExceptionAction extends SimpleViewAction<ExceptionForm>
+    {
+        public ModelAndView getView(ExceptionForm form, BindException errors) throws Exception
+        {
+            Exception exception;
+            switch (form.getMessage())
+            {
+                case "ISE":
+                    exception = new IllegalStateException();
+                    break;
+                case "NPE":
+                    exception = new NullPointerException();
+                    break;
+                case "NPE2":
+                    exception = new NullPointerException();
+                    break;
+                default:
+                    throw new IllegalArgumentException(form.getMessage());
+            }
+            ExceptionUtil.decorateException(exception, ExceptionUtil.ExceptionInfo.ExtraMessage, "testing", true);
+            throw exception;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+
+    @RequiresSiteAdmin
     public class IllegalStateAction extends SimpleViewAction<ExceptionForm>
     {
         public ModelAndView getView(ExceptionForm form, BindException errors) throws Exception
