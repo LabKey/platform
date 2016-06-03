@@ -1499,12 +1499,46 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted = null;
         assert null != (oldAndBusted = getParentsOldAndBusted(start));
-        assert oldAndBusted.first.equals(newHotness.first);
-        assert oldAndBusted.second.equals(newHotness.second);
+        assert assertLineage(newHotness, oldAndBusted);
 
         return newHotness;
     }
 
+    // Make boolean so it can hide behind 'assert' and no-op in production mode
+    private boolean assertLineage(Pair<Set<ExpData>, Set<ExpMaterial>> newHotness, Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted)
+    {
+        if (newHotness.first.equals(oldAndBusted.first) &&
+                newHotness.second.equals(oldAndBusted.second))
+            return true; // short-circuit if everything matches
+
+        Set<ExpData> newExpDataUniques = new HashSet<>(newHotness.first);
+        Set<ExpData> oldExpDataUniques = new HashSet<>(oldAndBusted.first);
+        Set<ExpMaterial> newExpMaterialUniques = new HashSet<>(newHotness.second);
+        Set<ExpMaterial> oldExpMaterialUniques = new HashSet<>(oldAndBusted.second);
+        newExpDataUniques.removeAll(oldAndBusted.first);
+        oldExpDataUniques.removeAll(newHotness.first);
+        newExpMaterialUniques.removeAll(oldAndBusted.second);
+        oldExpMaterialUniques.removeAll(newHotness.second);
+
+        Set<ExpData> expDataOverlap = new HashSet<>(newHotness.first);
+        expDataOverlap.removeAll(newExpDataUniques);
+        Set<ExpMaterial> expMaterialOverlap = new HashSet<>(newHotness.second);
+        expMaterialOverlap.removeAll(newExpMaterialUniques);
+
+        StringBuilder errorMsg = new StringBuilder("Old lineage doesn't match new lineage.");
+        if (!newExpDataUniques.isEmpty())
+            errorMsg.append("\nOld missing data: ").append(newExpDataUniques.toString());
+        if (!oldExpDataUniques.isEmpty())
+            errorMsg.append("\nNew missing data: ").append(newExpDataUniques.toString());
+        if (!newExpMaterialUniques.isEmpty())
+            errorMsg.append("\nOld missing materials: ").append(newExpDataUniques.toString());
+        if (!oldExpMaterialUniques.isEmpty())
+            errorMsg.append("\nNew missing maerials: ").append(newExpDataUniques.toString());
+        errorMsg.append("\nMatching Data: ").append(expDataOverlap);
+        errorMsg.append("\nMatching Materials: ").append(expMaterialOverlap);
+        assert false : errorMsg.toString();
+        return false; // Unreachable
+    }
 
     /**
      * walk experiment graph in memory, with tons queries, mostly repetitive queries over and over again
@@ -1556,8 +1590,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted = null;
         assert null != (oldAndBusted = getChildrenOldAndBusted(start));
-        assert oldAndBusted.first.equals(newHotness.first) : "old lineage doesn't match new lineage.\nold set: " + oldAndBusted.first + "\nnew set: " + newHotness.first;
-        assert oldAndBusted.second.equals(newHotness.second) : "old lineage doesn't match new lineage.\nold set: " + oldAndBusted.second + "\nnew set: " + newHotness.second;
+        assert assertLineage(newHotness, oldAndBusted);
 
         return newHotness;
     }
