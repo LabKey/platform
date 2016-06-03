@@ -216,6 +216,7 @@ public interface SearchService
 
     class SearchHit
     {
+        public int doc;
         public String docid;
         public String container;
         public String title;
