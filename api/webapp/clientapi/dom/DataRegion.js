@@ -2273,6 +2273,9 @@ if (!LABKEY.DataRegions) {
                     if (lastIdx > -1 && lastIdx == (key.length - LAST.length)) {
                         return;
                     }
+                    else if (key.indexOf(region.name + '.') !== 0) { // 26686: Prevent non-region parameters
+                        return;
+                    }
 
                     var stop = false;
                     if (skip) {
@@ -2809,7 +2812,7 @@ if (!LABKEY.DataRegions) {
                 {name: 'disableAnalytics', prefix: true},
                 {name: 'maxRows', prefix: true, check: function(v) { return v > 0; }},
                 {name: 'showRows', prefix: true},
-                {name: 'offset', prefix: true},
+                {name: 'offset', prefix: true, check: function(v) { return v !== 0; }},
                 {name: 'reportId', prefix: true},
                 {name: 'viewName', prefix: true}
             ]);
