@@ -101,7 +101,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
 
     private WritableIndexManagerImpl(IndexWriter iw, SearcherFactory factory, Directory directory) throws IOException
     {
-        super(new SearcherManager(iw, true, factory), directory);
+        super(new SearcherManager(iw, factory), directory);
         _iw = iw;
     }
 

@@ -17,10 +17,10 @@ package org.labkey.search.model;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.DocsEnum;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.LeafReader;
 import org.apache.lucene.index.LeafReaderContext;
+import org.apache.lucene.index.PostingsEnum;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.store.Directory;
@@ -107,13 +107,14 @@ public class IndexInspector
                     if (null != terms)
                     {
                         TermsEnum termsEnum = terms.iterator();
+                        PostingsEnum pe = null;
 
                         while (null != termsEnum.next())
                         {
-                            DocsEnum de = termsEnum.docs(ar.getLiveDocs(), null);
+                            pe = termsEnum.postings(pe);
                             int doc;
 
-                            while ((doc = de.nextDoc()) != DocsEnum.NO_MORE_DOCS)
+                            while ((doc = pe.nextDoc()) != PostingsEnum.NO_MORE_DOCS)
                             {
                                 termCountPerDoc[doc]++;
                             }
