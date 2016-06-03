@@ -466,7 +466,9 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
         if (c == null)
             return null;
 
-        ExpDataClass dc = ExperimentService.get().getDataClass(c, dataClassName);
+        ExpDataClass dc = null;
+        if (dataClassName.length() > 0 && !dataClassName.equals("-"))
+            dc = ExperimentService.get().getDataClass(c, dataClassName);
         Integer rowId;
         try
         {
@@ -477,7 +479,10 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
             return null;
         }
 
-        return ExperimentServiceImpl.get().getExpData(dc, rowId);
+        if (dc != null)
+            return ExperimentServiceImpl.get().getExpData(dc, rowId);
+        else
+            return ExperimentServiceImpl.get().getExpData(rowId);
     }
 
     public void index(SearchService.IndexTask task)
