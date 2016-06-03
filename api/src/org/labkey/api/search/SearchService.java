@@ -160,11 +160,11 @@ public interface SearchService
     // plug in interfaces
     //
     
-    abstract class ResourceResolver
+    interface ResourceResolver
     {
-        public WebdavResource resolve(@NotNull String resourceIdentifier) { return null; }
-        public HttpView getCustomSearchResult(User user, @NotNull String resourceIdentifier) { return null; }
-        public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier) { return null; }
+        default WebdavResource resolve(@NotNull String resourceIdentifier) { return null; }
+        default HttpView getCustomSearchResult(User user, @NotNull String resourceIdentifier) { return null; }
+        default Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier) { return null; }
     }
 
 
