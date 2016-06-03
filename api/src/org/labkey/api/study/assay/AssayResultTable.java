@@ -20,8 +20,10 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DelegatingContainerFilter;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
@@ -218,7 +220,20 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         runIdSQL.append(".");
         runIdSQL.append(RUN_ID_ALIAS);
         ExprColumn runColumn = new ExprColumn(this, RUN_ID_ALIAS, runIdSQL, JdbcType.INTEGER);
-        runColumn.setFk(new QueryForeignKey(_userSchema, null, AssayProtocolSchema.RUNS_TABLE_NAME, null, null));
+        runColumn.setFk(new QueryForeignKey(_userSchema, null, AssayProtocolSchema.RUNS_TABLE_NAME, null, null)
+        {
+            @Override
+            protected void propagateContainerFilter(ColumnInfo foreignKey, TableInfo lookupTable)
+            {
+                // Can't rely on normal container filter propagation since assay-backed datasets will have different
+                // container filters on the dataset table compared with the assay result table from which they are
+                // adopting columns
+                if (lookupTable.supportsContainerFilter())
+                {
+                    ((ContainerFilterable)lookupTable).setContainerFilter(new DelegatingContainerFilter(AssayResultTable.this));
+                }
+            }
+        });
         runColumn.setUserEditable(false);
         runColumn.setShownInInsertView(false);
         runColumn.setShownInUpdateView(false);
