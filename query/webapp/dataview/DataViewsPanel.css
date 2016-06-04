@@ -56,11 +56,6 @@
     text-align: center !important;
 }
 
-/* Grid column title */
-.dvc .x4-column-header-inner .x4-column-header-text {
-    font-weight: bold;
-}
-
 /* Tree Column */
 .dvc .dvcategory img.x4-tree-icon {
     display: none;

@@ -14,7 +14,7 @@ body, div, td, th, table, img, form, input, select, .gwt-TextBox
 }
 
 .x-btn, .x4-btn {
-    font-family: 'Roboto-Bold', arial, helvetica, sans-serif !important;
+    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif !important;
     font-size: 12px;
     letter-spacing: .5px;
 }
@@ -31,6 +31,18 @@ strong, b {
 @font-face {
     font-family: 'Roboto-Bold';
     src: url('fonts/Roboto/Roboto-Bold.ttf');
+}
+
+@font-face {
+    font-family: 'Arial-Bold';
+    src: local('Arial');
+    font-weight: 600;
+}
+
+@font-face {
+    font-family: 'Helvetica-Bold';
+    src: local('Helvetica');
+    font-weight: 600;
 }
 
 img
@@ -401,7 +413,7 @@ table.labkey-button-bar
 .labkey-disabled-menu-button,
 .labkey-wp-text-buttons a
 {
-    font-family:  'Roboto-Bold', arial, helvetica, sans-serif !important;
+    font-family:  'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif !important;
     font-size: 12px;
     letter-spacing: .5px;
 }
@@ -423,8 +435,6 @@ table.labkey-button-bar
 
     color: #126495;
     text-transform: uppercase;
-    /*font-size: 10px;*/
-    font-weight: bold;
     letter-spacing: .5px;
 	line-height: 2.3em;
     *line-height: 1.9em;
@@ -538,8 +548,6 @@ td .labkey-menu-button:hover,
 
     color: #808080 !important;
     text-transform: uppercase;
-    /*font-size: 10px;*/
-    font-weight: bold;
     cursor: default;
 
     line-height: 2.3em;
@@ -633,8 +641,6 @@ span.labkey-button {
     border: 1px solid #b4b4b4;
     color: #126495;
     text-transform: uppercase;
-    /*font-size: 10px;*/
-    font-weight: bold;
     white-space: nowrap;
 
 	border-radius: 5px;
@@ -662,8 +668,6 @@ span.labkey-button:hover
     border: 1px solid #676767 !important;
     color: #000000;
     text-transform: uppercase;
-    /*font-size: 10px;*/
-    font-weight: bold;
     cursor: pointer;
 
     border-radius: 5px;
@@ -685,8 +689,6 @@ a.labkey-disabled-button {
     margin-right: 5px;
     color: #808080 !important;
     text-transform: uppercase;
-    /*font-size: 10px;*/
-    font-weight: bold;
     cursor: default;
 
     border-radius: 5px;
@@ -938,10 +940,6 @@ span.labkey-help-pop-up
 
 .auth-item {
     margin-top: 15px;
-}
-
-.auth-form-body label {
-    font-weight: bold;
 }
 
 .auth-form-body input[type="text"],
@@ -1960,14 +1958,15 @@ td.labkey-wp-body.labkey-wp-nopadding
 help pop up */
 tr.labkey-wp-header
 {
-    font-weight: bold;
     background-color: #e0e6ea;
+    font-weight: normal;
     border: 0;
 }
 
 .labkey-wp-header th.labkey-wp-title-left, .labkey-wp-header td.labkey-wp-title-left
 {
-    font-family: 'Roboto-Bold', arial, helvetica, sans-serif;
+    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
+    font-weight: normal;
     letter-spacing: .5px;
     padding: 0 0 4px 4px;
     text-align: left;
@@ -2087,14 +2086,13 @@ a.no-arrow {
 
 .labkey-text-link, a.labkey-text-link-noarrow, .labkey-disabled-text-link
 {
-    font-family: 'Roboto-Bold', arial, helvetica, sans-serif;
+    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
     font-size: 11px;
     letter-spacing: .5px;
 }
 
 a.labkey-text-link, a.labkey-text-link:visited, a.labkey-text-link-noarrow {
     color: #126495;
-    font-weight: bold;
     padding: .3em 14px 2px 0;
     text-transform: uppercase;
 	border: none;
@@ -2117,7 +2115,7 @@ table.labkey-data-region a.labkey-text-link:visited {
 a.labkey-text-link:hover, a.labkey-text-link-noarrow:hover {
     text-transform: uppercase;
     /*font-size: 10px;*/
-    font-weight: bold;
+    font-weight: normal;
     padding: .3em 14px 2px 0;
 	border: none;
 	color: #000000;
@@ -2863,13 +2861,12 @@ div.note {
 
 .tool-icon a,
 .tool-icon a:visited {
-    font-family: 'Roboto-Bold', arial, helvetica, sans-serif;
+    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
 	text-transform: uppercase;
 	text-decoration: none;
 	color: #126495;
 	font-size: 11px;
     letter-spacing: .5px;
-	font-weight: bold;
 }
 
 .tool-icon:hover a,
@@ -2997,9 +2994,8 @@ input[type="checkbox"], input[type="radio"] {
 }
 
 .labkey-app-bar ul li a {
-    font-family: 'Roboto-Bold', arial, helvetica, sans-serif;
+    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
     letter-spacing: .5px;
-    font-weight: bold;
 }
 
 .labkey-app-bar ul:hover.labkey-tab-strip { /* map bottom border and background color to Primary background color */
