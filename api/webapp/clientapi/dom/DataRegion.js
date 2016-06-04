@@ -27,6 +27,21 @@ if (!LABKEY.DataRegions) {
                             'beforeoffsetchange', 'beforerefresh', 'beforesetparameters', 'beforesortchange', 'render',
                             'rendermsg', 'success'];
 
+    // TODO: Update constants to not include '.' so mapping can be used easier
+    var REQUIRE_NAME_PREFIX = {
+        '~': true,
+        'columns': true,
+        'param': true,
+        'reportId': true,
+        'sort': true,
+        'offset': true,
+        'maxRows': true,
+        'showRows': true,
+        'containerFilterName': true,
+        'viewName': true,
+        'disableAnalytics': true
+    };
+
     //
     // PRIVATE VARIABLES
     //
@@ -2273,7 +2288,8 @@ if (!LABKEY.DataRegions) {
                     if (lastIdx > -1 && lastIdx == (key.length - LAST.length)) {
                         return;
                     }
-                    else if (key.indexOf(region.name + '.') !== 0) { // 26686: Prevent non-region parameters
+                    else if (REQUIRE_NAME_PREFIX.hasOwnProperty(key)) {
+                        // 26686: Black list known parameters, should be prefixed by region name
                         return;
                     }
 
