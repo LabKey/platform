@@ -83,7 +83,6 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.RserveScriptEngine;
 import org.labkey.api.reports.actions.ReportForm;
 import org.labkey.api.reports.model.DataViewEditForm;
-import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.model.ViewInfo;
@@ -547,6 +546,7 @@ public class ReportsController extends SpringActionController
                 record.put("external", String.valueOf(isExternal));
                 record.put("enabled", String.valueOf(LabkeyScriptEngineManager.isFactoryEnabled(factory)));
 
+
                 if (isExternal)
                 {
                     // extra metadata for external engines
@@ -561,6 +561,7 @@ public class ReportsController extends SpringActionController
                     record.put("exePath", def.getExePath());
                     record.put("exeCommand", def.getExeCommand());
                     record.put("outputFileName", def.getOutputFileName());
+                    record.put("pandocEnabled", String.valueOf(def.isPandocEnabled()));
 
                     if (def.isRemote())
                     {

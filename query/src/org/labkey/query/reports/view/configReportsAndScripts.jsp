@@ -80,6 +80,27 @@
 
     }
 
+    function getEngineSpecificItems(record) {
+        if (record.name === R_ENGINE_NAME)
+        {
+            return getRSpecificFields(record.pandocEnabled)
+        }
+
+        return null;
+    }
+
+    function getRSpecificFields(enabled) {
+        return [{
+            fieldLabel: 'Use pandoc & rmarkdown',
+            name: 'pandocEnabled',
+            id: 'pandocEnabled',
+            xtype: 'checkbox',
+            checked: enabled,
+            tooltip: {text: 'Use Pandoc and rmarkdown v2 to render reports. Must be pre-installed.', title: 'Enable rmarkdown v2'},
+            listeners: {render: setFormFieldTooltip}
+        }];
+    }
+
     function showEngines()
     {
         // pre defined engine templates
@@ -187,7 +208,9 @@
                         {name:'enabled', type:'boolean'},
                         {name:'external', type:'boolean'},
                         {name:'remote', type:'boolean'},
-                        {name:'outputFileName'}]),
+                        {name:'outputFileName'},
+                        {name:'pandocEnabled', type:'boolean'}
+                    ]),
             proxy: con,
             autoLoad: true,
             listeners:{load:function(store, records, options) {
@@ -570,6 +593,13 @@
         // common items for both local and remote
         panelItems.push(itemCmd);
         panelItems.push(itemOutputFileName);
+
+        //add engine specific fields
+        var engineItems = getEngineSpecificItems(record);
+        if (engineItems && engineItems.length > 0) {
+            panelItems = panelItems.concat(engineItems);
+        }
+
         panelItems.push(itemEnabled);
         panelItems.push(itemExternal);
         panelItems.push(itemKey);
