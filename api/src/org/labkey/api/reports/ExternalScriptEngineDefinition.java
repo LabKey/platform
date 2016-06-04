@@ -24,49 +24,52 @@ import org.labkey.api.pipeline.file.PathMapper;
 */
 public interface ExternalScriptEngineDefinition
 {
-    public String getName();
-    public String[] getExtensions();
-    public String getLanguageName();
-    public String getLanguageVersion();
+    String getName();
+    String[] getExtensions();
+    String getLanguageName();
+    String getLanguageVersion();
 
-    public String getExePath();
-    public String getExeCommand();
-
-    //
-    // consider:  move these to RemoteScriptEngineDefinition?
-    //
-    public String getMachine();
-    public int getPort();
-    public String getUser();
-    public String getPassword();
-    public PathMapper getPathMap();
-
-    public void setName(String name);
-    public void setExtensions(String[] extensions);
-    public void setLanguageName(String name);
-    public void setLanguageVersion(String version);
-
-    public void setExePath(String path);
-    public void setExeCommand(String cmd);
-
-    public String getOutputFileName();
-    public void setOutputFileName(String name);
-
-    public void setEnabled(boolean enabled);
-    public boolean isEnabled();
-
-    public void setExternal(boolean external);
-    public boolean isExternal();
-
-    public void setRemote(boolean remote);
-    public boolean isRemote();
+    String getExePath();
+    String getExeCommand();
 
     //
     // consider:  move these to RemoteScriptEngineDefinition?
     //
-    public void setMachine(String name);
-    public void setPort(int port);
-    public void setUser(String user);
-    public void setPassword(String password);
-    public void setPathMap(PathMapper pathMap);
+    String getMachine();
+    int getPort();
+    String getUser();
+    String getPassword();
+    PathMapper getPathMap();
+
+    void setName(String name);
+    void setExtensions(String[] extensions);
+    void setLanguageName(String name);
+    void setLanguageVersion(String version);
+
+    void setExePath(String path);
+    void setExeCommand(String cmd);
+
+    String getOutputFileName();
+    void setOutputFileName(String name);
+
+    void setEnabled(boolean enabled);
+    boolean isEnabled();
+
+    void setExternal(boolean external);
+    boolean isExternal();
+
+    void setRemote(boolean remote);
+    boolean isRemote();
+
+    void setPandocEnabled(boolean pandocEnabled);
+    boolean isPandocEnabled();
+
+    //
+    // consider:  move these to RemoteScriptEngineDefinition?
+    //
+    void setMachine(String name);
+    void setPort(int port);
+    void setUser(String user);
+    void setPassword(String password);
+    void setPathMap(PathMapper pathMap);
 }

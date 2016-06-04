@@ -93,9 +93,14 @@ public class RScriptEngine extends ExternalScriptEngine
             throw new ScriptException("There are no file name extensions registered for this ScriptEngine : " + getFactory().getLanguageName());
     }
 
+    private boolean isPandocEnabled()
+    {
+        return _def.isPandocEnabled();
+    }
+
     protected String getKnitrExtension(ScriptContext context, List<String> extensions)
     {
-        // consider: make a format class and then just override the specifid html, md, functions
+        // consider: make a format class and then just override the specified html, md, functions
         if (getKnitrFormat(context) == RReportDescriptor.KnitrFormat.Html)
             return extensions.get(0) + "html";
 
@@ -170,14 +175,14 @@ public class RScriptEngine extends ExternalScriptEngine
         sb.append(getRWorkingDir(context));
         sb.append("\")\n");
         sb.append("library(knitr)\n");
+        sb.append("library(rmarkdown)\n");
 
         //
         // setup a knitr hook to translate the knitr-generated filename to a parameter
         // replacement token so that we can fixup the url to the file
         //
         sb.append("labkey.makeHref <- function(filename)\n");
-        sb.append("{ return (paste(\"${hrefout:\", filename, \"}\", sep=\"\")) }\n");
-        sb.append("opts_knit$set(upload.fun = labkey.makeHref)\n");
+        sb.append("{ return (paste0(\"${hrefout:\", filename, \"}\")) }\n");
 
         //
         // if the format is markdown then we use a knit2html to combine knit and markdownToHtml functions
@@ -185,15 +190,27 @@ public class RScriptEngine extends ExternalScriptEngine
         //
         if (getKnitrFormat(context) == RReportDescriptor.KnitrFormat.Markdown)
         {
-            //
-            // if we just use the knit2html defaults then it overrides the labkey styles.  So suppress the style
-            // block by specifying no css.  Also, use the default options for knit2html except don't base64 encode
-            // images
-            //
-            sb.append("knit2html(options=c('use_xhtml', 'smartypants', 'mathjax', 'highlight_code'), stylesheet='', ");
+            if(isPandocEnabled())
+            {
+                sb.append("render(run_pandoc='true', output_options=list(self.contained=FALSE, theme=NULL, css=NULL, highlight=NULL), ");
+            }
+            else
+            {
+
+                //TODO: this should be outside if statement, but is not correctly substituting currently for markdown v2
+                sb.append("opts_knit$set(upload.fun = labkey.makeHref)\n");
+
+                //
+                // if we just use the knit2html defaults then it overrides the labkey styles.  So suppress the style
+                // block by specifying no css.  Also, use the default options for knit2html except don't base64 encode
+                // images
+                //
+                sb.append("knit2html(options=c('use_xhtml', 'smartypants', 'mathjax', 'highlight_code'), stylesheet='', ");
+            }
         }
         else
         {
+            sb.append("opts_knit$set(upload.fun = labkey.makeHref)\n");
             sb.append("knit(");
         }
 

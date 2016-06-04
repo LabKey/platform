@@ -69,7 +69,8 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
         pathMap,
         user,
         password,
-        remote
+        remote,
+        pandocEnabled
     }
 
     ScriptEngineFactory rhino = null;
@@ -309,6 +310,7 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
                     setProp(Props.outputFileName.name(), def.getOutputFileName(), key);
                     setProp(Props.disabled.name(), String.valueOf(!def.isEnabled()), key);
                     setProp(Props.remote.name(), String.valueOf(def.isRemote()), key);
+                    setProp(Props.pandocEnabled.name(), String.valueOf(def.isPandocEnabled()), key); //TODO: should this be moved to an extended class?
                 }
                 else
                     throw new IllegalArgumentException("Existing definition does not exist in the DB");
@@ -438,6 +440,7 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
         boolean _enabled;
         boolean _external;
         boolean _remote;
+        boolean _pandocEnabled;
 
         public String getKey()
         {
@@ -581,6 +584,16 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
         public void setPassword(String password)
         {
             _password = password;
+        }
+
+        public void setPandocEnabled(boolean pandocEnabled)
+        {
+            _pandocEnabled = pandocEnabled;
+        }
+
+        public boolean isPandocEnabled()
+        {
+            return _pandocEnabled;
         }
 
         @Override
