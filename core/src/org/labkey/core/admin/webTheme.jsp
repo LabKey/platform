@@ -160,7 +160,7 @@ if (null != webThemeErrors) { %>
         <%
         if (!isBuiltInTheme)
         {%>
-        <%= button("Save").submit(true).attributes("id=\"saveButton\" name=\"Define\"") %>&nbsp;
+        <%= button("Save").submit(true).attributes("id=\"saveButton\" name=\"Define\"") %>
             <%
             if (selectedTheme != null && bean.themes.size() > 1)
             {%>
