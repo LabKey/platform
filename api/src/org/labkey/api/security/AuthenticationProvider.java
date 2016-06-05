@@ -18,6 +18,7 @@ package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.annotations.RefactorIn16_3;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.AuthenticationManager.LinkFactory;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
@@ -47,15 +48,36 @@ public interface AuthenticationProvider
     );
 
     @Nullable ActionURL getConfigurationLink();
-    String getName();
-    String getDescription();
-    void logout(HttpServletRequest request);
-    void activate();
-    void deactivate();
-    boolean isPermanent();
+    @NotNull String getName();
+    @NotNull String getDescription();
+
+    default void activate()
+    {
+        // TODO: block activation if provider hasn't been configured... add isConfigured()?
+    }
+
+    default void deactivate()
+    {
+    }
+
+    default boolean isPermanent()
+    {
+        return false;
+    }
+
+    @Deprecated
+    @RefactorIn16_3
+    // This makes no sense for secondary auth, reset password, etc., so it's been moved to PrimaryAuthenticationProvider. But
+    // leaving it here temporarily to avoid breaking in-flight feature branches. TODO: remove in 16.3
+    default void logout(HttpServletRequest request)
+    {
+    }
 
     interface PrimaryAuthenticationProvider extends AuthenticationProvider
     {
+        default void logout(HttpServletRequest request)
+        {
+        }
     }
 
     interface LoginFormAuthenticationProvider extends PrimaryAuthenticationProvider

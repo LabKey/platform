@@ -56,6 +56,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -266,6 +267,12 @@ public class AuthenticationManager
         {
             return null;
         }
+    }
+
+
+    public static void registerProvider(AuthenticationProvider authProvider)
+    {
+        registerProvider(authProvider, Priority.High);
     }
 
 
