@@ -116,6 +116,7 @@ import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
+import org.labkey.api.view.Portal.WebPart;
 import org.labkey.api.view.ShortURLService;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
@@ -164,6 +165,8 @@ import org.labkey.core.analytics.AnalyticsController;
 import org.labkey.core.analytics.AnalyticsProviderRegistryImpl;
 import org.labkey.core.analytics.AnalyticsServiceImpl;
 import org.labkey.core.attachment.AttachmentServiceImpl;
+import org.labkey.core.authentication.test.TestSsoController;
+import org.labkey.core.authentication.test.TestSsoProvider;
 import org.labkey.core.dialect.PostgreSqlDialectFactory;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
@@ -326,12 +329,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false);
 
         // authentication provider implementations
-        AuthenticationManager.registerProvider(new LdapAuthenticationProvider(), Priority.High);
         if (AppProps.getInstance().isDevMode())
         {
             addController("testsecondary", TestSecondaryController.class);
-            AuthenticationManager.registerProvider(new TestSecondaryProvider(), Priority.Low);
+            AuthenticationManager.registerProvider(new TestSecondaryProvider());
+            addController("testsso", TestSsoController.class);
+            AuthenticationManager.registerProvider(new TestSsoProvider());
         }
+        AuthenticationManager.registerProvider(new LdapAuthenticationProvider());
 
         SiteValidationService svc = ServiceRegistry.get().getService(SiteValidationService.class);
         if (null != svc)
@@ -347,14 +352,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         return new ArrayList<>(Arrays.asList(
             new AlwaysAvailableWebPartFactory("Contacts")
             {
-                public WebPartView getWebPartView(@NotNull ViewContext ctx, @NotNull Portal.WebPart webPart)
+                public WebPartView getWebPartView(@NotNull ViewContext ctx, @NotNull WebPart webPart)
                 {
                     return new ContactWebPart();
                 }
             },
             new BaseWebPartFactory("FolderNav")
             {
-                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     FolderNavigationForm form = getForm(portalCtx);
 
@@ -382,7 +387,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             },
             new BaseWebPartFactory("Workbooks")
             {
-                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     UserSchema schema = QueryService.get().getUserSchema(portalCtx.getUser(), portalCtx.getContainer(), SchemaKey.fromParts(CoreQuerySchema.NAME));
                     WorkbookQueryView wbqview = new WorkbookQueryView(portalCtx, schema);
@@ -400,7 +405,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             },
             new BaseWebPartFactory("Workbook Description")
             {
-                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     JspView view = new JspView("/org/labkey/core/workbook/workbookDescription.jsp");
                     view.setTitle("Workbook Description");
@@ -416,9 +421,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             },
             new AlwaysAvailableWebPartFactory("Projects")
             {
-                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
-                    JspView<Portal.WebPart> view = new JspView<>("/org/labkey/core/project/projects.jsp", webPart);
+                    JspView<WebPart> view = new JspView<>("/org/labkey/core/project/projects.jsp", webPart);
 
                     String title = webPart.getPropertyMap().containsKey("title") ? webPart.getPropertyMap().get("title") : "Projects";
                     view.setTitle(title);
@@ -434,9 +439,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             },
             new BaseWebPartFactory("ProjectNav")
             {
-                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
-                    JspView<Portal.WebPart> view = new JspView<>("/org/labkey/core/project/projectNav.jsp", webPart);
+                    JspView<WebPart> view = new JspView<>("/org/labkey/core/project/projectNav.jsp", webPart);
                     view.setTitle("Project Navigation");
                     view.setFrame(WebPartView.FrameType.NONE);
                     return view;
@@ -450,7 +455,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             },
             new AlwaysAvailableWebPartFactory("Custom Menu", true, true, WebPartFactory.LOCATION_MENUBAR)
             {
-                public WebPartView getWebPartView(@NotNull final ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+                public WebPartView getWebPartView(@NotNull final ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     final CustomizeMenuForm form = AdminController.getCustomizeMenuForm(webPart);
                     String title = "My Menu";
@@ -470,7 +475,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     return view;
                 }
 
-                public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
+                public HttpView getEditView(WebPart webPart, ViewContext context)
                 {
                     CustomizeMenuForm form = AdminController.getCustomizeMenuForm(webPart);
                     JspView<CustomizeMenuForm> view = new JspView<>("/org/labkey/core/admin/customizeMenu.jsp", form);
@@ -482,7 +487,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             new BaseWebPartFactory("BetaNav")
             {
                 @Override
-                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     FolderNavigationForm form = getForm(portalCtx);
 

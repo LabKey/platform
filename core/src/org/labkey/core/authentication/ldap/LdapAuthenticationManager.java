@@ -362,6 +362,7 @@ public class LdapAuthenticationManager
             return defaultValue;
     }
 
+    @NotNull
     public static String[] getServers()
     {
         return getProperty(Key.Servers, "").split(";");

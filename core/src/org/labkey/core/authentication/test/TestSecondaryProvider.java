@@ -15,13 +15,12 @@
  */
 package org.labkey.core.authentication.test;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
-
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * User: adam
@@ -43,37 +42,18 @@ public class TestSecondaryProvider implements SecondaryAuthenticationProvider
         return null;
     }
 
+    @NotNull
     @Override
     public String getName()
     {
         return "Test Secondary Authentication";
     }
 
+    @NotNull
     @Override
     public String getDescription()
     {
-        return "Adds an annoying secondary authentication requirement";
-    }
-
-    @Override
-    public void logout(HttpServletRequest request)
-    {
-    }
-
-    @Override
-    public void activate()
-    {
-    }
-
-    @Override
-    public void deactivate()
-    {
-    }
-
-    @Override
-    public boolean isPermanent()
-    {
-        return false;
+        return "Adds an annoying secondary authentication requirement (for test purposes only)";
     }
 
     @Override

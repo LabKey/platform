@@ -31,7 +31,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.Date;
 import java.util.EmptyStackException;
@@ -49,19 +48,13 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         return true;
     }
 
-    public void activate()
-    {
-    }
-
-    public void deactivate()
-    {
-    }
-
+    @NotNull
     public String getName()
     {
         return "Database";
     }
 
+    @NotNull
     public String getDescription()
     {
         return "Stores user names and passwords in the LabKey database";
@@ -140,11 +133,5 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
     public ActionURL getConfigurationLink()
     {
         return PageFlowUtil.urlProvider(LoginUrls.class).getConfigureDbLoginURL();
-    }
-
-
-    public void logout(HttpServletRequest request)
-    {
-        // No special handling required
     }
 }

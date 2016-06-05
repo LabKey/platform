@@ -25,7 +25,6 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
 import javax.naming.NamingException;
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * User: adam
@@ -35,11 +34,6 @@ import javax.servlet.http.HttpServletRequest;
 public class LdapAuthenticationProvider implements LoginFormAuthenticationProvider
 {
     private static final Logger LOG = Logger.getLogger(LdapAuthenticationProvider.class);
-
-    public boolean isPermanent()
-    {
-        return false;
-    }
 
     public void activate()
     {
@@ -51,11 +45,13 @@ public class LdapAuthenticationProvider implements LoginFormAuthenticationProvid
         LdapAuthenticationManager.deactivate();
     }
 
+    @NotNull
     public String getName()
     {
         return "LDAP";
     }
 
+    @NotNull
     public String getDescription()
     {
         return "Uses the LDAP protocol to authenticate against an institution's directory server";
@@ -82,9 +78,6 @@ public class LdapAuthenticationProvider implements LoginFormAuthenticationProvid
         String[] ldapServers = LdapAuthenticationManager.getServers();
         boolean saslAuthentication = LdapAuthenticationManager.useSASL();
 
-        if (null == ldapServers)
-            return AuthenticationResponse.createFailureResponse(FailureReason.configurationError);
-
         for (String server : ldapServers)
         {
             if (null == server || 0 == server.length())
@@ -105,10 +98,5 @@ public class LdapAuthenticationProvider implements LoginFormAuthenticationProvid
         }
 
         return AuthenticationResponse.createFailureResponse(FailureReason.configurationError);
-    }
-
-    public void logout(HttpServletRequest request)
-    {
-        // No special handling required
     }
 }
