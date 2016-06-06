@@ -16,6 +16,7 @@
 package org.labkey.experiment;
 
 import com.drew.lang.annotations.Nullable;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.audit.AuditLogService;
@@ -30,6 +31,9 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.DefaultExperimentDataHandler;
 import org.labkey.api.exp.api.ExpDataClass;
+import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.ExperimentProperty;
@@ -247,6 +251,21 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                     map.put("comment", data.getComment());
 
                     return map;
+                }
+            });
+            ss.addResourceResolver("material", new SearchService.ResourceResolver(){
+                @Override
+                public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
+                {
+                    int rowId = NumberUtils.toInt(resourceIdentifier.replace("material:", ""));
+                    if (rowId == 0)
+                        return null;
+
+                    ExpMaterial material = ExperimentService.get().getExpMaterial(rowId);
+                    if (material == null)
+                        return null;
+
+                    return ExperimentJSONConverter.serializeMaterial(material);
                 }
             });
             ss.addDocumentProvider(this);
