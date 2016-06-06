@@ -280,11 +280,11 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
                 }],
                 listeners : {
                     drop : function(node, data) {
-                        data.view.getStore().each(function(rec, i) {
-                            rec.set('displayOrder', i+1);
-                            rec.setDirty();
-                        });
-                    }
+                        var store = data.view.getStore();
+                        this.updateDisplayOrder(store);
+                        this.categoriesSyncSaveAndLoad(store);
+                    },
+                    scope: this
                 }
             },
             listeners : {
@@ -380,6 +380,11 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
                         }
                     }
                 },
+                sortchange : function(panel) {
+                    var store = panel.grid.getStore();
+                    this.updateDisplayOrder(store);
+                    this.categoriesSyncSaveAndLoad(store);
+                },
                 scope : this
             },
             plugins   : [cellEditing],
@@ -412,8 +417,8 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
                     cellEditing.startEditByPosition({row : 0, column : 0});
 
                     // hide subcategory
-                    if (this._subwinID) {
-                        var sw = Ext4.getCmp(this._subwinID);
+                    if (subwinID) {
+                        var sw = Ext4.getCmp(subwinID);
                         if (sw && sw.isVisible()) {
                             sw.hide();
                         }
@@ -462,7 +467,7 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
 
         var store = this.initializeCategoriesStore({categoryId : categoryid});
 
-        function categoriesSyncSaveAndLoad() {
+        function categoriesSyncSaveAndLoad(store) {
             store.sync({
                 success : function() {
                     store.load();
@@ -522,26 +527,50 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
                 listeners : {
                     drop : function(node, data) {
 
-                        // update the displayOrder in the subCategory store
-                        data.view.getStore().each(function(rec, i) {
-                            rec.set('displayOrder', i+1);
-                            rec.setDirty();
-                        });
-
-                        categoriesSyncSaveAndLoad();
+                        var store = data.view.getStore();
+                        this.updateDisplayOrder(store);
+                        this.categoriesSyncSaveAndLoad(store);
                     }
                 }
             },
             listeners : {
                 edit : function(editor, e) {
-                    categoriesSyncSaveAndLoad();
-                }
+                    this.categoriesSyncSaveAndLoad(e.grid.getStore());
+                },
+                sortchange : function(panel) {
+
+                    var store = panel.grid.getStore();
+                    this.updateDisplayOrder(store);
+                    this.categoriesSyncSaveAndLoad(store);
+                },
+                scope: this
             },
-            mutliSelect : false,
+            multiSelect : false,
             cls     : 'iScroll',
             plugins : [cellEditing],
             selType : 'rowmodel',
             scope   : this
+        });
+    },
+
+    categoriesSyncSaveAndLoad(store) {
+        store.sync({
+            success : function() {
+                store.load();
+            },
+            failure : function(batch) {
+                if (batch.operations && batch.operations.length > 0) {
+                    if (!batch.operations[0].request.scope.reader.jsonData.success) {
+                        var mb = Ext4.Msg.alert('Category Management', batch.operations[0].request.scope.reader.jsonData.message);
+                        idxMgr.register(mb);
+                    }
+                }
+                else {
+                    Ext4.Msg.alert('Category Management', 'Failed to save updates.');
+                    idxMgr.register(mb);
+                }
+                store.load();
+            }
         });
     },
 
@@ -787,7 +816,7 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
             height   : 250,
             columns : [{
                 xtype    : 'templatecolumn',
-                text     : 'Report',
+                text     : 'Reports and Charts',
                 flex     : 1,
                 sortable : true,
                 dataIndex: 'name',
@@ -797,6 +826,15 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
                     allowBlank:false
                 }
             }],
+            listeners : {
+                sortchange : function(panel) {
+
+                    var store = panel.grid.getStore();
+                    this.updateDisplayOrder(store);
+                    reportsSyncSaveAndLoad(store);
+                },
+                scope: this
+            },
 
             viewConfig : {
                 stripRows : true,
@@ -808,14 +846,7 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
                     drop : function(node, data) {
 
                         var store = data.view.getStore();
-                        // update the displayOrder in the category store
-                        store.each(function(rec, i) {
-
-                            i = typeof i !== 'undefined' ? i : 1;  // set initial value to 1
-                            rec.set('displayOrder', i+1);
-                            rec.setDirty();
-                        });
-
+                        this.updateDisplayOrder(store);
                         reportsSyncSaveAndLoad(store);
                     },
                     scope : this
@@ -928,6 +959,14 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
                 reader : 'json'
             },
             sortRoot : 'displayOrder'
+        });
+    },
+
+    updateDisplayOrder : function(store) {
+
+        store.each(function(rec, i) {
+            rec.set('displayOrder', i+1);
+            rec.setDirty();
         });
     }
 });
