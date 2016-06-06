@@ -26,6 +26,7 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyA;
 import org.labkey.test.components.ext4.Window;
+import org.labkey.test.components.study.DatasetFacetPanel;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
@@ -39,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.labkey.test.components.ext4.Window.Window;
@@ -219,7 +221,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         waitForText("Copy/paste text");
         setFormElement(Locator.xpath("//textarea"), header + tsv);
         clickButton("Submit", 0);
-        waitForText(msg);
+        waitForText(WAIT_FOR_PAGE, msg);
     }
 
     @LogMethod
@@ -297,67 +299,89 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     private void verifyFilterPanelOnDemographics(String regionName)
     {
         DataRegionTable dataregion = new DataRegionTable(regionName, getDriver());
-        dataregion.openSideFilterPanel();
+        DatasetFacetPanel facetPanel = dataregion.openSideFilterPanel();
 
         waitForElement(Locator.paginationText(24));
-        _ext4Helper.clickParticipantFilterGridRowText(GROUP1A, 0);
+        facetPanel.clickGroupLabel(GROUP1A);
         waitForElementToDisappear(Locator.css(".labkey-pagination"), WAIT_FOR_JAVASCRIPT);
         waitForElement(Locator.linkWithText(PTIDS[0]));
         assertElementPresent(Locator.linkWithText(PTIDS[1]));
-        dataregion = new DataRegionTable(regionName, getDriver());
         assertEquals("Wrong number of rows after filter", 2, dataregion.getDataRowCount());
 
-        _ext4Helper.checkGridRowCheckbox(GROUP1B); // GROUP1A OR GROUP1B
+        facetPanel.getGroupCheckbox(GROUP1B).check(); // GROUP1A OR GROUP1B
         waitForElement(Locator.linkWithText(PTIDS[2]));
         assertElementPresent(Locator.linkWithText(PTIDS[0]));
         assertElementPresent(Locator.linkWithText(PTIDS[1]));
         assertElementPresent(Locator.linkWithText(PTIDS[3]));
-        dataregion = new DataRegionTable(regionName, getDriver());
         assertEquals("Wrong number of rows after filter", 4, dataregion.getDataRowCount());
 
-        _ext4Helper.clickParticipantFilterGridRowText(GROUP2A, 0);// (GROUP1A OR GROUP1B) AND GROUP2A
+        facetPanel.clickGroupLabel(GROUP2A);// (GROUP1A OR GROUP1B) AND GROUP2A
         waitForElementToDisappear(Locator.linkWithText(PTIDS[2]));
         waitForElement(Locator.linkWithText(PTIDS[1]));
         assertElementPresent(Locator.linkWithText(PTIDS[3]));
-        dataregion = new DataRegionTable(regionName, getDriver());
         assertEquals("Wrong number of rows after filter", 2, dataregion.getDataRowCount());
 
-        _ext4Helper.clickParticipantFilterGridRowText("Not in any group", 1); // (GROUP1A OR GROUP1B) AND (CATEGORY2 = NULL)
+        facetPanel.clickGroupLabel("Not in any group", 1); // (GROUP1A OR GROUP1B) AND (CATEGORY2 = NULL)
         waitForElementToDisappear(Locator.linkWithText(PTIDS[1]));
         waitForElement(Locator.linkWithText(PTIDS[0]));
-        dataregion = new DataRegionTable(regionName, getDriver());
         assertEquals("Wrong number of rows after filter", 1, dataregion.getDataRowCount());
 
-        _ext4Helper.clickParticipantFilterCategory(CATEGORY2); // (GROUP1A OR GROUP1B)
+        facetPanel.getCategoryCheckbox(CATEGORY2).check(); // (GROUP1A OR GROUP1B)
         waitForElement(Locator.linkWithText(PTIDS[2]));
         assertElementPresent(Locator.linkWithText(PTIDS[0]));
         assertElementPresent(Locator.linkWithText(PTIDS[1]));
         assertElementPresent(Locator.linkWithText(PTIDS[3]));
-        dataregion = new DataRegionTable(regionName, getDriver());
         assertEquals("Wrong number of rows after filter", 4, dataregion.getDataRowCount());
 
-        _ext4Helper.uncheckGridRowCheckbox("Group 1"); // (GROUP1A OR GROUP1B) AND (COHORT 2)
+        facetPanel.getGroupCheckbox("Group 1").uncheck(); // (GROUP1A OR GROUP1B) AND (COHORT 2)
         waitForElementToDisappear(Locator.linkWithText(PTIDS[0]));
         waitForElement(Locator.linkWithText(PTIDS[1]));
         assertElementPresent(Locator.linkWithText(PTIDS[2]));
-        dataregion = new DataRegionTable(regionName, getDriver());
         assertEquals("Wrong number of rows after filter", 2, dataregion.getDataRowCount());
 
-        dataregion.toggleAllFacetsCheckbox();
+        facetPanel.toggleAll();
         waitForElement(Locator.linkWithText(PTIDS[5]));
-        dataregion = new DataRegionTable(regionName, getDriver());
         assertEquals("Wrong number of rows after filter", 24, dataregion.getDataRowCount());
 
-        _extHelper.clickMenuButton(false, "Groups", "Create Mouse Group", "From All Mice");
+        dataregion.clickHeaderButton("Groups", false, "Create Mouse Group", "From All Mice");
         Window window = Window().withTitle("Define Mouse Group").waitFor(getDriver());
         final WebElement groupLabelInput = Locator.id("groupLabel-inputEl").notHidden().waitForElement(window, 10000);
         setFormElement(groupLabelInput, EXTRA_GROUP);
-        window.clickButton("Save", 0);
-        window.waitForClose();
-        refresh();
-        dataregion = new DataRegionTable(regionName, getDriver());
-        dataregion.openSideFilterPanel();
-        waitForElement(DataRegionTable.Locators.facetRow(EXTRA_GROUP, EXTRA_GROUP));
+        dataregion.doAndWaitForUpdate(() ->
+        {
+            window.clickButton("Save", 0);
+            window.waitForClose();
+        });
+        refresh(); // New group doesn't AJAX into facet panel
+
+        // Verify syncronization between URL filters and facet panel
+
+        facetPanel = dataregion.openSideFilterPanel();
+        dataregion.doAndWaitForUpdate(() ->
+                dataregion.clickHeaderButton("Groups", false, CATEGORY2, GROUP2A)); // (Category2 = GROUP2A)
+        assertEquals("Wrong number of rows after URL filter", 2, dataregion.getDataRowCount());
+        assertTrue("New group should be selected by default", facetPanel.getCategoryCheckbox(EXTRA_GROUP).isChecked());
+
+        // GROUP2A was selected via menu, GROUP2B should initialize unchecked
+        assertFalse("Group filter not applied from URL", facetPanel.getGroupCheckbox(GROUP2B).isChecked());
+
+        facetPanel.getGroupCheckbox(GROUP2B).check(); // (Category2 IS ONE OF (Group2A, Group2B))
+        waitForElement(Locator.linkWithText(PTIDS[2]));
+        assertEquals("Wrong number of rows after filter", 4, dataregion.getDataRowCount());
+
+        dataregion.clickHeaderButton("Groups", false, CATEGORY2, GROUP2B); // (Category2 = GROUP2B)
+        waitForElementToDisappear(Locator.linkWithText(PTIDS[1]));
+        assertEquals("Wrong number of rows after filter", 2, dataregion.getDataRowCount());
+
+        // GROUP2B was selected via menu, GROUP2A should update to unchecked
+        assertFalse("Group filter not applied from menu", facetPanel.getGroupCheckbox(GROUP2A).isChecked());
+
+        facetPanel.getGroupCheckbox(GROUP2B).uncheck(); // Should equal NO FILTER
+        waitForElement(Locator.paginationText(24));
+        facetPanel.getGroupCheckbox("Not in any group", 1).check(); // (Category2 is blank)
+        waitForElementToDisappear(Locator.linkWithText(PTIDS[4]));
+        assertElementPresent(Locator.linkWithText(PTIDS[0]));
+        assertEquals("Wrong number of rows for not in any group", 20, dataregion.getDataRowCount());
     }
 
     // in 13.2 Sprint 1 we changed reports and views so that they are associated with query name instead of label (i.e. dataset name instead of label)

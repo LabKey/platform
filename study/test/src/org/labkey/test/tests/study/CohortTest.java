@@ -22,6 +22,7 @@ import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyB;
+import org.labkey.test.components.study.DatasetFacetPanel;
 import org.labkey.test.util.DataRegionExportHelper;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
@@ -32,7 +33,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @Category({DailyB.class})
 public class CohortTest extends BaseWebDriverTest
@@ -87,7 +90,7 @@ public class CohortTest extends BaseWebDriverTest
     {
         waitAndClick(WAIT_FOR_JAVASCRIPT, Locator.linkWithText("Blood"), WAIT_FOR_PAGE);
 
-        DataRegionTable specimenTable = new DataRegionTable("SpecimenDetail", this);
+        DataRegionTable specimenTable = new DataRegionTable("SpecimenDetail", getDriver());
         assertEquals("Incorrect number of vials.", "Count:  25", specimenTable.getTotal("Global Unique Id")); // 5 participants x 5 visits
         List<String> cohortValues = specimenTable.getColumnDataAsText("Collection Cohort");
         assertEquals(10, Collections.frequency(cohortValues, "Positive"));
@@ -246,7 +249,7 @@ public class CohortTest extends BaseWebDriverTest
         clickProject(PROJECT_NAME);
         waitAndClick(WAIT_FOR_JAVASCRIPT, Locator.linkWithText("Blood"), WAIT_FOR_PAGE);
 
-        specimenTable = new DataRegionTable("SpecimenDetail", this);
+        specimenTable = new DataRegionTable("SpecimenDetail", getDriver());
         verifyVialCount(specimenTable, 20); // 5 participants x 4 visits (was five visits, but one was just deleted)
 
         setCohortFilter("Negative", AdvancedCohortType.INITIAL);
@@ -267,7 +270,7 @@ public class CohortTest extends BaseWebDriverTest
         clickAndWait(Locator.linkWithText("2 datasets"));
         clickAndWait(Locator.linkWithText("Test Results"));
         _customizeViewsHelper.openCustomizeViewPanel();
-        _customizeViewsHelper.addCustomizeViewSort("ParticipantId", "Ascending");
+        _customizeViewsHelper.addSort("ParticipantId", "Ascending");
         _customizeViewsHelper.applyCustomView();
 
         setCohortFilter("Positive", AdvancedCohortType.DATA_COLLECTION);
@@ -477,7 +480,7 @@ public class CohortTest extends BaseWebDriverTest
 
         log("Verify saved cohort filtered views");
         DataRegionTable.findDataRegion(this).clickHeaderButton("Grid Views", "CurrentNegative");
-        DataRegionTable dataset = new DataRegionTable("Dataset", this);
+        DataRegionTable dataset = new DataRegionTable("Dataset", getDriver());
         assertEquals("Unexpected row count", 4, dataset.getDataRowCount());
 
         DataRegionTable.findDataRegion(this).clickHeaderButton("Grid Views", "InitialPositive");
@@ -495,7 +498,7 @@ public class CohortTest extends BaseWebDriverTest
         clickAndWait(Locator.linkWithText("Test Results"));
 
         setCohortFilter("Positive", AdvancedCohortType.CURRENT);
-        DataRegionTable list = new DataRegionTable("query", this);
+        DataRegionTable list = new DataRegionTable("query", getDriver());
         DataRegionExportHelper helper = new DataRegionExportHelper(list);
         File expFile = helper.exportText(DataRegionExportHelper.TextSeparator.TAB);
         String tsv = TestFileUtils.getFileContents(expFile);
@@ -511,12 +514,12 @@ public class CohortTest extends BaseWebDriverTest
         clickAndWait(Locator.linkWithText("Test Results"));
 
         setCohortFilter("Positive", AdvancedCohortType.CURRENT);
-        DataRegionTable dataset = new DataRegionTable("Dataset", this);
+        DataRegionTable dataset = new DataRegionTable("Dataset", getDriver());
         dataset.createQuickChart("SequenceNum");
         clickButton("View Data", 0);
         waitForElement(Locator.xpath("//*[starts-with(@id, 'aqwp')]"));
         String drtId = getAttribute(Locator.xpath("//*[starts-with(@id, 'aqwp')]"), "id");
-        DataRegionTable chartData = new DataRegionTable(drtId, this);
+        DataRegionTable chartData = new DataRegionTable(drtId, getDriver());
         assertEquals("Wrong amount of data rows in quick chart", 12, chartData.getDataRowCount());
         List<String> participants = chartData.getColumnDataAsText("ParticipantID");
         assertTrue("Expected participant was not present in chart data", participants.contains("Infected1"));
@@ -564,7 +567,7 @@ public class CohortTest extends BaseWebDriverTest
 
         assertTextNotPresent("Current cohort is enrolled or unassigned");
 
-        DataRegionTable table = new DataRegionTable("Dataset", this);
+        DataRegionTable table = new DataRegionTable("Dataset", getDriver());
         assertEquals(allRowCount, table.getDataRowCount());
 
         return table;
@@ -576,7 +579,7 @@ public class CohortTest extends BaseWebDriverTest
 
         if (enrolledMenu)
         {
-            DataRegionTable specimenTable = new DataRegionTable("SpecimenDetail", this);
+            DataRegionTable specimenTable = new DataRegionTable("SpecimenDetail", getDriver());
             DataRegionTable.findDataRegion(this).clickHeaderButton("Groups", "Enrolled");
             verifyVialCount(specimenTable, enrolledRowCount);
         }
@@ -589,7 +592,7 @@ public class CohortTest extends BaseWebDriverTest
     private void verifySpecimenEnrolledCohortFilterAdvanced(String specimenLink, int allRowCount, int initialRowCount, int currentRowCount, int dataCollectionRowCount)
     {
         verifyUnfilteredSpecimens(specimenLink, allRowCount);
-        DataRegionTable specimenTable = new DataRegionTable("SpecimenDetail", this);
+        DataRegionTable specimenTable = new DataRegionTable("SpecimenDetail", getDriver());
 
         DataRegionTable.findDataRegion(this).clickHeaderButton("Groups", "Enrolled", AdvancedCohortType.INITIAL.toString());
         verifyVialCount(specimenTable, initialRowCount);
@@ -606,7 +609,7 @@ public class CohortTest extends BaseWebDriverTest
         clickTab("Specimen Data");
         waitAndClickAndWait(Locator.linkWithText(specimenLink));
 
-        DataRegionTable specimenTable = new DataRegionTable("SpecimenDetail", this);
+        DataRegionTable specimenTable = new DataRegionTable("SpecimenDetail", getDriver());
         verifyVialCount(specimenTable, allRowCount);
     }
 
@@ -623,33 +626,19 @@ public class CohortTest extends BaseWebDriverTest
 
     private void verifyCohortSelection(boolean toggleAll, @Nullable String previousCohort, @Nullable String nextCohort, String[] expectedParticipants, boolean expectEnrolledText, String waitText)
     {
+        DataRegionTable dataRegion = DataRegionTable.findDataRegion(this);
+        DatasetFacetPanel facetPanel = dataRegion.openSideFilterPanel();
         if (toggleAll)
-        {
-            Locator all = DataRegionTable.Locators.facetRowCheckbox("All");
-            waitAndClick(all);
-        }
+            facetPanel.toggleAll();
 
         if (previousCohort != null)
-            _ext4Helper.uncheckGridRowCheckbox(previousCohort);
+            facetPanel.getGroupCheckbox(previousCohort).uncheck();
 
         if (nextCohort != null)
-            _ext4Helper.checkGridRowCheckbox(nextCohort);
+            facetPanel.getGroupCheckbox(nextCohort).check();
 
         waitForText(waitText);
         verifyParticipantList(expectedParticipants, expectEnrolledText);
-    }
-
-    private boolean isPartipantInGroup(String ptid, String[] ptidGroup)
-    {
-        for (String id : ptidGroup)
-        {
-            if ( 0 == ptid.compareToIgnoreCase(id))
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private void refreshParticipantList()
@@ -673,29 +662,11 @@ public class CohortTest extends BaseWebDriverTest
         }
 
         // make sure everyone in the group is there
-        for (String ptid : ptids)
-        {
-            assertPtid(ptid, true);
-        }
-
-        // make sure everyone not in the group is not there
-        for (String ptid : PTIDS_ALL)
-        {
-            if (!isPartipantInGroup(ptid, ptids))
-            {
-                assertPtid(ptid, false);
-            }
-        }
+        List<String> actualPtids = getTexts(Locator.tagWithClass("li", "ptid").findElements(getDriver()));
+        assertEquals("Wrong ptids visible", Arrays.asList(ptids), actualPtids);
     }
 
     // TODO: Move some place more generally useful?  ParticipantListHelper?
-    private void assertPtid(String ptid, boolean present)
-    {
-        Locator loc = Locator.xpath("//li[contains(@class, 'ptid')]/a[string() = '" + ptid + "']");
-        assertEquals(ptid + " should " + (present ? "" : "not ") + "be present", present, isElementPresent(loc));
-    }
-
-    // TODO: Same here
     private String getStatusText()
     {
         Locator loc = Locator.id("participantsDiv1.status");
@@ -713,7 +684,7 @@ public class CohortTest extends BaseWebDriverTest
         return PROJECT_NAME;
     }
 
-    private static enum AdvancedCohortType
+    private enum AdvancedCohortType
     {
         INITIAL("Initial cohort", "ParticipantId/InitialCohort/Label"),
         CURRENT("Current cohort", "ParticipantId/Cohort/Label"),
@@ -722,7 +693,7 @@ public class CohortTest extends BaseWebDriverTest
         private String _type;
         private String _fieldKey;
 
-        private AdvancedCohortType(String type, String fieldKey)
+        AdvancedCohortType(String type, String fieldKey)
         {
             _type = type;
             _fieldKey = fieldKey;
