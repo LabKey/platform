@@ -16,8 +16,8 @@
 
 package org.labkey.api.data;
 
-import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.collections15.multimap.MultiHashMap;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -103,6 +103,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 /**
  * This class manages a hierarchy of collections, backed by a database table called Containers.
@@ -1665,27 +1666,24 @@ public class ContainerManager
 
 
     // Retrieve entire container hierarchy
-    public static MultiMap<Container, Container> getContainerTree()
+    public static MultiValuedMap<Container, Container> getContainerTree()
     {
-        final MultiMap<Container, Container> mm = new MultiHashMap<>();
+        final MultiValuedMap<Container, Container> mm = new ArrayListValuedHashMap<>();
 
         // Get all containers and parents
         SqlSelector selector = new SqlSelector(CORE.getSchema(), "SELECT Parent, EntityId FROM " + CORE.getTableInfoContainers() + " ORDER BY SortOrder, LOWER(Name) ASC");
 
-        selector.forEach(new Selector.ForEachBlock<ResultSet>() {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                String parentId = rs.getString(1);
-                Container parent = (parentId != null ? getForId(parentId) : null);
-                Container child = getForId(rs.getString(2));
+        selector.forEach(rs -> {
+            String parentId = rs.getString(1);
+            Container parent = (parentId != null ? getForId(parentId) : null);
+            Container child = getForId(rs.getString(2));
 
-                if (null != child)
-                    mm.put(parent, child);
-            }
+            if (null != child)
+                mm.put(parent, child);
         });
 
-        for (Object key : mm.keySet())
+        // TODO: Isn't this a complete waste of time? Create an array list, sort it, then throw it away?
+        for (Container key : mm.keySet())
         {
             List<Container> siblings = new ArrayList<>(mm.get(key));
             Collections.sort(siblings);
@@ -1699,28 +1697,21 @@ public class ContainerManager
      * @param root The root container
      * @return MultiMap of containers including root and its descendants
      */
-    public static MultiMap<Container, Container> getContainerTree(Container root)
+    public static MultiValuedMap<Container, Container> getContainerTree(Container root)
     {
         //build a multimap of only the container ids
-        final MultiMap<String, String> mmIds = new MultiHashMap<>();
+        final MultiValuedMap<String, String> mmIds = new ArrayListValuedHashMap<>();
 
         // Get all containers and parents
         Selector selector = new SqlSelector(CORE.getSchema(), "SELECT Parent, EntityId FROM " + CORE.getTableInfoContainers() + " ORDER BY SortOrder, LOWER(Name) ASC");
 
-        selector.forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                mmIds.put(rs.getString(1), rs.getString(2));
-            }
-        });
+        selector.forEach(rs -> mmIds.put(rs.getString(1), rs.getString(2)));
 
         //now find the root and build a MultiMap of it and its descendants
-        MultiMap<Container, Container> mm = new MultiHashMap<>();
+        MultiValuedMap<Container, Container> mm = new ArrayListValuedHashMap<>();
         mm.put(null, root);
         addChildren(root, mmIds, mm);
-        for (Object key : mm.keySet())
+        for (Container key : mm.keySet())
         {
             List<Container> siblings = new ArrayList<>(mm.get(key));
             Collections.sort(siblings);
@@ -1728,7 +1719,7 @@ public class ContainerManager
         return mm;
     }
 
-    private static void addChildren(Container c, MultiMap<String, String> mmIds, MultiMap<Container, Container> mm)
+    private static void addChildren(Container c, MultiValuedMap<String, String> mmIds, MultiValuedMap<Container, Container> mm)
     {
         Collection<String> childIds = mmIds.get(c.getId());
         if (null != childIds)
@@ -1745,22 +1736,16 @@ public class ContainerManager
         }
     }
 
-    public static Set<Container> getContainerSet(MultiMap<Container, Container> mm, User user, Class<? extends Permission> perm)
+    public static Set<Container> getContainerSet(MultiValuedMap<Container, Container> mm, User user, Class<? extends Permission> perm)
     {
-        //noinspection unchecked
         Collection<Container> containers = mm.values();
         if (null == containers)
             return new HashSet<>();
 
-        Set<Container> set = new HashSet<>(containers.size());
-
-        for (Container c : containers)
-        {
-            if (c.hasPermission(user, perm))
-                set.add(c);
-        }
-
-        return set;
+        return containers
+            .stream()
+            .filter(c -> c.hasPermission(user, perm))
+            .collect(Collectors.toSet());
     }
 
 
@@ -2220,7 +2205,7 @@ public class ContainerManager
         {
             int count = 20;
             Random random = new Random();
-            MultiMap<String, String> mm = new MultiHashMap<>();
+            MultiValuedMap<String, String> mm = new ArrayListValuedHashMap<>();
 
             for (int i = 1; i <= count; i++)
             {
@@ -2328,7 +2313,7 @@ public class ContainerManager
             }
         }
 
-        private static void createContainers(MultiMap<String, String> mm, String name, Container parent)
+        private static void createContainers(MultiValuedMap<String, String> mm, String name, Container parent)
         {
             Collection<String> nodes = mm.get(name);
 
@@ -2343,7 +2328,7 @@ public class ContainerManager
         }
 
 
-        private static void cleanUpChildren(MultiMap<String, String> mm, String name, Container parent)
+        private static void cleanUpChildren(MultiValuedMap<String, String> mm, String name, Container parent)
         {
             Collection<String> nodes = mm.get(name);
 
@@ -2359,7 +2344,7 @@ public class ContainerManager
         }
 
 
-        private static void logNode(MultiMap<String, String> mm, String name, int offset)
+        private static void logNode(MultiValuedMap<String, String> mm, String name, int offset)
         {
             Collection<String> nodes = mm.get(name);
 

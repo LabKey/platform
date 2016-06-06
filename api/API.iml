@@ -702,5 +702,18 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="commons-collections4-4.1">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-collections4-4.1.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-collections4-4.1-javadoc.jar!/" />
+        </JAVADOC>
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-collections4-4.1-src.zip!/commons-collections4-4.1-src/src/main/java" />
+        </SOURCES>
+      </library>
+    </orderEntry>
   </component>
 </module>

@@ -212,7 +212,6 @@ api/src/org/labkey/api/collections/ConcurrentHashSet.java -text
 api/src/org/labkey/api/collections/IndexMappingList.java -text
 api/src/org/labkey/api/collections/ListWrapper.java -text
 api/src/org/labkey/api/collections/MapWrapper.java -text
-api/src/org/labkey/api/collections/MultiValueMap.java -text
 api/src/org/labkey/api/collections/NullPreventingSet.java -text
 api/src/org/labkey/api/collections/OneBasedList.java -text
 api/src/org/labkey/api/collections/ResultSetRowMapFactory.java -text
@@ -223,7 +222,6 @@ api/src/org/labkey/api/collections/SetFromMap.java -text
 api/src/org/labkey/api/collections/Sets.java -text
 api/src/org/labkey/api/collections/SparseBitSet.java -text
 api/src/org/labkey/api/collections/SwapQueue.java -text
-api/src/org/labkey/api/collections/UnmodifiableMultiMap.java -text
 api/src/org/labkey/api/collections/ValueComparableMap.java -text
 api/src/org/labkey/api/concurrent/CountingSemaphore.java -text
 api/src/org/labkey/api/data/AES.java -text

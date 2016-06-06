@@ -15,7 +15,7 @@
  */
 package org.labkey.api.data;
 
-import org.apache.commons.collections15.MultiMap;
+import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,7 +31,7 @@ public class JavaScriptDisplayColumnFactory implements DisplayColumnFactory
     private final @Nullable Collection<String> _dependencies;
     private final @Nullable String _javaScriptEvents;
 
-    public JavaScriptDisplayColumnFactory(MultiMap<String, String> properties)
+    public JavaScriptDisplayColumnFactory(MultiValuedMap<String, String> properties)
     {
         _dependencies = properties.get("dependency");
         _javaScriptEvents = StringUtils.join(properties.get("javaScriptEvents"), " ");

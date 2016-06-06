@@ -1,10 +1,11 @@
 package org.labkey.api.security;
 
+import org.apache.commons.collections4.SetValuedMap;
+import org.apache.commons.collections4.multimap.AbstractSetValuedMap;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.collections.MultiValueMap;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -31,17 +32,17 @@ public class AuthenticationProviderCache
 
     private static class AuthenticationProviderCollections
     {
-        private final MultiValueMap<Class<? extends AuthenticationProvider>, AuthenticationProvider> _allMap = new MultiValueMap<Class<? extends AuthenticationProvider>, AuthenticationProvider>(new LinkedHashMap<>()) {
+        private final SetValuedMap<Class<? extends AuthenticationProvider>, AuthenticationProvider> _allMap = new AbstractSetValuedMap<Class<? extends AuthenticationProvider>, AuthenticationProvider>(new LinkedHashMap<>()) {
             @Override
-            protected Collection<AuthenticationProvider> createValueCollection()
+            protected Set<AuthenticationProvider> createCollection()
             {
                 return new LinkedHashSet<>();
             }
         };
 
-        private final MultiValueMap<Class<? extends AuthenticationProvider>, AuthenticationProvider> _activeMap = new MultiValueMap<Class<? extends AuthenticationProvider>, AuthenticationProvider>(new LinkedHashMap<>()) {
+        private final SetValuedMap<Class<? extends AuthenticationProvider>, AuthenticationProvider> _activeMap = new AbstractSetValuedMap<Class<? extends AuthenticationProvider>, AuthenticationProvider>(new LinkedHashMap<>()) {
             @Override
-            protected Collection<AuthenticationProvider> createValueCollection()
+            protected Set<AuthenticationProvider> createCollection()
             {
                 return new LinkedHashSet<>();
             }
@@ -63,7 +64,7 @@ public class AuthenticationProviderCache
             }
         }
 
-        private void addToMap(MultiValueMap<Class<? extends AuthenticationProvider>, AuthenticationProvider> map, AuthenticationProvider provider)
+        private void addToMap(SetValuedMap<Class<? extends AuthenticationProvider>, AuthenticationProvider> map, AuthenticationProvider provider)
         {
             AuthenticationProvider.ALL_PROVIDER_INTERFACES
                 .stream()

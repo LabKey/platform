@@ -16,8 +16,8 @@
 
 package org.labkey.api.view;
 
-import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.collections15.multimap.MultiHashMap;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -968,7 +968,7 @@ public class Portal
             }
         }
 
-        MultiMap<String, WebPart> locationMap = getPartsByLocation(parts);
+        MultiValuedMap<String, WebPart> locationMap = getPartsByLocation(parts);
         Collection<String> locations = locationMap.keySet();
 
         for (String location : locations)
@@ -1085,9 +1085,9 @@ public class Portal
     }
 
 
-    public static MultiMap<String, WebPart> getPartsByLocation(Collection<WebPart> parts)
+    public static MultiValuedMap<String, WebPart> getPartsByLocation(Collection<WebPart> parts)
     {
-        MultiMap<String, WebPart> multiMap = new MultiHashMap<>();
+        MultiValuedMap<String, WebPart> multiMap = new ArrayListValuedHashMap<>();
 
         for (WebPart part : parts)
         {

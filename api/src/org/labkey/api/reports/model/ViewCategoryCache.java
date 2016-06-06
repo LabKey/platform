@@ -15,13 +15,11 @@
  */
 package org.labkey.api.reports.model;
 
-import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.collections15.multimap.MultiHashMap;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.BlockingStringKeyCache;
-import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.StringKeyCache;
-import org.labkey.api.cache.Wrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseCache;
@@ -46,13 +44,7 @@ public class ViewCategoryCache
 {
     private static final ViewCategoryCache INSTANCE = new ViewCategoryCache();
 
-    private final StringKeyCache<ViewCategoryCollections> VIEW_CATEGORY_CACHE = new BlockingStringKeyCache<>(new DatabaseCache<Wrapper<ViewCategoryCollections>>(CoreSchema.getInstance().getSchema().getScope(), 300, "View Category"), new CacheLoader<String, ViewCategoryCollections>(){
-        @Override
-        public ViewCategoryCollections load(String key, @Nullable Object argument)
-        {
-            return new ViewCategoryCollections(key);
-        }
-    });
+    private final StringKeyCache<ViewCategoryCollections> VIEW_CATEGORY_CACHE = new BlockingStringKeyCache<>(new DatabaseCache<>(CoreSchema.getInstance().getSchema().getScope(), 300, "View Category"), (key, argument) -> new ViewCategoryCollections(key));
 
     private ViewCategoryCache()
     {
@@ -110,7 +102,7 @@ public class ViewCategoryCache
     private static class ViewCategoryCollections
     {
         private final Map<Integer, ViewCategory> _rowIdMap;
-        private final MultiMap<Integer, ViewCategory> _childrenMap;
+        private final MultiValuedMap<Integer, ViewCategory> _childrenMap;
         private final Map<Path, ViewCategory> _pathMap;
 
         private ViewCategoryCollections(String cid)
@@ -131,7 +123,7 @@ public class ViewCategoryCache
             _rowIdMap = Collections.unmodifiableMap(rowIdMap);
 
             Map<Path, ViewCategory> pathMap = new HashMap<>();
-            _childrenMap = new MultiHashMap<>();
+            _childrenMap = new ArrayListValuedHashMap<>();
 
             for (ViewCategory category : categories)
             {

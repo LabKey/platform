@@ -18,8 +18,8 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.collections15.multimap.MultiHashMap;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -1106,13 +1106,13 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             org.labkey.data.xml.ColumnType.DisplayColumnFactory xmlFactory = xmlCol.getDisplayColumnFactory();
             String displayColumnClassName = xmlFactory.getClassName();
 
-            // MultiMap is a little harder for the factories to work with, but it allows the same property
+            // MultiValuedMap is a little harder for the factories to work with, but it allows the same property
             // multiple times (e.g., multiple "dependency" properties on JavaScriptDisplayColumnFactory)
-            MultiMap<String, String> props = null;
+            MultiValuedMap<String, String> props = null;
 
             if (xmlFactory.isSetProperties())
             {
-                props = new MultiHashMap<>();
+                props = new ArrayListValuedHashMap<>();
 
                 for (ColumnType.DisplayColumnFactory.Properties.Property prop : xmlFactory.getProperties().getPropertyArray())
                     props.put(prop.getName(), prop.getStringValue());
@@ -1146,7 +1146,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                             }
                             else
                             {
-                                Constructor<DisplayColumnFactory> ctor = factoryClass.getConstructor(MultiMap.class);
+                                Constructor<DisplayColumnFactory> ctor = factoryClass.getConstructor(MultiValuedMap.class);
                                 _displayColumnFactory = ctor.newInstance(props);
                             }
                         }

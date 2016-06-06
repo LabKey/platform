@@ -15,7 +15,7 @@
  */
 package org.labkey.api.util;
 
-import org.apache.commons.collections15.MultiMap;
+import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -104,7 +104,7 @@ public class ContainerTree
     }
 
 
-    protected boolean renderChildren(StringBuilder html, MultiMap<Container, Container> mm, Container parent, int level)
+    protected boolean renderChildren(StringBuilder html, MultiValuedMap<Container, Container> mm, Container parent, int level)
     {
         // Hide hidden folders, unless you're an administrator
         if (!parent.shouldDisplay(_user) || parent.isWorkbookOrTab())
