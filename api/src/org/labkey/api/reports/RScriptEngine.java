@@ -175,7 +175,6 @@ public class RScriptEngine extends ExternalScriptEngine
         sb.append(getRWorkingDir(context));
         sb.append("\")\n");
         sb.append("library(knitr)\n");
-        sb.append("library(rmarkdown)\n");
 
         //
         // setup a knitr hook to translate the knitr-generated filename to a parameter
@@ -192,6 +191,7 @@ public class RScriptEngine extends ExternalScriptEngine
         {
             if(isPandocEnabled())
             {
+                sb.append("library(rmarkdown)\n");
                 sb.append("render(run_pandoc='true', output_options=list(self.contained=FALSE, theme=NULL, css=NULL, highlight=NULL), ");
             }
             else
