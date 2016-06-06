@@ -26,9 +26,7 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.JunitUtil;
-import org.labkey.api.util.StartupListener;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.visualization.GenericChartReportDescriptor;
 import org.labkey.api.visualization.TimeChartReportDescriptor;
@@ -44,7 +42,6 @@ import org.labkey.visualization.sql.VisualizationCDSGenerator;
 import org.labkey.visualization.sql.VisualizationSQLGenerator;
 import org.labkey.visualization.test.VisTestSchema;
 
-import javax.servlet.ServletContext;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -138,28 +135,6 @@ public class VisualizationModule extends DefaultModule
             analyticsProviderRegistry.registerProvider(new DimensionPieChartAnalyticsProvider());
             analyticsProviderRegistry.registerProvider(new DimensionBarChartAnalyticsProvider());
             analyticsProviderRegistry.registerProvider(new QuickChartAnalyticsProvider());
-        }
-    }
-
-
-    @Override
-    public void afterUpdate(final ModuleContext moduleContext) {
-        if (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 13.31)
-        {
-            ContextListener.addStartupListener(new StartupListener()
-            {
-                @Override
-                public String getName()
-                {
-                    return "Visualization: upgrade saved json for Generic Charts";
-                }
-
-                @Override
-                public void moduleStartupComplete(ServletContext servletContext)
-                {
-                    VisualizationUpgradeCode.upgradeGenericChartSaveConfig(moduleContext);
-                }
-            });
         }
     }
 }
