@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.commons.collections4.multimap.AbstractSetValuedMap" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
-<%@ page import="org.labkey.api.collections.MultiValueMap" %>
 <%@ page import="org.labkey.api.data.DbSchema" %>
 <%@ page import="org.labkey.api.search.SearchUrls" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
@@ -31,7 +31,6 @@
 <%@ page import="org.labkey.search.umls.UmlsController" %>
 <%@ page import="org.labkey.search.umls.UmlsSchema" %>
 <%@ page import="java.util.ArrayList" %>
-<%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.HashSet" %>
 <%@ page import="java.util.Map" %>
@@ -41,16 +40,17 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-    public static class StringSet extends MultiValueMap<String,String>
+    public static class StringSet extends AbstractSetValuedMap<String, String>
     {
         StringSet()
         {
-            super(new TreeMap<String,Collection<String>>());
+            super(new TreeMap<>());
         }
+
         @Override
-        protected Collection createValueCollection()
+        protected Set<String> createCollection()
         {
-            return new TreeSet<String>();
+            return new TreeSet<>();
         }
     }
     // sort by ISPREF

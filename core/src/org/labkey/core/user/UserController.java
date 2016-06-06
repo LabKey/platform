@@ -16,7 +16,7 @@
 
 package org.labkey.core.user;
 
-import org.apache.commons.collections15.MultiMap;
+import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -59,8 +59,25 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.UserSchemaAction;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.security.*;
+import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.security.CSRF;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.LoginUrls;
+import org.labkey.api.security.MemberType;
+import org.labkey.api.security.RequiresLogin;
+import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityMessage;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
+import org.labkey.api.security.SecurityUrls;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.UserUrls;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UnauthorizedImpersonationException;
@@ -1107,7 +1124,7 @@ public class UserController extends SpringActionController
         }
     }
 
-    private void buildAccessDetailList(MultiMap<Container, Container> containerTree, Container parent,
+    private void buildAccessDetailList(MultiValuedMap<Container, Container> containerTree, Container parent,
                                        List<AccessDetailRow> rows, Set<Container> containersInList, User requestedUser,
                                        int depth, Map<Container, List<Group>> projectGroupCache, boolean showAll)
     {
@@ -1241,7 +1258,7 @@ public class UserController extends SpringActionController
             List<AccessDetailRow> rows = new ArrayList<>();
             Set<Container> containersInList = new HashSet<>();
             Container c = getContainer();
-            MultiMap<Container, Container> containerTree =  c.isRoot() ? ContainerManager.getContainerTree() : ContainerManager.getContainerTree(c.getProject());
+            MultiValuedMap<Container, Container> containerTree =  c.isRoot() ? ContainerManager.getContainerTree() : ContainerManager.getContainerTree(c.getProject());
             Map<Container, List<Group>> projectGroupCache = new HashMap<>();
             buildAccessDetailList(containerTree, c.isRoot() ? ContainerManager.getRoot() : null, rows, containersInList, requestedUser, 0, projectGroupCache, form.getShowAll());
             AccessDetail details = new AccessDetail(rows);

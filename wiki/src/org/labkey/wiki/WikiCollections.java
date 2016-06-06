@@ -16,8 +16,8 @@
 
 package org.labkey.wiki;
 
-import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.collections15.multimap.MultiHashMap;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.announcements.CommSchema;
@@ -79,7 +79,7 @@ public class WikiCollections
         final Map<String, WikiTree> treesByName = new LinkedHashMap<>();
         final Map<String, String> nameTitleMap = new LinkedHashMap<>();
         final List<String> names = new LinkedList<>();
-        final MultiMap<Integer, Integer> childMap = new MultiHashMap<>();
+        final MultiValuedMap<Integer, Integer> childMap = new ArrayListValuedHashMap<>();
 
         treesByRowId.put(_root.getRowId(), _root);
 
@@ -118,7 +118,7 @@ public class WikiCollections
     }
 
 
-    private void populateWikiTree(WikiTree parent, MultiMap<Integer, Integer> childMap, Map<Integer, WikiTree> treesByRowId)
+    private void populateWikiTree(WikiTree parent, MultiValuedMap<Integer, Integer> childMap, Map<Integer, WikiTree> treesByRowId)
     {
         Collection<WikiTree> children = parent.getChildren();
         Collection<Integer> childrenIds = childMap.get(parent.getRowId());

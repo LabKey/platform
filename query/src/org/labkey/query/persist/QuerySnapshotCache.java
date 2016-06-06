@@ -15,14 +15,14 @@
  */
 package org.labkey.query.persist;
 
-import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.collections15.multimap.MultiHashMap;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.apache.commons.collections4.multimap.UnmodifiableMultiValuedMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.collections.UnmodifiableMultiMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
@@ -77,7 +77,7 @@ public class QuerySnapshotCache
     private static class QuerySnapshotCollections
     {
         private final Collection<QuerySnapshotDef> _allDefs;
-        private final MultiMap<String, QuerySnapshotDef> _bySchema;
+        private final MultiValuedMap<String, QuerySnapshotDef> _bySchema;
         private final Map<String, Map<String, QuerySnapshotDef>> _bySchemaAndName;
 
         private QuerySnapshotCollections(@Nullable Container c)
@@ -89,7 +89,7 @@ public class QuerySnapshotCache
                     .getCollection(QuerySnapshotDef.class)
             );
 
-            MultiMap<String, QuerySnapshotDef> bySchema = new MultiHashMap<>();
+            MultiValuedMap<String, QuerySnapshotDef> bySchema = new ArrayListValuedHashMap<>();
             Map<String, Map<String, QuerySnapshotDef>> bySchemaAndName = new HashMap<>();
 
             for (QuerySnapshotDef def : _allDefs)
@@ -107,7 +107,7 @@ public class QuerySnapshotCache
                 map.put(def.getName(), def);
             }
 
-            _bySchema = new UnmodifiableMultiMap<>(bySchema);
+            _bySchema = UnmodifiableMultiValuedMap.unmodifiableMultiValuedMap(bySchema);
             _bySchemaAndName = Collections.unmodifiableMap(bySchemaAndName);
         }
 

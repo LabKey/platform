@@ -15,8 +15,8 @@
  */
 package org.labkey.core.reader;
 
-import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.collections15.multimap.MultiHashMap;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -54,13 +54,13 @@ public class DataLoaderServiceImpl implements DataLoaderService.I
     private static final Logger _log = Logger.getLogger(DataLoaderService.class);
 
     private Map<FileType, DataLoaderFactory> _fileTypeToFactory;
-    private MultiMap<String, DataLoaderFactory> _extensionToFactory;
+    private MultiValuedMap<String, DataLoaderFactory> _extensionToFactory;
     private List<DataLoaderFactory> _factories;
 
     public DataLoaderServiceImpl()
     {
         _fileTypeToFactory = new LinkedHashMap<>();
-        _extensionToFactory = new MultiHashMap<>();
+        _extensionToFactory = new ArrayListValuedHashMap<>();
         _factories = new ArrayList<>(10);
     }
 
@@ -170,7 +170,7 @@ public class DataLoaderServiceImpl implements DataLoaderService.I
         {
             ext = ext.toLowerCase();
             Collection<DataLoaderFactory> factories = _extensionToFactory.get(ext);
-            if (factories == null && !ext.startsWith("."))
+            if (factories.isEmpty() && !ext.startsWith("."))
                 factories = _extensionToFactory.get("." + ext);
             if (factories != null && factories.size() > 0)
             {

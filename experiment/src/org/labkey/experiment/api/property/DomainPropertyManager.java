@@ -15,22 +15,20 @@
  */
 package org.labkey.experiment.api.property;
 
-import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.collections15.multimap.MultiHashMap;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.apache.commons.collections4.multimap.UnmodifiableMultiValuedMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.Wrapper;
-import org.labkey.api.collections.UnmodifiableMultiMap;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
@@ -45,7 +43,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -171,10 +168,10 @@ public class DomainPropertyManager
 
 
     // Container.getId() -> PropertyId -> Collection<PropertyValidator>
-    private static final CacheLoader<String, MultiMap<Integer, PropertyValidator>> PV_LOADER = new CacheLoader<String, MultiMap<Integer, PropertyValidator>>()
+    private static final CacheLoader<String, MultiValuedMap<Integer, PropertyValidator>> PV_LOADER = new CacheLoader<String, MultiValuedMap<Integer, PropertyValidator>>()
     {
         @Override
-        public MultiMap<Integer, PropertyValidator> load(String containerId, @Nullable Object argument)
+        public MultiValuedMap<Integer, PropertyValidator> load(String containerId, @Nullable Object argument)
         {
             /*
              * There are a LOT more property descriptors than property validators, let's just sweep them all up, if we have a container
@@ -185,24 +182,19 @@ public class DomainPropertyManager
                     "LEFT OUTER JOIN " + getTinfoValidator() + " PV ON (VR.ValidatorId = PV.RowId) " +
                     "WHERE PV.Container=?\n";
 
-            final MultiMap<Integer, PropertyValidator> validators = new MultiHashMap<>();
+            final MultiValuedMap<Integer, PropertyValidator> validators = new ArrayListValuedHashMap<>();
 
-            new SqlSelector(getExpSchema(), sql, containerId).forEach(new Selector.ForEachBlock<PropertyValidator>()
-            {
-                @Override
-                public void exec(PropertyValidator pv) throws SQLException
-                {
-                    validators.put(pv.getPropertyId(), pv);
-                }
+            new SqlSelector(getExpSchema(), sql, containerId).forEach(pv -> {
+                validators.put(pv.getPropertyId(), pv);
             }, PropertyValidator.class);
 
-            return validators.isEmpty() ? _emptyMap : new UnmodifiableMultiMap<>(validators);
+            return validators.isEmpty() ? _emptyMap : UnmodifiableMultiValuedMap.unmodifiableMultiValuedMap(validators);
         }
     };
 
-    private static final Cache<String, MultiMap<Integer, PropertyValidator>> validatorCache = new BlockingCache<>(new DatabaseCache<Wrapper<MultiMap<Integer, PropertyValidator>>>(getExpSchema().getScope(), 5000, CacheManager.HOUR, "Property Validators"), PV_LOADER);
+    private static final Cache<String, MultiValuedMap<Integer, PropertyValidator>> validatorCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), 5000, CacheManager.HOUR, "Property Validators"), PV_LOADER);
     private static final Collection<PropertyValidator> _emptyCollection = Collections.emptyList();
-    private static final MultiMap<Integer, PropertyValidator> _emptyMap = new UnmodifiableMultiMap<>(new MultiHashMap<Integer, PropertyValidator>());
+    private static final MultiValuedMap<Integer, PropertyValidator> _emptyMap = UnmodifiableMultiValuedMap.unmodifiableMultiValuedMap(new ArrayListValuedHashMap<>());
 
 
     private Collection<PropertyValidator> getValidators(@NotNull Container c, int propertyId)
@@ -210,7 +202,7 @@ public class DomainPropertyManager
         if (propertyId == 0)
             return _emptyCollection;
 
-        MultiMap<Integer, PropertyValidator> validators = validatorCache.get(c.getId());
+        MultiValuedMap<Integer, PropertyValidator> validators = validatorCache.get(c.getId());
         if (null == validators)
             return _emptyCollection;
         Collection<PropertyValidator> coll = validators.get(propertyId);

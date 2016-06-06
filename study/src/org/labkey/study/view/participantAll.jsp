@@ -16,9 +16,9 @@
  */
 %>
 <%@ page import="org.apache.commons.beanutils.ConvertUtils" %>
+<%@ page import="org.apache.commons.collections4.multimap.AbstractSetValuedMap" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.collections.CaseInsensitiveHashSet" %>
-<%@ page import="org.labkey.api.collections.MultiValueMap" %>
 <%@ page import="org.labkey.api.data.ColumnInfo" %>
 <%@ page import="org.labkey.api.data.DbSchema" %>
 <%@ page import="org.labkey.api.data.Results" %>
@@ -628,15 +628,15 @@
     }
 
 
-    public static class VisitMultiMap extends MultiValueMap<Integer, Double>
+    public static class VisitMultiMap extends AbstractSetValuedMap<Integer, Double>
     {
         public VisitMultiMap()
         {
-            super(new TreeMap<Integer, Collection<Double>>());
+            super(new TreeMap<>());
         }
 
         @Override
-        protected Collection<Double> createValueCollection()
+        protected Set<Double> createCollection()
         {
             return new TreeSet<>();
         }

@@ -15,14 +15,14 @@
  */
 package org.labkey.query.reports;
 
-import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.collections15.multimap.MultiHashMap;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.apache.commons.collections4.multimap.UnmodifiableMultiValuedMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.collections.UnmodifiableMultiMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SimpleFilter;
@@ -56,7 +56,7 @@ public class ReportCache
     {
         private final Map<Integer, Report> _rowIdMap;
         private final Map<String, Report> _entityIdMap;
-        private final MultiMap<String, Report> _reportKeyMap;
+        private final MultiValuedMap<String, Report> _reportKeyMap;
         private final Collection<Report> _inheritableReports;
 
         private ReportCollections(Container c)
@@ -64,7 +64,7 @@ public class ReportCache
             ReportServiceImpl svc = ReportServiceImpl.getInstance();
             Map<Integer, Report> rowIdMap = new HashMap<>();
             Map<String, Report> entityIdMap = new HashMap<>();
-            MultiMap<String, Report> reportKeyMap = new MultiHashMap<>();
+            MultiValuedMap<String, Report> reportKeyMap = new ArrayListValuedHashMap<>();
             List<Report> inheritableReports = new LinkedList<>();
 
             new TableSelector(CoreSchema.getInstance().getTableInfoReport(), SimpleFilter.createContainerFilter(c, "ContainerId"), null).forEach(reportDB -> {
@@ -79,7 +79,7 @@ public class ReportCache
 
             _rowIdMap = Collections.unmodifiableMap(rowIdMap);
             _entityIdMap = Collections.unmodifiableMap(entityIdMap);
-            _reportKeyMap = new UnmodifiableMultiMap<>(reportKeyMap);
+            _reportKeyMap = UnmodifiableMultiValuedMap.unmodifiableMultiValuedMap(reportKeyMap);
             _inheritableReports = Collections.unmodifiableList(inheritableReports);
         }
 

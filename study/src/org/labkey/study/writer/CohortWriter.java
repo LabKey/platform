@@ -13,10 +13,11 @@
         * See the License for the specific language governing permissions and
         * limitations under the License.
         */
-        package org.labkey.study.writer;
 
-import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.collections15.multimap.MultiHashMap;
+package org.labkey.study.writer;
+
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.Participant;
@@ -80,7 +81,7 @@ public class CohortWriter implements InternalStudyWriter
         cohortsXml.setFile(COHORTS_FILENAME);
 
         List<CohortImpl> cohorts = study.getCohorts(ctx.getUser());
-        MultiMap<Integer, String> participantsInEachCohort = new MultiHashMap<>(cohorts.size());
+        MultiValuedMap<Integer, String> participantsInEachCohort = new ArrayListValuedHashMap<>(cohorts.size());
         ParticipantMapper participantMapper = ctx.getParticipantMapper();
 
         for (Participant participant : StudyManager.getInstance().getParticipants(study))

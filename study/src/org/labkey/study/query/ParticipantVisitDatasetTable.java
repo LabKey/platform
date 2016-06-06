@@ -16,11 +16,16 @@
 
 package org.labkey.study.query;
 
-import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.collections15.multimap.MultiHashMap;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.*;
+import org.labkey.api.data.AbstractForeignKey;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.LookupColumn;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.VirtualTable;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
@@ -28,10 +33,23 @@ import org.labkey.api.study.Visit;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.*;
+import org.labkey.study.model.DatasetDefinition;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.VisitDataset;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.visitmanager.VisitManager;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 public class ParticipantVisitDatasetTable extends VirtualTable
 {
@@ -104,7 +122,7 @@ public class ParticipantVisitDatasetTable extends VirtualTable
         }
 
         // duplicate label check a) two visits with same label b) two sequences with same visit
-        MultiMap<String, Double> labelMap = new MultiHashMap<>();
+        MultiValuedMap<String, Double> labelMap = new ArrayListValuedHashMap<>();
 
         for (double seq : sequenceSet)
         {

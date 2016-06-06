@@ -21,8 +21,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.antlr.runtime.tree.Tree;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.collections15.multimap.MultiHashMap;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -541,7 +541,7 @@ public class QueryController extends SpringActionController
         {
             List<ExternalSchemaDef> allDefs = QueryManager.get().getExternalSchemaDefs(null);
 
-            MultiMap<String, ExternalSchemaDef> byDataSourceName = new MultiHashMap<>();
+            MultiValuedMap<String, ExternalSchemaDef> byDataSourceName = new ArrayListValuedHashMap<>();
 
             for (ExternalSchemaDef def : allDefs)
                 byDataSourceName.put(def.getDataSource(), def);
@@ -549,7 +549,7 @@ public class QueryController extends SpringActionController
             StringBuilder sb = new StringBuilder();
 
             sb.append("\n<table>\n");
-            sb.append("  <tr><td colspan=5>This page lists all the data sources defined in your " + AppProps.getInstance().getWebappConfigurationFilename() + " file that were available at server startup and the external schemas defined in each.</td></tr>\n");
+            sb.append("  <tr><td colspan=5>This page lists all the data sources defined in your ").append(AppProps.getInstance().getWebappConfigurationFilename()).append(" file that were available at server startup and the external schemas defined in each.</td></tr>\n");
             sb.append("  <tr><td colspan=5>&nbsp;</td></tr>\n");
             sb.append("  <tr><th>Data Source</th><th>Current Status</th><th>URL</th><th>Product Name</th><th>Product Version</th></tr>\n");
 
@@ -593,7 +593,7 @@ public class QueryController extends SpringActionController
 
                 if (null != dsDefs)
                 {
-                    MultiMap<String, ExternalSchemaDef> byContainerPath = new MultiHashMap<>();
+                    MultiValuedMap<String, ExternalSchemaDef> byContainerPath = new ArrayListValuedHashMap<>();
 
                     for (ExternalSchemaDef def : dsDefs)
                         byContainerPath.put(def.getContainerPath(), def);
@@ -4142,7 +4142,7 @@ public class QueryController extends SpringActionController
         protected void initSources()
         {
             User user = HttpView.currentContext().getUser();
-            MultiMap<Container, Container> containerTree = ContainerManager.getContainerTree(_c.getProject());
+            MultiValuedMap<Container, Container> containerTree = ContainerManager.getContainerTree(_c.getProject());
             Set<Container> adminContainers = ContainerManager.getContainerSet(containerTree, user, AdminPermission.class);
 
             SortedSet<Container> sortedContainers = new TreeSet<>(new Comparator<Container>() {

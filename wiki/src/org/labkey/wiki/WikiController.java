@@ -16,8 +16,8 @@
 
 package org.labkey.wiki;
 
-import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.collections15.multimap.MultiHashMap;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -196,41 +196,34 @@ public class WikiController extends SpringActionController
 
             ViewContext context = getViewContext();
 
-            try
+            //get all containers that include wiki pages
+            _containerList = populateWikiContainerList(context);
+            if (!_containerList.contains(context.getContainer()))
+                _containerList.add(0, context.getContainer());
+
+            //get wiki page list for the currently stored container (or current container if null)
+            Container cStored;
+
+            if (webPart == null)
+                cStored = context.getContainer();
+            else
             {
-                //get all containers that include wiki pages
-                _containerList = populateWikiContainerList(context);
-                if (!_containerList.contains(context.getContainer()))
-                    _containerList.add(0, context.getContainer());
+                String id = webPart.getPropertyMap().get("webPartContainer");
+                //is this still a valid container id? if not, use current container
+                //also use the current container if the stored container doesn't
+                //have any pages left in it
+                cStored = id == null ? context.getContainer() : ContainerManager.getForId(id);
 
-                //get wiki page list for the currently stored container (or current container if null)
-                Container cStored;
-
-                if (webPart == null)
-                    cStored = context.getContainer();
-                else
+                if (cStored == null || !_containerList.contains(cStored))
                 {
-                    String id = webPart.getPropertyMap().get("webPartContainer");
-                    //is this still a valid container id? if not, use current container
-                    //also use the current container if the stored container doesn't
-                    //have any pages left in it
-                    cStored = id == null ? context.getContainer() : ContainerManager.getForId(id);
+                    cStored = context.getContainer();
 
-                    if (cStored == null || !_containerList.contains(cStored))
-                    {
-                        cStored = context.getContainer();
-
-                        //reset the webPartContainer property so that customizeWiki.jsp selects the correct one in the UI
-                        webPart.getPropertyMap().put("webPartContainer", cStored.getId());
-                    }
+                    //reset the webPartContainer property so that customizeWiki.jsp selects the correct one in the UI
+                    webPart.getPropertyMap().put("webPartContainer", cStored.getId());
                 }
+            }
 
-                _containerNameTitleMap = WikiSelectManager.getNameTitleMap(cStored);
-            }
-            catch(SQLException e)
-            {
-                throw new RuntimeException("Failed to populate container or page list.", e);
-            }
+            _containerNameTitleMap = WikiSelectManager.getNameTitleMap(cStored);
         }
 
         public List<Container> getContainerList()
@@ -245,10 +238,9 @@ public class WikiController extends SpringActionController
     }
 
     public static List<Container> populateWikiContainerList(ViewContext context)
-            throws SQLException, ServletException
     {
         //retrieve all containers
-        MultiMap<Container, Container> mm = ContainerManager.getContainerTree();
+        MultiValuedMap<Container, Container> mm = ContainerManager.getContainerTree();
 
         //get wikis for containers recursively
         List<Container> children = new ArrayList<>();
@@ -257,8 +249,7 @@ public class WikiController extends SpringActionController
         return children;
     }
 
-    private static void populateWikiContainerListRecursive(ViewContext context, Container c, List<Container> children, MultiMap<Container, Container> mm)
-            throws SQLException, ServletException
+    private static void populateWikiContainerListRecursive(ViewContext context, Container c, List<Container> children, MultiValuedMap<Container, Container> mm)
     {
         //get a list of containers in root and add to arraylist
         Collection<Container> arrCont = mm.get(c);
@@ -2859,7 +2850,7 @@ public class WikiController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             Container c = getContainer();
-            MultiMap<String, Wiki> mmap = new MultiHashMap<>();
+            MultiValuedMap<String, Wiki> mmap = new ArrayListValuedHashMap<>();
             Map<Wiki, Collection<String>> unusedAttachments = new TreeMap<>((w1, w2) -> {
                 return w1.getName().compareToIgnoreCase(w2.getName());
             });
@@ -2943,7 +2934,7 @@ public class WikiController extends SpringActionController
             return html;
         }
 
-        private StringBuilder renderTable(Container c, MultiMap<String, Wiki> mmap, String title, boolean validWiki)
+        private StringBuilder renderTable(Container c, MultiValuedMap<String, Wiki> mmap, String title, boolean validWiki)
         {
             StringBuilder html = new StringBuilder();
             Set<String> names =  new TreeSet<>(String.CASE_INSENSITIVE_ORDER);

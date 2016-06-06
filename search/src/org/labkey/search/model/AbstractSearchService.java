@@ -17,7 +17,7 @@ package org.labkey.search.model;
 
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Multiset.Entry;
-import org.apache.commons.collections15.MultiMap;
+import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -1329,7 +1329,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         final IndexTask task = null==in ? createTask("Index project " + c.getName()) : in;
 
         Runnable r = () -> {
-            MultiMap<Container,Container> mmap = ContainerManager.getContainerTree(c);
+            MultiValuedMap<Container, Container> mmap = ContainerManager.getContainerTree(c);
             Set<Container> set = new HashSet<>();
             for (Container key : mmap.keySet())
             {

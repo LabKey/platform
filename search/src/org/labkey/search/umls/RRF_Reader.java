@@ -15,8 +15,10 @@
  */
 package org.labkey.search.umls;
 
+import org.apache.commons.collections4.SetValuedMap;
+import org.apache.commons.collections4.multimap.AbstractSetValuedMap;
 import org.apache.commons.lang3.StringUtils;
-import org.labkey.api.collections.MultiValueMap;
+import org.labkey.api.reader.Readers;
 import org.labkey.api.util.Filter;
 
 import java.io.BufferedReader;
@@ -35,6 +37,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Set;
 import java.util.TreeSet;
 
 /**
@@ -46,10 +49,10 @@ public class RRF_Reader
 {
     File metaDirectory;
     
-    MultiValueMap<String,String> files = new MultiValueMap<String, String>(new HashMap<String,Collection<String>>())
+    SetValuedMap<String, String> files = new AbstractSetValuedMap<String, String>(new HashMap<>())
     {
         @Override
-        protected Collection<String> createValueCollection()
+        protected Set<String> createCollection()
         {
             return new TreeSet<>();
         }
@@ -67,7 +70,7 @@ public class RRF_Reader
         String[] list = metaDirectory.list();
         for (String name : list)
         {
-            if (-1==name.indexOf(".RRF") || name.startsWith("."))
+            if (!name.contains(".RRF") || name.startsWith("."))
                 continue;
             String base = name.substring(0,name.indexOf('.'));
             if (base.startsWith("MRXW_"))
@@ -92,7 +95,7 @@ public class RRF_Reader
             try
             {
                 _size = f.length();
-                _in = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
+                _in = Readers.getReader(new FileInputStream(f));
                 _next = readNext();
             }
             catch (IOException x)
