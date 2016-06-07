@@ -965,6 +965,7 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
     updateDisplayOrder : function(store) {
 
         store.each(function(rec, i) {
+            i = typeof i !== 'undefined' ? i : 1;  // set initial value to 1
             rec.set('displayOrder', i+1);
             rec.setDirty();
         });
