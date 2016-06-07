@@ -626,16 +626,17 @@ public class CohortTest extends BaseWebDriverTest
 
     private void verifyCohortSelection(boolean toggleAll, @Nullable String previousCohort, @Nullable String nextCohort, String[] expectedParticipants, boolean expectEnrolledText, String waitText)
     {
-        DataRegionTable dataRegion = DataRegionTable.findDataRegion(this);
-        DatasetFacetPanel facetPanel = dataRegion.openSideFilterPanel();
         if (toggleAll)
-            facetPanel.toggleAll();
+        {
+            Locator all = DataRegionTable.Locators.facetRowCheckbox("All");
+            waitAndClick(all);
+        }
 
         if (previousCohort != null)
-            facetPanel.getGroupCheckbox(previousCohort).uncheck();
+            _ext4Helper.uncheckGridRowCheckbox(previousCohort);
 
         if (nextCohort != null)
-            facetPanel.getGroupCheckbox(nextCohort).check();
+            _ext4Helper.checkGridRowCheckbox(nextCohort);
 
         waitForText(waitText);
         verifyParticipantList(expectedParticipants, expectEnrolledText);
