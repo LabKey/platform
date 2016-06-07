@@ -553,7 +553,7 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
         });
     },
 
-    categoriesSyncSaveAndLoad(store) {
+    categoriesSyncSaveAndLoad : function(store) {
         store.sync({
             success : function() {
                 store.load();
