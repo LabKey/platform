@@ -262,7 +262,7 @@ public class GroupManager
 
     public static void importGroupMembers(@Nullable Group group, GroupType xmlGroupType, Logger log, Container container)
     {
-        // don't do anything if the group has no members (i.e., empty groups will not be created upon import)
+        // don't do anything if the group has no members
         if (group != null && xmlGroupType != null && (xmlGroupType.getGroups() != null || xmlGroupType.getUsers() != null))
         {
             // remove existing group members, full replacement
