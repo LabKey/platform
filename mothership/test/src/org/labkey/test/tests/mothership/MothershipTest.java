@@ -214,7 +214,7 @@ public class MothershipTest extends BaseWebDriverTest
 
     private ShowExceptionsPage goToMothership()
     {
-        goToProjectHome(MOTHERSHIP_PROJECT);
+        clickProject(MOTHERSHIP_PROJECT);
         return new ShowExceptionsPage(getDriver());
     }
 
