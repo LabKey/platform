@@ -2464,7 +2464,7 @@ public class AnnouncementsController extends SpringActionController
             if (perm.includeGroups())
             {
                 DisplayColumn createGroups = new GroupColumn(colCreatedBy);
-                createGroups.setCaption("Groups");
+                createGroups.setCaption("Created By Groups");
                 rgn.addDisplayColumn(createGroups);
             }
 
@@ -2477,7 +2477,7 @@ public class AnnouncementsController extends SpringActionController
             if (perm.includeGroups())
             {
                 DisplayColumn responseGroups = new GroupColumn(colResponseCreatedBy);
-                responseGroups.setCaption("Groups");
+                responseGroups.setCaption("Most Recent Groups");
                 rgn.addDisplayColumn(responseGroups);
             }
 
