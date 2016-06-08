@@ -70,12 +70,10 @@ var labResultsPlotConfig = {
         y: {
             scaleType: 'continuous',
 			trans: 'linear',
-            min: 400,
-            max: 1000
+            domain: [400,1000]
         },
         yRight: {
-            min: null,
-            max: null
+            domain: [null, null]
         },
         shape: {
             scaleType: 'discrete'
@@ -131,7 +129,7 @@ var coffeePlot = new LABKEY.vis.Plot({
         yLeft: {
             scaleType: 'continuous',
             trans: 'linear',
-            min: 0
+            domain: [0, null]
         }
     },
     margins: {

@@ -164,7 +164,7 @@ LABKEY.vis.getColumnAlias = function(aliasArray, measureInfo) {
 };
 
 LABKEY.vis.isValid = function(value) {
-    return !(value == undefined || value == null || (typeof value == "number" && isNaN(value)));
+    return !(value == undefined || value == null || (typeof value == "number" && !isFinite(value)));
 };
 
 LABKEY.vis.arrayObjectIndexOf = function(myArray, searchTerm, property) {

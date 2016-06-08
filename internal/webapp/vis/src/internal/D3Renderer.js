@@ -301,7 +301,7 @@ LABKEY.vis.internal.Axis = function() {
         var adjustTickPosition = function() {
             var starts = [];
             var ends = [];
-            var axisStart=100, axisEnd=1000;
+            var axisStart = null, axisEnd = null, defaultSpacer = 0;
 
             selection.selectAll('.grid-rect').each(function() {
                 if (this) {
@@ -317,20 +317,24 @@ LABKEY.vis.internal.Axis = function() {
                 }
             });
 
+            if (starts.length > 1 && ends.length > 0) {
+                defaultSpacer = (starts[1] - ends[0]) / 2;
+            }
+
             adjustedStarts = [];
             adjustedEnds = [];
             for (var i = 0; i < starts.length; i++) {
-                if (i < starts.length -1) {
-                    adjustedEnds.push(ends[i] + (starts[i + 1] - ends[i]) / 2);
+                if (i < (starts.length - 1)) {
+                    adjustedEnds.push(ends[i] + ((starts[i + 1] - ends[i]) / 2));
                 }
                 else {
-                    adjustedEnds[i] = ends[i] + (axisEnd - ends[i])/2;
+                    adjustedEnds.push(ends[i] + (axisEnd != null ? ((axisEnd - ends[i]) / 2) : defaultSpacer));
                 }
                 if (i > 0) {
-                    adjustedStarts.push(starts[i] - (starts[i] - ends[i - 1]) / 2);
+                    adjustedStarts.push(starts[i] - ((starts[i] - ends[i - 1]) / 2));
                 }
                 else {
-                    adjustedStarts[i] = starts[i] - (starts[i] - axisStart)/2;
+                    adjustedStarts.push(starts[i] - (axisStart != null ? ((starts[i] - axisStart) / 2) : defaultSpacer));
                 }
             }
 
@@ -350,7 +354,6 @@ LABKEY.vis.internal.Axis = function() {
                     .attr('class', (tickRectCls?tickRectCls:"tick-rect"))
                     .attr('x', function() {
                         currentIndex = currentIndex + 1;
-                        var test = this.nextSibling.getBBox();
                         if (needAdjustment) {
                             return adjustedStarts[currentIndex];
                         }
@@ -1913,11 +1916,13 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         data = data.filter(function(d) {
             var x = xAcc(d), y = yAcc(d);
+
             // Note: while we don't actually use the color or shape here, we need to calculate them so they show up in
             // the legend, even if the points are null.
             if (typeof colorAcc == 'function') { colorAcc(d); }
             if (shapeAcc != defaultShape) { shapeAcc(d);}
-            return x !== null && y !== null;
+
+            return x !== null && isFinite(x) && y !== null && isFinite(y);
         }, this);
 
         // reset the jitterIndex since we will call xAcc again via translateAcc
