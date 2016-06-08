@@ -1047,6 +1047,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     {
         List<String> statements = new ArrayList<>();
 
+        statements.addAll(getDropIndexStatements(change));
         //Generate the alter table portion of statement
         String alterTableSegment = String.format("ALTER TABLE %s",
                 makeTableIdentifier(change)
@@ -1071,6 +1072,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             statement += column.isNullable() ? "NULL;" : "NOT NULL;";
             statements.add(statement);
         }
+        statements.addAll(getCreateIndexStatements(change));
 
         return statements;
     }
@@ -1141,7 +1143,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             {
                 statements.add(String.format("CREATE %s INDEX %s ON %s (%s)",
                         index.isUnique ? "UNIQUE" : "",
-                        nameIndex(change.getTableName(), index.columnNames),
+                        nameIndex(change.getTableName(), index.columnNames, false),
                         makeTableIdentifier(change),
                         makeLegalIdentifiers(index.columnNames)));
             }
@@ -1181,7 +1183,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
                 // Add a index over the computed hash column
                 statements.add(String.format("CREATE INDEX %s ON %s (%s) INCLUDE (%s)",
-                        nameIndex(change.getTableName(), new String[] { columnName }),
+                        nameIndex(change.getTableName(), new String[] { columnName }, false),
                         tableName,
                         hashedColumn,
                         columnName));
@@ -1306,10 +1308,19 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             List<PropertyStorageSpec> specs = change.toSpecs(Arrays.asList(index.columnNames));
             int bytes = specs.stream().collect(Collectors.summingInt(this::columnStorageSize));
 
+            String nameIndex = nameIndex(change.getTableName(), index.columnNames, false);
+            String nameIndexLegacy = nameIndex(change.getTableName(), index.columnNames, true);
             if (bytes < MAX_INDEX_SIZE)
             {
-                statements.add(String.format("DROP INDEX %s ON %s",
-                        nameIndex(change.getTableName(), index.columnNames),
+                statements.add(String.format("IF EXISTS (SELECT 1 FROM sys.indexes i where i.name = '%s') DROP INDEX %s ON %s",
+                        nameIndex,
+                        nameIndex,
+                        makeTableIdentifier(change)
+                ));
+                // Issue 26311: We add to drop statements to capture indexes named with legacy truncation limit as well as new, longer truncation limit
+                statements.add(String.format("IF EXISTS (SELECT 1 FROM sys.indexes i where i.name = '%s') DROP INDEX %s ON %s",
+                        nameIndexLegacy,
+                        nameIndexLegacy,
                         makeTableIdentifier(change)
                 ));
             }
@@ -1327,7 +1338,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                         nameTrigger(change.getTableName(), new String[] { columnName })));
 
                 statements.add(String.format("DROP INDEX %s ON %s",
-                        nameIndex(change.getTableName(), index.columnNames),
+                        nameIndex(change.getTableName(), index.columnNames, false),
                         tableName
                 ));
 
@@ -1344,9 +1355,9 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         return change.getSchemaName() + "." + change.getTableName();
     }
 
-    private String nameIndex(String tableName, String[] indexedColumns)
+    private String nameIndex(String tableName, String[] indexedColumns, boolean useLegacyMaxLength)
     {
-        return AliasManager.makeLegalName(tableName + '_' + StringUtils.join(indexedColumns, "_"), this);
+        return AliasManager.makeLegalName(tableName + '_' + StringUtils.join(indexedColumns, "_"), this, useLegacyMaxLength);
     }
 
     private String nameTrigger(String tableName, String[] indexedColumns)
@@ -1372,8 +1383,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         {
             PropertyStorageSpec.Index oldIndex = oldToNew.getKey();
             PropertyStorageSpec.Index newIndex = oldToNew.getValue();
-            String oldName = nameIndex(change.getTableName(), oldIndex.columnNames);
-            String newName = nameIndex(change.getTableName(), newIndex.columnNames);
+            String oldName = nameIndex(change.getTableName(), oldIndex.columnNames, false);
+            String newName = nameIndex(change.getTableName(), newIndex.columnNames, false);
             if (!oldName.equals(newName))
             {
                 statements.add(String.format("EXEC sp_rename '%s','%s','INDEX'",

@@ -223,7 +223,7 @@ public class QueryTable extends QueryRelation
             if (name.startsWith(gttp) && 10 < name.indexOf('$'))
                 name = name.substring(gttp.length(), name.indexOf("$"));
         }
-        String r = AliasManager.makeLegalName(name, getSchema().getDbSchema().getSqlDialect(), true);
+        String r = AliasManager.makeLegalName(name, getSchema().getDbSchema().getSqlDialect(), true, false);
         r += "_" + _uniqueAliasCounter;
         return r;
     }
