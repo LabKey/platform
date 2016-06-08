@@ -122,23 +122,20 @@ LABKEY.vis.TimeChartHelper = new function() {
             x: {
                 scaleType : 'continuous',
                 trans : xTrans,
-                min : xMin,
-                max : xMax,
+                domain : [xMin, xMax],
                 tickFormat : xTickFormat ? xTickFormat : null,
                 tickHoverText : xTickHoverText ? xTickHoverText : null
             },
             yLeft: {
                 scaleType : 'continuous',
                 trans : yLeftTrans,
-                min : yLeftMin,
-                max : yLeftMax,
+                domain : [yLeftMin, yLeftMax],
                 tickFormat : yLeftTickFormat ? yLeftTickFormat : null
             },
             yRight: {
                 scaleType : 'continuous',
                 trans : yRightTrans,
-                min : yRightMin,
-                max : yRightMax,
+                domain : [yRightMin, yRightMax],
                 tickFormat : yRightTickFormat ? yRightTickFormat : null
             },
             shape: {
