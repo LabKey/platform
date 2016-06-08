@@ -262,5 +262,30 @@ public class KeywordManager
         {
             _keyword = keyword;
         }
+
+        @Override
+        public int hashCode()
+        {
+            int result;
+
+            result = (_keyword != null ? _keyword.hashCode() : 0);
+            result = 31 * result + (_default ? 1 : 0);
+
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Keyword that = (Keyword) o;
+
+            if (_keyword != null ? !_keyword.equals(that._keyword) : that._keyword != null) return false;
+            if (_default != that._default) return false;
+
+            return true;
+        }
     }
 }

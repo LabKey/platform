@@ -97,4 +97,36 @@ public class CustomColumn
     {
         return _inherited;
     }
+
+    @Override
+    public int hashCode()
+    {
+        int result;
+
+        // intentionally not including container for comparison
+        result = (_name != null ? _name.hashCode() : 0);
+        result = 31 * result + (_caption != null ? _caption.hashCode() : 0);
+        result = 31 * result + (_pickList ? 1 : 0);
+        result = 31 * result + (_permissionClass != null ? _permissionClass.getName().hashCode() : 0);
+        result = 31 * result + (_inherited ? 1 : 0);
+
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        CustomColumn that = (CustomColumn) o;
+        // intentionally not including container for comparison
+        if (_name != null ? !_name.equals(that._name) : that._name != null) return false;
+        if (_caption != null ? !_caption.equals(that._caption) : that._caption != null) return false;
+        if (_pickList != that._pickList) return false;
+        if (_permissionClass != null ? !_permissionClass.getName().equals(that._permissionClass.getName()) : that._permissionClass != null) return false;
+        if (_inherited != that._inherited) return false;
+
+        return true;
+    }
 }

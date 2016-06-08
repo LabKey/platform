@@ -16,15 +16,18 @@
 package org.labkey.issue;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -52,6 +55,7 @@ import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.query.IssueDefDomainKind;
 import org.labkey.issue.query.IssuesQuerySchema;
+import org.labkey.issue.view.IssuesUpgradeCode;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -206,5 +210,12 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
     public void indexDeleted()
     {
         new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute("UPDATE issues.issues SET lastIndexed=NULL");
+    }
+
+    @Nullable
+    @Override
+    public UpgradeCode getUpgradeCode()
+    {
+        return new IssuesUpgradeCode();
     }
 }

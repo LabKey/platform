@@ -157,6 +157,15 @@ public class IssuesQuerySchema extends UserSchema
     {
         if (name != null)
         {
+            if (AppProps.getInstance().isExperimentalFeatureEnabled(IssueManager.NEW_ISSUES_EXPERIMENTAL_FEATURE))
+            {
+                TableInfo issueTable = getIssueTable(name);
+                if (issueTable != null)
+                {
+                    return issueTable;
+                }
+            }
+
             TableType tableType = null;
             for (TableType t : TableType.values())
             {
@@ -170,15 +179,6 @@ public class IssuesQuerySchema extends UserSchema
             if (tableType != null)
             {
                 return tableType.createTable(this);
-            }
-
-            if (AppProps.getInstance().isExperimentalFeatureEnabled(IssueManager.NEW_ISSUES_EXPERIMENTAL_FEATURE))
-            {
-                TableInfo issueTable = getIssueTable(name);
-                if (issueTable != null)
-                {
-                    return issueTable;
-                }
             }
         }
         return null;

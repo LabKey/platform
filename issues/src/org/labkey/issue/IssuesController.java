@@ -2805,6 +2805,7 @@ public class IssuesController extends SpringActionController
             //handle custom column and required field section if admin settings are inherited
             if(bean.inheritFromContainer != null)
             {
+                // mutating cached values is really bad, this code shouldn't live here
                 bean.inheritFromContainerExists = true;
                 for (CustomColumn cc : customColumns)
                 {

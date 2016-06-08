@@ -63,12 +63,12 @@ public class IssueDefDomainKind extends AbstractDomainKind
     private static final Set<String> MANDATORY_PROPERTIES;
     private static final Set<PropertyStorageSpec.ForeignKey> FOREIGN_KEYS;
 
-    private static final String ISSUE_LOOKUP_TEMPLATE_GROUP = "issue-lookup";
-    private static final String PRIORITY_LOOKUP = "priority";
-    private static final String TYPE_LOOKUP = "type";
-    private static final String AREA_LOOKUP = "area";
-    private static final String MILESTONE_LOOKUP = "milestone";
-    private static final String RESOLUTION_LOOKUP = "resolution";
+    public static final String ISSUE_LOOKUP_TEMPLATE_GROUP = "issue-lookup";
+    public static final String PRIORITY_LOOKUP = "priority";
+    public static final String TYPE_LOOKUP = "type";
+    public static final String AREA_LOOKUP = "area";
+    public static final String MILESTONE_LOOKUP = "milestone";
+    public static final String RESOLUTION_LOOKUP = "resolution";
 
     static
     {
@@ -258,7 +258,7 @@ public class IssueDefDomainKind extends AbstractDomainKind
             def.delete(user);
     }
 
-    public String getLookupTableName(String domainName, String lookupTemplateName)
+    public static String getLookupTableName(String domainName, String lookupTemplateName)
     {
         return domainName + "-" + lookupTemplateName + "-lookup";
     }

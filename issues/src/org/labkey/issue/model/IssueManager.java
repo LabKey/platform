@@ -24,7 +24,6 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.cache.CacheLoader;
@@ -75,7 +74,6 @@ import org.labkey.issue.ColumnTypeEnum;
 import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.query.IssuesQuerySchema;
-import org.labkey.remoteapi.assay.Run;
 
 import javax.servlet.ServletException;
 import java.io.ByteArrayOutputStream;
@@ -87,7 +85,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -546,6 +543,7 @@ public class IssueManager
                 for(CustomColumn cc : inheritFromCC)
                 {
                     //override with inheritFrom container
+                    cc.setInherited(true);
                     map.put(cc.getName(), cc);
                 }
             }
@@ -694,6 +692,27 @@ public class IssueManager
                 map.put(cc.getName(), cc.getCaption());
 
             return map;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result;
+            result = (_map != null ? _map.hashCode() : 0);
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            CustomColumnConfigurationImpl that = (CustomColumnConfigurationImpl) o;
+            if (_map != null ? !_map.equals(that._map) : that._map != null)
+                return false;
+
+            return true;
         }
     }
 
@@ -1245,6 +1264,11 @@ public class IssueManager
      */
     public static String getRequiredIssueFields(Container container)
     {
+        return getRequiredIssueFields(container, IssuesController.DEFAULT_REQUIRED_FIELDS);
+    }
+
+    public static String getRequiredIssueFields(Container container, @Nullable String defaultValue)
+    {
         Map<String, String> map = PropertyManager.getProperties(getInheritFromOrCurrentContainer(container), ISSUES_PREF_MAP);
         String requiredFields = map.get(ISSUES_REQUIRED_FIELDS);
 
@@ -1252,7 +1276,7 @@ public class IssueManager
         {
             return getMyRequiredIssueFields(container) + ";" + requiredFields;
         }
-        return null == requiredFields ? IssuesController.DEFAULT_REQUIRED_FIELDS : requiredFields.toLowerCase();
+        return null == requiredFields ? defaultValue : requiredFields.toLowerCase();
     }
 
     /**
@@ -1502,6 +1526,33 @@ public class IssueManager
         return new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), null, null).getObject(rowId, IssueListDef.class);
     }
 
+/*
+    public static void deleteAllIssueListDefs(User user) throws Exception
+    {
+        try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
+        {
+            for (IssueListDef def : getIssueListDefs(null))
+            {
+                deleteIssueListDef(def.getRowId(), ContainerManager.getForId(def.getContainerId()), user);
+            }
+
+            Set<Container> allContainers = ContainerManager.getAllChildren(ContainerManager.getRoot());
+            for (Container container : allContainers)
+            {
+                for (Domain d : PropertyService.get().getDomains(container))
+                {
+                    DomainKind kind = d.getDomainKind();
+                    if (kind instanceof IssueDefDomainKind)
+                    {
+                        kind.deleteDomain(user, d);
+                    }
+                }
+            }
+            transaction.commit();
+        }
+    }
+*/
+
     public static void deleteIssueListDef(int rowId, Container c, User user) throws DomainNotFoundException
     {
         IssueListDef def = getIssueListDef(rowId);
@@ -1515,12 +1566,25 @@ public class IssueManager
         try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
         {
             TableInfo issueDefTable = IssuesSchema.getInstance().getTableInfoIssueListDef();
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Name"), def.getName());
 
             deleteIssueRecords(def, c, user);
             Table.delete(IssuesSchema.getInstance().getTableInfoIssueListDef(), rowId);
 
             // if there are no other containers referencing this domain, then it's safe to delete
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Name"), def.getName());
+            Container domainContainer = d.getContainer();
+            ContainerFilter containerFilter = null;
+
+            if (ContainerManager.getSharedContainer().equals(domainContainer))
+                containerFilter = new ContainerFilter.AllFolders(user);
+            else if (domainContainer.isProject())
+                containerFilter = new ContainerFilter.CurrentAndSubfolders(user);
+            else
+                filter.addCondition(FieldKey.fromParts("container"), domainContainer);
+
+            if (containerFilter != null)
+                filter.addClause(containerFilter.createFilterClause(IssuesSchema.getInstance().getSchema(), FieldKey.fromParts("container"), domainContainer));
+
             if (new TableSelector(issueDefTable, filter, null).getRowCount() == 0)
             {
                 d.getDomainKind().deleteDomain(user, d);
