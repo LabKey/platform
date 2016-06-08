@@ -477,9 +477,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
     private String oldLegalName(FieldKey fkey)
     {
-        String r = AliasManager.makeLegalName(StringUtils.join(fkey.getParts(),"_"), null, false);
-//        if (r.length() > 40)
-//            r = r.substring(0,40);
+        String r = AliasManager.makeLegalName(StringUtils.join(fkey.getParts(),"_"), null, false, false);
         return ColumnInfo.propNameFromName(r).toLowerCase();
     }
 

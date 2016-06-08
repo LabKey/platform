@@ -22,12 +22,16 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -71,6 +75,31 @@ public class TableChange
         DbScope scope = kind.getScope();
         SqlExecutor executor = new SqlExecutor(scope);
 
+        // Issue 26311: when resizing, we need to change the indices as well and SQL Server needs to be given explicit instructions for this.
+        if (_type == ChangeType.ResizeColumns)
+        {
+            Set<Index> changedIndexColumns = new HashSet<>();
+            Map<String, List<Index>> columnIndexMap = new HashMap<>();
+            for (Index index : kind.getPropertyIndices())
+            {
+                for (String columnName : index.columnNames)
+                {
+                    if (!columnIndexMap.containsKey(columnName))
+                        columnIndexMap.put(columnName, new ArrayList<>());
+
+                    columnIndexMap.get(columnName).add(index);
+                }
+            }
+            for (PropertyStorageSpec spec : getColumns())
+            {
+                if (columnIndexMap.containsKey(spec.getName()))
+                {
+                    changedIndexColumns.addAll(columnIndexMap.get(spec.getName()));
+                }
+            }
+            getIndexedColumns().addAll(changedIndexColumns);
+        }
+        // TODO consider indices created from domain as well(domain does not persist property indices after creating currently, so they are not available during resizing)
         try
         {
             for (String sql : scope.getSqlDialect().getChangeStatements(this))

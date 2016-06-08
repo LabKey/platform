@@ -138,13 +138,19 @@ public class AliasManager
     }
 
 
-    public static String makeLegalName(String str, @Nullable SqlDialect dialect)
+    public static String makeLegalName(String str, @Nullable SqlDialect dialect, boolean useLegacyMaxLength)
     {
-        return makeLegalName(str, dialect, true);
+        return makeLegalName(str, dialect, true, useLegacyMaxLength);
     }
 
 
-    public static String makeLegalName(String str, @Nullable SqlDialect dialect, boolean truncate)
+    public static String makeLegalName(String str, @Nullable SqlDialect dialect)
+    {
+        return makeLegalName(str, dialect, true, false);
+    }
+
+
+    public static String makeLegalName(String str, @Nullable SqlDialect dialect, boolean truncate, boolean useLegacyMaxLength)
     {
         String ret = legalNameFromName(str);
         if (null != dialect && dialect.isReserved(ret))
@@ -153,12 +159,12 @@ public class AliasManager
         if (0 == length)
             return "_";
         // we use 28 here because Oracle has a limit or 30 characters, and that is likely the shortest restriction
-        int maxLength = dialect == null ? 28 : dialect.getIdentifierMaxLength();
+        int maxLength = useLegacyMaxLength ? 40 : (dialect == null ? 28 : dialect.getIdentifierMaxLength());
         return (truncate && length > maxLength) ? truncate(ret, maxLength) : ret;
     }
 
 
-    public static String makeLegalName(FieldKey key, @Nullable SqlDialect dialect)
+    public static String makeLegalName(FieldKey key, @Nullable SqlDialect dialect, boolean useLegacyMaxLength)
     {
         if (key.getParent() == null)
             return makeLegalName(key.getName(), dialect);
@@ -171,7 +177,7 @@ public class AliasManager
             connector = "_";
         }
         // we use 28 here because Oracle has a limit or 30 characters, and that is likely the shortest restriction
-        return truncate(sb.toString(), dialect == null ? 28 : dialect.getIdentifierMaxLength());
+        return truncate(sb.toString(), useLegacyMaxLength ? 40 : (dialect == null ? 28 : dialect.getIdentifierMaxLength()));
     }
 
 

@@ -308,7 +308,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     public String getAlias()
     {
         if (alias == null)
-            alias = AliasManager.makeLegalName(getFieldKey(), getSqlDialect());
+            alias = AliasManager.makeLegalName(getFieldKey(), getSqlDialect(), false);
         return alias;
     }
 

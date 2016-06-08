@@ -250,7 +250,7 @@ public class ClientApiAuditProvider extends AbstractAuditTypeProvider implements
             super(EVENT_TYPE);
 
             Set<PropertyDescriptor> fields = new LinkedHashSet<>();
-            fields.add(createPropertyDescriptor(COLUMN_NAME_SUBTYPE, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_SUBTYPE, PropertyType.STRING, null, null, false, 64));
             fields.add(createPropertyDescriptor(COLUMN_NAME_STRING1, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_STRING2, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_STRING3, PropertyType.STRING));

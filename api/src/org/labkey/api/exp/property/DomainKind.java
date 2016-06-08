@@ -230,8 +230,7 @@ abstract public class DomainKind implements Handler<String>
      */
     public boolean exceedsMaxLength(Domain kind, DomainProperty prop)
     {
-        //Most domain dont need to do anything here
+        //Most domains don't need to do anything here
         return false;
     }
-
 }
