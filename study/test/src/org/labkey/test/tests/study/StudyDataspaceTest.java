@@ -15,8 +15,8 @@
  */
 package org.labkey.test.tests.study;
 
-import org.apache.commons.collections15.Bag;
-import org.apache.commons.collections15.bag.HashBag;
+import org.apache.commons.collections4.Bag;
+import org.apache.commons.collections4.bag.HashBag;
 import org.junit.Assert;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.Locator;

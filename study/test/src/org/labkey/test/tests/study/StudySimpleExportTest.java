@@ -15,7 +15,7 @@
  */
 package org.labkey.test.tests.study;
 
-import org.apache.commons.collections15.MapUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.jetbrains.annotations.Nullable;
 import org.junit.BeforeClass;
 import org.junit.Ignore;

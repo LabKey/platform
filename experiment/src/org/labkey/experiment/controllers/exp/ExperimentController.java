@@ -18,7 +18,7 @@ package org.labkey.experiment.controllers.exp;
 
 import au.com.bytecode.opencsv.CSVWriter;
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.collections15.iterators.ArrayIterator;
+import org.apache.commons.collections4.iterators.ArrayIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;

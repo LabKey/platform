@@ -15,7 +15,8 @@
  */
 package org.labkey.query.sql;
 
-import org.apache.commons.collections15.multimap.MultiHashMap;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -1819,7 +1820,7 @@ groupByLoop:
         if (this._parent instanceof QueryUnion || this._parent instanceof QueryPivot)
             return Collections.emptySet();
 
-        MultiHashMap<QueryRelation, RelationColumn> maps = new MultiHashMap<>();
+        MultiValuedMap<QueryRelation, RelationColumn> maps = new ArrayListValuedHashMap<>();
         Set<RelationColumn> ret = new HashSet<>();
 
         for (SelectColumn sc : _columns.values())
@@ -1835,7 +1836,7 @@ groupByLoop:
             maps.put(field.getTable(), field.getRelationColumn());
         }
 
-        for (Map.Entry<QueryRelation, Collection<RelationColumn>> e : maps.entrySet())
+        for (Map.Entry<QueryRelation, Collection<RelationColumn>> e : maps.asMap().entrySet())
         {
             IdentityHashMap<RelationColumn,RelationColumn> h = new IdentityHashMap<>();
             for (RelationColumn rc : e.getValue())

@@ -17,9 +17,8 @@
 package org.labkey.study.model;
 
 import gwt.client.org.labkey.study.dataset.client.model.GWTDataset;
-import org.apache.commons.collections15.CollectionUtils;
-import org.apache.commons.collections15.Transformer;
-import org.apache.commons.collections15.map.CaseInsensitiveMap;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.Transformer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.log4j.Level;
@@ -1599,14 +1598,7 @@ public class StudyManager
             return;
 
         // Extract visit rowIds
-        Collection<Integer> visitIds = CollectionUtils.collect(visits, new Transformer<VisitImpl, Integer>()
-        {
-            @Override
-            public Integer transform(VisitImpl visit)
-            {
-                return visit.getRowId();
-            }
-        });
+        Collection<Integer> visitIds = CollectionUtils.collect(visits, VisitImpl::getRowId);
 
         StudySchema schema = StudySchema.getInstance();
         SQLFragment visitInClause = new SQLFragment();
@@ -5269,7 +5261,7 @@ public class StudyManager
             // let's try to update a row
             rows.clear(); errors.clear();
             assertTrue(firstRowMap.containsKey("Value"));
-            CaseInsensitiveMap<Object> row = new CaseInsensitiveMap<>();
+            CaseInsensitiveHashMap<Object> row = new CaseInsensitiveHashMap<>();
             row.putAll(firstRowMap);
             row.put("Value", 3.14159);
             // TODO why is Number==null OK on insert() but not update()?

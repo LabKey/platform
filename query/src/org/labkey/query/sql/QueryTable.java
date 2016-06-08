@@ -15,7 +15,6 @@
  */
 package org.labkey.query.sql;
 
-import org.apache.commons.collections15.map.HashedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -41,6 +40,7 @@ import org.labkey.data.xml.ColumnType;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -575,7 +575,7 @@ public class QueryTable extends QueryRelation
         if (_query._strictColumnList)
             return Collections.emptySet();
 
-        Map<FieldKey, RelationColumn> selectedColumnMap = new HashedMap<>(selected.size());
+        Map<FieldKey, RelationColumn> selectedColumnMap = new HashMap<>(selected.size());
         for (RelationColumn column : selected)
             selectedColumnMap.put(column.getFieldKey(), column);
 

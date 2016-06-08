@@ -19,11 +19,8 @@ package org.labkey.study.controllers;
 import gwt.client.org.labkey.study.StudyApplication;
 import gwt.client.org.labkey.study.dataset.client.Designer;
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.collections15.FactoryUtils;
-import org.apache.commons.collections15.MapUtils;
-import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.collections15.multimap.MultiHashMap;
-import org.apache.commons.collections4.MultiSet;
+import org.apache.commons.collections4.FactoryUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.BooleanUtils;
@@ -171,27 +168,7 @@ import org.labkey.study.importer.StudyReload;
 import org.labkey.study.importer.StudyReload.ReloadStatus;
 import org.labkey.study.importer.StudyReload.ReloadTask;
 import org.labkey.study.importer.VisitMapImporter;
-import org.labkey.study.model.CohortImpl;
-import org.labkey.study.model.CohortManager;
-import org.labkey.study.model.CustomParticipantView;
-import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.DatasetReorderer;
-import org.labkey.study.model.LocationImpl;
-import org.labkey.study.model.Participant;
-import org.labkey.study.model.ParticipantCategoryImpl;
-import org.labkey.study.model.ParticipantGroup;
-import org.labkey.study.model.ParticipantGroupManager;
-import org.labkey.study.model.QCState;
-import org.labkey.study.model.QCStateSet;
-import org.labkey.study.model.SecurityType;
-import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.StudySnapshot;
-import org.labkey.study.model.UploadLog;
-import org.labkey.study.model.VisitDataset;
-import org.labkey.study.model.VisitDatasetType;
-import org.labkey.study.model.VisitImpl;
-import org.labkey.study.model.VisitMapKey;
+import org.labkey.study.model.*;
 import org.labkey.study.pipeline.DatasetFileReader;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.query.DatasetQuerySettings;
@@ -2707,7 +2684,7 @@ public class StudyController extends BaseStudyController
             String originalSourceLsid = (String)getViewContext().get("sourceLsid");
 
             // Need to handle this by groups of source lsids -- each assay container needs logging
-            MultiMap<String,String> sourceLsid2datasetLsid = new MultiHashMap<>();
+            MultiValuedMap<String,String> sourceLsid2datasetLsid = new ArrayListValuedHashMap<>();
 
 
             if (originalSourceLsid != null)
@@ -2730,7 +2707,7 @@ public class StudyController extends BaseStudyController
 
             if (protocolId != null)
             {
-                for (Map.Entry<String,Collection<String>> entry : sourceLsid2datasetLsid.entrySet())
+                for (Map.Entry<String, Collection<String>> entry : sourceLsid2datasetLsid.asMap().entrySet())
                 {
                     String sourceLsid = entry.getKey();
                     Container sourceContainer;
@@ -5315,7 +5292,7 @@ public class StudyController extends BaseStudyController
 
     public static class DatasetPropertyForm
     {
-        private Map<Integer, DatasetVisibilityData> _map = MapUtils.lazyMap(new HashMap<Integer, DatasetVisibilityData>(), FactoryUtils.instantiateFactory(DatasetVisibilityData.class));
+        private Map<Integer, DatasetVisibilityData> _map = MapUtils.lazyMap(new HashMap<>(), FactoryUtils.instantiateFactory(DatasetVisibilityData.class));
 
         public Map<Integer, DatasetVisibilityData> getDataset()
         {

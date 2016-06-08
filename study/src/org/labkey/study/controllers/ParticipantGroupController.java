@@ -15,7 +15,7 @@
  */
 package org.labkey.study.controllers;
 
-import org.apache.commons.collections15.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;

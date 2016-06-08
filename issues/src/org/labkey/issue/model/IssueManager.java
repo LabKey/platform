@@ -16,7 +16,7 @@
 package org.labkey.issue.model;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.collections15.comparators.ReverseComparator;
+import org.apache.commons.collections4.comparators.ReverseComparator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;

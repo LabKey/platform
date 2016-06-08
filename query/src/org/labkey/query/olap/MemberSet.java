@@ -15,7 +15,7 @@
  */
 package org.labkey.query.olap;
 
-import org.apache.commons.collections15.iterators.IteratorChain;
+import org.apache.commons.collections4.iterators.IteratorChain;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;

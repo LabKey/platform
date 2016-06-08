@@ -16,7 +16,6 @@
 package org.labkey.query.olap;
 
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.collections15.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -169,9 +168,9 @@ public class QubeQuery
 
 
     // cache Hierarchies
-    Map<String,Hierarchy> _cubeHierarchyMap = new CaseInsensitiveMap<>();
+    Map<String, Hierarchy> _cubeHierarchyMap = new CaseInsensitiveHashMap<>();
     // cache Levels
-    Map<String,Level> _cubeLevelMap = new CaseInsensitiveMap<>();
+    Map<String, Level> _cubeLevelMap = new CaseInsensitiveHashMap<>();
 
     void initMetadataCache()
     {

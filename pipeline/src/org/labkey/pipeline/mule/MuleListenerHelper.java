@@ -18,8 +18,8 @@ package org.labkey.pipeline.mule;
 import org.apache.activemq.thread.Scheduler;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.Converter;
-import org.apache.commons.collections15.map.CaseInsensitiveMap;
 import org.apache.log4j.Logger;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.URIUtil;
@@ -28,14 +28,20 @@ import org.mule.config.ThreadingProfile;
 import org.mule.config.builders.MuleXmlBuilderContextListener;
 import org.mule.providers.service.TransportFactory;
 
-import javax.servlet.*;
+import javax.servlet.RequestDispatcher;
+import javax.servlet.Servlet;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.*;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * MuleInitializer class
@@ -65,7 +71,7 @@ public class MuleListenerHelper implements ServletContext
         // HACK: Fix for MULE-2289
         final Converter conv = ConvertUtils.lookup(Integer.TYPE);
         ConvertUtils.register(new Converter() {
-            private final Map POOL_EXHAUSTED_ACTIONS = new CaseInsensitiveMap<Integer>()
+            private final Map POOL_EXHAUSTED_ACTIONS = new CaseInsensitiveHashMap<Integer>()
             {
                 // static initializer
                 {
