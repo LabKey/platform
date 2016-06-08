@@ -1401,7 +1401,7 @@ if (!LABKEY.DataRegions) {
         // clear sibling parameters
         this.showRows = undefined;
 
-        if (rowOffset) {
+        if (rowOffset != undefined) {
             _setParameter(this, OFFSET_PREFIX, rowOffset, [OFFSET_PREFIX, SHOW_ROWS_PREFIX]);
         }
         else {
