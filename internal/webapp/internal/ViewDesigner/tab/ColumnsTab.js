@@ -227,7 +227,12 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
                             clicksToEdit: 1
                         })
                     ],
-                    columns: [{ text: 'Type', dataIndex: 'type', width: 75, menuDisabled: true,
+                    columns: [{
+                        text: 'Type',
+                        dataIndex: 'type',
+                        width: 75,
+                        menuDisabled: true,
+                        sortable: false,
                         editor: {
                             xtype: "combo",
                             name: "aggregate",
@@ -240,19 +245,24 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
                             mode: 'local',
                             editable: false
                         }
-                    },
-                        { text: 'Label', dataIndex: 'label', flex: 1, menuDisabled: true, editor: 'textfield' },
-                        {
-                            xtype: 'actioncolumn',
-                            width: 30,
-                            menuDisabled: true,
-                            sortable: false,
-                            icon: LABKEY.contextPath + '/_images/delete.png',
-                            tooltip: 'Remove',
-                            handler: function(grid, index) {
-                                grid.getStore().removeAt(index);
-                            }
-                        }],
+                    },{
+                        text: 'Label',
+                        dataIndex: 'label',
+                        flex: 1,
+                        menuDisabled: true,
+                        sortable: false,
+                        editor: 'textfield'
+                    },{
+                        xtype: 'actioncolumn',
+                        width: 30,
+                        menuDisabled: true,
+                        sortable: false,
+                        icon: LABKEY.contextPath + '/_images/delete.png',
+                        tooltip: 'Remove',
+                        handler: function(grid, index) {
+                            grid.getStore().removeAt(index);
+                        }
+                    }],
                     buttons: [{
                         text: 'Add Aggregate',
                         margin: 10,
