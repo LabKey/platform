@@ -30,9 +30,7 @@ import org.labkey.api.exp.ExperimentRunTypeSource;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.DefaultExperimentDataHandler;
-import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
-import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainAuditProvider;
@@ -89,7 +87,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -227,30 +224,13 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 }
 
                 @Override
-                public HttpView getCustomSearchResult(User user, @NotNull String resourceIdentifier)
-                {
-                    return null;
-                }
-
-                @Override
                 public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
                 {
                     ExpDataImpl data = ExpDataImpl.fromDocumentId(resourceIdentifier);
                     if (data == null)
                         return null;
 
-                    Map<String, Object> map = new HashMap<>();
-                    map.put("rowId", data.getRowId());
-                    ExpDataClass dc = data.getDataClass();
-                    if (dc != null)
-                        map.put("dataClass", dc.getName());
-                    map.put("name", data.getName());
-                    map.put("lsid", data.getLSID());
-                    map.put("aliases", data.getAliases());
-                    map.put("description", data.getDescription());
-                    map.put("comment", data.getComment());
-
-                    return map;
+                    return ExperimentJSONConverter.serializeData(data);
                 }
             });
             ss.addResourceResolver("material", new SearchService.ResourceResolver(){
