@@ -18,7 +18,8 @@ package org.labkey.api.util;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.collections15.multimap.MultiHashMap;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -636,11 +637,11 @@ public class URLHelper implements Cloneable, Serializable, Taintable
         if (null == _parameters || _parameters.size() == 0)
             return new MutablePropertyValues();
         // convert multiple values to String[] if necessary
-        MultiHashMap<String,String> map = new MultiHashMap<>();
-        for (Pair<String,String> p : _parameters)
+        MultiValuedMap<String, String> map = new ArrayListValuedHashMap<>();
+        for (Pair<String, String> p : _parameters)
             map.put(p.getKey(), p.getValue());
         MutablePropertyValues mpvs = new MutablePropertyValues();
-        for (Map.Entry<String,Collection<String>> m : map.entrySet())
+        for (Map.Entry<String, Collection<String>> m : map.asMap().entrySet())
         {
             if (m.getValue().size() == 1)
                 mpvs.addPropertyValue(m.getKey(), ((List<String>)m.getValue()).get(0));

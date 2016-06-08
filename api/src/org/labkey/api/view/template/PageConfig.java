@@ -16,8 +16,8 @@
 
 package org.labkey.api.view.template;
 
-import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.collections15.multimap.MultiHashMap;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.DataRegion;
@@ -77,7 +77,7 @@ public class PageConfig
     private TrueFalse _showHeader = TrueFalse.Default;
     private List<NavTree> _navTrail;
     private AppBar _appBar;
-    private MultiMap<String, String> _meta = new MultiHashMap<>();
+    private MultiValuedMap<String, String> _meta = new ArrayListValuedHashMap<>();
     private FrameOption _frameOption = FrameOption.ALLOW;
     private boolean _trackingScript = true;
     private String _canonicalLink = null;
@@ -244,7 +244,7 @@ public class PageConfig
 
     public void addMetaTag(String name, String value)
     {
-        if (!_meta.containsValue(name,value))
+        if (!_meta.containsMapping(name,value))
             _meta.put(name,value);
     }
     
@@ -259,14 +259,14 @@ public class PageConfig
 
     public void setNoIndex()
     {
-        _meta.remove("robots", "index");
+        _meta.removeMapping("robots", "index");
         addMetaTag("robots", "noindex");
     }
 
 
     public void setNoFollow()
     {
-        _meta.remove("robots", "follow");
+        _meta.removeMapping("robots", "follow");
         addMetaTag("robots", "nofollow");
     }
 
@@ -313,7 +313,7 @@ public class PageConfig
 
         if (!_meta.isEmpty())
         {
-            for (Map.Entry<String, Collection<String>>  e : _meta.entrySet())
+            for (Map.Entry<String, Collection<String>>  e : _meta.asMap().entrySet())
             {
                 sb.append("    <meta name=\"").append(PageFlowUtil.filter(e.getKey())).append("\" content=\"");
                 sb.append(PageFlowUtil.filter(StringUtils.join(e.getValue(), ", ")));

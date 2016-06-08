@@ -15,8 +15,6 @@
  */
 package org.labkey.api.module;
 
-import org.apache.commons.collections15.Closure;
-import org.apache.commons.collections15.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
@@ -144,26 +142,22 @@ public class SimpleModule extends SpringModule
             if (schemasDir != null && schemasDir.isCollection())
             {
                 final List<String> schemaNames = new ArrayList<>();
-                CollectionUtils.forAllDo(schemasDir.list(), new Closure<Resource>() {
-                    @Override
-                    public void execute(Resource resource)
+                schemasDir.list().forEach(resource -> {
+                    String name = resource.getName();
+                    if (name.endsWith(".xml") && !name.endsWith(QueryService.SCHEMA_TEMPLATE_EXTENSION))
                     {
-                        String name = resource.getName();
-                        if (name.endsWith(".xml") && !name.endsWith(QueryService.SCHEMA_TEMPLATE_EXTENSION))
+                        try
                         {
-                            try
-                            {
-                                TablesDocument.Factory.parse(resource.getInputStream());
-                                String schemaName = name.substring(0, name.length() - ".xml".length());
-                                schemaNames.add(schemaName);
-                            }
-                            catch (XmlException | IOException e)
-                            {
-                                if (throwOnError)
-                                    throw new ConfigurationException("Error in '" + name + "' schema file: " + e.getMessage());
-                                else
-                                    _log.error("Skipping '" + name + "' schema file: " + e.getMessage());
-                            }
+                            TablesDocument.Factory.parse(resource.getInputStream());
+                            String schemaName = name.substring(0, name.length() - ".xml".length());
+                            schemaNames.add(schemaName);
+                        }
+                        catch (XmlException | IOException e)
+                        {
+                            if (throwOnError)
+                                throw new ConfigurationException("Error in '" + name + "' schema file: " + e.getMessage());
+                            else
+                                _log.error("Skipping '" + name + "' schema file: " + e.getMessage());
                         }
                     }
                 });

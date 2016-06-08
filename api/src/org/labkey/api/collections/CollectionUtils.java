@@ -15,11 +15,10 @@
  */
 package org.labkey.api.collections;
 
-import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.Unmodifiable;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.collections4.multimap.UnmodifiableMultiValuedMap;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -112,10 +111,6 @@ public class CollectionUtils
         {
             return "a modifiable MultiValuedMap (" + value.getClass() + ")";
         }
-        else if (value instanceof MultiMap)
-        {
-            return "a modifiable MultiMap (" + value.getClass() + ")";
-        }
 
         return null;
     }
@@ -148,8 +143,8 @@ public class CollectionUtils
             assertModifiable(new int[20], "an array");
 
             // MultiMaps
-            assertModifiable(new MultiHashMap<>(), "a modifiable MultiMap (class org.apache.commons.collections15.multimap.MultiHashMap)");
             assertModifiable(new ArrayListValuedHashMap<String, String>(new HashMap<>()), "a modifiable MultiValuedMap (class org.apache.commons.collections4.multimap.ArrayListValuedHashMap)");
+            assertModifiable(new HashSetValuedHashMap<String, String>(new HashMap<>()), "a modifiable MultiValuedMap (class org.apache.commons.collections4.multimap.HashSetValuedHashMap)");
 
             // null should be "unmodifiable"
             assertUnmodifiable(null);

@@ -15,7 +15,8 @@
  */
 package org.labkey.api.data.queryprofiler;
 
-import org.apache.commons.collections15.map.ReferenceMap;
+import org.apache.commons.collections4.map.AbstractReferenceMap.ReferenceStrength;
+import org.apache.commons.collections4.map.ReferenceMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.ByteArrayHashKey;
@@ -50,7 +51,7 @@ class QueryTracker
     private final String _sql;
     private final boolean _validSql;
     private final long _firstInvocation;
-    private final Map<ByteArrayHashKey, AtomicInteger> _stackTraces = new ReferenceMap<>(ReferenceMap.SOFT, ReferenceMap.HARD, true); // Not sure about purgeValues
+    private final Map<ByteArrayHashKey, AtomicInteger> _stackTraces = new ReferenceMap<>(ReferenceStrength.SOFT, ReferenceStrength.HARD, true); // Not sure about purgeValues
 
     private @Nullable List<Object> _parameters = null;  // Keep parameters from the longest running query
 

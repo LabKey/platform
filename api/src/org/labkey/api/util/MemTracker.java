@@ -16,8 +16,9 @@
 
 package org.labkey.api.util;
 
-import org.apache.commons.collections15.map.AbstractReferenceMap;
-import org.apache.commons.collections15.map.ReferenceIdentityMap;
+import org.apache.commons.collections4.map.AbstractReferenceMap;
+import org.apache.commons.collections4.map.AbstractReferenceMap.ReferenceStrength;
+import org.apache.commons.collections4.map.ReferenceIdentityMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -40,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 /**
  * Tracks objects that may be expensive, commonly allocated so that we know that they're not being held and creating
@@ -63,13 +65,7 @@ public class MemTracker
     public synchronized List<RequestInfo> getNewRequests(long requestId)
     {
         List<RequestInfo> result = new ArrayList<>(_recentRequests.size());
-        for (RequestInfo recentRequest : _recentRequests)
-        {
-            if (recentRequest.getId() > requestId)
-            {
-                result.add(recentRequest);
-            }
-        }
+        result.addAll(_recentRequests.stream().filter(recentRequest -> recentRequest.getId() > requestId).collect(Collectors.toList()));
         return Collections.unmodifiableList(result);
     }
 
@@ -401,7 +397,7 @@ public class MemTracker
     // reference tracking impl
     //
 
-    private final Map<Object, AllocationInfo> _references = new ReferenceIdentityMap<>(AbstractReferenceMap.WEAK, AbstractReferenceMap.HARD, true);
+    private final Map<Object, AllocationInfo> _references = new ReferenceIdentityMap<>(ReferenceStrength.WEAK, ReferenceStrength.HARD, true);
     private final List<MemTrackerListener> _listeners = new CopyOnWriteArrayList<>();
 
     private synchronized boolean _put(Object object)

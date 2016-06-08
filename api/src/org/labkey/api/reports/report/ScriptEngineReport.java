@@ -15,12 +15,12 @@
  */
 package org.labkey.api.reports.report;
 
-import org.apache.commons.collections15.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.ImportContext;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
@@ -419,7 +419,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     {
         assert null != r.getResultSet();
         CaseInsensitiveHashSet aliases = new CaseInsensitiveHashSet(); // output names
-        Map<String,String> remap = new CaseInsensitiveMap<>();       // resultset name to output name
+        Map<String, String> remap = new CaseInsensitiveHashMap<>();       // resultset name to output name
                 
         // process the FieldKeys in order to be backward compatible
         for (Map.Entry<FieldKey,ColumnInfo> e : r.getFieldMap().entrySet())

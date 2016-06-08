@@ -15,7 +15,7 @@
  */
 package org.labkey.api.reader;
 
-import org.apache.commons.collections15.iterators.ArrayIterator;
+import org.apache.commons.collections4.iterators.ArrayIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.POIXMLException;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;

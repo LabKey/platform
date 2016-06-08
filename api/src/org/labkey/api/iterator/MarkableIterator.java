@@ -15,7 +15,7 @@
  */
 package org.labkey.api.iterator;
 
-import org.apache.commons.collections15.iterators.ArrayIterator;
+import org.apache.commons.collections4.iterators.ArrayIterator;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,7 +35,7 @@ import java.util.NoSuchElementException;
 public class MarkableIterator<T> implements Iterator<T>
 {
     // There are simpler ways to do this (e.g., building an IteratorChain<>(_buffer.iterator(), _iter) on every reset()
-    // would be cleaner), but more bookkeepping minimizes memory usage: we reuse the same buffer for repeated mark/reset
+    // would be cleaner), but more bookkeeping minimizes memory usage: we reuse the same buffer for repeated mark/reset
     // combinations and (if not currently marked) we remove elements from the buffer as we iterate through it.
 
     // A marked iterator stores elements into _buffer as they are read. On reset(), _bufferedIter is set to iterate over
@@ -263,7 +263,7 @@ public class MarkableIterator<T> implements Iterator<T>
         @Before
         public void init()
         {
-            _iter = new MarkableIterator<>(new ArrayIterator<String>(_array));
+            _iter = new MarkableIterator<>(new ArrayIterator<>(_array));
         }
 
         private void assertBufferSize(int expected)

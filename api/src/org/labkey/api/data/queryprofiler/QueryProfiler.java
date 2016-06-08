@@ -16,7 +16,8 @@
 
 package org.labkey.api.data.queryprofiler;
 
-import org.apache.commons.collections15.map.ReferenceMap;
+import org.apache.commons.collections4.map.AbstractReferenceMap.ReferenceStrength;
+import org.apache.commons.collections4.map.ReferenceMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Appender;
 import org.apache.log4j.Level;
@@ -68,7 +69,7 @@ public class QueryProfiler
     private static final QueryProfiler INSTANCE = new QueryProfiler();
 
     private final BlockingQueue<Query> _queue = new LinkedBlockingQueue<>(1000);
-    private final Map<String, QueryTracker> _queries = new ReferenceMap<>(ReferenceMap.HARD, ReferenceMap.WEAK);
+    private final Map<String, QueryTracker> _queries = new ReferenceMap<>(ReferenceStrength.HARD, ReferenceStrength.WEAK);
     private final Object _lock = new Object();
     private final Collection<QueryTrackerSet> _trackerSets = new ArrayList<>();
 

@@ -128,7 +128,7 @@ public class ViewCategoryCache
             for (ViewCategory category : categories)
             {
                 @Nullable Integer parentId = category.getParent();
-                // Note: ParentId may be null, but MultiHashMap supports null keys, so we use this to collect the top-level categories
+                // Note: ParentId may be null, but ArrayListValuedHashMap supports null keys, so we use this to collect the top-level categories
                 _childrenMap.put(parentId, category);
 
                 final Path path;

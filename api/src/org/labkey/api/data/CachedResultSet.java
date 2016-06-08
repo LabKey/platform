@@ -17,7 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.collections15.IteratorUtils;
+import org.apache.commons.collections4.IteratorUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.RowMap;

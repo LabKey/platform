@@ -16,7 +16,8 @@
 
 package org.labkey.api.etl;
 
-import org.apache.commons.collections15.multimap.MultiHashMap;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.log4j.Logger;
 import org.apache.tools.ant.filters.StringInputStream;
 import org.junit.Assert;
@@ -217,7 +218,7 @@ public class DataIteratorUtil
     public static ArrayList<ColumnInfo> matchColumns(DataIterator input, TableInfo target, boolean useImportAliases, ValidationException setupError)
     {
         ArrayList<Pair<ColumnInfo,MatchType>> matches = _matchColumns(input, target, useImportAliases);
-        MultiHashMap<FieldKey,Integer> duplicatesMap = new MultiHashMap<>(input.getColumnCount()+1);
+        MultiValuedMap<FieldKey,Integer> duplicatesMap = new ArrayListValuedHashMap<>(input.getColumnCount()+1);
 
         for (int i=1 ; i<= input.getColumnCount() ; i++)
         {
@@ -227,7 +228,7 @@ public class DataIteratorUtil
         }
 
         // handle duplicates, by priority
-        for (Map.Entry<FieldKey,Collection<Integer>> e : duplicatesMap.entrySet())
+        for (Map.Entry<FieldKey, Collection<Integer>> e : duplicatesMap.asMap().entrySet())
         {
             if (e.getValue().size() == 1)
                 continue;
