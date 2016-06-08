@@ -52,7 +52,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
@@ -1450,7 +1449,7 @@ public class SecurityController extends SpringActionController
                 String result = SecurityManager.addUser(getViewContext(), email, form.getSendMail(), null, extraParams.<Pair<String, String>>toArray(new Pair[extraParams.size()]), form.getProvider(), true);
                 User user = UserManager.getUser(email);
 
-                if (result == null)
+                if (result == null && user != null)
                 {
                     ActionURL url = PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(getContainer(), user.getUserId(), returnURL);
                     result = email + " was already a registered system user.  Click <a href=\"" + url.getEncodedLocalURIString() + "\">here</a> to see this user's profile and history.";
@@ -1459,7 +1458,10 @@ public class SecurityController extends SpringActionController
                 {
                     clonePermissions(userToClone, email);
                 }
-                form.addMessage(String.format("%s<meta userId='%d' email='%s'/>", result, user.getUserId(), user.getEmail()));
+                if (user != null)
+                    form.addMessage(String.format("%s<meta userId='%d' email='%s'/>", result, user.getUserId(), user.getEmail()));
+                else
+                    form.addMessage(result);
             }
 
             return false;
