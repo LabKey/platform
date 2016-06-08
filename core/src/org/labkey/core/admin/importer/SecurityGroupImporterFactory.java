@@ -78,19 +78,12 @@ public class SecurityGroupImporterFactory extends AbstractFolderImportFactory
             if (groups == null) // no groups to import
                 return;
 
-            // first create all the groups in the list that are not empty
+            // first create all the groups in the list
             for (GroupType xmlGroupType : groups.getGroupArray())
             {
-                if (xmlGroupType.getGroups() != null || xmlGroupType.getUsers() != null)
-                {
-                    Integer groupId = SecurityManager.getGroupId(ctx.getContainer(), xmlGroupType.getName(), false);
-                    if (groupId == null)
-                        SecurityManager.createGroup(ctx.getContainer(), xmlGroupType.getName());
-                }
-                else
-                {
-                    ctx.getLogger().warn("Empty group definition not imported: " + xmlGroupType.getName());
-                }
+                Integer groupId = SecurityManager.getGroupId(ctx.getContainer(), xmlGroupType.getName(), false);
+                if (groupId == null)
+                    SecurityManager.createGroup(ctx.getContainer(), xmlGroupType.getName());
             }
             // now populate the groups with their members
             for (GroupType xmlGroupType : groups.getGroupArray())
