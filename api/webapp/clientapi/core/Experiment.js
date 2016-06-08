@@ -328,6 +328,48 @@ LABKEY.Experiment = new function()
                 failure: LABKEY.Utils.getOnFailure(config),
                 scope: config.scope
             });
+        },
+
+        /**
+         * Get parent/child relationships of an ExpData or ExpMaterial.
+         * @param config
+         * @param config.rowId The row id of the seed ExpData or ExpMaterial.  Either rowId or lsid is required.
+         * @param config.lsid The LSID of the seed ExpData or ExpMaterial.  Either rowId or lsid is required.
+         * @param {Number} [config.depth] An optional depth argument.  Defaults to include all.
+         * @param {Boolean} [config.parents] Include parents in the lineage response.  Defaults to true.
+         * @param {Boolean} [config.children] Include children in the lineage response.  Defaults to true.
+         * @param {String} [config.expType] Optional experiment type to filter response -- either "Data", "Material", or "ExperimentRun".  Defaults to include all.
+         * @param {String} [config.cpasType] Optional LSID of a SampleSet or DataClass to filter the response.  Defaults to include all.
+         * @static
+         */
+        lineage : function (config)
+        {
+            var params = {};
+            if (config.rowId)
+                params.rowId = config.rowId;
+            else if (config.lsid)
+                params.lsid = config.lsid;
+
+            if (config.hasOwnProperty('parents'))
+                params.parents = config.parents;
+            if (config.hasOwnProperty('children'))
+                params.children = config.children;
+            if (config.hasOwnProperty('depth'))
+                params.depth = config.depth;
+
+            if (config.expType)
+                params.expType = config.expType;
+            if (config.cpasType)
+                params.cpasType = config.cpasType;
+
+            LABKEY.Ajax.request({
+                method: 'GET',
+                url: LABKEY.ActionURL.buildURL("experiment", "lineage.api"),
+                params: params,
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
+                scope: config.scope
+            });
         }
     };
 
@@ -365,7 +407,7 @@ if (typeof LABKEY.Exp == "undefined")
  * numbers, are just stored as simple properties. Properties of type FileLink will be returned by the server in the
  * same format as {@link LABKEY.Exp.Data} objects (missing many properties such as id and createdBy if they exist on disk but
  * have no row with metadata in the database). FileLink values are accepted from the client in the same way, or a simple value of the
- * following three types:  the data's RowId, the data's LSID, or the full path on the server's file system. 
+ * following three types:  the data's RowId, the data's LSID, or the full path on the server's file system.
  */
 LABKEY.Exp.ExpObject = function (config) {
     config = config || {};
@@ -529,7 +571,7 @@ LABKEY.Exp.Protocol.prototype.constructor = LABKEY.Exp.Protocol;
  * @class An experiment run group contains an array of
  * {@link LABKEY.Exp.Run}s.  If all runs have the same assay protocol, the run group
  * is considered a batch.  To add runs to a batch, insert new {@link LABKEY.Exp.Run}
- * instances into to the 'runs' Array and save the batch. 
+ * instances into to the 'runs' Array and save the batch.
  * <p>
  * Use {@link LABKEY.Experiment.loadBatch} and {@link LABKEY.Experiment.saveBatch} to
  * load and save a RunGroup.
@@ -683,6 +725,61 @@ LABKEY.Exp.SampleSet.create = function (config)
     LABKEY.Domain.create(LABKEY.Utils.getOnSuccess(config), LABKEY.Utils.getOnFailure(config), "SampleSet", config.domainDesign, config.options, config.containerPath);
 };
 
+/**
+ * DataClass represents a set of ExpData objects that share a set of properties.
+ *
+ * @class DataClass describes a collection of Data objects.
+ * This class defines the set of fields that you you wish to attach to all datas in the group.
+ * Within the DataClass, each Data has a unique name.
+ *
+ * @extends LABKEY.Exp.ExpObject
+ * @memberOf LABKEY.Exp
+ *
+ * @param config
+ * @param {String} config.description Description of the DataClass.
+ * @param {String} [config.nameExpression] Optional name expression used to generate unique names for ExpData inserted into the DataClass.
+ * @param {Object} [config.sampleSet] The optional SampleSet the DataClass is associated with.  With the following properties:
+ * @param {Integer} [config.sampleSet.id] The row id of the SampleSet.
+ * @param {String} [config.sampleSet.name] The name of the SampleSet.
+ * @constructor
+ */
+LABKEY.Exp.DataClass = function (config)
+{
+    "use strict";
+
+    LABKEY.Exp.ExpObject.call(this, config);
+    config = config || {};
+    this.data = config.data;
+    this.description = config.description;
+    this.sampleSet = config.sampleSet;
+};
+LABKEY.Exp.DataClass.prototype = new LABKEY.Exp.ExpObject;
+LABKEY.Exp.DataClass.prototype.constructor = LABKEY.Exp.DataClass;
+
+LABKEY.Exp.DataClass.prototype.getDomain = function (config)
+{
+    "use strict";
+    LABKEY.Domain.get({
+        success: LABKEY.Utils.getOnSuccess(config),
+        failure: LABKEY.Utils.getOnFailure(config),
+        schemaName: "exp.data",
+        queryName: this.name,
+        containerPath: config.containerPath
+    });
+};
+
+LABKEY.Exp.DataClass.create = function (config)
+{
+    "use strict";
+    LABKEY.Domain.create({
+        success: LABKEY.Utils.getOnSuccess(config),
+        failure: LABKEY.Utils.getOnFailure(config),
+        type: "dataclass",
+        domainDesign: config.domainDesign,
+        options: config.options,
+        containerPath: config.containerPath
+    });
+};
 
 /**
  * The ChildObject constructor is private.
@@ -758,7 +855,7 @@ LABKEY.Exp.Material.prototype.constructor = LABKEY.Exp.Material;
  * The Data constructor is private.
  * To create a LABKEY.Exp.Data object, upload a file using to the "assayFileUpload" action of
  * the "assay" controller.
- * 
+ *
  * @class The Experiment Data class describes the data input or output of a {@link LABKEY.Exp.Run}.  This typically
  * corresponds to an assay results file uploaded to the LabKey server.
  * <p>
@@ -778,6 +875,9 @@ LABKEY.Exp.Material.prototype.constructor = LABKEY.Exp.Material;
  *
  * @param {Object} [config] Private configuration object.  Inherits the config properties of {@link LABKEY.Exp.ExpObject}.
  * @param {String} config.dataFileURL The local file url of the uploaded file.
+ * @param {Object} [config.dataClass] The DataClass the data belongs to.  With the following properties:
+ * @param {Integer} [config.dataClass.id] The row id of the DataClass.
+ * @param {String} [config.dataClass.name] The name of the DataClass.
  *
  * @example
  * // To perform a file upload over HTTP:
@@ -847,6 +947,7 @@ LABKEY.Exp.Material.prototype.constructor = LABKEY.Exp.Material;
  *      }
  *    });
  *  });
+ *
  * &lt;/script>
  */
 LABKEY.Exp.Data = function (config) {
@@ -855,6 +956,7 @@ LABKEY.Exp.Data = function (config) {
 
     this.dataType = config.dataType;
     this.dataFileURL = config.dataFileURL;
+    this.dataClass = config.dataClass;
     if (config.pipelinePath)
         this.pipelinePath = config.pipelinePath;
     if (config.role)
@@ -1056,4 +1158,5 @@ LABKEY.Exp.Data.prototype.getContent = function(config)
     });
 
 };
+
 

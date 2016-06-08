@@ -65,6 +65,9 @@ public class ExperimentJSONConverter
     // Material properties
     public static final String SAMPLE_SET = "sampleSet";
 
+    // Data properties
+    public static final String DATA_CLASS = "dataClass";
+
     public static JSONObject serializeRunGroup(ExpExperiment runGroup, Domain domain) throws SQLException
     {
         JSONObject jsonObject = serializeStandardProperties(runGroup, domain.getProperties());
@@ -188,7 +191,10 @@ public class ExperimentJSONConverter
                 jsonObject.put(PIPELINE_PATH, pipeRoot.relativePath(f));
             }
         }
-        jsonObject.put(DATA_FILE_URL, data.getDataFileUrl());
+        if (data.getDataClass() != null)
+        {
+            jsonObject.put(DATA_CLASS, serializeStandardProperties(data.getDataClass(), null));
+        }
         return jsonObject;
     }
 
