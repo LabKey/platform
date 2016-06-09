@@ -294,6 +294,10 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
 
         selModel.deselectAll();
 
+        if (!selection) {
+            return;
+        }
+
         for (var s=0; s < selection.length; s++)
         {
             var rec;
@@ -583,6 +587,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
             if (stopEvents)
                 this.suspendEvents();
 
+            this.selection = undefined;
             this.getGrid().getSelectionModel().deselectAll();
             this.updateCategorySelectAllCheckboxes(false);
 
@@ -599,6 +604,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
             if (stopEvents)
                 this.suspendEvents();
 
+            this.selection = undefined;
             this.getGrid().getSelectionModel().selectAll();
             this.updateCategorySelectAllCheckboxes(false);
 
