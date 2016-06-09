@@ -93,7 +93,7 @@
         return [{
             fieldLabel: 'Use pandoc & rmarkdown',
             name: 'pandocEnabled',
-            id: 'pandocEnabled',
+            id: 'editEngine_pandocEnabled',
             xtype: 'checkbox',
             checked: enabled,
             tooltip: {text: 'Use Pandoc and rmarkdown v2 to render reports. Must be pre-installed.', title: 'Enable rmarkdown v2'},
