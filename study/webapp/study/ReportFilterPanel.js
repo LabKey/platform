@@ -290,7 +290,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
 
         var store = grid.getStore();
         var selModel = grid.getSelectionModel();
-        var current;
+        var current, rec;
 
         selModel.deselectAll();
 
@@ -300,7 +300,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
 
         for (var s=0; s < selection.length; s++)
         {
-            var rec;
+            rec = undefined;
 
             current = selection[s];
 
