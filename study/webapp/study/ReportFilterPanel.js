@@ -287,19 +287,38 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
     },
 
     initGridSelection: function(grid, selection) {
-        grid.getSelectionModel().deselectAll();
+
+        var store = grid.getStore();
+        var selModel = grid.getSelectionModel();
+        var current;
+
+        selModel.deselectAll();
+
         for (var s=0; s < selection.length; s++)
         {
-            // first try matching on cateogryId and record id
-            var rec = grid.getStore().getAt(grid.getStore().findBy(function(record){
-                return record.get("categoryId") == selection[s].categoryId && record.get("id") == selection[s].id;
-            }, this));
+            var rec;
+
+            current = selection[s];
+
+            // first, see if an idProperty is present (treat as model)
+            if (current.idProperty)
+            {
+                rec = store.getById(current.get(current.idProperty.name));
+            }
+
+            // second, try matching on categoryId and record id
+            if (!rec)
+            {
+                rec = store.getAt(store.findBy(function(record) {
+                    return record.get('categoryId') == current.categoryId && record.get('id') == current.id;
+                }, this));
+            }
 
             // next try matching on categoryName and record label
             if (!rec)
             {
-                rec = grid.getStore().getAt(grid.getStore().findBy(function(record){
-                    return record.get("categoryName") == selection[s].categoryName && record.get("label") == selection[s].label;
+                rec = store.getAt(store.findBy(function(record) {
+                    return record.get('categoryName') == current.categoryName && record.get('label') == current.label;
                 }, this));
             }
 
@@ -307,10 +326,10 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
             if (!rec)
             {
                 var label = null;
-                if (selection[s].data && selection[s].data.label)
-                    label = selection[s].data.label;
-                else if (selection[s].label)
-                    label = selection[s].label;
+                if (current.data && current.data.label)
+                    label = current.data.label;
+                else if (current.label)
+                    label = current.label;
 
                 if (label != null)
                     rec = grid.getStore().findRecord('label', label);
@@ -319,7 +338,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
             if (rec)
             {
                 // Compare ID && Label if dealing with virtual groups (e.g. not in cohorts, etc)
-                if (selection[s].id < 0 && (rec.data.label != selection[s].label))
+                if (current.id < 0 && (rec.data.label != current.label))
                     continue;
 
                 grid.getSelectionModel().select(rec, true);

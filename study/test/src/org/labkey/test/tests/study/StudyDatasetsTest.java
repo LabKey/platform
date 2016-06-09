@@ -354,7 +354,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         });
         refresh(); // New group doesn't AJAX into facet panel
 
-        // Verify syncronization between URL filters and facet panel
+        // Verify synchronization between URL filters and facet panel
 
         facetPanel = dataregion.openSideFilterPanel();
         dataregion.doAndWaitForUpdate(() ->
@@ -382,6 +382,14 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         waitForElementToDisappear(Locator.linkWithText(PTIDS[4]));
         assertElementPresent(Locator.linkWithText(PTIDS[0]));
         assertEquals("Wrong number of rows for not in any group", 20, dataregion.getDataRowCount());
+
+        // Regression coverage #26744
+        dataregion.setPageSize(40, false); // just to do something else to get the region to update
+        sleep(1000);
+        assertElementNotPresent(Locator.linkWithText(PTIDS[4]));
+        assertElementPresent(Locator.linkWithText(PTIDS[0]));
+        assertTrue("Facet panel failed to reflect filters", facetPanel.getGroupCheckbox("Not in any group", 1).isChecked());
+        assertFalse("Facet panel failed to reflect opposite filter", facetPanel.getGroupCheckbox(GROUP2A).isChecked());
     }
 
     // in 13.2 Sprint 1 we changed reports and views so that they are associated with query name instead of label (i.e. dataset name instead of label)
