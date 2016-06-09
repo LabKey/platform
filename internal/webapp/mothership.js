@@ -150,6 +150,10 @@ LABKEY.Mothership = (function () {
 
         var fileName = stackframe.getFileName();
 
+        // remove stack elements for errors generated from within the Chrome console
+        if (!fileName)
+            return false;
+
         // remove stacktrace-1.1.2.min.js and mothership.js from the stack
         if (_filterStacktrace &&
                 fileName.indexOf("/stacktrace-") > -1 ||
@@ -283,7 +287,9 @@ LABKEY.Mothership = (function () {
     }
 
     function reportError(error) {
-        report(error, error.fileName, error.lineNumber || error.line, error.columnNumber, error);
+        if (!error)
+            return;
+        report(error, error && error.fileName, error && (error.lineNumber || error.line), error && error.columnNumber, error);
     }
 
     // Wraps a fn with a try/catch block

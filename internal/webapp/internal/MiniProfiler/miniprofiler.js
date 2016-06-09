@@ -26,7 +26,6 @@ LABKEY.internal.MiniProfiler = new function () {
     function browserSupported() {
         return typeof (document.querySelectorAll) != 'undefined' &&
                 typeof (XMLHttpRequest) != 'undefined' &&
-                typeof (document.body.classList) != 'undefined' &&
                 _matches;
     }
 
