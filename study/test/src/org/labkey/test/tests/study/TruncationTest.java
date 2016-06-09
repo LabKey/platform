@@ -115,5 +115,6 @@ public class TruncationTest extends BaseWebDriverTest
         clickFolder(getFolderName());
         clickAndWait(Locator.linkWithText(LIST_NAME));
         assertTextNotPresent("Delete All Rows");
+        stopImpersonatingRole();
     }
 }
