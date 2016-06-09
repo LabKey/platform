@@ -32,6 +32,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.template.ClientDependency;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.validation.Errors;
 
@@ -276,7 +277,7 @@ public abstract class DataView extends WebPartView<RenderContext>
         {
             renderErrors(response.getWriter(), "View " + " has errors", Collections.singletonList(t));
         }
-        else if (t instanceof BadSqlGrammarException)
+        else if (t instanceof BadSqlGrammarException || t instanceof DataIntegrityViolationException)
         {
             Throwable cause = t.getCause();
             renderErrors(response.getWriter(), "View " + " has errors", Collections.singletonList(cause));
