@@ -76,7 +76,7 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
         sinkEvents(Event.ONCHANGE);
         setPropertyEditor(conceptTypePropertyEditor);
         _lookupService = lookupService;
-        setEditable(true);
+        setEditable(false);
         setName(name);
         // adjustSize==true causes getComputesStyle(), SLOW ON FIREFOX
         this.adjustSize = false;
