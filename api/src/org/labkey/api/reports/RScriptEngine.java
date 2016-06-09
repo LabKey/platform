@@ -192,7 +192,9 @@ public class RScriptEngine extends ExternalScriptEngine
             if(isPandocEnabled())
             {
                 sb.append("library(rmarkdown)\n");
-                sb.append("render(run_pandoc='true', output_options=list(self.contained=FALSE, theme=NULL, css=NULL, highlight=NULL), ");
+                sb.append("opts_knit$set(upload.fun = labkey.makeHref)\n");
+                sb.append("render(run_pandoc=TRUE, output_format=html_document_base(keep_md=TRUE, self_contained=FALSE, fig_caption=TRUE, " +
+                        "theme=NULL, css=NULL, smart=TRUE, highlight=\"default\"), ");
             }
             else
             {
