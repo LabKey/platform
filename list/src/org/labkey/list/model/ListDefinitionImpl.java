@@ -632,14 +632,14 @@ public class ListDefinitionImpl implements ListDefinition
             else
             {
                 table = null;
-                LOG.error("Failed to construct list table because domain not found");
+                LOG.warn("Failed to construct list table because domain not found");
             }
         }
         catch (IllegalStateException e)
         {
             /* Return a null table -- configuration failed */
             table = null;
-            LOG.error("Failed to construct list table", e);
+            LOG.warn("Failed to construct list table", e);
         }
 
         return table;

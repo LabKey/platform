@@ -16,6 +16,7 @@
 
 package org.labkey.list.model;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -46,6 +47,7 @@ public class ListQuerySchema extends UserSchema
 {
     public static final String NAME = "lists";
     public static final String DESCR = "Contains a data table for each defined list";
+    private static final Logger LOG = Logger.getLogger(ListQuerySchema.class);
 
     public static void register(Module module)
     {
@@ -92,7 +94,14 @@ public class ListQuerySchema extends UserSchema
             Domain domain = def.getDomain();
             if (domain != null)
             {
-                return new ListTable(this, def, def.getDomain());
+                try
+                {
+                    return new ListTable(this, def, def.getDomain());
+                }
+                catch (IllegalStateException e)
+                {
+                    LOG.warn("Failed to construct list table", e);
+                }
             }
         }
         return null;
