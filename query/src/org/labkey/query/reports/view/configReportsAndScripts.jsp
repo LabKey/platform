@@ -96,7 +96,7 @@
             id: 'editEngine_pandocEnabled',
             xtype: 'checkbox',
             checked: enabled,
-            tooltip: {text: 'Use Pandoc and rmarkdown v2 to render reports. Must be pre-installed.', title: 'Enable rmarkdown v2'},
+            tooltip: {text: 'Select this option if you have rmarkdown and pandoc installed. Please see knitr help documentation on labkey.org for more information.', title: 'Enable rmarkdown v2'},
             listeners: {render: setFormFieldTooltip}
         }];
     }
