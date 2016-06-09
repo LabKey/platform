@@ -37,6 +37,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.springframework.beans.PropertyValues;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -271,7 +272,7 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
                     throw x;
                 errors.reject(SpringActionController.ERROR_MSG, x.getMessage());
             }
-            catch (InvalidKeyException x)
+            catch (InvalidKeyException | DuplicateKeyException | DataIntegrityViolationException x)
             {
                 errors.reject(SpringActionController.ERROR_MSG, x.getMessage());
             }
