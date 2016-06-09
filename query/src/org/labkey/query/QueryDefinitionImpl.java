@@ -74,6 +74,7 @@ import org.labkey.query.persist.QueryManager;
 import org.labkey.query.sql.Query;
 import org.labkey.query.sql.QueryTableInfo;
 import org.labkey.query.view.CustomViewSetKey;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.BadSqlGrammarException;
 
 import javax.servlet.http.HttpServletRequest;
@@ -422,7 +423,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         {
             return (QueryParseException) e;
         }
-        if (e instanceof BadSqlGrammarException)
+        if (e instanceof BadSqlGrammarException || e instanceof DataIntegrityViolationException)
         {
             return new QueryParseException(e.getMessage(), e, 0, 0);
         }
