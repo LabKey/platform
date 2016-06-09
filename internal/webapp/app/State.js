@@ -691,6 +691,45 @@ Ext.define('LABKEY.app.controller.State', {
             }
         }
     },
+    
+    toggleMemberInclusion : function(filterId, memberIndex) {
+        for (var s=0; s < this.selections.length; s++) {
+            if (this.selections[s].id == filterId) {
+                var members = this.selections[s].data.members;
+                if (memberIndex < members.length)
+                {
+                    members[memberIndex].isNegated = !members[memberIndex].isNegated;
+                    this.selections[s].set('members', members);
+                    this.requestSelectionUpdate(false, false);
+                }
+                else
+                {
+                    console.warn('Invalid memberIndex (' + memberIndex + ') for selected filterId: ', filterId);
+                }
+
+                return;
+            }
+        }
+
+        for (s=0; s < this.filters.length; s++) {
+            if (this.filters[s].id == filterId) {
+                var members = this.filters[s].data.members;
+                if (memberIndex < members.length)
+                {
+                    members[memberIndex].isNegated = !members[memberIndex].isNegated;
+                    this.filters[s].set('members', members);
+                    this.updateMDXFilter(false, false);
+                }
+                else
+                {
+                    console.warn('Invalid memberIndex (' + memberIndex + ') for saved filterId: ', filterId);
+                }
+
+                return;
+            }
+        }
+        
+    },
 
     /**
      * Updates the filter set for MDX
