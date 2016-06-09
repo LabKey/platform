@@ -327,29 +327,43 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
                 var values = filter.getValue().toLowerCase().split(';'); // EQ or IN
                 for (var s=0; s < store.getRange().length; s++) {
                     var rec = store.getAt(s);
-                    if (values.indexOf(rec.get('label').toLowerCase()) > -1) {
+                    var label = (rec.get('label') || '').toLowerCase();
+
+                    if (values.indexOf(label) > -1) {
+                        selections.push(rec);
+                    }
+                    else if (filter.getFilterType().getURLSuffix().toLowerCase() === 'isblank' &&
+                            label.indexOf('not in any cohort') === 0) {
                         selections.push(rec);
                     }
                 }
             });
 
-            // process group filters
-            Ext4.each(groupFilters, function(filter) {
-                var grpCategory = filter.getColumnName().split('/');
-                grpCategory = grpCategory[grpCategory.length-1].toLowerCase();
+            // prevent mixing/matching cohort and group filters
+            if (selections.length === 0) {
+                // process group filters
+                Ext4.each(groupFilters, function(filter) {
+                    var grpCategory = filter.getColumnName().split('/');
+                    grpCategory = grpCategory[grpCategory.length-1].toLowerCase();
 
-                var values = filter.getValue().toLowerCase().split(';'); // EQ or IN
-                for (var s=0; s < store.getRange().length; s++) {
-                    var rec = store.getAt(s);
-                    var category = rec.get('category');
+                    var values = filter.getValue().toLowerCase().split(';'); // EQ or IN
+                    for (var s=0; s < store.getRange().length; s++) {
+                        var rec = store.getAt(s);
+                        var category = rec.get('category');
+                        var label = (rec.get('label') || '').toLowerCase();
 
-                    if (Ext4.isObject(category) && category.label.toLowerCase() === grpCategory) {
-                        if (values.indexOf(rec.get('label') && rec.get('label').toLowerCase()) > -1) {
-                            selections.push(rec);
+                        if (Ext4.isObject(category) && category.label.toLowerCase() === grpCategory) {
+                            if (values.indexOf(label) > -1) {
+                                selections.push(rec);
+                            }
+                            else if (filter.getFilterType().getURLSuffix().toLowerCase() === 'isblank' &&
+                                    label.indexOf('not in any') === 0) {
+                                selections.push(rec);
+                            }
                         }
                     }
-                }
-            });
+                });
+            }
 
             if (selections.length > 0) {
                 fp.selection = selections;
