@@ -17,6 +17,7 @@ import org.labkey.api.data.StopIteratingException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -24,6 +25,7 @@ import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
@@ -153,6 +155,13 @@ public class IssuesUpgradeCode implements UpgradeCode
             {
                 Map<String, Collection<KeywordManager.Keyword>> keywordMap = config.getKeywordMap();
                 Set<String> keywordSet = new CaseInsensitiveHashSet(keywordMap.keySet());
+                Set<String> requiredFields = new CaseInsensitiveHashSet();
+                if (config.getRequiredFields() != null)
+                {
+                    for (String field : config.getRequiredFields().split(";"))
+                        requiredFields.add(field.trim());
+                }
+
                 for (CustomColumn col : config.getColumnConfiguration().getCustomColumns())
                 {
                     DomainProperty prop = domain.getPropertyByName(col.getName());
@@ -173,6 +182,8 @@ public class IssuesUpgradeCode implements UpgradeCode
                     }
                     prop.setLabel(col.getCaption());
 
+                    if (requiredFields.contains(prop.getName()))
+                        prop.setRequired(true);
                     if (!col.getPermission().equals(ReadPermission.class))
                         prop.setProtected(true);
 
@@ -199,7 +210,7 @@ public class IssuesUpgradeCode implements UpgradeCode
                         if (lookup != null && keywordMap.containsKey(col.getName()))
                         {
                             keywordSet.remove(col.getName());
-                            populateLookupTable(domain.getContainer(), user, lookup, keywordMap.get(col.getName()));
+                            populateLookupTable(domain.getContainer(), user, prop, lookup, keywordMap.get(col.getName()));
                         }
                     }
                 }
@@ -209,9 +220,11 @@ public class IssuesUpgradeCode implements UpgradeCode
                 for (String colName : keywordSet)
                 {
                     DomainProperty prop = domain.getPropertyByName(colName);
+                    if (requiredFields.contains(prop.getName()))
+                        prop.setRequired(true);
                     if (prop != null && prop.getLookup() != null)
                     {
-                        populateLookupTable(domain.getContainer(), user, prop.getLookup(), keywordMap.get(colName));
+                        populateLookupTable(domain.getContainer(), user, prop, prop.getLookup(), keywordMap.get(colName));
                     }
                 }
                 domain.save(user);
@@ -222,7 +235,7 @@ public class IssuesUpgradeCode implements UpgradeCode
     /**
      * Populates the lookup table with the contents of the legacy keywords
      */
-    private void populateLookupTable(Container c, User user, Lookup lookup, Collection<KeywordManager.Keyword> keywords) throws Exception
+    private void populateLookupTable(Container c, User user, DomainProperty prop, Lookup lookup, Collection<KeywordManager.Keyword> keywords) throws Exception
     {
         UserSchema userSchema = QueryService.get().getUserSchema(user, lookup.getContainer(), lookup.getSchemaName());
         TableInfo table = userSchema.getTable(lookup.getQueryName());
@@ -252,7 +265,11 @@ public class IssuesUpgradeCode implements UpgradeCode
                 }
                 qus.insertRows(user, c, rows, errors, null, null);
 
-                // todo handle default values
+                if (defaultValue != null)
+                {
+                    prop.setDefaultValueTypeEnum(DefaultValueType.FIXED_EDITABLE);
+                    DefaultValueService.get().setDefaultValues(c, Collections.singletonMap(prop, defaultValue));
+                }
             }
         }
     }
@@ -418,10 +435,12 @@ public class IssuesUpgradeCode implements UpgradeCode
                 else
                 {
                     Set<String> projectNames = new HashSet<>();
-
                     for (IssueMigrationPlan plan : entry.getValue())
                     {
-                        if (plan.getIssueDefName() == null && !plan.getConfig().isEmpty())
+                        boolean hasRequiredFields = plan.getConfig().getRequiredFields() != null;
+                        boolean hasCustomColumns = !plan.getConfig().getColumnConfiguration().getCustomColumns().isEmpty();
+
+                        if (plan.getIssueDefName() == null && (hasRequiredFields | hasCustomColumns))
                         {
                             plan.setIssueDefName(DEFAULT_ISSUE_LIST_NAME);
                             projectNames.add(DEFAULT_ISSUE_LIST_NAME);
