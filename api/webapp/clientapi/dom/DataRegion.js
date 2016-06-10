@@ -1797,6 +1797,49 @@ if (!LABKEY.DataRegions) {
         }
     };
 
+    // These study specific functions/constants should be moved out of Data Region
+    // and into their own dependency.
+
+    var COHORT_LABEL = '/Cohort/Label';
+    var ADV_COHORT_LABEL = '/InitialCohort/Label';
+
+    /**
+     * DO NOT CALL DIRECTLY. This method is private and only available for removing cohort/group filters
+     * for this Data Region.
+     * @param subjectColumn
+     * @param groupNames
+     * @private
+     */
+    Proto._removeCohortGroupFilters = function(subjectColumn, groupNames) {
+        var params = _getParameters(this, this.requestURL);
+        var skips = [], i, p, k;
+
+        var keys = [
+            subjectColumn + COHORT_LABEL,
+            subjectColumn + ADV_COHORT_LABEL
+        ];
+
+        if ($.isArray(groupNames)) {
+            for (k=0; k < groupNames.length; k++) {
+                keys.push(subjectColumn + '/' + groupNames[k]);
+            }
+        }
+
+        for (i = 0; i < params.length; i++) {
+            p = params[i][0];
+            if (p.indexOf(this.name + '.') == 0) {
+                for (k=0; k < keys.length; k++) {
+                    if (p.indexOf(keys[k] + '~') > -1) {
+                        skips.push(p);
+                        k = keys.length; // break loop
+                    }
+                }
+            }
+        }
+
+        _updateFilter(this, undefined, skips);
+    };
+
     /**
      * DO NOT CALL DIRECTLY. This method is private and only available for replacing advanced cohort filters
      * for this Data Region. Remove if advanced cohorts are removed.
@@ -1810,7 +1853,7 @@ if (!LABKEY.DataRegions) {
         for (i = 0; i < params.length; i++) {
             p = params[i][0];
             if (p.indexOf(this.name + '.') == 0) {
-                if (p.indexOf('/Cohort/Label') > -1 || p.indexOf('/InitialCohort/Label') > -1) {
+                if (p.indexOf(COHORT_LABEL) > -1 || p.indexOf(ADV_COHORT_LABEL) > -1) {
                     skips.push(p);
                 }
             }
