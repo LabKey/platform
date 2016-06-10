@@ -22,12 +22,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SimpleFolderType;
-import org.labkey.api.security.SecurityManager;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.data.xml.PermissionType;
 import org.labkey.data.xml.folderType.FolderTabDocument;
 import org.labkey.data.xml.folderType.PermissionClassType;
 import org.labkey.data.xml.folderType.SelectorDocument;
@@ -47,6 +45,7 @@ public class SimpleFolderTab extends FolderTab.PortalPage
     private List<Portal.WebPart> _requiredWebParts = new ArrayList<>();
     private List<Portal.WebPart> _preferredWebParts = new ArrayList<>();
     private List<TabSelector> _selectors = new ArrayList<>();
+    private String _url = null;
 
     private TAB_TYPE _tabType = TAB_TYPE.Portal;        // default to Portal type
     private String _folderTypeName;
@@ -138,6 +137,11 @@ public class SimpleFolderTab extends FolderTab.PortalPage
 
             if (permissions.size() > 0)
                 _permissions = permissions;
+        }
+
+        if (tab.isSetUrl())
+        {
+            _url = tab.getUrl();
         }
     }
 
@@ -243,5 +247,17 @@ public class SimpleFolderTab extends FolderTab.PortalPage
             return FolderTypeManager.get().getFolderType(getFolderTypeName());
         }
         return _folderType;
+    }
+
+    @Override
+    public ActionURL getURL(Container container, User user)
+    {
+        if (null != _url)
+        {
+            DetailsURL detailsURL = DetailsURL.fromString(_url);
+            detailsURL.setContainerContext(container);
+            return detailsURL.getActionURL();
+        }
+        return super.getURL(container, user);
     }
 }
