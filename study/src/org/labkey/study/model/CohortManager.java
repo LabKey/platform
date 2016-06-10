@@ -217,7 +217,7 @@ public class CohortManager
     }
 
 
-    public void addCohortNavTree(Container container, User user, ActionURL baseURL, CohortFilter currentCohortFilter, @Nullable String dataRegionName, NavTree tree)
+    public void addCohortNavTree(Container container, User user, CohortFilter currentCohortFilter, @Nullable String dataRegionName, NavTree tree)
     {
         List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(container, user);
         if (cohorts.size() > 0)

@@ -243,7 +243,7 @@ public class ParticipantGroupManager
             }
             baseURL.setReadOnly();
 
-            button.addMenuItem("All", baseURL.toString(), null, (selected.isEmpty() && cohortFilter == null));
+            button.addMenuItem("All", null, getRemoveSelectionScript(dataRegionName, study, classes), (selected.isEmpty() && cohortFilter == null));
 
             // merge in cohorts
             if (CohortManager.getInstance().hasCohortMenu(container, user))
@@ -286,7 +286,7 @@ public class ParticipantGroupManager
                 }
 
                 NavTree cohort = new NavTree("Cohorts");
-                CohortManager.getInstance().addCohortNavTree(context.getContainer(), context.getUser(), baseURL, cohortFilter, dataRegionName, cohort);
+                CohortManager.getInstance().addCohortNavTree(context.getContainer(), context.getUser(), cohortFilter, dataRegionName, cohort);
                 button.addMenuItem(cohort);
             }
 
@@ -356,6 +356,28 @@ public class ParticipantGroupManager
         {
             throw new RuntimeException(e);
         }
+    }
+
+    private String getRemoveSelectionScript(String dataRegionName, Study study, Collection<ParticipantCategoryImpl> categories)
+    {
+        StringBuilder script = new StringBuilder();
+        script.append("LABKEY.DataRegions['").append(dataRegionName).append("']._removeCohortGroupFilters(");
+        script.append(PageFlowUtil.jsString(study.getSubjectColumnName()));
+
+        if (categories.size() > 0)
+        {
+            script.append(",[");
+            String sep = "";
+            for (ParticipantCategoryImpl category : categories)
+            {
+                script.append(sep).append(PageFlowUtil.jsString(category.getLabel()));
+                sep = ",";
+            }
+            script.append("]");
+        }
+
+        script.append(");");
+        return script.toString();
     }
 
     private String getSelectionScript(String dataRegionName, Pair<FieldKey, String> filterColValue)
