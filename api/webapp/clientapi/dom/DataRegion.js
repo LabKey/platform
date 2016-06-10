@@ -1011,24 +1011,19 @@ if (!LABKEY.DataRegions) {
 
         var results = {};
 
-        if (this.qwp) {
-            results = this.qwp.getParameters();
-        }
-        else {
-            var params = _getParameters(this, this.getSearchString()),
+        var params = _getParameters(this, this.getSearchString()),
                 re = new RegExp('^' + LABKEY.Utils.escapeRe(this.name) + PARAM_PREFIX.replace(/\./g, '\\.'), 'i'),
                 name;
 
-            $.each(params, function(i, pair) {
-                if (pair.length > 0 && pair[0].match(re)) {
-                    name = pair[0].replace(re, '');
-                    if (toLowercase) {
-                        name = name.toLowerCase();
-                    }
-                    results[name] = pair[1];
+        $.each(params, function(i, pair) {
+            if (pair.length > 0 && pair[0].match(re)) {
+                name = pair[0].replace(re, '');
+                if (toLowercase) {
+                    name = name.toLowerCase();
                 }
-            });
-        }
+                results[name] = pair[1];
+            }
+        });
 
         return results;
     };
@@ -1916,17 +1911,6 @@ if (!LABKEY.DataRegions) {
         var filters = this.getUserFilterArray();
         if (filters.length > 0) {
             config.filters = filters;
-        }
-
-        // NOTE: need to account for non-removable filters and sort in a QWP
-        if (this.qwp) {
-            if (this.qwp.sort) {
-                config.sort = config.sort + ',' + this.qwp.sort;
-            }
-
-            if (this.qwp.filters && this.qwp.filters.length) {
-                config.filters = config.filters.concat(this.qwp.filters);
-            }
         }
 
         return config;
