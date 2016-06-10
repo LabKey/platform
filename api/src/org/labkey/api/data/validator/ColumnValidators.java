@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.query.ValidationException;
@@ -138,7 +139,13 @@ public class ColumnValidators
         {
             return null;
         }
-        return new DateValidator(col != null ? col.getName() : dp.getName());
+
+        SqlDialect dialect = null;
+        if (col != null)
+            dialect = col.getSqlDialect();
+        else if (null != dp.getDomain().getDomainKind().getScope())
+            dialect = dp.getDomain().getDomainKind().getScope().getSqlDialect();
+        return new DateValidator(col != null ? col.getName() : dp.getName(), dialect);
     }
 
     @Nullable
