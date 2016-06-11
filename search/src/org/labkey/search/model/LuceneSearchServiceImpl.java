@@ -571,7 +571,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             _log.debug("parsed " + url);
 
-            if (StringUtils.isBlank(keywordsMed))
+            if (null == props.get(PROPERTY.keywordsMed.toString()) && StringUtils.isBlank(keywordsMed))
                 keywordsMed = title;
 
             // Add all container path parts as low-priority keywords... see #9362
