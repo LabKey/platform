@@ -39,54 +39,53 @@
 <table>
     <tr><td colspan="5">These are the installed primary authentication providers:<br><br></td></tr>
 
-    <% appendProviders(out, primary, urls); %>
+<%
+    appendProviders(out, primary, urls);
 
+    if (!secondary.isEmpty())
+    {
+%>
+        <tr><td colspan="5">&nbsp;</td></tr>
+        <tr><td colspan="5">These are the installed secondary authentication providers:<br><br></td></tr>
+<%
+        appendProviders(out, secondary, urls);
+    }
+%>
     <tr><td colspan="5">&nbsp;</td></tr>
-    <tr><td colspan="5">Other authentication options:</td></tr>
+    <tr><td colspan="5">Other options:</td></tr>
     <tr><td colspan="5">&nbsp;</td></tr>
     <tr>
-        <td>&nbsp;&nbsp;</td>
+        <td>&nbsp;</td>
         <td>Self sign-up</td>
         <% if (AuthenticationManager.isRegistrationEnabled()) { %>
         <td><%=PageFlowUtil.textLink("Disable", urls.getDisableConfigParameterURL(AuthenticationManager.SELF_REGISTRATION_KEY))%></td>
         <% } else { %>
         <td><%=PageFlowUtil.textLink("Enable", urls.getEnableConfigParameterURL(AuthenticationManager.SELF_REGISTRATION_KEY))%></td>
         <% } %>
-        <td colspan="3">Users are able to register for accounts when using database authentication.  Use caution when enabling this if you have enabled sending email to non-users.</td>
+        <td colspan="2">&nbsp;</td>
+        <td>Users are able to register for accounts when using database authentication. Use caution when enabling this if you have enabled sending email to non-users.</td>
     </tr>
     <tr>
-        <td>&nbsp;&nbsp;</td>
+        <td>&nbsp;</td>
         <td>Auto-create authenticated users</td>
         <% if (AuthenticationManager.isAutoCreateAccountsEnabled()) { %>
         <td><%=text(isExternalProviderEnabled ? textLink("Disable", urls.getDisableConfigParameterURL(AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY)) : "&nbsp;")%></td>
         <% } else { %>
         <td><%=text(isExternalProviderEnabled ? textLink("Enable", urls.getEnableConfigParameterURL(AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY)) : "&nbsp;")%></td>
         <% } %>
-        <td colspan="3">Accounts are created automatically for users authenticated via LDAP, SSO, etc.</td>
+        <td colspan="2">&nbsp;</td>
+        <td>Accounts are created automatically when new users authenticate via LDAP or SSO.</td>
     </tr>
-
-    <%
-    if (!secondary.isEmpty())
-    {
-%>
-        <tr><td colspan="5">&nbsp;</td></tr>
-        <tr><td colspan="5">These are the installed secondary authentication providers:<br><br></td></tr>
-
-        <% appendProviders(out, secondary, urls); %>
-<%
-    }
-%>
-    <tr><td colspan="5">&nbsp;</td></tr>
-    <tr><td colspan="5">Configure site-wide authentication options:<br><br></td></tr>
     <tr>
-        <td>&nbsp;&nbsp;</td>
-        <td>Self-service Email Changes</td>
+        <td>&nbsp;</td>
+        <td>Self-service email changes</td>
         <% if (AuthenticationManager.isSelfServiceEmailChangesEnabled()) { %>
         <td><%=PageFlowUtil.textLink("Disable", urls.getDisableConfigParameterURL(AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY))%></td>
         <% } else { %>
         <td><%=PageFlowUtil.textLink("Enable", urls.getEnableConfigParameterURL(AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY))%></td>
         <% } %>
-        <td colspan="3">Users can change their own email address if their password is managed by LabKey Server.</td>
+        <td colspan="2">&nbsp;</td>
+        <td>Users can change their own email address if their password is managed by LabKey Server.</td>
     </tr>
     <tr><td colspan="5">&nbsp;</td></tr>
     <tr><td colspan="5">
