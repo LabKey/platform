@@ -42,6 +42,7 @@ public interface ScheduledPipelineJobDescriptor<C extends ContainerUser>
     boolean isStandalone();
     boolean isSiteScope();
     boolean isAllowMultipleQueuing();
+    Map<String, String> getPipelineParameters();
 
     ScheduleBuilder getScheduleBuilder();
     String getScheduleDescription();
