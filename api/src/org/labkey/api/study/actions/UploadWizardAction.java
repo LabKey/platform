@@ -67,6 +67,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.ContainerUser;
 import org.springframework.context.MessageSourceResolvable;
@@ -77,7 +78,6 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
-import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
@@ -229,7 +229,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
 
         if (errorReshow)
-            view.setInitialValues(getViewContext().getRequest().getParameterMap());
+            view.setInitialValues(ViewServlet.adjustAndValidateParameterMap(getViewContext().getRequest().getParameterMap()));
         else
         {
             Map<String, Object> inputNameToValue = new HashMap<>();

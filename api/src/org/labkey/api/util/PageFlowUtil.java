@@ -63,6 +63,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebTheme;
 import org.labkey.api.view.WebThemeManager;
 import org.labkey.api.view.template.ClientDependency;

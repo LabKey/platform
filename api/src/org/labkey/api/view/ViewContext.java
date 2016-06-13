@@ -113,9 +113,9 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
 
         for (Object o : _request.getParameterMap().entrySet())
         {
-            Map.Entry<String, Object> entry = (Map.Entry<String, Object>) o;
+            Map.Entry<String, String[]> entry = (Map.Entry<String, String[]>) o;
             String key = entry.getKey();
-            String[] value = (String[]) entry.getValue();
+            String[] value = entry.getValue();
 
             if (value.length == 1)
                 _map.put(key, value[0]);

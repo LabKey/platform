@@ -44,6 +44,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewServlet;
 import org.springframework.validation.BindException;
 
 import java.io.File;
@@ -173,7 +174,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         InsertView view = new InsertView(rgn, errors);
 
         if (reshow)
-            view.setInitialValues(domainIdForm.getRequest().getParameterMap());
+            view.setInitialValues(ViewServlet.adjustAndValidateParameterMap(domainIdForm.getRequest().getParameterMap()));
         else
         {
             Map<DomainProperty, Object> defaults = DefaultValueService.get().getDefaultValues(domainIdForm.getContainer(), domain);

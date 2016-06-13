@@ -786,4 +786,22 @@ public class ViewServlet extends HttpServlet
 
         return sb.toString();
     }
+
+    // Validate and adjust the Map returned by ancient version of servlet-api.jar to Map<String, Object>, which is
+    // closer to what modern servlet-api.jar expects. This is temporary... first step for #25941.
+    public static Map<String, Object> adjustAndValidateParameterMap(Map parameterMap)
+    {
+        Map<String, Object> newMap = new HashMap<>(parameterMap.size() * 2);
+
+        for (Object o : parameterMap.entrySet())
+        {
+            Map.Entry<String, Object> entry = (Map.Entry<String, Object>) o;
+            Object value = entry.getValue();
+            assert value.getClass().isArray();
+            String[] arrayValue = (String[]) value;
+            newMap.put(entry.getKey(), arrayValue);
+        }
+
+        return newMap;
+    }
 }

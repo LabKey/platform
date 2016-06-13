@@ -26,6 +26,7 @@ import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.view.InsertView;
+import org.labkey.api.view.ViewServlet;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
@@ -138,7 +139,7 @@ public abstract class SamplePropertyHelper<ObjectType>
             region.addGroup(group);
         }
         if (errorReshow && defaultValueContext != null)
-            view.setInitialValues(defaultValueContext.getRequest().getParameterMap());
+            view.setInitialValues(ViewServlet.adjustAndValidateParameterMap(defaultValueContext.getRequest().getParameterMap()));
 
         // don't display the group heading if there is only a single group
         if (sampleNames.size() == 1)
