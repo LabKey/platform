@@ -441,7 +441,7 @@ public class StatementUtils
                 keys.put(col.getFieldKey(), col);
             else
             {
-                for (ColumnInfo pk : table.getPkColumns())
+                for (ColumnInfo pk : _table.getPkColumns())
                     keys.put(pk.getFieldKey(), pk);
             }
         }
