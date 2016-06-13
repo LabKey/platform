@@ -19,6 +19,7 @@
             <element name="schedule" type="etl:ScheduleType" maxOccurs="1" minOccurs="0"/>
             <element name="incrementalFilter" type="etl:FilterType" minOccurs="0" maxOccurs="1"/>
             <element name="parameters" type="etl:ParametersType" minOccurs="0" maxOccurs="1"/>
+            <element name="pipelineParameters" type="etl:PipelineParametersType" minOccurs="0" maxOccurs="1"/>
         </all>
         <attribute name="loadReferencedFiles" type="boolean" default="false"/>
         <attribute name="standalone" type="boolean" default="true">
@@ -354,6 +355,23 @@
         <attribute name="name" type="string" use="required" />
         <attribute name="value" type="string" use="optional" />
         <attribute name="type" type="string" use="required" />
+    </complexType>
+
+    <complexType name="PipelineParametersType">
+        <sequence minOccurs="1" maxOccurs="unbounded">
+            <element name="parameter" type="etl:PipelineParameterType"/>
+        </sequence>
+    </complexType>
+
+    <complexType name="PipelineParameterType">
+        <annotation>
+            <documentation>
+                Intended for use when an ETL invokes file analysis pipeline command tasks.
+                Will be passed as parameter overrides into the protocol.
+            </documentation>
+        </annotation>
+        <attribute name="name" type="string" use="required" />
+        <attribute name="value" type="string" use="required" />
     </complexType>
 
     <complexType name="TaskRefType">

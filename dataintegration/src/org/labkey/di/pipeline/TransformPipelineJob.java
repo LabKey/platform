@@ -82,6 +82,7 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
         setAnalysisDirectory(etlLogDir);
         setBaseName(StringUtils.substringBefore(etlLogFile.getName(), "." + LOG_EXTENSION));
         initVariableMap(info);
+        _parameters.putAll(etlDescriptor.getPipelineParameters());
     }
 
     private void initVariableMap(TransformJobContext info)

@@ -97,6 +97,7 @@ import org.labkey.etl.xml.EtlDocument;
 import org.labkey.etl.xml.EtlType;
 import org.labkey.etl.xml.FilterType;
 import org.labkey.etl.xml.ParameterType;
+import org.labkey.etl.xml.PipelineParameterType;
 import org.labkey.etl.xml.TransformType;
 import org.labkey.etl.xml.TransformsType;
 import org.quartz.CronExpression;
@@ -261,10 +262,19 @@ public class TransformManager implements DataIntegrationService.Interface
                 }
             }
 
+            Map<String, String> pipelineParameters = new LinkedHashMap<>();
+            if (null != etlXml.getPipelineParameters())
+            {
+                for (PipelineParameterType xmlPipeParam : etlXml.getPipelineParameters().getParameterArray())
+                {
+                    pipelineParameters.put(xmlPipeParam.getName(), xmlPipeParam.getValue());
+                }
+            }
+
             // XmlSchema validate the document after we've attempted to parse it since we can provide better error messages.
             XmlBeansUtil.validateXmlDocument(document, "ETL '" + resource.getPath() + "'");
 
-            return new TransformDescriptor(configId, etlXml, module.getName(), interval, cron, defaultFactory, stepMetaDatas, declaredVariables, hasGateStep);
+            return new TransformDescriptor(configId, etlXml, module.getName(), interval, cron, defaultFactory, stepMetaDatas, declaredVariables, hasGateStep, pipelineParameters);
         }
     }
 

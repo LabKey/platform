@@ -113,6 +113,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
     private final boolean _standalone;
     private final boolean _siteScope;
     private boolean _allowMultipleQueuing;
+    private Map<String, String> _pipelineParameters;
     private static final String XAR_EXT = ".etl.xar.xml";
 
     // declared variables
@@ -128,20 +129,23 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
 
     public TransformDescriptor(String id, String name, String moduleName) throws XmlException, IOException
     {
-        this(id, name, null, moduleName, null, null, null, null, null, false, false, true, false, false);
+        this(id, name, null, moduleName, null, null, null, null, null, false, false, true, false, false, null);
     }
 
     public TransformDescriptor(String id, EtlType etlXml, String moduleName, Long interval,
                                CronExpression cron, FilterStrategy.Factory defaultFactory, ArrayList<StepMeta> stepMetaDatas,
-                               Map<ParameterDescription, Object> declaredVariables, boolean gatedByStep) throws XmlException, IOException
+                               Map<ParameterDescription, Object> declaredVariables, boolean gatedByStep, Map<String, String> pipelineParameters) throws XmlException, IOException
     {
-        this(id, etlXml.getName(), etlXml.getDescription(), moduleName, interval, cron, defaultFactory, stepMetaDatas, declaredVariables, etlXml.getLoadReferencedFiles(), gatedByStep, etlXml.getStandalone(), etlXml.getSiteScope(), etlXml.getAllowMultipleQueuing());
+        this(id, etlXml.getName(), etlXml.getDescription(), moduleName, interval, cron, defaultFactory, stepMetaDatas,
+                declaredVariables, etlXml.getLoadReferencedFiles(), gatedByStep, etlXml.getStandalone(),
+                etlXml.getSiteScope(), etlXml.getAllowMultipleQueuing(), pipelineParameters);
     }
 
     public TransformDescriptor(String id, String name, String description, String moduleName, Long interval,
                                CronExpression cron, FilterStrategy.Factory defaultFactory, ArrayList<StepMeta> stepMetaDatas,
                                Map<ParameterDescription, Object> declaredVariables,
-                               boolean loadReferencedFiles, boolean gatedByStep, boolean standalone, boolean siteScope, boolean allowMultipleQueuing) throws XmlException, IOException
+                               boolean loadReferencedFiles, boolean gatedByStep, boolean standalone, boolean siteScope, boolean allowMultipleQueuing,
+                               Map<String, String> pipelineParameters) throws XmlException, IOException
     {
         _id = id;
         _name = name;
@@ -158,6 +162,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         _standalone = standalone;
         _siteScope = siteScope;
         _allowMultipleQueuing = allowMultipleQueuing;
+        _pipelineParameters = pipelineParameters;
     }
 
     public String getName()
@@ -539,6 +544,12 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
     public boolean isAllowMultipleQueuing()
     {
         return _allowMultipleQueuing;
+    }
+
+    @Override
+    public Map<String, String> getPipelineParameters()
+    {
+        return Collections.unmodifiableMap(_pipelineParameters);
     }
 
     public static class TestCase extends Assert
