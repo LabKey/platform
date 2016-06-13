@@ -73,21 +73,18 @@ class SecurityQuery extends Query
             {
                 boolean searchable = c.isSearchable() || c.equals(currentContainer);
 
-                if (searchable)
+                if (searchable && c.shouldDisplay(user))
                 {
-                    boolean shouldDisplay = c.isWorkbook() || c.shouldDisplay(user);
-
-                    if (shouldDisplay)
-                    {
-                        _containerIds.put(c.getId(), c);
-                    }
+                    _containerIds.put(c.getId(), c);
                 }
             }
         }
         else
         {
             _containerIds = new HashMap<>();
-            _containerIds.put(searchRoot.getId(), searchRoot);
+
+            if (searchRoot.hasPermission(user, ReadPermission.class))
+                _containerIds.put(searchRoot.getId(), searchRoot);
         }
     }
 
