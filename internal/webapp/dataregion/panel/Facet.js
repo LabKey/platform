@@ -365,9 +365,7 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
                 });
             }
 
-            if (selections.length > 0) {
-                fp.selection = selections;
-            }
+            fp.selection = selections;
         }
     }
 });
