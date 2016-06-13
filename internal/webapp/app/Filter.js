@@ -317,15 +317,79 @@ Ext.define('LABKEY.app.model.Filter', {
                         });
                     }
                     else {
-                        Ext.each(data.members, function(member) {
-                            filter.arguments.push({
-                                level: mdx.perspectives[data.perspective].level,
-                                membersQuery: {
-                                    hierarchy: data.hierarchy,
-                                    members: [member]
+                        var membersMap = this.getIncludeExcludeMap(data.members);
+                        // if we have nothing excluded, simply add a filter argument for each included member
+                        if (membersMap['excluded'].length == 0)
+                        {
+                            this.addFilterArguments(filter, mdx.perspectives[data.perspective].level, data.hierarchy, membersMap['included']);
+                        }
+                        // if we have only excluded members, we need to add a "members.members" argument first
+                        else if (membersMap['included'].length == 0)
+                        {
+                            if (filter.operator == LABKEY.app.model.Filter.Operators.INTERSECT)
+                            {
+                                filter.operator = LABKEY.app.model.Filter.Operators.EXCEPT;
+                                // first include all of the members
+                                filter.arguments.push({
+                                    level: mdx.perspectives[data.perspective].level,
+                                    members: "members"
+                                });
+                                // then exclude the selected members
+                                this.addFilterArguments(filter, mdx.perspectives[data.perspective].level, data.hierarchy, membersMap['excluded']);
+                            }
+                            else
+                            {
+                                // get a set for each excluded member and union those sets together.
+                                for (var m = 0; m < membersMap['excluded'].length; m++)
+                                {
+                                    filter.arguments.push(
+                                            this.getOlapFilter(mdx, Ext.create(Argos.model.Filter.getFilterModelName(), {
+                                                hierarchy: data.hierarchy,
+                                                level: data.level,
+                                                members: [membersMap['excluded'][m]],
+                                                membersName: data.membersName,
+                                                perspective: data.perspective
+                                            }), subjectName)
+                                    );
                                 }
-                            });
-                        });
+                            }
+                        }
+                        else // have both included and excluded
+                        {
+                            if (filter.operator == LABKEY.app.model.Filter.Operators.INTERSECT )
+                            {
+                                filter.operator = LABKEY.app.model.Filter.Operators.EXCEPT;
+                                // get the filter for the included members.  This will be the set to exclude members from
+                                filter.arguments.push(
+                                        this.getOlapFilter(mdx, Ext.create(Argos.model.Filter.getFilterModelName(), {
+                                            hierarchy: data.hierarchy,
+                                            level: data.level,
+                                            members: membersMap['included'],
+                                            membersName: data.membersName,
+                                            perspective: data.perspective
+                                        }), subjectName)
+                                );
+                                this.addFilterArguments(filter, mdx.perspectives[data.perspective].level, data.hierarchy, membersMap['excluded']);
+                            }
+                            else
+                            {
+                                // add the filter arguments for all included members
+                                this.addFilterArguments(filter, mdx.perspectives[data.perspective].level, data.hierarchy, membersMap['included']);
+                                // for each excluded member, get an except query
+                                for (var m = 0; m < membersMap['excluded'].length; m++)
+                                {
+                                    filter.arguments.push(
+                                        this.getOlapFilter(mdx, Ext.create(Argos.model.Filter.getFilterModelName(), {
+                                            hierarchy: data.hierarchy,
+                                            level: data.level,
+                                            members: [membersMap['excluded'][m]],
+                                            membersName: data.membersName,
+                                            perspective: data.perspective
+                                        }), subjectName)
+                                    );
+                                }
+                            }
+                        }
                     }
                 }
                 else {
@@ -342,6 +406,7 @@ Ext.define('LABKEY.app.model.Filter', {
                         });
                     }
                     else {
+                        // TODO?  Is there also a possibility for excluded members here?
                         for (var m=0; m < data.members.length; m++) {
                             filter.arguments.push({
                                 hierarchy : subjectName,
@@ -356,6 +421,32 @@ Ext.define('LABKEY.app.model.Filter', {
             }
 
             return filter;
+        },
+
+        addFilterArguments: function(filter, level, hierarchy, members)
+        {
+            Ext.each(members, function (member)
+            {
+                filter.arguments.push({
+                    level: level,
+                    membersQuery: {
+                        hierarchy: hierarchy,
+                        members: [member]
+                    }
+                });
+            });
+        },
+
+        getIncludeExcludeMap : function(members) {
+            var membersMap = {'excluded' : [], 'included' : []};
+            for (var m = 0; m < members.length; m++)
+            {
+                if (members[m].isNegated)
+                    membersMap['excluded'].push(members[m]);
+                else
+                    membersMap['included'].push(members[m]);
+            }
+            return membersMap;
         },
 
         usesMemberName : function(data, subjectName) {
@@ -469,7 +560,8 @@ Ext.define('LABKEY.app.model.Filter', {
 
         Operators: {
             UNION: 'UNION',
-            INTERSECT: 'INTERSECT'
+            INTERSECT: 'INTERSECT',
+            EXCEPT : 'EXCEPT'
         },
 
         sorters: {
