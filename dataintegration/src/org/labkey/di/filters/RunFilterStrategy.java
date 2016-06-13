@@ -92,31 +92,31 @@ public class RunFilterStrategy extends FilterStrategyImpl
         SchemaKey runSchemaKey = null!=_runTableSchema ? _runTableSchema : _config.getSourceSchema();
         QuerySchema runSchema = DefaultSchema.get(_context.getUser(), _context.getContainer(), runSchemaKey);
         if (null == runSchema)
-            throw new IllegalArgumentException("Schema not found: " + runSchemaKey);
+            throw new ConfigurationException("Schema not found: " + runSchemaKey);
 
         _runsTable = runSchema.getTable(_runTableName);
         if (null == _runsTable)
-            throw new IllegalArgumentException("Table not found: " + _runTableName);
+            throw new ConfigurationException("Table not found: " + _runTableName);
         _runPkCol = _runsTable.getColumn(_pkColumnName);
         if (null == _runPkCol)
-            throw new IllegalArgumentException("Column not found: " + _runTableName + "." + _pkColumnName);
+            throw new ConfigurationException("Column not found: " + _runTableName + "." + _pkColumnName);
 
 
         if (null != _config && _config.isUseSource())
         {
             QuerySchema sourceSchema = DefaultSchema.get(_context.getUser(), _context.getContainer(), _config.getSourceSchema());
             if (null == sourceSchema)
-                throw new IllegalArgumentException("Source schema not found: " + _config.getSourceSchema().toString());
+                throw new ConfigurationException("Source schema not found: " + _config.getSourceSchema().toString());
 
             _sourceTable = sourceSchema.getTable(_config.getSourceQuery());
             if (null == _sourceTable)
-                throw new IllegalArgumentException("Table not found: " + _config.getSourceQuery());
+                throw new ConfigurationException("Table not found: " + _config.getSourceQuery());
 
             String runColumnName = StringUtils.defaultString(_config.getSourceRunColumnName(), _fkDefaultColumnName);
             runColumnName = StringUtils.defaultString(runColumnName, Columns.TransformRunId.getColumnName());
             _sourceFkCol = _sourceTable.getColumn(runColumnName);
             if (null == _sourceFkCol)
-                throw new IllegalArgumentException("Column not found: " + _config.getSourceQuery() + "." + runColumnName);
+                throw new ConfigurationException("Column not found: " + _config.getSourceQuery() + "." + runColumnName);
         }
     }
 

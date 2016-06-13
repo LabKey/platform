@@ -23,6 +23,7 @@ import org.labkey.api.etl.CopyConfig;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.di.VariableMap;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.steps.StepMeta;
@@ -46,7 +47,7 @@ public abstract class FilterStrategyImpl implements FilterStrategy
     public FilterStrategyImpl(StepMeta stepMeta, TransformJobContext context, DeletedRowsSource deletedRowsSource)
     {
         if (!(stepMeta instanceof CopyConfig))
-            throw new IllegalArgumentException(this.getClass().getName() + " is not compatible with " + stepMeta.getClass().getName());
+            throw new ConfigurationException(this.getClass().getName() + " is not compatible with " + stepMeta.getClass().getName());
         _config = (CopyConfig)stepMeta;
         _context = context;
         _deletedRowsSource = deletedRowsSource;
@@ -75,18 +76,18 @@ public abstract class FilterStrategyImpl implements FilterStrategy
         {
             QuerySchema sourceSchema = DefaultSchema.get(_context.getUser(), _context.getContainer(), _deletedRowsSource.getSchemaName());
             if (null == sourceSchema)
-                throw new IllegalArgumentException("Schema for deleted rows query not found: " + _deletedRowsSource.getSchemaName());
+                throw new ConfigurationException("Schema for deleted rows query not found: " + _deletedRowsSource.getSchemaName());
 
             _deletedRowsTinfo = sourceSchema.getTable(_deletedRowsSource.getQueryName());
             if (null == _deletedRowsTinfo)
-                throw new IllegalArgumentException("Query for deleted rows not found: " + _deletedRowsSource.getQueryName());
+                throw new ConfigurationException("Query for deleted rows not found: " + _deletedRowsSource.getQueryName());
 
             if (_deletedRowsSource.getDeletedSourceKeyColumnName() == null) // use the PK
             {
                 List<String> delSrcPkCols = _deletedRowsTinfo.getPkColumnNames();
                 if (delSrcPkCols.size() != 1)
                 {
-                    throw new IllegalArgumentException("Deleted rows query must either have exactly one primary key column, or the match column should be specified in the xml.");
+                    throw new ConfigurationException("Deleted rows query must either have exactly one primary key column, or the match column should be specified in the xml.");
                 }
                 _deletedRowsKeyCol = delSrcPkCols.get(0);
             }
@@ -94,7 +95,7 @@ public abstract class FilterStrategyImpl implements FilterStrategy
             {
                 ColumnInfo deletedRowsCol = _deletedRowsTinfo.getColumn(FieldKey.fromParts(_deletedRowsSource.getDeletedSourceKeyColumnName()));
                 if (null == deletedRowsCol)
-                    throw new IllegalArgumentException("Match key for deleted rows not found: " + _deletedRowsSource.getQueryName() + "." + _deletedRowsSource.getDeletedSourceKeyColumnName());
+                    throw new ConfigurationException("Match key for deleted rows not found: " + _deletedRowsSource.getQueryName() + "." + _deletedRowsSource.getDeletedSourceKeyColumnName());
                 _deletedRowsKeyCol = deletedRowsCol.getColumnName();
             }
         }

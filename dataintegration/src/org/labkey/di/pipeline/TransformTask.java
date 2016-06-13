@@ -132,7 +132,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
             return appendToTargetQuery(meta, c, u, context, source, log, txTarget);
         else if (CopyConfig.TargetTypes.file.equals(meta.getTargetType()))
             return appendToTargetFile(meta, context, source, log);
-        else throw new IllegalArgumentException("Invalid target type specified.");
+        else throw new ConfigurationException("Invalid target type specified.");
     }
 
     private int appendToTargetQuery(CopyConfig meta, Container c, User u, DataIteratorContext context, DataIteratorBuilder source, Logger log, DbScope.Transaction txTarget)
@@ -183,7 +183,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
                     rowCount = qus.importRows(u, c, source, context.getErrors(), options, extraContext);
                     break;
                 default:
-                    throw new IllegalArgumentException("Invalid target option specified: " + meta.getTargetOptions());
+                    throw new ConfigurationException("Invalid target option specified: " + meta.getTargetOptions());
             }
 
             // We shouldn't proceed to deleting records if there were errors in the main step operation. In SQL Server, this could leave data in an unknown state.
@@ -486,11 +486,11 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
     {
         QuerySchema sourceSchema = DefaultSchema.get(_context.getUser(), _context.getContainer(), _meta.getSourceSchema());
         if (null == sourceSchema || null == sourceSchema.getDbSchema())
-            throw new IllegalArgumentException("Source schema not found: " + _meta.getSourceSchema());
+            throw new ConfigurationException("Source schema not found: " + _meta.getSourceSchema());
 
         TableInfo t = sourceSchema.getTable(_meta.getSourceQuery());
         if (null == t)
-            throw new IllegalArgumentException("Could not find table: " +  _meta.getSourceSchema() + "." + _meta.getSourceQuery());
+            throw new ConfigurationException("Could not find table: " +  _meta.getSourceSchema() + "." + _meta.getSourceQuery());
 
         return getFilterStrategy().hasWork();
     }

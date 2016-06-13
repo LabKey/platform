@@ -117,11 +117,11 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
     {
         QuerySchema schema = DefaultSchema.get(_context.getUser(), _context.getContainer(), _config.getSourceSchema());
         if (null == schema)
-            throw new IllegalArgumentException("Schema not found: " + _config.getSourceSchema());
+            throw new ConfigurationException("Schema not found: " + _config.getSourceSchema());
 
         _table = schema.getTable(_config.getSourceQuery());
         if (null == _table)
-            throw new IllegalArgumentException("Table not found: " + _config.getSourceQuery());
+            throw new ConfigurationException("Table not found: " + _config.getSourceQuery());
 
         String timestampColumnName = StringUtils.defaultString(_config.getSourceTimestampColumnName(), _defaultTimestampColumnName);
         timestampColumnName = StringUtils.defaultString(timestampColumnName, Columns.TransformModified.getColumnName());
@@ -232,11 +232,11 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
         }
         catch (DataIntegrityViolationException ex)
         {
-            throw new IllegalArgumentException("Timestamp column '"+ _table.getName() + "." + tsCol.getColumnName()+"' contains value not castable to a legal type.", ex);
+            throw new ConfigurationException("Timestamp column '"+ _table.getName() + "." + tsCol.getColumnName()+"' contains value not castable to a legal type.", ex);
         }
         catch (Exception ex)
         {
-            throw new IllegalArgumentException("Problem with configured timestamp column '"+ _table.getName() + "." + tsCol.getColumnName(), ex);
+            throw new ConfigurationException("Problem with configured timestamp column '"+ _table.getName() + "." + tsCol.getColumnName(), ex);
         }
 
         List<Aggregate.Result> list = results.get(tsCol.getName());
@@ -244,7 +244,7 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
         // Diagnostic for 20659, from exception 17683. The aggregates resultset doesn't include the tsCol name.
         if (list == null)
         {
-            throw new IllegalArgumentException(makeBadTsColMessage("Timestamp column '" + tsCol.getName() + "' not found in aggregate results for table '" + _table.getName(), results));
+            throw new ConfigurationException(makeBadTsColMessage("Timestamp column '" + tsCol.getName() + "' not found in aggregate results for table '" + _table.getName(), results));
         }
         Aggregate.Result maxResult = list.get(0);
 
@@ -263,11 +263,11 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
             }
             catch (ParseException e)
             {
-                throw new IllegalArgumentException(makeBadTsColMessage("Timestamp column '"+ tsCol.getColumnName()+"' contains value not castable to a legal type: " + incrementalEndTimestamp.toString(), results));
+                throw new ConfigurationException(makeBadTsColMessage("Timestamp column '"+ tsCol.getColumnName()+"' contains value not castable to a legal type: " + incrementalEndTimestamp.toString(), results));
             }
         }
         else
-            throw new IllegalArgumentException(makeBadTsColMessage("Timestamp column '"+ tsCol.getColumnName()+"' contains value not castable to a legal type: " + incrementalEndTimestamp.toString(), results));
+            throw new ConfigurationException(makeBadTsColMessage("Timestamp column '"+ tsCol.getColumnName()+"' contains value not castable to a legal type: " + incrementalEndTimestamp.toString(), results));
         return timestamps;
     }
 

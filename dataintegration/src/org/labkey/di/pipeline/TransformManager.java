@@ -64,6 +64,7 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.test.TestWhen;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
@@ -305,7 +306,7 @@ public class TransformManager implements DataIntegrationService.Interface
             return new RunFilterStrategy.Factory(filterTypeXML);
         else if (className.equals(SelectAllFilterStrategy.class.getName()))
             return new SelectAllFilterStrategy.Factory(filterTypeXML);
-        throw new IllegalArgumentException("Class is not a recognized filter strategy: " + className);
+        throw new ConfigurationException("Class is not a recognized filter strategy: " + className);
     }
 
     // errors

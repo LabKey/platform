@@ -265,7 +265,7 @@ public class StoredProcedureStep extends TransformTask
         if (!checkingForWork && !validate(_meta, _context.getContainer(), _context.getUser(), getJob().getLogger())) return false;
         setDbScopes(_context.getContainer(), _context.getUser());
         if (!procDialect.isProcedureExists(procScope, procDbSchemaName, procName))
-            throw new IllegalArgumentException("Could not find procedure " + procQuerySchemaName + "." + procName);
+            throw new ConfigurationException("Could not find procedure " + procQuerySchemaName + "." + procName);
         getParametersFromDbMetadata();
         initSavedParamVals(checkingForWork);
         seedParameterValues(checkingForWork);
