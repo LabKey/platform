@@ -1624,7 +1624,7 @@ public class DavController extends SpringActionController
             defaultDepth = 1;
 
             // Map Bind Parameters
-            form = new JsonForm(new MutablePropertyValues(getRequest().getParameterMap()));
+            form = new JsonForm(new MutablePropertyValues(ViewServlet.adjustAndValidateParameterMap(getRequest().getParameterMap())));
         }
 
         @Override

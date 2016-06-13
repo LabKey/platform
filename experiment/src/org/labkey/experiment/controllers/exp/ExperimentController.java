@@ -182,6 +182,7 @@ import org.labkey.api.view.UpdateView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.experiment.ChooseExperimentTypeBean;
@@ -4485,7 +4486,7 @@ public class ExperimentController extends SpringActionController
 
             insertView.getDataRegion().addHiddenFormField("targetSampleSetId", Integer.toString(form.getTargetSampleSetId()));
             insertView.getDataRegion().addHiddenFormField("outputCount", Integer.toString(form.getOutputCount()));
-            insertView.setInitialValues(getViewContext().getRequest().getParameterMap());
+            insertView.setInitialValues(ViewServlet.adjustAndValidateParameterMap(getViewContext().getRequest().getParameterMap()));
             ButtonBar bar = new ButtonBar();
             bar.setStyle(ButtonBar.Style.separateButtons);
             ActionButton submitButton = new ActionButton(DeriveSamplesAction.class, "Submit");
