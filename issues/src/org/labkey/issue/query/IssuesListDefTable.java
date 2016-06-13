@@ -57,7 +57,7 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
 
     public static String nameFromLabel(String label)
     {
-        return label.toLowerCase();
+        return label != null ? label.toLowerCase() : null;
     }
 
     private void addAllColumns()

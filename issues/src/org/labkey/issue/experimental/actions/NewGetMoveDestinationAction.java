@@ -1,10 +1,8 @@
 package org.labkey.issue.experimental.actions;
 
-import org.hamcrest.core.Is;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.issues.IssuesSchema;
@@ -18,7 +16,6 @@ import org.labkey.issue.model.IssueManager;
 import org.springframework.validation.BindException;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -39,16 +36,27 @@ public class NewGetMoveDestinationAction extends ApiAction<IssuesController.Issu
         String issueDefName = form.getIssueDefName();
         if (issueDefName != null)
         {
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("name"), issueDefName);
-            List<IssueListDef> defs = new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), filter, null).getArrayList(IssueListDef.class);
-            for (IssueListDef def : defs)
+            IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issueDefName);
+            if (issueListDef != null)
             {
-                // exclude current container
-                if (!def.getContainerId().equals(getContainer().getId()))
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("name"), issueDefName);
+                SimpleFilter.FilterClause filterClause = IssueListDef.createFilterClause(issueListDef, getUser());
+
+                if (filterClause != null)
+                    filter.addClause(filterClause);
+                else
+                    filter.addCondition(FieldKey.fromParts("container"), getContainer());
+
+                List<IssueListDef> defs = new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), filter, null).getArrayList(IssueListDef.class);
+                for (IssueListDef def : defs)
                 {
-                    containers.add(PageFlowUtil.map(
-                            "containerId", def.getContainerId(),
-                            "containerPath", def.getContainerPath()));
+                    // exclude current container
+                    if (!def.getContainerId().equals(getContainer().getId()))
+                    {
+                        containers.add(PageFlowUtil.map(
+                                "containerId", def.getContainerId(),
+                                "containerPath", def.getContainerPath()));
+                    }
                 }
             }
         }

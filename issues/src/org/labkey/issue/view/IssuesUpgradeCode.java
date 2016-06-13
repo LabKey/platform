@@ -3,6 +3,7 @@ package org.labkey.issue.view;
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
@@ -10,10 +11,13 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DeferredUpgrade;
+import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.StopIteratingException;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
@@ -45,11 +49,13 @@ import org.labkey.issue.ColumnTypeEnum;
 import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.IssuesModule;
 import org.labkey.issue.model.CustomColumn;
+import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.KeywordManager;
 import org.labkey.issue.query.IssueDefDomainKind;
 import org.labkey.issue.query.IssuesListDefTable;
+import org.springframework.util.LinkedCaseInsensitiveMap;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -84,6 +90,7 @@ public class IssuesUpgradeCode implements UpgradeCode
         _log.info("Analyzing site-wide configuration to generate the issue list migration plan");
         MultiMap<Container, IssueMigrationPlan> migrationPlans = generateMigrationPlan();
         User upgradeUser = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.getRole(SiteAdminRole.class)), false);
+        ObjectFactory factory = ObjectFactory.Registry.getFactory(Issue.class);
 
         try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
         {
@@ -111,6 +118,11 @@ public class IssuesUpgradeCode implements UpgradeCode
                         {
                             createNewIssueListDef(upgradeUser, plan.getIssueDefName(), folder);
                         }
+
+                        // migrate issue records specific to this folder
+                        populateProvisionedTable(folder, upgradeUser, factory, plan);
+
+                        // fixup webparts
                     }
                 }
             }
@@ -122,7 +134,69 @@ public class IssuesUpgradeCode implements UpgradeCode
         }
     }
 
-    IssueListDef createNewIssueListDef(User user, String label, Container container)
+    /**
+     * Populate the new provisioned tables with existing data from issues.issues. We want to write directly
+     * to the hard tables instead of using the query update service to avoid double writing to the legacy
+     * issues table.
+     */
+    void populateProvisionedTable(Container c, User user, ObjectFactory factory, IssueMigrationPlan plan) throws SQLException
+    {
+        IssueListDef issueListDef = IssueManager.getIssueListDef(c, plan.getIssueDefName());
+        if (issueListDef != null)
+        {
+            TableInfo table = issueListDef.createTable(user);
+            if (table != null)
+            {
+                // add any custom parameters
+                Map<String, String> columnNameMap = new LinkedCaseInsensitiveMap<>();
+                for (CustomColumn cc : plan.getConfig().getColumnConfiguration().getCustomColumns())
+                {
+                    if (cc.getName().startsWith("string") || cc.getName().startsWith("int"))
+                    {
+                        String colName = ColumnInfo.legalNameFromName(cc.getCaption());
+                        columnNameMap.put(cc.getName(), colName);
+                    }
+                }
+                List<Map<String, Object>> rows = new ArrayList<>();
+
+                new TableSelector(IssuesSchema.getInstance().getTableInfoIssues(), SimpleFilter.createContainerFilter(c), null).forEachBatch(new Selector.ForEachBatchBlock<Issue>()
+                {
+                    @Override
+                    public void exec(List<Issue> batch) throws SQLException
+                    {
+                        for (Issue issue : batch)
+                        {
+                            Map<String, Object> row = new CaseInsensitiveHashMap<>();
+                            factory.toMap(issue, row);
+
+                            row.putIfAbsent("AssignedTo", 0);
+
+                            for (Map.Entry<String, String> entry : columnNameMap.entrySet())
+                            {
+                                if (row.get(entry.getKey()) != null)
+                                    row.put(entry.getValue(), row.get(entry.getKey()));
+                            }
+                            rows.add(row);
+                        }
+                    }
+                }, Issue.class, 1000);
+
+                for (Map<String, Object> row : rows)
+                {
+                    Table.insert(user, table, row);
+                }
+
+                // need to set the issue def id in the issues table to be able to determine the issue definition for
+                // each individual issue record
+                SQLFragment sql = new SQLFragment("UPDATE ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
+                        append(" SET IssueDefId = ? WHERE Container = ?");
+                sql.addAll(issueListDef.getRowId(), c);
+                new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(sql);
+            }
+        }
+    }
+
+    IssueListDef createNewIssueListDef(User user, String name, Container container)
     {
         // ensure the issue module is enabled for this folder
         Module issueModule = ModuleLoader.getInstance().getModule(IssuesModule.NAME);
@@ -136,8 +210,8 @@ public class IssuesUpgradeCode implements UpgradeCode
             container.setActiveModules(newActiveModules);
         }
         IssueListDef def = new IssueListDef();
-        def.setName(IssuesListDefTable.nameFromLabel(label));
-        def.setLabel(label);
+        def.setName(name);
+        def.setLabel(name);
         def.beforeInsert(user, container.getId());
 
         return def.save(user);
@@ -156,6 +230,8 @@ public class IssuesUpgradeCode implements UpgradeCode
                 Map<String, Collection<KeywordManager.Keyword>> keywordMap = config.getKeywordMap();
                 Set<String> keywordSet = new CaseInsensitiveHashSet(keywordMap.keySet());
                 Set<String> requiredFields = new CaseInsensitiveHashSet();
+                Map<String, String> defaultValueMap = new HashMap<>();
+
                 if (config.getRequiredFields() != null)
                 {
                     for (String field : config.getRequiredFields().split(";"))
@@ -182,7 +258,7 @@ public class IssuesUpgradeCode implements UpgradeCode
                     }
                     prop.setLabel(col.getCaption());
 
-                    if (requiredFields.contains(prop.getName()))
+                    if (requiredFields.contains(col.getName()))
                         prop.setRequired(true);
                     if (!col.getPermission().equals(ReadPermission.class))
                         prop.setProtected(true);
@@ -210,7 +286,9 @@ public class IssuesUpgradeCode implements UpgradeCode
                         if (lookup != null && keywordMap.containsKey(col.getName()))
                         {
                             keywordSet.remove(col.getName());
-                            populateLookupTable(domain.getContainer(), user, prop, lookup, keywordMap.get(col.getName()));
+                            String defaultValue = populateLookupTable(domain.getContainer(), user, prop, lookup, keywordMap.get(col.getName()));
+                            if (defaultValue != null)
+                                defaultValueMap.put(prop.getName(), defaultValue);
                         }
                     }
                 }
@@ -224,21 +302,38 @@ public class IssuesUpgradeCode implements UpgradeCode
                         prop.setRequired(true);
                     if (prop != null && prop.getLookup() != null)
                     {
-                        populateLookupTable(domain.getContainer(), user, prop, prop.getLookup(), keywordMap.get(colName));
+                        String defaultValue = populateLookupTable(domain.getContainer(), user, prop, prop.getLookup(), keywordMap.get(colName));
+                        if (defaultValue != null)
+                            defaultValueMap.put(prop.getName(), defaultValue);
                     }
                 }
                 domain.save(user);
+
+                // set any default values
+                for (Map.Entry<String, String> entry : defaultValueMap.entrySet())
+                {
+                    DomainProperty prop = domain.getPropertyByName(entry.getKey());
+
+                    if (prop != null)
+                    {
+                        prop.setDefaultValueTypeEnum(DefaultValueType.FIXED_EDITABLE);
+                        DefaultValueService.get().setDefaultValues(domain.getContainer(), Collections.singletonMap(prop, entry.getValue()));
+                    }
+                }
             }
         }
     }
 
     /**
      * Populates the lookup table with the contents of the legacy keywords
+     * @return the default value for the keyword set (if any)
      */
-    private void populateLookupTable(Container c, User user, DomainProperty prop, Lookup lookup, Collection<KeywordManager.Keyword> keywords) throws Exception
+    @Nullable
+    private String populateLookupTable(Container c, User user, DomainProperty prop, Lookup lookup, Collection<KeywordManager.Keyword> keywords) throws Exception
     {
         UserSchema userSchema = QueryService.get().getUserSchema(user, lookup.getContainer(), lookup.getSchemaName());
         TableInfo table = userSchema.getTable(lookup.getQueryName());
+        String defaultValue = null;
 
         if (table != null)
         {
@@ -255,7 +350,6 @@ public class IssuesUpgradeCode implements UpgradeCode
 
                 List<Map<String, Object>> rows = new ArrayList();
                 BatchValidationException errors = new BatchValidationException();
-                String defaultValue = null;
 
                 for (KeywordManager.Keyword keyword : keywords)
                 {
@@ -264,14 +358,9 @@ public class IssuesUpgradeCode implements UpgradeCode
                         defaultValue = keyword.getKeyword();
                 }
                 qus.insertRows(user, c, rows, errors, null, null);
-
-                if (defaultValue != null)
-                {
-                    prop.setDefaultValueTypeEnum(DefaultValueType.FIXED_EDITABLE);
-                    DefaultValueService.get().setDefaultValues(c, Collections.singletonMap(prop, defaultValue));
-                }
             }
         }
+        return defaultValue;
     }
 
     /**
@@ -589,7 +678,7 @@ public class IssuesUpgradeCode implements UpgradeCode
         {
             _config = config;
             _folders = folders;
-            _issueDefName = name;
+            _issueDefName = IssuesListDefTable.nameFromLabel(name);
         }
 
         public IssueAdminConfig getConfig()
@@ -609,7 +698,7 @@ public class IssuesUpgradeCode implements UpgradeCode
 
         public void setIssueDefName(String issueDefName)
         {
-            _issueDefName = issueDefName;
+            _issueDefName = IssuesListDefTable.nameFromLabel(issueDefName);
         }
     }
 }

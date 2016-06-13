@@ -1572,18 +1572,12 @@ public class IssueManager
 
             // if there are no other containers referencing this domain, then it's safe to delete
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Name"), def.getName());
-            Container domainContainer = d.getContainer();
-            ContainerFilter containerFilter = null;
+            SimpleFilter.FilterClause filterClause = IssueListDef.createFilterClause(def, user);
 
-            if (ContainerManager.getSharedContainer().equals(domainContainer))
-                containerFilter = new ContainerFilter.AllFolders(user);
-            else if (domainContainer.isProject())
-                containerFilter = new ContainerFilter.CurrentAndSubfolders(user);
+            if (filterClause != null)
+                filter.addClause(filterClause);
             else
-                filter.addCondition(FieldKey.fromParts("container"), domainContainer);
-
-            if (containerFilter != null)
-                filter.addClause(containerFilter.createFilterClause(IssuesSchema.getInstance().getSchema(), FieldKey.fromParts("container"), domainContainer));
+                filter.addCondition(FieldKey.fromParts("container"), c);
 
             if (new TableSelector(issueDefTable, filter, null).getRowCount() == 0)
             {

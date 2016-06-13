@@ -4,6 +4,10 @@ import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.issues.IssuesSchema;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -15,6 +19,7 @@ import org.springframework.validation.BindException;
 
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -33,16 +38,30 @@ public class GetRelatedFolder extends ApiAction<IssuesController.IssuesForm>
         String issueDefName = form.getIssueDefName();
         if (issueDefName != null)
         {
-            for (IssueListDef def : IssueManager.getIssueListDefs(null))
+            IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issueDefName);
+            if (issueListDef != null)
             {
-                if (!def.getName().equals(issueDefName) || !def.getContainerId().equals(getContainer().getId()))
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("name"), issueDefName);
+                SimpleFilter.FilterClause filterClause = IssueListDef.createFilterClause(issueListDef, getUser());
+
+                if (filterClause != null)
+                    filter.addClause(filterClause);
+                else
+                    filter.addCondition(FieldKey.fromParts("container"), getContainer());
+
+                List<IssueListDef> defs = new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), filter, null).getArrayList(IssueListDef.class);
+                for (IssueListDef def : defs)
                 {
-                    Container c = ContainerManager.getForId(def.getContainerId());
-                    if (c.hasPermission(getUser(), InsertPermission.class))
+                    // exclude current container
+                    if (!def.getContainerId().equals(getContainer().getId()))
                     {
-                        containers.add(PageFlowUtil.map(
-                                "containerId", c.getId(),
-                                "containerPath", c.getPath()));
+                        Container c = ContainerManager.getForId(def.getContainerId());
+                        if (c.hasPermission(getUser(), InsertPermission.class))
+                        {
+                            containers.add(PageFlowUtil.map(
+                                    "containerId", c.getId(),
+                                    "containerPath", c.getPath()));
+                        }
                     }
                 }
             }

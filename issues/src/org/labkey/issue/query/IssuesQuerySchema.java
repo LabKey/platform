@@ -204,6 +204,13 @@ public class IssuesQuerySchema extends UserSchema
         String queryName = settings.getQueryName();
         if (queryName != null)
         {
+            // check for an issue definition
+            IssueListDef def =  getIssueDefs().get(queryName);
+            if (def != null)
+            {
+                return new org.labkey.issue.experimental.query.IssuesQueryView(def, context, this, settings, errors);
+            }
+
             QueryType queryType = null;
             for (QueryType qt : QueryType.values())
             {
@@ -215,13 +222,6 @@ public class IssuesQuerySchema extends UserSchema
             }
             if (queryType != null)
                 return queryType.createView(context, this, settings, errors);
-
-            // check for an issue definition
-            IssueListDef def =  getIssueDefs().get(queryName);
-            if (def != null)
-            {
-                return new org.labkey.issue.experimental.query.IssuesQueryView(def, context, this, settings, errors);
-            }
         }
 
         return super.createView(context, settings, errors);
