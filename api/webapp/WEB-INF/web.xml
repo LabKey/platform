@@ -126,34 +126,6 @@
         <servlet-name>FileServlet</servlet-name>
         <servlet-class>org.labkey.api.view.FileServlet</servlet-class>
     </servlet>
-    <!--
-    EXPERIMENTAL:
-    CGI Servlet. Parameters are shown below.
-    cgiDir is most important parameter. cgi scripts will be searched in this directory
-    subdirectories will NOT be searched. See servlet mapping for example URLs
-    perl is the default executable so it does not have to be specified as shown here..
-
-    Used in conjunction with frame.view action from the filecontent module
-    cgi scripts can be look somewhat integrated with the rest of the site.
-    E.g. http://host/labkey/filecontent/home/folder/frame.view?src=http://host/labkey/cgi/home/folder/test.pl
-
-    <servlet>
-        <servlet-name>CgiServlet</servlet-name>
-        <servlet-class>org.labkey.api.view.CGIServlet</servlet-class>
-        <init-param>
-            <param-name>cgiDir</param-name>
-            <param-value>/projects/home/cgi</param-value>
-        </init-param>
-        <init-param>
-            <param-name>debug</param-name>
-            <param-value>0</param-value>
-        </init-param>
-        <init-param>
-            <param-name>executable</param-name>
-            <param-value>perl</param-value>
-        </init-param>
-    </servlet>
-    -->
 
     <servlet>
         <servlet-name>ImageServlet</servlet-name>
