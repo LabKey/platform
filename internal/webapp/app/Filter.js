@@ -275,8 +275,8 @@ Ext.define('LABKEY.app.model.Filter', {
             var M = LABKEY.app.model.Filter;
             return  M.dfProvider.fn.call(M.dfProvider.scope, filter, data);
         },
-
-        getOlapFilter : function(mdx, model, subjectName) {
+        
+        getOlapFilter : function(mdx, model, subjectName, modelName) {
             if (!Ext.isDefined(mdx) || mdx.$className !== 'LABKEY.query.olap.MDX') {
                 console.error('must provide mdx to getOlapFilter');
             }
@@ -284,6 +284,9 @@ Ext.define('LABKEY.app.model.Filter', {
             var M = LABKEY.app.model.Filter,
                 data = model.data;
 
+            if (!modelName)
+                modelName = this.$className;
+            
             var filter = {
                 filterType: data.isWhereFilter === true ? 'WHERE' : 'COUNT'
             };
@@ -343,13 +346,13 @@ Ext.define('LABKEY.app.model.Filter', {
                                 for (var m = 0; m < membersMap['excluded'].length; m++)
                                 {
                                     filter.arguments.push(
-                                            this.getOlapFilter(mdx, Ext.create(Argos.model.Filter.getFilterModelName(), {
+                                            this.getOlapFilter(mdx, Ext.create(modelName, {
                                                 hierarchy: data.hierarchy,
                                                 level: data.level,
                                                 members: [membersMap['excluded'][m]],
                                                 membersName: data.membersName,
                                                 perspective: data.perspective
-                                            }), subjectName)
+                                            }), subjectName, modelName)
                                     );
                                 }
                             }
@@ -361,13 +364,13 @@ Ext.define('LABKEY.app.model.Filter', {
                                 filter.operator = LABKEY.app.model.Filter.Operators.EXCEPT;
                                 // get the filter for the included members.  This will be the set to exclude members from
                                 filter.arguments.push(
-                                        this.getOlapFilter(mdx, Ext.create(Argos.model.Filter.getFilterModelName(), {
+                                        this.getOlapFilter(mdx, Ext.create(modelName, {
                                             hierarchy: data.hierarchy,
                                             level: data.level,
                                             members: membersMap['included'],
                                             membersName: data.membersName,
                                             perspective: data.perspective
-                                        }), subjectName)
+                                        }), subjectName, modelName)
                                 );
                                 this.addFilterArguments(filter, mdx.perspectives[data.perspective].level, data.hierarchy, membersMap['excluded']);
                             }
@@ -379,13 +382,13 @@ Ext.define('LABKEY.app.model.Filter', {
                                 for (var m = 0; m < membersMap['excluded'].length; m++)
                                 {
                                     filter.arguments.push(
-                                        this.getOlapFilter(mdx, Ext.create(Argos.model.Filter.getFilterModelName(), {
+                                        this.getOlapFilter(mdx, Ext.create(modelName, {
                                             hierarchy: data.hierarchy,
                                             level: data.level,
                                             members: [membersMap['excluded'][m]],
                                             membersName: data.membersName,
                                             perspective: data.perspective
-                                        }), subjectName)
+                                        }), subjectName, modelName)
                                     );
                                 }
                             }
@@ -406,7 +409,8 @@ Ext.define('LABKEY.app.model.Filter', {
                         });
                     }
                     else {
-                        // TODO?  Is there also a possibility for excluded members here?
+                        // CONSIDER: If we need to implement negation of individual subjects, this loop will need to change,
+                        // but it seems that we might be able to get rid of this code.
                         for (var m=0; m < data.members.length; m++) {
                             filter.arguments.push({
                                 hierarchy : subjectName,
@@ -438,13 +442,13 @@ Ext.define('LABKEY.app.model.Filter', {
         },
 
         getIncludeExcludeMap : function(members) {
-            var membersMap = {'excluded' : [], 'included' : []};
+            var membersMap = {excluded : [], included : []};
             for (var m = 0; m < members.length; m++)
             {
                 if (members[m].isNegated)
-                    membersMap['excluded'].push(members[m]);
+                    membersMap.excluded.push(members[m]);
                 else
-                    membersMap['included'].push(members[m]);
+                    membersMap.included.push(members[m]);
             }
             return membersMap;
         },
@@ -686,8 +690,8 @@ Ext.define('LABKEY.app.model.Filter', {
         }
     },
 
-    getOlapFilter : function(mdx, subjectName) {
-        return LABKEY.app.model.Filter.getOlapFilter(mdx, this, subjectName);
+    getOlapFilter : function(mdx, subjectName, modelName) {
+        return LABKEY.app.model.Filter.getOlapFilter(mdx, this, subjectName, modelName);
     },
 
     getHierarchy : function() {
