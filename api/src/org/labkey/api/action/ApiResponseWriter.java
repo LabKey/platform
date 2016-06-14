@@ -172,18 +172,25 @@ public abstract class ApiResponseWriter implements AutoCloseable
         }
         catch (Exception e)
         {
-            if (!(e instanceof ExpectedException))
+            if (ExceptionUtil.isClientAbortException(e))
             {
-                ExceptionUtil.logExceptionToMothership(null, e);
-                Logger.getLogger(ApiResponseWriter.class).warn("ApiResponseWriter exception: ", e);
+                close();
             }
-            //at this point, we can't guarantee a legitimate
-            //JSON response, and we need to write the exception
-            //back so the client can tell something went wrong
-            if (null != getResponse() && !getResponse().isCommitted())
-                resetOutput();
+            else
+            {
+                if (!(e instanceof ExpectedException))
+                {
+                    ExceptionUtil.logExceptionToMothership(null, e);
+                    Logger.getLogger(ApiResponseWriter.class).warn("ApiResponseWriter exception: ", e);
+                }
+                //at this point, we can't guarantee a legitimate
+                //JSON response, and we need to write the exception
+                //back so the client can tell something went wrong
+                if (null != getResponse())
+                    resetOutput();
 
-            writeAndClose(e);
+                writeAndClose(e);
+            }
         }
     }
 
@@ -193,7 +200,8 @@ public abstract class ApiResponseWriter implements AutoCloseable
      */
     protected void resetOutput() throws IOException
     {
-        getResponse().reset();
+        if (!getResponse().isCommitted())
+            getResponse().reset();
     }
 
     protected abstract void writeObject(Object object) throws IOException;
