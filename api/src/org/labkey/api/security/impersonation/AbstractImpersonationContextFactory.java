@@ -51,8 +51,7 @@ public class AbstractImpersonationContextFactory
     // Stash all attributes in the session
     protected void stashAllSessionAttributes(HttpSession adminSession)
     {
-        @SuppressWarnings("unchecked")
-        Enumeration<String> attributeNames = (Enumeration<String>)adminSession.getAttributeNames();
+        Enumeration<String> attributeNames = adminSession.getAttributeNames();
         stashSessionAttributes(adminSession, Collections.list(attributeNames));
     }
 

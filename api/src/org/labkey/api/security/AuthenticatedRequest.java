@@ -329,7 +329,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
         }
 
         @Override
-        public Enumeration getAttributeNames()
+        public Enumeration<String> getAttributeNames()
         {
             return null==_real ? _attributes.keys() : _real.getAttributeNames();
         }
@@ -369,7 +369,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
         @Override
         public boolean isNew()
         {
-            return null==_real ? true : _real.isNew();
+            return null == _real || _real.isNew();
         }
     }
 

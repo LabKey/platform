@@ -15,6 +15,7 @@
  */
 package org.labkey.api.util;
 
+import org.apache.commons.collections4.IteratorUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.LockManager;
@@ -129,15 +130,10 @@ public class SessionHelper
                 {
                     // Clear all the attributes instead of using s.invalidate(). This is an attempt to fix #22245, which I
                     // suspect is caused by race conditions. It also allows us to preserve certain attributes.
-                    Enumeration enumeration = s.getAttributeNames();
-
-                    while (enumeration.hasMoreElements())
-                    {
-                        String name = (String) enumeration.nextElement();
-
+                    IteratorUtils.asIterator(s.getAttributeNames()).forEachRemaining(name -> {
                         if (!attributesToPreserve.contains(name))
                             s.removeAttribute(name);
-                    }
+                    });
                 }
             }
         }
