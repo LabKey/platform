@@ -810,7 +810,7 @@ public class DbScope
         {
             if (null != _dialect)
             {
-                _dialect.initializeConnection(conn);
+                _dialect.prepareConnection(conn);
                 spid = _dialect.getSPID(delegate);
             }
 

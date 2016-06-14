@@ -68,7 +68,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public void initializeConnection(Connection conn) throws SQLException
+    public void prepareConnection(Connection conn) throws SQLException
     {
     }
 

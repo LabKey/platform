@@ -392,13 +392,13 @@ public abstract class SqlDialect
         initialize();
     }
 
+    public abstract void prepareConnection(Connection conn) throws SQLException;
+
     // Post construction initialization that doesn't require a scope
     void initialize()
     {
         _stringHandler = createStringHandler();
     }
-
-    public abstract void initializeConnection(Connection conn) throws SQLException;
 
     // Called once when new scope is being prepared
     protected DialectStringHandler createStringHandler()
