@@ -57,10 +57,7 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.mvc.AbstractController;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -89,11 +86,12 @@ public class DemoController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class BeginAction extends AbstractController implements NavTrailAction
+    public class BeginAction extends SimpleViewAction implements NavTrailAction
     {
-        public ModelAndView handleRequestInternal(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws Exception
-        {                                                                    
-            GridView gridView = new GridView(getDataRegion(), (BindException)null);
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            GridView gridView = new GridView(getDataRegion(), errors);
             gridView.setSort(new Sort("LastName"));
             return gridView;
         }
