@@ -237,12 +237,12 @@ public class ViewServlet extends HttpServlet
             return _mock.getParameter(s);
         }
         @Override
-        public Map getParameterMap()
+        public Map<String, String[]> getParameterMap()
         {
             return _mock.getParameterMap();
         }
         @Override
-        public Enumeration getParameterNames()
+        public Enumeration<String> getParameterNames()
         {
             return _mock.getParameterNames();
         }
@@ -497,7 +497,7 @@ public class ViewServlet extends HttpServlet
         }
 
         @Override
-        public Map getParameterMap()
+        public Map<String, String[]> getParameterMap()
         {
             return _actionURL.getParameterMap();
         }
@@ -510,30 +510,27 @@ public class ViewServlet extends HttpServlet
         }
 
         @Override
-        public Enumeration getParameterNames()
+        public Enumeration<String> getParameterNames()
         {
             return _actionURL.getParameterNames();
         }
     }
 
 
-    public static MockHttpServletResponse GET(ActionURL url, User user, Map<String, Object> headers)
-            throws Exception
+    public static MockHttpServletResponse GET(ActionURL url, User user, Map<String, Object> headers) throws Exception
     {
         HttpServletRequest request = mockRequest("GET", url, user, headers, null);
         return mockDispatch(request, null);
     }
 
-    public static MockHttpServletResponse POST(ActionURL url, User user, Map<String, Object> headers, String postData)
-            throws Exception
+    public static MockHttpServletResponse POST(ActionURL url, User user, Map<String, Object> headers, String postData) throws Exception
     {
         HttpServletRequest request = mockRequest("POST", url, user, headers, postData);
         return mockDispatch(request, null);
     }
 
 
-    public static MockHttpServletResponse mockDispatch(HttpServletRequest request, @Nullable final String requiredContentType)
-            throws Exception
+    public static MockHttpServletResponse mockDispatch(HttpServletRequest request, @Nullable final String requiredContentType) throws Exception
     {
         if (!("GET".equals(request.getMethod()) || "POST".equals(request.getMethod())))
             throw new IllegalArgumentException(request.getMethod());
@@ -787,21 +784,10 @@ public class ViewServlet extends HttpServlet
         return sb.toString();
     }
 
-    // Validate and adjust the Map returned by ancient version of servlet-api.jar to Map<String, Object>, which is
-    // closer to what modern servlet-api.jar expects. This is temporary... first step for #25941.
-    public static Map<String, Object> adjustAndValidateParameterMap(Map parameterMap)
+    // Adapt Map<String, String[]> returned by getParameterMap() to match InsertView.setInitialValues(Map<String, Object>).
+    // This makes it possible to upgrade our version of servlet-api.jar without a major overhaul. See #25941.
+    public static Map<String, Object> adaptParameterMap(Map<String, String[]> parameterMap)
     {
-        Map<String, Object> newMap = new HashMap<>(parameterMap.size() * 2);
-
-        for (Object o : parameterMap.entrySet())
-        {
-            Map.Entry<String, Object> entry = (Map.Entry<String, Object>) o;
-            Object value = entry.getValue();
-            assert value.getClass().isArray();
-            String[] arrayValue = (String[]) value;
-            newMap.put(entry.getKey(), arrayValue);
-        }
-
-        return newMap;
+        return new HashMap<>(parameterMap);
     }
 }

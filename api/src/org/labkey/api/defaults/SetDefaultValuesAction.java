@@ -174,7 +174,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         InsertView view = new InsertView(rgn, errors);
 
         if (reshow)
-            view.setInitialValues(ViewServlet.adjustAndValidateParameterMap(domainIdForm.getRequest().getParameterMap()));
+            view.setInitialValues(ViewServlet.adaptParameterMap(domainIdForm.getRequest().getParameterMap()));
         else
         {
             Map<DomainProperty, Object> defaults = DefaultValueService.get().getDefaultValues(domainIdForm.getContainer(), domain);
@@ -284,7 +284,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
     }
 
     /**
-     * Convenience method for subclasses to override if they've done addtional processing of values before they were stored.
+     * Convenience method for subclasses to override if they've done additional processing of values before they were stored.
      * @param formDefaults
      * @param propName
      * @param stringValue

@@ -16,6 +16,7 @@
 
 package org.labkey.api.security;
 
+import org.apache.commons.collections4.IteratorUtils;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SafeFlushResponseWrapper;
 import org.labkey.api.query.QueryService;
@@ -38,7 +39,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Enumeration;
 
 
 @SuppressWarnings({"UnusedDeclaration"})
@@ -217,15 +217,10 @@ public class AuthFilter implements Filter
 
     private boolean clearRequestAttributes(HttpServletRequest request)
     {
-        Enumeration attributeNames = request.getAttributeNames();
-
-        while (attributeNames.hasMoreElements())
-        {
-            String name = (String)attributeNames.nextElement();
-            if (name.startsWith("org.apache.tomcat."))
-                continue;
-            request.removeAttribute(name);
-        }
+        IteratorUtils.asIterator(request.getAttributeNames()).forEachRemaining(name -> {
+            if (!name.startsWith("org.apache.tomcat."))
+                request.removeAttribute(name);
+        });
 
         return true;
     }

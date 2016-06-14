@@ -16,6 +16,7 @@
 
 package org.labkey.api.util;
 
+import org.apache.commons.collections4.IteratorUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
@@ -30,7 +31,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
-import java.util.Enumeration;
 import java.util.Map;
 
 public class ErrorRenderer
@@ -146,12 +146,10 @@ public class ErrorRenderer
             if (!_isStartupFailure && !(_exception instanceof HideConfigurationDetails))
             {
                 out.println("<b>request attributes</b><br>");
-                for (Enumeration e = request.getAttributeNames(); e.hasMoreElements();)
-                {
+                IteratorUtils.asIterator(request.getAttributeNames()).forEachRemaining(name -> {
                     try
                     {
-                        String s = e.nextElement().toString();
-                        s = PageFlowUtil.filter("    " + s + " = " + request.getAttribute(s));
+                        String s = PageFlowUtil.filter("    " + name + " = " + request.getAttribute(name));
                         s = s.replaceAll("\n", "<br>&nbsp;&nbsp;&nbsp;&nbsp;");
                         out.println(s);
                     }
@@ -160,24 +158,21 @@ public class ErrorRenderer
                         //
                     }
                     out.println("<br>");
-                }
+                });
 
                 try
                 {
                     DbSchema core = CoreSchema.getInstance().getSchema();
                     DbScope scope = core.getScope();
 
-                    if (null != core)
-                    {
-                        out.println("<br><table>\n");
-                        out.println("<tr><td colspan=2><b>core schema database configuration</b></td></tr>\n");
-                        out.println("<tr><td>Server URL</td><td>" + scope.getURL() + "</td></tr>\n");
-                        out.println("<tr><td>Product Name</td><td>" + scope.getDatabaseProductName() + "</td></tr>\n");
-                        out.println("<tr><td>Product Version</td><td>" + scope.getDatabaseProductVersion() + "</td></tr>\n");
-                        out.println("<tr><td>Driver Name</td><td>" + scope.getDriverName() + "</td></tr>\n");
-                        out.println("<tr><td>Driver Version</td><td>" + scope.getDriverVersion() + "</td></tr>\n");
-                        out.println("</table>\n");
-                    }
+                    out.println("<br><table>\n");
+                    out.println("<tr><td colspan=2><b>core schema database configuration</b></td></tr>\n");
+                    out.println("<tr><td>Server URL</td><td>" + scope.getURL() + "</td></tr>\n");
+                    out.println("<tr><td>Product Name</td><td>" + scope.getDatabaseProductName() + "</td></tr>\n");
+                    out.println("<tr><td>Product Version</td><td>" + scope.getDatabaseProductVersion() + "</td></tr>\n");
+                    out.println("<tr><td>Driver Name</td><td>" + scope.getDriverName() + "</td></tr>\n");
+                    out.println("<tr><td>Driver Version</td><td>" + scope.getDriverVersion() + "</td></tr>\n");
+                    out.println("</table>\n");
                 }
                 catch(Exception e)
                 {

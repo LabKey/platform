@@ -21,6 +21,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.DynaBean;
 import org.apache.commons.beanutils.DynaClass;
 import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -51,7 +52,6 @@ import java.beans.Introspector;
 import java.io.File;
 import java.sql.SQLException;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -779,12 +779,10 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
                 set(checkbox, "0");
 
         // handle Spring style markers as well
-        for (Enumeration e = request.getParameterNames(); e.hasMoreElements() ; )
-        {
-            String name = (String)e.nextElement();
+        IteratorUtils.asIterator(request.getParameterNames()).forEachRemaining(name -> {
             if (name.startsWith(SpringActionController.FIELD_MARKER))
                 set(name.substring(SpringActionController.FIELD_MARKER.length()), "0");
-        }
+        });
 
         BindException errors = new NullSafeBindException(new BaseViewAction.BeanUtilsPropertyBindingResult(this, "form"));
 

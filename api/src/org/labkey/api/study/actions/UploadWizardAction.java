@@ -229,7 +229,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
 
         if (errorReshow)
-            view.setInitialValues(ViewServlet.adjustAndValidateParameterMap(getViewContext().getRequest().getParameterMap()));
+            view.setInitialValues(ViewServlet.adaptParameterMap(getViewContext().getRequest().getParameterMap()));
         else
         {
             Map<String, Object> inputNameToValue = new HashMap<>();

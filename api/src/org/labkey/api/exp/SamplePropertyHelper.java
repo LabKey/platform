@@ -139,7 +139,7 @@ public abstract class SamplePropertyHelper<ObjectType>
             region.addGroup(group);
         }
         if (errorReshow && defaultValueContext != null)
-            view.setInitialValues(ViewServlet.adjustAndValidateParameterMap(defaultValueContext.getRequest().getParameterMap()));
+            view.setInitialValues(ViewServlet.adaptParameterMap(defaultValueContext.getRequest().getParameterMap()));
 
         // don't display the group heading if there is only a single group
         if (sampleNames.size() == 1)

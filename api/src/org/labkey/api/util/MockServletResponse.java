@@ -22,7 +22,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
@@ -34,7 +33,7 @@ import java.util.TreeMap;
  */
 class MockServletResponse implements HttpServletResponse
 {
-    Map<String,String> headers = new TreeMap<>();
+    Map<String, String> headers = new TreeMap<>();
     int status = 0;
     String message = null;
     String redirect = null;
@@ -43,8 +42,8 @@ class MockServletResponse implements HttpServletResponse
     int contentLength = 0;
     ByteArrayOutputStream os = new ByteArrayOutputStream();
     Locale locale = null;
-
     PrintWriter printWriter = new PrintWriter(os);
+
     ServletOutputStream servletOutputStream = new ServletOutputStream()
     {
         @Override
@@ -279,5 +278,29 @@ class MockServletResponse implements HttpServletResponse
     {
         printWriter.flush();
         return new String(os.toByteArray(), 0, os.size());
+    }
+
+    @Override
+    public int getStatus()
+    {
+        return status;
+    }
+
+    @Override
+    public String getHeader(String s)
+    {
+        return headers.get(s);
+    }
+
+    @Override
+    public Collection<String> getHeaders(String s)
+    {
+        return null; // TODO
+    }
+
+    @Override
+    public Collection<String> getHeaderNames()
+    {
+        return headers.keySet();
     }
 }

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -63,7 +64,6 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -810,7 +810,7 @@ public class DbScope
         {
             if (null != _dialect)
             {
-                _dialect.initializeConnection(conn);
+                _dialect.prepareConnection(conn);
                 spid = _dialect.getSPID(delegate);
             }
 
@@ -1036,14 +1036,11 @@ public class DbScope
 
                     Map<String, String> dsProperties = new HashMap<>();
                     ServletContext ctx = ModuleLoader.getServletContext();
-                    Enumeration enumeration = ctx.getInitParameterNames();
 
-                    while (enumeration.hasMoreElements())
-                    {
-                        String name = (String)enumeration.nextElement();
+                    IteratorUtils.asIterator(ctx.getInitParameterNames()).forEachRemaining(name -> {
                         if (name.startsWith(dsName + ":"))
                             dsProperties.put(name.substring(name.indexOf(':') + 1), ctx.getInitParameter(name));
-                    }
+                    });
 
                     DataSourceProperties dsPropertiesBean = DataSourceProperties.get(dsProperties);
                     if (dsName.equals(labkeyDsName) && dsPropertiesBean.isLogQueries())

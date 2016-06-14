@@ -780,7 +780,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable
 
 
     // like HttpRequest.getParameterMap
-    public Enumeration getParameterNames()
+    public Enumeration<String> getParameterNames()
     {
         Hashtable<String,String> h = new Hashtable<>();
         for (Pair<String,String> p : _parameters)
