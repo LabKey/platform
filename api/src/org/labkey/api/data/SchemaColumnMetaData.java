@@ -234,7 +234,7 @@ public class SchemaColumnMetaData
             try (JdbcMetaDataLocator locator = scope.getSqlDialect().getJdbcMetaDataLocator(scope, schemaName, ti.getMetaDataName()))
             {
                 JdbcMetaDataSelector uqSelector = new JdbcMetaDataSelector(locator,
-                        ((dbmd, l) -> dbmd.getIndexInfo(l.getCatalogName(), l.getSchemaName(), l.getTableName(), true, false)));
+                        ((dbmd, l) -> dbmd.getIndexInfo(l.getCatalogName(), l.getSchemaName(), l.getTableName(), true, true)));
 
                 Set<String> ignoreIndex = new HashSet<>();
                 Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> uniqueIndexMap = new HashMap<>();
