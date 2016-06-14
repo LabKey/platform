@@ -12,8 +12,16 @@
             testHideColumns: testHideColumns,
             testPagingConfig: testPagingConfig,
             testSetPaging: testSetPaging,
-            test25337: test25337
+            test25337: test25337,
+            testPageOffset: testPageOffset
         };
+
+        var PAGE_OFFSET = 4;
+        var PAGE_OFFSET_SKIPP = false;
+        function resetVariables () {
+            PAGE_OFFSET = 4;
+            PAGE_OFFSET_SKIPP = false;
+        }
 
         var tabsSel = '.qwp-demo .tab',
                 activeCls = 'active-tab';
@@ -25,6 +33,7 @@
 
         function onHashChange(initial)
         {
+            resetVariables();
             var hash = location.hash;
             if (initial === true) {
                 if (hash) {
@@ -70,6 +79,9 @@
                     if (!results || results.length < 3) {
                         alert('Failed to list out all queries in Samples schema');
                     }
+                    else {
+                        LABKEY.Utils.signalWebDriverTest("testSchemaOnly");
+                    }
                 },
                 failure: function() {
                    alert('Failed test: List out all queries in schema');
@@ -84,6 +96,9 @@
                 schemaName: 'Samples',
                 queryName: 'sampleDataTest1',
                 renderTo: RENDERTO,
+                success: function() {
+                    LABKEY.Utils.signalWebDriverTest("testQueryOnly");
+                },
                 failure: function() {
                     alert('Failed test: Show default view for query sampleDataTest');
                 }
@@ -99,12 +114,17 @@
                 renderTo: RENDERTO,
                 success: function() {
                     var results = $('tr.labkey-alternate-row, tr.labkey-row');
+                    var failed = false;
                     if (results && results.length > 0) {
                         for (var i = 0; i < results.length; i++) {
                             if (results[i].lastChild.innerHTML !== 'blue') {
                                 alert('Failed test: Filter by Tag = blue');
+                                failed = true;
                             }
                         }
+                    }
+                    if (!failed) {
+                        LABKEY.Utils.signalWebDriverTest("testFilterArray");
                     }
                 },
                 failure: function() {
@@ -129,6 +149,9 @@
 
                         if (result1.localeCompare(result2) > 0 || result2.localeCompare(result3) > 0) {
                             alert('Failed test: Sort by Tag');
+                        }
+                        else {
+                            LABKEY.Utils.signalWebDriverTest("testSort");
                         }
                     }
                 },
@@ -155,6 +178,9 @@
                     if (results && results.length > 0) {
                         alert('Failed to hide buttons');
                     }
+                    else {
+                        LABKEY.Utils.signalWebDriverTest("testHideButtons");
+                    }
                 },
                 failure: function() {
                     alert('Failed test: Hide buttons');
@@ -175,6 +201,9 @@
                     var detailsLinks = $("a.labkey-text-link:contains('details')");
                     if ((editLinks && editLinks.length > 0) || (detailsLinks && detailsLinks.length > 0)) {
                         alert('Failed test: Hide Edit and Details columns');
+                    }
+                    else {
+                        LABKEY.Utils.signalWebDriverTest("testHideColumns");
                     }
                 },
                 failure: function() {
@@ -197,6 +226,9 @@
                     var results = $("a:contains('sampleDataTest1')");
                     if (!results || results.length != 3) {
                         alert('Failed to set Paging to 3 with maxRows config');
+                    }
+                    else {
+                        LABKEY.Utils.signalWebDriverTest("testPagingConfig");
                     }
                 },
                 failure: function() {
@@ -223,6 +255,9 @@
                             var results = $("a:contains('sampleDataTest1')");
                             if (!results || results.length != 2) {
                                 alert('Failed to set Paging to 2 with API');
+                            }
+                            else {
+                                LABKEY.Utils.signalWebDriverTest("testSetPaging");
                             }
                         }
                     }
@@ -251,6 +286,9 @@
                             if (filters.length !== 3) {
                                 alert('Failed test: Regression #25337. Expected removeableFilters + two filters of the same column/type to be applied');
                             }
+                            else {
+                                LABKEY.Utils.signalWebDriverTest("test25337");
+                            }
                         }
                         else {
                             check = true;
@@ -259,6 +297,45 @@
                                 LABKEY.Filter.create('tag', 'black', LABKEY.Filter.Types.CONTAINS)
                             ];
                             qwp.replaceFilters(twoSameFilters, {fieldKey: 'tag'});
+                        }
+                    }
+                }
+            });
+        }
+
+        function testPageOffset() {
+            new LABKEY.QueryWebPart({
+                title: 'Change Page Offset',
+                schemaName: 'Samples',
+                queryName: 'sampleDataTest1',
+                renderTo: RENDERTO,
+                maxRows: 2,
+                offset: PAGE_OFFSET,
+                failure: function() {
+                    alert('Failed test: Set Paging to 2 with API');
+                },
+                listeners: {
+                    render: function(dr) {
+                        var prevPageLink = $('a[title="Previous Page"]');
+                        if (PAGE_OFFSET == 4) {
+                            var firstPageLink = $('a[title="First Page"]');
+                            if (!firstPageLink || firstPageLink.length == 0 || !prevPageLink || prevPageLink.length == 0) {
+                                alert('Failed to set Offset to 4 and MaxRows to 2 with config');
+                            }
+                            else {
+                                PAGE_OFFSET = 0;
+                                dr.setPageOffset(PAGE_OFFSET);
+                            }
+                        }
+                        else if (!PAGE_OFFSET_SKIPP) {
+                            PAGE_OFFSET_SKIPP = true;
+                            var nextPageLink = $('a[title="Next Page"]');
+                            if (prevPageLink.length == 0 && nextPageLink.length > 0) {
+                                LABKEY.Utils.signalWebDriverTest("testPageOffset");
+                            }
+                            else {
+                                alert('Failed to set Offset to 0 with API');
+                            }
                         }
                     }
                 }
