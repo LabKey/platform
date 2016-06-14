@@ -21,6 +21,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.labkey.remoteapi.CommandResponse;
 import org.labkey.remoteapi.Connection;
 import org.labkey.remoteapi.PostCommand;
 import org.labkey.remoteapi.query.DeleteRowsCommand;
@@ -164,7 +165,10 @@ public class DataClassSearchTest extends BaseWebDriverTest
         domainOptions.put("nameExpression", DATA_CLASS_DOMAIN_EXPRESSION);  // not tested currently
         domainJson.put("options", domainOptions);
         createDomainCommand.setJsonObject(domainJson);
-        createDomainCommand.execute(connection, getCurrentContainerPath());
+        CommandResponse commandResponse;
+        commandResponse = createDomainCommand.execute(connection, getCurrentContainerPath());
+        dataClassDomainId = commandResponse.getProperty("domainId");
+        dataClassDomainUri = commandResponse.getProperty("domainURI");
 
         // create second domain with same fields as first
         createDomainCommand = new PostCommand("property", "createDomain");
@@ -284,12 +288,12 @@ public class DataClassSearchTest extends BaseWebDriverTest
         deleteRowsCommand.execute(connection, getCurrentContainerPath());
 
         // alter domain
-        // errors probably caused by Issue 26116, disable for now TODO: re-enable when Issue 26116 is fixed
-        /*
+        // keep an eye on these tests, see issue #26116
+
         PostCommand saveDomainCommand = new PostCommand("property", "saveDomain");
-        domainJson = new JSONObject();
+        JSONObject domainJson = new JSONObject();
         domainJson.put("schemaName", DATA_CLASS_SCHEMA);
-        domainJson.put("queryName", DATA_CLASS_DOMAIN);
+        domainJson.put("queryName", DATA_CLASS_DOMAIN_1);
         JSONArray domainFieldsJson = new JSONArray();
         JSONObject firstDomainFieldJson = new JSONObject();
         firstDomainFieldJson.put("name", "sodaFlavor");
@@ -311,21 +315,14 @@ public class DataClassSearchTest extends BaseWebDriverTest
         JSONObject domainOptions = new JSONObject();
         domainJson.put("options", domainOptions);
         saveDomainCommand.setJsonObject(domainJson);
-        try
-        {
-            commandResponse = saveDomainCommand.execute(connection, getCurrentContainerPath());
-        }
-        catch (CommandException | IOException fail)
-        {
-            throw new RuntimeException(fail);
-        }
+        saveDomainCommand.execute(connection, getCurrentContainerPath());
 
         // update classes with altered domain
         PostCommand saveRowsCommand = new PostCommand("query", "updateRows");
         domainJson = new JSONObject();
         domainJson.put("schemaName", DATA_CLASS_SCHEMA);
-        domainJson.put("queryName", DATA_CLASS_DOMAIN);
-        domainRowsJson = new JSONArray();
+        domainJson.put("queryName", DATA_CLASS_DOMAIN_1);
+        JSONArray domainRowsJson = new JSONArray();
         JSONObject secondDomainRowJson = new JSONObject();
         secondDomainRowJson.put("rowId", dataClassRowIds[1]);
         secondDomainRowJson.put("sodaFlavor", "ginger ale");
@@ -334,21 +331,15 @@ public class DataClassSearchTest extends BaseWebDriverTest
         domainRowsJson.add(secondDomainRowJson);
         domainJson.put("rows", domainRowsJson);
         saveRowsCommand.setJsonObject(domainJson);
-        try
-        {
-            commandResponse = saveRowsCommand.execute(connection, getCurrentContainerPath());
-        }
-        catch (CommandException | IOException fail)
-        {
-            throw new RuntimeException(fail);
-        }
+        saveRowsCommand.execute(connection, getCurrentContainerPath());
+
         _searchHelper.enqueueSearchItem("speckled");  // should no longer be found, as domain fields were modified
         _searchHelper.enqueueSearchItem("ek \ndo \nteen");  // should no longer be found, as domain fields were modified
         _searchHelper.enqueueSearchItem("yellow", Locator.linkContainingText(DATA_CLASS_2_NAME));
         _searchHelper.enqueueSearchItem("ein \nzwei \ndrei", Locator.linkContainingText(DATA_CLASS_2_NAME));
         _searchHelper.verifySearchResults("/" + getProjectName(), false);
         _searchHelper.clearSearchQueue();
-        */
+
     }
 
     private void deleteSearchableDataClasses() throws Exception
@@ -358,13 +349,13 @@ public class DataClassSearchTest extends BaseWebDriverTest
         // delete data classes with first domain
         DeleteRowsCommand deleteRowsCommand = new DeleteRowsCommand(DATA_CLASS_SCHEMA, DATA_CLASS_DOMAIN_1);
         Map<String, Object> deletedRow = new HashMap<>();
-        deletedRow.put("rowId", dataClassRowIds[0]);
+        deletedRow.put("rowId", dataClassRowIds[1]);
         deleteRowsCommand.addRow(deletedRow);
         deleteRowsCommand.execute(connection, getCurrentContainerPath());
 
-        _searchHelper.enqueueSearchItem(DATA_CLASS_1_NAME_2);  // this and remaining search items should no longer be found, as data classes were removed
-        //_searchHelper.enqueueSearchItem("yellow");  // TODO: re-enable this and following line when Issue 26116 is fixed
-        //_searchHelper.enqueueSearchItem("ein \nzwei \ndrei");
+        _searchHelper.enqueueSearchItem(DATA_CLASS_2_NAME);  // this and remaining search items should no longer be found, as data classes were removed
+        _searchHelper.enqueueSearchItem("yellow");  // keep an eye on these and surrounding tests, see issue #26116
+        _searchHelper.enqueueSearchItem("ein \nzwei \ndrei");
         _searchHelper.verifySearchResults("/" + getProjectName(), false);
         _searchHelper.clearSearchQueue();
     }
