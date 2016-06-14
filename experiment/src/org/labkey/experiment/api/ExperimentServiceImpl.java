@@ -1478,13 +1478,13 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted = null;
         assert null != (oldAndBusted = getParentsOldAndBusted(start));
-        assert assertLineage(newHotness, oldAndBusted);
+        assert assertLineage(start, newHotness, oldAndBusted);
 
         return newHotness;
     }
 
     // Make boolean so it can hide behind 'assert' and no-op in production mode
-    private boolean assertLineage(Pair<Set<ExpData>, Set<ExpMaterial>> newHotness, Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted)
+    private boolean assertLineage(ExpProtocolOutput seed, Pair<Set<ExpData>, Set<ExpMaterial>> newHotness, Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted)
     {
         if (newHotness.first.equals(oldAndBusted.first) &&
                 newHotness.second.equals(oldAndBusted.second))
@@ -1504,7 +1504,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         Set<ExpMaterial> expMaterialOverlap = new HashSet<>(newHotness.second);
         expMaterialOverlap.removeAll(newExpMaterialUniques);
 
-        StringBuilder errorMsg = new StringBuilder("Old lineage doesn't match new lineage.");
+        StringBuilder errorMsg = new StringBuilder("Old lineage doesn't match new lineage for: " + seed);
         if (!newExpDataUniques.isEmpty())
             errorMsg.append("\nOld missing data: ").append(newExpDataUniques.toString());
         if (!oldExpDataUniques.isEmpty())
@@ -1515,6 +1515,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             errorMsg.append("\nNew missing materials: ").append(oldExpMaterialUniques.toString());
         errorMsg.append("\nMatching Data: ").append(expDataOverlap);
         errorMsg.append("\nMatching Materials: ").append(expMaterialOverlap);
+        errorMsg.append("\n");
         assert false : errorMsg.toString();
         return false; // Unreachable
     }
@@ -1569,7 +1570,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted = null;
         assert null != (oldAndBusted = getChildrenOldAndBusted(start));
-        assert assertLineage(newHotness, oldAndBusted);
+        assert assertLineage(start, newHotness, oldAndBusted);
 
         return newHotness;
     }
@@ -3131,12 +3132,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         SimpleFilter.InClause in2 = new SimpleFilter.InClause(FieldKey.fromParts("RowId"), ids);
 
         SQLFragment sql = new SQLFragment("SELECT * FROM exp.ExperimentRun WHERE\n" +
-                            "RowId IN (SELECT pa.RunId FROM exp.ProtocolApplication pa WHERE pa.RowId IN\n" +
+                            "RowId IN (SELECT pa.RunId FROM exp.ProtocolApplication pa WHERE pa.RowId IN (\n" +
                             "(SELECT di.TargetApplicationId FROM exp.DataInput di WHERE ");
         sql.append(in1.toSQLFragment(Collections.emptyMap(), getExpSchema().getSqlDialect()));
         sql.append(") UNION (SELECT d.SourceApplicationId FROM exp.Data d WHERE ");
         sql.append(in2.toSQLFragment(Collections.emptyMap(), getExpSchema().getSqlDialect()));
-        sql.append(")) ORDER BY Created DESC");
+        sql.append("))) ORDER BY Created DESC");
 
         return ExpRunImpl.fromRuns(new SqlSelector(getExpSchema(), sql).getArrayList(ExperimentRun.class));
     }
@@ -3267,7 +3268,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         sql.append(getTinfoExperimentRun(), "er");
         sql.append(" WHERE \n RowId IN (SELECT RowId FROM ");
         sql.append(getTinfoExperimentRun(), "er2");
-        sql.append(" WHERE RowId IN (SELECT pa.RunId FROM ");
+        sql.append(" WHERE RowId IN ((SELECT pa.RunId FROM ");
         sql.append(getTinfoProtocolApplication(), "pa");
         sql.append(", ");
         sql.append(getTinfoDataInput(), "di");
@@ -3280,7 +3281,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         sql.append(getTinfoData(), "d");
         sql.append(" WHERE d.SourceApplicationId = pa.RowId AND d.RowId ");
         sql.append(dataRowIdSQL);
-        sql.append("))");
+        sql.append(")))");
         return new SqlSelector(getExpSchema(), sql).getArrayList(ExperimentRun.class);
     }
 
@@ -3307,7 +3308,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         sql.append(getTinfoExperimentRun(), "er");
         sql.append(" WHERE \n RowId IN (SELECT RowId FROM ");
         sql.append(getTinfoExperimentRun(), "er2");
-        sql.append(" WHERE RowId IN (SELECT pa.RunId FROM ");
+        sql.append(" WHERE RowId IN ((SELECT pa.RunId FROM ");
         sql.append(getTinfoProtocolApplication(), "pa");
         sql.append(", ");
         sql.append(getTinfoMaterialInput(), "mi");
@@ -3320,7 +3321,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         sql.append(getTinfoMaterial(), "m");
         sql.append(" WHERE m.SourceApplicationId = pa.RowId AND m.RowId ");
         sql.append(materialRowIdSQL);
-        sql.append("))");
+        sql.append(")))");
         return new SqlSelector(getExpSchema(), sql).getArrayList(ExperimentRun.class);
     }
 
