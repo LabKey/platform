@@ -16,6 +16,7 @@
 
 package org.labkey.core.junit;
 
+import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.log4j.Logger;
@@ -55,7 +56,6 @@ import java.text.Format;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -678,10 +678,7 @@ public class JunitController extends SpringActionController
         {
             PrintWriter out = res.getWriter();
             out.println("<html><head></head><body><form method=GET>");
-            Enumeration<String> names = req.getParameterNames();
-            while (names.hasMoreElements())
-            {
-                String name = names.nextElement();
+            IteratorUtils.asIterator(req.getAttributeNames()).forEachRemaining(name -> {
                 out.print("<input name='");
                 out.print(h(name));
                 out.print("' value='");
@@ -689,7 +686,7 @@ public class JunitController extends SpringActionController
                 out.print("'>");
                 out.print(h(name));
                 out.println("<br>");
-            }
+            });
 
             out.println("<input type=submit></body></html>");
             return null;

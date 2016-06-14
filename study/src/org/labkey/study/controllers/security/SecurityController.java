@@ -15,6 +15,7 @@
  */
 package org.labkey.study.controllers.security;
 
+import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.action.ExportAction;
@@ -80,7 +81,6 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -158,12 +158,9 @@ public class SecurityController extends SpringActionController
         private MutableSecurityPolicy policyFromPost(HttpServletRequest request, HashSet<Integer> set, Study study)
         {
             MutableSecurityPolicy policy = new MutableSecurityPolicy(study);
-            Enumeration i = request.getParameterNames();
-            while (i.hasMoreElements())
-            {
-                String name = (String) i.nextElement();
+            IteratorUtils.asIterator(request.getAttributeNames()).forEachRemaining(name -> {
                 if (!name.startsWith("group."))
-                    continue;
+                    return;
                 String s = name.substring("group.".length());
                 int groupid;
                 try
@@ -172,13 +169,13 @@ public class SecurityController extends SpringActionController
                 }
                 catch (NumberFormatException x)
                 {
-                    continue;
+                    return;
                 }
                 if (!set.contains(groupid))
-                    continue;
+                    return;
                 Group group = SecurityManager.getGroup(groupid);
                 if (null == group)
-                    continue;
+                    return;
 
                 s = request.getParameter(name);
                 if (s.equals(GroupSecurityType.UPDATE_ALL.getParamName()))
@@ -189,7 +186,7 @@ public class SecurityController extends SpringActionController
                     policy.addRoleAssignment(group, RestrictedReaderRole.class);
                 else
                     policy.addRoleAssignment(group, NoPermissionsRole.class);
-            }
+            });
             return policy;
         }
     }

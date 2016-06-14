@@ -156,7 +156,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import static org.labkey.api.action.ApiJsonWriter.CONTENT_TYPE_JSON;
-import static org.labkey.api.test.TestWhen.When.BVT;
 
 
 /**
@@ -1624,7 +1623,7 @@ public class DavController extends SpringActionController
             defaultDepth = 1;
 
             // Map Bind Parameters
-            form = new JsonForm(new MutablePropertyValues(ViewServlet.adjustAndValidateParameterMap(getRequest().getParameterMap())));
+            form = new JsonForm(new MutablePropertyValues(getRequest().getParameterMap()));
         }
 
         @Override

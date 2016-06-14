@@ -16,6 +16,7 @@
 
 package org.labkey.core.portal;
 
+import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -93,7 +94,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -1092,29 +1092,20 @@ public class ProjectController extends SpringActionController
             props.clear();
 
             // Loop once to find field markers -- this ensures, for example, that unchecked check boxes get set to 0
-            Enumeration params = request.getParameterNames();
-
-            while (params.hasMoreElements())
-            {
-                String name = (String) params.nextElement();
-
+            IteratorUtils.asIterator(request.getAttributeNames()).forEachRemaining(name -> {
                 if (name.startsWith(SpringActionController.FIELD_MARKER))
                     props.put(name.substring(SpringActionController.FIELD_MARKER.length()), "0");
-            }
-
-            params = request.getParameterNames();
+            });
 
             // TODO: Clean this up. Type checking... (though type conversion also must be done by the webpart)
-            while (params.hasMoreElements())
-            {
-                String s = (String) params.nextElement();
+            IteratorUtils.asIterator(request.getAttributeNames()).forEachRemaining(s -> {
                 if (!"webPartId".equals(s) && !"index".equals(s) && !"pageId".equals(s) && !"x".equals(s) && !"y".equals(s) && !ActionURL.Param.returnUrl.name().equals(s))
                 {
                     String value = request.getParameter(s);
                     if (value != null && !"".equals(value.trim()))
                         webPart.getPropertyMap().put(s, value.trim());
                 }
-            }
+            });
         }
     }
 

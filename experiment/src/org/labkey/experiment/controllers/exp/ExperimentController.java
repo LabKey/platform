@@ -4486,7 +4486,7 @@ public class ExperimentController extends SpringActionController
 
             insertView.getDataRegion().addHiddenFormField("targetSampleSetId", Integer.toString(form.getTargetSampleSetId()));
             insertView.getDataRegion().addHiddenFormField("outputCount", Integer.toString(form.getOutputCount()));
-            insertView.setInitialValues(ViewServlet.adjustAndValidateParameterMap(getViewContext().getRequest().getParameterMap()));
+            insertView.setInitialValues(ViewServlet.adaptParameterMap(getViewContext().getRequest().getParameterMap()));
             ButtonBar bar = new ButtonBar();
             bar.setStyle(ButtonBar.Style.separateButtons);
             ActionButton submitButton = new ActionButton(DeriveSamplesAction.class, "Submit");

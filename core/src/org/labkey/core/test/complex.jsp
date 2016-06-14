@@ -117,18 +117,18 @@ for (ObjectError e : getAllErrors(pageContext))
 </pre>
 <%
     out.println("<hr><b>attributes</b><br>");
-    Enumeration e = request.getAttributeNames();
+    Enumeration<String> e = request.getAttributeNames();
     while (e.hasMoreElements())
     {
-        String name = (String)e.nextElement();
+        String name = e.nextElement();
         out.println("<b>" + h(name) + ":</b> " + h(String.valueOf(request.getAttribute(name))) + "<br>");
     }
 
     out.println("<hr><b>parameters</b><br>");
-    Enumeration f = request.getParameterNames();
+    Enumeration<String> f = request.getParameterNames();
     while (f.hasMoreElements())
     {
-        String name = (String)f.nextElement();
+        String name = f.nextElement();
         out.println("<b>" + h(name) + ":</b> " + h(String.valueOf(request.getParameter(name))) + "<br>");
     }
     out.println("<br>");

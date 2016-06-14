@@ -15,6 +15,7 @@
  */
 package org.labkey.core.security;
 
+import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.json.JSONObject;
@@ -105,7 +106,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -1245,12 +1245,11 @@ public class SecurityController extends SpringActionController
             {
                 addAuditEvent(getUser(), String.format("Container %s was updated to inherit security permissions", c.getName()), 0);
 
-                //get any existing policy specifically for this container (may return null)
+                //get existing policy specifically for this container
                 SecurityPolicy oldPolicy = SecurityPolicyManager.getPolicy(c, false);
 
-                //delete if we found one
-                if(null != oldPolicy)
-                    SecurityPolicyManager.deletePolicy(c);
+                //delete
+                SecurityPolicyManager.deletePolicy(c);
 
                 //now get the nearest policy for this container so we can write to the
                 //audit log how the permissions have changed
@@ -1275,33 +1274,32 @@ public class SecurityController extends SpringActionController
                 if(!oldPolicy.getResourceId().equals(c.getResourceId()))
                     changeType = AuditChangeType.fromInherited;
 
+                final AuditChangeType ct = changeType;
                 HttpServletRequest request = getViewContext().getRequest();
-                Enumeration e = request.getParameterNames();
-                while (e.hasMoreElements())
-                {
+
+                IteratorUtils.asIterator(request.getAttributeNames()).forEachRemaining(key -> {
                     try
                     {
-                        String key = (String) e.nextElement();
                         if (!key.startsWith("group."))
-                            continue;
+                            return;
                         int groupid = (int) Long.parseLong(key.substring(6), 16);
                         Group group = SecurityManager.getGroup(groupid);
-                        if(null == group)
-                            continue; //invalid group id
+                        if (null == group)
+                            return; //invalid group id
 
                         String roleName = request.getParameter(key);
                         Role role = RoleManager.getRole(roleName);
-                        if(null == role)
-                            continue; //invalid role name
+                        if (null == role)
+                            return; //invalid role name
 
                         newPolicy.addRoleAssignment(group, role);
-                        addAuditEvent(group, newPolicy, oldPolicy, changeType);
+                        addAuditEvent(group, newPolicy, oldPolicy, ct);
                     }
                     catch (NumberFormatException x)
                     {
                         // continue;
                     }
-                }
+                });
 
                 SecurityPolicyManager.savePolicy(newPolicy);
             }
