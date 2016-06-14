@@ -1092,13 +1092,13 @@ public class ProjectController extends SpringActionController
             props.clear();
 
             // Loop once to find field markers -- this ensures, for example, that unchecked check boxes get set to 0
-            IteratorUtils.asIterator(request.getAttributeNames()).forEachRemaining(name -> {
+            IteratorUtils.asIterator(request.getParameterNames()).forEachRemaining(name -> {
                 if (name.startsWith(SpringActionController.FIELD_MARKER))
                     props.put(name.substring(SpringActionController.FIELD_MARKER.length()), "0");
             });
 
             // TODO: Clean this up. Type checking... (though type conversion also must be done by the webpart)
-            IteratorUtils.asIterator(request.getAttributeNames()).forEachRemaining(s -> {
+            IteratorUtils.asIterator(request.getParameterNames()).forEachRemaining(s -> {
                 if (!"webPartId".equals(s) && !"index".equals(s) && !"pageId".equals(s) && !"x".equals(s) && !"y".equals(s) && !ActionURL.Param.returnUrl.name().equals(s))
                 {
                     String value = request.getParameter(s);

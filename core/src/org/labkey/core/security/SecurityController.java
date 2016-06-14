@@ -1277,7 +1277,7 @@ public class SecurityController extends SpringActionController
                 final AuditChangeType ct = changeType;
                 HttpServletRequest request = getViewContext().getRequest();
 
-                IteratorUtils.asIterator(request.getAttributeNames()).forEachRemaining(key -> {
+                IteratorUtils.asIterator(request.getParameterNames()).forEachRemaining(key -> {
                     try
                     {
                         if (!key.startsWith("group."))

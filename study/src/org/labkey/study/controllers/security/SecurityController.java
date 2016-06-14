@@ -158,7 +158,7 @@ public class SecurityController extends SpringActionController
         private MutableSecurityPolicy policyFromPost(HttpServletRequest request, HashSet<Integer> set, Study study)
         {
             MutableSecurityPolicy policy = new MutableSecurityPolicy(study);
-            IteratorUtils.asIterator(request.getAttributeNames()).forEachRemaining(name -> {
+            IteratorUtils.asIterator(request.getParameterNames()).forEachRemaining(name -> {
                 if (!name.startsWith("group."))
                     return;
                 String s = name.substring("group.".length());

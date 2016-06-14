@@ -678,7 +678,7 @@ public class JunitController extends SpringActionController
         {
             PrintWriter out = res.getWriter();
             out.println("<html><head></head><body><form method=GET>");
-            IteratorUtils.asIterator(req.getAttributeNames()).forEachRemaining(name -> {
+            IteratorUtils.asIterator(req.getParameterNames()).forEachRemaining(name -> {
                 out.print("<input name='");
                 out.print(h(name));
                 out.print("' value='");
