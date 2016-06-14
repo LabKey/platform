@@ -39,7 +39,6 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.core.admin.sql.ScriptReorderer;
 import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
-import org.postgresql.PGConnection;
 
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
@@ -718,6 +717,8 @@ class PostgreSql91Dialect extends SqlDialect
     }
 
 
+    // TODO: Remove this override... all recent PostgreSQL versions ship with PL/pgSQL enabled by default
+
     // Make sure that the PL/pgSQL language is enabled in the associated database. If not, throw. It would be nice
     // to use CREATE LANGUAGE at this point, however, that requires SUPERUSER permissions and takes us down the path of
     // creating call handlers and other complexities. It looks like PostgreSQL 8.1 has a simpler form of CREATE LANGUAGE...
@@ -746,6 +747,11 @@ class PostgreSql91Dialect extends SqlDialect
         determineSettings(scope);
         determineIfArraySortFunctionExists(scope);
         super.prepare(scope);
+    }
+
+    @Override
+    public void prepareConnection(Connection conn) throws SQLException
+    {
     }
 
     // PostgreSQL JDBC driver introduced caching of PreparedStatements starting with 9.4.1202, with no provision for uncaching.
@@ -1334,13 +1340,6 @@ class PostgreSql91Dialect extends SqlDialect
         return quoteIdentifier(name.toLowerCase());
     }
 
-
-    @Override
-    public void initializeConnection(Connection conn) throws SQLException
-    {
-        PGConnection pgConn = conn.unwrap(PGConnection.class);
-        pgConn.setPrepareThreshold(0);
-    }
 
     @Override
     public void purgeTempSchema(Map<String, TempTableTracker> createdTableNames)

@@ -1481,14 +1481,6 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     @Override
-    public void initializeConnection(Connection conn) throws SQLException
-    {
-        Statement stmt = conn.createStatement();
-        stmt.execute("SET ARITHABORT ON");
-        stmt.close();
-    }
-
-    @Override
     public void afterCoreUpgrade(ModuleContext context)
     {
         GroupConcatInstallationManager.ensureGroupConcat(context);
@@ -1511,6 +1503,14 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         _edition = getEdition(scope);
 
         super.prepare(scope);
+    }
+
+    @Override
+    public void prepareConnection(Connection conn) throws SQLException
+    {
+        Statement stmt = conn.createStatement();
+        stmt.execute("SET ARITHABORT ON");
+        stmt.close();
     }
 
     private Edition getEdition(DbScope scope)
