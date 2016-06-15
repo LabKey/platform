@@ -282,7 +282,6 @@
             resizable: false,
             buttons: [{
                 text: 'Submit',
-                id: 'btn_submit',
                 handler: function(){
                     var form = formPanel.getForm();
                     if (form && !form.isValid())
@@ -308,8 +307,7 @@
                 }
             },{
                 text: 'Cancel',
-                id: 'btn_cancel',
-                handler: function(){win.close();}
+                handler: function() { win.close(); }
             }],
             bbar: [{ xtype: 'tbtext', text: '',id:'statusTxt' }]
         });
@@ -327,7 +325,6 @@
     function addRule(grid, type, name, action, testURL, ruleData)
     {
         var store = grid.store;
-        var data = store.data;
 
         if (type == 'CUSTOM_QUERY' && !ruleData)
         {
@@ -479,16 +476,6 @@
             cls:'extContainer',
             items:addMenuItems
         });
-        
-        var addButton = new Ext.Button({
-            text:'Add Rule',
-            id: 'btn_addEngine',
-            menu: addMenu,
-            tooltip: {
-                text:'Adds a new rule for determining requestability.',
-                title:'Add Rule'
-            }
-        });
 
         var removeButton = new Ext.Button({
             text:'Remove Rule',
@@ -523,22 +510,6 @@
             },
             listeners: {
                 click: function(button, event) { LABKEY.setDirty(true); reorder(rulesGrid, false); }
-            }
-        });
-
-        var saveButton = new Ext.Button({
-            text:'Save',
-            id: 'btn_save',
-            listeners: {
-                click: function(button, event) { save(rulesGrid); }
-            }
-        });
-
-        var cancelButton = new Ext.Button({
-            text:'Cancel',
-            id: 'btn_cancel',
-            listeners: {
-                click: function(button, event) { document.location = '<%= new ActionURL(StudyController.ManageStudyAction.class, c)%>'; }
             }
         });
         
@@ -592,7 +563,7 @@
             }
         });
 
-        rowSelectionModel.on("rowdeselect", function(model, rowIndex, record)
+        rowSelectionModel.on("rowdeselect", function()
         {
             moveUpButton.disable();
             moveDownButton.disable();
@@ -632,14 +603,28 @@
             renderTo: 'rulesGrid',
             buttonAlign:'center',
             sm: rowSelectionModel,
-            buttons: [addButton, removeButton, moveUpButton, moveDownButton, saveButton, cancelButton]
+            buttons: [{
+                text: 'Add Rule',
+                menu: addMenu,
+                tooltip: {
+                    text: 'Adds a new rule for determining requestability.',
+                    title: 'Add Rule'
+                }
+            }, removeButton, moveUpButton, moveDownButton, {
+                text: 'Save',
+                listeners: {
+                    click: function() { save(rulesGrid); }
+                }
+            }, {
+                text: 'Cancel',
+                listeners: {
+                    click: function() { document.location = '<%= new ActionURL(StudyController.ManageStudyAction.class, c)%>'; }
+                }
+            }]
         });
     }
 
-    Ext.onReady(function()
-    {
-        showRules();
-    });
+    Ext.onReady(showRules);
 </script>
 
 <labkey:errors/>
