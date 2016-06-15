@@ -68,6 +68,7 @@ abstract public class TransformBaseTable extends VirtualTable
         colMap.put("ExecutionTime", "ExecutionTime");
         colMap.put("JobId", "JobInfo");
         colMap.put("ExpRunId", "RunInfo");
+        colMap.put("TransformRunLog","TransformRunLog");
         return colMap;
     }
 
@@ -116,6 +117,8 @@ abstract public class TransformBaseTable extends VirtualTable
         sql.append(_nameMap.get("JobId"));
         sql.append(", e.RowId AS ");
         sql.append(_nameMap.get("ExpRunId"));
+        sql.append(", t.TransformRunLog AS ");
+        sql.append(_nameMap.get("TransformRunLog"));
         sql.append(", t.TransformRunId");
         sql.append(" FROM ");
         sql.append(DataIntegrationQuerySchema.getTransformRunTableName());
@@ -234,6 +237,11 @@ abstract public class TransformBaseTable extends VirtualTable
         expRunId.setJdbcType(JdbcType.INTEGER);
         expRunId.setHidden(true);
         addColumn(expRunId);
+
+        ColumnInfo transformRunLog = new ColumnInfo(_nameMap.get("TransformRunLog"), this);
+        transformRunLog.setJdbcType(JdbcType.VARCHAR);
+        addColumn(transformRunLog);
+
     }
 
     @Override
@@ -276,7 +284,7 @@ abstract public class TransformBaseTable extends VirtualTable
             StringBuilder script = new StringBuilder();
             script.append("<script type=\"text/javascript\">");
             script.append("function ");
-            script.append(dataRegionName + ShowLog);
+            script.append(dataRegionName).append(ShowLog);
             script.append("(url, title) {");
             script.append("Ext4.Ajax.request({");
             script.append("url:url, method: 'GET', success: function(response) {");
