@@ -44,8 +44,6 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
-import org.labkey.api.security.AuthenticationProvider.RequestAuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.ResetPasswordProvider;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.impersonation.DisallowGlobalRolesContext;
@@ -93,7 +91,6 @@ import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import javax.naming.NamingException;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.beans.PropertyChangeListener;
@@ -2017,7 +2014,7 @@ public class SecurityManager
 
     public interface ViewFactory
     {
-        HttpView createView(ViewContext context) throws ServletException;
+        HttpView createView(ViewContext context);
     }
 
     // Modules register a factory to add module-specific ui to the permissions page

@@ -38,7 +38,7 @@ LABKEY.Domain = new function()
     function createDomain(success, failure, parameters, containerPath)
     {
         LABKEY.Ajax.request({
-            url : LABKEY.ActionURL.buildURL("property", "createDomain", containerPath),
+            url : LABKEY.ActionURL.buildURL("property", "createDomain.api", containerPath),
             method : 'POST',
             success: LABKEY.Utils.getCallbackWrapper(success),
             failure: LABKEY.Utils.getCallbackWrapper(failure, this, true),
@@ -52,7 +52,7 @@ LABKEY.Domain = new function()
     function getDomain(success, failure, parameters, containerPath)
     {
         LABKEY.Ajax.request({
-            url : LABKEY.ActionURL.buildURL("property", "getDomain", containerPath),
+            url : LABKEY.ActionURL.buildURL("property", "getDomain.api", containerPath),
             method : 'GET',
             success: LABKEY.Utils.getCallbackWrapper(success),
             failure: LABKEY.Utils.getCallbackWrapper(failure, this, true),
@@ -63,7 +63,7 @@ LABKEY.Domain = new function()
     function saveDomain(success, failure, parameters, containerPath)
     {
         LABKEY.Ajax.request({
-            url : LABKEY.ActionURL.buildURL("property", "saveDomain", containerPath),
+            url : LABKEY.ActionURL.buildURL("property", "saveDomain.api", containerPath),
             method : 'POST',
             success: LABKEY.Utils.getCallbackWrapper(success),
             failure: LABKEY.Utils.getCallbackWrapper(failure, this, true),
@@ -77,7 +77,7 @@ LABKEY.Domain = new function()
     function deleteDomain(success, failure, parameters, containerPath)
     {
         LABKEY.Ajax.request({
-            url : LABKEY.ActionURL.buildURL("property", "deleteDomain", containerPath),
+            url : LABKEY.ActionURL.buildURL("property", "deleteDomain.api", containerPath),
             method : 'POST',
             success: LABKEY.Utils.getCallbackWrapper(success),
             failure: LABKEY.Utils.getCallbackWrapper(failure, this, true),

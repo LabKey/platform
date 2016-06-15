@@ -23,7 +23,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
@@ -56,7 +55,6 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -239,7 +237,16 @@ public class ExperimentService
         Pair<Set<ExpData>, Set<ExpMaterial>> getParents(ExpProtocolOutput start);
         Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(ExpProtocolOutput start);
 
+        /**
+         * Find all child and grandchild samples Samples that are direct descendants of <code>start</code> ExpData,
+         * ignoring any sample children derived from ExpData children.
+         */
         Set<ExpMaterial> getRelatedChildSamples(ExpData start);
+
+        /**
+         * Find all parent ExpData that are parents of the <code>start</code> ExpMaterial,
+         * stopping at the first parent generation (no grandparents.)
+         */
         Set<ExpData> getNearestParentDatas(ExpMaterial start);
 
         ExpLineage getLineage(ExpProtocolOutput start, ExpLineageOptions options);
