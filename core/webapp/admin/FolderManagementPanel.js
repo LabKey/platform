@@ -456,7 +456,7 @@ Ext4.define('LABKEY.ext4.panel.FolderManagement', {
                                     }
                                     else {
                                         Ext4.Msg.confirm('Change Project', 'You are moving folder \'' + _s.data.text + '\' from one project to another. ' +
-                                                'This will remove all permissions settings from this folder, any subfolders, and any other configurations. ' +
+                                                'After the move is complete, you will need to reconfigure permissions settings for this folder, any subfolders, and other secured resources. ' +
                                                 '<br/><b>This action cannot be undone.</b>',
                                                 function(btn){
                                                     me.confirmation = true;

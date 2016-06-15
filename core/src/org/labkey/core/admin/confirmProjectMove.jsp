@@ -35,7 +35,7 @@
 <labkey:form action="<%=h(buildURL(AdminController.MoveFolderAction.class))%>" method="post">
 <p>
 You are moving folder '<%=h(c.getName())%>' from one project into another.
-This will remove all permission settings from this folder, any subfolders, and any contained objects.
+After the move is complete, you will need to reconfigure permissions settings for this folder, any subfolders, and other secured resources.
 </p>
 <p>
 This action cannot be undone.
