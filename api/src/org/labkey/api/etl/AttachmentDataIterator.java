@@ -1,6 +1,7 @@
 package org.labkey.api.etl;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
@@ -148,13 +149,17 @@ public class AttachmentDataIterator extends WrapperDataIterator
         }
     }
 
-    public static DataIteratorBuilder getAttachmentDataIteratorBuilder(TableInfo ti, final DataIteratorBuilder builder, final User user, @Nullable final VirtualFile attachmentDir, Container container, AttachmentParentFactory parentFactory)
+    public static DataIteratorBuilder getAttachmentDataIteratorBuilder(TableInfo ti, @NotNull final DataIteratorBuilder builder, final User user, @Nullable final VirtualFile attachmentDir, Container container, AttachmentParentFactory parentFactory)
     {
         return new DataIteratorBuilder()
         {
             @Override
             public DataIterator getDataIterator(DataIteratorContext context)
             {
+                //Adding as check against Issue #26599
+                if (builder == null)
+                    throw new IllegalStateException("Originating data iterator is null");
+
                 DataIterator it = builder.getDataIterator(context);
                 Domain domain = ti.getDomain();
                 if(domain == null)
