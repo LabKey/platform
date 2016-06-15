@@ -15,25 +15,7 @@
  */
 package org.labkey.core.query;
 
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.ContainerTable;
-import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
-import org.labkey.api.data.ForeignKey;
-import org.labkey.api.data.LookupColumn;
-import org.labkey.api.data.MultiValuedForeignKey;
-import org.labkey.api.data.MultiValuedLookupColumn;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.Results;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -239,6 +221,7 @@ public class CoreQuerySchema extends UserSchema
         " The data in this table are available only to site administrators. All other users will see no rows.");
 
         addGroupsColumn(users);
+        addAvatarColumn(users);
         
         return users;
     }
@@ -396,6 +379,7 @@ public class CoreQuerySchema extends UserSchema
             users.addInClause(userid, _projectUserIds);
 
             addGroupsColumn(users);
+            addAvatarColumn(users);
         }
 
         users.setDescription("Contains all users who are members of the current project." +
@@ -426,10 +410,22 @@ public class CoreQuerySchema extends UserSchema
                 return super.createMultiValuedLookupColumn(lookupColumn, parent, childKey, junctionKey, fk);
             }
         });
+        groupsCol.setDescription("List of the user's group memberships.");
         users.addColumn(groupsCol);
+
         List<FieldKey> visibleColumns = new ArrayList<>(users.getDefaultVisibleColumns());
         visibleColumns.add(groupsCol.getFieldKey());
         users.setDefaultVisibleColumns(visibleColumns);
+    }
+
+    private void addAvatarColumn(FilteredTable users)
+    {
+        ColumnInfo avatarCol = users.wrapColumn(UserAvatarDisplayColumnFactory.FIELD_KEY, users.getRealTable().getColumn("userid"));
+        avatarCol.setDescription("Thumbnail icon associated with this use account.");
+        avatarCol.setDisplayColumnFactory(new UserAvatarDisplayColumnFactory());
+        avatarCol.setInputType("file");
+        avatarCol.setHidden(true);
+        users.addColumn(avatarCol);
     }
 
 

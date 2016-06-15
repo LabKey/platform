@@ -443,7 +443,7 @@ public class ServerManager
                 warmCubeUser.setPrincipalType(PrincipalType.SERVICE);
                 warmCubeUser.setDisplayName("Warm OLAP Cache User");
                 warmCubeUser.setEmail("warmolapcache@labkey.org");
-                warmCubeUser.setEntityId(new GUID());
+                warmCubeUser.setGUID(new GUID());
             }
 
             long s = System.currentTimeMillis();

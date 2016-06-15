@@ -31,6 +31,8 @@ import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.data.ActionButton;
@@ -89,9 +91,13 @@ import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.thumbnail.ImageStreamThumbnailProvider;
+import org.labkey.api.thumbnail.ThumbnailProvider;
+import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
@@ -122,9 +128,12 @@ import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.UserAuditProvider;
+import org.labkey.core.query.UserAvatarDisplayColumnFactory;
 import org.labkey.core.query.UsersDomainKind;
 import org.labkey.core.query.UsersTable;
 import org.labkey.core.security.SecurityController;
+import org.springframework.beans.PropertyValue;
+import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -132,6 +141,8 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.mail.Address;
 import javax.mail.Message;
 import javax.mail.internet.MimeMessage;
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -227,6 +238,15 @@ public class UserController extends SpringActionController
             url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, CoreQuerySchema.USERS_TABLE_NAME);
             url.addReturnURL(returnURL);
 
+            return url;
+        }
+
+        @Override
+        public ActionURL getUserAttachmentDownloadURL(User user, String name)
+        {
+            ActionURL url = new ActionURL(AttachmentDownloadAction.class, ContainerManager.getRoot());
+            url.addParameter("userId", user.getUserId());
+            url.addParameter("name", name);
             return url;
         }
 
@@ -800,11 +820,63 @@ public class UserController extends SpringActionController
         }
     }
 
+    @RequiresLogin
+    public class AttachmentDownloadAction extends SimpleViewAction<AttachmentForm>
+    {
+        public ModelAndView getView(AttachmentForm form, BindException errors) throws Exception
+        {
+            User user = UserManager.getUser(form.getUserId());
+            if (null == user)
+            {
+                throw new NotFoundException("Unable to find user");
+            }
+            else if (!getUser().isSiteAdmin() && user.getUserId() != getUser().getUserId())
+            {
+                throw new IllegalArgumentException("Unable to download user attachment");
+            }
+
+            AttachmentService.get().download(getViewContext().getResponse(), user, form.getName());
+            return null;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+    public static class AttachmentForm
+    {
+        private Integer _userId;
+        private String _name;
+
+        public Integer getUserId()
+        {
+            return _userId;
+        }
+
+        public void setUserId(Integer userId)
+        {
+            _userId = userId;
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+    }
+
     @RequiresLogin @CSRF
     public class ShowUpdateAction extends UserSchemaAction
     {
         Integer _userId;
         Integer _pkVal;
+        PropertyValue _deletedAttachments;
 
         public ModelAndView getView(QueryUpdateForm form, boolean reshow, BindException errors) throws Exception
         {
@@ -851,10 +923,10 @@ public class UserController extends SpringActionController
         protected QueryForm createQueryForm(ViewContext context)
         {
             QueryForm form = new UserQueryForm();
-
             form.setViewContext(context);
-            form.bindParameters(context.getBindPropertyValues());
-
+            PropertyValues propertyValues = context.getBindPropertyValues();
+            _deletedAttachments = propertyValues.getPropertyValue("deletedAttachments");
+            form.bindParameters(propertyValues);
             return form;
         }
 
@@ -917,7 +989,8 @@ public class UserController extends SpringActionController
         {
             User user = getUser();
             _userId = user.getUserId();
-            boolean isOwnRecord = NumberUtils.toInt(form.getPkVal().toString()) == _userId;
+            _pkVal = NumberUtils.toInt(form.getPkVal().toString());
+            boolean isOwnRecord = _pkVal.equals(_userId);
 
             if (user.isSiteAdmin() || isOwnRecord)
             {
@@ -925,8 +998,38 @@ public class UserController extends SpringActionController
                 if (table instanceof UsersTable)
                     ((UsersTable)table).setMustCheckPermissions(false);
                 doInsertUpdate(form, errors, false);
+
+                updateAvatarThumbnail(form);
             }
             return 0 == errors.getErrorCount();
+        }
+
+        private void updateAvatarThumbnail(QueryUpdateForm form) throws IOException
+        {
+            User user = UserManager.getUser(_pkVal);
+            ThumbnailService.ImageType imageType = ThumbnailService.ImageType.Height32;
+            ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
+
+            if (svc != null)
+            {
+                // check if there is a request to delete the existing avatar
+                if (_deletedAttachments != null && UserAvatarDisplayColumnFactory.FIELD_KEY.equalsIgnoreCase(_deletedAttachments.getValue().toString()))
+                {
+                    svc.deleteThumbnail(user, imageType);
+                }
+
+                // add any new avatars by using the ThumbnailService to generate and attach to the User's entityid
+                String avatarFieldKey = "quf_" + UserAvatarDisplayColumnFactory.FIELD_KEY;
+                if (getFileMap().containsKey(avatarFieldKey) && !getFileMap().get(avatarFieldKey).isEmpty())
+                {
+                    SpringAttachmentFile file = new SpringAttachmentFile(getFileMap().get(avatarFieldKey));
+                    try (InputStream is = file.openInputStream())
+                    {
+                        ThumbnailProvider wrapper = new ImageStreamThumbnailProvider(user, is, file.getContentType(), imageType);
+                        svc.replaceThumbnail(wrapper, imageType, null, getViewContext());
+                    }
+                }
+            }
         }
 
         @Override

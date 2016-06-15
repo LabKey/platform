@@ -96,7 +96,7 @@ public class BitSetQueryImpl
         olapServiceUser.setPrincipalType(PrincipalType.SERVICE);
         olapServiceUser.setDisplayName("Internal JDBC Service User");
         olapServiceUser.setEmail("internaljdbc@labkey.org");
-        olapServiceUser.setEntityId(new GUID());
+        olapServiceUser.setGUID(new GUID());
     }
 
     final Container container;
@@ -2152,7 +2152,7 @@ public class BitSetQueryImpl
             // CONSIDER: The result will often be the same across users, however, so we could
             // CONSIDER: try to share cached results.
 
-            String cacheKey = user.getEntityId() + ":" + level.getUniqueName() + ":" + sql;
+            String cacheKey = user.getGUID() + ":" + level.getUniqueName() + ":" + sql;
             MemberSet set = _resultsCache.get(cacheKey);
             if (null != set)
                 return set;
