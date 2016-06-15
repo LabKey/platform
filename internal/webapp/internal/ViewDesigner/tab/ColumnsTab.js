@@ -103,6 +103,9 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
 
                     /* Clicking this will fire the onToolClose() function */
                     '    <td width="15px" valign="top"><span class="labkey-tool labkey-tool-close" title="Remove column"></span></td>',
+
+                    /* Spacer on the end to prevent tools from appearing under scrollbar */
+                    '    <td width="15px"><span>&nbsp;</span></td>',
                     '  </tr>',
                     '</table>',
                     '</tpl>',
