@@ -1432,7 +1432,6 @@ query/src/org/labkey/query/audit/QueryAuditProvider.java -text
 query/src/org/labkey/query/audit/QueryUpdateAuditProvider.java -text
 query/src/org/labkey/query/controllers/AbstractExternalSchemaForm.java -text
 query/src/org/labkey/query/controllers/DeleteViewForm.java -text
-query/src/org/labkey/query/controllers/DesignServiceForm.java -text
 query/src/org/labkey/query/controllers/ExternalSchemaForm.java -text
 query/src/org/labkey/query/controllers/GetQueryDetailsAction.java -text
 query/src/org/labkey/query/controllers/GetSchemaQueryTreeAction.java -text
