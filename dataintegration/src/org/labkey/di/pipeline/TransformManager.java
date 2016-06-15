@@ -702,6 +702,13 @@ public class TransformManager implements DataIntegrationService.Interface
         return styled ? PageFlowUtil.textLink(text, detailsURL ) : PageFlowUtil.unstyledTextLink(text, detailsURL);
     }
 
+    public String getTransformRunlog(Container c, Integer runId)
+    {
+        return (runId != null) ?
+            getTransformRun(c, runId).getTransformRunLog() :
+            null;
+    }
+
     /* Should only be called once at startup */
     public void startAllConfigurations()
     {

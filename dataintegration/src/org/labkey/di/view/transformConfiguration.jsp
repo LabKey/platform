@@ -239,8 +239,11 @@ function onTruncateAndReset(el, id)
         <td class="labkey-column-header">Last Status</td>
         <td class="labkey-column-header">Last Successful Run</td>
         <td class="labkey-column-header">Last Checked</td>
+    <%if(isAdmin) {%>
         <td class="labkey-column-header"></td>
         <td class="labkey-column-header"></td>
+        <td class="labkey-column-header">Last Transform Run Log</td>
+    <%}%>
     </tr><%
 
 int row = 0;
@@ -286,6 +289,7 @@ for (ScheduledPipelineJobDescriptor descriptor : sortedDescriptors)
             reset.addMenuItem("Truncate and Reset", "#", "onTruncateAndReset(this," + q(descriptor.getId()) + "); return false;");
             reset.render(new RenderContext(getViewContext()), out);
         %></td>
+        <td><%=h(configuration.getLastTransformRunLog())%></td>
         </tr><%
     }
     else

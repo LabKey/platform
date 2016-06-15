@@ -195,6 +195,13 @@ public class TransformConfiguration extends Entity
         return DateUtil.formatDateTime(lookupContainer(), getLastChecked());
     }
 
+    public String getLastTransformRunLog()
+    {
+        if (null == getLastRunId())
+            return null;
+        return TransformManager.get().getTransformRunlog(lookupContainer(), getLastRunId());
+    }
+
     public String getTransformState()
     {
         return null==jsonState ? "{}" : jsonState.toString();
