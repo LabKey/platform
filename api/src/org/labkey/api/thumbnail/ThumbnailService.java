@@ -33,11 +33,12 @@ import org.labkey.api.data.views.DataViewProvider.EditInfo.ThumbnailType;
  */
 public interface ThumbnailService
 {
-    public static final Set<String> ImageFilenames = PageFlowUtil.set(ImageType.Large.getFilename(), ImageType.Small.getFilename());
+    public static final Set<String> ImageFilenames = PageFlowUtil.set(ImageType.Large.getFilename(), ImageType.Height32.getFilename(), ImageType.Small.getFilename());
 
     public enum ImageType
     {
         Large("Thumbnail", "thumbnail", 256.0f),
+        Height32("Height32Thumbnail", "thumbnail", 32.0f),
         Small("SmallThumbnail", "icon", 16.0f);
 
         private final String _filename;

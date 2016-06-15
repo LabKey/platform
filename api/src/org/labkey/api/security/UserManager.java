@@ -618,7 +618,7 @@ public class UserManager
             executor.execute("DELETE FROM " + CORE.getTableInfoLogins() + " WHERE Email=?", user.getEmail());
             executor.execute("DELETE FROM " + CORE.getTableInfoPrincipals() + " WHERE UserId=?", userId);
 
-            OntologyManager.deleteOntologyObject(user.getEntityId().toString(), ContainerManager.getSharedContainer(), true);
+            OntologyManager.deleteOntologyObject(user.getEntityId(), ContainerManager.getSharedContainer(), true);
         }
         catch (Exception e)
         {

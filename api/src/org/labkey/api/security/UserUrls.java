@@ -34,6 +34,7 @@ public interface UserUrls extends UrlProvider
     ActionURL getUserDetailsURL(Container container, int userId, @Nullable URLHelper returnURL);
     ActionURL getUserDetailsURL(Container c, @Nullable URLHelper returnURL);
     ActionURL getUserUpdateURL(Container c, URLHelper returnURL, int userId);
+    ActionURL getUserAttachmentDownloadURL(User user, String name);
 
     /**
      * Does this user's profile need to be updated? In other words, are there required fields that are blank? Doesn't

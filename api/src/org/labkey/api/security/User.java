@@ -20,7 +20,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.views.DataViewProvider;
 import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.impersonation.NotImpersonatingContext;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -31,7 +35,14 @@ import org.labkey.api.security.roles.DeveloperRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.thumbnail.Thumbnail;
+import org.labkey.api.thumbnail.ThumbnailProvider;
+import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -41,7 +52,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 
-public class User extends UserPrincipal implements Serializable, Cloneable
+public class User extends UserPrincipal implements Serializable, Cloneable, ThumbnailProvider
 {
     private String _firstName = null;
     private String _lastName = null;
@@ -56,7 +67,8 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     private String _im;
     private String _description;
 
-    private GUID entityId;
+    private GUID _entityId;
+    private ActionURL _avatarUrl;
 
     private ImpersonationContext _impersonationContext = NotImpersonatingContext.get();
 
@@ -361,14 +373,44 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         _description = description;
     }
 
-    public GUID getEntityId()
+    public GUID getGUID()
     {
-        return entityId;
+        return _entityId;
     }
 
-    public void setEntityId(GUID entityId)
+    public String getEntityId()
     {
-        this.entityId = entityId;
+        return getGUID().toString();
+    }
+
+    public void setGUID(GUID entityId)
+    {
+        _entityId = entityId;
+    }
+
+    public void setEntityId(String entityId)
+    {
+        _entityId = new GUID(entityId);
+    }
+
+    public ActionURL getAvatarUrl()
+    {
+        if (_avatarUrl == null && getGUID() != null)
+        {
+            ThumbnailService.ImageType imageType = ThumbnailService.ImageType.Height32;
+            Attachment attachment = AttachmentService.get().getAttachment(this, imageType.getFilename());
+            if (attachment != null)
+            {
+                _avatarUrl = PageFlowUtil.urlProvider(UserUrls.class).getUserAttachmentDownloadURL(this, imageType.getFilename());
+            }
+        }
+
+        return _avatarUrl;
+    }
+
+    public String getAvatarThumbnailPath()
+    {
+        return getAvatarUrl() != null ? getAvatarUrl().toString() : getStaticThumbnailPath();
     }
 
     public static JSONObject getUserProps(User user, @Nullable Container container)
@@ -379,6 +421,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         props.put("displayName", user.getDisplayName(user));
         props.put("email", user.getEmail());
         props.put("phone", user.getPhone());
+        props.put("avatar", user.getAvatarThumbnailPath());
 
         boolean nonNullContainer = null != container;
         props.put("canInsert", nonNullContainer && container.hasPermission(user, InsertPermission.class));
@@ -393,4 +436,56 @@ public class User extends UserPrincipal implements Serializable, Cloneable
 
         return props;
     }
+
+    @Override
+    public String getContainerId()
+    {
+        // Note: a container is required for the AttachmentService
+        return ContainerManager.getRoot().getId();
+    }
+
+    @Override
+    public String getThumbnailCacheKey()
+    {
+        return "User: " + getEntityId();
+    }
+
+    @Override
+    public String getDownloadURL(ViewContext context, String name)
+    {
+        return null;
+    }
+
+    @Override
+    public SecurityPolicy getSecurityPolicy()
+    {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public Thumbnail generateThumbnail(@Nullable ViewContext context)
+    {
+        return null;
+    }
+
+    @Override
+    public String getStaticThumbnailPath()
+    {
+        return AppProps.getInstance().getContextPath() + "/_images/defaultavatar.png";
+    }
+
+    @Override
+    public boolean supportsDynamicThumbnail()
+    {
+        return false;
+    }
+
+    @Override
+    public void afterThumbnailDelete(ThumbnailService.ImageType imageType)
+    {}
+
+    @Override
+    public void afterThumbnailSave(ThumbnailService.ImageType imageType, DataViewProvider.EditInfo.ThumbnailType thumbnailType)
+    {}
 }
