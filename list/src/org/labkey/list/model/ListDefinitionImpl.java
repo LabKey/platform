@@ -31,6 +31,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListImportProgress;
@@ -91,7 +92,7 @@ public class ListDefinitionImpl implements ListDefinition
     }
 
 
-    public ListDefinitionImpl(Container container, String name, KeyType keyType)
+    public ListDefinitionImpl(Container container, String name, KeyType keyType, TemplateInfo templateInfo)
     {
         _new = true;
         ListDef.ListDefBuilder builder = new ListDef.ListDefBuilder();
@@ -101,7 +102,7 @@ public class ListDefinitionImpl implements ListDefinition
         builder.setKeyType(keyType.toString());
         _def = builder;
         Lsid lsid = ListDomainKind.generateDomainURI(name, container, keyType);
-        _domain = PropertyService.get().createDomain(container, lsid.toString(), name);
+        _domain = PropertyService.get().createDomain(container, lsid.toString(), name, templateInfo);
     }
 
     // For new lists only, we'll attempt to use these IDs at insert time

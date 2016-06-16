@@ -255,7 +255,7 @@ public class PropertyController extends SpringActionController
                         options.put(key, value);
                 }
 
-                domain = DomainUtil.createDomain(kindName, newDomain, options, getContainer(), getUser(), domainName);
+                domain = DomainUtil.createDomain(kindName, newDomain, options, getContainer(), getUser(), domainName, null);
             }
             else
             {

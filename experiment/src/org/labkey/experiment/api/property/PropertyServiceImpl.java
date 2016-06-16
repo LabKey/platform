@@ -35,6 +35,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.property.Domain;
@@ -102,6 +103,12 @@ public class PropertyServiceImpl implements PropertyService.Interface
     public Domain createDomain(Container container, String typeURI, String name)
     {
         return new DomainImpl(container, typeURI, name);
+    }
+
+    @NotNull
+    public Domain createDomain(Container container, String typeURI, String name, @Nullable TemplateInfo templateInfo)
+    {
+        return new DomainImpl(container, typeURI, name, templateInfo);
     }
 
     @Nullable

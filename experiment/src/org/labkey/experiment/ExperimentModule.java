@@ -111,7 +111,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     public double getVersion()
     {
-        return 16.12;
+        return 16.13;
     }
 
     protected void init()

@@ -38,25 +38,7 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.defaults.DefaultValueService;
-import org.labkey.api.exp.AbstractParameter;
-import org.labkey.api.exp.DomainNotFoundException;
-import org.labkey.api.exp.ExperimentDataHandler;
-import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.ExperimentMaterialListener;
-import org.labkey.api.exp.ExperimentRunListView;
-import org.labkey.api.exp.ExperimentRunType;
-import org.labkey.api.exp.ExperimentRunTypeSource;
-import org.labkey.api.exp.Identifiable;
-import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.LsidManager;
-import org.labkey.api.exp.LsidType;
-import org.labkey.api.exp.ObjectProperty;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.ProtocolApplicationParameter;
-import org.labkey.api.exp.ProtocolParameter;
-import org.labkey.api.exp.XarContext;
-import org.labkey.api.exp.XarFormatException;
-import org.labkey.api.exp.XarSource;
+import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
@@ -4714,6 +4696,14 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public ExpSampleSetImpl createSampleSet(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol)
             throws ExperimentException
     {
+        return createSampleSet(c,u,name,description,properties,indices,idCol1,idCol2,idCol3,parentCol,null);
+    }
+
+    @NotNull
+    public ExpSampleSetImpl createSampleSet(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
+            @Nullable TemplateInfo templateInfo)
+        throws ExperimentException
+    {
         ExpSampleSet existing = getSampleSet(c, name);
         if (existing != null)
             throw new IllegalArgumentException("SampleSet '" + name + "' already exists");
@@ -4734,7 +4724,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             throw new ExperimentException("column index out of range");
 
         Lsid lsid = getSampleSetLsid(name, c);
-        Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name);
+        Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name, templateInfo);
         DomainKind kind = domain.getDomainKind();
         Set<String> reservedNames = kind.getReservedPropertyNames(domain);
         Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(Collectors.toSet());
@@ -4816,8 +4806,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return ss;
     }
 
-    public ExpDataClassImpl createDataClass(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, Integer sampleSetId, String nameExpression)
-            throws ExperimentException
+    public ExpDataClassImpl createDataClass(
+            Container c, User u, String name, String description,
+            List<GWTPropertyDescriptor> properties,
+            List<GWTIndex> indices, Integer sampleSetId, String nameExpression,
+            @Nullable TemplateInfo templateInfo)
+        throws ExperimentException
     {
         ExpDataClass existing = getDataClass(c, u, name, true);
         if (existing != null)
@@ -4834,7 +4828,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
 
         Lsid lsid = getDataClassLsid(name, c);
-        Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name);
+        Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name, templateInfo);
         DomainKind kind = domain.getDomainKind();
 
         Set<String> reservedNames = kind.getReservedPropertyNames(domain);

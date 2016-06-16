@@ -141,7 +141,7 @@ public class ExpDataClassDataTestCase
 
         String nameExpr = "JUNIT-${genId}-${aa}";
 
-        final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "testing", null, props, indices, null, nameExpr);
+        final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "testing", null, props, indices, null, nameExpr, null);
         Assert.assertNotNull(dataClass);
 
         final Domain domain = dataClass.getDomain();
@@ -366,10 +366,10 @@ public class ExpDataClassDataTestCase
 
         // Create two DataClasses
         final String firstDataClassName = "firstDataClass";
-        final ExpDataClassImpl firstDataClass = ExperimentServiceImpl.get().createDataClass(c, user, firstDataClassName, null, props, Collections.emptyList(), null, null);
+        final ExpDataClassImpl firstDataClass = ExperimentServiceImpl.get().createDataClass(c, user, firstDataClassName, null, props, Collections.emptyList(), null, null, null);
 
         final String secondDataClassName = "secondDataClass";
-        final ExpDataClassImpl secondDataClass = ExperimentServiceImpl.get().createDataClass(c, user, secondDataClassName, null, props, Collections.emptyList(), null, null);
+        final ExpDataClassImpl secondDataClass = ExperimentServiceImpl.get().createDataClass(c, user, secondDataClassName, null, props, Collections.emptyList(), null, null, null);
         insertRows(c, Arrays.asList(new CaseInsensitiveHashMap<>(Collections.singletonMap("name", "jimbo"))), secondDataClassName);
 
         // Import data with magic "DataInputs" and "MaterialInputs" columns
@@ -571,7 +571,7 @@ public class ExpDataClassDataTestCase
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         props.add(new GWTPropertyDescriptor("aa", "int"));
 
-        final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "testing", null, props, Collections.emptyList(), null, null);
+        final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "testing", null, props, Collections.emptyList(), null, null, null);
         final int dataClassId = dataClass.getRowId();
 
         UserSchema schema = QueryService.get().getUserSchema(user, c, expDataSchemaKey);
@@ -659,7 +659,7 @@ public class ExpDataClassDataTestCase
         boolean sqlServer = ExperimentService.get().getSchema().getSqlDialect().isSqlServer();
         try
         {
-            final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "largeUnique", null, props, indices, null, null);
+            final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "largeUnique", null, props, indices, null, null, null);
             if (sqlServer)
                 Assert.fail("Expected exception creating large index over two columns");
         }
@@ -692,7 +692,7 @@ public class ExpDataClassDataTestCase
 
         String nameExpr = "JUNIT-${genId}-${aa}";
 
-        final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "largeUnique2", null, props, indices, null, nameExpr);
+        final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "largeUnique2", null, props, indices, null, nameExpr, null);
         final int dataClassId = dataClass.getRowId();
 
         List<Map<String, Object>> rows = new ArrayList<>();

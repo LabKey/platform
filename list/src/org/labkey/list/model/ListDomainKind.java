@@ -28,6 +28,7 @@ import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListDefinition.KeyType;
@@ -305,7 +306,8 @@ public abstract class ListDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user)
+    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user,
+        @Nullable TemplateInfo templateInfo)
     {
         String name = domain.getName();
         String keyName = arguments.containsKey("keyName") ? (String)arguments.get("keyName") : null;
@@ -316,7 +318,7 @@ public abstract class ListDomainKind extends AbstractDomainKind
         if (keyName == null)
             throw new IllegalArgumentException("List keyName must not be null");
 
-        ListDefinition list = ListService.get().createList(container, name, getKeyType());
+        ListDefinition list = ListService.get().createList(container, name, getKeyType(), templateInfo);
         list.setKeyName(keyName);
         list.setDescription(domain.getDescription());
 

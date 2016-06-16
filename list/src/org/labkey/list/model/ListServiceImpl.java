@@ -21,6 +21,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
@@ -52,7 +53,12 @@ public class ListServiceImpl implements ListService.Interface
 
     public ListDefinition createList(Container container, String name, ListDefinition.KeyType keyType)
     {
-        return new ListDefinitionImpl(container, name, keyType);
+        return new ListDefinitionImpl(container, name, keyType, null);
+    }
+
+    public ListDefinition createList(Container container, String name, ListDefinition.KeyType keyType, @Nullable TemplateInfo templateInfo)
+    {
+        return new ListDefinitionImpl(container, name, keyType, templateInfo);
     }
 
     public ListDefinition getList(Container container, int listId)

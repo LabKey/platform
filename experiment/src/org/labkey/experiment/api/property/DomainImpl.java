@@ -42,6 +42,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
@@ -110,9 +111,15 @@ public class DomainImpl implements Domain
 
     public DomainImpl(Container container, String uri, String name)
     {
+        this(container, uri, name, null);
+    }
+
+    public DomainImpl(Container container, String uri, String name, @Nullable TemplateInfo templateInfo)
+    {
         _new = true;
         _dd = new DomainDescriptor.Builder(uri, container)
                 .setName(name)
+                .setTemplateInfoObject(templateInfo)
                 .build();
         _properties = new ArrayList<>();
     }

@@ -88,7 +88,7 @@ public class DataClassSearchTest extends BaseWebDriverTest
     @Override
     protected String getProjectName()
     {
-        return "DataClass SearchTest" + TRICKY_CHARACTERS_FOR_PROJECT_NAMES + " Project";
+        return "DataClass SearchTest" + " Project";
     }
 
     @BeforeClass

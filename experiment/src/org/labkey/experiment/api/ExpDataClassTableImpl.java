@@ -219,7 +219,7 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
             {
                 ExpDataClass dc = ExperimentService.get().createDataClass(c, user, name, description,
                         Collections.emptyList(), Collections.emptyList(),
-                        materialSourceId, nameExpression);
+                        materialSourceId, nameExpression, null);
                 return new CaseInsensitiveHashMap((Map<String,Object>) BeanUtils.describe(dc));
             }
             catch (ExperimentException | ReflectiveOperationException e)

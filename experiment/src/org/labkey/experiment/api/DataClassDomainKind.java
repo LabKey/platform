@@ -27,6 +27,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
@@ -188,8 +189,9 @@ public class DataClassDomainKind extends AbstractDomainKind
         return container.hasPermission(user, AdminPermission.class);
     }
 
+
     @Override
-    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user)
+    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, TemplateInfo templateInfo)
     {
         String name = domain.getName();
         if (name == null)
@@ -218,7 +220,7 @@ public class DataClassDomainKind extends AbstractDomainKind
         ExpDataClass dataClass;
         try
         {
-            dataClass = ExperimentService.get().createDataClass(container, user, name, description, properties, indices, sampleSetId, nameExpression);
+            dataClass = ExperimentService.get().createDataClass(container, user, name, description, properties, indices, sampleSetId, nameExpression, templateInfo);
         }
         catch (SQLException e)
         {
@@ -230,6 +232,7 @@ public class DataClassDomainKind extends AbstractDomainKind
         }
         return dataClass.getDomain();
     }
+
 
     @Override
     public void deleteDomain(User user, Domain domain)

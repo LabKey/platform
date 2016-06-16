@@ -182,6 +182,8 @@ public class ListManager implements SearchService.DocumentProvider
         DbSequence sequence = DbSequenceManager.get(c, LIST_SEQUENCE_NAME);
         ListDef.ListDefBuilder builder = new ListDef.ListDefBuilder(def);
 
+        builder.setListId(-1);
+
         for (Integer preferredListId : preferredListIds)
         {
             SimpleFilter filter = new SimpleFilter(tinfo.getColumn("Container").getFieldKey(), c).addCondition(tinfo.getColumn("ListId"), preferredListId);
@@ -190,15 +192,14 @@ public class ListManager implements SearchService.DocumentProvider
             if (!new TableSelector(getListMetadataTable().getColumn("ListId"), filter, null).exists())
             {
                 builder.setListId(preferredListId);
-                ListDef ret = Table.insert(user, tinfo, builder.build());
-                _listDefCache.remove(c.getId());
                 sequence.ensureMinimum(preferredListId);  // Ensure sequence is at or above the preferred ID we just used
-                return ret;
+                break;
             }
         }
 
         // If none of the preferred IDs is available then use the next sequence value
-        builder.setListId(sequence.next());
+        if (builder.getListId() == -1)
+            builder.setListId(sequence.next());
 
         ListDef ret = Table.insert(user, tinfo, builder.build());
         _listDefCache.remove(c.getId());
