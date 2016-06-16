@@ -393,6 +393,7 @@ public class DatasetQueryView extends StudyQueryView
             bar.add(createQCStateButton(_qcStateSet));
 
         bar.add(createExportButton());
+        bar.add(createPrintButton());
         bar.add(createPageSizeMenuButton());
 
         User user = getUser();
