@@ -15,15 +15,21 @@
  */
 package org.labkey.api.exp.property;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
@@ -53,6 +59,9 @@ import org.labkey.data.xml.domainTemplate.SampleSetOptionsType;
 import org.labkey.data.xml.domainTemplate.SampleSetTemplateType;
 
 import java.io.IOException;
+import java.io.StringWriter;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -464,5 +473,11 @@ public class DomainTemplate
             this.importIdentity = importIdentity;
             this.importLookupByAlternateKey = importLookupByAlternateKey;
         }
+    }
+
+    public TemplateInfo getTemplateInfo()
+    {
+        Module m = ModuleLoader.getInstance().getModule(getModuleName());
+        return new TemplateInfo(m.getName(), getTemplateGroup(), getTemplateName(), m.getVersion());
     }
 }

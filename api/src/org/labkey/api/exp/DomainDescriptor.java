@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exp;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BuilderObjectFactory;
 import org.labkey.api.data.Container;
@@ -30,7 +31,16 @@ public final class DomainDescriptor
 {
     static
     {
-        ObjectFactory.Registry.register(DomainDescriptor.class, new BuilderObjectFactory<>(DomainDescriptor.class,Builder.class));
+        ObjectFactory.Registry.register(DomainDescriptor.class, new BuilderObjectFactory<DomainDescriptor>(DomainDescriptor.class,Builder.class)
+        {
+            @Override
+            protected void fixupMap(Map m, DomainDescriptor dd)
+            {
+                TemplateInfo ti = dd.getTemplateInfo();
+                if (null != ti)
+                    m.put("templateInfo",ti.toJSON());
+            }
+        });
     }
 
     private final Object _ts;     // for optimistic concurrency
@@ -41,6 +51,7 @@ public final class DomainDescriptor
     private final Container container;
     private final Container project;
     private final int titlePropertyId;
+    private final TemplateInfo templateInfo;
 
     // for StorageProvisioner (currently assuming labkey scope)
     private final String storageTableName;
@@ -49,10 +60,13 @@ public final class DomainDescriptor
     private DomainDescriptor(
             String domainURI, Container c, Container p, String name,
             int domainId, String description, String storageTableName, String storageSchemaName,
-            int titlePropertyId, Object ts)
+            int titlePropertyId, Object ts,
+            TemplateInfo templateInfo
+    )
     {
         MemTracker.getInstance().put(this);
         this._ts = ts;
+        this.templateInfo = templateInfo;
 
         this.description = description;
 
@@ -125,6 +139,8 @@ public final class DomainDescriptor
             titlePropertyId = (Integer) map.get("titlePropertyId");
         else
             titlePropertyId = 0;
+
+        templateInfo = null;
     }
 
     public DomainDescriptor.Builder edit()
@@ -178,6 +194,11 @@ public final class DomainDescriptor
         return storageSchemaName;
     }
 
+    public TemplateInfo getTemplateInfo()
+    {
+        return templateInfo;
+    }
+
     public Object get_Ts()
     {
         return _ts;
@@ -193,6 +214,7 @@ public final class DomainDescriptor
     {
         try
         {
+            // templateInfo is immutable, don't need to clone
             return (DomainDescriptor) super.clone();
         }
         catch (CloneNotSupportedException cnse)
@@ -237,6 +259,7 @@ public final class DomainDescriptor
         private int titlePropertyId=0;
         private String storageTableName;
         private String storageSchemaName;
+        private TemplateInfo templateInfo;
 
         public Builder()
         {
@@ -265,6 +288,7 @@ public final class DomainDescriptor
 
             setStorageTableName(dd.getStorageTableName());
             setStorageSchemaName(dd.getStorageSchemaName());
+            setTemplateInfoObject(dd.getTemplateInfo());
         }
 
         public DomainDescriptor build()
@@ -272,7 +296,7 @@ public final class DomainDescriptor
             return new DomainDescriptor(
                     domainURI, container, project, name,
                     domainId, description, storageTableName, storageSchemaName,
-                    titlePropertyId, _ts
+                    titlePropertyId, _ts, templateInfo
             );
         }
 
@@ -330,16 +354,31 @@ public final class DomainDescriptor
             return this;
         }
 
+        public Builder setTemplateInfo(String json)
+        {
+            if (StringUtils.isBlank(json))
+                this.templateInfo = null;
+            else
+                this.templateInfo = TemplateInfo.fromJson(json);
+            return this;
+        }
+
+        public Builder setTemplateInfoObject(TemplateInfo templateInfo)
+        {
+            this.templateInfo = templateInfo;
+            return this;
+        }
+
         public Builder setTs(Object ts)
         {
             this._ts = ts;
             return this;
         }
+
         public Builder set_Ts(Object ts)
         {
             this._ts = ts;
             return this;
         }
-
     }
 }

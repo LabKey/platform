@@ -34,6 +34,7 @@ import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.LsidType;
 import org.labkey.api.exp.ProtocolApplicationParameter;
+import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
@@ -136,8 +137,10 @@ public class ExperimentService
         /**
          * Create a new DataClass with the provided properties.
          */
-        ExpDataClass createDataClass(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, Integer sampleSetId, String nameExpression)
-                throws ExperimentException, SQLException;
+        ExpDataClass createDataClass(Container c, User u, String name, String description,
+                 List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, Integer sampleSetId, String nameExpression,
+                 @Nullable TemplateInfo templateInfo)
+            throws ExperimentException, SQLException;
 
         List<? extends ExpDataClass> getDataClasses(Container container, User user, boolean includeOtherContainers);
 
@@ -191,6 +194,12 @@ public class ExperimentService
         @NotNull
         ExpSampleSet createSampleSet(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol)
             throws ExperimentException, SQLException;
+
+        /** (MAB) todo need a builder interface, or at least  parameter bean */
+        @NotNull
+        ExpSampleSet createSampleSet(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
+                     @Nullable TemplateInfo templateInfo)
+                throws ExperimentException, SQLException;
 
         @NotNull
         ExpSampleSet createSampleSet();

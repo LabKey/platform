@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.security.User;
@@ -54,6 +55,7 @@ public class PropertyService
         List<? extends Domain> getDomains(Container container);
         /** Creates an in-memory Domain. It is not automatically saved to the database */
         @NotNull Domain createDomain(Container container, String typeURI, String name);
+        @NotNull Domain createDomain(Container container, String typeURI, String name, @Nullable TemplateInfo templateInfo);
 
         /** Same as QueryService.get().getUserSchema(user, container, schemaName).getDomainURI(queryName) */
         @Nullable String getDomainURI(String schemaName, String queryName, Container container, User user);

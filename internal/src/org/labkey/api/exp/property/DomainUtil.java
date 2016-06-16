@@ -39,6 +39,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.gwt.client.model.GWTConditionalFormat;
@@ -368,10 +369,15 @@ public class DomainUtil
 
     public static Domain createDomain(DomainTemplate template, Container container, User user, @Nullable String domainName)
     {
-        return createDomain(template.getDomainKind(), template.getDomain(), template.getOptions(), container, user, domainName);
+        return createDomain(template.getDomainKind(), template.getDomain(), template.getOptions(), container, user, domainName, template.getTemplateInfo());
     }
 
-    public static Domain createDomain(String kindName, GWTDomain domain, Map<String, Object> arguments, Container container, User user, @Nullable String domainName)
+
+    public static Domain createDomain(
+            String kindName, GWTDomain domain, Map<String, Object> arguments,
+            Container container, User user, @Nullable String domainName,
+            @Nullable TemplateInfo templateInfo
+    )
     {
         if (domainName != null)
         {
@@ -386,7 +392,7 @@ public class DomainUtil
         if (!kind.canCreateDefinition(user, container))
             throw new UnauthorizedException("You don't have permission to create a new domain");
 
-        Domain created = kind.createDomain(domain, arguments, container, user);
+        Domain created = kind.createDomain(domain, arguments, container, user, templateInfo);
         if (created == null)
             throw new RuntimeException("Failed to created domain");
         return created;

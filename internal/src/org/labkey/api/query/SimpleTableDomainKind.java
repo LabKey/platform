@@ -24,6 +24,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.api.ExperimentUrls;
@@ -237,7 +238,7 @@ public class SimpleTableDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user)
+    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, TemplateInfo templateInfo)
     {
         String schemaName = (String)arguments.get("schemaName");
         String tableName = (String)arguments.get("tableName");
@@ -245,7 +246,7 @@ public class SimpleTableDomainKind extends AbstractDomainKind
             throw new IllegalArgumentException("schemaName and tableName are required");
 
         String domainURI = generateDomainURI(schemaName, tableName, container, user);
-        return PropertyService.get().createDomain(container, domainURI, domain.getName());
+        return PropertyService.get().createDomain(container, domainURI, domain.getName(), templateInfo);
     }
 
 }

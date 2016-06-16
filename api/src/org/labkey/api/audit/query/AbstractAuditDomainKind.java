@@ -31,6 +31,7 @@ import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.property.Domain;
@@ -220,7 +221,7 @@ public abstract class AbstractAuditDomainKind extends DomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user)
+    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
         return null;
     }

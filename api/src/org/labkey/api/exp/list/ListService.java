@@ -18,6 +18,7 @@ package org.labkey.api.exp.list;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.view.ActionURL;
 
@@ -42,6 +43,7 @@ public class ListService
         Map<String, ListDefinition> getLists(Container container);
         boolean hasLists(Container container);
         ListDefinition createList(Container container, String name, ListDefinition.KeyType keyType);
+        ListDefinition createList(Container container, String name, ListDefinition.KeyType keyType, @Nullable TemplateInfo templateInfo);
         ListDefinition getList(Container container, int listId);
         @Nullable ListDefinition getList(Container container, String name);
         ListDefinition getList(Domain domain);

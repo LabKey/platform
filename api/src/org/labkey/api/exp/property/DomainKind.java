@@ -26,6 +26,7 @@ import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.security.User;
@@ -97,7 +98,7 @@ abstract public class DomainKind implements Handler<String>
      * @param user User
      * @return The newly created Domain.
      */
-    abstract public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user);
+    abstract public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, @Nullable TemplateInfo templateInfo);
 
     /**
      * Update a Domain definition appropriate for this DomainKind.

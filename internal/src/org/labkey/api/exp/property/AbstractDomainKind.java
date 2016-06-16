@@ -25,6 +25,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.gwt.client.model.GWTDomain;
@@ -93,7 +94,7 @@ public abstract class AbstractDomainKind extends DomainKind
     {
     }
 
-    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user)
+    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
         return null;
     }

@@ -35,6 +35,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.sql.Clob;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -64,6 +65,17 @@ public class BuilderObjectFactory<K> implements ObjectFactory<K>
         }
         void set(Object bean, Object value) throws InvocationTargetException, IllegalAccessException
         {
+            if (value instanceof Clob)
+            {
+                try
+                {
+                    value = ConvertHelper.convertClobToString((Clob)value);
+                }
+                catch (SQLException e)
+                {
+                    throw new InvocationTargetException(e);
+                }
+            }
             if (null != value && null != converter)
                 value = converter.convert(type, value);
             method.invoke(bean, value);
