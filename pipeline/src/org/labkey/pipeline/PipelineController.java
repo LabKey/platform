@@ -256,6 +256,10 @@ public class PipelineController extends SpringActionController
         URI root = validatePath(path, errors);
         String supplementalPath = form.hasSiteDefaultPipelineRoot() || form.getSupplementalPath() == null ? null : form.getSupplementalPath();
         URI supplementalRoot = supplementalPath == null ? null : validatePath(supplementalPath, errors);
+        if (root == null && supplementalRoot != null)
+        {
+            errors.addError(new LabkeyError("Cannot set a supplemental root without also setting a primary root"));
+        }
         if (errors.hasErrors())
         {
             return false;
