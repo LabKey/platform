@@ -234,7 +234,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             hidden: true,
             preventHeader: true,
             border: false, frame: false,
-            height: 250,
+            height: 261,
             items: [ this.customPanel ]
         },{
             xtype: 'panel',
@@ -1078,7 +1078,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 xtype      : 'radiogroup',
                 fieldLabel : 'Display',
                 columns    : 3,
-                height     : 50,
+                height     : 61,
                 items      : sizeItems
             },{
                 xtype           : 'numberfield',
