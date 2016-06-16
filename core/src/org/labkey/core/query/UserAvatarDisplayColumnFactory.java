@@ -48,20 +48,24 @@ public class UserAvatarDisplayColumnFactory implements DisplayColumnFactory
                 String renderUrl = renderURL(ctx);
                 if (renderUrl != null)
                 {
-                    out.write("<img src=\"" + renderUrl + "\"/>");
+                    out.write(getImageTagStr(renderUrl, 32));
                 }
             }
 
             @Override
             public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
             {
-                renderGridCellContents(ctx, out);
+                String renderUrl = renderURL(ctx);
+                if (renderUrl != null)
+                {
+                    out.write(getImageTagStr(renderUrl, null));
+                }
             }
 
             @Override
             protected void renderIconAndFilename(RenderContext ctx, Writer out, String filename, @Nullable String fileIconUrl, boolean link, boolean thumbnail) throws IOException
             {
-                renderGridCellContents(ctx, out);
+                renderDetailsCellContents(ctx, out);
             }
 
             @Override
@@ -75,6 +79,11 @@ public class UserAvatarDisplayColumnFactory implements DisplayColumnFactory
             protected InputStream getFileContents(RenderContext ctx, Object value) throws FileNotFoundException
             {
                 return null;
+            }
+
+            private String getImageTagStr(String renderUrl, Integer size)
+            {
+                return "<img src=\"" + renderUrl + "\"" + (size != null ? " height=\"" + size + "\" width=\"" + size + "\"" : "") + "/>";
             }
 
             private User getUserFromCtx(RenderContext ctx)

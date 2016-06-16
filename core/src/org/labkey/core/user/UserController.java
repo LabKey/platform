@@ -138,9 +138,11 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.imageio.ImageIO;
 import javax.mail.Address;
 import javax.mail.Message;
 import javax.mail.internet.MimeMessage;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
@@ -983,6 +985,25 @@ public class UserController extends SpringActionController
                     errors.reject(SpringActionController.ERROR_MSG, "The value of the 'Display Name' field conflicts with another value in the database. Please enter a different value");
                 }
             }
+
+            // validate the original size of the avatar image
+            SpringAttachmentFile file = getAvatarFileFromFileMap();
+            if (file != null)
+            {
+                try (InputStream is = file.openInputStream())
+                {
+                    BufferedImage image = ImageIO.read(is);
+                    float desiredSize = ThumbnailService.ImageType.Large.getHeight();
+                    if (image.getHeight() < desiredSize || image.getWidth() < desiredSize)
+                    {
+                        errors.reject(SpringActionController.ERROR_MSG, "Avatar file must have a height and width of at least " + desiredSize + "px.");
+                    }
+                }
+                catch (IOException e)
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, "Unable to open avatar file.");
+                }
+            }
         }
 
         public boolean handlePost(QueryUpdateForm form, BindException errors) throws Exception
@@ -999,15 +1020,26 @@ public class UserController extends SpringActionController
                     ((UsersTable)table).setMustCheckPermissions(false);
                 doInsertUpdate(form, errors, false);
 
-                updateAvatarThumbnail(form);
+                updateAvatarThumbnail();
             }
             return 0 == errors.getErrorCount();
         }
 
-        private void updateAvatarThumbnail(QueryUpdateForm form) throws IOException
+        private SpringAttachmentFile getAvatarFileFromFileMap()
+        {
+            String avatarFieldKey = "quf_" + UserAvatarDisplayColumnFactory.FIELD_KEY;
+            if (getFileMap().containsKey(avatarFieldKey) && !getFileMap().get(avatarFieldKey).isEmpty())
+            {
+                return new SpringAttachmentFile(getFileMap().get(avatarFieldKey));
+            }
+
+            return null;
+        }
+
+        private void updateAvatarThumbnail() throws IOException
         {
             User user = UserManager.getUser(_pkVal);
-            ThumbnailService.ImageType imageType = ThumbnailService.ImageType.Height32;
+            ThumbnailService.ImageType imageType = ThumbnailService.ImageType.Large;
             ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
 
             if (svc != null)
@@ -1019,10 +1051,9 @@ public class UserController extends SpringActionController
                 }
 
                 // add any new avatars by using the ThumbnailService to generate and attach to the User's entityid
-                String avatarFieldKey = "quf_" + UserAvatarDisplayColumnFactory.FIELD_KEY;
-                if (getFileMap().containsKey(avatarFieldKey) && !getFileMap().get(avatarFieldKey).isEmpty())
+                SpringAttachmentFile file = getAvatarFileFromFileMap();
+                if (file != null)
                 {
-                    SpringAttachmentFile file = new SpringAttachmentFile(getFileMap().get(avatarFieldKey));
                     try (InputStream is = file.openInputStream())
                     {
                         ThumbnailProvider wrapper = new ImageStreamThumbnailProvider(user, is, file.getContentType(), imageType);
