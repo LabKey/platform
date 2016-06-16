@@ -397,7 +397,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, Thum
     {
         if (_avatarUrl == null && getGUID() != null)
         {
-            ThumbnailService.ImageType imageType = ThumbnailService.ImageType.Height32;
+            ThumbnailService.ImageType imageType = ThumbnailService.ImageType.Large;
             Attachment attachment = AttachmentService.get().getAttachment(this, imageType.getFilename());
             if (attachment != null)
             {
