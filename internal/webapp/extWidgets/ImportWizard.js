@@ -153,7 +153,7 @@ Ext4.define('LABKEY.ext.ImportWizard', {
                 fieldLabel: 'Title',
                 name: 'title',
                 itemId: 'titleField',
-                value: LABKEY.Security.currentUser.displayName + ' ' + (new Date().format('Y-m-d'))
+                value: LABKEY.Security.currentUser.displayName + ' ' + (Ext4.Date.format(new Date(),'Y-m-d'))
             },{
                 xtype: 'textarea',
                 fieldLabel: 'Description',
