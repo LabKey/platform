@@ -1765,7 +1765,6 @@ api/webapp/clientapi/dom/Tour.js -text
 api/webapp/clientapi/dom/Utils.js -text
 api/webapp/clientapi/dom/WebPart.js -text
 api/webapp/clientapi/ext3.lib.xml -text
-api/webapp/clientapi/ext3/DataRegion.js -text
 api/webapp/clientapi/ext3/EditorGridPanel.js -text
 api/webapp/clientapi/ext3/ExtendedJsonReader.js -text
 api/webapp/clientapi/ext3/FieldKey.js -text
@@ -1776,10 +1775,11 @@ api/webapp/clientapi/ext3/GridView.js -text
 api/webapp/clientapi/ext3/HoverPopup.js -text
 api/webapp/clientapi/ext3/LongTextEditor.js -text
 api/webapp/clientapi/ext3/PersistentToolTip.js -text
-api/webapp/clientapi/ext3/QueryWebPart.js -text
 api/webapp/clientapi/ext3/SecurityPolicy.js -text
 api/webapp/clientapi/ext3/Store.js -text
 api/webapp/clientapi/ext3/Utils.js -text
+api/webapp/clientapi/ext3/deprecated/DataRegion.js -text
+api/webapp/clientapi/ext3/deprecated/QueryWebPart.js -text
 api/webapp/clientapi/ext4.lib.xml -text
 api/webapp/clientapi/ext4/Util.js -text
 api/webapp/clientapi/ext4/data/Proxy.js -text

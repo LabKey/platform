@@ -23,9 +23,93 @@ if (!LABKEY.DataRegions) {
     var CUSTOM_VIEW_PANELID = '~~customizeView~~';
     var VIEWNAME_PREFIX = '.viewName';
     var DISABLE_ANALYTICS = '.disableAnalytics';
-    var VALID_LISTENERS = ['afterpanelhide', 'afterpanelshow', 'beforechangeview', 'beforeclearsort', 'beforemaxrowschange',
-                            'beforeoffsetchange', 'beforerefresh', 'beforesetparameters', 'beforesortchange', 'render',
-                            'rendermsg', 'success'];
+
+    var VALID_LISTENERS = [
+        /**
+         * @memberOf LABKEY.DataRegion.prototype
+         * @name afterpanelhide
+         * @event LABKEY.DataRegion.prototype#hidePanel
+         * @description Fires after hiding a visible 'Customize Grid' panel.
+         */
+            'afterpanelhide',
+        /**
+         * @memberOf LABKEY.DataRegion.prototype
+         * @name afterpanelshow
+         * @event LABKEY.DataRegion.prototype.showPanel
+         * @description Fires after showing 'Customize Grid' panel.
+         */
+            'afterpanelshow',
+        /**
+         * @memberOf LABKEY.DataRegion.prototype
+         * @name beforechangeview
+         * @event
+         * @description Fires before changing grid/view/report.
+         * @see LABKEY.DataRegion#changeView
+         */
+            'beforechangeview',
+        /**
+         * @memberOf LABKEY.DataRegion.prototype
+         * @name beforeclearsort
+         * @event
+         * @description Fires before clearing sort applied to grid.
+         * @see LABKEY.DataRegion#clearSort
+         */
+            'beforeclearsort',
+        /**
+         * @memberOf LABKEY.DataRegion.prototype
+         * @name beforemaxrowschange
+         * @event
+         * @description Fires before change page size.
+         * @see LABKEY.DataRegion#setMaxRows
+         */
+            'beforemaxrowschange',
+        /**
+         * @memberOf LABKEY.DataRegion.prototype
+         * @name beforeoffsetchange
+         * @event
+         * @description Fires before change page number.
+         * @see LABKEY.DataRegion#setPageOffset
+         */
+            'beforeoffsetchange',
+        /**
+         * @memberOf LABKEY.DataRegion.prototype
+         * @name beforerefresh
+         * @event
+         * @description Fires before refresh grid.
+         * @see LABKEY.DataRegion#refresh
+         */
+            'beforerefresh',
+        /**
+         * @memberOf LABKEY.DataRegion.prototype
+         * @name beforesetparameters
+         * @event
+         * @description Fires before setting the parameterized query values for this query.
+         * @see LABKEY.DataRegion#setParameters
+         */
+            'beforesetparameters',
+        /**
+         * @memberOf LABKEY.DataRegion.prototype
+         * @name beforesortchange
+         * @event
+         * @description Fires before change sorting on the grid.
+         * @see LABKEY.DataRegion#changeSort
+         */
+            'beforesortchange',
+        /**
+         * @memberOf LABKEY.DataRegion.prototype
+         * @member
+         * @name render
+         * @event
+         * @description Fires when data region renders.
+         */
+            'render',
+        /**
+         * @memberOf LABKEY.DataRegion.prototype
+         * @name success
+         * @event
+         * @description Fires when data region loads successfully.
+         */
+            'success'];
 
     // TODO: Update constants to not include '.' so mapping can be used easier
     var REQUIRE_NAME_PREFIX = {
@@ -47,13 +131,17 @@ if (!LABKEY.DataRegions) {
     //
     var _paneCache = {};
 
+    /**
+     * The DataRegion constructor is private - to get a LABKEY.DataRegion object, use LABKEY.DataRegions['dataregionname'].
+     * @class LABKEY.DataRegion
+     * The DataRegion class allows you to interact with LabKey grids, including querying and modifying selection state, filters, and more.
+     * @constructor
+     */
     LABKEY.DataRegion = function(config) {
         this._init(config, true);
     };
 
-    var Proto = LABKEY.DataRegion.prototype;
-
-    Proto.toJSON = function() {
+    LABKEY.DataRegion.prototype.toJSON = function() {
         return {
             name: this.name,
             schemaName: this.schemaName,
@@ -71,7 +159,7 @@ if (!LABKEY.DataRegions) {
      * @param {Boolean} [applyDefaults=false]
      * @private
      */
-    Proto._init = function(config, applyDefaults) {
+    LABKEY.DataRegion.prototype._init = function(config, applyDefaults) {
 
         // ensure name
         if (!config.dataRegionName) {
@@ -168,6 +256,8 @@ if (!LABKEY.DataRegions) {
                  * Id of the DataRegion. Same as name property.
                  */
                 id: this.name,
+
+                deleteURL: undefined,
 
                 importURL: undefined,
 
@@ -345,6 +435,7 @@ if (!LABKEY.DataRegions) {
         }
 
         /**
+         * @ignore
          * Non-configurable Options
          */
         this.selectionModified = false;
@@ -382,16 +473,18 @@ if (!LABKEY.DataRegions) {
         }
     };
 
-    Proto.destroy = function() {
+    LABKEY.DataRegion.prototype.destroy = function() {
         // currently a no-op, but should be used to clean-up after ourselves
         this.disableHeaderLock();
     };
 
     /**
-     * Refreshes the grid via a page reload. Can be prevented with a listener on the 'beforerefresh'
+     * Refreshes the grid, via AJAX region is in async mode (loaded through a QueryWebPart),
+     * and via a page reload otherwise. Can be prevented with a listener
+     * on the 'beforerefresh'
      * event.
      */
-    Proto.refresh = function() {
+    LABKEY.DataRegion.prototype.refresh = function() {
 
         //var event = $.Event("beforerefresh");
         //
@@ -417,15 +510,16 @@ if (!LABKEY.DataRegions) {
     /**
      * Add a filter to this Data Region.
      * @param {LABKEY.Filter} filter
+     * @see LABKEY.DataRegion.addFilter static method.
      */
-    Proto.addFilter = function(filter) {
+    LABKEY.DataRegion.prototype.addFilter = function(filter) {
         _updateFilter(this, filter);
     };
 
     /**
      * Removes all filters from the DataRegion
      */
-    Proto.clearAllFilters = function() {
+    LABKEY.DataRegion.prototype.clearAllFilters = function() {
         //var event = $.Event("beforeclearallfilters");
         //
         //$(this).trigger(event, this);
@@ -446,7 +540,7 @@ if (!LABKEY.DataRegions) {
      * Removes all the filters for a particular field
      * @param {string|FieldKey} fieldKey the name of the field from which all filters should be removed
      */
-    Proto.clearFilter = function(fieldKey) {
+    LABKEY.DataRegion.prototype.clearFilter = function(fieldKey) {
         fieldKey = _resolveFieldKey(this, fieldKey);
 
         if (fieldKey) {
@@ -484,7 +578,7 @@ if (!LABKEY.DataRegions) {
      * @returns {String} The container filter currently applied to this DataRegion. Defaults to 'undefined' if a container filter is not specified by the configuration.
      * @see LABKEY.DataRegion#getUserContainerFilter to get the containerFilter value from the URL.
      */
-    Proto.getContainerFilter = function() {
+    LABKEY.DataRegion.prototype.getContainerFilter = function() {
         var cf;
 
         if (LABKEY.Utils.isString(this.containerFilter) && this.containerFilter.length > 0) {
@@ -497,11 +591,7 @@ if (!LABKEY.DataRegions) {
         return cf;
     };
 
-    /**
-     *
-     * @returns {LABKEY.DataRegion}
-     */
-    Proto.getDataRegion = function() {
+    LABKEY.DataRegion.prototype.getDataRegion = function() {
         return this;
     };
 
@@ -509,7 +599,7 @@ if (!LABKEY.DataRegions) {
      * Returns the user {@link LABKEY.Query.containerFilter} parameter from the URL.
      * @returns {LABKEY.Query.containerFilter} The user container filter.
      */
-    Proto.getUserContainerFilter = function() {
+    LABKEY.DataRegion.prototype.getUserContainerFilter = function() {
         return this.getParameter(this.name + CONTAINER_FILTER_NAME);
     };
 
@@ -523,7 +613,7 @@ if (!LABKEY.DataRegions) {
      * @returns {Object} Object representing the user filter.
      * @deprecated 12.2 Use getUserFilterArray instead
      */
-    Proto.getUserFilter = function() {
+    LABKEY.DataRegion.prototype.getUserFilter = function() {
 
         if (LABKEY.devMode) {
             console.warn([
@@ -549,7 +639,7 @@ if (!LABKEY.DataRegions) {
      * Returns an Array of LABKEY.Filter instances constructed from the URL.
      * @returns {Array} Array of {@link LABKEY.Filter} objects that represent currently applied filters.
      */
-    Proto.getUserFilterArray = function() {
+    LABKEY.DataRegion.prototype.getUserFilterArray = function() {
         var userFilter = [], me = this;
 
         var pairs = _getParametersSearch(this, this.requestURL);
@@ -569,7 +659,7 @@ if (!LABKEY.DataRegions) {
      * Remove a filter on this DataRegion.
      * @param {LABKEY.Filter} filter
      */
-    Proto.removeFilter = function(filter) {
+    LABKEY.DataRegion.prototype.removeFilter = function(filter) {
         if (LABKEY.Utils.isObject(filter) && LABKEY.Utils.isFunction(filter.getColumnName)) {
             _updateFilter(this, null, [this.name + '.' + filter.getColumnName() + '~']);
         }
@@ -581,12 +671,17 @@ if (!LABKEY.DataRegions) {
      * @param {LABKEY.Filter} filter
      * @param {LABKEY.Filter} [filterToReplace]
      */
-    Proto.replaceFilter = function(filter, filterToReplace) {
+    LABKEY.DataRegion.prototype.replaceFilter = function(filter, filterToReplace) {
         var target = filterToReplace ? filterToReplace : filter;
         _updateFilter(this, filter, [this.name + '.' + target.getColumnName() + '~']);
     };
 
-    Proto.replaceFilters = function(filters, columnNames) {
+    /**
+     * @ignore
+     * @param filters
+     * @param columnNames
+     */
+    LABKEY.DataRegion.prototype.replaceFilters = function(filters, columnNames) {
         var filterPrefixes = [],
             filterParams = [],
             me = this;
@@ -629,7 +724,7 @@ if (!LABKEY.DataRegions) {
      * @param filter
      * @param filterMatch
      */
-    Proto.replaceFilterMatch = function(filter, filterMatch) {
+    LABKEY.DataRegion.prototype.replaceFilterMatch = function(filter, filterMatch) {
         var params = _getParameters(this, this.requestURL);
         var skips = [], me = this;
 
@@ -649,7 +744,7 @@ if (!LABKEY.DataRegions) {
     /**
      * @private
      */
-    Proto._initSelection = function() {
+    LABKEY.DataRegion.prototype._initSelection = function() {
 
         var me = this,
             form = _getFormSelector(this);
@@ -694,7 +789,7 @@ if (!LABKEY.DataRegions) {
      * @see LABKEY.DataRegion#selectPage
      * @see LABKEY.DataRegion.clearSelected static method.
      */
-    Proto.clearSelected = function(config) {
+    LABKEY.DataRegion.prototype.clearSelected = function(config) {
         config = config || {};
         config.selectionKey = this.selectionKey;
         config.scope = config.scope || this;
@@ -724,7 +819,7 @@ if (!LABKEY.DataRegions) {
      * Note, if the region is paginated, selected items may exist on other pages.
      * @see LABKEY.DataRegion#getSelected
      */
-    Proto.getChecked = function() {
+    LABKEY.DataRegion.prototype.getChecked = function() {
         var values = [];
         _getRowSelectors(this).each(function() {
             if (this.checked) {
@@ -755,7 +850,7 @@ if (!LABKEY.DataRegions) {
      *
      * @see LABKEY.DataRegion.getSelected static method.
      */
-    Proto.getSelected = function(config) {
+    LABKEY.DataRegion.prototype.getSelected = function(config) {
         if (!this.selectionKey)
             return;
 
@@ -769,7 +864,7 @@ if (!LABKEY.DataRegions) {
      * @returns {Integer} the number of selected rows on the current page of the DataRegion.
      * @see LABKEY.DataRegion#getSelected to get all selected rows.
      */
-    Proto.getSelectionCount = function() {
+    LABKEY.DataRegion.prototype.getSelectionCount = function() {
         if (!$('#' + this.domId)) {
             return 0;
         }
@@ -789,7 +884,7 @@ if (!LABKEY.DataRegions) {
      * @returns {Boolean} true if any row is checked on the current page of the DataRegion.
      * @see LABKEY.DataRegion#getSelected to get all selected rows.
      */
-    Proto.hasSelected = function() {
+    LABKEY.DataRegion.prototype.hasSelected = function() {
         return this.getSelectionCount() > 0;
     };
 
@@ -798,7 +893,7 @@ if (!LABKEY.DataRegions) {
      * @returns {Boolean} true if all rows are checked on the current page of the DataRegion and at least one row is present.
      * @see LABKEY.DataRegion#getSelected to get all selected rows.
      */
-    Proto.isPageSelected = function() {
+    LABKEY.DataRegion.prototype.isPageSelected = function() {
         var checkboxes = _getRowSelectors(this);
         var i=0;
 
@@ -810,7 +905,7 @@ if (!LABKEY.DataRegions) {
         return i > 0;
     };
 
-    Proto.selectAll = function(config) {
+    LABKEY.DataRegion.prototype.selectAll = function(config) {
         if (this.selectionKey) {
             config = config || {};
             config.scope = config.scope || this;
@@ -842,9 +937,11 @@ if (!LABKEY.DataRegions) {
     };
 
     /**
+     * @deprecated use clearSelected instead
+     * @function
      * @see LABKEY.DataRegion#clearSelected
      */
-    Proto.selectNone = Proto.clearSelected;
+    LABKEY.DataRegion.prototype.selectNone = LABKEY.DataRegion.prototype.clearSelected;
 
     /**
      * Set the selection state for all checkboxes on the current page of the DataRegion.
@@ -854,7 +951,7 @@ if (!LABKEY.DataRegions) {
      * @see LABKEY.DataRegion#setSelected to set selected items on the current page of the DataRegion.
      * @see LABKEY.DataRegion#clearSelected to clear all selected.
      */
-    Proto.selectPage = function(checked) {
+    LABKEY.DataRegion.prototype.selectPage = function(checked) {
         var _check = (checked === true);
         var ids = _toggleAllRows(this, _check);
         var me = this;
@@ -893,10 +990,10 @@ if (!LABKEY.DataRegions) {
     };
 
     /**
-     *
+     * @ignore
      * @param el
      */
-    Proto.selectRow = function(el) {
+    LABKEY.DataRegion.prototype.selectRow = function(el) {
         this.setSelected({
             ids: [el.value],
             checked: el.checked
@@ -931,7 +1028,7 @@ if (!LABKEY.DataRegions) {
      * @see LABKEY.DataRegion#getSelected to get the selected items for this DataRegion.
      * @see LABKEY.DataRegion#clearSelected to clear all selected items for this DataRegion.
      */
-    Proto.setSelected = function(config) {
+    LABKEY.DataRegion.prototype.setSelected = function(config) {
         if (!config || !LABKEY.Utils.isArray(config.ids) || config.ids.length == 0) {
             return;
         }
@@ -968,7 +1065,7 @@ if (!LABKEY.DataRegions) {
     /**
      * Removes all parameters from the DataRegion
      */
-    Proto.clearAllParameters = function() {
+    LABKEY.DataRegion.prototype.clearAllParameters = function() {
         //var event = $.Event('beforeclearallparameters');
         //
         //$(this).trigger(event, this);
@@ -985,7 +1082,12 @@ if (!LABKEY.DataRegions) {
         _removeParameters(this, [PARAM_PREFIX, OFFSET_PREFIX]);
     };
 
-    Proto.getParameter = function(paramName) {
+    /**
+     * Returns the specified parameter from the URL.
+     * @param {String} paramName
+     * @returns {*}
+     */
+    LABKEY.DataRegion.prototype.getParameter = function(paramName) {
         var pairs = _getParameters(this, this.getSearchString()), param = null;
         $.each(pairs, function(i, pair) {
             if (pair.length > 0 && pair[0] == paramName) {
@@ -1007,7 +1109,7 @@ if (!LABKEY.DataRegions) {
      * @param {boolean} toLowercase If true, all parameter names will be converted to lowercase
      * returns params An Object of key/val pairs.
      */
-    Proto.getParameters = function(toLowercase) {
+    LABKEY.DataRegion.prototype.getParameters = function(toLowercase) {
 
         var results = {};
 
@@ -1033,7 +1135,7 @@ if (!LABKEY.DataRegions) {
      * are named by the query itself.
      * @param {Mixed} params An Object or Array of Array key/val pairs.
      */
-    Proto.setParameters = function(params) {
+    LABKEY.DataRegion.prototype.setParameters = function(params) {
         var event = $.Event('beforesetparameters');
 
         $(this).trigger(event);
@@ -1062,9 +1164,10 @@ if (!LABKEY.DataRegions) {
     };
 
     /**
+     * @ignore
      * @Deprecated
      */
-    Proto.getSearchString = function() {
+    LABKEY.DataRegion.prototype.getSearchString = function() {
         if (!LABKEY.Utils.isString(this.savedSearchString)) {
             this.savedSearchString = document.location.search.substring(1) /* strip the ? */ || "";
         }
@@ -1072,9 +1175,10 @@ if (!LABKEY.DataRegions) {
     };
 
     /**
+     * @ignore
      * @Deprecated
      */
-    Proto.setSearchString = function(regionName, search) {
+    LABKEY.DataRegion.prototype.setSearchString = function(regionName, search) {
         this.savedSearchString = search || "";
         // If the search string doesn't change and there is a hash on the url, the page won't reload.
         // Remove the hash by setting the full path plus search string.
@@ -1088,7 +1192,7 @@ if (!LABKEY.DataRegions) {
     /**
      * @private
      */
-    Proto._initMessaging = function() {
+    LABKEY.DataRegion.prototype._initMessaging = function() {
         if (!this.msgbox) {
             this.msgbox = new MessageArea(this);
             this.msgbox.on('rendermsg', function(evt, msgArea, parts) { _onRenderMessageArea(this, parts); }, this);
@@ -1115,9 +1219,8 @@ if (!LABKEY.DataRegions) {
      *      </ul>
      * @param part The part of the message area to render the message to. Used to scope messages so they can be added
      *      and removed without clearing other messages.
-     * @return {Ext.Element} The Ext.Element of the newly created message div.
      */
-    Proto.addMessage = function(config, part) {
+    LABKEY.DataRegion.prototype.addMessage = function(config, part) {
         this.hidePanel();
 
         if (LABKEY.Utils.isString(config)) {
@@ -1143,7 +1246,7 @@ if (!LABKEY.DataRegions) {
     /**
      * Clear the message box contents.
      */
-    Proto.clearMessage = function() {
+    LABKEY.DataRegion.prototype.clearMessage = function() {
         if (this.msgbox) this.msgbox.clear();
     };
 
@@ -1152,7 +1255,7 @@ if (!LABKEY.DataRegions) {
      *      and removed without clearing other messages.
      * @return {String} The message for 'part'. Could be undefined.
      */
-    Proto.getMessage = function(part) {
+    LABKEY.DataRegion.prototype.getMessage = function(part) {
         if (this.msgbox) { return this.msgbox.getMessage(part); } // else undefined
     };
 
@@ -1161,7 +1264,7 @@ if (!LABKEY.DataRegions) {
      *      and removed without clearing other messages.
      * @return {Boolean} true iff there is a message area for this region and it has the message keyed by 'part'.
      */
-    Proto.hasMessage = function(part) {
+    LABKEY.DataRegion.prototype.hasMessage = function(part) {
         return this.msgbox && this.msgbox.hasMessage(part);
     };
 
@@ -1169,7 +1272,7 @@ if (!LABKEY.DataRegions) {
      * If a message is currently showing, hide it and clear out its contents
      * @param keepContent If true don't remove the message area content
      */
-    Proto.hideMessage = function(keepContent) {
+    LABKEY.DataRegion.prototype.hideMessage = function(keepContent) {
         if (this.msgbox) {
             this.msgbox.hide();
 
@@ -1179,9 +1282,11 @@ if (!LABKEY.DataRegions) {
     };
 
     /**
+     * @ignore
+     * @private
      * Toggle expand/collapse state for the message area content.
      */
-    Proto.toggleMessageArea = function() {
+    LABKEY.DataRegion.prototype.toggleMessageArea = function() {
         if (this.msgbox && this.msgbox.isVisible()) {
 
             if (this.msgbox.getToggleEl().hasClass('fa-minus'))
@@ -1195,21 +1300,21 @@ if (!LABKEY.DataRegions) {
      * Returns true if a message is currently being shown for this DataRegion. Messages are shown as a header.
      * @return {Boolean} true if a message is showing.
      */
-    Proto.isMessageShowing = function() {
+    LABKEY.DataRegion.prototype.isMessageShowing = function() {
         return this.msgbox && this.msgbox.isVisible();
     };
 
     /**
      * Removes all messages from this Data Region.
      */
-    Proto.removeAllMessages = function() {
+    LABKEY.DataRegion.prototype.removeAllMessages = function() {
         if (this.msgbox) { this.msgbox.removeAll(); }
     };
 
     /**
      * If a message is currently showing, remove the specified part
      */
-    Proto.removeMessage = function(part) {
+    LABKEY.DataRegion.prototype.removeMessage = function(part) {
         if (this.msgbox) { this.msgbox.removeMessage(part); }
     };
 
@@ -1217,12 +1322,12 @@ if (!LABKEY.DataRegions) {
      * Show a message in the header of this DataRegion with a loading indicator.
      * @param html the HTML source of the message to be shown
      */
-    Proto.showLoadingMessage = function(html) {
+    LABKEY.DataRegion.prototype.showLoadingMessage = function(html) {
         html = html || "Loading...";
         this.addMessage('<div><span class="loading-indicator">&nbsp;</span><em>' + html + '</em></div>', 'drloading');
     };
 
-    Proto.hideLoadingMessage = function() {
+    LABKEY.DataRegion.prototype.hideLoadingMessage = function() {
         this.removeMessage('drloading');
     };
 
@@ -1230,7 +1335,7 @@ if (!LABKEY.DataRegions) {
      * Show a success message in the header of this DataRegion.
      * @param html the HTML source of the message to be shown
      */
-    Proto.showSuccessMessage = function(html) {
+    LABKEY.DataRegion.prototype.showSuccessMessage = function(html) {
         html = html || "Completed successfully.";
         this.addMessage('<div class="labkey-message">' + html + '</div>');
     };
@@ -1239,7 +1344,7 @@ if (!LABKEY.DataRegions) {
      * Show an error message in the header of this DataRegion.
      * @param html the HTML source of the message to be shown
      */
-    Proto.showErrorMessage = function(html) {
+    LABKEY.DataRegion.prototype.showErrorMessage = function(html) {
         html = html || "An error occurred.";
         this.addMessage('<div class="labkey-error">' + html + '</div>');
     };
@@ -1249,13 +1354,13 @@ if (!LABKEY.DataRegions) {
      * @param msg the HTML source of the message to be shown
      * @deprecated use addMessage(msg, part) instead.
      */
-    Proto.showMessage = function(msg) {
+    LABKEY.DataRegion.prototype.showMessage = function(msg) {
         if (this.msgbox) {
             this.msgbox.addMessage(msg);
         }
     };
 
-    Proto.showMessageArea = function() {
+    LABKEY.DataRegion.prototype.showMessageArea = function() {
         if (this.msgbox && this.msgbox.hasContent()) {
             this.msgbox.show();
         }
@@ -1270,7 +1375,7 @@ if (!LABKEY.DataRegions) {
      * @param {string or LABKEY.FieldKey} fieldKey name of the column to be sorted
      * @param {string} [sortDir=+] Set to '+' for ascending or '-' for descending
      */
-    Proto.changeSort = function(fieldKey, sortDir) {
+    LABKEY.DataRegion.prototype.changeSort = function(fieldKey, sortDir) {
         if (!fieldKey)
             return;
 
@@ -1294,7 +1399,7 @@ if (!LABKEY.DataRegions) {
      * Removes the sort on a specified column
      * @param {string or LABKEY.FieldKey} fieldKey name of the column
      */
-    Proto.clearSort = function(fieldKey) {
+    LABKEY.DataRegion.prototype.clearSort = function(fieldKey) {
         if (!fieldKey)
             return;
 
@@ -1327,7 +1432,7 @@ if (!LABKEY.DataRegions) {
      * </ul>
      * @returns {Object} Object representing the user sort.
      */
-    Proto.getUserSort = function() {
+    LABKEY.DataRegion.prototype.getUserSort = function() {
         return _getUserSort(this);
     };
 
@@ -1335,38 +1440,54 @@ if (!LABKEY.DataRegions) {
     // Paging
     //
 
-    Proto._initPaging = function() {
+    LABKEY.DataRegion.prototype._initPaging = function() {
         _getHeaderSelector(this).find('div.labkey-pagination').css('visibility', 'visible');
     };
 
     /**
      * Forces the grid to show all rows, without any paging
      */
-    Proto.showAllRows = function() {
+    LABKEY.DataRegion.prototype.showAllRows = function() {
         _showRows(this, 'all');
     };
-    Proto.showAll = Proto.showAllRows;
+
+    /**
+     * @deprecated use showAllRows instead
+     * @function
+     * @see LABKEY.DataRegion#showAllRows
+     */
+    LABKEY.DataRegion.prototype.showAll = LABKEY.DataRegion.prototype.showAllRows;
 
     /**
      * Forces the grid to show only rows that have been selected
      */
-    Proto.showSelectedRows = function() {
+    LABKEY.DataRegion.prototype.showSelectedRows = function() {
         _showRows(this, 'selected');
     };
-    Proto.showSelected = Proto.showSelectedRows;
+    /**
+     * @deprecated use showSelectedRows instead
+     * @function
+     * @see LABKEY.DataRegion#showSelectedRows
+     */
+    LABKEY.DataRegion.prototype.showSelected = LABKEY.DataRegion.prototype.showSelectedRows;
 
     /**
      * Forces the grid to show only rows that have not been selected
      */
-    Proto.showUnselectedRows = function() {
+    LABKEY.DataRegion.prototype.showUnselectedRows = function() {
         _showRows(this, 'unselected');
     };
-    Proto.showUnselected = Proto.showUnselectedRows;
+    /**
+     * @deprecated use showUnselectedRows instead
+     * @function
+     * @see LABKEY.DataRegion#showUnselectedRows
+     */
+    LABKEY.DataRegion.prototype.showUnselected = LABKEY.DataRegion.prototype.showUnselectedRows;
 
     /**
      * Forces the grid to do paging based on the current maximum number of rows
      */
-    Proto.showPaged = function() {
+    LABKEY.DataRegion.prototype.showPaged = function() {
         if (_beforeRowsChange(this, null)) { // lol, what? Handing in null is so lame
             _removeParameters(this, [SHOW_ROWS_PREFIX]);
         }
@@ -1375,16 +1496,21 @@ if (!LABKEY.DataRegions) {
     /**
      * Displays the first page of the grid
      */
-    Proto.showFirstPage = function() {
+    LABKEY.DataRegion.prototype.showFirstPage = function() {
         this.setPageOffset(0);
     };
-    Proto.pageFirst = Proto.showFirstPage;
+    /**
+     * @deprecated use showFirstPage instead
+     * @function
+     * @see LABKEY.DataRegion#showFirstPage
+     */
+    LABKEY.DataRegion.prototype.pageFirst = LABKEY.DataRegion.prototype.showFirstPage;
 
     /**
      * Changes the current row offset for paged content
      * @param rowOffset row index that should be at the top of the grid
      */
-    Proto.setPageOffset = function(rowOffset) {
+    LABKEY.DataRegion.prototype.setPageOffset = function(rowOffset) {
         var event = $.Event('beforeoffsetchange');
 
         $(this).trigger(event, [this, rowOffset]);
@@ -1403,13 +1529,18 @@ if (!LABKEY.DataRegions) {
             _removeParameters(this, [OFFSET_PREFIX, SHOW_ROWS_PREFIX]);
         }
     };
-    Proto.setOffset = Proto.setPageOffset;
+    /**
+     * @deprecated use setPageOffset instead
+     * @function
+     * @see LABKEY.DataRegion#setPageOffset
+     */
+    LABKEY.DataRegion.prototype.setOffset = LABKEY.DataRegion.prototype.setPageOffset;
 
     /**
      * Changes the maximum number of rows that the grid will display at one time
      * @param newmax the maximum number of rows to be shown
      */
-    Proto.setMaxRows = function(newmax) {
+    LABKEY.DataRegion.prototype.setMaxRows = function(newmax) {
         var event = $.Event('beforemaxrowschange'); // Can't this just be a variant of _beforeRowsChange with an extra param?
         $(this).trigger(event, [this, newmax]);
         if (event.isDefaultPrevented()) {
@@ -1426,7 +1557,7 @@ if (!LABKEY.DataRegions) {
     //
     // Customize View
     //
-    Proto._initCustomViews = function() {
+    LABKEY.DataRegion.prototype._initCustomViews = function() {
         if (this.view && this.view.session) {
             var msg;
             if (this.view.savable) {
@@ -1459,7 +1590,7 @@ if (!LABKEY.DataRegions) {
      * @param {String} [view.reportId] If the type is 'report', then the report id.
      * @param {Object} urlParameters <b>NOTE: Experimental parameter; may change without warning.</b> A set of filter and sorts to apply as URL parameters when changing the view.
      */
-    Proto.changeView = function(view, urlParameters) {
+    LABKEY.DataRegion.prototype.changeView = function(view, urlParameters) {
         var event = $.Event('beforechangeview');
         $(this).trigger(event, [this, view, urlParameters]);
         if (event.isDefaultPrevented()) {
@@ -1512,7 +1643,7 @@ if (!LABKEY.DataRegions) {
         _setParameters(this, paramValPairs, skipPrefixes);
     };
 
-    Proto.getQueryDetails = function(success, failure, scope) {
+    LABKEY.DataRegion.prototype.getQueryDetails = function(success, failure, scope) {
 
         var userFilter = [],
             userSort = this.getUserSort(),
@@ -1554,7 +1685,7 @@ if (!LABKEY.DataRegions) {
     /**
      * Hides the customize view interface if it is visible.
      */
-    Proto.hideCustomizeView = function() {
+    LABKEY.DataRegion.prototype.hideCustomizeView = function() {
         if (this.activePanelId === CUSTOM_VIEW_PANELID) {
             this.hidePanel();
             this.showMessageArea();
@@ -1565,7 +1696,7 @@ if (!LABKEY.DataRegions) {
      * Show the customize view interface.
      * @param activeTab {[String]} Optional. One of "ColumnsTab", "FilterTab", or "SortTab".  If no value is specified (or undefined), the ColumnsTab will be shown.
      */
-    Proto.showCustomizeView = function(activeTab) {
+    LABKEY.DataRegion.prototype.showCustomizeView = function(activeTab) {
         var region = this;
 
         var panelConfig = this.getPanelConfiguration(CUSTOM_VIEW_PANELID);
@@ -1671,9 +1802,11 @@ if (!LABKEY.DataRegions) {
     };
 
     /**
+     * @ignore
+     * @private
      * Shows/Hides customize view depending on if it is currently shown
      */
-    Proto.toggleShowCustomizeView = function() {
+    LABKEY.DataRegion.prototype.toggleShowCustomizeView = function() {
         if (this.activePanelId === CUSTOM_VIEW_PANELID) {
             this.hideCustomizeView();
         }
@@ -1694,7 +1827,7 @@ if (!LABKEY.DataRegions) {
         });
     };
 
-    Proto.publishPanel = function(panelId, panel, showFn, hideFn, scope) {
+    LABKEY.DataRegion.prototype.publishPanel = function(panelId, panel, showFn, hideFn, scope) {
         this.panelConfigurations[panelId] = {
             panel: panel,
             show: $.isFunction(showFn) ? showFn : _defaultShow,
@@ -1704,14 +1837,15 @@ if (!LABKEY.DataRegions) {
         return this;
     };
 
-    Proto.getPanelConfiguration = function(panelId) {
+    LABKEY.DataRegion.prototype.getPanelConfiguration = function(panelId) {
         return this.panelConfigurations[panelId];
     };
 
     /**
+     * @ignore
      * Hides any panel that is currently visible. Returns a callback once the panel is hidden.
      */
-    Proto.hidePanel = function(callback, scope) {
+    LABKEY.DataRegion.prototype.hidePanel = function(callback, scope) {
         if (this.activePanelId) {
             var config = this.getPanelConfiguration(this.activePanelId);
             if (config) {
@@ -1737,7 +1871,7 @@ if (!LABKEY.DataRegions) {
         }
     };
 
-    Proto.showPanel = function(panelId, callback, scope) {
+    LABKEY.DataRegion.prototype.showPanel = function(panelId, callback, scope) {
 
         var config = this.getPanelConfiguration(panelId);
 
@@ -1772,7 +1906,7 @@ if (!LABKEY.DataRegions) {
     /**
      * @private
      */
-    Proto._initHeaderLocking = function() {
+    LABKEY.DataRegion.prototype._initHeaderLocking = function() {
         if (this._allowHeaderLock === true) {
             this.hLock = new HeaderLock(this);
         }
@@ -1781,7 +1915,7 @@ if (!LABKEY.DataRegions) {
     /**
      * @private
      */
-    Proto._initPanes = function() {
+    LABKEY.DataRegion.prototype._initPanes = function() {
         var callbacks = _paneCache[this.name];
         if (callbacks) {
             var me = this;
@@ -1805,7 +1939,7 @@ if (!LABKEY.DataRegions) {
      * @param groupNames
      * @private
      */
-    Proto._removeCohortGroupFilters = function(subjectColumn, groupNames) {
+    LABKEY.DataRegion.prototype._removeCohortGroupFilters = function(subjectColumn, groupNames) {
         var params = _getParameters(this, this.requestURL);
         var skips = [], i, p, k;
 
@@ -1841,7 +1975,7 @@ if (!LABKEY.DataRegions) {
      * @param filter
      * @private
      */
-    Proto._replaceAdvCohortFilter = function(filter) {
+    LABKEY.DataRegion.prototype._replaceAdvCohortFilter = function(filter) {
         var params = _getParameters(this, this.requestURL);
         var skips = [], i, p;
 
@@ -1862,7 +1996,7 @@ if (!LABKEY.DataRegions) {
      * @param columnIdentifier
      * @returns {*}
      */
-    Proto.getColumn = function(columnIdentifier) {
+    LABKEY.DataRegion.prototype.getColumn = function(columnIdentifier) {
 
         var column = null, // backwards compat
             isString = LABKEY.Utils.isString,
@@ -1889,7 +2023,7 @@ if (!LABKEY.DataRegions) {
      * Returns a query config object suitable for passing into LABKEY.Query.selectRows() or other LABKEY.Query APIs.
      * @returns {Object} Object representing the query configuration that generated this grid.
      */
-    Proto.getQueryConfig = function() {
+    LABKEY.DataRegion.prototype.getQueryConfig = function() {
         var config = {
             dataRegionName: this.name,
             dataRegionSelectionKey: this.selectionKey,
@@ -1919,7 +2053,7 @@ if (!LABKEY.DataRegions) {
     /**
      * Hide the ribbon panel. If visible the ribbon panel will be hidden.
      */
-    Proto.hideButtonPanel = function() {
+    LABKEY.DataRegion.prototype.hideButtonPanel = function() {
         this.hidePanel();
         this.showMessageArea();
     };
@@ -1927,10 +2061,11 @@ if (!LABKEY.DataRegions) {
     /**
      * Allows for asynchronous rendering of the Data Region. This region must be in "async" mode for
      * this to do anything.
+     * @function
      * @param {String} [renderTo] - The element ID where to render the data region. If not given it will default to
      * the current renderTo target is.
      */
-    Proto.render = function(renderTo) {
+    LABKEY.DataRegion.prototype.render = function(renderTo) {
         if (!this.RENDER_LOCK && this.async) {
             _convertRenderTo(this, renderTo);
             this.refresh();
@@ -1938,10 +2073,9 @@ if (!LABKEY.DataRegions) {
     };
 
     /**
-     * Show a ribbon panel. tabPanelConfig is an ExtJS 3.4 config object for a TabPanel.
-     * The only required value is the items array.
+     * Show a ribbon panel.
      */
-    Proto.showButtonPanel = function(panelButton) {
+    LABKEY.DataRegion.prototype.showButtonPanel = function(panelButton) {
 
         var ribbon = _getHeaderSelector(this).find('.labkey-ribbon'),
             panelId = $(panelButton).attr('panel-toggle'),
@@ -1972,7 +2106,7 @@ if (!LABKEY.DataRegions) {
         }
     };
 
-    Proto.loadFaceting = function(cb, scope) {
+    LABKEY.DataRegion.prototype.loadFaceting = function(cb, scope) {
 
         var region = this;
 
@@ -2001,7 +2135,7 @@ if (!LABKEY.DataRegions) {
         }, this);
     };
 
-    Proto.showFaceting = function() {
+    LABKEY.DataRegion.prototype.showFaceting = function() {
         if (this.facetLoaded) {
             if (!this.facet) {
                 this.facet = LABKEY.dataregion.panel.Facet.display(this);
@@ -2013,12 +2147,12 @@ if (!LABKEY.DataRegions) {
         }
     };
 
-    Proto.on = function(evt, callback, scope) {
+    LABKEY.DataRegion.prototype.on = function(evt, callback, scope) {
         // Prevent from handing back the jQuery event itself.
         $(this).bind(evt, function() { callback.apply(scope || this, $(arguments).slice(1)); });
     };
 
-    Proto._onButtonClick = function(buttonId) {
+    LABKEY.DataRegion.prototype._onButtonClick = function(buttonId) {
         var item = this.findButtonById(this.buttonBar.items, buttonId);
         if (item && $.isFunction(item.handler)) {
             try {
@@ -2029,7 +2163,7 @@ if (!LABKEY.DataRegions) {
         return false;
     };
 
-    Proto.findButtonById = function(items, id) {
+    LABKEY.DataRegion.prototype.findButtonById = function(items, id) {
         if (!items || !items.length || items.length <= 0) {
             return null;
         }
@@ -2048,9 +2182,9 @@ if (!LABKEY.DataRegions) {
         return null;
     };
 
-    Proto.headerLock = function() { return this._allowHeaderLock === true; };
+    LABKEY.DataRegion.prototype.headerLock = function() { return this._allowHeaderLock === true; };
 
-    Proto.disableHeaderLock = function() {
+    LABKEY.DataRegion.prototype.disableHeaderLock = function() {
         if (this.headerLock() && this.hLock) {
             this.hLock.disable();
         }
@@ -2059,7 +2193,7 @@ if (!LABKEY.DataRegions) {
     /**
      * @private
      */
-    Proto._openFilter = function(columnName) {
+    LABKEY.DataRegion.prototype._openFilter = function(columnName) {
         if (this._dialogLoaded) {
             new LABKEY.FilterDialog({
                 dataRegionName: this.name,
@@ -2836,6 +2970,7 @@ if (!LABKEY.DataRegions) {
                 'allowHeaderLock',
                 'buttonBarPosition',
                 'detailsURL',
+                'deleteURL',
                 'importURL',
                 'insertURL',
                 'linkTarget',
@@ -3667,6 +3802,242 @@ if (!LABKEY.DataRegions) {
     };
     MsgProto.on = function(evt, callback, scope) { $(this).bind(evt, $.proxy(callback, scope)); };
 
+    /**
+     * @description Constructs a LABKEY.QueryWebPart class instance
+     * @class The LABKEY.QueryWebPart simplifies the task of dynamically adding a query web part to your page.  Please use
+     * this class for adding query web parts to a page instead of {@link LABKEY.WebPart},
+     * which can be used for other types of web parts.
+     *              <p>Additional Documentation:
+     *              <ul>
+     *                  <li><a href= "https://www.labkey.org/wiki/home/Documentation/page.view?name=webPartConfig">
+     *  				        Web Part Configuration Properties</a></li>
+     *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+     *                      How To Find schemaName, queryName &amp; viewName</a></li>
+     *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=javascriptTutorial">LabKey JavaScript API Tutorial</a> and
+     *                      <a href="https://www.labkey.org/wiki/home/Study/demo/page.view?name=reagentRequest">Demo</a></li>
+     *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=labkeySql">
+     *                      LabKey SQL Reference</a></li>
+     *              </ul>
+     *           </p>
+     * @constructor
+     * @param {Object} config A configuration object with the following possible properties:
+     * @param {String} config.schemaName The name of the schema the web part will query.
+     * @param {String} config.queryName The name of the query within the schema the web part will select and display.
+     * @param {String} [config.viewName] the name of a saved view you wish to display for the given schema and query name.
+     * @param {String} [config.reportId] the report id of a saved report you wish to display for the given schema and query name.
+     * @param {Mixed} [config.renderTo] The element id, DOM element, or Ext element inside of which the part should be rendered. This is typically a &lt;div&gt;.
+     * If not supplied in the configuration, you must call the render() method to render the part into the page.
+     * @param {String} [config.errorType] A parameter to specify how query parse errors are returned. (default 'html'). Valid
+     * values are either 'html' or 'json'. If 'html' is specified the error will be rendered to an HTML view, if 'json' is specified
+     * the errors will be returned to the callback handlers as an array of objects named 'parseErrors' with the following properties:
+     * <ul>
+     *  <li><b>msg</b>: The error message.</li>
+     *  <li><b>line</b>: The line number the error occurred at (optional).</li>
+     *  <li><b>col</b>: The column number the error occurred at (optional).</li>
+     *  <li><b>errorStr</b>: The line from the source query that caused the error (optional).</li>
+     * </ul>
+     * @param {String} [config.sql] A SQL query that can be used instead of an existing schema name/query name combination.
+     * @param {Object} [config.metadata] Metadata that can be applied to the properties of the table fields. Currently, this option is only
+     * available if the query has been specified through the config.sql option. For full documentation on
+     * available properties, see <a href="https://www.labkey.org/download/schema-docs/xml-schemas/schemas/tableInfo_xsd/schema-summary.html">LabKey XML Schema Reference</a>.
+     * This object may contain the following properties:
+     * <ul>
+     *  <li><b>type</b>: The type of metadata being specified. Currently, only 'xml' is supported.</li>
+     *  <li><b>value</b>: The metadata XML value as a string. For example: <code>'&lt;tables xmlns=&quot;http://labkey.org/data/xml&quot;&gt;&lt;table tableName=&quot;Announcement&quot; tableDbType=&quot;NOT_IN_DB&quot;&gt;&lt;columns&gt;&lt;column columnName=&quot;Title&quot;&gt;&lt;columnTitle&gt;Custom Title&lt;/columnTitle&gt;&lt;/column&gt;&lt;/columns&gt;&lt;/table&gt;&lt;/tables&gt;'</code></li>
+     * </ul>
+     * @param {String} [config.title] A title for the web part. If not supplied, the query name will be used as the title.
+     * @param {String} [config.titleHref] If supplied, the title will be rendered as a hyperlink with this value as the href attribute.
+     * @param {String} [config.buttonBarPosition] DEPRECATED--see config.buttonBar.position
+     * @param {boolean} [config.allowChooseQuery] If the button bar is showing, whether or not it should be include a button
+     * to let the user choose a different query.
+     * @param {boolean} [config.allowChooseView] If the button bar is showing, whether or not it should be include a button
+     * to let the user choose a different view.
+     * @param {String} [config.detailsURL] Specify or override the default details URL for the table with one of the form
+     * "/controller/action.view?id=${RowId}" or "org.labkey.package.MyController$ActionAction.class?id=${RowId}"
+     * @param {boolean} [config.showDetailsColumn] If the underlying table has a details URL, show a column that renders a [details] link (default true).  If true, the record selectors will be included regardless of the 'showRecordSelectors' config option.
+     * @param {String} [config.updateURL] Specify or override the default updateURL for the table with one of the form
+     * "/controller/action.view?id=${RowId}" or "org.labkey.package.MyController$ActionAction.class?id=${RowId}"
+     * @param {boolean} [config.showUpdateColumn] If the underlying table has an update URL, show a column that renders an [edit] link (default true).
+     * @param {String} [config.insertURL] Specify or override the default insert URL for the table with one of the form
+     * "/controller/insertAction.view" or "org.labkey.package.MyController$InsertActionAction.class"
+     * @param {String} [config.importURL] Specify or override the default bulk import URL for the table with one of the form
+     * "/controller/importAction.view" or "org.labkey.package.MyController$ImportActionAction.class"
+     * @param {String} [config.deleteURL] Specify or override the default delete URL for the table with one of the form
+     * "/controller/action.view" or "org.labkey.package.MyController$ActionAction.class". The keys for the selected rows
+     * will be included in the POST.
+     * @param {boolean} [config.showInsertNewButton] If the underlying table has an insert URL, show an "Insert New" button in the button bar (default true).
+     * @param {boolean} [config.showDeleteButton] Show a "Delete" button in the button bar (default true).
+     * @param {boolean} [config.showReports] If true, show reports on the Views menu (default true).
+     * @param {boolean} [config.showExportButtons] Show the export button menu in the button bar (default true).
+     * @param {boolean} [config.showBorders] Render the table with borders (default true).
+     * @param {boolean} [config.showSurroundingBorder] Render the table with a surrounding border (default true).
+     * @param {boolean} [config.showRecordSelectors] Render the select checkbox column (default undefined, meaning they will be shown if the query is updatable by the current user).
+     *  If 'showDeleteButton' is true, the checkboxes will be  included regardless of the 'showRecordSelectors' config option.
+     * @param {boolean} [config.showPagination] Show the pagination links and count (default true).
+     * @param {boolean} [config.shadeAlternatingRows] Shade every other row with a light gray background color (default true).
+     * @param {boolean} [config.suppressRenderErrors] If true, no alert will appear if there is a problem rendering the QueryWebpart. This is most often encountered if page configuration changes between the time when a request was made and the content loads. Defaults to false.
+     * @param {Object} [config.buttonBar] Button bar configuration. This object may contain any of the following properties:
+     * <ul>
+     *  <li><b>position</b>: Configures where the button bar will appear with respect to the data grid: legal values are 'top', 'bottom', 'none', or 'both'. Default is 'both'.</li>
+     *  <li><b>includeStandardButtons</b>: If true, all standard buttons not specifically mentioned in the items array will be included at the end of the button bar. Default is false.</li>
+     *  <li><b>items</b>: An array of button bar items. Each item may be either a reference to a standard button, or a new button configuration.
+     *                  to reference standard buttons, use one of the properties on {@link #standardButtons}, or simply include a string
+     *                  that matches the button's caption. To include a new button configuration, create an object with the following properties:
+     *      <ul>
+     *          <li><b>text</b>: The text you want displayed on the button (aka the caption).</li>
+     *          <li><b>url</b>: The URL to navigate to when the button is clicked. You may use LABKEY.ActionURL to build URLs to controller actions.
+     *                          Specify this or a handler function, but not both.</li>
+     *          <li><b>handler</b>: A reference to the JavaScript function you want called when the button is clicked.</li>
+     *          <li><b>permission</b>: Optional. Permission that the current user must possess to see the button.
+     *                          Valid options are 'READ', 'INSERT', 'UPDATE', 'DELETE', and 'ADMIN'.
+     *                          Default is 'READ' if permissionClass is not specified.</li>
+     *          <li><b>permissionClass</b>: Optional. If permission (see above) is not specified, the fully qualified Java class
+     *                           name of the permission that the user must possess to view the button.</li>
+     *          <li><b>requiresSelection</b>: A boolean value (true/false) indicating whether the button should only be enabled when
+     *                          data rows are checked/selected.</li>
+     *          <li><b>items</b>: To create a drop-down menu button, set this to an array of menu item configurations.
+     *                          Each menu item configuration can specify any of the following properties:
+     *              <ul>
+     *                  <li><b>text</b>: The text of the menu item.</li>
+     *                  <li><b>handler</b>: A reference to the JavaScript function you want called when the menu item is clicked.</li>
+     *                  <li><b>icon</b>: A url to an image to use as the menu item's icon.</li>
+     *                  <li><b>items</b>: An array of sub-menu item configurations. Used for fly-out menus.</li>
+     *              </ul>
+     *          </li>
+     *      </ul>
+     *  </li>
+     * </ul>
+     * @param {String} [config.sort] A base sort order to use. This is a comma-separated list of column names, each of
+     * which may have a - prefix to indicate a descending sort. It will be treated as the final sort, after any that the user
+     * has defined in a custom view or through interacting with the grid column headers.
+     * @param {String} [config.removeableSort] An additional sort order to use. This is a comma-separated list of column names, each of
+     * which may have a - prefix to indicate a descending sort. It will be treated as the first sort, before any that the user
+     * has defined in a custom view or through interacting with the grid column headers.
+     * @param {Array} [config.filters] A base set of filters to apply. This should be an array of {@link LABKEY.Filter} objects
+     * each of which is created using the {@link LABKEY.Filter.create} method. These filters cannot be removed by the user
+     * interacting with the UI.
+     * For compatibility with the {@link LABKEY.Query} object, you may also specify base filters using config.filterArray.
+     * @param {Array} [config.removeableFilters] A set of filters to apply. This should be an array of {@link LABKEY.Filter} objects
+     * each of which is created using the {@link LABKEY.Filter.create} method. These filters can be modified or removed by the user
+     * interacting with the UI.
+     * @param {Object} [config.parameters] Map of name (string)/value pairs for the values of parameters if the SQL
+     * references underlying queries that are parameterized. For example, the following passes two parameters to the query: {'Gender': 'M', 'CD4': '400'}.
+     * The parameters are written to the request URL as follows: query.param.Gender=M&query.param.CD4=400.  For details on parameterized SQL queries, see
+     * <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=paramsql">Parameterized SQL Queries</a>.
+     * @param {Array} [config.aggregates] An array of aggregate definitions. The objects in this array should have the properties:
+     * <ul>
+     *     <li><b>column:</b> The name of the column to be aggregated.</li>
+     *     <li><b>type:</b> The aggregate type (see {@link LABKEY.AggregateTypes})</li>
+     *     <li><b>label:</b> Optional label used when rendering the aggregate row.
+     * </ul>
+     * @param {String} [config.showRows] Either 'paginated' (the default) 'selected', 'unselected', 'all', or 'none'.
+     *        When 'paginated', the maxRows and offset parameters can be used to page through the query's result set rows.
+     *        When 'selected' or 'unselected' the set of rows selected or unselected by the user in the grid view will be returned.
+     *        You can programatically get and set the selection using the {@link LABKEY.DataRegion.setSelected} APIs.
+     *        Setting <code>config.maxRows</code> to -1 is the same as 'all'
+     *        and setting <code>config.maxRows</code> to 0 is the same as 'none'.
+     * @param {Integer} [config.maxRows] The maximum number of rows to return from the server (defaults to 100).
+     *        If you want to return all possible rows, set this config property to -1.
+     * @param {Integer} [config.offset] The index of the first row to return from the server (defaults to 0).
+     *        Use this along with the maxRows config property to request pages of data.
+     * @param {String} [config.dataRegionName] The name to be used for the data region. This should be unique within
+     * the set of query views on the page. If not supplied, a unique name is generated for you.
+     * @param {String} [config.linkTarget] The name of a browser window/tab in which to open URLs rendered in the
+     * QueryWebPart. If not supplied, links will generally be opened in the same browser window/tab where the QueryWebPart.
+     * @param {String} [config.frame] The frame style to use for the web part. This may be one of the following:
+     * 'div', 'portal', 'none', 'dialog', 'title', 'left-nav'.
+     * @param {String} [config.showViewPanel] Open the customize view panel after rendering.  The value of this option can be "true" or one of "ColumnsTab", "FilterTab", or "SortTab".
+     * @param {String} [config.bodyClass] A CSS style class that will be added to the enclosing element for the web part.
+     * @param {Function} [config.success] A function to call after the part has been rendered. It will be passed two arguments:
+     * <ul>
+     * <li><b>dataRegion:</b> the LABKEY.DataRegion object representing the rendered QueryWebPart</li>
+     * <li><b>request:</b> the XMLHTTPRequest that was issued to the server</li>
+     * </ul>
+     * @param {Function} [config.failure] A function to call if the request to retrieve the content fails. It will be passed three arguments:
+     * <ul>
+     * <li><b>json:</b> JSON object containing the exception.</li>
+     * <li><b>response:</b> The XMLHttpRequest object containing the response data.</li>
+     * <li><b>options:</b> The parameter to the request call.</li>
+     * </ul>
+     * @param {Object} [config.scope] An object to use as the callback function's scope. Defaults to this.
+     * @param {int} [config.timeout] A timeout for the AJAX call, in milliseconds. Default is 30000 (30 seconds).
+     * @param {String} [config.containerPath] The container path in which the schema and query name are defined. If not supplied, the current container path will be used.
+     * @param {String} [config.containerFilter] One of the values of {@link LABKEY.Query.containerFilter} that sets the scope of this query. If not supplied, the current folder will be used.
+     * @example
+     * &lt;div id='queryTestDiv1'/&gt;
+     * &lt;script type="text/javascript"&gt;
+     var qwp1 = new LABKEY.QueryWebPart({
+
+             renderTo: 'queryTestDiv1',
+             title: 'My Query Web Part',
+             schemaName: 'lists',
+             queryName: 'People',
+             buttonBarPosition: 'none',
+             aggregates: [
+                    {column: 'First', type: LABKEY.AggregateTypes.COUNT, label: 'Total People'},
+                    {column: 'Age', type: LABKEY.AggregateTypes.AVG}
+             ],
+             filters: [
+                    LABKEY.Filter.create('Last', 'Flintstone')
+             ],
+                    sort: '-Last'
+             });
+
+             //note that you may also register for the 'render' event
+             //instead of using the success config property.
+             //registering for events is done using Ext event registration.
+             //Example:
+             qwp1.on("render", onRender);
+             function onRender()
+             {
+                //...do something after the part has rendered...
+             }
+
+             ///////////////////////////////////////
+             // Custom Button Bar Example
+
+             var qwp1 = new LABKEY.QueryWebPart({
+             renderTo: 'queryTestDiv1',
+             title: 'My Query Web Part',
+             schemaName: 'lists',
+             queryName: 'People',
+             buttonBar: {
+                    includeStandardButtons: true,
+                    items:[
+                        LABKEY.QueryWebPart.standardButtons.views,
+                        {text: 'Test', url: LABKEY.ActionURL.buildURL('project', 'begin')},
+                        {text: 'Test Script', onClick: "alert('Hello World!'); return false;"},
+                        {text: 'Test Handler', handler: onTestHandler},
+                        {text: 'Test Menu', items: [
+                        {text: 'Item 1', handler: onItem1Handler},
+                        {text: 'Fly Out', items: [
+                            {text: 'Sub Item 1', handler: onItem1Handler}
+                            ]},
+                            '-', //separator
+                            {text: 'Item 2', handler: onItem2Handler}
+                        ]},
+                        LABKEY.QueryWebPart.standardButtons.exportRows
+                    ]}
+             });
+
+             function onTestHandler(dataRegion)
+             {
+                 alert("onTestHandler called!");
+                 return false;
+             }
+
+             function onItem1Handler(dataRegion)
+             {
+                 alert("onItem1Handler called!");
+             }
+
+             function onItem2Handler(dataRegion)
+             {
+                 alert("onItem2Handler called!");
+             }
+
+             &lt;/script&gt;
+     */
     LABKEY.QueryWebPart = function(config) {
         config._useQWPDefaults = true;
         return LABKEY.DataRegion.create(config);
@@ -3842,6 +4213,22 @@ LABKEY.QueryWebPart.standardButtons = {
     print: 'print',
     pageSize: 'paging'
 };
+
+/**
+ * Requests the query web part content and renders it within the element identified by the renderTo parameter.
+ * Note that you do not need to call this method explicitly if you specify a renderTo property on the config object
+ * handed to the class constructor. If you do not specify renderTo in the config, then you must call this method
+ * passing the id of the element in which you want the part rendered
+ * @function
+ * @param renderTo The id of the element in which you want the part rendered.
+ */
+
+LABKEY.QueryWebPart.prototype.render = LABKEY.DataRegion.prototype.render;
+
+/**
+ * @returns {LABKEY.DataRegion}
+ */
+LABKEY.QueryWebPart.prototype.getDataRegion = LABKEY.DataRegion.prototype.getDataRegion;
 
 LABKEY.AggregateTypes = {
     /**
