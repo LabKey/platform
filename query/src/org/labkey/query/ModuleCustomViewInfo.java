@@ -184,7 +184,10 @@ public class ModuleCustomViewInfo implements CustomViewInfo
     }
 
     @Override
-    public String getCustomIconCls() { return null; }
+    public String getCustomIconCls()
+    {
+        return _customViewDef.getCustomIconCls();
+    }
 
     @NotNull
     @Override

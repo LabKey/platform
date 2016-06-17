@@ -72,6 +72,7 @@ public class CustomViewXmlReader
     private List<String> _sorts;
     private List<Aggregate> _aggregates;
     private String _customIconUrl;
+    private String _customIconCls;
     private ContainerFilter.Type _containerFilter;
     private boolean _showInDataViews;
     private String _category;
@@ -233,6 +234,11 @@ public class CustomViewXmlReader
         return _customIconUrl;
     }
 
+    public String getCustomIconCls()
+    {
+        return _customIconCls;
+    }
+
     public static CustomViewXmlReader loadDefinition(Resource r)
     {
         try (InputStream is = r.getInputStream())
@@ -261,6 +267,7 @@ public class CustomViewXmlReader
             reader._canInherit = viewElement.isSetCanInherit() && viewElement.getCanInherit();
             reader._canOverride = viewElement.isSetCanOverride() && viewElement.getCanOverride();
             reader._customIconUrl = viewElement.isSetCustomIconUrl() ? viewElement.getCustomIconUrl() : "/reports/grid.gif";
+            reader._customIconCls = viewElement.isSetCustomIconUrl() ? "" : "fa fa-table";  // cannot be changed, so pick a sane default
             reader._label = viewElement.getLabel();
             if (viewElement.isSetShowInDataViews())
                 reader._showInDataViews = viewElement.getShowInDataViews();

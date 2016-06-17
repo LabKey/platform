@@ -135,6 +135,11 @@ public class ModuleCustomViewDef
         return _customView.getCustomIconUrl();
     }
 
+    public String getCustomIconCls()
+    {
+        return _customView.getCustomIconCls();
+    }
+
     public String getContainerFilterName()
     {
         return _customView.getContainerFilter() != null ? _customView.getContainerFilter().name() : null;
