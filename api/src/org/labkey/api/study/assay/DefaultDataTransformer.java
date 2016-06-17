@@ -25,6 +25,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.util.PageFlowUtil;
@@ -55,6 +56,7 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
     public static final String R_SESSIONID_REPLACEMENT = "rLabkeySessionId";
     public static final String SESSION_ID_REPLACEMENT = "httpSessionId";
     public static final String SESSION_COOKIE_NAME_REPLACEMENT = "sessionCookieName";
+    public static final String BASE_SERVER_URL_REPLACEMENT = "baseServerURL";
 
     public TransformResult transformAndValidate(AssayRunUploadContext<ProviderType> context, ExpRun run) throws ValidationException
     {
@@ -123,6 +125,8 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
                         paramMap.put(R_SESSIONID_REPLACEMENT, getSessionInfo(context, transformSessionId));
                         paramMap.put(SESSION_COOKIE_NAME_REPLACEMENT, getSessionCookieName(context));
                         paramMap.put(SESSION_ID_REPLACEMENT, getSessionId(context, transformSessionId));
+                        paramMap.put(BASE_SERVER_URL_REPLACEMENT, AppProps.getInstance().getBaseServerUrl()
+                                                                    + AppProps.getInstance().getContextPath());
 
                         bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, paramMap);
 
