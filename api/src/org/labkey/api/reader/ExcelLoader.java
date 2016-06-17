@@ -15,7 +15,7 @@
  */
 package org.labkey.api.reader;
 
-import org.apache.commons.collections4.iterators.ArrayIterator;
+import org.apache.commons.collections15.iterators.ArrayIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.POIXMLException;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -223,13 +223,13 @@ public class ExcelLoader extends DataLoader
         {
             try
             {
-                List<ArrayList<Object>> grid = getParsedGridXLSX();
+                List<List<?>> grid = getParsedGridXLSX();
                 List<String[]> cells = new ArrayList<>();
 
                 for (int i=0 ; cells.size() < n && i<grid.size() ; i++)
                 {
-                    ArrayList<Object> currentRow = grid.get(i);
-                    ArrayList<String> rowData = new ArrayList<>(currentRow.size());
+                    List<?> currentRow = grid.get(i);
+                    List<String> rowData = new ArrayList<>(currentRow.size());
                     boolean foundData = false;
 
                     for (Object v : currentRow)
@@ -371,21 +371,21 @@ public class ExcelLoader extends DataLoader
 //    }
 
 
-    private List<ArrayList<Object>> _parsedGridXLSX = null;
+    private List<List<?>> _parsedGridXLSX = null;
 
-    private List<ArrayList<Object>> getParsedGridXLSX() throws IOException, InvalidFormatException
+    private List<List<?>> getParsedGridXLSX() throws IOException, InvalidFormatException
     {
         if (null == _parsedGridXLSX)
             _parsedGridXLSX = loadSheetFromXLSX();
         return _parsedGridXLSX;
     }
 
-    private List<ArrayList<Object>> loadSheetFromXLSX() throws IOException, InvalidFormatException
+    private List<List<?>> loadSheetFromXLSX() throws IOException, InvalidFormatException
     {
         OPCPackage xlsxPackage = null;
         try
         {
-            LinkedList<ArrayList<Object>> collect = new LinkedList<>();
+            List<List<Object>> collect = new LinkedList<>();
             xlsxPackage = OPCPackage.open(_file.getPath(), PackageAccess.READ);
             ReadOnlySharedStringsTable strings = new ReadOnlySharedStringsTable(xlsxPackage);
             XSSFReader xssfReader = new XSSFReader(xlsxPackage);
@@ -402,7 +402,7 @@ public class ExcelLoader extends DataLoader
                 sheetParser.setContentHandler(handler);
                 sheetParser.parse(sheetSource);
             }
-            ArrayList<ArrayList<Object>> ret = new ArrayList<>(collect.size());
+            List<List<?>> ret = new ArrayList<>(collect.size());
             ret.addAll(collect);
             return ret;
         }
@@ -432,9 +432,9 @@ public class ExcelLoader extends DataLoader
 
     private class XlsxIterator extends DataLoaderIterator
     {
-        final List<ArrayList<Object>> grid;
+        final List<List<?>> grid;
 
-        public XlsxIterator() throws IOException, InvalidFormatException
+        XlsxIterator() throws IOException, InvalidFormatException
         {
             super(_skipLines == -1 ? 1 : _skipLines);
             grid = getParsedGridXLSX();
@@ -447,7 +447,7 @@ public class ExcelLoader extends DataLoader
                 return null;
 
             ColumnDescriptor[] allColumns = getColumns();
-            ArrayList row = grid.get(lineNum());
+            List<?> row = grid.get(lineNum());
             Object[] fields = new Object[_activeColumns.length];
             for (int columnIndex = 0, fieldIndex = 0; columnIndex < row.size() && columnIndex < allColumns.length; columnIndex++)
             {
@@ -467,7 +467,7 @@ public class ExcelLoader extends DataLoader
         private final Sheet sheet;
         private final int numRows;
 
-        public ExcelIterator() throws IOException
+        ExcelIterator() throws IOException
         {
             super(_skipLines == -1 ? 1 : _skipLines);
 
@@ -665,7 +665,7 @@ public class ExcelLoader extends DataLoader
         /**
          * Destination for data
          */
-        private final Collection<ArrayList<Object>> output;
+        private final Collection<List<Object>> output;
 
         private ArrayList<Object> currentRow;
         private int widestRow = 1;
@@ -690,7 +690,7 @@ public class ExcelLoader extends DataLoader
         private int thisColumn = -1;
 
         // Gathers characters as they are seen.
-        private StringBuffer value;
+        private StringBuilder value;
 
         private int debugIndent = 0;
 
@@ -701,16 +701,16 @@ public class ExcelLoader extends DataLoader
          * @param cols    Minimum number of columns to show
          * @param target  Sink for output
          */
-        public SheetHandler(
+        SheetHandler(
                 StylesTable styles,
                 ReadOnlySharedStringsTable strings,
                 int cols,
-                Collection<ArrayList<Object>> target)
+                Collection<List<Object>> target)
         {
             this.stylesTable = styles;
             this.sharedStringsTable = strings;
             this.minColumnCount = cols;
-            this.value = new StringBuffer();
+            this.value = new StringBuilder();
             this.nextDataType = xssfDataType.NUMBER;
             this.output = target;
             this.formatter = new DataFormatter();
@@ -893,7 +893,6 @@ public class ExcelLoader extends DataLoader
         /**
          * Converts an Excel column name like "C" to a zero-based index.
          *
-         * @param name
          * @return Index corresponding to the specified name
          */
         private int nameToColumn(String name)
