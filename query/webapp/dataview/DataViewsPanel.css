@@ -176,4 +176,5 @@ div.icon img
 .dataview-icon {
     vertical-align: 0;   /* reset alignment */
     background-size: 16px 16px;
+    height: 16px;
 }
