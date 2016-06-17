@@ -47,9 +47,8 @@ public class SpecimenRefreshPipelineJob extends AbstractStudyPipelineJob
 
     public SpecimenRefreshPipelineJob(Container source, Container destination, User user, ActionURL url, PipeRoot root, SnapshotSettings snapshotSettings)
     {
-        super(source, user, url, root);
+        super(source, destination, user, url, root);
         _settings = snapshotSettings;
-        _dstContainer = destination;
     }
 
     @Override
@@ -69,9 +68,9 @@ public class SpecimenRefreshPipelineJob extends AbstractStudyPipelineJob
     {
         try
         {
-            _sourceStudy = StudyManager.getInstance().getStudy(getContainer());
+            StudyImpl sourceStudy = StudyManager.getInstance().getStudy(getContainer());
 
-            if (null == _sourceStudy)
+            if (null == sourceStudy)
                 throw new NotFoundException("Source study no longer exists");
 
             StudyImpl destStudy = StudyManager.getInstance().getStudy(_dstContainer);
@@ -84,15 +83,15 @@ public class SpecimenRefreshPipelineJob extends AbstractStudyPipelineJob
             User user = getUser();
             Set<String> dataTypes = PageFlowUtil.set(StudyWriterFactory.DATA_TYPE, "Specimens");  // TODO: Define a constant for specimens
 
-            FolderExportContext ctx = new FolderExportContext(user, _sourceStudy.getContainer(), dataTypes, "new", false,
+            FolderExportContext ctx = new FolderExportContext(user, sourceStudy.getContainer(), dataTypes, "new", false,
                     _settings.isRemoveProtectedColumns(), _settings.isShiftDates(), _settings.isUseAlternateParticipantIds(),
                     _settings.isMaskClinic(), new PipelineJobLoggerGetter(this));
 
             Set<DatasetDefinition> datasets = Collections.emptySet();
 
-            StudyExportContext studyCtx = new StudyExportContext(_sourceStudy, user, _sourceStudy.getContainer(),
+            StudyExportContext studyCtx = new StudyExportContext(sourceStudy, user, sourceStudy.getContainer(),
                     dataTypes, _settings.isRemoveProtectedColumns(),
-                    new ParticipantMapper(_sourceStudy, _settings.isShiftDates(), _settings.isUseAlternateParticipantIds()),
+                    new ParticipantMapper(sourceStudy, _settings.isShiftDates(), _settings.isUseAlternateParticipantIds()),
                     _settings.isMaskClinic(), datasets, new PipelineJobLoggerGetter(this)
             );
 
@@ -111,7 +110,7 @@ public class SpecimenRefreshPipelineJob extends AbstractStudyPipelineJob
         }
         catch (Exception e)
         {
-            error("Specimen refresh failed", e);
+            error(getDescription() + " failed", e);
             return false;
         }
 

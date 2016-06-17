@@ -48,15 +48,16 @@ import java.io.File;
 // Allows some sharing of code between snapshot/ancillary study publication and specimen refresh
 public abstract class AbstractStudyPipelineJob extends PipelineJob
 {
-    protected transient Container _dstContainer;
-    protected transient StudyImpl _sourceStudy;
+    protected final transient Container _dstContainer;
 
     // TODO: This is legacy error handling that we should remove
     protected final BindException _errors;
 
-    public AbstractStudyPipelineJob(Container c, User user, ActionURL url, PipeRoot root)
+    public AbstractStudyPipelineJob(Container source, Container destination, User user, ActionURL url, PipeRoot root)
     {
-        super(null, new ViewBackgroundInfo(c, user, url), root);
+        super(null, new ViewBackgroundInfo(source, user, url), root);
+
+        _dstContainer = destination;
 
         File tempLogFile = new File(root.getRootPath(), FileUtil.makeFileNameWithTimestamp(getLogName(), "log"));
         setLogFile(tempLogFile);
@@ -94,7 +95,7 @@ public abstract class AbstractStudyPipelineJob extends PipelineJob
     {
         // the set of data types to write is determined by the export context dataTypes variable
         FolderWriterImpl writer = new FolderWriterImpl();
-        writer.write(_sourceStudy.getContainer(), ctx, vf);
+        writer.write(ctx.getContainer(), ctx, vf);
     }
 
     protected void importSpecimenData(StudyImpl destStudy, VirtualFile vf) throws Exception

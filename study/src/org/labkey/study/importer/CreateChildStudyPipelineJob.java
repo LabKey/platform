@@ -39,6 +39,7 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudySnapshotType;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.MemoryVirtualFile;
 import org.labkey.api.writer.VirtualFile;
@@ -82,16 +83,12 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
     private final ChildStudyDefinition _form;
     private final boolean _destFolderCreated;
 
-    private transient Set<DatasetDefinition> _datasets = new HashSet<>();
-    private transient List<ParticipantGroup> _participantGroups = new ArrayList<>();
-
     public CreateChildStudyPipelineJob(ViewContext context, PipeRoot root, ChildStudyDefinition form, boolean destFolderCreated)
     {
-        super(context.getContainer(), context.getUser(), context.getActionURL(), root);
+        super(context.getContainer(), ContainerManager.getForPath(form.getDstPath()), context.getUser(), context.getActionURL(), root);
 
         _form = form;
         _destFolderCreated = destFolderCreated;
-        _dstContainer = ContainerManager.getForPath(_form.getDstPath());
     }
 
     @Override
@@ -117,29 +114,35 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         try
         {
             Container sourceContainer = ContainerManager.getForPath(_form.getSrcPath());
-            _sourceStudy = StudyManager.getInstance().getStudy(sourceContainer);
+            StudyImpl sourceStudy = StudyManager.getInstance().getStudy(sourceContainer);
+
+            if (null == sourceStudy)
+                throw new NotFoundException("Source study no longer exists");
 
             StudyImpl destStudy = StudyManager.getInstance().getStudy(_dstContainer);
             setStatus(TaskStatus.running);
 
             if (destStudy != null)
             {
+                Set<DatasetDefinition> datasets = new HashSet<>();
+
                 // get the list of datasets to export
                 for (int datasetId : _form.getDatasets())
                 {
-                    DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(getSourceStudy(), datasetId);
+                    DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(sourceStudy, datasetId);
 
                     if (def != null)
-                        _datasets.add(def);
+                        datasets.add(def);
                 }
+
+                List<ParticipantGroup> participantGroups = new ArrayList<>();
 
                 for (int rowId : _form.getGroups())
                 {
-                    ParticipantGroup pg = ParticipantGroupManager.getInstance().getParticipantGroup(_sourceStudy.getContainer(), getUser(), rowId);
-                    if(pg !=null)
-                        _participantGroups.add(pg);
+                    ParticipantGroup pg = ParticipantGroupManager.getInstance().getParticipantGroup(sourceStudy.getContainer(), getUser(), rowId);
+                    if (pg !=null)
+                        participantGroups.add(pg);
                 }
-
 
                 HashSet<Integer> selectedVisits = null;
                 if (null != _form.getVisits())
@@ -147,24 +150,24 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                     selectedVisits = new HashSet<>(Arrays.asList(_form.getVisits()));
                 }
 
-                // Force snapshots for datasets referenced by the parent study's visit map.  This ensures that
+                // Force snapshots for datasets referenced by the parent study's visit map. This ensures that
                 // we'll be able to calculate visit dates for all data:
-                for (Visit visit : getSourceStudy().getVisits(Visit.Order.SEQUENCE_NUM))
+                for (Visit visit : sourceStudy.getVisits(Visit.Order.SEQUENCE_NUM))
                 {
                     // Limit datasets taken to those in the selected set of visits.
                     if (visit.getVisitDateDatasetId() != null && (null == selectedVisits || selectedVisits.contains(visit.getId())))
                     {
-                        DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(getSourceStudy(), visit.getVisitDateDatasetId());
+                        DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(sourceStudy, visit.getVisitDateDatasetId());
                         if (def != null)
-                            _datasets.add(def);
+                            datasets.add(def);
                     }
                 }
 
                 // issue 15942: for date based studies any demographics datasets that have a StartDate column need to be included so that
                 // visits are correctly calculated\
-                if (_sourceStudy.getTimepointType() == TimepointType.DATE)
+                if (sourceStudy.getTimepointType() == TimepointType.DATE)
                 {
-                    for (DatasetDefinition dataset : _sourceStudy.getDatasets())
+                    for (DatasetDefinition dataset : sourceStudy.getDatasets())
                     {
                         if (dataset.isDemographicData())
                         {
@@ -173,12 +176,12 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                             ColumnInfo col = tInfo.getColumn("StartDate");
                             if (null != col)
                             {
-                                _datasets.add(dataset);
+                                datasets.add(dataset);
 
                                 // also add the visits included in this dataset
                                 if (selectedVisits != null)
                                 {
-                                    for (Visit visit : StudyManager.getInstance().getVisitsForDataset(_sourceStudy.getContainer(), dataset.getDatasetId()))
+                                    for (Visit visit : StudyManager.getInstance().getVisitsForDataset(sourceStudy.getContainer(), dataset.getDatasetId()))
                                         selectedVisits.add(visit.getId());
                                 }
                             }
@@ -194,7 +197,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                     _form.setStudyProps(_form.getStudyProps()[0].split(","));
                 Set<String> dataTypes = getDataTypesToExport(_form);
 
-                FolderExportContext folderExportContext = new FolderExportContext(user, _sourceStudy.getContainer(), dataTypes, "new", false,
+                FolderExportContext folderExportContext = new FolderExportContext(user, sourceStudy.getContainer(), dataTypes, "new", false,
                         _form.isRemoveProtectedColumns(), _form.isShiftDates(), _form.isUseAlternateParticipantIds(),
                         _form.isMaskClinic(), new PipelineJobLoggerGetter(this));
 
@@ -207,18 +210,18 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 if (_form.getReports() != null)
                     folderExportContext.setReportIds(_form.getReports());
 
-                StudyExportContext studyExportContext = new StudyExportContext(_sourceStudy, user, _sourceStudy.getContainer(),
+                StudyExportContext studyExportContext = new StudyExportContext(sourceStudy, user, sourceStudy.getContainer(),
                         dataTypes, _form.isRemoveProtectedColumns(),
-                        new ParticipantMapper(_sourceStudy, _form.isShiftDates(), _form.isUseAlternateParticipantIds()),
-                        _form.isMaskClinic(), _datasets, new PipelineJobLoggerGetter(this)
+                        new ParticipantMapper(sourceStudy, _form.isShiftDates(), _form.isUseAlternateParticipantIds()),
+                        _form.isMaskClinic(), datasets, new PipelineJobLoggerGetter(this)
                 );
 
                 if (selectedVisits != null)
                     studyExportContext.setVisitIds(selectedVisits);
 
                 // TODO: Need handlers for each "create study" type (ancillary, publish, specimen)
-                if (!_participantGroups.isEmpty())
-                    studyExportContext.setParticipants(getGroupParticipants(_form, studyExportContext));
+                if (!participantGroups.isEmpty())
+                    studyExportContext.setParticipants(getGroupParticipants(_form, sourceStudy, participantGroups, studyExportContext));
                 else if (null != _form.getVials())
                 {
                     studyExportContext.setParticipants(getSpecimenParticipants(_form));
@@ -242,13 +245,13 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 StudyImportContext studyImportContext = importToDestinationStudy(_errors, destStudy, vf);
 
                 // copy participants
-                exportParticipantGroups(_form, folderExportContext, vf);
+                exportParticipantGroups(_form, sourceStudy, participantGroups, folderExportContext, vf);
 
                 // assay schedule and treatment data (study design)
                 importStudyDesignData(_errors, vf, studyImportContext);
 
                 // import dataset data or create snapshot datasets
-                importDatasetData(context, _form, destStudy, snapshot, vf, _errors, studyImportContext);
+                importDatasetData(context, _form, sourceStudy, destStudy, snapshot, datasets, participantGroups, vf, _errors, studyImportContext);
 
                 // import the specimen data and settings
                 importSpecimenData(destStudy, vf);
@@ -280,7 +283,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         }
         catch (Exception e)
         {
-            error("Study creation failed", e);
+            error(getDescription() + " failed", e);
         }
         finally
         {
@@ -300,11 +303,6 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
             ParticipantGroupImporter groupImporter = new ParticipantGroupImporter();
             groupImporter.process(importContext, studyDir, errors);
         }
-    }
-
-    private StudyImpl getSourceStudy()
-    {
-        return _sourceStudy;
     }
 
     private Set<String> getDataTypesToExport(ChildStudyDefinition form)
@@ -464,8 +462,8 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         importer.process(null, folderImportContext, vf);
     }
 
-    private void importDatasetData(ViewContext context, ChildStudyDefinition form, StudyImpl destStudy, StudySnapshot snapshot,
-                                   VirtualFile vf, BindException errors, StudyImportContext importContext) throws Exception
+    private void importDatasetData(ViewContext context, ChildStudyDefinition form, StudyImpl sourceStudy, StudyImpl destStudy, StudySnapshot snapshot, Set<DatasetDefinition> datasets,
+                                   List<ParticipantGroup> participantGroups, VirtualFile vf, BindException errors, StudyImportContext importContext) throws Exception
     {
         User user = getUser();
 
@@ -491,33 +489,33 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
 
             QuerySnapshotService.I svc = QuerySnapshotService.get(StudySchema.getInstance().getSchemaName());
 
-            List<Integer> participantGroups = new ArrayList<>();
-            if (!_participantGroups.isEmpty())
+            List<Integer> participantGroupIds = new ArrayList<>();
+            if (!participantGroups.isEmpty())
             {
                 // get the participant categories that were copied to the ancillary study
                 for (ParticipantCategoryImpl category : ParticipantGroupManager.getInstance().getParticipantCategories(_dstContainer, user))
                 {
-                    for(ParticipantGroup group : category.getGroups())
+                    for (ParticipantGroup group : category.getGroups())
                     {
-                        participantGroups.add(group.getRowId());
+                        participantGroupIds.add(group.getRowId());
                     }
                 }
             }
 
-            for (DatasetDefinition def : _datasets)
+            for (DatasetDefinition def : datasets)
             {
                 BindException datasetErrors = new NullSafeBindException(def, "dataset");
-                StudyQuerySchema schema = StudyQuerySchema.createSchema(getSourceStudy(), user, true);
+                StudyQuerySchema schema = StudyQuerySchema.createSchema(sourceStudy, user, true);
                 TableInfo table = def.getTableInfo(user);
                 QueryDefinition queryDef = QueryService.get().createQueryDefForTable(schema, table.getName());
 
                 if (queryDef != null && def.getType().equals(Dataset.TYPE_STANDARD))
                 {
-                    queryDef.setDefinitionContainer(getSourceStudy().getContainer());
+                    queryDef.setDefinitionContainer(sourceStudy.getContainer());
 
                     QuerySnapshotDefinition qsDef = QueryService.get().createQuerySnapshotDef(destStudy.getContainer(), queryDef, def.getName());
                     qsDef.setUpdateDelay(form.getUpdateDelay());
-                    qsDef.setParticipantGroups(participantGroups);
+                    qsDef.setParticipantGroups(participantGroupIds);
                     qsDef.setOptionsId(snapshot.getRowId());
 
                     qsDef.save(user);
@@ -540,29 +538,29 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         }
     }
 
-    private void exportParticipantGroups(ChildStudyDefinition form, FolderExportContext ctx, VirtualFile vf) throws Exception
+    private void exportParticipantGroups(ChildStudyDefinition form, StudyImpl sourceStudy, List<ParticipantGroup> participantGroups, FolderExportContext ctx, VirtualFile vf) throws Exception
     {
         List<ParticipantGroup> groupsToCopy = new ArrayList<>();
         if (form.isCopyParticipantGroups())
-            groupsToCopy.addAll(_participantGroups);
+            groupsToCopy.addAll(participantGroups);
 
         if (!groupsToCopy.isEmpty())
         {
             // query snapshots need to have participants created ahead of the snapshot
             if (form.isUpdate())
-                ensureGroupParticipants(_form.isUseAlternateParticipantIds());
+                ensureGroupParticipants(participantGroups, sourceStudy, _form.isUseAlternateParticipantIds());
 
             VirtualFile studyDir = vf.getDir("study");
 
             ParticipantGroupWriter groupWriter = new ParticipantGroupWriter();
             groupWriter.setGroupsToCopy(groupsToCopy);
-            groupWriter.write(_sourceStudy, ctx.getContext(StudyExportContext.class), studyDir);
+            groupWriter.write(sourceStudy, ctx.getContext(StudyExportContext.class), studyDir);
         }
     }
 
-    private List<String> getGroupParticipants(ChildStudyDefinition form, StudyExportContext ctx)
+    private List<String> getGroupParticipants(ChildStudyDefinition form, StudyImpl sourceStudy, List<ParticipantGroup> participantGroups, StudyExportContext ctx)
     {
-        if (!_participantGroups.isEmpty())
+        if (!participantGroups.isEmpty())
         {
             StudySchema schema = StudySchema.getInstance();
 
@@ -570,7 +568,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
             String delim = "";
 
             groupInClause.append("(");
-            for (ParticipantGroup group : _participantGroups)
+            for (ParticipantGroup group : participantGroups)
             {
                 groupInClause.append(delim);
                 groupInClause.append(group.getRowId());
@@ -585,7 +583,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
             sql.append(" WHERE GroupId IN ").append(groupInClause).append(" AND Container = ?");
 
             sql.add(_dstContainer.getId());
-            sql.add(_sourceStudy.getContainer().getId());
+            sql.add(sourceStudy.getContainer().getId());
             SqlSelector selector = new SqlSelector(schema.getSchema(), sql);
 
             if (form.isUseAlternateParticipantIds())
@@ -626,9 +624,9 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
      *
      * @param useAlternateParticipantIds Whether to use alternate participant ids
      */
-    private void ensureGroupParticipants(boolean useAlternateParticipantIds)
+    private void ensureGroupParticipants(List<ParticipantGroup> participantGroups, StudyImpl sourceStudy, boolean useAlternateParticipantIds)
     {
-        if (!_participantGroups.isEmpty())
+        if (!participantGroups.isEmpty())
         {
             StudySchema schema = StudySchema.getInstance();
 
@@ -636,7 +634,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
             String delim = "";
 
             groupInClause.append("(");
-            for (ParticipantGroup group : _participantGroups)
+            for (ParticipantGroup group : participantGroups)
             {
                 groupInClause.append(delim);
                 groupInClause.append(group.getRowId());
@@ -657,7 +655,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 sql.append(" INNER JOIN ").append(schema.getTableInfoParticipant(), "p").append(" ON gm.Container = p.Container AND gm.ParticipantId = p.ParticipantId");
 
             sql.append(" WHERE GroupId IN ").append(groupInClause).append(" AND gm.Container = ?");
-            sql.add(_sourceStudy.getContainer());
+            sql.add(sourceStudy.getContainer());
 
             new SqlExecutor(schema.getSchema()).execute(sql);
         }

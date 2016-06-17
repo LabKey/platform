@@ -69,12 +69,12 @@ public class SpecimenRefreshMaintainanceTask extends DefaultSystemMaintenanceTas
 
         for (StudySnapshot snapshot : snapshots)
         {
-            StudyImpl sourceStudy =  getStudy(snapshot.getSource());
+            StudyImpl sourceStudy = getStudy(snapshot.getSource());
 
             if (null == sourceStudy)
                 continue;
 
-            StudyImpl destinationStudy =  getStudy(snapshot.getDestination());
+            StudyImpl destinationStudy = getStudy(snapshot.getDestination());
 
             if (null == destinationStudy)
                 continue;
