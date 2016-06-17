@@ -57,6 +57,7 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
     public static final String SESSION_ID_REPLACEMENT = "httpSessionId";
     public static final String SESSION_COOKIE_NAME_REPLACEMENT = "sessionCookieName";
     public static final String BASE_SERVER_URL_REPLACEMENT = "baseServerURL";
+    public static final String CONTAINER_PATH = "containerPath";
 
     public TransformResult transformAndValidate(AssayRunUploadContext<ProviderType> context, ExpRun run) throws ValidationException
     {
@@ -127,6 +128,7 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
                         paramMap.put(SESSION_ID_REPLACEMENT, getSessionId(context, transformSessionId));
                         paramMap.put(BASE_SERVER_URL_REPLACEMENT, AppProps.getInstance().getBaseServerUrl()
                                                                     + AppProps.getInstance().getContextPath());
+                        paramMap.put(CONTAINER_PATH, context.getContainer().getPath());
 
                         bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, paramMap);
 
