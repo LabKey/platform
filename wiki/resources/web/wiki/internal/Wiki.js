@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-(function () {
+(function ($) {
 
     var ID_COUNTER = 0;
 
@@ -33,6 +33,8 @@
         this.editFieldId = this.id + "_inline_field";
         this.saving = false;
         this.config = config;
+
+        this.edit();
     }
 
     InlineEditor.prototype.addEditClass = function () {
@@ -76,34 +78,27 @@
 
         // replace content with a textarea and buttons
         var msgboxId = this.editFieldId + "_msgbox";
-        var html = "<div class='labkey-inline-editor'>" +
-                "<textarea id='" + this.editFieldId + "' style='width:100%; height:" + height + "px;'>" +
-                this.originalValue +
-                "</textarea>" +
-                "<div id='" + msgboxId + "' class='labkey-dataregion-msgbox' style='display:none;'></div>" +
-                "<p>" +
-                "<a class='labkey-button' name='save'><span>Save</span></a>" +
-                "<a class='labkey-button' name='cancel'><span>Cancel</span></a>";
 
-        if (this.updateContentURL) {
-            html = html + "<a style='margin-left: 25px' class='labkey-button' name='advanced'><span>Advanced Editor</span></a>";
-        }
-
-        html = html + "</p>" +
-                "</div>";
-        this.dom.innerHTML = html;
+        $(this.dom).html([
+            '<div class="labkey-inline-editor">',
+                '<textarea id="' + this.editFieldId + '" style="width: 100%; height: ' + height + 'px;">',
+                    this.originalValue,
+                '</textarea>',
+                '<div id="' + msgboxId + '" class="labkey-dataregion-msgbox" style="display: none;"></div>',
+                '<p>',
+                    '<a class="labkey-button" name="save"><span>Save</span></a>',
+                    '<a class="labkey-button" name="cancel"><span>Cancel</span></a>',
+                    (this.updateContentURL ? '<a class="labkey-button" name="advanced" style="margin-left: 25px;"><span>Advanced Editor</span></a>' : ''),
+                '</p>',
+            '</div>'
+        ].join(''));
 
         this.msgbox = document.getElementById(msgboxId);
 
         // find the buttons and attach click events
-        var buttons = this.dom.getElementsByClassName("labkey-button");
-        var saveBtn = buttons[0];
-        var cancelBtn = buttons[1];
-        var advancedBtn = buttons[2];
-
-        tinymce.dom.Event.add(saveBtn, 'click', this.onSaveClick, this);
-        tinymce.dom.Event.add(cancelBtn, 'click', this.onCancelClick, this);
-        tinymce.dom.Event.add(advancedBtn, 'click', this.onAdvancedClick, this);
+        $(this.dom).find('.labkey-button[name="save"]').click(this.onSaveClick.bind(this));
+        $(this.dom).find('.labkey-button[name="cancel"]').click(this.onCancelClick.bind(this));
+        $(this.dom).find('.labkey-button[name="advanced"]').click(this.onAdvancedClick.bind(this));
 
         // create the editor
         this.ed = new tinymce.Editor(this.editFieldId, {
@@ -143,11 +138,6 @@
             gecko_spellcheck : true,
 
             content_css : LABKEY.contextPath + "/core/themeStylesheet.view"
-
-            // labkey specific
-            //handle_event_callback : tinyMceHandleEvent,
-
-            //init_instance_callback: onInitCallback
         });
 
         this.ed.render();
@@ -272,11 +262,12 @@
 
         if (isEditing(config.dom))
         {
-//            console.log("Editor already active");
             return;
         }
 
-        tinymceinit();
+        // convince tinyMCE that the page is loaded
+        tinymce.dom.Event.domLoaded = 1;
+
         var editor = new InlineEditor({
             dom: config.dom,
             id: config.id,
@@ -317,14 +308,6 @@
                 });
             }
         });
-
-        editor.edit();
-    }
-
-    function tinymceinit()
-    {
-        // convince tinymce that the page is loaded
-        tinymce.dom.Event.domLoaded = 1;
     }
 
     // create namespaces
@@ -356,11 +339,9 @@
                 throw new Error("wiki entityId and pageVersionId required");
 
             var webpartEl = document.getElementById("webpart_" + config.webPartId);
-            var wikiEl = webpartEl.getElementsByClassName("labkey-wiki")[0];
-            config.dom = wikiEl;
+            config.dom = webpartEl.getElementsByClassName("labkey-wiki")[0];
 
-            var dependencies = [ "tiny_mce/tiny_mce_src.js" ];
-            LABKEY.requiresScript(dependencies, function () { inlineWikiEdit(config); }, this);
+            LABKEY.requiresScript('tiny_mce/tiny_mce.js', function () { inlineWikiEdit(config); }, this);
         },
         toggleTable : function(tocTable, expand, notify) {
             //Structure of a navtree table:
@@ -429,5 +410,5 @@
             }
         }
     };
-})();
+})(jQuery);
 

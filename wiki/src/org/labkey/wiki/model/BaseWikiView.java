@@ -213,7 +213,8 @@ public abstract class BaseWikiView extends JspView<Object>
             {
                 if (useInlineEditor)
                 {
-                    // Indlude wiki.js as a client dependency only for inline editing
+                    // Include wiki.js as a client dependency only for inline editing
+                    addClientDependency(ClientDependency.fromPath("internal/jQuery"));
                     addClientDependency(ClientDependency.fromPath("wiki/internal/Wiki.js"));
 
                     NavTree edit = new NavTree("Edit Inline", null, null, "fa fa-pencil");
