@@ -15,7 +15,7 @@
  */
 package org.labkey.api.data.queryprofiler;
 
-import com.drew.lang.annotations.Nullable;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.QueryLogging;

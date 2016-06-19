@@ -15,7 +15,7 @@
  */
 package org.labkey.api.study;
 
-import com.drew.lang.annotations.Nullable;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;

@@ -16,7 +16,7 @@
 
 package org.labkey.api.action;
 
-import com.drew.lang.annotations.Nullable;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.TSVWriter;
