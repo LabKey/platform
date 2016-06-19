@@ -15,9 +15,9 @@
  */
 package org.labkey.study.importer;
 
-import com.drew.lang.annotations.Nullable;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlObject;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.QCState;

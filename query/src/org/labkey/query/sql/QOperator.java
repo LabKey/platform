@@ -16,7 +16,7 @@
 
 package org.labkey.query.sql;
 
-import com.drew.lang.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.JdbcType;
 
 

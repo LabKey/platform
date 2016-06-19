@@ -15,8 +15,8 @@
  */
 package org.labkey.query.olap.metadata;
 
-import com.drew.lang.annotations.Nullable;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.data.JdbcType;
@@ -35,7 +35,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
-import static org.labkey.query.olap.rolap.RolapCubeDef.*;
+import static org.labkey.query.olap.rolap.RolapCubeDef.DimensionDef;
+import static org.labkey.query.olap.rolap.RolapCubeDef.HierarchyDef;
+import static org.labkey.query.olap.rolap.RolapCubeDef.LevelDef;
+import static org.labkey.query.olap.rolap.RolapCubeDef.MeasureDef;
 
 
 

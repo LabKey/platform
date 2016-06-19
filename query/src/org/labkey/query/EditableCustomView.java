@@ -15,7 +15,7 @@
  */
 package org.labkey.query;
 
-import com.drew.lang.annotations.Nullable;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.User;
 
 /**
@@ -24,5 +24,5 @@ import org.labkey.api.security.User;
 public interface EditableCustomView
 {
     @Nullable
-    public CustomViewImpl getEditableViewInfo(User owner, boolean session);
+    CustomViewImpl getEditableViewInfo(User owner, boolean session);
 }

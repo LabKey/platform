@@ -15,7 +15,6 @@
  */
 package org.labkey.query.olap;
 
-import com.drew.lang.annotations.NotNull;
 import mondrian.olap.MondrianServer;
 import mondrian.rolap.RolapConnection;
 import mondrian.rolap.RolapConnectionProperties;
@@ -27,6 +26,7 @@ import mondrian.spi.CatalogLocator;
 import mondrian.spi.DataSourceChangeListener;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;

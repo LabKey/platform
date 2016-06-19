@@ -16,15 +16,14 @@
 
 package org.labkey.study.query;
 
-import com.drew.lang.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.UserPrincipal;

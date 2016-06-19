@@ -16,7 +16,7 @@
 
 package org.labkey.issue.query;
 
-import com.drew.lang.annotations.Nullable;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
@@ -44,18 +44,18 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.IssuesController;
-import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.CustomColumn;
+import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.IssueManager.EntryTypeNames;
 
 import java.io.IOException;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.io.Writer;
 import java.util.stream.Collectors;
 
 public class IssuesTable extends FilteredTable<IssuesQuerySchema>

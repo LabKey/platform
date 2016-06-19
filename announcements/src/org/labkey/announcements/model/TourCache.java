@@ -15,7 +15,7 @@
  */
 package org.labkey.announcements.model;
 
-import com.drew.lang.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheLoader;
