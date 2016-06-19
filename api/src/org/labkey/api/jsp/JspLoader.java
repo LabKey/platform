@@ -107,7 +107,7 @@ public class JspLoader
             return null;
         }
 
-        public Enumeration getInitParameterNames()
+        public Enumeration<String> getInitParameterNames()
         {
             return null;
         }

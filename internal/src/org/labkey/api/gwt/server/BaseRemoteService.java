@@ -80,9 +80,9 @@ public abstract class BaseRemoteService extends RemoteServiceServlet
                 return null;
             }
 
-            public Enumeration getInitParameterNames()
+            public Enumeration<String> getInitParameterNames()
             {
-                return new Vector().elements();
+                return new Vector<String>().elements();
             }
 
             public ServletContext getServletContext()

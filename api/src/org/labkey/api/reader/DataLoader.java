@@ -18,6 +18,7 @@ package org.labkey.api.reader;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.Converter;
+import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -40,7 +41,6 @@ import org.labkey.api.etl.MapDataIterator;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.iterator.CloseableIterator;
-import org.labkey.api.iterator.IteratorUtil;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.ExceptionUtil;
@@ -478,20 +478,13 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     // TODO: Migrate usages to iterator()
     public List<Map<String, Object>> load() throws IOException
     {
-        return IteratorUtil.toList(iterator());
+        return IteratorUtils.toList(iterator());
     }
 
     public abstract void close();
 
 
-    public static final Converter noopConverter = new Converter()
-    {
-        @Override
-        public Object convert(Class type, Object value)
-        {
-            return value;
-        }
-    };
+    public static final Converter noopConverter = (type, value) -> value;
     public static final Converter StringConverter = ConvertUtils.lookup(String.class);
 
     protected abstract class DataLoaderIterator implements CloseableIterator<Map<String, Object>>

@@ -152,7 +152,7 @@ public class MimeMap implements FileNameMap
         map.put(extn, new MimeType(type.toLowerCase(), inline));
     }
 
-    public Enumeration getExtensions()
+    public Enumeration<String> getExtensions()
     {
         return map.keys();
     }

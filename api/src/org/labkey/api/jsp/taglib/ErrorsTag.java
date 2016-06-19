@@ -16,26 +16,23 @@
 
 package org.labkey.api.jsp.taglib;
 
-import org.labkey.api.action.LabkeyError;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.action.FormattedError;
-import org.springframework.validation.BindingResult;
-import org.springframework.context.MessageSourceResolvable;
-import org.springframework.context.NoSuchMessageException;
 import org.apache.log4j.Logger;
+import org.labkey.api.action.LabkeyError;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
+import org.springframework.context.NoSuchMessageException;
+import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
 
-import javax.servlet.jsp.JspException;
-import javax.servlet.jsp.PageContext;
-import javax.servlet.jsp.JspWriter;
-import javax.servlet.jsp.tagext.TagSupport;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.jsp.JspException;
+import javax.servlet.jsp.JspWriter;
+import javax.servlet.jsp.PageContext;
+import javax.servlet.jsp.tagext.TagSupport;
 import java.io.IOException;
 import java.util.Enumeration;
-import java.util.List;
 
 public class ErrorsTag extends TagSupport
 {
@@ -50,7 +47,7 @@ public class ErrorsTag extends TagSupport
 
             // There are spring tags for this.  But I want to make this work for migration beehive->spring
             int count=0;
-            Enumeration e = pageContext.getAttributeNamesInScope(PageContext.REQUEST_SCOPE);
+            Enumeration<String> e = pageContext.getAttributeNamesInScope(PageContext.REQUEST_SCOPE);
             while (e.hasMoreElements())
             {
                 String s = (String)e.nextElement();
