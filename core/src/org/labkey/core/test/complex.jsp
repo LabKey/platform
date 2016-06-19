@@ -26,6 +26,7 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Enumeration" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.apache.commons.collections4.IteratorUtils" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -139,18 +140,15 @@ for (ObjectError e : getAllErrors(pageContext))
     {
         List<ObjectError> l = new ArrayList<>();
 
-        Enumeration e = pageContext.getAttributeNamesInScope(PageContext.REQUEST_SCOPE);
-        while (e.hasMoreElements())
-        {
-            String s = (String) e.nextElement();
+        IteratorUtils.asIterator(pageContext.getAttributeNamesInScope(PageContext.REQUEST_SCOPE)).forEachRemaining(s -> {
             if (s.startsWith(BindingResult.MODEL_KEY_PREFIX))
             {
                 Object o = pageContext.getAttribute(s, PageContext.REQUEST_SCOPE);
-                if (!(o instanceof Errors))
-                    continue;
-                l.addAll(((BindingResult) o).getAllErrors());
+                if (o instanceof Errors)
+                    l.addAll(((BindingResult) o).getAllErrors());
             }
-        }
+        });
+
         return l;
     }
 %>

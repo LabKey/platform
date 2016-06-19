@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.commons.collections4.IteratorUtils" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.action.SpringActionController" %>
 <%@ page import="org.labkey.core.test.TestController" %>
@@ -120,18 +121,14 @@ for (ObjectError e : getAllErrors(pageContext))
     {
         List<ObjectError> l = new ArrayList<>();
 
-        Enumeration e = pageContext.getAttributeNamesInScope(PageContext.REQUEST_SCOPE);
-        while (e.hasMoreElements())
-        {
-            String s = (String) e.nextElement();
+        IteratorUtils.asIterator(pageContext.getAttributeNamesInScope(PageContext.REQUEST_SCOPE)).forEachRemaining(s -> {
             if (s.startsWith(BindingResult.MODEL_KEY_PREFIX))
             {
                 Object o = pageContext.getAttribute(s, PageContext.REQUEST_SCOPE);
-                if (!(o instanceof Errors))
-                    continue;
-                l.addAll(((BindingResult) o).getAllErrors());
+                if (o instanceof Errors)
+                    l.addAll(((BindingResult) o).getAllErrors());
             }
-        }
+        });
         return l;
     }
 %>

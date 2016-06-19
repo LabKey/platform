@@ -18,6 +18,7 @@
 
 package org.labkey.core.webdav;
 
+import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -145,7 +146,25 @@ import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.TimeZone;
+import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
@@ -667,11 +686,9 @@ public class DavController extends SpringActionController
                 _log.debug(">>>> " + request.getMethod() + " " + getResourcePath() + " (" + auth + ") " + (modified==-1? "" : "   (If-Modified-Since:" + DateUtil.toISO(modified) + ")"));
                 if (1==0) // verbose
                 {
-                    for (Enumeration e = request.getHeaderNames() ; e.hasMoreElements() ; )
-                    {
-                        String name = (String)e.nextElement();
+                    IteratorUtils.asIterator(request.getHeaderNames()).forEachRemaining(name -> {
                         _log.debug(name + ": " + request.getHeader(name));
-                    }
+                    });
                 }
                 start = System.currentTimeMillis();
             }
