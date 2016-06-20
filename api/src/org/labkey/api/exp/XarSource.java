@@ -15,21 +15,27 @@
  */
 package org.labkey.api.exp;
 
+import org.apache.xmlbeans.XmlException;
 import org.fhcrc.cpas.exp.xml.ExperimentArchiveDocument;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocolApplication;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.security.User;
-import org.apache.xmlbeans.XmlException;
 
-import java.io.IOException;
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
-import java.util.Map;
-import java.util.HashMap;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * User: jeckels
@@ -47,6 +53,7 @@ public abstract class XarSource implements Serializable
 
     protected final Map<String, String> _dataFileURLs = new HashMap<>();
 
+    @NotNull
     private final XarContext _xarContext;
 
     public XarSource(String description, Container container, User user)
@@ -238,6 +245,7 @@ public abstract class XarSource implements Serializable
         return pr != null && pr.isUnderRoot(file);
     }
 
+    @NotNull
     public XarContext getXarContext()
     {
         return _xarContext;

@@ -16,6 +16,7 @@
 package org.labkey.api.exp;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.DataType;
@@ -45,7 +46,7 @@ public interface ExperimentDataHandler extends Handler<ExpData>
      * Import whatever content from the file is destined for storage in the database. Typically persisted in a schema
      * owned by the module that holds the implementation of the ExperimentDataHandler.
      */
-    void importFile(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context) throws ExperimentException;
+    void importFile(@NotNull ExpData data, File dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context) throws ExperimentException;
 
     /**
      * Stream the content of this data object. Typically this just streams the bytes of the file from disk, but could
