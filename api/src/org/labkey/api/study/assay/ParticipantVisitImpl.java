@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.assay;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -83,6 +84,12 @@ public class ParticipantVisitImpl implements ParticipantVisit
         return _studyContainer;
     }
 
+    /** Prevent generated LSIDs from getting too long - see issue 25929 */
+    private String truncate(@NotNull String s, int maxLength)
+    {
+        return s.length() < maxLength ? s : s.substring(0, maxLength - 1);
+    }
+
     public ExpMaterial getMaterial()
     {
         if (_material == null)
@@ -91,7 +98,7 @@ public class ParticipantVisitImpl implements ParticipantVisit
             if (_participantID != null)
             {
                 name.append("Participant-");
-                name.append(_participantID);
+                name.append(truncate(_participantID, 40));
             }
             if (_visitID != null)
             {
@@ -118,7 +125,7 @@ public class ParticipantVisitImpl implements ParticipantVisit
                     name.append(".");
                 }
                 name.append("SpecimenID-");
-                name.append(_specimenID);
+                name.append(truncate(_specimenID, 40));
             }
 
             if (name.length() == 0)
