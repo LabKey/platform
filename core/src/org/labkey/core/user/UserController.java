@@ -994,7 +994,12 @@ public class UserController extends SpringActionController
                 {
                     BufferedImage image = ImageIO.read(is);
                     float desiredSize = ThumbnailService.ImageType.Large.getHeight();
-                    if (image.getHeight() < desiredSize || image.getWidth() < desiredSize)
+
+                    if (image == null)
+                    {
+                        errors.reject(SpringActionController.ERROR_MSG, "Avatar file must be an image file.");
+                    }
+                    else if (image.getHeight() < desiredSize || image.getWidth() < desiredSize)
                     {
                         errors.reject(SpringActionController.ERROR_MSG, "Avatar file must have a height and width of at least " + desiredSize + "px.");
                     }
@@ -1056,7 +1061,8 @@ public class UserController extends SpringActionController
                 {
                     try (InputStream is = file.openInputStream())
                     {
-                        ThumbnailProvider wrapper = new ImageStreamThumbnailProvider(user, is, file.getContentType(), imageType);
+                        ImageStreamThumbnailProvider wrapper = new ImageStreamThumbnailProvider(user, is, file.getContentType(), imageType);
+                        wrapper.setMakeSquare(true);
                         svc.replaceThumbnail(wrapper, imageType, null, getViewContext());
                     }
                 }
