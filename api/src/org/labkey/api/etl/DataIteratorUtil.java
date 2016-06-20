@@ -146,7 +146,7 @@ public class DataIteratorUtil
         return targetAliasesMap;
     }
 
-    enum MatchType {propertyuri, name, alias}
+    enum MatchType {propertyuri, name, alias, jdbcname}
 
     protected static Map<String,Pair<ColumnInfo,MatchType>> _createTableMap(TableInfo target, boolean useImportAliases)
     {
@@ -170,17 +170,24 @@ public class DataIteratorUtil
             String label = col.getLabel();
             if (null != label && !targetAliasesMap.containsKey(label))
                 targetAliasesMap.put(label, new Pair<>(col, MatchType.alias));
+            String translatedFieldKey;
             if (useImportAliases)
             {
                 for (String alias : col.getImportAliasSet())
                     if (!targetAliasesMap.containsKey(alias))
                         targetAliasesMap.put(alias, new Pair<>(col, MatchType.alias));
                 // Be sure we have an alias the column name we generate for TSV exports. See issue 21774
-                String translatedFieldKey = FieldKey.fromString(col.getName()).toDisplayString();
+                translatedFieldKey = FieldKey.fromString(col.getName()).toDisplayString();
                 if (!targetAliasesMap.containsKey(translatedFieldKey))
                 {
                     targetAliasesMap.put(translatedFieldKey, new Pair<>(col, MatchType.alias));
                 }
+            }
+            // Jdbc resultset names have substitutions for special characters. If this is such a column, need the substituted name to match on
+            translatedFieldKey = col.getJdbcRsName();
+            if (!name.equals(translatedFieldKey))
+            {
+                targetAliasesMap.put(translatedFieldKey, new Pair<>(col, MatchType.jdbcname));
             }
         }
         return targetAliasesMap;

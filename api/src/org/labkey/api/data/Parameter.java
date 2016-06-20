@@ -199,10 +199,8 @@ public class Parameter implements AutoCloseable
     public Parameter(ColumnInfo c, int[] indexes)
     {
         // The jdbc resultset metadata replaces special characters in source column names.
-        // We need the parameter names to match so we can match to the column. I haven't found an exhaustive list of
-        // the characters and their replacements, but spaces, hyphens, and forward slashes have been seen in a client db schema
-        // and have an issue.
-        _name = c.getName().replaceAll("\\s", "_").replace("-", "_minus_").replace("/", "_fs_");
+        // We need the parameter names to match so we can match to the column.
+        _name = c.getJdbcRsName();
         _uri = c.getPropertyURI();
         _type = c.getJdbcType();
         _indexes = indexes;

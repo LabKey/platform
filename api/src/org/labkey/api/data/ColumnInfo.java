@@ -775,6 +775,12 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     }
 
     /**
+     * See {@link #jdbcRsNameFromName(String) }
+     *
+     */
+    public String getJdbcRsName() { return jdbcRsNameFromName(getName()); }
+
+    /**
      * Version column can be used for optimistic concurrency.
      * for now we assume that this column is never updated
      * explicitly.
@@ -1251,6 +1257,23 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         return Introspector.decapitalize(legalNameFromName(name));
     }
 
+    /**
+     *  The jdbc resultset metadata replaces special characters in source column names.
+     *  This is a problem when matching source and target columns, as we have the jdbc name for the source.
+     *  I haven't found an exhaustive list of the characters and their replacements, but spaces, hyphens, parens,
+     *  and forward slashes have been seen in a client db schema and have an issue.
+     */
+    public static String jdbcRsNameFromName(String name)
+    {
+        if (StringUtils.isBlank(name))
+            return null;
+
+        return name.replaceAll("\\s", "_")
+                .replace("-", "_minus_")
+                .replace("/", "_fs_")
+                .replace("(", "_lp_")
+                .replace(")", "_rp_");
+    }
 
     public static boolean booleanFromString(String str)
     {
