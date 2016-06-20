@@ -465,9 +465,11 @@ public class StringExpressionFactory
             int index;
             while (start < _source.length() && (index = _source.indexOf("${", start)) >= 0)
             {
+                int closeIndex = _source.indexOf('}', index + 2);
+                if (closeIndex == -1)
+                    break;
                 if (index > 0)
                     _parsedExpression.add(new ConstantPart(_source.substring(start, index)));
-                int closeIndex = _source.indexOf('}', index + 2);
                 String sub = _source.substring(index+2,closeIndex);
                 _parsedExpression.add(parsePart(sub));
                 start = closeIndex + 1;
