@@ -47,6 +47,7 @@ public class ImageStreamThumbnailProvider implements ThumbnailProvider
     private final @Nullable String _contentType;
     private final ImageType _type;
     private final InputStream _is;
+    private boolean _makeSquare = false;
 
     // Generates a thumbnail from the image in the inputstream and associates it with the provider
     public ImageStreamThumbnailProvider(ThumbnailProvider provider, InputStream is, @Nullable String contentType, ImageType type)
@@ -55,6 +56,11 @@ public class ImageStreamThumbnailProvider implements ThumbnailProvider
         _contentType = contentType;
         _type = type;
         _is = new CheckedInputStream(is);
+    }
+
+    public void setMakeSquare(boolean makeSquare)
+    {
+        _makeSquare = makeSquare;
     }
 
     @Override
@@ -107,7 +113,7 @@ public class ImageStreamThumbnailProvider implements ThumbnailProvider
                 // Try-with-resources will close stream
                 try (InputStream is = _is)
                 {
-                    return ImageUtil.renderThumbnail(ImageIO.read(is), _type);
+                    return ImageUtil.renderThumbnail(ImageIO.read(is), _type, _makeSquare);
                 }
             }
         }

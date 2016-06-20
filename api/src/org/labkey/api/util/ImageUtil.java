@@ -139,7 +139,12 @@ public class ImageUtil
 
     public static @Nullable Thumbnail renderThumbnail(BufferedImage image, ImageType imageType) throws IOException
     {
-        return renderThumbnail(image, imageType.getHeight());
+        return renderThumbnail(image, imageType, false);
+    }
+
+    public static @Nullable Thumbnail renderThumbnail(BufferedImage image, ImageType imageType, boolean makeSquare) throws IOException
+    {
+        return renderThumbnail(image, imageType.getHeight(), makeSquare);
     }
 
     public static @Nullable Thumbnail renderThumbnail(BufferedImage image) throws IOException
@@ -147,7 +152,7 @@ public class ImageUtil
         return renderThumbnail(image, ImageType.Large);
     }
 
-    public static @Nullable Thumbnail renderThumbnail(BufferedImage image, float desiredHeight) throws IOException
+    public static @Nullable Thumbnail renderThumbnail(BufferedImage image, float desiredHeight, boolean makeSquare) throws IOException
     {
         if (null == image)
             return null;
@@ -155,13 +160,38 @@ public class ImageUtil
         ThumbnailOutputStream os = new ThumbnailOutputStream();
         int height = image.getHeight();
 
+        if (makeSquare)
+            image = cropImageToSquare(image);
+
         // Scale the image down if height is greater than THUMBNAIL_HEIGHT, otherwise leave it alone
         if (height > desiredHeight)
-            ImageUtil.resizeImage(image, os, desiredHeight/height, 1);
+            ImageUtil.resizeImage(image, os, desiredHeight / height, 1);
         else
             ImageIO.write(image, "png", os);
 
         return os.getThumbnail("image/png");
+    }
+
+    private static BufferedImage cropImageToSquare(BufferedImage image)
+    {
+        if (image != null)
+        {
+            int height = image.getHeight();
+            int width = image.getWidth();
+
+            if (width > height)
+            {
+                int sizeDiff = width - height;
+                return image.getSubimage(sizeDiff / 2, 0, width - sizeDiff, height);
+            }
+            else if (height > width)
+            {
+                int sizeDiff = height - width;
+                return image.getSubimage(0, sizeDiff / 2, width, height - sizeDiff);
+            }
+        }
+
+        return image;
     }
 
     public static Thumbnail webThumbnail(URL url) throws IOException
