@@ -65,6 +65,7 @@ import org.labkey.api.study.assay.pipeline.AssayUploadPipelineJob;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.ContainerUser;
 
@@ -120,8 +121,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         ExpProtocol protocol = context.getProtocol();
         ExpRun run = null;
 
-        boolean background = provider.isBackgroundUpload(protocol);
-        if (!background)
+        // Check if assay protocol is configured to import in the background.
+        // Issue 26811: If we don't have a view, assume that we are on a background job thread already.
+        boolean importInBackground = provider.isBackgroundUpload(protocol) && HttpView.hasCurrentView();
+        if (!importInBackground)
         {
             File primaryFile = context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE);
             run = AssayService.get().createExperimentRun(context.getName(), context.getContainer(), protocol, primaryFile);
@@ -282,7 +285,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             TransformResult transformResult = transform(context, run);
             List<ExpData> insertedDatas = new ArrayList<>();
 
-            if(transformResult.getWarnings() != null && context instanceof AssayRunUploadForm)
+            if (transformResult.getWarnings() != null && context instanceof AssayRunUploadForm)
             {
                 context.setTransformResult(transformResult);
                 ((AssayRunUploadForm)context).setName(run.getName());
