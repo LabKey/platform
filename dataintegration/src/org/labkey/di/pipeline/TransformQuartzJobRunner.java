@@ -67,11 +67,21 @@ public class TransformQuartzJobRunner implements Job
             try
             {
                 PipelineService.get().setStatus(job, PipelineJob.TaskStatus.waiting.toString(), null, true);
+            }
+            catch (Exception e)
+            {
+                LOG.error("Unable to queue ETL job", e);
+            }
+
+            try
+            {
                 PipelineService.get().queueJob(job);
             }
             catch (Exception e)
             {
                 LOG.error("Unable to queue ETL job", e);
+                job.setStatus(PipelineJob.TaskStatus.error, "Unable to queue ETL job. " + e.getMessage());
+                job.done(null);
             }
         }
         catch (RuntimeException x)
