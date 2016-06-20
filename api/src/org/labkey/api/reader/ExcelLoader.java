@@ -54,6 +54,7 @@ import javax.xml.parsers.SAXParserFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -114,6 +115,9 @@ public class ExcelLoader extends DataLoader
 
     private String sheetName;
     private Integer sheetIndex;
+
+    private ExcelLoader()
+    {}
 
     public ExcelLoader(File file) throws IOException
     {
@@ -532,13 +536,53 @@ public class ExcelLoader extends DataLoader
     }
 
 
+    /**
+     * The main point of this routine is to return a full-fidelity string version of the passed in value.
+     * However, when copying a numeric value in a spreadsheet to a string column in the database, it would
+     * be nice to use a decent default format.
+     *
+     * If the caller REALLY cares about the format, it should probably set useFormats==true
+     * @param value object to convert
+     * @return string representation
+      */
+    String _toString(Object value, boolean isNumberFormat)
+    {
+        if (null == value)
+            return "";
+        String toStringValue = value.toString();
+        if (!isNumberFormat || !StringUtils.contains(toStringValue,'.'))
+            return toStringValue;
+
+        try
+        {
+            // try to convert to double and reformat without trailing ...00000001 or ...99999999.
+            double d = Double.parseDouble(toStringValue);
+            double pos = Math.abs(d);
+            if (pos == 0.0)
+                return "0";
+            if (Double.isFinite(d) && pos <= 9_007_199_254_740_992L && Math.log10(pos)>=-6)
+            {
+                String formatValue = df.format(d);
+                if (d == Double.parseDouble(formatValue))
+                    return formatValue;
+            }
+        }
+        catch (NumberFormatException x)
+        {
+        }
+        return toStringValue;
+    }
+
+    DecimalFormat df = new DecimalFormat("###0.#####################");
+
+
     public static class ExcelLoaderTestCase extends Assert
     {
         private final File _projectRoot;
 
         public ExcelLoaderTestCase()
         {
-            String projectRootPath =  AppProps.getInstance().getProjectRoot();
+            String projectRootPath = AppProps.getInstance().getProjectRoot();
             if (projectRootPath == null)
                 projectRootPath = System.getProperty("user.dir") + "/..";
             _projectRoot = new File(projectRootPath);
@@ -615,6 +659,21 @@ public class ExcelLoader extends DataLoader
             assertTrue(firstRow.get("scan").equals(96));
             assertTrue(firstRow.get("accurateMZ").equals(false));
             assertTrue(firstRow.get("description").equals("description"));
+        }
+
+        @Test
+        public void testDoubleToString() throws IOException
+        {
+            ExcelLoader xl = new ExcelLoader();
+
+            assertEquals("0", xl._toString("0.0", true));
+            assertEquals("1", xl._toString("1.0", true));
+            assertEquals(String.valueOf(Integer.MAX_VALUE), xl._toString(Integer.MAX_VALUE, true));
+            assertEquals("1.572", xl._toString("1.5720000000000001", true));
+            assertEquals("2.441", xl._toString("2.4409999999999998", true));
+            assertEquals("1.5720000000000001", xl._toString("1.5720000000000001", false));
+            assertEquals("2.4409999999999998", xl._toString("2.4409999999999998", false));
+            assertEquals("0.000001572", xl._toString("0.000001572", true));
         }
     }
 
@@ -844,16 +903,24 @@ public class ExcelLoader extends DataLoader
 
                     case NUMBER:
                         boolean isDateFormat = null!=this.formatString && org.apache.poi.ss.usermodel.DateUtil.isADateFormat(this.formatIndex, this.formatString);
-                        // since Excel auto-converts lots of things that are not numbers, such particpantids and sometimes dates
-                        // convert to string and let DataLoader sort it out
-                        if (StringUtils.isEmpty(value))
+                        boolean isNumberFormat = null != this.formatString && !isDateFormat && !this.formatString.equals("General") && !this.formatString.equals("@"); // i18n???
+
+                        if (StringUtils.isBlank(value))
                             thisValue = "";
                         else if (this.formatString != null && (useFormats || isDateFormat))
                         {
                             thisValue = formatter.formatRawCellContents(Double.parseDouble(value.toString()), this.formatIndex, this.formatString);
                         }
                         else
-                            thisValue = value.toString();
+                        {
+                            // Excel auto-converts lots of things that are not numbers, such particpantids and sometimes dates
+                            // If the value is not explicitly formatted as a number then use Excel's stored string representation and let DataLoader sort it out
+                            // NOTE: if we it is formatted as a number we generate our own string representation,
+                            // This helps when targeting a string column
+                            //     a) to avoid Excel's trailing 0000001 and 9999999 format
+                            //     b) avoid scientific notation if possible
+                            thisValue = _toString(value, isNumberFormat);
+                        }
                         break;
 
                     default:
@@ -906,15 +973,4 @@ public class ExcelLoader extends DataLoader
             return column;
         }
     }
-
-
-/*
-    static class _ArrayListMap extends ArrayListMap<String, Object>
-    {
-        _ArrayListMap(FindMap<String> findMap, ArrayList<Object> row)
-        {
-            super(findMap, row);
-        }
-    }
-*/
 }
