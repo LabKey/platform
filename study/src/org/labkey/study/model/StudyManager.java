@@ -3073,11 +3073,6 @@ public class StudyManager
             Table.delete(StudySchema.getInstance().getTableInfoPlate(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoPlate());
 
-            //
-            // reports
-            //
-            ReportManager.get().deleteReports(c, deletedTables);
-
             // QC States
             Table.delete(StudySchema.getInstance().getTableInfoQCState(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoQCState());

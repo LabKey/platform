@@ -74,7 +74,6 @@ import java.util.Set;
 public class ReportManager implements DatasetManager.DatasetListener
 {
     private static final String SCHEMA_NAME = "study";
-    private static final String TABLE_NAME = "Report";
 
     /** records the dataset id used for plotviews (charts not tied to a specific dataset view) */
     public static final int ALL_DATASETS = -1;
@@ -97,11 +96,6 @@ public class ReportManager implements DatasetManager.DatasetListener
     private DbSchema getSchema()
     {
         return DbSchema.get(SCHEMA_NAME);
-    }
-
-    public TableInfo getTable()
-    {
-        return getSchema().getTable(TABLE_NAME);
     }
 
     private static final String _datasetLabelQuery;
@@ -253,14 +247,6 @@ public class ReportManager implements DatasetManager.DatasetListener
         columns.addAll(propertyColumns);
 
         return new TableSelector(tinfo, columns, filter, null).setForDisplay(true).getResults();
-    }
-
-
-    public void deleteReports(Container c, Set<TableInfo> set)
-    {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ContainerId"), c.getId());
-        Table.delete(getTable(), filter);
-        assert set.add(getTable());
     }
 
     public Report createReport(String reportType)
