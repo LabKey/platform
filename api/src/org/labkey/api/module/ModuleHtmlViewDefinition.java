@@ -168,6 +168,8 @@ public class ModuleHtmlViewDefinition
 
                 if (SimpleAction.PermissionEnum.login == perm)
                     _requiresLogin = true;
+                else if (SimpleAction.PermissionEnum.none == perm)
+                    _requiredPerms = perm.toInt();
                 else if (null != perm)
                     _requiredPerms |= perm.toInt();
             }
