@@ -600,6 +600,16 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                 listeners: {
                     afterrender: function() {
                         rendered = true;
+                        treeStore.filterBy(function(record) {
+                            // Issue 26404: filters and sorts on columns from look up tables result in duplicate nodes.
+                            // skip node on CV render if it's a child node of a lookup table that's collpased
+                            // All nodes except ROOT are collapsed on render
+                            if (record && record.get('fieldKey').indexOf('/') == -1) {
+                                return record;
+                            }
+                            return false;
+                        }, null /* scope */, true /* matchParentNodes */);
+
                         firstCheck();
                     },
                     beforeselect: function(tree, record) {
