@@ -519,12 +519,14 @@ Ext4.override(Ext4.form.action.Action, { timeout: Ext4.Ajax.timeout / 1000 });
  * Issue 26404: filters and sorts on columns from look up tables result in duplicate nodes.
  * Copied from https://fiddle.sencha.com/#fiddle/ra
  * ExtJS forum thread: https://www.sencha.com/forum/showthread.php?184010-TreeStore-filtering.
+ * Update: modified patch to pass internalId on copy only if it's a deep copy.
  */
 Ext4.override(Ext4.data.Model, {
     // fixes the issue where null newId doesn't use me.internalId to copy the record using its existing ID
-    copy: function(newId) {
+    // Modified original patch to only use me.internalId when deep copy, which is used for tree nodes
+    copy: function(newId, deep) {
         var me = this;
-        return new me.self(me.raw, newId || me.internalId, null, Ext4.apply({}, me[me.persistenceProperty]));
+        return new me.self(me.raw, newId || (deep ? me.internalId : undefined), null, Ext4.apply({}, me[me.persistenceProperty]));
     }
 });
 Ext4.override(Ext4.data.NodeInterface, {
