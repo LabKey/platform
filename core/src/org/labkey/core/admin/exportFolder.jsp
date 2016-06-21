@@ -152,6 +152,7 @@ Ext.onReady(function(){
             border: false,
             standardSubmit: true,
             layout: 'column',
+            height: '100%',
             defaults: {
                 xtype: 'container',
                 layout: 'form'
