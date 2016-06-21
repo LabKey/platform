@@ -213,7 +213,7 @@ public class StudyUnionTableInfo extends VirtualTable
 
     public SQLFragment getParticipantSequenceNumSQL(String alias)
     {
-        HashSet<FieldKey> fks = new HashSet<>(Arrays.asList(new FieldKey(null,"participantId"),new FieldKey(null,"SequenceNum"),new FieldKey(null,"ParticipantSequenceNum")));
+        Set<FieldKey> fks = new HashSet<>(Arrays.asList(FieldKey.fromParts("participantId"), FieldKey.fromParts("SequenceNum"), FieldKey.fromParts("ParticipantSequenceNum")));
         return _getFromSQL(alias, fks, true);
     }
 

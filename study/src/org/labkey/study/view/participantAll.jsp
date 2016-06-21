@@ -302,7 +302,7 @@
 
     // get the data for this dataset and group rows by SequenceNum/Key
     TableInfo table = querySchema.createDatasetTableInternal(dataset);
-    Map<Double, Map<Object, Map>> seqKeyRowMap = new HashMap<>();
+    Map<Double, Map<Object, Map<String, Object>>> seqKeyRowMap = new HashMap<>();
     FieldKey keyColumnName = null == dataset.getKeyPropertyName() ? null : new FieldKey(null, dataset.getKeyPropertyName());
     ColumnInfo keyColumn = null == keyColumnName ? null : table.getColumn(keyColumnName);
     ColumnInfo seqnumColumn = table.getColumn("SequenceNum");
@@ -316,7 +316,7 @@
         Object sequenceNum = seqnumColumn.getValue(dsResults);
         Object key = null == keyColumn ? "" : keyColumn.getValue(dsResults);
 
-        Map<Object, Map> keyMap = seqKeyRowMap.get(sequenceNum);
+        Map<Object, Map<String, Object>> keyMap = seqKeyRowMap.get(sequenceNum);
         if (null == keyMap)
             seqKeyRowMap.put(((Number)sequenceNum).doubleValue(), keyMap = new HashMap<>());
         keyMap.put(key, dsResults.getRowMap());
@@ -345,7 +345,7 @@
         {
             for (double seq : visitSequenceMap.get(visit.getRowId()))
             {
-                Map<Object, Map> keyMap = seqKeyRowMap.get(seq);
+                Map<Object, Map<String, Object>> keyMap = seqKeyRowMap.get(seq);
                 Integer count = countKeysForSequence.get(seq);
                 int colspan = count != null ? count : 1;
                 if (null != keyMap)
@@ -415,11 +415,11 @@
         {
             for (double seq : visitSequenceMap.get(visit.getRowId()))
             {
-                Map<Object, Map> keyMap = seqKeyRowMap.get(seq);
+                Map<Object, Map<String, Object>> keyMap = seqKeyRowMap.get(seq);
                 int countTD = 0;
                 if (null != keyMap)
                 {
-                    for (Map.Entry<Object, Map> e : keyMap.entrySet())
+                    for (Map.Entry<Object, Map<String, Object>> e : keyMap.entrySet())
                     {
                         Integer id = (Integer) e.getValue().get("QCState");
                         QCState state = getQCState(study, id);
@@ -449,7 +449,7 @@
 
     // sort the properties so they appear in the same order as the grid view
 //            PropertyDescriptor[] pds = sortProperties(StudyController.getParticipantPropsFromCache(context, typeURI), dataset, context);
-    ColumnInfo[] displayColumns = sortColumns(allColumns.values(), dataset, context);
+    List<ColumnInfo> displayColumns = sortColumns(allColumns.values(), dataset, context);
 
     for (ColumnInfo col : displayColumns)
     {
@@ -467,13 +467,13 @@
         {
             for (double seq : visitSequenceMap.get(visit.getRowId()))
             {
-                Map<Object, Map> keyMap = seqKeyRowMap.get(seq);
+                Map<Object, Map<String, Object>> keyMap = seqKeyRowMap.get(seq);
                 int countTD = 0;
                 if (null != keyMap)
                 {
-                    for (Map.Entry<Object, Map> e : keyMap.entrySet())
+                    for (Map.Entry<Object, Map<String, Object>> e : keyMap.entrySet())
                     {
-                        Map propMap = e.getValue();
+                        Map<String, Object> propMap = e.getValue();
                         if (sourceLsidColumn.getValue(propMap) != null)
                             hasSourceLsid = true;
                         Object value = col.getValue(propMap);
@@ -510,14 +510,14 @@
         {
             for (double seq : visitSequenceMap.get(visit.getRowId()))
             {
-                Map<Object, Map> keyMap = seqKeyRowMap.get(seq);
+                Map<Object, Map<String, Object>> keyMap = seqKeyRowMap.get(seq);
                 int countTD = 0;
                 if (null != keyMap)
                 {
-                    for (Map.Entry<Object, Map> e : keyMap.entrySet())
+                    for (Map.Entry<Object, Map<String, Object>> e : keyMap.entrySet())
                     {
                         String link = "&nbsp;";
-                        Map propMap = e.getValue();
+                        Map<String, Object> propMap = e.getValue();
                         String sourceLsid = (String) sourceLsidColumn.getValue(propMap);
 
                         if (sourceLsid != null && LsidManager.get().hasPermission(sourceLsid, getUser(), ReadPermission.class))
@@ -584,7 +584,7 @@
             "container", "_key", "datasets", "folder");
 
 
-    ColumnInfo[] sortColumns(Collection<ColumnInfo> cols, Dataset dsd, ViewContext context)
+    List<ColumnInfo> sortColumns(Collection<ColumnInfo> cols, Dataset dsd, ViewContext context)
     {
         final Map<String, Integer> sortMap = StudyController.getSortedColumnList(context, dsd);
         if (sortMap != null && !sortMap.isEmpty())
@@ -604,7 +604,7 @@
             for (ColumnInfo col : list)
                 if (col != null)
                     results.add(col);
-            return results.toArray(new ColumnInfo[results.size()]);
+            return results;
         }
 
         // default list
@@ -624,7 +624,7 @@
                 continue;
             ret.add(col);
         }
-        return ret.toArray(new ColumnInfo[ret.size()]);
+        return ret;
     }
 
 
