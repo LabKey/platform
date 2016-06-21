@@ -249,7 +249,7 @@ This folder does not contain a study.
                         String viewPickerHtml = factory.getCustomViewPicker(views);
                 %>
                     <tr>
-                        <td style="<%= optionLabelStyle %>">Base view</td>
+                        <td style="<%= optionLabelStyle %>">Base</td>
                         <td>
                             <%= viewPickerHtml %>
                         </td>
@@ -297,7 +297,7 @@ This folder does not contain a study.
                     <tr>
                         <td colspan="2">
                         <%= button("Refresh").submit(true).onClick("document['" + formName + "']['excelExport'].value=false;") %>
-                        <%= button("Print View").submit(true).onClick("document['" + formName + "']['_print'].value=1; document['" + formName + "']['excelExport'].value=false;") %>
+                        <%= button("Print").submit(true).onClick("document['" + formName + "']['_print'].value=1; document['" + formName + "']['excelExport'].value=false;") %>
                         <%= bean.hasReports() ? button("Export to Excel").submit(true).onClick("document['" + formName + "']['excelExport'].value=true;") :
                                 button("Export to Excel").submit(true).onClick("document['" + formName + "']['excelExport'].value=true;").enabled(false) %>
                         </td>

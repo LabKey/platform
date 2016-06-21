@@ -153,7 +153,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
     // delete views template
     deleteTpl: new Ext4.XTemplate(
-            '<div><span>Are you sure you want to delete the selected view(s)?</span></div><br/>' +
+            '<div><span>Are you sure you want to delete the following?</span></div><br/>' +
             '<tpl for=".">' +
                 '<tpl if="data.type">' +
                     '<div><span' +
@@ -174,7 +174,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
     // delete unsupported template
     unsupportedDeleteTpl: new Ext4.XTemplate(
-            '<div><span>Delete is not allowed for the following view type(s), please omit them from your selection.</span></div><br/>' +
+            '<div><span>Delete is not allowed for the following type(s), please omit them from your selection.</span></div><br/>' +
             '<tpl for=".">' +
                 '<div><span' +
                 '<tpl if="data.iconCls">' +
@@ -958,7 +958,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 if (unsupported.length > 0) {
 
                     Ext4.Msg.show({
-                        title   : 'Delete Views',
+                        title   : 'Delete',
                         msg     : this.unsupportedDeleteTpl.apply(unsupported),
                         buttons : Ext4.Msg.OK,
                         icon    : Ext4.MessageBox.INFO
@@ -967,7 +967,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 else if (viewsToDelete.length > 0) {
 
                     Ext4.Msg.show({
-                        title   : 'Delete Views',
+                        title   : 'Delete',
                         msg     : this.deleteTpl.apply(sel),
                         scope   : this,
                         buttons : Ext4.Msg.OKCANCEL,
@@ -981,7 +981,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                                     jsonData: {views : viewsToDelete},
                                     success : function(){this.gridPanel.store.load();},
                                     failure : LABKEY.Utils.getCallbackWrapper(function(json, response, options) {
-                                        Ext4.Msg.alert("Delete Views", "Deletion Failed: " + json.exception);
+                                        Ext4.Msg.alert("Delete", "Deletion Failed: " + json.exception);
                                     }, null, true)
                                 });
                             }
@@ -991,8 +991,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             }
             else {
                 Ext4.Msg.show({
-                    title   : 'Delete Views',
-                    msg     : 'No views have been selected',
+                    title   : 'Delete',
+                    msg     : 'No items have been selected',
                     buttons : Ext4.Msg.OK,
                     icon    : Ext4.MessageBox.INFO
                 });
@@ -1282,7 +1282,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             var gpStore = this.gridPanel.getStore(); // Need because for some reason this.gridPanel is not in scope
                                                      // in the successCallback below.
             buttons.push({
-                text: 'Delete View',
+                text: 'Delete',
                 scope: this,
                 handler: function ()
                 {
@@ -1313,7 +1313,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                         }
                     };
 
-                    Ext4.MessageBox.confirm('Delete View?', msg, confirmCallback, this);
+                    Ext4.MessageBox.confirm('Delete?', msg, confirmCallback, this);
                 }
             });
         }

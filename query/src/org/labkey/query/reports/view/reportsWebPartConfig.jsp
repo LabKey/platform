@@ -78,7 +78,7 @@
             <td><input type="text" name="title" size="40" value="<%=h(pm.get("title"))%>"></td>
         </tr>
         <tr>
-            <td class="labkey-form-label">Report or View:</td>
+            <td class="labkey-form-label">Report or Chart:</td>
             <td>
                 <select id="reportId" name="<%=Report.renderParam.reportId.name()%>" onchange="getSectionNames(this);">
                     <%
@@ -103,13 +103,13 @@
             </td>
         </tr>
         <tr>
-            <td class="labkey-form-label">Show View Tabs:<%=PageFlowUtil.helpPopup("Show tabs",
-                    "Some views may be rendered with multiple tabs showing. Select this option to only show the primary view.")%></td>
+            <td class="labkey-form-label">Show Tabs:<%=PageFlowUtil.helpPopup("Show tabs",
+                    "Some report/chart may be rendered with multiple tabs showing. Select this option to only show the primary one.")%></td>
             <td><input id='showTabs' type="checkbox" name="<%=h(showTabs)%>" <%=checked(BooleanUtils.toBoolean(pm.get(showTabs)))%> onclick="onShowTabs(this.checked);"></td>
         </tr>
         <tr id="visibleSections">
             <td class="labkey-form-label">Visible Report Sections:<%=PageFlowUtil.helpPopup("Show Report sections",
-                    "Some views contain multiple sections such as: images, text, console output. For these types of views, you can select which section(s) to " +
+                    "Some reports/charts contain multiple sections such as: images, text, console output. For these types of report, you can select which section(s) to " +
                             "display by selecting them from the list.")%></td>
             <td><select id="showSection" multiple="true" onchange="selectSection()"></select></td>
         </tr>

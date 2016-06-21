@@ -73,9 +73,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         this.reportLoaded = true;
         this.typeToLabel = {
-            auto_plot : 'Auto Plot Report',
-            scatter_plot : 'Scatter Plot Report',
-            box_plot : 'Box Plot Report'
+            auto_plot : 'Auto Plot',
+            scatter_plot : 'Scatter Plot',
+            box_plot : 'Box Plot'
         };
 
         // only linear for now but could expand in the future
