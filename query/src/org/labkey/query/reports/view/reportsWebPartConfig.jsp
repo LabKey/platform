@@ -104,7 +104,7 @@
         </tr>
         <tr>
             <td class="labkey-form-label">Show Tabs:<%=PageFlowUtil.helpPopup("Show tabs",
-                    "Some report/chart may be rendered with multiple tabs showing. Select this option to only show the primary one.")%></td>
+                    "Some reports/charts may be rendered with multiple tabs showing. Select this option to only show the primary one.")%></td>
             <td><input id='showTabs' type="checkbox" name="<%=h(showTabs)%>" <%=checked(BooleanUtils.toBoolean(pm.get(showTabs)))%> onclick="onShowTabs(this.checked);"></td>
         </tr>
         <tr id="visibleSections">
