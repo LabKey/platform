@@ -4,20 +4,13 @@
 .labkey-notification-panel
 {
     position:fixed; right:0; top:0;
-    /*background-color: #323336;*/
-    /*color:#ffffff;*/
     height:100%;
     width:400px;
     z-index: 2147483630; /* see relationship to value for miniprofiler */
 }
 .labkey-notification, .labkey-notification-none
 {
-    /*color: #aaaaaa;*/
     padding: 10px 15px;
-}
-.labkey-notification:hover
-{
-    /*background-color: #555555;*/
 }
 .labkey-notification-inbox
 {
@@ -27,7 +20,6 @@
 {
     font-weight: bold;
     padding: 10px 5px;
-    /*color: #ffffff;*/
     border-bottom: solid #aaaaaa 1px;
     margin: 0 10px 10px 10px;
 }
@@ -43,7 +35,6 @@
     padding: 20px 15px;
     font-weight:bold;
     text-transform: uppercase;
-    /*color: #ffffff;*/
 }
 .labkey-notification-footer
 {
@@ -51,27 +42,16 @@
     bottom: 0;
     padding: 15px;
     width: 100%;
-    /*background-color: #323336;*/
-    /*color: #126495;*/
-}
-.labkey-notification-footer span:hover
-{
-    /*color: #ffffff;*/
-    cursor: default;
 }
 .labkey-notification-createdby
 {
     display: inline-block;
-    /*color: #ffffff;*/
-    cursor: default;
     white-space: nowrap;
     width: 300px;
     text-overflow: ellipsis;
 }
 .labkey-notification-body
 {
-    /*color: #aaaaaa;*/
-    cursor: default;
     white-space: nowrap;
     width: 300px;
     height: 16px;
@@ -89,10 +69,8 @@
 {
     float: left;
     font-size: 18px;
-    /*color: #323336;*/
     margin-right: 8px;
     padding: 7px;
-    /*background-color: #aaaaaa;*/
 }
 .labkey-notification-toggle
 {
@@ -102,31 +80,23 @@
 {
     display: block;
     font-size: 16px;
-    /*color: #aaaaaa;*/
-    cursor: default;
 }
 .labkey-notification-times
 {
     padding-bottom: 3px;
 }
-.labkey-notification-times:hover, .labkey-notification-toggle:hover
-{
-    /*color: #ffffff;*/
-}
 .labkey-notification-clear-all
 {
-    /*color: #126495;*/
-    cursor: default;
     position: fixed;
     top: 20px;
     right: 15px;
 }
-.labkey-notification-clear-all:hover
-{
-    /*color: #ffffff;*/
-}
+.labkey-notification:hover,
+.labkey-notification-footer span:hover,
+.labkey-notification-times:hover,
+.labkey-notification-toggle:hover,
+.labkey-notification-clear-all:hover,
 .labkey-notification-panel a:hover
 {
-    /*color: #ffffff;*/
-    cursor: default;
+    cursor: pointer;
 }
