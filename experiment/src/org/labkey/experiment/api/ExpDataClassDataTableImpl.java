@@ -79,6 +79,7 @@ import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
@@ -153,6 +154,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             case RowId:
             {
                 ColumnInfo c = wrapColumn(alias, getRealTable().getColumn("RowId"));
+                c.setFk(new RowIdForeignKey(c));
                 c.setKeyField(true);
                 c.setHidden(true);
                 return c;
