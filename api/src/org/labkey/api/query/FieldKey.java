@@ -128,12 +128,12 @@ public class FieldKey extends QueryKey<FieldKey>
     }
 
 
-    public FieldKey(FieldKey parent, @NotNull String name)
+    public FieldKey(@Nullable FieldKey parent, @NotNull String name)
     {
         super(parent, name);
     }
 
-    public FieldKey(FieldKey parent, Enum name)
+    public FieldKey(@Nullable FieldKey parent, Enum name)
     {
         super(parent, name);
     }
