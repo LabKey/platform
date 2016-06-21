@@ -92,7 +92,7 @@ public class EditableSpecimenImporter extends SpecimenImporter
 
         try
         {
-            super.process(sifMap, merge, logger, null);
+            super.process(sifMap, merge, logger, null, true);
         }
         catch (ValidationException ex)
         {

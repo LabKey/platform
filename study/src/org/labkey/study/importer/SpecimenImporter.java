@@ -1250,7 +1250,7 @@ public class SpecimenImporter
         return specimenColumns;
     }
 
-    private void resyncStudy()
+    private void resyncStudy(boolean syncParticipantVisit)
     {
         TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
         TableInfo tableSpecimen = getTableInfoSpecimen();
@@ -1261,12 +1261,16 @@ public class SpecimenImporter
                 "WHERE ptid IS NOT NULL AND " +
                 "ptid NOT IN (SELECT ParticipantId FROM " + tableParticipant.getSelectName() + " WHERE Container = ?)", _container, _container);
 
-        StudyImpl study = StudyManager.getInstance().getStudy(_container);
-        info("Updating study-wide subject/visit information...");
-        StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(_user, Collections.emptyList(), null, null, true, _logger);
+        if (syncParticipantVisit)
+        {
+            StudyImpl study = StudyManager.getInstance().getStudy(_container);
+            info("Updating study-wide subject/visit information...");
+            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(_user, Collections.emptyList(), null, null, true, _logger);
+            info("Subject/visit update complete.");
+        }
 
+        info("Updating locations in use...");
         LocationTable.updateLocationTableInUse(getTableInfoLocation(), getContainer());
-        info("Subject/visit update complete.");
     }
 
     private void updateAllStatistics()
@@ -1288,14 +1292,16 @@ public class SpecimenImporter
         return updated;
     }
 
-    public void process(VirtualFile specimensDir, boolean merge, Logger logger, @Nullable PipelineJob job) throws SQLException, IOException, ValidationException
+    public void process(VirtualFile specimensDir, boolean merge, Logger logger, @Nullable PipelineJob job, boolean syncParticipantVisit)
+            throws SQLException, IOException, ValidationException
     {
         Map<SpecimenTableType, SpecimenImportFile> sifMap = populateFileMap(specimensDir, new HashMap<SpecimenTableType, SpecimenImportFile>());
 
-        process(sifMap, merge, logger, job);
+        process(sifMap, merge, logger, job, syncParticipantVisit);
     }
 
-    protected void process(Map<SpecimenTableType, SpecimenImportFile> sifMap, boolean merge, Logger logger, @Nullable PipelineJob job) throws IOException, ValidationException
+    protected void process(Map<SpecimenTableType, SpecimenImportFile> sifMap, boolean merge, Logger logger, @Nullable PipelineJob job, boolean syncParticipantVisit)
+            throws IOException, ValidationException
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         _logger = logger;
@@ -1358,7 +1364,7 @@ public class SpecimenImporter
 
             setStatus(GENERAL_JOB_STATUS_MSG + " (update study)");
             _iTimer.setPhase(ImportPhases.ResyncStudy);
-            resyncStudy();
+            resyncStudy(syncParticipantVisit);
 
             ensureNotCanceled();
             _iTimer.setPhase(ImportPhases.SetLastSpecimenLoad);
@@ -3321,7 +3327,7 @@ public class SpecimenImporter
             // "UNION ALL" the temp and the existing tables and group by columns used in the specimen hash
             SQLFragment allEventsByHashCols = new SQLFragment("SELECT COUNT(*) AS Group_Count, * FROM (\n");
             allEventsByHashCols.append("(\n").append(existingEvents).append("\n)\n");
-            allEventsByHashCols.append("UNION ALL\n");
+            allEventsByHashCols.append("UNION ALL /* SpecimenImporter.checkForConflictingSpecimens() */\n");
             allEventsByHashCols.append("(\n").append(tempTableEvents).append("\n)\n");
             allEventsByHashCols.append(") U\n");
             allEventsByHashCols.append("GROUP BY GlobalUniqueId");

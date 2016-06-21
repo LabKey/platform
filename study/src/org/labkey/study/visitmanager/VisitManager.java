@@ -105,6 +105,10 @@ public abstract class VisitManager
     {
         updateParticipantVisits(user, changedDatasets, null, null, true, null);
     }
+    public void updateParticipantVisits(User user, Collection<DatasetDefinition> changedDatasets, @Nullable Logger logger)
+    {
+        updateParticipantVisits(user, changedDatasets, null, null, true, logger);
+    }
 
     protected void info(@Nullable Logger logger, String message)
     {

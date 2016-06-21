@@ -81,6 +81,13 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
 
     public static void doImport(@Nullable File inputFile, PipelineJob job, StudyImportContext ctx, boolean merge) throws PipelineJobException
     {
+        doImport(inputFile, job, ctx, merge, true);
+    }
+
+
+    public static void doImport(@Nullable File inputFile, PipelineJob job, StudyImportContext ctx, boolean merge,
+            boolean syncParticipantVisit) throws PipelineJobException
+    {
         VirtualFile specimenDir;
         File unzipDir = null;
 
@@ -139,7 +146,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
                     job.setStatus("PROCESSING SPECIMENS");
                 ctx.getLogger().info("Starting specimen import...");
                 SpecimenImporter importer = new SpecimenImporter(ctx.getContainer(), ctx.getUser());
-                importer.process(specimenDir, merge, ctx.getLogger(), job);
+                importer.process(specimenDir, merge, ctx.getLogger(), job, syncParticipantVisit);
             }
 
             // perform any tasks after the transform and import has been completed

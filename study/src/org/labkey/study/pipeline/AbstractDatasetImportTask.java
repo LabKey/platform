@@ -37,6 +37,7 @@ import org.labkey.study.model.StudyManager;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -91,100 +92,110 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
 
     public static void doImport(VirtualFile datasetsDirectory, String datasetsFileName, PipelineJob job, StudyImportContext ctx, StudyImpl study) throws PipelineJobException
     {
-        if (!ctx.isDataTypeSelected(StudyImportDatasetTask.getType()))
-            return;
+        doImport(datasetsDirectory, datasetsFileName, job, ctx, study, true);
+    }
 
-        if (null != datasetsDirectory && null != datasetsFileName)
+    public static List<DatasetDefinition> doImport(VirtualFile datasetsDirectory, String datasetsFileName, PipelineJob job, StudyImportContext ctx, StudyImpl study,
+            boolean syncParticipantVisit) throws PipelineJobException
+    {
+        if (!ctx.isDataTypeSelected(StudyImportDatasetTask.getType()))
+            return Collections.emptyList();
+
+        if (null == datasetsDirectory || null == datasetsFileName)
+            return Collections.emptyList();
+
+        // If a directory and dataset file have been specified then make sure the file exists, #17208
+        if (!Arrays.asList(datasetsDirectory.list()).contains(datasetsFileName))
         {
-            // If a directory and dataset file have been specified then make sure the file exists, #17208
-            if (!Arrays.asList(datasetsDirectory.list()).contains(datasetsFileName))
-            {
-                ctx.getLogger().error("Dataset file \"" + datasetsFileName + "\" not found");
-                return;
-            }
+            ctx.getLogger().error("Dataset file \"" + datasetsFileName + "\" not found");
+            return Collections.emptyList();
+        }
+
+        try
+        {
+            QuerySnapshotService.get(StudySchema.getInstance().getSchemaName()).pauseUpdates(study.getContainer());
+            DatasetFileReader reader = new DatasetFileReader(datasetsDirectory, datasetsFileName, study, job, ctx);
+            List<String> errors = new ArrayList<>();
 
             try
             {
-                QuerySnapshotService.get(StudySchema.getInstance().getSchemaName()).pauseUpdates(study.getContainer());
-                DatasetFileReader reader = new DatasetFileReader(datasetsDirectory, datasetsFileName, study, job, ctx);
-                List<String> errors = new ArrayList<>();
+                reader.validate(errors);
+
+                for (String error : errors)
+                    ctx.getLogger().error(error);
+
+                Set<String> notFound = reader.getDatasetsNotFound();
+                if (!notFound.isEmpty())
+                {
+                    ctx.getLogger().warn("Could not find definitions for " + notFound.size() + " dataset data files: " + StringUtils.join(notFound, ", "));
+                }
+            }
+            catch (Exception x)
+            {
+                ctx.getLogger().error("Parse failed: " + datasetsFileName, x);
+                return Collections.emptyList();
+            }
+
+            List<DatasetImportRunnable> runnables = reader.getRunnables();
+            ctx.getLogger().info("Start batch " + datasetsFileName);
+
+            List<DatasetDefinition> datasets = new ArrayList<>();
+
+            for (DatasetImportRunnable runnable : runnables)
+            {
+                String validate = runnable.validate();
+                if (validate != null)
+                {
+                    if (job != null)
+                        job.setStatus(validate);
+                    ctx.getLogger().error(validate);
+                    continue;
+                }
+                String statusMsg = "" + runnable._action + " " + runnable._datasetDefinition.getLabel();
+                datasets.add(runnable._datasetDefinition);
+                if (runnable._tsvName != null)
+                    statusMsg += " using file " + runnable._tsvName;
+                if (job != null)
+                    job.setStatus(statusMsg);
 
                 try
                 {
-                    reader.validate(errors);
-
-                    for (String error : errors)
-                        ctx.getLogger().error(error);
-
-                    Set<String> notFound = reader.getDatasetsNotFound();
-                    if (!notFound.isEmpty())
-                    {
-                        ctx.getLogger().warn("Could not find definitions for " + notFound.size() + " dataset data files: " + StringUtils.join(notFound, ", "));
-                    }
+                    runnable.run();
                 }
                 catch (Exception x)
                 {
-                    ctx.getLogger().error("Parse failed: " + datasetsFileName, x);
-                    return;
+                    ctx.getLogger().error("Unexpected error loading " + runnable._tsvName, x);
                 }
+            }
 
-                List<DatasetImportRunnable> runnables = reader.getRunnables();
-                ctx.getLogger().info("Start batch " + datasetsFileName);
+            ctx.getLogger().info("Finish batch " + datasetsFileName);
 
-                List<DatasetDefinition> datasets = new ArrayList<>();
-
-                for (DatasetImportRunnable runnable : runnables)
-                {
-                    String validate = runnable.validate();
-                    if (validate != null)
-                    {
-                        if (job != null)
-                            job.setStatus(validate);
-                        ctx.getLogger().error(validate);
-                        continue;
-                    }
-                    String statusMsg = "" + runnable._action + " " + runnable._datasetDefinition.getLabel();
-                    datasets.add(runnable._datasetDefinition);
-                    if (runnable._tsvName != null)
-                        statusMsg += " using file " + runnable._tsvName;
-                    if (job != null)
-                        job.setStatus(statusMsg);
-
-                    try
-                    {
-                        runnable.run();
-                    }
-                    catch (Exception x)
-                    {
-                        ctx.getLogger().error("Unexpected error loading " + runnable._tsvName, x);
-                    }
-                }
-
-                ctx.getLogger().info("Finish batch " + datasetsFileName);
-
+            if (syncParticipantVisit)
+            {
                 if (job != null)
                     job.setStatus("UPDATE participants");
                 ctx.getLogger().info("Updating participant visits");
-                StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(ctx.getUser(), datasets);
-
+                StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(ctx.getUser(), datasets, ctx.getLogger());
                 ctx.getLogger().info("Finished updating participants");
             }
-            catch (CancelledException e)
-            {
-                throw e;
-            }
-            catch (RuntimeException x)
-            {
-                ctx.getLogger().error("Unexpected error", x);
-                throw x;
-            }
-            finally
-            {
-                QuerySnapshotService.get(StudySchema.getInstance().getSchemaName()).resumeUpdates(ctx.getUser(), study.getContainer());
-                File lock = StudyPipeline.lockForDataset(study, Path.parse(datasetsDirectory.getLocation()).append(datasetsFileName));
-                if (lock.exists() && lock.canRead() && lock.canWrite())
-                    lock.delete();
-            }
+
+            return datasets;
+        }
+        catch (CancelledException e)
+        {
+            throw e;
+        }
+        catch (RuntimeException x)
+        {
+            ctx.getLogger().error("Unexpected error", x);
+            throw x;
+        }
+        finally
+        {
+            QuerySnapshotService.get(StudySchema.getInstance().getSchemaName()).resumeUpdates(ctx.getUser(), study.getContainer());
+            File lock = StudyPipeline.lockForDataset(study, Path.parse(datasetsDirectory.getLocation()).append(datasetsFileName));
+            if (lock.exists() && lock.canRead() && lock.canWrite())
+                lock.delete();
         }
     }
 

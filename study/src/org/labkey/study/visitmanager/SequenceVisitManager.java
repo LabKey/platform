@@ -34,6 +34,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
+import org.labkey.api.util.DateUtil;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyUnionTableInfo;
@@ -42,14 +43,17 @@ import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.ParticipantGroupFilterClause;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -412,22 +416,39 @@ public class SequenceVisitManager extends VisitManager
 
     private void _updateVisitRowId(boolean updateAll, @Nullable Logger logger)
     {
+        final boolean USE_CASE_STATEMENT = true;
+
         info(logger, "Update visit row IDs");
         DbSchema schema = StudySchema.getInstance().getSchema();
 
-        final Study visitStudy = StudyManager.getInstance().getStudyForVisits(getStudy());
+        final StudyImpl visitStudy = (StudyImpl)StudyManager.getInstance().getStudyForVisits(getStudy());
 
         SQLFragment seqnum2visit = new SQLFragment();
-        seqnum2visit.append(
-                "WITH seqnum2visit AS (" +
-                "  SELECT SequenceNum, COALESCE(V.RowId,-1) AS RowId\n" +
-                "  FROM (SELECT DISTINCT SequenceNum FROM study.ParticipantVisit WHERE Container = ?");
-        if (!updateAll)
-            seqnum2visit.append(" AND VisitRowId=-1");
-        seqnum2visit.append(") seqnumPV, study.Visit V\n" +
-                "  WHERE SequenceNum BETWEEN V.SequenceNumMin AND V.SequenceNumMax AND V.Container = ?)\n");
-        seqnum2visit.add(getStudy().getContainer());
-        seqnum2visit.add(visitStudy.getContainer());
+        if (USE_CASE_STATEMENT)
+        {
+            String caseStmt = generateSequenceToVisit(visitStudy, "SequenceNum");
+            seqnum2visit.append(
+                    "WITH seqnum2visit AS (" +
+                            "  SELECT SequenceNum, " + caseStmt + " AS RowId\n" +
+                            "  FROM (SELECT DISTINCT SequenceNum FROM study.ParticipantVisit WHERE Container = ?");
+            if (!updateAll)
+                seqnum2visit.append(" AND VisitRowId=-1");
+            seqnum2visit.append(") seqnumPV)\n");
+            seqnum2visit.add(getStudy().getContainer());
+        }
+        else
+        {
+            seqnum2visit.append(
+                    "WITH seqnum2visit AS (" +
+                    "  SELECT SequenceNum, COALESCE(V.RowId,-1) AS RowId\n" +
+                    "  FROM (SELECT DISTINCT SequenceNum FROM study.ParticipantVisit WHERE Container = ?");
+            if (!updateAll)
+                seqnum2visit.append(" AND VisitRowId=-1");
+            seqnum2visit.append(") seqnumPV, study.Visit V\n" +
+                    "  WHERE SequenceNum BETWEEN V.SequenceNumMin AND V.SequenceNumMax AND V.Container = ?)\n");
+            seqnum2visit.add(getStudy().getContainer());
+            seqnum2visit.add(visitStudy.getContainer());
+        }
 
         // NOTE (seqnum2visit.RowId != VisitRowId OR VisitRowId IS NULL) is because postgres doesn't seem to optimize
         // updating a column to the existing value
@@ -447,14 +468,17 @@ public class SequenceVisitManager extends VisitManager
             sqlUpdateVisitRowId.append(
                 "UPDATE PV\n" +
                 "        SET VisitRowId = RowId\n" +
-                "        FROM study.ParticipantVisit PV, seqnum2visit\n"+
+                "        FROM study.ParticipantVisit PV WITH (INDEX(IX_PV_SequenceNum)), seqnum2visit\n"+
                 "        WHERE seqnum2visit.SequenceNum = PV.SequenceNum AND PV.Container = ? AND seqnum2visit.RowId <> VisitRowId");
             sqlUpdateVisitRowId.add(getStudy().getContainer());
         }
         if (!updateAll)
             sqlUpdateVisitRowId.append(" AND VisitRowId=-1");
 
+        long start = System.currentTimeMillis();
+        (null==logger?Logger.getLogger(SequenceVisitManager.class):logger).trace("START UPDATE", new Throwable());
         new SqlExecutor(schema).execute(sqlUpdateVisitRowId);
+        (null==logger?Logger.getLogger(SequenceVisitManager.class):logger).trace("DONE UPDATE " + DateUtil.formatDuration(System.currentTimeMillis()-start));
     }
 
 
@@ -500,5 +524,60 @@ public class SequenceVisitManager extends VisitManager
                         "     FROM ").append(StudySchema.getInstance().getTableInfoStudyData(getStudy(), null).getFromSQL("SD")).append(
                 ") x\nORDER BY DatasetId, SequenceNum");
         return sql;
+    }
+
+
+
+    private String generateSequenceToVisit(StudyImpl study, String sn)
+    {
+        List<VisitImpl> visits = study.getVisits(Visit.Order.SEQUENCE_NUM);
+        if (visits.isEmpty())
+            return "-1";
+        DecimalFormat f = new DecimalFormat("0.0###");
+        return generateSequenceToVisit(visits, sn, f);
+    }
+    private String generateSequenceToVisit(List<VisitImpl> visits, String sn, DecimalFormat f)
+    {
+        if (visits.size() <= 10)
+        {
+            StringBuilder sb = new StringBuilder();
+            boolean allEqual = visits.stream().allMatch(v -> v.getSequenceNumMin()==v.getSequenceNumMax());
+            if (allEqual)
+            {
+                sb.append("CASE " + sn + "\n");
+                for (VisitImpl v : visits)
+                {
+                    sb.append(" WHEN ").append(f.format(v.getSequenceNumMin())).append(" THEN " ).append(v.getId()).append("\n");
+                }
+                sb.append("ELSE -1\n");
+                sb.append("END\n");
+            }
+            else
+            {
+                sb.append("CASE\n");
+                for (VisitImpl v : visits)
+                {
+                    if (v.getSequenceNumMin() == v.getSequenceNumMax())
+                        sb.append(" WHEN ").append(sn).append(" = ").append(f.format(v.getSequenceNumMin())).append(" THEN ").append(v.getId()).append("\n");
+                    else
+                        sb.append(" WHEN ").append(sn).append(" BETWEEN ").append(f.format(v.getSequenceNumMin())).append(" AND ").append(f.format(v.getSequenceNumMax())).append(" THEN ").append(v.getId()).append("\n");
+                }
+                sb.append("ELSE -1\n");
+                sb.append("END\n");
+            }
+            return sb.toString();
+        }
+        else
+        {
+            int mid = visits.size()/2;
+            VisitImpl v = visits.get(mid);
+            StringBuilder sb = new StringBuilder();
+            sb.append("CASE WHEN ").append(sn).append(" < ").append(f.format(v.getSequenceNumMin())).append(" THEN\n");
+            sb.append(generateSequenceToVisit(visits.subList(0,mid), sn, f));
+            sb.append("\nELSE\n");
+            sb.append(generateSequenceToVisit(visits.subList(mid,visits.size()), sn, f));
+            sb.append("\nEND\n");
+            return sb.toString();
+        }
     }
 }

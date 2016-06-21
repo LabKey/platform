@@ -29,6 +29,7 @@ import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.pipeline.StudyImportDatasetTask;
@@ -40,6 +41,7 @@ import org.springframework.validation.BindException;
 import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -121,11 +123,15 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                 String datasetsFileName = StudyImportDatasetTask.getDatasetsFileName(studyImportContext);
                 VirtualFile datasetsDirectory = StudyImportDatasetTask.getDatasetsDirectory(studyImportContext, studyDir);
                 StudyImpl study = StudyManager.getInstance().getStudy(c);
-                StudyImportDatasetTask.doImport(datasetsDirectory, datasetsFileName, job, studyImportContext, study);
+                List<DatasetDefinition> datasets = StudyImportDatasetTask.doImport(datasetsDirectory, datasetsFileName, job, studyImportContext, study, false);
 
                 // specimen import task
                 File specimenFile = studyImportContext.getSpecimenArchive(studyDir);
-                StudyImportSpecimenTask.doImport(specimenFile, job, studyImportContext, false);
+                StudyImportSpecimenTask.doImport(specimenFile, job, studyImportContext, false, false);
+
+                ctx.getLogger().info("Updating study-wide subject/visit information...");
+                StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, datasets, null, null, true, ctx.getLogger());
+                ctx.getLogger().info("Subject/visit update complete.");
 
                 // the final study import task handles registered study importers like: cohorts, participant comments, categories, etc.
                 StudyImportFinalTask.doImport(job, studyImportContext, errors);
