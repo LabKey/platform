@@ -209,7 +209,7 @@ public class ReportingWriter
             }
             props.put("shortCaption", cinfo.getShortLabel());
 
-            if (dc instanceof MultiValuedDisplayColumn)
+            if (dc instanceof IMultiValuedDisplayColumn)
             {
                 // Disallow faceted filtering when the column is multi-valued, as the value that comes out of the
                 // database likely has a different delimiter compared to what the user wants to see and therefore

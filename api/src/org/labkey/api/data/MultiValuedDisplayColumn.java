@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
  * User: adam
  * Date: Sep 14, 2010
  */
-public class MultiValuedDisplayColumn extends DisplayColumnDecorator
+public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements IMultiValuedDisplayColumn
 {
     private final Set<FieldKey> _fieldKeys = new HashSet<>();
     private final Set<FieldKey> _additionalFieldKeys = new HashSet<>();
@@ -106,6 +106,7 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator
         }
     }
 
+    @Override
     public List<String> renderURLs(RenderContext ctx)
     {
         return values(ctx, super::renderURL);
@@ -154,6 +155,7 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator
         return getDisplayValues(ctx).stream().map(Object::toString).collect(Collectors.joining(", "));
     }
 
+    @Override
     public List<Object> getDisplayValues(RenderContext ctx)
     {
         return values(ctx, super::getDisplayValue);
@@ -165,12 +167,20 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator
         return getTsvFormattedValues(ctx).stream().collect(Collectors.joining(", "));
     }
 
+    @Override
     public List<String> getTsvFormattedValues(RenderContext ctx)
     {
         return values(ctx, super::getTsvFormattedValue);
     }
 
+    @Override
     public List<Object> getJsonValue(RenderContext ctx)
+    {
+        return getJsonValues(ctx);
+    }
+
+    @Override
+    public List<Object> getJsonValues(RenderContext ctx)
     {
         return values(ctx, super::getJsonValue);
     }

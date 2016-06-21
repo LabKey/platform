@@ -17,8 +17,8 @@ package org.labkey.api.action;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.IMultiValuedDisplayColumn;
 import org.labkey.api.data.MVDisplayColumn;
-import org.labkey.api.data.MultiValuedDisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
@@ -99,12 +99,12 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
 
     protected Object createColMap(DisplayColumn dc)
     {
-        if (_arrayMultiValueColumns && dc instanceof MultiValuedDisplayColumn)
+        if (_arrayMultiValueColumns && dc instanceof IMultiValuedDisplayColumn)
         {
             // render MultiValue columns as an array of 'value', 'displayValue', and 'url' objects
-            MultiValuedDisplayColumn mdc = (MultiValuedDisplayColumn)dc;
+            IMultiValuedDisplayColumn mdc = (IMultiValuedDisplayColumn)dc;
 
-            List<Object> values = mdc.getJsonValue(getRenderContext());
+            List<Object> values = mdc.getJsonValues(getRenderContext());
             List<String> urls = mdc.renderURLs(getRenderContext());
             List<Object> display = mdc.getDisplayValues(getRenderContext());
 
