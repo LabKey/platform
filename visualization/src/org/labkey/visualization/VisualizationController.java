@@ -1250,7 +1250,7 @@ public class VisualizationController extends SpringActionController
                 form.setComponentId("generic-report-panel-" + UniqueID.getRequestScopedUID(getViewContext().getRequest()));
                 JspView view = new JspView<>("/org/labkey/visualization/views/genericChartWizard.jsp", form);
 
-                view.setTitle(_renderType.getName() + " Report");
+                view.setTitle(_renderType.getName());
                 view.setFrame(WebPartView.FrameType.PORTAL);
 
                 if (getViewContext().hasPermission(InsertPermission.class))
@@ -1281,7 +1281,7 @@ public class VisualizationController extends SpringActionController
         {
             setHelpTopic("quickchart");
             if (null != _renderType)
-                root.addChild(_renderType.getName() + " Report");
+                root.addChild(_renderType.getName());
             return root;
         }
     }
