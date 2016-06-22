@@ -849,9 +849,6 @@ public class AssayTest extends AbstractAssayTest
 
         clickProject(TEST_ASSAY_PRJ_SECURITY);
 
-        // Remove so we can easily click on the Views menu for the right web part
-        portalHelper.removeWebPart("Assay List");
-
         portalHelper.addWebPart("Assay Runs");
         selectOptionByText(Locator.name("viewProtocolId"), "General: " + TEST_ASSAY);
         // assay runs has a details page that needs to be submitted
@@ -921,9 +918,6 @@ public class AssayTest extends AbstractAssayTest
         clickButton("Cancel", defaultWaitForPage);
 
         clickProject(TEST_ASSAY_PRJ_SECURITY);
-
-        // Add it back to the portal page
-        portalHelper.addWebPart("Assay List");
     }
 
     @LogMethod
