@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.converters.LongConverter;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -178,7 +179,14 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        Map<String, Object> result = new TableSelector(getQueryTable()).getObject(keyFromMap(keys), Map.class);
+        Map<String, Object> row = new TableSelector(getQueryTable()).getObject(keyFromMap(keys), Map.class);
+        Map<String, Object> result = new HashMap<>();
+        for (ColumnInfo column : getQueryTable().getColumns())
+            if (row.containsKey(column.getName()))
+                result.put(column.getName(), row.get(column.getName()));
+            else
+                result.put(column.getName(), row.get(column.getName().toLowerCase()));
+
         return result;
     }
 
