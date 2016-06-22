@@ -303,12 +303,19 @@ public class MothershipReport implements Runnable
         ServletContext context = ModuleLoader.getServletContext();
         String servletContainer = context == null ? null : context.getServerInfo();
         addParam("servletContainer", servletContainer);
-        String usedInstaller = context == null ? null : context.getInitParameter("org.labkey.api.util.mothershipreport.usedInstaller");
-        addParam("usedInstaller", Boolean.parseBoolean(usedInstaller));
+        addParam("usedInstaller", usedInstaller());
     }
 
     public String getContent()
     {
         return _content;
+    }
+
+    public static boolean usedInstaller()
+    {
+        ServletContext context = ModuleLoader.getServletContext();
+        String usedInstaller = context == null ? null : context.getInitParameter("org.labkey.api.util.mothershipreport.usedInstaller");
+
+        return  Boolean.parseBoolean(usedInstaller);
     }
 }
