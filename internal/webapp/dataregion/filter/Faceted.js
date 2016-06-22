@@ -15,6 +15,10 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
 
     useStoreCache: true,
 
+    alias: 'widget.labkey-faceted-filterpanel',
+    
+    maxGroup: 20,
+
     /*** Overridden Methods ***/
     beforeInit : function() {
 
@@ -105,10 +109,14 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
                 cls: 'measuresgrid filterpanegrid',
 
                 listeners : {
-                    viewready: {
+                    viewready : {
                         fn: function() { this.gridReady = true; this.onViewReady(); },
                         scope: this,
                         single: true
+                    },
+                    selectionchange : {
+                        fn: function() { this.changed = true; },
+                        scope: this
                     }
                 }
             };
@@ -240,7 +248,7 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
         if (this.useGrouping === true) {
             var grpConfig = Ext4.apply(Ext4.clone(baseConfig), {
                 filterArray: this.groupFilters,
-                maxRows: 20,
+                maxRows: this.maxGroup,
                 success: function(d) {
                     this.groupedValues = d;
                     onSuccess.call(this);
@@ -272,11 +280,29 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
                 grid.getSelectionModel().selectAll(true);
             }
             else {
-                this.selectFilter(this.filters[0]);
+                var mergedFilter = [];
+                Ext4.each(this.filters, function (filter) {
+                    if (this.model.column.fieldKey == filter.getColumnName() && !filter.isSelection) {
+                        mergedFilter = LABKEY.Filter.merge(mergedFilter, this.model.column.fieldKey, filter);
+                    }
+                }, this);
+
+                if (mergedFilter.length == 0) {
+                    grid.getSelectionModel().selectAll(true);
+                }
+                else {
+                    this.selectFilter(mergedFilter[0]);
+                }
             }
         }
+        
+        this.changed = false;
     },
 
+    isChanged : function () {
+        return this.changed;
+    },
+    
     constructFilter : function(selected, unselected) {
         var filter = null;
 
@@ -324,7 +350,7 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
     selectFilter : function(filter) {
         var negated = this.determineNegation(filter);
 
-        this.setValue(filter.getURLParameterValue(), negated);
+        this.setValue(filter.getURLParameterValue().toString(), negated);
 
         if (!this.filterOptimization && negated) {
             this.fireEvent('invalidfilter');
@@ -351,7 +377,7 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
         if (Ext4.isArray(values) && values.length == 1) {
             values = values[0].split(';');
         }
-        else if (!Ext4.isArray(values)) {
+        else if (!Ext4.isArray(values) && Ext4.isString(values)) {
             values = values.split(';');
         }
 

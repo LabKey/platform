@@ -38,19 +38,44 @@ Ext4.define('LABKEY.ext4.DefaultFilterPanel', {
         this.applyFilterArray();
         var input = this.getInputField(0);
         input.focus(true, 250);
+        this.changed = false;
     },
 
     isValid : function () {
         return this.getForm().isValid();
+    },
+    
+    isChanged : function () {
+        return this.changed;
+    },
+
+    setFilters : function(filters) {
+        this.filterArray = filters;
+        this.applyFilterArray();
     },
 
     applyFilterArray : function () {
         if (null == this.filterArray)
             return;
 
+        if(this.filterArray.length < 1) {
+            Ext4.each(this.getFilterCombos(), function(comb) {
+                comb.setValue("");
+            }, this);
+
+            Ext4.each(this.getInputFields(), function(inp) {
+                inp.setValue();
+                inp.isValid();
+            }, this);
+        }
+
         var idx = 0;
         Ext4.each(this.filterArray, function(filter) {
             if (filter.getColumnName() != this._fieldName)
+                return;
+
+            // Only apply column filters
+            if(filter.isSelection)
                 return;
 
             var combo = this.getFilterCombo(idx);
@@ -173,6 +198,7 @@ Ext4.define('LABKEY.ext4.DefaultFilterPanel', {
                         //Disable the field and allow it to be blank for values 'isblank' and 'isnonblank'.
                         inputField.disable();
                         inputField.setValue();
+                        this.changed = true;
                     }
                     else {
                         inputField.enable();
@@ -273,6 +299,9 @@ Ext4.define('LABKEY.ext4.DefaultFilterPanel', {
                 focus: function(){
                     if (this.focusTask)
                         Ext4.TaskManager.stop(this.focusTask);
+                },
+                change: function(){
+                    this.changed = true;
                 }
             },
             validator: function(value){
