@@ -2936,8 +2936,6 @@ public class QueryController extends SpringActionController
                 return null;
             }
 
-            queryLogging.setQueryLogging(queryLogging.getUser(), queryLogging.getContainer(), null, new HashSet<>(), new HashSet<>());
-
             // Regenerate the column since the alias may have changed after call to getSelectSQL()
             columns = service.getColumns(table, settings.getFieldKeys());
             col = columns.get(settings.getFieldKeys().get(0));
@@ -2957,7 +2955,7 @@ public class QueryController extends SpringActionController
                 service.validateNamedParameters(sql);
             }
 
-            return new SqlSelector(table.getSchema().getScope(), sql, queryLogging);
+            return new SqlSelector(table.getSchema().getScope(), sql, QueryLogging.noValidationNeededQueryLogging());
         }
     }
 
