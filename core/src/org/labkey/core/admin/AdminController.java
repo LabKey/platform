@@ -140,6 +140,7 @@ import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.api.writer.MemoryVirtualFile;
+import org.labkey.core.CoreModule;
 import org.labkey.core.admin.miniprofiler.MiniProfilerController;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.portal.ProjectController;
@@ -188,6 +189,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -330,13 +332,7 @@ public class AdminController extends SpringActionController
             assert null != (asserts = "enabled");
             userEmail = user.getEmail();
             modules = new ArrayList<>(ModuleLoader.getInstance().getModules());
-            Collections.sort(modules, new Comparator<Module>()
-            {
-                public int compare(Module o1, Module o2)
-                {
-                    return o1.getName().compareToIgnoreCase(o2.getName());
-                }
-            });
+            Collections.sort(modules, (o1, o2) -> o1.getName().compareToIgnoreCase(o2.getName()));
         }
     }
 
@@ -751,80 +747,33 @@ public class AdminController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            String jarRegEx = "^([\\w-\\.]+\\.jar)\\|";
-            Module core = ModuleLoader.getInstance().getCoreModule();
-
-            HttpView jars = new CreditsView("/core/resources/credits/jars.txt", getCreditsFile(core, "jars.txt"), getWebInfJars(true), "JAR", "webapp", null, jarRegEx);
-            VBox views = new VBox(jars);
-
+            VBox views = new VBox();
             List<Module> modules = new ArrayList<>(ModuleLoader.getInstance().getModules());
-            Collections.sort(modules);
 
-            for (Module module : modules)
-            {
-                if (!module.equals(core))
-                {
-                    String wikiSource = getCreditsFile(module, "jars.txt");
-                    Collection<String> jarFilenames = module.getJarFilenames();
+            // DefaultModule and CoreModule compareTo() implementations claim to cooperate to put Core first in the sort order... but it doesn't work
+            Collections.sort(modules, (m1, m2) -> {
+                if (m1.getName().equalsIgnoreCase(m2.getName()))
+                    return 0;
+                else if (CoreModule.CORE_MODULE_NAME.equalsIgnoreCase(m1.getName()))
+                    return -1;
+                else if (CoreModule.CORE_MODULE_NAME.equalsIgnoreCase(m2.getName()))
+                    return 1;
+                else
+                    return m1.getName().compareToIgnoreCase(m2.getName());
+            });
 
-                    if (null != wikiSource || (null != jarFilenames && !jarFilenames.isEmpty()))
-                    {
-                        HttpView moduleJars = new CreditsView("jars.txt", wikiSource, jarFilenames, "JAR", "webapp", "the " + module.getName() + " Module", jarRegEx);
-                        views.addView(moduleJars);
-                    }
-                }
-            }
+            String jarRegEx = "^([\\w-\\.]+\\.jar)\\|";
 
-            views.addView(new CreditsView("/core/resources/credits/tomcat_jars.txt", getCreditsFile(core, "tomcat_jars.txt"), getTomcatJars(), "Tomcat JAR", "/external/lib/tomcat directory", null, jarRegEx));
-            views.addView(new CreditsView("/core/resources/credits/scripts.txt", getCreditsFile(core, "scripts.txt"), null, "JavaScript, Icons and Font", null, null, null));
+            addCreditsViews(views, modules, "jars.txt", "JAR", "webapp", null, Module::getJarFilenames, jarRegEx);
 
-            for (Module module : modules)
-            {
-                if (!module.equals(core))
-                {
-                    String wikiSource = getCreditsFile(module, "scripts.txt");
+            views.addView(new CreditsView("/core/resources/credits/tomcat_jars.txt", getCreditsFile(ModuleLoader.getInstance().getCoreModule(), "tomcat_jars.txt"), getTomcatJars(), "Tomcat JAR", "/external/lib/tomcat directory", null, jarRegEx));
 
-                    if (null != wikiSource)
-                    {
-                        HttpView moduleJS = new CreditsView("scripts.txt", wikiSource, null, "JavaScript, Icons and Font", null, "the " + module.getName() + " Module", null);
-                        views.addView(moduleJS);
-                    }
-                }
-            }
+            addCreditsViews(views, modules, "scripts.txt", "JavaScript, Icons and Font");
+            addCreditsViews(views, modules, "source.txt", "Java Source Code");
+            addCreditsViews(views, modules, "executables.txt", "Executable");
 
-            views.addView(new CreditsView("/core/META-INF/core/source.txt", getCreditsFile(core, "source.txt"), null, "Java Source Code", null, null, null));
-
-            for (Module module : modules)
-            {
-                if (!module.equals(core))
-                {
-                    String wikiSource = getCreditsFile(module, "source.txt");
-
-                    if (null != wikiSource)
-                    {
-                        HttpView moduleJars = new CreditsView("source.txt", wikiSource, null, "Java Source Code", null, "the " + module.getName() + " Module", null);
-                        views.addView(moduleJars);
-                    }
-                }
-            }
-
-            views.addView(new CreditsView("/core/META-INF/core/executables.txt", getCreditsFile(core, "executables.txt"), getBinFilenames(), "Executable", "/external/bin directory", null, "([\\w\\.]+\\.(exe|dll|manifest|jar))"));
-
-            for (Module module : modules)
-            {
-                if (!module.equals(core))
-                {
-                    String wikiSource = getCreditsFile(module, "executables.txt");
-
-                    if (null != wikiSource)
-                    {
-                        HttpView moduleJS = new CreditsView("executables.txt", wikiSource, null, "Executable Files", null, "the " + module.getName() + " Module", null);
-                        views.addView(moduleJS);
-                    }
-                }
-            }
-
-            views.addView(new CreditsView("/core/META-INF/core/installer.txt", getCreditsFile(core, "installer.txt"), null, "Executable", null, "the Graphical Windows Installer", null));
+            if (AppProps.getInstance().isDevMode() || MothershipReport.usedInstaller())
+                addCreditsViews(views, modules, "installer.txt", "Executable", null, "the Graphical Windows Installer for ", null, null);
 
             return views;
         }
@@ -836,6 +785,32 @@ public class AdminController extends SpringActionController
     }
 
 
+    private void addCreditsViews(VBox views, List<Module> modules, String creditsFile, String fileType) throws IOException
+    {
+        addCreditsViews(views, modules, creditsFile, fileType, null, null, null, null);
+    }
+
+
+    private void addCreditsViews(VBox views, List<Module> modules, String creditsFile, String fileType, @Nullable String foundWhere, @Nullable String descriptionPrefix, @Nullable Function<Module, Collection<String>> filenameProvider, @Nullable String wikiSourceSearchPattern) throws IOException
+    {
+        for (Module module : modules)
+        {
+            String wikiSource = getCreditsFile(module, creditsFile);
+
+            Collection<String> filenames = null;
+
+            if (null != filenameProvider)
+                filenames = filenameProvider.apply(module);
+
+            if (null != wikiSource || (null != filenames && !filenames.isEmpty()))
+            {
+                HttpView moduleJS = new CreditsView(creditsFile, wikiSource, filenames, fileType, foundWhere, (null != descriptionPrefix ? descriptionPrefix : "") + "the " + module.getName() + " Module", wikiSourceSearchPattern);
+                views.addView(moduleJS);
+            }
+        }
+    }
+
+
     private static class CreditsView extends WebPartView
     {
         private final String WIKI_LINE_SEP = "\r\n\r\n";
@@ -843,7 +818,7 @@ public class AdminController extends SpringActionController
 
         CreditsView(String creditsFilename, @Nullable String wikiSource, @Nullable Collection<String> filenames, String fileType, String foundWhere, String component, String wikiSourceSearchPattern) throws IOException
         {
-            super(fileType + " Files Distributed with " + (null == component ? "LabKey Core" : component));
+            super(fileType + " Files Distributed with " + (null == component ? "LabKey" : component));
 
             // If both wikiSource and filenames are null there can't be a problem.
             // trims/empty check allow for problem reporting if one is null but not the other.
@@ -914,32 +889,6 @@ public class AdminController extends SpringActionController
     private static final String LIB_PATH = "/WEB-INF/lib/";
     private static final String JAVA_CLIENT_API_JAR_PREFIX = "labkey-client-api-";
 
-    private Set<String> getWebInfJars(boolean removeInternalJars)
-    {
-        if (!AppProps.getInstance().isDevMode())
-            return null;
-
-        //noinspection unchecked
-        Set<String> resources = ViewServlet.getViewServletContext().getResourcePaths(LIB_PATH);
-        Set<String> filenames = new CaseInsensitiveTreeSet();
-        // We don't need to include licensing information for our own JAR files (only third-party JARs), so filter out
-        // our JARs that end up in WEB-INF/lib
-        Set<String> internalJars = removeInternalJars ? new CsvSet("api.jar,schemas.jar,internal.jar") : Collections.emptySet();
-
-        // Remove path prefix and copy to a modifiable collection
-        for (String filename : resources)
-        {
-            String name = filename.substring(LIB_PATH.length());
-
-            // The Java client API JAR contains a version number in its file name, so we have to do a prefix match for it
-            if (DefaultModule.isRuntimeJar(name) && !internalJars.contains(name) && !name.startsWith(JAVA_CLIENT_API_JAR_PREFIX))
-                filenames.add(name);
-        }
-
-        return filenames;
-    }
-
-
     private Set<String> getTomcatJars()
     {
         if (!AppProps.getInstance().isDevMode())
@@ -958,37 +907,9 @@ public class AdminController extends SpringActionController
     }
 
 
-    private Set<String> getBinFilenames()
-    {
-        if (!AppProps.getInstance().isDevMode())
-            return null;
+    private static FileFilter _fileFilter = f -> !f.isDirectory();
 
-        File binRoot = new File(AppProps.getInstance().getProjectRoot(), "external/windows/core");
-
-        if (!binRoot.exists())
-            return null;
-
-        Set<String> filenames = new CaseInsensitiveTreeSet();
-
-        addAllChildren(binRoot, filenames);
-
-        return filenames;
-    }
-
-
-    private static FileFilter _fileFilter = new FileFilter() {
-        public boolean accept(File f)
-        {
-            return !f.isDirectory();
-        }
-    };
-
-    private static FileFilter _dirFilter = new FileFilter() {
-        public boolean accept(File f)
-        {
-            return f.isDirectory() && !".svn".equals(f.getName());
-        }
-    };
+    private static FileFilter _dirFilter = f -> f.isDirectory() && !".svn".equals(f.getName());
 
     private void addAllChildren(File root, Set<String> filenames)
     {
@@ -2295,13 +2216,7 @@ public class AdminController extends SpringActionController
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            return QueryProfiler.getInstance().getStackTraceView(form.getSqlHashCode(), new QueryProfiler.ActionURLFactory() {
-                @Override
-                public ActionURL getActionURL(String sql)
-                {
-                    return getExecutionPlanURL(sql);
-                }
-            });
+            return QueryProfiler.getInstance().getStackTraceView(form.getSqlHashCode(), AdminController::getExecutionPlanURL);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -2918,47 +2833,47 @@ public class AdminController extends SpringActionController
             ClassLoadingMXBean classbean = ManagementFactory.getClassLoadingMXBean();
             if (classbean != null)
             {
-                systemProperties.add(new Pair<String,Object>("Loaded Class Count", classbean.getLoadedClassCount()));
-                systemProperties.add(new Pair<String,Object>("Unloaded Class Count", classbean.getUnloadedClassCount()));
-                systemProperties.add(new Pair<String,Object>("Total Loaded Class Count", classbean.getTotalLoadedClassCount()));
+                systemProperties.add(new Pair<>("Loaded Class Count", classbean.getLoadedClassCount()));
+                systemProperties.add(new Pair<>("Unloaded Class Count", classbean.getUnloadedClassCount()));
+                systemProperties.add(new Pair<>("Total Loaded Class Count", classbean.getTotalLoadedClassCount()));
             }
 
             // runtime:
             RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
             if (runtimeBean != null)
             {
-                systemProperties.add(new Pair<String,Object>("VM Start Time", DateUtil.formatDateTimeISO8601(new Date(runtimeBean.getStartTime()))));
+                systemProperties.add(new Pair<>("VM Start Time", DateUtil.formatDateTimeISO8601(new Date(runtimeBean.getStartTime()))));
                 long upTime = runtimeBean.getUptime(); // round to sec
                 upTime = upTime - (upTime % 1000);
-                systemProperties.add(new Pair<String,Object>("VM Uptime", DateUtil.formatDuration(upTime)));
-                systemProperties.add(new Pair<String,Object>("VM Version", runtimeBean.getVmVersion()));
-                systemProperties.add(new Pair<String,Object>("VM Classpath", runtimeBean.getClassPath()));
+                systemProperties.add(new Pair<>("VM Uptime", DateUtil.formatDuration(upTime)));
+                systemProperties.add(new Pair<>("VM Version", runtimeBean.getVmVersion()));
+                systemProperties.add(new Pair<>("VM Classpath", runtimeBean.getClassPath()));
             }
 
             // threads:
             ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
             if (threadBean != null)
             {
-                systemProperties.add(new Pair<String,Object>("Thread Count", threadBean.getThreadCount()));
-                systemProperties.add(new Pair<String,Object>("Peak Thread Count", threadBean.getPeakThreadCount()));
+                systemProperties.add(new Pair<>("Thread Count", threadBean.getThreadCount()));
+                systemProperties.add(new Pair<>("Peak Thread Count", threadBean.getPeakThreadCount()));
                 long[] deadlockedThreads = threadBean.findMonitorDeadlockedThreads();
-                systemProperties.add(new Pair<String,Object>("Deadlocked Thread Count", deadlockedThreads != null ? deadlockedThreads.length : 0));
+                systemProperties.add(new Pair<>("Deadlocked Thread Count", deadlockedThreads != null ? deadlockedThreads.length : 0));
             }
 
             // threads:
             List<GarbageCollectorMXBean> gcBeans = ManagementFactory.getGarbageCollectorMXBeans();
             for (GarbageCollectorMXBean gcBean : gcBeans)
             {
-                systemProperties.add(new Pair<String,Object>(gcBean.getName() + " GC count", gcBean.getCollectionCount()));
-                systemProperties.add(new Pair<String,Object>(gcBean.getName() + " GC time", DateUtil.formatDuration(gcBean.getCollectionTime())));
+                systemProperties.add(new Pair<>(gcBean.getName() + " GC count", gcBean.getCollectionCount()));
+                systemProperties.add(new Pair<>(gcBean.getName() + " GC time", DateUtil.formatDuration(gcBean.getCollectionTime())));
             }
 
             String cacheMem = lastCacheMemUsed;
 
             if (null != cacheMem)
-                systemProperties.add(new Pair<String, Object>("Most Recent Estimated Cache Memory Usage", cacheMem));
+                systemProperties.add(new Pair<>("Most Recent Estimated Cache Memory Usage", cacheMem));
 
-            systemProperties.add(new Pair<String, Object>("In-Use DB Connections", ConnectionWrapper.getActiveConnectionCount()));
+            systemProperties.add(new Pair<>("In-Use DB Connections", ConnectionWrapper.getActiveConnectionCount()));
 
             //noinspection ConstantConditions
             assert assertsEnabled = true;

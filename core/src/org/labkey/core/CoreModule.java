@@ -20,6 +20,7 @@ import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.RollingFileAppender;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiXmlWriter;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.SubfolderWriter;
@@ -37,7 +38,9 @@ import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
+import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.collections.CollectionUtils;
+import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sampler;
 import org.labkey.api.collections.SwapQueue;
 import org.labkey.api.data.*;
@@ -51,6 +54,7 @@ import org.labkey.api.etl.StatementDataIterator;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.iterator.MarkableIterator;
+import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
@@ -115,13 +119,13 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.Portal;
 import org.labkey.api.view.Portal.WebPart;
 import org.labkey.api.view.ShortURLService;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewService;
 import org.labkey.api.view.ViewServiceImpl;
+import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.menu.FolderMenu;
@@ -134,10 +138,6 @@ import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
-import org.labkey.core.authentication.ldap.LdapAuthenticationProvider;
-import org.labkey.core.authentication.ldap.LdapController;
-import org.labkey.core.authentication.test.TestSecondaryController;
-import org.labkey.core.authentication.test.TestSecondaryProvider;
 import org.labkey.core.admin.ActionsTsvWriter;
 import org.labkey.core.admin.AdminController;
 import org.labkey.core.admin.CustomizeMenuForm;
@@ -165,6 +165,10 @@ import org.labkey.core.analytics.AnalyticsController;
 import org.labkey.core.analytics.AnalyticsProviderRegistryImpl;
 import org.labkey.core.analytics.AnalyticsServiceImpl;
 import org.labkey.core.attachment.AttachmentServiceImpl;
+import org.labkey.core.authentication.ldap.LdapAuthenticationProvider;
+import org.labkey.core.authentication.ldap.LdapController;
+import org.labkey.core.authentication.test.TestSecondaryController;
+import org.labkey.core.authentication.test.TestSecondaryProvider;
 import org.labkey.core.authentication.test.TestSsoController;
 import org.labkey.core.authentication.test.TestSsoProvider;
 import org.labkey.core.dialect.PostgreSqlDialectFactory;
@@ -746,6 +750,36 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public void startBackgroundThreads()
     {
         SystemMaintenance.setTimer();
+    }
+
+    private static final String LIB_PATH = "/WEB-INF/lib/";
+    private static final String JAVA_CLIENT_API_JAR_PREFIX = "labkey-client-api-";
+
+    @Nullable
+    @Override
+    public Collection<String> getJarFilenames()
+    {
+        if (!AppProps.getInstance().isDevMode())
+            return null;
+
+        //noinspection unchecked
+        Set<String> resources = ViewServlet.getViewServletContext().getResourcePaths(LIB_PATH);
+        Set<String> filenames = new CaseInsensitiveTreeSet();
+        // We don't need to include licensing information for our own JAR files (only third-party JARs), so filter out
+        // our JARs that end up in WEB-INF/lib
+        Set<String> internalJars = new CsvSet("api.jar,schemas.jar,internal.jar");
+
+        // Remove path prefix and copy to a modifiable collection
+        for (String filename : resources)
+        {
+            String name = filename.substring(LIB_PATH.length());
+
+            // The Java client API JAR contains a version number in its file name, so we have to do a prefix match for it
+            if (DefaultModule.isRuntimeJar(name) && !internalJars.contains(name) && !name.startsWith(JAVA_CLIENT_API_JAR_PREFIX))
+                filenames.add(name);
+        }
+
+        return filenames;
     }
 
     @Override
