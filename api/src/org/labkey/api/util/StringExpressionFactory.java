@@ -720,7 +720,14 @@ public class StringExpressionFactory
             // HACK
             if (RenderContextPart.SUPPORTED_SUBSTITUTIONS.contains(expr))
                 return new RenderContextPart(expr);
-            return new FieldPart(expr, _urlEncodeSubstitutions);
+            try
+            {
+                return new FieldPart(expr, _urlEncodeSubstitutions);
+            }
+            catch (IllegalArgumentException x)
+            {
+                return new ConstantPart("${" + expr + "}");
+            }
         }
 
         /**
