@@ -265,6 +265,7 @@ public class VisualizationServiceImpl implements VisualizationService
             props.put("queryDescription", getQueryDefinition(query, _tableInfoMap));
             props.put("isUserDefined", !query.isTableQueryDefinition());
             props.put("isDemographic", isDemographicQueryDefinition(query));
+            props.put("phi", column.getPHI().name());
             props.put("hidden", column.isHidden() || (tableInfo != null && !tableInfo.getDefaultVisibleColumns().contains(column.getFieldKey())));
             props.put("queryType", getQueryType(query, _tableInfoMap));
             props.put("id", count++);

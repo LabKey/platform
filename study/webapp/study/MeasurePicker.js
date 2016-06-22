@@ -1432,6 +1432,7 @@ Ext4.define('LABKEY.ext4.Measure', {
         {name : 'isMeasure', defaultValue: false},
         {name : 'isDimension', defaultValue: false},
         {name : 'isDemographic', defaultValue: false},
+        {name : 'phi'},
         {name : 'inNotNullSet', defaultValue: undefined},
         {name : 'hidden', defaultValue: false},
         {name : 'queryLabel'},
