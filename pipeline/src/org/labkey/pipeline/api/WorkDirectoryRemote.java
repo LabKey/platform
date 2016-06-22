@@ -108,6 +108,12 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
                         // directory too
                         name = name.substring(0, 9);
                     }
+                    else if (name.length() < 3)
+                    {
+                        //File.createTempFile() does not allow prefixes <3 chars
+                        name = "wd_" + name;
+                    }
+
                     tempDir = File.createTempFile(name, WORK_DIR_SUFFIX, dirParent);
                     tempDir.delete();
                     tempDir.mkdirs();
