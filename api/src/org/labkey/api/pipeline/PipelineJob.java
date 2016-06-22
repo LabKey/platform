@@ -506,6 +506,8 @@ abstract public class PipelineJob extends Job implements Serializable
         _settingStatus = true;
         try
         {
+            //Attempt to debug intermittent lack of status update.  Do not merge.
+            getLogger().debug("updating status: " + status + (info != null ? ", " + info : ""));
             boolean statusSet = PipelineJobService.get().getStatusWriter().setStatus(this, status, info, false);
             if (!statusSet)
             {
