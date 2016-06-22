@@ -1,4 +1,4 @@
-package org.labkey.issue.experimental.view;
+package org.labkey.issue.view;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
@@ -8,9 +8,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.issue.IssuesController;
-import org.labkey.issue.experimental.IssuesListView;
-import org.labkey.issue.experimental.actions.NewInsertAction;
-import org.labkey.issue.experimental.actions.NewListAction;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 
@@ -32,11 +29,13 @@ public class SummaryWebPart extends JspView<IssuesController.SummaryBean>
         Container c = context.getContainer();
 
         String issueDefName = propertyMap.get(IssuesListView.ISSUE_LIST_DEF_NAME);
+        if (issueDefName == null)
+            issueDefName = IssueManager.getDefaultIssueListDefName(c);
 
         //set specified web part title
         Object title = propertyMap.get("title");
         if (title == null)
-            title = "New " + IssueManager.getEntryTypeNames(c).pluralName + " Summary : " + issueDefName;
+            title = IssueManager.getEntryTypeNames(c).pluralName + " Summary : " + issueDefName;
         setTitle(title.toString());
 
         User u = context.getUser();
@@ -44,14 +43,14 @@ public class SummaryWebPart extends JspView<IssuesController.SummaryBean>
         if (!bean.hasPermission)
             return;
 
-        ActionURL listUrl = new ActionURL(NewListAction.class, getViewContext().getContainer()).
+        ActionURL listUrl = new ActionURL(IssuesController.ListAction.class, getViewContext().getContainer()).
                 addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDefName).
                 addParameter(DataRegion.LAST_FILTER_PARAM, true);
 
         setTitleHref(listUrl);
 
         bean.listURL = listUrl;
-        bean.insertURL = new ActionURL(NewInsertAction.class, c).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDefName);
+        bean.insertURL = new ActionURL(IssuesController.InsertAction.class, c).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDefName);
 
         try
         {

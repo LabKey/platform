@@ -9,7 +9,6 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.data.queryprofiler.Query;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
@@ -29,7 +28,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
-import org.labkey.issue.experimental.actions.InsertIssueDefAction;
+import org.labkey.issue.actions.InsertIssueDefAction;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 
@@ -55,9 +54,14 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
         addAllColumns();
     }
 
+    @Nullable
     public static String nameFromLabel(String label)
     {
-        return label != null ? label.toLowerCase() : null;
+        if (label != null)
+        {
+            return ColumnInfo.legalNameFromName(label).toLowerCase();
+        }
+        return null;
     }
 
     private void addAllColumns()

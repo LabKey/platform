@@ -23,9 +23,9 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.Sort;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -33,7 +33,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -41,47 +40,29 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.issue.IssuesController;
+import org.labkey.issue.model.IssueListDef;
+import org.labkey.issue.view.IssuesListView;
 import org.springframework.validation.BindException;
 
-import java.io.IOException;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 
-@Deprecated
 public class IssuesQueryView extends QueryView
 {
-    private ViewContext _context;
+    private IssueListDef _issueDef;
 
-    public IssuesQueryView(ViewContext context, UserSchema schema, QuerySettings settings, BindException errors)
+    public IssuesQueryView(IssueListDef issueDef, ViewContext context, UserSchema schema, QuerySettings settings, BindException errors)
     {
         super(schema, settings, errors);
-        _context = context;
+
+        _issueDef = issueDef;
         setShowDetailsColumn(false);
-        getSettings().getBaseSort().insertSortColumn("-IssueId");
-    }
-
-    // MAB: I just want a resultset....
-    public ResultSet getResultSet() throws SQLException, IOException
-    {
-        DataView view = createDataView();
-        DataRegion rgn = view.getDataRegion();
-        return rgn.getResultSet(view.getRenderContext());
-    }
-
-    public DataView createDataView()
-    {
-        DataView view = super.createDataView();
-
-        if (view.getDataRegion().getButtonBarPosition() != DataRegion.ButtonBarPosition.NONE)
-            view.getDataRegion().setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
-        view.getDataRegion().setRecordSelectorValueColumns("IssueId");
-
-        return view;
+        setShowInsertNewButton(false);
+        setShowImportDataButton(false);
+        setShowUpdateColumn(false);
     }
 
     @NotNull
@@ -90,7 +71,7 @@ public class IssuesQueryView extends QueryView
     {
         LinkedHashSet<ClientDependency> resources = super.getClientDependencies();
         resources.add(ClientDependency.fromPath("Ext4"));
-        resources.add(ClientDependency.fromPath("issues/detail.js"));
+        resources.add(ClientDependency.fromPath("issues/move.js"));
         return resources;
     }
 
@@ -100,7 +81,10 @@ public class IssuesQueryView extends QueryView
 
         if (view.getDataRegion().getButtonBarPosition() != DataRegion.ButtonBarPosition.NONE)
         {
-            ActionURL viewDetailsURL = _context.cloneActionURL().setAction(IssuesController.DetailsListAction.class);
+            ViewContext context = getViewContext();
+
+            ActionURL viewDetailsURL = context.cloneActionURL().setAction(IssuesController.DetailsListAction.class);
+            viewDetailsURL.replaceParameter(IssuesListView.ISSUE_LIST_DEF_NAME, _issueDef.getName());
             ActionButton listDetailsButton = new ActionButton(viewDetailsURL, "View Details");
             listDetailsButton.setActionType(ActionButton.Action.POST);
             listDetailsButton.setRequiresSelection(true);
@@ -111,12 +95,18 @@ public class IssuesQueryView extends QueryView
             ActionButton moveButton = new ActionButton("Move");
             moveButton.setRequiresSelection(true);
             moveButton.setDisplayPermission(AdminPermission.class);
-            moveButton.setScript("Issues.window.MoveIssue.create(LABKEY.DataRegions['" + view.getDataRegion().getName() + "'].getChecked());");
+            moveButton.setScript("Issues.window.MoveIssue.create(LABKEY.DataRegions['" + view.getDataRegion().getName() + "'].getChecked(), " + PageFlowUtil.jsString(_issueDef.getName()) + ");");
             bar.add(moveButton);
 
-            ActionButton adminButton = new ActionButton(IssuesController.AdminAction.class, "Admin", DataRegion.MODE_GRID, ActionButton.Action.LINK);
-            adminButton.setDisplayPermission(AdminPermission.class);
-            bar.add(adminButton);
+            Domain domain = _issueDef.getDomain(getUser());
+            if (domain != null)
+            {
+                ActionURL url = new ActionURL(IssuesController.AdminAction.class, getContainer()).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, _issueDef.getName());
+                ActionButton adminButton = new ActionButton(url, "Admin", DataRegion.MODE_GRID, ActionButton.Action.LINK);
+                adminButton.setDisplayPermission(AdminPermission.class);
+
+                bar.add(adminButton);
+            }
 
             if (!getUser().isGuest())
             {
@@ -126,6 +116,7 @@ public class IssuesQueryView extends QueryView
         }
     }
 
+    @Override
     protected void addGridViews(MenuButton menu, URLHelper target, String currentView)
     {
         URLHelper url = target.clone().deleteParameters();
@@ -227,35 +218,5 @@ public class IssuesQueryView extends QueryView
             }
             menu.addMenuItem(item);
         }
-    }
-
-    protected void populateReportButtonBar(ButtonBar bar)
-    {
-        super.populateReportButtonBar(bar);
-
-        ActionButton adminButton = new ActionButton(IssuesController.AdminAction.class, "Admin", DataRegion.MODE_GRID, ActionButton.Action.LINK);
-        adminButton.setDisplayPermission(AdminPermission.class);
-        bar.add(adminButton);
-
-        if (!getUser().isGuest())
-        {
-            ActionButton prefsButton = new ActionButton(IssuesController.EmailPrefsAction.class, "Email Preferences", DataRegion.MODE_GRID, ActionButton.Action.LINK);
-            bar.add(prefsButton);
-        }
-    }
-
-    protected ActionURL urlFor(QueryAction action)
-    {
-        switch (action)
-        {
-            case exportRowsTsv:
-                final ActionURL url = _context.cloneActionURL().setAction(IssuesController.ExportTsvAction.class);
-                for (Pair<String, String> param : super.urlFor(action).getParameters())
-                {
-                    url.addParameter(param.getKey(), param.getValue());
-                }
-                return url;
-        }
-        return super.urlFor(action);
     }
 }

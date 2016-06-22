@@ -17,6 +17,6 @@ public interface IssueService extends LookupService
     public List<String> updateIssueDefinition(GWTIssueDefinition def, GWTDomain orig, GWTDomain dd);
 
     public List<Map<String, String>> getProjectGroups();
-    public List<Map<String, String>> getUsersForGroup(int groupId);
+    public List<Map<String, String>> getUsersForGroup(Integer groupId);
     public List<Map<String, String>> getFolderMoveContainers();
 }

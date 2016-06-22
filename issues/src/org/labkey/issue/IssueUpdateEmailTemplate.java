@@ -16,6 +16,7 @@
 package org.labkey.issue;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
@@ -28,7 +29,9 @@ import org.labkey.issue.model.IssueManager;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: jeckels
@@ -40,11 +43,12 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
             "^itemName^ #^issueId^, \"^title^,\" has been ^action^";
     protected static final String DEFAULT_BODY =
             "You can review this ^itemNameLowerCase^ here: ^detailsURL^\n" +
-            "Modified by: ^user^\n" +
-            "^modifiedFields^\n" +
-            "^comment^\n" +
-            "^attachments^";
+                    "Modified by: ^user^\n" +
+                    "^modifiedFields^\n" +
+                    "^comment^\n" +
+                    "^attachments^";
     private List<ReplacementParam> _replacements = new ArrayList<>();
+    private List<ReplacementParam> _allReplacements = new ArrayList<>();    // includes both static and dynamic custom field replacements
     private Issue _newIssue;
     private ActionURL _detailsURL;
     private String _change;
@@ -90,7 +94,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         {
             public String getValue(Container c) {return IssueManager.getEntryTypeNames(c).pluralName.toString().toLowerCase();}
         });
-        _replacements.add(new UserIdReplacementParam("user", "The display name of the user performing the operation")
+        _replacements.add(new IssueUpdateEmailTemplate.UserIdReplacementParam("user", "The display name of the user performing the operation")
         {
             public Integer getUserId(Container c)
             {
@@ -119,28 +123,28 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
                 return _recipients == null ? "user@domain.com" : _recipients;
             }
         });
-        _replacements.add(new StringReplacementParam("title", "The current title of the issue")
+        _replacements.add(new IssueUpdateEmailTemplate.StringReplacementParam("title", "The current title of the issue")
         {
             public String getStringValue(Container c)
             {
                 return _newIssue.getTitle();
             }
         });
-        _replacements.add(new StringReplacementParam("status", "The current status of the issue")
+        _replacements.add(new IssueUpdateEmailTemplate.StringReplacementParam("status", "The current status of the issue")
         {
             public String getStringValue(Container c)
             {
                 return _newIssue.getStatus();
             }
         });
-        _replacements.add(new StringReplacementParam("type", "The current type of the issue")
+        _replacements.add(new IssueUpdateEmailTemplate.StringReplacementParam("type", "The current type of the issue")
         {
             public String getStringValue(Container c)
             {
                 return _newIssue.getType();
             }
         });
-        _replacements.add(new StringReplacementParam("area", "The current area of the issue")
+        _replacements.add(new IssueUpdateEmailTemplate.StringReplacementParam("area", "The current area of the issue")
         {
             public String getStringValue(Container c)
             {
@@ -156,17 +160,17 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
                 {
                     return null;
                 }
-                return _newIssue.getPriority().toString(); 
+                return _newIssue.getPriority().toString();
             }
         });
-        _replacements.add(new StringReplacementParam("milestone", "The current milestone of the issue")
+        _replacements.add(new IssueUpdateEmailTemplate.StringReplacementParam("milestone", "The current milestone of the issue")
         {
             public String getStringValue(Container c)
             {
                 return _newIssue.getMilestone();
             }
         });
-        _replacements.add(new UserIdReplacementParam("openedBy", "The user that opened the issue")
+        _replacements.add(new IssueUpdateEmailTemplate.UserIdReplacementParam("openedBy", "The user that opened the issue")
         {
             public Integer getUserId(Container c)
             {
@@ -187,14 +191,14 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
                 return _newIssue == null || _newIssue.getResolved() == null ? null : _newIssue.getResolved();
             }
         });
-        _replacements.add(new UserIdReplacementParam("resolvedBy", "The user who last resolved this issue")
+        _replacements.add(new IssueUpdateEmailTemplate.UserIdReplacementParam("resolvedBy", "The user who last resolved this issue")
         {
             public Integer getUserId(Container c)
             {
                 return _newIssue.getResolvedBy();
             }
         });
-        _replacements.add(new StringReplacementParam("resolution", "The resolution type that was last used for this issue")
+        _replacements.add(new IssueUpdateEmailTemplate.StringReplacementParam("resolution", "The resolution type that was last used for this issue")
         {
             public String getStringValue(Container c)
             {
@@ -208,68 +212,19 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
                 return _newIssue == null || _newIssue.getClosed() == null ? null : _newIssue.getClosed();
             }
         });
-        _replacements.add(new UserIdReplacementParam("closedBy", "The user who last closed this issue")
+        _replacements.add(new IssueUpdateEmailTemplate.UserIdReplacementParam("closedBy", "The user who last closed this issue")
         {
             public Integer getUserId(Container c)
             {
                 return _newIssue.getClosedBy();
             }
         });
-        _replacements.add(new StringReplacementParam("notifyList", "The current notification list for this issue")
+        _replacements.add(new IssueUpdateEmailTemplate.StringReplacementParam("notifyList", "The current notification list for this issue")
         {
             public String getStringValue(Container c)
             {
                 List<String> names = _newIssue.getNotifyListDisplayNames(null);
                 return StringUtils.join(names, ";");
-            }
-        });
-        _replacements.add(new ReplacementParam<Integer>("int1", Integer.class, "The first admin-configurable integer field this issue")
-        {
-            public Integer getValue(Container c)
-            {
-                return _newIssue == null || _newIssue.getInt1() == null ? null : _newIssue.getInt1();
-            }
-        });
-        _replacements.add(new ReplacementParam<Integer>("int2", Integer.class, "The second admin-configurable integer field this issue")
-        {
-            public Integer getValue(Container c)
-            {
-                return _newIssue == null || _newIssue.getInt2() == null ? null : _newIssue.getInt2();
-            }
-        });
-        _replacements.add(new StringReplacementParam("string1", "The first admin-configurable string field this issue")
-        {
-            public String getStringValue(Container c)
-            {
-                return _newIssue.getString1();
-            }
-        });
-        _replacements.add(new StringReplacementParam("string2", "The second admin-configurable string field this issue")
-        {
-            public String getStringValue(Container c)
-            {
-                return _newIssue.getString2();
-            }
-        });
-        _replacements.add(new StringReplacementParam("string3", "The third admin-configurable string field this issue")
-        {
-            public String getStringValue(Container c)
-            {
-                return _newIssue.getString3();
-            }
-        });
-        _replacements.add(new StringReplacementParam("string4", "The fourth admin-configurable string field this issue")
-        {
-            public String getStringValue(Container c)
-            {
-                return _newIssue.getString4();
-            }
-        });
-        _replacements.add(new StringReplacementParam("string5", "The fifth admin-configurable string field this issue")
-        {
-            public String getStringValue(Container c)
-            {
-                return _newIssue.getString5();
             }
         });
         _replacements.add(new ReplacementParam<String>("modifiedFields", String.class, "Summary of all changed fields with before and after values")
@@ -284,7 +239,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
 
         _replacements.addAll(super.getValidReplacements());
     }
-    
+
     private abstract class StringReplacementParam extends ReplacementParam<String>
     {
         public StringReplacementParam(String name, String description)
@@ -299,10 +254,10 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
             {
                 return null;
             }
-            
+
             return getStringValue(c);
         }
-        
+
         protected abstract String getStringValue(Container c);
     }
 
@@ -360,8 +315,62 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
             sb.append(attachment.getFilename());
         }
         _attachments = sb.toString();
+        Set<String> existingParams = _replacements.stream().map(ReplacementParam::getName).collect(Collectors.toSet());
+        _allReplacements.addAll(_replacements);
 
+        // inject any custom fields into the replacement parameters
+        for (Map.Entry<String, Object> prop : _newIssue.getExtraProperties().entrySet())
+        {
+            if (!existingParams.contains(prop.getKey()))
+            {
+                Object value = prop.getValue();
+
+                if (value instanceof Integer)
+                {
+                    _allReplacements.add(new IssueUpdateEmailTemplate.CustomFieldReplacementParam<>(prop.getKey(), (Integer)value, Integer.class));
+                }
+                else if (value instanceof Date)
+                {
+                    _allReplacements.add(new IssueUpdateEmailTemplate.CustomFieldReplacementParam<>(prop.getKey(), (Date)value, Date.class));
+                }
+                else if (value instanceof Double)
+                {
+                    _allReplacements.add(new IssueUpdateEmailTemplate.CustomFieldReplacementParam<>(prop.getKey(), (Double)value, Double.class));
+                }
+                else
+                {
+                    _allReplacements.add(new IssueUpdateEmailTemplate.CustomFieldReplacementParam<>(prop.getKey(), String.valueOf(value), String.class));
+                }
+            }
+        }
     }
 
-    public List<ReplacementParam> getValidReplacements(){return _replacements;}
+    public List<ReplacementParam> getValidReplacements()
+    {
+        return _allReplacements.isEmpty() ? _replacements : _allReplacements;
+    }
+
+    @Override
+    protected boolean isValidReplacement(String paramNameAndFormat)
+    {
+        // allowing everything because the underlying domain could change
+        return true;
+    }
+
+    static class CustomFieldReplacementParam<Type> extends ReplacementParam<Type>
+    {
+        Type _value;
+
+        public CustomFieldReplacementParam(@NotNull String name, Type value, Class<Type> valueType)
+        {
+            super(name, valueType, "");
+            _value = value;
+        }
+
+        @Override
+        public Type getValue(Container c)
+        {
+            return _value;
+        }
+    }
 }

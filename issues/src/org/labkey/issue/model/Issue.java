@@ -382,7 +382,6 @@ public class Issue extends Entity implements Serializable, Cloneable
         if (dups != null) duplicates = dups;
     }
 
-
     public String getRelated()
     {
         return related;

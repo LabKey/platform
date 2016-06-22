@@ -1,6 +1,8 @@
-package org.labkey.issue.experimental;
+package org.labkey.issue.view;
 
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.Sort;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -11,7 +13,6 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.VBox;
 import org.labkey.issue.IssuesController;
-import org.labkey.issue.experimental.actions.NewListAction;
 import org.labkey.issue.query.IssuesQuerySchema;
 
 import java.io.PrintWriter;
@@ -25,16 +26,18 @@ public class IssuesListView extends VBox
 
     public IssuesListView(String issueDefName)
     {
-        String dataRegionName = IssuesQuerySchema.TableType.Issues.name() + "-" + issueDefName;
+        String dataRegionName = "issues-" + issueDefName;
         UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), IssuesQuerySchema.SCHEMA_NAME);
         QuerySettings settings = schema.getSettings(getViewContext(), dataRegionName, issueDefName);
+        settings.getBaseSort().insertSortColumn(FieldKey.fromParts("IssueId"), Sort.SortDirection.DESC);
+
         QueryView queryView = schema.createView(getViewContext(), settings, null);
 
         // add the header for buttons and views
-        addView(new JspView<>("/org/labkey/issue/experimental/view/list.jsp", issueDefName));
+        addView(new JspView<>("/org/labkey/issue/view/list.jsp", issueDefName));
         addView(queryView);
 
-        setTitleHref(new ActionURL(NewListAction.class, getViewContext().getContainer()).
+        setTitleHref(new ActionURL(IssuesController.ListAction.class, getViewContext().getContainer()).
                 addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDefName).
                 addParameter(DataRegion.LAST_FILTER_PARAM, true));
     }
@@ -51,7 +54,7 @@ public class IssuesListView extends VBox
 
         protected void renderInternal(Object model, PrintWriter out) throws Exception
         {
-            JspView view = new JspView<>("/org/labkey/issue/experimental/view/issueListWebPartConfig.jsp", _webPart);
+            JspView view = new JspView<>("/org/labkey/issue/view/issueListWebPartConfig.jsp", _webPart);
             include(view);
         }
     }

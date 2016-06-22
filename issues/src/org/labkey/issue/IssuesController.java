@@ -28,17 +28,17 @@ import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.LabkeyError;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.BeanViewForm;
@@ -52,27 +52,27 @@ import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.validator.ColumnValidator;
+import org.labkey.api.data.validator.ColumnValidators;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.issues.IssuesUrls;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchUrls;
 import org.labkey.api.security.CSRF;
-import org.labkey.api.security.Group;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
@@ -82,7 +82,6 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ConfigurationException;
@@ -94,6 +93,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.GWTView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -104,32 +104,19 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.api.wiki.WikiService;
-import org.labkey.issue.experimental.actions.AbstractIssueAction;
-import org.labkey.issue.experimental.actions.GetRelatedFolder;
-import org.labkey.issue.experimental.actions.InsertIssueDefAction;
-import org.labkey.issue.experimental.actions.IssueServiceAction;
-import org.labkey.issue.experimental.actions.NewAdminAction;
-import org.labkey.issue.experimental.actions.NewCloseAction;
-import org.labkey.issue.experimental.actions.NewDetailsAction;
-import org.labkey.issue.experimental.actions.NewDetailsListAction;
-import org.labkey.issue.experimental.actions.NewGetMoveDestinationAction;
-import org.labkey.issue.experimental.actions.NewInsertAction;
-import org.labkey.issue.experimental.actions.NewListAction;
-import org.labkey.issue.experimental.actions.NewReopenAction;
-import org.labkey.issue.experimental.actions.NewResolveAction;
-import org.labkey.issue.experimental.actions.NewUpdateAction;
-import org.labkey.issue.experimental.actions.ValidateIssueDefNameAction;
+import org.labkey.issue.actions.ChangeSummary;
+import org.labkey.issue.actions.GetRelatedFolder;
+import org.labkey.issue.actions.InsertIssueDefAction;
+import org.labkey.issue.actions.IssueServiceAction;
+import org.labkey.issue.actions.UpgradeIssuesAction;
+import org.labkey.issue.actions.ValidateIssueDefNameAction;
 import org.labkey.issue.model.CustomColumn;
 import org.labkey.issue.model.Issue;
+import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
-import org.labkey.issue.model.IssueManager.CustomColumnConfigurationImpl;
-import org.labkey.issue.model.IssueManager.EntryTypeNames;
 import org.labkey.issue.model.IssuePage;
-import org.labkey.issue.model.KeywordManager;
-import org.labkey.issue.model.KeywordManager.Keyword;
 import org.labkey.issue.query.IssuesQuerySchema;
+import org.labkey.issue.view.IssuesListView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.MapBindingResult;
@@ -167,28 +154,16 @@ public class IssuesController extends SpringActionController
     private static final String helpTopic = "issues";
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
             IssuesController.class,
-            NewUpdateAction.class,
-            NewDetailsAction.class,
-            NewListAction.class,
-            NewResolveAction.class,
-            NewReopenAction.class,
-            NewCloseAction.class,
-            NewInsertAction.class,
-            NewAdminAction.class,
             IssueServiceAction.class,
-            NewDetailsListAction.class,
-            NewGetMoveDestinationAction.class,
             GetRelatedFolder.class,
             InsertIssueDefAction.class,
-            ValidateIssueDefNameAction.class);
-
-    private static final int MAX_STRING_FIELD_LENGTH = 200;
+            ValidateIssueDefNameAction.class,
+            UpgradeIssuesAction.class);
 
     public IssuesController() throws Exception
     {
         setActionResolver(_actionResolver);
     }
-
 
     public static class IssuesUrlsImpl implements IssuesUrls
     {
@@ -295,19 +270,6 @@ public class IssuesController extends SpringActionController
     }
 
 
-    private ResultSet getIssuesResultSet() throws IOException, SQLException, ServletException
-    {
-        UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), IssuesQuerySchema.SCHEMA_NAME);
-        QuerySettings settings = schema.getSettings(getViewContext(), IssuesQuerySchema.TableType.Issues.name());
-        settings.setQueryName(IssuesQuerySchema.TableType.Issues.name());
-
-        QueryView queryView = schema.createView(getViewContext(), settings, null);
-
-        return queryView.getResultSet();
-    }
-
-
-    @Deprecated     // delete this code after we pivot to the new implementation
     @RequiresPermission(ReadPermission.class)
     public class ListAction extends SimpleViewAction<ListForm>
     {
@@ -318,35 +280,61 @@ public class IssuesController extends SpringActionController
             setViewContext(ctx);
         }
 
-        public ModelAndView getView(ListForm form, BindException errors) throws Exception
+        @Override
+        public ModelAndView getView(IssuesController.ListForm form, BindException errors) throws Exception
         {
-            EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
+            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
+            String issueDefName = getViewContext().getActionURL().getParameter(IssuesListView.ISSUE_LIST_DEF_NAME);
+            if (issueDefName == null)
+                issueDefName = IssueManager.getDefaultIssueListDefName(getContainer());
 
-            // convert AssignedTo/Email to AssignedTo/DisplayName: old bookmarks
-            // reference Email, which is no longer displayed.
-            ActionURL url = getViewContext().cloneActionURL();
-            String[] emailFilters = url.getKeysByPrefix(IssuesQuerySchema.TableType.Issues.name() + ".AssignedTo/Email");
-            if (emailFilters != null && emailFilters.length > 0)
+            if (issueDefName != null)
             {
-                for (String emailFilter : emailFilters)
-                    url.deleteParameter(emailFilter);
-                return HttpView.redirect(url);
+                // convert AssignedTo/Email to AssignedTo/DisplayName: old bookmarks
+                // reference Email, which is no longer displayed.
+                ActionURL url = getViewContext().cloneActionURL();
+                String[] emailFilters = url.getKeysByPrefix(issueDefName + ".AssignedTo/Email");
+                if (emailFilters != null && emailFilters.length > 0)
+                {
+                    for (String emailFilter : emailFilters)
+                        url.deleteParameter(emailFilter);
+                    return HttpView.redirect(url);
+                }
+
+                getPageConfig().setRssProperties(new IssuesController.RssAction().getUrl(), names.pluralName.toString());
+
+                return new IssuesListView(issueDefName);
             }
+            return new HtmlView("<span class='labkey-error'>There are no issues lists defined for this folder.</span>");
+        }
 
-            getPageConfig().setRssProperties(new RssAction().getUrl(), names.pluralName.toString());
-
-            return new IssuesListView();
+        private String getIssueDefName()
+        {
+            String issueDefName = getViewContext().getActionURL().getParameter(IssuesListView.ISSUE_LIST_DEF_NAME);
+            if (issueDefName == null)
+            {
+                String issueId = getViewContext().getActionURL().getParameter("issueId");
+                if (issueId != null)
+                {
+                    Issue issue = IssueManager.getNewIssue(getContainer(), getUser(), NumberUtils.toInt(issueId));
+                    if (issue != null)
+                    {
+                        issueDefName = IssueManager.getIssueListDef(issue).getName();
+                    }
+                }
+            }
+            return issueDefName;
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
-            return root.addChild(names.pluralName + " List", getURL());
-        }
+            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
 
-        public ActionURL getURL()
-        {
-            return issueURL(ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true");
+            ActionURL url = new ActionURL(ListAction.class, getContainer()).
+                    addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, getIssueDefName()).
+                    addParameter(DataRegion.LAST_FILTER_PARAM, "true");
+
+            return root.addChild(names.pluralName + " List", url);
         }
     }
 
@@ -378,12 +366,9 @@ public class IssuesController extends SpringActionController
         }
     }
 
-    @Deprecated     // delete this code after we pivot to the new implementation
     @RequiresPermission(ReadPermission.class)
-    public class DetailsAction extends SimpleViewAction<IssueIdForm>
+    public class DetailsAction extends AbstractIssueAction
     {
-        Issue _issue = null;
-
         public DetailsAction()
         {
         }
@@ -394,26 +379,29 @@ public class IssuesController extends SpringActionController
             setViewContext(context);
         }
 
-        public ModelAndView getView(IssueIdForm form, BindException errors) throws Exception
+        @Override
+        public ModelAndView getView(IssuesController.IssuesForm form, boolean reshow, BindException errors) throws Exception
         {
             int issueId = form.getIssueId();
             _issue = getIssue(issueId, true);
 
-            EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
+            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
             if (null == _issue)
             {
                 throw new NotFoundException("Unable to find " + names.singularName + " " + form.getIssueId());
             }
 
             IssuePage page = new IssuePage(getContainer(), getUser());
+            page.setMode(DataRegion.MODE_DETAILS);
             page.setPrint(isPrint());
             page.setIssue(_issue);
-            page.setCustomColumnConfiguration(getCustomColumnConfiguration());
+            page.setCustomColumnConfiguration(getColumnConfiguration());
             //pass user's update perms to jsp page to determine whether to show notify list
             page.setUserHasUpdatePermissions(hasUpdatePermission(getUser(), _issue));
             page.setUserHasAdminPermissions(hasAdminPermission(getUser(), _issue));
-            page.setMoveDestinations(IssueManager.getMoveDestinationContainers(getContainer()).size() != 0 ? true : false);
+            page.setMoveDestinations(IssueManager.getMoveDestinationContainers(getContainer(), getUser(), getIssueListDef().getName()).size() != 0);
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
+            page.setIssueListDef(getIssueListDef());
 
             // remove any notifications related to this user/objectid/type
             NotificationService.get().removeNotifications(getContainer(), "issue:" + _issue.getIssueId(), Arrays.asList(Issue.class.getName()), getUser().getUserId());
@@ -423,13 +411,13 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return new ListAction(getViewContext()).appendNavTrail(root)
-                    .addChild(getSingularEntityName() + " " + _issue.getIssueId() + ": " + _issue.getTitle(), getURL());
+            return new ListAction(getViewContext()).appendNavTrail(root).
+                    addChild(getSingularEntityName() + " " + _issue.getIssueId() + ": " + _issue.getTitle(), getURL());
         }
 
         public ActionURL getURL()
         {
-            return issueURL(DetailsAction.class).addParameter("issueId", _issue.getIssueId());
+            return new ActionURL(DetailsAction.class, getContainer()).addParameter("issueId", _issue.getIssueId());
         }
     }
 
@@ -439,16 +427,19 @@ public class IssuesController extends SpringActionController
     }
 
 
-    @Deprecated
     @RequiresPermission(ReadPermission.class)
-    public class DetailsListAction extends SimpleViewAction<ListForm>
+    public class DetailsListAction extends AbstractIssueAction
     {
-        public ModelAndView getView(ListForm listForm, BindException errors) throws Exception
+        @Override
+        public ModelAndView getView(IssuesController.IssuesForm form, boolean reshow, BindException errors) throws Exception
         {
+            _issue = new Issue();
+            _issue.setIssueDefName(form.getIssueDefName());
+
             // convert AssignedTo/Email to AssignedTo/DisplayName: old bookmarks
             // reference Email, which is no longer displayed.
             ActionURL url = getViewContext().cloneActionURL();
-            String[] emailFilters = url.getKeysByPrefix(IssuesQuerySchema.TableType.Issues.name() + ".AssignedTo/Email");
+            String[] emailFilters = url.getKeysByPrefix(form.getIssueDefName() + ".AssignedTo/Email");
             if (emailFilters != null && emailFilters.length > 0)
             {
                 for (String emailFilter : emailFilters)
@@ -457,30 +448,28 @@ public class IssuesController extends SpringActionController
             }
 
             Set<String> issueIds = DataRegionSelection.getSelected(getViewContext(), false);
-
             if (issueIds.isEmpty())
             {
                 issueIds = new LinkedHashSet<>();
 
-                try (ResultSet rs = getIssuesResultSet())
-                {
-                    int issueColumnIndex = rs.findColumn("issueId");
+                UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), IssuesQuerySchema.SCHEMA_NAME);
+                TableInfo table = userSchema.getTable(form.getIssueDefName());
+                List<String> ids = new TableSelector(table, Collections.singleton(table.getColumn(FieldKey.fromParts("issueId"))),
+                        null, null).getArrayList(String.class);
 
-                    while (rs.next())
-                    {
-                        issueIds.add(rs.getString(issueColumnIndex));
-                    }
-                }
+                issueIds.addAll(ids);
             }
 
             IssuePage page = new IssuePage(getContainer(), getUser());
             page.setPrint(isPrint());
             JspView v = new JspView<>("/org/labkey/issue/view/detailList.jsp", page);
 
+            page.setMode(DataRegion.MODE_DETAILS);
             page.setIssueIds(issueIds);
-            page.setCustomColumnConfiguration(getCustomColumnConfiguration());
+            page.setCustomColumnConfiguration(getColumnConfiguration());
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
-            page.setDataRegionSelectionKey(listForm.getQuerySettings().getSelectionKey());
+            page.setDataRegionSelectionKey(DataRegionSelection.getSelectionKeyFromRequest(getViewContext()));
+            page.setIssueListDef(getIssueListDef());
 
             getPageConfig().setNoIndex(); // We want crawlers to index the single issue detail page, no the multiple page
             getPageConfig().setNoFollow();
@@ -488,22 +477,41 @@ public class IssuesController extends SpringActionController
             return v;
         }
 
+        @Override
+        public boolean handlePost(IssuesController.IssuesForm form, BindException errors) throws Exception
+        {
+            return true;
+        }
+
+        @Override
+        public ActionURL getSuccessURL(IssuesController.IssuesForm form)
+        {
+            return null;
+        }
+
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
+            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
             return new ListAction(getViewContext()).appendNavTrail(root).addChild(names.singularName + " Details");
         }
     }
 
 
-    @Deprecated     // delete this code after we pivot to the new implementation
     @RequiresPermission(InsertPermission.class)
-    public class InsertAction extends FormViewAction<IssuesForm>
+    public class InsertAction extends AbstractIssueAction
     {
-        private Issue _issue = null;
-
-        public ModelAndView getView(IssuesForm form, boolean reshow, BindException errors) throws Exception
+        @Override
+        public ModelAndView getView(IssuesController.IssuesForm form, boolean reshow, BindException errors) throws Exception
         {
+            _issue = reshow ? form.getBean() : new Issue();
+            if (_issue.getExtraProperties().isEmpty())
+            {
+                _issue.getExtraProperties().putAll(form.getStrings());
+            }
+            _issue.setIssueDefName(form.getIssueDefName());
+
+/*
             // if we have errors, then form.getBean() is likely to throw, but try anyway
             if (errors.hasErrors())
             {
@@ -520,6 +528,7 @@ public class IssuesController extends SpringActionController
             {
                 _issue = reshow ? form.getBean() : new Issue();
             }
+*/
 
             if (_issue.getAssignedTo() != null)
             {
@@ -536,112 +545,37 @@ public class IssuesController extends SpringActionController
                 _issue.setAssignedTo(defaultUser.getUserId());
 
             _issue.open(getContainer(), getUser());
-            if (!reshow || form.getSkipPost())
-            {
-                // Set the defaults if we're not reshowing after an error, or if this is a request to open an issue
-                // from a mothership which comes in as a POST and is therefore considered a reshow 
-                setNewIssueDefaults(_issue);
-            }
 
-            if (form.getPriority() != null)
+            if (NumberUtils.isNumber(form.getPriority()))
                 _issue.setPriority(Integer.parseInt(form.getPriority()));
 
             IssuePage page = new IssuePage(getContainer(), getUser());
             JspView v = new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
 
-            CustomColumnConfiguration ccc = getCustomColumnConfiguration();
-
             page.setAction(InsertAction.class);
+            page.setMode(DataRegion.MODE_UPDATE);
+
             page.setIssue(_issue);
             page.setPrevIssue(_issue);
-            page.setCustomColumnConfiguration(ccc);
+            page.setCustomColumnConfiguration(getColumnConfiguration());
             page.setBody(form.getComment() == null ? form.getBody() : form.getComment());
             page.setCallbackURL(form.getCallbackURL());
-            page.setEditable(getEditableFields(page.getAction(), ccc));
+            page.setEditable(getEditableFields(page.getAction(), getColumnConfiguration()));
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
             page.setErrors(errors);
+            page.setIssueListDef(getIssueListDef());
 
             return v;
         }
 
-        public void validateCommand(IssuesForm form, Errors errors)
+        public NavTree appendNavTrail(NavTree root)
         {
-            if (!form.getSkipPost())
-            {
-                validateRequiredFields(form, errors);
-                validateNotifyList(form, errors);
-                validateAssignedTo(form, errors);
-                validateStringFields(form, errors);
-            }
+            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
+            return new ListAction(getViewContext()).appendNavTrail(root).addChild("Insert New " + names.singularName);
         }
 
-        public boolean handlePost(IssuesForm form, BindException errors) throws Exception
-        {
-            if (form.getSkipPost())
-                return false;
-
-            Container c = getContainer();
-            User user = getUser();
-
-            _issue = form.getBean();
-            _issue.open(c, user);
-            validateNotifyList(form, errors);
-            // convert from email addresses & display names to userids before we hit the database
-
-            if(_issue.getNotifyList() != null)
-                _issue.parseNotifyList(_issue.getNotifyList().toString());
-
-
-            // return errors from handler
-            boolean ret = relatedIssueHandler(_issue, user, errors);
-            if (!ret) return false;
-
-            ChangeSummary changeSummary;
-
-            try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
-            {
-                // for new issues, the original is always the default.
-                Issue orig = new Issue();
-                orig.open(getContainer(), getUser());
-
-                changeSummary = createChangeSummary(_issue, orig, null, user, form.getAction(), form.getComment(), getCustomColumnConfiguration(), getUser());
-                IssueManager.saveIssue(user, c, _issue);
-                AttachmentService.get().addAttachments(changeSummary.getComment(), getAttachmentFileList(), user);
-
-                Collection<Integer> rels = _issue.getRelatedIssues();
-                // handle comment changes to related issues
-                for (int curIssueId : rels)
-                {
-                    Issue relatedIssue = relatedIssueCommentHandler(_issue.getIssueId(), curIssueId, user, false);
-                    IssueManager.saveIssue(user, getContainer(), relatedIssue);
-                }
-
-                transaction.commit();
-            }
-            catch (Exception x)
-            {
-                Throwable ex = x.getCause() == null ? x : x.getCause();
-                String error = ex.getMessage();
-                _log.debug("IssuesController.doInsert", x);
-                _issue.open(c, user);
-
-                errors.addError(new LabkeyError(error));
-                return false;
-            }
-
-            ActionURL url = new DetailsAction(_issue, getViewContext()).getURL();
-
-            final String assignedTo = UserManager.getDisplayName(_issue.getAssignedTo(), user);
-            if (assignedTo != null)
-                sendUpdateEmail(_issue, null, changeSummary.getTextChanges(), changeSummary.getSummary(), form.getComment(), url, "opened and assigned to " + assignedTo, getAttachmentFileList(), form.getAction(), user);
-            else
-                sendUpdateEmail(_issue, null, changeSummary.getTextChanges(), changeSummary.getSummary(), form.getComment(), url, "opened", getAttachmentFileList(), form.getAction(), user);
-
-            return true;
-        }
-
-
-        public ActionURL getSuccessURL(IssuesForm issuesForm)
+        @Override
+        public ActionURL getSuccessURL(IssuesController.IssuesForm issuesForm)
         {
             if (!StringUtils.isEmpty(issuesForm.getCallbackURL()))
             {
@@ -653,131 +587,33 @@ public class IssuesController extends SpringActionController
 
             return new DetailsAction(_issue, getViewContext()).getURL();
         }
-
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
-            return new ListAction(getViewContext()).appendNavTrail(root).addChild("Insert New " + names.singularName);
-        }
     }
 
-
-    private Issue setNewIssueDefaults(Issue issue) throws SQLException, ServletException
+    abstract class AbstractIssueAction extends FormViewAction<IssuesForm>
     {
-        Map<ColumnTypeEnum, String> defaults = IssueManager.getAllDefaults(getContainer());
-
-        ColumnTypeEnum.AREA.setDefaultValue(issue, defaults);
-        ColumnTypeEnum.TYPE.setDefaultValue(issue, defaults);
-        ColumnTypeEnum.MILESTONE.setDefaultValue(issue, defaults);
-        ColumnTypeEnum.PRIORITY.setDefaultValue(issue, defaults);
-
-        CustomColumnConfiguration config = getCustomColumnConfiguration();
-
-        // For each of the string configurable columns,
-        // only set the default if the column is currently configured as a pick list
-        for (ColumnTypeEnum stringColumn : ColumnTypeEnum.getCustomStringColumns())
-        {
-            if (config.hasPickList(stringColumn.getColumnName()))
-            {
-                stringColumn.setDefaultValue(issue, defaults);
-            }
-        }
-
-        return issue;
-    }
-
-    protected boolean relatedIssueHandler(Issue issue, User user, BindException errors)
-    {
-        String textInput = issue.getRelated();
-        Set<Integer> newRelatedIssues = new TreeSet<>();
-        if (textInput != null)
-        {
-            String[] textValues = issue.getRelated().split("[\\s,;]+");
-            int relatedId;
-            // for each issue id we need to validate
-            for (String relatedText : textValues)
-            {
-                relatedId = NumberUtils.toInt(relatedText.trim(), 0);
-                if (relatedId == 0)
-                {
-                    errors.rejectValue("Related", ERROR_MSG, "Invalid issue id in related string.");
-                    return false;
-                }
-                if (issue.getIssueId() == relatedId)
-                {
-                    errors.rejectValue("Related", ERROR_MSG, "As issue may not be related to itself");
-                    return false;
-                }
-
-                Issue related = IssueManager.getIssue(null, relatedId);
-                if (related == null)
-                {
-                    errors.rejectValue("Related", ERROR_MSG, "Related issue '" + relatedId + "' not found");
-                    return false;
-                }
-                newRelatedIssues.add(relatedId);
-            }
-        }
-
-        // Fetch from IssueManager to make sure the related issues are populated
-        Issue originalIssue = IssueManager.getIssue(null, issue.getIssueId());
-        Set<Integer> originalRelatedIssues = originalIssue == null ? Collections.emptySet() : originalIssue.getRelatedIssues();
-
-        // Only check permissions if
-        if (!originalRelatedIssues.equals(newRelatedIssues))
-        {
-            for (Integer relatedId : newRelatedIssues)
-            {
-                Issue related = IssueManager.getIssue(null, relatedId);
-                if (!related.lookupContainer().hasPermission(user, ReadPermission.class))
-                {
-                    errors.rejectValue("Related", ERROR_MSG, "User does not have Read Permission for related issue '" + relatedId + "'");
-                    return false;
-                }
-            }
-        }
-
-        // this sets the collection of integer ids for all related issues
-        issue.setRelatedIssues(newRelatedIssues);
-        return true;
-    }
-    
-    protected Issue relatedIssueCommentHandler(int issueId, int relatedIssueId, User user, boolean drop)
-    {
-        StringBuilder sb = new StringBuilder();
-        Issue relatedIssue = IssueManager.getIssue(null, relatedIssueId);
-        Set<Integer> prevRelated = relatedIssue.getRelatedIssues();
-        Set<Integer> newRelated = new TreeSet<>();
-        newRelated.addAll(prevRelated);
-
-        if (drop)
-            newRelated.remove(new Integer(issueId));
-        else
-            newRelated.add(issueId);
-
-        sb.append("<div class=\"wiki\"><table class=issues-Changes>");
-        sb.append(String.format("<tr><td>Related</td><td>%s</td><td>&raquo;</td><td>%s</td></tr>", StringUtils.join(prevRelated, ", "), StringUtils.join(newRelated, ", ")));
-        sb.append("</table></div>");
-
-        relatedIssue.addComment(user, sb.toString());
-
-        relatedIssue.setRelatedIssues(newRelated);
-        return relatedIssue;
-    }
-
-    @Deprecated     // delete this code after we pivot to the new implementation
-    protected abstract class IssueUpdateAction extends FormViewAction<IssuesForm>
-    {
-        // NOTE: aaron this is used in the InsertAction but not the update (consider refactor)
-        Issue _issue = null;
+        protected Issue _issue = null;
+        private CustomColumnConfiguration _columnConfiguration;
 
         public boolean handlePost(IssuesForm form, BindException errors) throws Exception
         {
+            if (form.getSkipPost())
+                return false;
+
             Container c = getContainer();
             User user = getUser();
 
             Issue issue = form.getBean();
+            setIssue(issue);
+
+            // validate any related issue values
+            boolean ret = relatedIssueHandler(issue, user, errors);
+            if (!ret) return false;
+
+            // bind the provisioned table to the form bean so we can get typed properties
+            IssueListDef issueListDef = getIssueListDef();
+            form.setTable(issueListDef.createTable(getUser()));
+            issue.setExtraProperties(form.getTypedColumns());
+
             Issue prevIssue = (Issue)form.getOldValues();
             requiresUpdatePermission(user, issue);
             ActionURL detailsUrl;
@@ -792,24 +628,25 @@ public class IssuesController extends SpringActionController
 
             Issue duplicateOf = null;
             if (ResolveAction.class.equals(form.getAction()) &&
+                    issue.getResolution() != null &&
                     issue.getResolution().equals("Duplicate") &&
                     issue.getDuplicate() != null &&
                     !issue.getDuplicate().equals(prevIssue.getDuplicate()))
             {
                 if (issue.getDuplicate() == issue.getIssueId())
                 {
-                    errors.rejectValue("Duplicate", ERROR_MSG, "An issue may not be a duplicate of itself");
+                    errors.rejectValue("Duplicate", SpringActionController.ERROR_MSG, "An issue may not be a duplicate of itself");
                     return false;
                 }
                 duplicateOf = IssueManager.getIssue(null, issue.getDuplicate().intValue());
                 if (duplicateOf == null)
                 {
-                    errors.rejectValue("Duplicate", ERROR_MSG, "Duplicate issue '" + issue.getDuplicate().intValue() + "' not found");
+                    errors.rejectValue("Duplicate", SpringActionController.ERROR_MSG, "Duplicate issue '" + issue.getDuplicate().intValue() + "' not found");
                     return false;
                 }
                 if (!duplicateOf.lookupContainer().hasPermission(user, ReadPermission.class))
                 {
-                    errors.rejectValue("Duplicate", ERROR_MSG, "User does not have Read permission for duplicate issue '" + issue.getDuplicate().intValue() + "'");
+                    errors.rejectValue("Duplicate", SpringActionController.ERROR_MSG, "User does not have Read permission for duplicate issue '" + issue.getDuplicate().intValue() + "'");
                     return false;
                 }
             }
@@ -817,17 +654,21 @@ public class IssuesController extends SpringActionController
             // get previous related issue ids before updating
             Set<Integer> prevRelatedIds = prevIssue.getRelatedIssues();
 
-            boolean ret = relatedIssueHandler(issue, user, errors);
-            if (!ret) return false;
-
             ChangeSummary changeSummary;
             try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
             {
                 detailsUrl = new DetailsAction(issue, getViewContext()).getURL();
 
-                if (ResolveAction.class.equals(form.getAction()))
+                if (InsertAction.class.equals(form.getAction()))
+                {
+                    // for new issues, the original is always the default.
+                    issue.open(c, user);
+                    prevIssue = new Issue();
+                    prevIssue.open(getContainer(), getUser());
+                }
+                else if (ResolveAction.class.equals(form.getAction()))
                     issue.resolve(user);
-                else if (InsertAction.class.equals(form.getAction()) || ReopenAction.class.equals(form.getAction()))
+                else if (ReopenAction.class.equals(form.getAction()))
                     issue.open(c, user);
                 else if (CloseAction.class.equals(form.getAction()))
                     issue.close(user);
@@ -837,16 +678,16 @@ public class IssuesController extends SpringActionController
                 // convert from email addresses & display names to userids before we hit the database
                 issue.parseNotifyList(issue.getNotifyList());
 
-                changeSummary = createChangeSummary(issue, prevIssue, duplicateOf, user, form.getAction(), form.getComment(), getCustomColumnConfiguration(), getUser());
-                IssueManager.saveIssue(user, c, issue);
+                changeSummary = ChangeSummary.createChangeSummary(getIssueListDef(), issue, prevIssue, duplicateOf, getContainer(), user, form.getAction(), form.getComment(), getColumnConfiguration(), getUser());
+                IssueManager.newSaveIssue(user, c, issue);
                 AttachmentService.get().addAttachments(changeSummary.getComment(), getAttachmentFileList(), user);
 
                 if (duplicateOf != null)
                 {
                     StringBuilder sb = new StringBuilder();
                     sb.append("<em>Issue ").append(issue.getIssueId()).append(" marked as duplicate of this issue.</em>");
-                    Issue.Comment dupComment = duplicateOf.addComment(user, sb.toString());
-                    IssueManager.saveIssue(user, c, duplicateOf);
+                    duplicateOf.addComment(user, sb.toString());
+                    IssueManager.newSaveIssue(user, c, duplicateOf);
                 }
 
                 Set<Integer> newRelatedIds = issue.getRelatedIssues();
@@ -855,10 +696,11 @@ public class IssuesController extends SpringActionController
                 Collection<Integer> newIssues = new ArrayList<>();
                 newIssues.addAll(newRelatedIds);
                 newIssues.removeAll(prevRelatedIds);
+
                 for (int curIssueId : newIssues)
                 {
                     Issue relatedIssue = relatedIssueCommentHandler(issue.getIssueId(), curIssueId, user, false);
-                    IssueManager.saveIssue(user, getContainer(), relatedIssue);
+                    IssueManager.newSaveIssue(user, getContainer(), relatedIssue);
                 }
 
                 // this list represents all the ids which will need related handling for a droping a relatedIssue entry
@@ -870,10 +712,9 @@ public class IssuesController extends SpringActionController
                     for (int curIssueId : prevIssues)
                     {
                         Issue relatedIssue = relatedIssueCommentHandler(issue.getIssueId(), curIssueId, user, true);
-                        IssueManager.saveIssue(user, getContainer(), relatedIssue);
+                        IssueManager.newSaveIssue(user, getContainer(), relatedIssue);
                     }
                 }
-
                 transaction.commit();
             }
             catch (IOException x)
@@ -886,29 +727,624 @@ public class IssuesController extends SpringActionController
             // Send update email...
             //    ...if someone other than "created by" is closing a bug
             //    ...if someone other than "assigned to" is updating, reopening, or resolving a bug
-            String change = ReopenAction.class.equals(form.getAction()) ? "reopened" : getActionName(form.getAction()) + "d";
+            final String assignedTo = UserManager.getDisplayName(_issue.getAssignedTo(), user);
+            String change;
+            if (InsertAction.class.equals(form.getAction()))
+            {
+                if (assignedTo != null)
+                    change = "opened and assigned to " + assignedTo;
+                else
+                    change = "opened";
+            }
+            else
+                change = ReopenAction.class.equals(form.getAction()) ? "reopened" : getActionName(form.getAction()) + "d";
+
             if ("resolved".equalsIgnoreCase(change) && issue.getResolution() != null)
             {
                 change += " as " + issue.getResolution(); // Issue 12273
             }
             sendUpdateEmail(issue, prevIssue, changeSummary.getTextChanges(), changeSummary.getSummary(), form.getComment(), detailsUrl, change, getAttachmentFileList(), form.getAction(), user);
+
             return true;
         }
 
-        public void validateCommand(IssuesForm form, Errors errors)
+        @Override
+        public void validateCommand(IssuesController.IssuesForm form, Errors errors)
         {
-            validateRequiredFields(form, errors);
-            validateNotifyList(form, errors);
-            validateAssignedTo(form, errors);
-            validateStringFields(form, errors);
+            if (!form.getSkipPost())
+            {
+                setIssue(form.getBean());
+
+                validateRequiredFields(form, errors);
+                validateNotifyList(form, errors);
+                validateAssignedTo(form, errors);
+                validateStringFields(form, errors);
+            }
         }
 
-        public ActionURL getSuccessURL(IssuesForm form)
+        public ActionURL getSuccessURL(IssuesController.IssuesForm form)
         {
-            if(getIssue(form.getIssueId(), false).getStatus().equals("closed"))
-                return issueURL(ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true");
-            
+            if (getIssue(form.getIssueId(), false).getStatus().equals("closed"))
+            {
+                ActionURL url = new ActionURL(ListAction.class, getContainer()).addParameter(DataRegion.LAST_FILTER_PARAM, "true");
+                IssueListDef issueListDef = getIssueListDef();
+
+                if (issueListDef != null)
+                    url.addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueListDef.getName());
+
+                return url;
+            }
+
             return form.getForwardURL();
+        }
+
+        /**
+         * @param redirect if the issue isn't in this container, whether to redirect the browser to same URL except in the
+         * issue's parent container
+         * @throws RedirectException if the issue lives in another container and the user has at least read permission to it
+         */
+        protected Issue getIssue(int issueId, boolean redirect) throws RedirectException
+        {
+            Issue result = IssueManager.getNewIssue(redirect ? null : getContainer(), getUser(), issueId);
+            // See if it's from a different container
+            if (result != null && redirect && !result.getContainerId().equals(getContainer().getId()))
+            {
+                Container issueContainer = ContainerManager.getForId(result.getContainerId());
+                // Make sure the user has read permission before redirecting
+                if (issueContainer.hasPermission(getUser(), ReadPermission.class))
+                {
+                    ActionURL url = getViewContext().getActionURL().clone();
+                    url.setContainer(issueContainer);
+                    throw new RedirectException(url);
+                }
+                return null;
+            }
+            return result;
+        }
+
+        public void setIssue(Issue issue)
+        {
+            _issue = issue;
+        }
+
+        public Issue getIssue()
+        {
+            return _issue;
+        }
+
+        protected String getSingularEntityName()
+        {
+            return IssueManager.getEntryTypeNames(getContainer()).singularName;
+        }
+
+        protected Set<String> getEditableFields(Class<? extends Controller> action, CustomColumnConfiguration ccc)
+        {
+            final Set<String> editable = new HashSet<>(20);
+
+            editable.add("title");
+            editable.add("assignedTo");
+            editable.add("type");
+            editable.add("area");
+            editable.add("priority");
+            editable.add("milestone");
+            editable.add("comments");
+            editable.add("attachments");
+
+            // Add all the enabled custom fields
+            for (CustomColumn cc : ccc.getCustomColumns())
+            {
+                editable.add(cc.getName());
+            }
+
+            editable.add("notifyList");
+
+            if (ResolveAction.class.equals(action))
+            {
+                editable.add("resolution");
+                editable.add("duplicate");
+            }
+
+            editable.add("related");
+
+            return editable;
+        }
+
+        /**
+         * Throw an exception if user does not have permission to update issue
+         */
+        protected void requiresUpdatePermission(User user, Issue issue)
+                throws ServletException
+        {
+            if (!hasUpdatePermission(user, issue))
+            {
+                throw new UnauthorizedException();
+            }
+        }
+
+        /**
+         * Does this user have permission to update this issue?
+         */
+        protected boolean hasUpdatePermission(User user, Issue issue)
+        {
+            return getContainer().hasPermission(user, UpdatePermission.class,
+                    (issue.getCreatedBy() == user.getUserId() ? RoleManager.roleSet(OwnerRole.class) : null));
+        }
+
+        protected boolean hasAdminPermission(User user, Issue issue)
+        {
+            return getContainer().hasPermission(user, AdminPermission.class,
+                    (issue.getCreatedBy() == user.getUserId() ? RoleManager.roleSet(OwnerRole.class) : null));
+        }
+
+        public CustomColumnConfiguration getColumnConfiguration()
+        {
+            if (_columnConfiguration == null)
+            {
+                _columnConfiguration = new NewCustomColumnConfiguration(getContainer(), getUser(), getIssueListDef());
+            }
+            return _columnConfiguration;
+        }
+
+        protected IssueListDef getIssueListDef()
+        {
+            String issueDefName = getIssue().getIssueDefName();
+            if (issueDefName != null)
+            {
+                return IssueManager.getIssueListDef(getContainer(), issueDefName);
+            }
+            else
+            {
+                return IssueManager.getIssueListDef(getIssue());
+            }
+        }
+
+        public void setColumnConfiguration(CustomColumnConfiguration columnConfiguration)
+        {
+            _columnConfiguration = columnConfiguration;
+        }
+
+        private void validateRequiredFields(IssuesController.IssuesForm form, Errors errors)
+        {
+            String requiredFields = "";
+            final Map<String, String> newFields = form.getStrings();
+            MapBindingResult requiredErrors = new MapBindingResult(newFields, errors.getObjectName());
+
+            // handle custom field types
+            IssueListDef issueListDef = getIssueListDef();
+            if (issueListDef != null)
+            {
+                TableInfo tableInfo = issueListDef.createTable(getUser());
+
+                for (Map.Entry<String, String> entry : newFields.entrySet())
+                {
+                    ColumnInfo col = tableInfo.getColumn(FieldKey.fromParts(entry.getKey()));
+                    if (col != null)
+                    {
+                        for (ColumnValidator validator : ColumnValidators.create(col, null))
+                        {
+                            String msg = validator.validate(0, entry.getValue());
+                            if (msg != null)
+                                requiredErrors.rejectValue(col.getName(), "NullError", new Object[] {col.getName()}, msg);
+                        }
+                    }
+                }
+            }
+            if (newFields.containsKey("comment"))
+                validateRequired("comment", newFields.get("comment"), requiredFields, requiredErrors);
+
+            // When resolving Duplicate, the 'duplicate' field should be set.
+            if ("Duplicate".equals(newFields.get("resolution")))
+                validateRequired("duplicate", newFields.get("duplicate"), "duplicate", requiredErrors);
+
+            errors.addAllErrors(requiredErrors);
+        }
+
+        private void validateRequired(String columnName, String value, String requiredFields, Errors errors)
+        {
+            if (requiredFields != null)
+            {
+                if (requiredFields.indexOf(columnName) != -1)
+                {
+                    if (StringUtils.isEmpty(value) || StringUtils.isEmpty(value.trim()))
+                    {
+                        final CustomColumnConfiguration ccc = getColumnConfiguration();
+                        String name = null;
+
+                        // TODO: Not sure what to do here
+                        if (ccc.shouldDisplay(columnName))
+                        {
+                            name = ccc.getCaption(columnName);
+                        }
+                        else
+                        {
+                            ColumnInfo column = IssuesSchema.getInstance().getTableInfoIssues().getColumn(columnName);
+                            if (column != null)
+                                name = column.getName();
+                        }
+
+                        String display = name == null ? columnName : name;
+                        errors.rejectValue(columnName, "NullError", new Object[] {display}, display + " is required.");
+                    }
+                }
+            }
+        }
+
+        private void validateNotifyList(IssuesController.IssuesForm form, Errors errors)
+        {
+            User user;
+            for (String username : StringUtils.split(StringUtils.trimToEmpty(form.getNotifyList()), ";\n"))
+            {
+                // NOTE: this "username" should be a user id but may be a psuedo-username (an assumed user which has default domain appended)
+                //       or in the other special case this is an e-mail address
+                username = username.trim();
+
+                // Ignore lines of all whitespace, otherwise show an error.
+                if (!"".equals(username))
+                {
+                    user = UserManager.getUserByDisplayName(username);
+                    if (user != null)
+                        continue;
+                    // Trying to generate user object from the "name" will not be enough if the username is for the default domain
+                    // TODO: most of this logic can be reduced when we change the Schema and fix the typing of these fields. (making announcements and issues consistent)
+                    try
+                    {
+                        user = UserManager.getUser( new ValidEmail(username) );
+                    }
+                    catch (ValidEmail.InvalidEmailException e)
+                    {
+                        // do nothing?
+                    }
+                    finally
+                    {
+                        if (user == null)
+                        {
+                            String message = "Failed to add user " + username + ": Invalid user display name";
+                            errors.rejectValue("notifyList", SpringActionController.ERROR_MSG, message);
+                        }
+                    }
+                }
+            }
+        }
+
+        private void validateAssignedTo(IssuesController.IssuesForm form, Errors errors)
+        {
+            // here we check that the user is a valid assignee
+            Integer userId = form.getBean().getAssignedTo();
+
+            if (userId != null)
+            {
+                User user = UserManager.getUser(userId);
+                // TODO: consider exposing IssueManager.canAssignTo
+                if (!user.isActive() || !getContainer().hasPermission(user, UpdatePermission.class))
+                    errors.rejectValue("assignedTo", SpringActionController.ERROR_MSG, "An invalid user was set for the Assigned To");
+            }
+        }
+
+        private static final int MAX_STRING_FIELD_LENGTH = 200;
+        private void validateStringFields(IssuesController.IssuesForm form, Errors errors)
+        {
+            final Map<String, String> fields = form.getStrings();
+            final CustomColumnConfiguration ccc = getColumnConfiguration();
+            String lengthError = " cannot be longer than " + MAX_STRING_FIELD_LENGTH + " characters.";
+
+            for (int i = 1; i <= 5; i++)
+            {
+                String name = "string" + i;
+
+                if (fields.containsKey(name) && fields.get(name).length() > MAX_STRING_FIELD_LENGTH)
+                    errors.reject(SpringActionController.ERROR_MSG, ccc.getCaption(name) + lengthError);
+            }
+        }
+
+        private void sendUpdateEmail(Issue issue, Issue prevIssue, String fieldChanges, String summary, String comment, ActionURL detailsURL, String change, List<AttachmentFile> attachments, Class<? extends Controller> action, User createdByUser) throws ServletException
+        {
+            // Skip the email if no comment and no public fields have changed, #17304
+            if (fieldChanges.isEmpty() && comment.isEmpty())
+                return;
+
+            final Set<User> allAddresses = getUsersToEmail(issue, prevIssue, action);
+            for (User user : allAddresses)
+            {
+                boolean hasPermission = getContainer().hasPermission(user, ReadPermission.class);
+                if (!hasPermission) continue;
+
+                String to = user.getEmail();
+                try
+                {
+                    Issue.Comment lastComment = issue.getLastComment();
+                    String messageId = "<" + issue.getEntityId() + "." + lastComment.getCommentId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
+                    String references = messageId + " <" + issue.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
+                    MailHelper.MultipartMessage m = MailHelper.createMultipartMessage();
+                    m.addRecipients(Message.RecipientType.TO, MailHelper.createAddressArray(to));
+                    Address[] addresses = m.getAllRecipients();
+
+                    if (addresses != null && addresses.length > 0)
+                    {
+                        IssueUpdateEmailTemplate template = EmailTemplateService.get().getEmailTemplate(IssueUpdateEmailTemplate.class, getContainer());
+                        template.init(issue, detailsURL, change, comment, fieldChanges, allAddresses, attachments, user);
+
+                        m.setSubject(template.renderSubject(getContainer()));
+                        m.setFrom(template.renderFrom(getContainer(), LookAndFeelProperties.getInstance(getContainer()).getSystemEmailAddress()));
+                        m.setHeader("References", references);
+                        String body = template.renderBody(getContainer());
+
+                        m.setTextContent(body);
+                        StringBuilder html = new StringBuilder();
+                        html.append("<html><head></head><body>");
+                        html.append(PageFlowUtil.filter(body,true,true));
+                        html.append(
+                                "<div itemscope itemtype=\"http://schema.org/EmailMessage\">\n" +
+                                        "  <div itemprop=\"action\" itemscope itemtype=\"http://schema.org/ViewAction\">\n" +
+                                        "    <link itemprop=\"url\" href=\"" + PageFlowUtil.filter(detailsURL) + "\"></link>\n" +
+                                        "    <meta itemprop=\"name\" content=\"View Commit\"></meta>\n" +
+                                        "  </div>\n" +
+                                        "  <meta itemprop=\"description\" content=\"View this " + PageFlowUtil.filter(IssueManager.getEntryTypeNames(getContainer()).singularName) + "\"></meta>\n" +
+                                        "</div>\n");
+                        html.append("</body></html>");
+                        m.setEncodedHtmlContent(html.toString());
+
+                        NotificationService.get().sendMessage(getContainer(), createdByUser, user, m,
+                                "view " + IssueManager.getEntryTypeNames(getContainer()).singularName,
+                                new ActionURL(IssuesController.DetailsAction.class,getContainer()).addParameter("issueId",issue.getIssueId()).getLocalURIString(false),
+                                "issue:" + issue.getIssueId(),
+                                Issue.class.getName(), true);
+                    }
+                }
+                catch (ConfigurationException | AddressException e)
+                {
+                    _log.error("error sending update email to " + to, e);
+                }
+                catch (Exception e)
+                {
+                    _log.error("error sending update email to " + to, e);
+                    ExceptionUtil.logExceptionToMothership(null, e);
+                }
+            }
+        }
+
+        /**
+         * Builds the list of email addresses for notification based on the user
+         * preferences and the explicit notification list.
+         */
+        private Set<User> getUsersToEmail(Issue issue, Issue prevIssue, Class<? extends Controller> action) throws ServletException
+        {
+            final Set<User> emailUsers = new HashSet<>();
+            final Container c = getContainer();
+            int assignedToPref = IssueManager.getUserEmailPreferences(c, issue.getAssignedTo());
+            int assignedToPrev = prevIssue != null && prevIssue.getAssignedTo() != null ? prevIssue.getAssignedTo() : 0;
+            int assignedToPrevPref = assignedToPrev != 0 ? IssueManager.getUserEmailPreferences(c, prevIssue.getAssignedTo()) : 0;
+            int createdByPref = IssueManager.getUserEmailPreferences(c, issue.getCreatedBy());
+
+            if (IssuesController.InsertAction.class.equals(action))
+            {
+                if ((assignedToPref & IssueManager.NOTIFY_ASSIGNEDTO_OPEN) != 0)
+                    safeAddEmailUsers(emailUsers, UserManager.getUser(issue.getAssignedTo()));
+            }
+            else
+            {
+                if ((assignedToPref & IssueManager.NOTIFY_ASSIGNEDTO_UPDATE) != 0)
+                    safeAddEmailUsers(emailUsers, UserManager.getUser(issue.getAssignedTo()));
+
+                if ((assignedToPrevPref & IssueManager.NOTIFY_ASSIGNEDTO_UPDATE) != 0)
+                    safeAddEmailUsers(emailUsers, UserManager.getUser(prevIssue.getAssignedTo()));
+
+                if ((createdByPref & IssueManager.NOTIFY_CREATED_UPDATE) != 0)
+                    safeAddEmailUsers(emailUsers, UserManager.getUser(issue.getCreatedBy()));
+            }
+
+            // add any users subscribed to this forum
+            List<ValidEmail> subscribedEmails = IssueManager.getSubscribedUserEmails(c);
+            for (ValidEmail email : subscribedEmails)
+                safeAddEmailUsers(emailUsers, UserManager.getUser(email));
+
+            // add any explicit notification list addresses
+            List<ValidEmail> emails = issue.getNotifyListEmail();
+            for (ValidEmail email : emails)
+                safeAddEmailUsers(emailUsers, UserManager.getUser(email));
+
+            boolean selfSpam = !((IssueManager.NOTIFY_SELF_SPAM & IssueManager.getUserEmailPreferences(c, getUser().getUserId())) == 0);
+            if (selfSpam)
+                safeAddEmailUsers(emailUsers, getUser());
+            else
+                emailUsers.remove(getUser());
+
+            return emailUsers;
+        }
+
+        private void safeAddEmailUsers(Set<User> users, User user)
+        {
+            if (user != null && user.isActive())
+                users.add(user);
+        }
+
+        private boolean relatedIssueHandler(Issue issue, User user, BindException errors)
+        {
+            String textInput = issue.getRelated();
+            Set<Integer> newRelatedIssues = new TreeSet<>();
+            if (textInput != null)
+            {
+                String[] textValues = issue.getRelated().split("[\\s,;]+");
+                int relatedId;
+                // for each issue id we need to validate
+                for (String relatedText : textValues)
+                {
+                    relatedId = NumberUtils.toInt(relatedText.trim(), 0);
+                    if (relatedId == 0)
+                    {
+                        errors.rejectValue("Related", SpringActionController.ERROR_MSG, "Invalid issue id in related string.");
+                        return false;
+                    }
+                    if (issue.getIssueId() == relatedId)
+                    {
+                        errors.rejectValue("Related", SpringActionController.ERROR_MSG, "As issue may not be related to itself");
+                        return false;
+                    }
+
+                    Issue related = IssueManager.getNewIssue(null, getUser(), relatedId);
+                    if (related == null)
+                    {
+                        errors.rejectValue("Related", SpringActionController.ERROR_MSG, "Related issue '" + relatedId + "' not found");
+                        return false;
+                    }
+                    newRelatedIssues.add(relatedId);
+                }
+            }
+
+            // Fetch from IssueManager to make sure the related issues are populated
+            Issue originalIssue = IssueManager.getNewIssue(null, getUser(), issue.getIssueId());
+            Set<Integer> originalRelatedIssues = originalIssue == null ? Collections.emptySet() : originalIssue.getRelatedIssues();
+
+            // Only check permissions if
+            if (!originalRelatedIssues.equals(newRelatedIssues))
+            {
+                for (Integer relatedId : newRelatedIssues)
+                {
+                    Issue related = IssueManager.getIssue(null, relatedId);
+                    if (!related.lookupContainer().hasPermission(user, ReadPermission.class))
+                    {
+                        errors.rejectValue("Related", SpringActionController.ERROR_MSG, "User does not have Read Permission for related issue '" + relatedId + "'");
+                        return false;
+                    }
+                }
+            }
+
+            // this sets the collection of integer ids for all related issues
+            issue.setRelatedIssues(newRelatedIssues);
+            return true;
+        }
+
+        private Issue relatedIssueCommentHandler(int issueId, int relatedIssueId, User user, boolean drop)
+        {
+            StringBuilder sb = new StringBuilder();
+            Issue relatedIssue = IssueManager.getNewIssue(null, getUser(), relatedIssueId);
+            Set<Integer> prevRelated = relatedIssue.getRelatedIssues();
+            Set<Integer> newRelated = new TreeSet<>();
+            newRelated.addAll(prevRelated);
+
+            if (drop)
+                newRelated.remove(new Integer(issueId));
+            else
+                newRelated.add(issueId);
+
+            sb.append("<div class=\"wiki\"><table class=issues-Changes>");
+            sb.append(String.format("<tr><td>Related</td><td>%s</td><td>&raquo;</td><td>%s</td></tr>", StringUtils.join(prevRelated, ", "), StringUtils.join(newRelated, ", ")));
+            sb.append("</table></div>");
+
+            relatedIssue.addComment(user, sb.toString());
+            relatedIssue.setRelatedIssues(newRelated);
+
+            return relatedIssue;
+        }
+
+        public class NewCustomColumnConfiguration implements CustomColumnConfiguration
+        {
+            private Map<String, CustomColumn> _columnMap = new LinkedHashMap<>();
+            private Map<String, String> _captionMap = new LinkedHashMap<>();
+            private Set<String> _baseNames = new CaseInsensitiveHashSet();
+            private Map<String, DomainProperty> _propertyMap = new CaseInsensitiveHashMap<>();
+            private List<DomainProperty> _customProperties = new ArrayList<>();
+
+            public NewCustomColumnConfiguration(Container c, User user, IssueListDef issueDef)
+            {
+                if (issueDef != null)
+                {
+                    Domain domain = issueDef.getDomain(user);
+                    _baseNames.addAll(domain.getDomainKind().getMandatoryPropertyNames(domain));
+
+                    if (domain != null)
+                    {
+                        for (DomainProperty prop : domain.getProperties())
+                        {
+                            _propertyMap.put(prop.getName(), prop);
+                            if (!_baseNames.contains(prop.getName()))
+                            {
+                                _customProperties.add(prop);
+                                CustomColumn col = new CustomColumn(c,
+                                        prop.getName().toLowerCase(),
+                                        prop.getLabel() != null ? prop.getLabel() : ColumnInfo.labelFromName(prop.getName()),
+                                        prop.getLookup() != null,
+                                        prop.isProtected() ? InsertPermission.class : ReadPermission.class);
+
+                                _columnMap.put(col.getName(), col);
+                                _captionMap.put(col.getName(), col.getCaption());
+                            }
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public Map<String, DomainProperty> getPropertyMap()
+            {
+                return _propertyMap;
+            }
+
+            @Override
+            public Collection<DomainProperty> getCustomProperties()
+            {
+                return _customProperties;
+            }
+
+            @Override
+            public CustomColumn getCustomColumn(String name)
+            {
+                return _columnMap.get(name);
+            }
+
+            @Override
+            public Collection<CustomColumn> getCustomColumns()
+            {
+                return _columnMap.values();
+            }
+
+            @Override
+            public Collection<CustomColumn> getCustomColumns(User user)
+            {
+                return _columnMap.values();
+            }
+
+            @Override
+            public boolean shouldDisplay(String name)
+            {
+                return true;
+            }
+
+            @Override
+            public boolean shouldDisplay(User user, String name)
+            {
+                CustomColumn col = _columnMap.get(name);
+                if (col != null)
+                {
+                    return col.getContainer().hasPermission(user, col.getPermission());
+                }
+                else if (_baseNames.contains(name))
+                {
+                    // short term hack
+                    return true;
+                }
+                return false;
+            }
+
+            @Override
+            public boolean hasPickList(String name)
+            {
+                CustomColumn col = _columnMap.get(name);
+                return col != null && col.isPickList();
+            }
+
+            @Nullable
+            @Override
+            public String getCaption(String name)
+            {
+                CustomColumn col = _columnMap.get(name);
+                return col != null ? col.getCaption() : ColumnInfo.labelFromName(name);
+            }
+
+            @Override
+            public Map<String, String> getColumnCaptions()
+            {
+                return _captionMap;
+            }
         }
     }
 
@@ -1014,11 +1450,10 @@ public class IssuesController extends SpringActionController
     }
 
 
-    @Deprecated     // delete this code after we pivot to the new implementation
     @RequiresPermission(ReadPermission.class)
-    public class UpdateAction extends IssueUpdateAction
+    public class UpdateAction extends AbstractIssueAction
     {
-        public ModelAndView getView(IssuesForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(IssuesController.IssuesForm form, boolean reshow, BindException errors) throws Exception
         {
             int issueId = form.getIssueId();
             _issue = getIssue(issueId, true);
@@ -1036,16 +1471,16 @@ public class IssuesController extends SpringActionController
             IssuePage page = new IssuePage(getContainer(), user);
             JspView v = new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
 
-            CustomColumnConfiguration ccc = getCustomColumnConfiguration();
-
             page.setAction(UpdateAction.class);
+            page.setMode(DataRegion.MODE_UPDATE);
             page.setIssue(_issue);
             page.setPrevIssue(prevIssue);
-            page.setCustomColumnConfiguration(ccc);
+            page.setCustomColumnConfiguration(getColumnConfiguration());
             page.setBody(form.getComment());
-            page.setEditable(getEditableFields(page.getAction(), ccc));
+            page.setEditable(getEditableFields(page.getAction(), getColumnConfiguration()));
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
             page.setErrors(errors);
+            page.setIssueListDef(getIssueListDef());
 
             return v;
         }
@@ -1057,48 +1492,11 @@ public class IssuesController extends SpringActionController
         }
     }
 
-
-    private Set<String> getEditableFields(Class<? extends Controller> action, CustomColumnConfiguration ccc)
-    {
-        final Set<String> editable = new HashSet<>(20);
-
-        editable.add("title");
-        editable.add("assignedTo");
-        editable.add("type");
-        editable.add("area");
-        editable.add("priority");
-        editable.add("milestone");
-        editable.add("comments");
-        editable.add("attachments");
-
-        // Add all the enabled custom fields
-        for (CustomColumn cc : ccc.getCustomColumns())
-        {
-            ColumnTypeEnum type = ColumnTypeEnum.forName(cc.getName());
-
-            if (null != type && type.isCustom())
-                editable.add(cc.getName());
-        }
-
-        editable.add("notifyList");
-
-        if (ResolveAction.class.equals(action))
-        {
-            editable.add("resolution");
-            editable.add("duplicate");
-        }
-
-        editable.add("related");
-
-        return editable;
-    }
-
-
-    @Deprecated     // delete this code after we pivot to the new implementation
     @RequiresPermission(ReadPermission.class)
-    public class ResolveAction extends IssueUpdateAction
+    public class ResolveAction extends AbstractIssueAction
     {
-        public ModelAndView getView(IssuesForm form, boolean reshow, BindException errors) throws Exception
+        @Override
+        public ModelAndView getView(IssuesController.IssuesForm form, boolean reshow, BindException errors) throws Exception
         {
             int issueId = form.getIssueId();
             _issue = getIssue(issueId, true);
@@ -1132,33 +1530,32 @@ public class IssuesController extends SpringActionController
             IssuePage page = new IssuePage(getContainer(), user);
             JspView v = new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
 
-            CustomColumnConfiguration ccc = getCustomColumnConfiguration();
-
             page.setAction(ResolveAction.class);
+            page.setMode(DataRegion.MODE_UPDATE);
             page.setIssue(_issue);
             page.setPrevIssue(prevIssue);
-            page.setCustomColumnConfiguration(ccc);
+            page.setCustomColumnConfiguration(getColumnConfiguration());
             page.setBody(form.getComment());
-            page.setEditable(getEditableFields(page.getAction(), ccc));
+            page.setEditable(getEditableFields(page.getAction(), getColumnConfiguration()));
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
             page.setErrors(errors);
+            page.setIssueListDef(getIssueListDef());
 
             return v;
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
+            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
             return (new DetailsAction(_issue, getViewContext()).appendNavTrail(root)).addChild("Resolve " + names.singularName);
         }
     }
 
-
-    @Deprecated     // delete this code after we pivot to the new implementation
     @RequiresPermission(ReadPermission.class)
-    public class CloseAction extends IssueUpdateAction
+    public class CloseAction extends AbstractIssueAction
     {
-        public ModelAndView getView(IssuesForm form, boolean reshow, BindException errors) throws Exception
+        @Override
+        public ModelAndView getView(IssuesController.IssuesForm form, boolean reshow, BindException errors) throws Exception
         {
             int issueId = form.getIssueId();
             _issue = getIssue(issueId, true);
@@ -1176,33 +1573,33 @@ public class IssuesController extends SpringActionController
             IssuePage page = new IssuePage(getContainer(), user);
             JspView v = new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
 
-            CustomColumnConfiguration ccc = getCustomColumnConfiguration();
-
             page.setAction(CloseAction.class);
+            page.setMode(DataRegion.MODE_UPDATE);
             page.setIssue(_issue);
             page.setPrevIssue(prevIssue);
-            page.setCustomColumnConfiguration(ccc);
+            page.setCustomColumnConfiguration(getColumnConfiguration());
             page.setBody(form.getComment());
-            page.setEditable(getEditableFields(page.getAction(), ccc));
+            page.setEditable(getEditableFields(page.getAction(), getColumnConfiguration()));
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
             page.setErrors(errors);
+            page.setIssueListDef(getIssueListDef());
 
             return v;
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
+            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
             return (new DetailsAction(_issue, getViewContext()).appendNavTrail(root)).addChild("Close " + names.singularName);
         }
     }
 
 
-    @Deprecated     // delete this code after we pivot to the new implementation
     @RequiresPermission(ReadPermission.class)
-    public class ReopenAction extends IssueUpdateAction
+    public class ReopenAction extends AbstractIssueAction
     {
-        public ModelAndView getView(IssuesForm form, boolean reshow, BindException errors) throws Exception
+        @Override
+        public ModelAndView getView(IssuesController.IssuesForm form, boolean reshow, BindException errors) throws Exception
         {
             int issueId = form.getIssueId();
             _issue = getIssue(issueId, true);
@@ -1222,296 +1619,25 @@ public class IssuesController extends SpringActionController
             IssuePage page = new IssuePage(getContainer(), user);
             JspView v = new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
 
-            CustomColumnConfiguration ccc = getCustomColumnConfiguration();
-
             page.setAction(ReopenAction.class);
+            page.setMode(DataRegion.MODE_UPDATE);
             page.setIssue(_issue);
             page.setPrevIssue(prevIssue);
-            page.setCustomColumnConfiguration(ccc);
+            page.setCustomColumnConfiguration(getColumnConfiguration());
             page.setBody(form.getComment());
-            page.setEditable(getEditableFields(page.getAction(), ccc));
+            page.setEditable(getEditableFields(page.getAction(), getColumnConfiguration()));
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
             page.setErrors(errors);
+            page.setIssueListDef(getIssueListDef());
 
             return v;
-            //return _renderInTemplate(v, "(open) " + issue.getTitle(), null);
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
+            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
             return (new DetailsAction(_issue, getViewContext()).appendNavTrail(root)).addChild("Reopen " + names.singularName);
         }
-    }
-
-    private void validateStringFields(IssuesForm form, Errors errors)
-    {
-        final Map<String, String> fields = form.getStrings();
-        final CustomColumnConfiguration ccc = getCustomColumnConfiguration();
-        String lengthError = " cannot be longer than " + MAX_STRING_FIELD_LENGTH + " characters.";
-
-        for (int i = 1; i <= 5; i++)
-        {
-            String name = "string" + i;
-
-            if (fields.containsKey(name) && fields.get(name).length() > MAX_STRING_FIELD_LENGTH)
-                errors.reject(ERROR_MSG, ccc.getCaption(name) + lengthError);
-        }
-    }
-    
-    private void validateRequiredFields(IssuesForm form, Errors errors)
-    {
-        String requiredFields = IssueManager.getRequiredIssueFields(getContainer());
-        final Map<String, String> newFields = form.getStrings();
-        if (!"0".equals(newFields.get("issueId")) && requiredFields.contains("comment"))
-        {
-            // When updating an existing issue (which will have a unique IssueId), never require a comment
-            requiredFields = requiredFields.replace("comment", "");
-        }
-        if (requiredFields.isEmpty())
-            return;
-
-        MapBindingResult requiredErrors = new MapBindingResult(newFields, errors.getObjectName());
-        if (newFields.containsKey("title"))
-            validateRequired("title", newFields.get("title"), requiredFields, requiredErrors);
-        if (newFields.containsKey("assignedTo") && !(Issue.statusCLOSED.equals(form.getBean().getStatus())))
-            validateRequired("assignedto", newFields.get("assignedTo"), requiredFields, requiredErrors);
-        if (newFields.containsKey("type"))
-            validateRequired("type", newFields.get("type"), requiredFields, requiredErrors);
-        if (newFields.containsKey("area"))
-            validateRequired("area", newFields.get("area"), requiredFields, requiredErrors);
-        if (newFields.containsKey("priority"))
-            validateRequired("priority", newFields.get("priority"), requiredFields, requiredErrors);
-        if (newFields.containsKey("milestone"))
-            validateRequired("milestone", newFields.get("milestone"), requiredFields, requiredErrors);
-        if (newFields.containsKey("notifyList"))
-            validateRequired("notifylist", newFields.get("notifyList"), requiredFields, requiredErrors);
-        if (newFields.containsKey("int1"))
-            validateRequired("int1", newFields.get("int1"), requiredFields, requiredErrors);
-        if (newFields.containsKey("int2"))
-            validateRequired("int2", newFields.get("int2"), requiredFields, requiredErrors);
-        if (newFields.containsKey("string1"))
-            validateRequired("string1", newFields.get("string1"), requiredFields, requiredErrors);
-        if (newFields.containsKey("string2"))
-            validateRequired("string2", newFields.get("string2"), requiredFields, requiredErrors);
-        if (newFields.containsKey("string3"))
-            validateRequired("string3", newFields.get("string3"), requiredFields, requiredErrors);
-        if (newFields.containsKey("string4"))
-            validateRequired("string4", newFields.get("string4"), requiredFields, requiredErrors);
-        if (newFields.containsKey("string5"))
-            validateRequired("string5", newFields.get("string5"), requiredFields, requiredErrors);
-        if (newFields.containsKey("comment"))
-            validateRequired("comment", newFields.get("comment"), requiredFields, requiredErrors);
-
-        // When resolving Duplicate, the 'duplicate' field should be set.
-        if ("Duplicate".equals(newFields.get("resolution")))
-            validateRequired("duplicate", newFields.get("duplicate"), "duplicate", requiredErrors);
-
-        errors.addAllErrors(requiredErrors);
-    }
-
-
-    private void validateRequired(String columnName, String value, String requiredFields, Errors errors)
-    {
-        if (requiredFields != null)
-        {
-            if (requiredFields.indexOf(columnName) != -1)
-            {
-                if (StringUtils.isEmpty(value) || StringUtils.isEmpty(value.trim()))
-                {
-                    final CustomColumnConfiguration ccc = getCustomColumnConfiguration();
-                    String name = null;
-
-                    // TODO: Not sure what to do here
-                    if (ccc.shouldDisplay(columnName))
-                    {
-                        name = ccc.getCaption(columnName);
-                    }
-                    else
-                    {
-                        ColumnInfo column = IssuesSchema.getInstance().getTableInfoIssues().getColumn(columnName);
-                        if (column != null)
-                            name = column.getName();
-                    }
-
-                    String display = name == null ? columnName : name;
-                    errors.rejectValue(columnName, "NullError", new Object[] {display}, display + " is required.");
-                }
-            }
-        }
-    }
-    
-
-    private void validateNotifyList(IssuesForm form, Errors errors)
-    {
-        User user;
-        for (String username : StringUtils.split(StringUtils.trimToEmpty(form.getNotifyList()), ";\n"))
-        {
-            // NOTE: this "username" should be a user id but may be a psuedo-username (an assumed user which has default domain appended)
-            //       or in the other special case this is an e-mail address
-            username = username.trim();
-
-            // Ignore lines of all whitespace, otherwise show an error.
-            if (!"".equals(username))
-            {
-                user = UserManager.getUserByDisplayName(username);
-                if (user != null)
-                    continue;
-                // Trying to generate user object from the "name" will not be enough if the username is for the default domain
-                // TODO: most of this logic can be reduced when we change the Schema and fix the typing of these fields. (making announcements and issues consistent)
-                try
-                {
-                    user = UserManager.getUser( new ValidEmail(username) );
-                }
-                catch (ValidEmail.InvalidEmailException e)
-                {
-                    // do nothing?
-                }
-                finally
-                {
-                    if (user == null)
-                    {
-                        String message = "Failed to add user " + username + ": Invalid user display name";
-                        errors.rejectValue("notifyList", ERROR_MSG, message);
-                    }
-                }
-            }
-        }
-    }
-
-    private void validateAssignedTo(IssuesForm form, Errors errors)
-    {
-        // here we check that the user is a valid assignee
-        Integer userId = form.getBean().getAssignedTo();
-
-        if (userId != null)
-        {
-            User user = UserManager.getUser(userId);
-            // TODO: consider exposing IssueManager.canAssignTo
-            if (!user.isActive() || !getContainer().hasPermission(user, UpdatePermission.class))
-                errors.rejectValue("assignedTo", ERROR_MSG, "An invalid user was set for the Assigned To");
-        }
-    }
-
-    private void sendUpdateEmail(Issue issue, Issue prevIssue, String fieldChanges, String summary, String comment, ActionURL detailsURL, String change, List<AttachmentFile> attachments, Class<? extends Controller> action, User createdByUser) throws ServletException
-    {
-        // Skip the email if no comment and no public fields have changed, #17304
-        if (fieldChanges.isEmpty() && comment.isEmpty())
-            return;
-
-        final Set<User> allAddresses = getUsersToEmail(issue, prevIssue, action);
-        for (User user : allAddresses)
-        {
-            boolean hasPermission = getContainer().hasPermission(user, ReadPermission.class);
-            if (!hasPermission) continue;
-
-            String to = user.getEmail();
-            try
-            {
-                Issue.Comment lastComment = issue.getLastComment();
-                String messageId = "<" + issue.getEntityId() + "." + lastComment.getCommentId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
-                String references = messageId + " <" + issue.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
-                MailHelper.MultipartMessage m = MailHelper.createMultipartMessage();
-                m.addRecipients(Message.RecipientType.TO, MailHelper.createAddressArray(to));
-                Address[] addresses = m.getAllRecipients();
-
-                if (addresses != null && addresses.length > 0)
-                {
-                    IssueUpdateEmailTemplate template = EmailTemplateService.get().getEmailTemplate(IssueUpdateEmailTemplate.class, getContainer());
-                    template.init(issue, detailsURL, change, comment, fieldChanges, allAddresses, attachments, user);
-
-                    m.setSubject(template.renderSubject(getContainer()));
-                    m.setFrom(template.renderFrom(getContainer(), LookAndFeelProperties.getInstance(getContainer()).getSystemEmailAddress()));
-                    m.setHeader("References", references);
-                    String body = template.renderBody(getContainer());
-
-                    m.setTextContent(body);
-                    StringBuilder html = new StringBuilder();
-                    html.append("<html><head></head><body>");
-                    html.append(PageFlowUtil.filter(body,true,true));
-                    html.append(
-                            "<div itemscope itemtype=\"http://schema.org/EmailMessage\">\n" +
-                            "  <div itemprop=\"action\" itemscope itemtype=\"http://schema.org/ViewAction\">\n" +
-                            "    <link itemprop=\"url\" href=\"" + PageFlowUtil.filter(detailsURL) + "\"></link>\n" +
-                            "    <meta itemprop=\"name\" content=\"View Commit\"></meta>\n" +
-                            "  </div>\n" +
-                            "  <meta itemprop=\"description\" content=\"View this " + PageFlowUtil.filter(IssueManager.getEntryTypeNames(getContainer()).singularName) + "\"></meta>\n" +
-                            "</div>\n");
-                    html.append("</body></html>");
-                    m.setEncodedHtmlContent(html.toString());
-
-                    NotificationService.get().sendMessage(getContainer(), createdByUser, user, m,
-                            "view " + IssueManager.getEntryTypeNames(getContainer()).singularName,
-                            new ActionURL(DetailsAction.class,getContainer()).addParameter("issueId",issue.getIssueId()).getLocalURIString(false),
-                            "issue:" + issue.getIssueId(),
-                            Issue.class.getName(), true);
-                }
-            }
-            catch (ConfigurationException | AddressException e)
-            {
-                _log.error("error sending update email to " + to, e);
-            }
-            catch (Exception e)
-            {
-                _log.error("error sending update email to " + to, e);
-                ExceptionUtil.logExceptionToMothership(null, e);
-            }
-        }
-    }
-
-    /**
-     * Builds the list of email addresses for notification based on the user
-     * preferences and the explicit notification list.
-     */
-    private Set<User> getUsersToEmail(Issue issue, Issue prevIssue, Class<? extends Controller> action) throws ServletException
-    {
-        final Set<User> emailUsers = new HashSet<>();
-        final Container c = getContainer();
-        int assignedToPref = IssueManager.getUserEmailPreferences(c, issue.getAssignedTo());
-        int assignedToPrev = prevIssue != null && prevIssue.getAssignedTo() != null ? prevIssue.getAssignedTo() : 0;
-        int assignedToPrevPref = assignedToPrev != 0 ? IssueManager.getUserEmailPreferences(c, prevIssue.getAssignedTo()) : 0;
-        int createdByPref = IssueManager.getUserEmailPreferences(c, issue.getCreatedBy());
-
-        if (InsertAction.class.equals(action))
-        {
-            if ((assignedToPref & IssueManager.NOTIFY_ASSIGNEDTO_OPEN) != 0)
-                safeAddEmailUsers(emailUsers, UserManager.getUser(issue.getAssignedTo()));
-        }
-        else
-        {
-            if ((assignedToPref & IssueManager.NOTIFY_ASSIGNEDTO_UPDATE) != 0)
-                safeAddEmailUsers(emailUsers, UserManager.getUser(issue.getAssignedTo()));
-
-            if ((assignedToPrevPref & IssueManager.NOTIFY_ASSIGNEDTO_UPDATE) != 0)
-                safeAddEmailUsers(emailUsers, UserManager.getUser(prevIssue.getAssignedTo()));
-
-            if ((createdByPref & IssueManager.NOTIFY_CREATED_UPDATE) != 0)
-                safeAddEmailUsers(emailUsers, UserManager.getUser(issue.getCreatedBy()));
-        }
-
-        // add any users subscribed to this forum
-        List<ValidEmail> subscribedEmails = IssueManager.getSubscribedUserEmails(c);
-        for (ValidEmail email : subscribedEmails)
-            safeAddEmailUsers(emailUsers, UserManager.getUser(email));
-
-        // add any explicit notification list addresses
-        List<ValidEmail> emails = issue.getNotifyListEmail();
-        for (ValidEmail email : emails)
-            safeAddEmailUsers(emailUsers, UserManager.getUser(email));
-
-        boolean selfSpam = !((IssueManager.NOTIFY_SELF_SPAM & IssueManager.getUserEmailPreferences(c, getUser().getUserId())) == 0);
-        if (selfSpam)
-            safeAddEmailUsers(emailUsers, getUser());
-        else
-            emailUsers.remove(getUser());
-
-        return emailUsers;
-    }
-
-    private void safeAddEmailUsers(Set<User> users, User user)
-    {
-        if (user != null && user.isActive())
-            users.add(user);
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -1561,23 +1687,21 @@ public class IssuesController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class GetMoveDestinationsAction extends ApiAction
+    public class GetMoveDestinationAction extends ApiAction<IssuesController.IssuesForm>
     {
         @Override
-        public ApiResponse execute(Object object, BindException errors) throws Exception
+        public ApiResponse execute(IssuesController.IssuesForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
+            Collection<Map<String, String>> containers = new LinkedList<>();
 
-            Collection<Map<String, Object>> responseContainers = new LinkedList<>();
-            for (Container container : IssueManager.getMoveDestinationContainers(getContainer()))
+            for (Container c : IssueManager.getMoveDestinationContainers(getContainer(), getUser(), form.getIssueDefName()))
             {
-                Map<String, Object> map = new HashMap<>();
-                map.put("containerId", container.getId());
-                map.put("containerPath", container.getPath());
-                responseContainers.add(map);
+                containers.add(PageFlowUtil.map(
+                        "containerId", c.getId(),
+                        "containerPath", c.getPath()));
             }
-
-            response.put("containers", responseContainers);
+            response.put("containers", containers);
 
             return response;
         }
@@ -1619,18 +1743,6 @@ public class IssuesController extends SpringActionController
         protected boolean includeContainer(Container c)
         {
            return true;
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class GetInheritFromContainersAction extends IssuesController.GetContainersAction
-    {
-        @Override
-        protected boolean includeContainer(Container c)
-        {
-            //remove containers that already have inherited settings.
-            //Note: this effects populating folders in 'Set move to folder'-->Specific Folder as well.
-            return IssueManager.getInheritFromContainer(c) == null;
         }
     }
 
@@ -1685,563 +1797,33 @@ public class IssuesController extends SpringActionController
     public static final String REQUIRED_FIELDS_COLUMNS = "title,assignedto,type,area,priority,milestone,notifylist";
     public static final String DEFAULT_REQUIRED_FIELDS = "title;assignedto";
 
-
     @RequiresPermission(AdminPermission.class)
-    public class AdminAction extends FormViewAction<AdminForm>
+    public class AdminAction extends SimpleViewAction<AdminForm>
     {
-        public ModelAndView getView(AdminForm form, boolean reshow, BindException errors) throws Exception
+        @Override
+        public ModelAndView getView(IssuesController.AdminForm adminForm, BindException errors) throws Exception
         {
-            return new AdminView(getContainer(), getCustomColumnConfiguration(), errors);
+            String issueDefName = getViewContext().getActionURL().getParameter(IssuesListView.ISSUE_LIST_DEF_NAME);
+            IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issueDefName);
+            Domain domain = issueListDef.getDomain(getUser());
+
+            Map<String, String> props = new HashMap<>();
+            props.put("typeURI", domain.getTypeURI());
+
+            props.put("issueListUrl", new ActionURL(ListAction.class, getContainer()).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDefName).getLocalURIString());
+            props.put("customizeEmailUrl", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(getContainer(), IssueUpdateEmailTemplate.class, getViewContext().getActionURL()).getLocalURIString());
+            props.put("instructions", domain.getDomainKind().getDomainEditorInstructions());
+
+            return new GWTView("org.labkey.issues.Designer", props);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
-            return (new ListAction(getViewContext())).appendNavTrail(root).addChild(names.pluralName + " Admin Page", getUrl());
-        }
-
-        public ActionURL getUrl()
-        {
-            return issueURL(AdminAction.class);
-        }
-
-
-        @Override
-        public void validateCommand(AdminForm target, Errors errors)
-        {
-        }
-
-        @Override
-        public boolean handlePost(AdminForm adminForm, BindException errors) throws Exception
-        {
-            return false;
-        }
-
-        @Override
-        public URLHelper getSuccessURL(AdminForm adminForm)
-        {
-            return getUrl();
+            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
+            return (new ListAction(getViewContext())).appendNavTrail(root).addChild(names.pluralName + " Admin Page", new ActionURL(AdminAction.class, getContainer()));
         }
     }
-
-
-    public abstract class AdminFormAction extends FormHandlerAction<AdminForm>
-    {
-        public void validateCommand(AdminForm adminForm, Errors errors)
-        {
-        }
-
-        public ActionURL getSuccessURL(AdminForm adminForm)
-        {
-            return issueURL(AdminAction.class);
-        }
-    }
-
-
-    @RequiresPermission(AdminPermission.class)
-    public class AddKeywordAction extends AdminAction
-    {
-        private ColumnType _type;
-
-        @Override
-        public void validateCommand(AdminForm form, Errors errors)
-        {
-            _type = ColumnTypeEnum.forOrdinal(form.getType());
-            String keyword = form.getKeyword();
-
-            if (null == _type)
-            {
-                errors.reject(ERROR_MSG, "Unknown keyword type");
-            }
-            if (null == keyword || StringUtils.isBlank(keyword))
-            {
-                errors.reject(ERROR_MSG, "Enter a value in the text box before clicking any of the \"Add <Keyword>\" buttons");
-            }
-            else
-            {
-                if (ColumnTypeEnum.PRIORITY == _type)
-                {
-                    try
-                    {
-                        Integer.parseInt(keyword);
-                    }
-                    catch (NumberFormatException e)
-                    {
-                        errors.reject(ERROR_MSG, "Priority must be an integer");
-                    }
-                }
-                else
-                {
-                    if (keyword.length() > 200)
-                        errors.reject(ERROR_MSG, "The keyword is too long, it must be under 200 characters.");
-
-                    Collection<Keyword> keywords = KeywordManager.getKeywords(getContainer(), _type);
-
-                    for (Keyword word : keywords)
-                    {
-                        if (word.getKeyword().compareToIgnoreCase(keyword)== 0)
-                            errors.reject(ERROR_MSG, "\"" + word.getKeyword() + "\" already exists");
-                    }
-                }
-            }
-        }
-
-        public boolean handlePost(AdminForm form, BindException errors) throws Exception
-        {
-            try
-            {
-                KeywordManager.addKeyword(getContainer(), _type, form.getKeyword());
-            }
-            catch (RuntimeSQLException e)
-            {
-                if (RuntimeSQLException.isConstraintException(e.getSQLException()))
-                {
-                    errors.reject(ERROR_MSG, "\"" + form.getKeyword() + "\" already exists");
-                    return false;
-                }
-
-                throw e;
-            }
-
-            return true;
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class DeleteKeywordAction extends AdminFormAction
-    {
-        public boolean handlePost(AdminForm form, BindException errors) throws Exception
-        {
-            KeywordManager.deleteKeyword(getContainer(), ColumnTypeEnum.forOrdinal(form.getType()), form.getKeyword());
-            return true;
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class SetKeywordDefaultAction extends AdminFormAction
-    {
-        public boolean handlePost(AdminForm form, BindException errors) throws Exception
-        {
-            KeywordManager.setKeywordDefault(getContainer(), ColumnTypeEnum.forOrdinal(form.getType()), form.getKeyword());
-            return true;
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class ClearKeywordDefaultAction extends AdminFormAction
-    {
-        public boolean handlePost(AdminForm form, BindException errors) throws Exception
-        {
-            KeywordManager.clearKeywordDefault(getContainer(), ColumnTypeEnum.forOrdinal(form.getType()));
-            return true;
-        }
-    }
-
-    public static class ConfigureIssuesForm
-    {
-        public static enum ParamNames
-        {
-            entrySingularName,
-            entryPluralName,
-            direction
-        }
-
-        private String _direction;
-        private String _assignedToMethod = null;
-        private int _assignedToGroup = 0;
-        private String _assignedToUser = null;
-        private int _defaultUser = 0;
-
-        private String _moveToContainer = null;
-        private String _moveToContainerSelect = null;
-
-        private String[] _requiredFields = new String[0];
-
-        private String _entrySingularName;
-        private String _entryPluralName;
-
-        private String _relatedIssuesList;
-
-        private String _inheritFromContainer = null;
-        private String _inheritFromContainerSelect = null;
-
-        public String getDirection()
-        {
-            return _direction;
-        }
-
-        public void setDirection(String direction)
-        {
-            _direction = direction;
-        }
-
-        public String getAssignedToMethod()
-        {
-            return _assignedToMethod;
-        }
-
-        public void setAssignedToMethod(String assignedToMethod)
-        {
-            _assignedToMethod = assignedToMethod;
-        }
-
-        public int getAssignedToGroup()
-        {
-            return _assignedToGroup;
-        }
-
-        public void setAssignedToGroup(int assignedToGroup)
-        {
-            _assignedToGroup = assignedToGroup;
-        }
-
-        public String getAssignedToUser()
-        {
-            return _assignedToUser;
-        }
-
-        public void setAssignedToUser(String assignedToUser)
-        {
-            _assignedToUser = assignedToUser;
-        }
-
-        public int getDefaultUser()
-        {
-            return _defaultUser;
-        }
-
-        public void setDefaultUser(int defaultUser)
-        {
-            _defaultUser = defaultUser;
-        }
-
-        public String getMoveToContainer()
-        {
-            return _moveToContainer;
-        }
-
-        public void setMoveToContainer(String moveToContainer)
-        {
-            _moveToContainer = moveToContainer;
-        }
-
-        public String getMoveToContainerSelect()
-        {
-            return _moveToContainerSelect;
-        }
-
-        public void setMoveToContainerSelect(String moveToContainerSelect)
-        {
-            _moveToContainerSelect = moveToContainerSelect;
-        }
-
-        public String getEntrySingularName()
-        {
-            return _entrySingularName;
-        }
-
-        public void setEntrySingularName(String entrySingularName)
-        {
-            _entrySingularName = entrySingularName;
-        }
-
-        public String getEntryPluralName()
-        {
-            return _entryPluralName;
-        }
-
-        public void setEntryPluralName(String entryPluralName)
-        {
-            _entryPluralName = entryPluralName;
-        }
-
-        public void setRequiredFields(String[] requiredFields)
-        {
-            _requiredFields = requiredFields;
-        }
-
-        public String[] getRequiredFields()
-        {
-            return _requiredFields;
-        }
-
-        public String getRelatedIssuesList()
-        {
-            return _relatedIssuesList;
-        }
-
-        public void setRelatedIssuesList(String relatedIssuesList)
-        {
-            _relatedIssuesList = relatedIssuesList;
-        }
-
-        public String getInheritFromContainer()
-        {
-            return _inheritFromContainer;
-        }
-
-        public void setInheritFromContainer(String inheritFromContainer)
-        {
-            _inheritFromContainer = inheritFromContainer;
-        }
-
-        public String getInheritFromContainerSelect()
-        {
-            return _inheritFromContainerSelect;
-        }
-
-        public void setInheritFromContainerSelect(String inheritFromContainerSelect)
-        {
-            _inheritFromContainerSelect = inheritFromContainerSelect;
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class ConfigureIssuesAction extends FormHandlerAction<ConfigureIssuesForm>
-    {
-        private static final String INHERIT_FROM_CONTAINER = "inheritFromContainer";
-        private static final String MOVE_TO_CONTAINER = "moveToContainer";
-        private Group _group = null;
-        private User _user = null;
-        private Container _inheritSettingsFromThisContainer = null;
-        private List<Container> _moveToContainers = new LinkedList<>();
-        private Sort.SortDirection _direction = Sort.SortDirection.ASC;
-
-        public void validateCommand(ConfigureIssuesForm form, Errors errors)
-        {
-            Container currentContainer = getViewContext().getContainer();
-
-            checkPickLists(form, errors);
-            
-            CustomColumnConfiguration ccc = new CustomColumnConfigurationImpl(getViewContext());
-            String defaultCols[] = {"Milestone", "Area", "Type", "Priority", "Resolution", "Related", "Status"};
-
-            Map<String, String> captions = ccc.getColumnCaptions(); //All of the custom captions
-            for (String column : defaultCols)
-            {
-                //Here we add the default captions if the user hasn't changed them.
-                if (captions.get(column.toLowerCase()) == null)
-                {
-                    captions.put(column.toLowerCase(), column);
-                }
-            }
-
-            CaseInsensitiveHashSet uniqueCaptions = new CaseInsensitiveHashSet(captions.values());
-            if (captions.size() > uniqueCaptions.size())
-            {
-                errors.reject(ERROR_MSG, "Custom field names must be unique.");
-            }
-
-            if (form.getAssignedToMethod() != null)
-            {
-                if (form.getAssignedToMethod().equals("ProjectUsers"))
-                {
-                    if (form.getAssignedToGroup() != 0)
-                        errors.reject("assignedToGroup", "Project users setting shouldn't include a group!");
-                }
-                else if (form.getAssignedToMethod().equals("Group"))
-                {
-                    int groupId = form.getAssignedToGroup();
-                    _group = SecurityManager.getGroup(groupId);
-
-                    if (null == _group)
-                        errors.reject("assignedToGroup", "Group does not exist!");
-                }
-                else
-                {
-                    errors.reject("assignedToGroup", "Invalid assigned to setting!");
-                }
-            }
-
-            if(form.getAssignedToUser() != null)
-            {
-
-                if (form.getAssignedToUser().equals("NoDefaultUser"))
-                {
-                    if (form.getDefaultUser() != 0)
-                        errors.reject("assignedToUser", "No default user setting shouldn't include a default user!");
-                }
-                else if (form.getAssignedToUser().equals("SpecificUser"))
-                {
-                    int userId = form.getDefaultUser();
-                    _user = UserManager.getUser(userId);
-
-                    if (null == _user)
-                        errors.reject("assignedToUser", "User does not exist!");
-                }
-                else
-                {
-                    errors.reject("assignedToUser", "Invalid assigned to setting!");
-                }
-            }
-
-            if(form.getInheritFromContainer().equals("DoNotInheritFromContainer"))
-            {
-                if (form.getInheritFromContainerSelect() != null)
-                {
-                    errors.reject(INHERIT_FROM_CONTAINER, "No 'inherit from folder' setting shouldn't include a default container!");
-                }
-            }
-            else if(form.getInheritFromContainer().equals("InheritFromSpecificContainer"))
-            {
-
-                String inheritFromContainerPath = form.getInheritFromContainerSelect();
-                if(inheritFromContainerPath != null)
-                {
-                    //get the Container to inherit/capture admin settings from
-                    Container container = ContainerManager.getForPath(inheritFromContainerPath);
-                    if(null == container)
-                    {
-                        errors.reject(INHERIT_FROM_CONTAINER, "Container does not exist!");
-                    }
-                    else
-                    {
-                        _inheritSettingsFromThisContainer = container;
-                    }
-                }
-                else
-                    errors.reject(INHERIT_FROM_CONTAINER, "The Inherit Admin Setting's 'Choose Folder' option was selected with a blank.");
-            }
-            else
-            {
-                errors.reject(INHERIT_FROM_CONTAINER, "Invalid 'inherit from' setting!");
-            }
-
-            if(form.getMoveToContainer() != null)
-            {
-                if (form.getMoveToContainer().equals("NoMoveToContainer"))
-                {
-                    if (form.getMoveToContainerSelect() != null)
-                        errors.reject(MOVE_TO_CONTAINER, "No move to container setting shouldn't include a default container!");
-                }
-                else if (form.getMoveToContainer().equals("SpecificMoveToContainer"))
-                {
-                    String moveToContainers = form.getMoveToContainerSelect();
-                    if (moveToContainers != null)
-                    {
-                        String[] containerPaths = StringUtils.split(moveToContainers, ';');
-
-                        for (String containerPath : containerPaths)
-                        {
-                            Container container = ContainerManager.getForPath(containerPath);
-                            if (null == container)
-                            {
-                                errors.reject(MOVE_TO_CONTAINER, "Container does not exist!");
-                                break;
-                            }
-                            _moveToContainers.add(container);
-                        }
-                    }
-                    else
-                        errors.reject(MOVE_TO_CONTAINER, "The move to specific container option was selected with a blank.");
-                }
-                else
-                {
-                    errors.reject(MOVE_TO_CONTAINER, "Invalid move to setting!");
-                }
-            }
-
-            if (form.getRelatedIssuesList() != null)
-            {
-                Container related = ContainerManager.getForPath(form.getRelatedIssuesList());
-                if (related == null)
-                    errors.reject("Related Issues List", "Invalid folder path for folder of related issues list.");
-            }
-
-            //only check for null values if there is no inheriting container of the current container
-            if(currentContainer.equals(IssueManager.getInheritFromOrCurrentContainer(currentContainer)))
-            {
-                if (null == StringUtils.trimToNull(form.getEntrySingularName()))
-                    errors.reject(ConfigureIssuesForm.ParamNames.entrySingularName.name(), "You must specify a value for the entry type singular name!");
-                if (null == StringUtils.trimToNull(form.getEntryPluralName()))
-                    errors.reject(ConfigureIssuesForm.ParamNames.entryPluralName.name(), "You must specify a value for the entry type plural name!");
-
-                try
-                {
-                    if (form.getDirection() == null)
-                    {
-                        errors.reject(ConfigureIssuesForm.ParamNames.direction.name(), "You must specify a comment sort direction!");
-                    }
-                    _direction = Sort.SortDirection.valueOf(form.getDirection());
-                }
-                catch (IllegalArgumentException e)
-                {
-                    errors.reject(ConfigureIssuesForm.ParamNames.direction.name(), "You must specify a valid comment sort direction!");
-                }
-            }
-        }
-
-        private void checkPickLists(ConfigureIssuesForm form, Errors errors)
-        {
-            ArrayList<String> newRequiredFields = new ArrayList<>();
-             /**
-             * You have to make the required fields all lower case to compare them to the STRING_#_STRING constants.
-             * I made the mistake of trying to make the field use lowercase names but it ruins the camelcasing when
-             * you ouput the form on the JSP, which then breaks the tests.
-             */
-            for(String required : form.getRequiredFields())
-            {
-                newRequiredFields.add(required.toLowerCase());
-            }
-
-            CustomColumnConfiguration newColumnConfiguration = new CustomColumnConfigurationImpl(getViewContext());
-            CustomColumnConfiguration oldColumnConfiguration = getCustomColumnConfiguration();
-
-            for (String required : form.getRequiredFields())
-            {
-                /**
-                 * If the required field is one of the custom string fields, and it has no keywords, and it has just been
-                 * selected (in the new picklist, but not old), then we remove it from the required fields. This way you
-                 * don't have a required field with no keywords.
-                 */
-                ColumnTypeEnum type = ColumnTypeEnum.forName(required.toString());
-
-                if (null != type && type.isCustomString() && KeywordManager.getKeywords(getContainer(), type).isEmpty())
-                {
-                    String name = type.getColumnName();
-
-                    if (newColumnConfiguration.hasPickList(name) && !oldColumnConfiguration.hasPickList(name))
-                        newRequiredFields.remove(name);
-                }
-            }
-
-            form.setRequiredFields(newRequiredFields.toArray(new String[newRequiredFields.size()]));
-        }
-
-        public boolean handlePost(ConfigureIssuesForm form, BindException errors)
-        {
-            //save only if not inheriting settings from a different container
-            if(IssueManager.getInheritFromContainer(getContainer()) == null)
-            {
-                EntryTypeNames names = new EntryTypeNames();
-
-                names.singularName = form.getEntrySingularName();
-                names.pluralName = form.getEntryPluralName();
-
-                IssueManager.saveEntryTypeNames(getContainer(), names);
-                IssueManager.saveCommentSortDirection(getContainer(), _direction);
-                IssueManager.saveMoveDestinationContainers(getContainer(), _moveToContainers);
-                IssueManager.saveRelatedIssuesList(getContainer(), form.getRelatedIssuesList());
-            }
-
-            CustomColumnConfiguration nccc = new CustomColumnConfigurationImpl(getViewContext());
-            IssueManager.saveCustomColumnConfiguration(getContainer(), nccc);
-
-            IssueManager.saveAssignedToGroup(getContainer(), _group);
-            IssueManager.saveDefaultAssignedToUser(getContainer(), _user);
-
-            IssueManager.setRequiredIssueFields(getContainer(), form.getRequiredFields());
-            IssueManager.saveInheritFromContainer(getContainer(), _inheritSettingsFromThisContainer);
-            return true;
-
-        }
-
-        public ActionURL getSuccessURL(ConfigureIssuesForm form)
-        {
-            return issueURL(AdminAction.class);
-        }
-    }
-
 
     @RequiresPermission(ReadPermission.class)
     public class RssAction extends SimpleViewAction
@@ -2614,524 +2196,6 @@ public class IssuesController extends SpringActionController
         }
     }
 
-
-    private static void _appendChange(StringBuilder sbHTML, StringBuilder sbText, String internalFieldName, String from, String to, CustomColumnConfiguration ccc, boolean newIssue)
-    {
-        // Use custom caption if one is configured
-        CustomColumn cc = ccc.getCustomColumn(internalFieldName.toLowerCase());
-        _appendChange(sbHTML, sbText, internalFieldName, cc, from, to, newIssue);
-    }
-
-
-    private static void _appendChange(StringBuilder sbHTML, StringBuilder sbText, String internalFieldName, @Nullable CustomColumn cc, String from, String to, boolean newIssue)
-    {
-        // Use custom caption if one is configured
-        String encField = PageFlowUtil.filter(null != cc ? cc.getCaption() : internalFieldName);
-        from = from == null ? "" : from;
-        to = to == null ? "" : to;
-
-        if (!from.equals(to))
-        {
-            sbText.append(encField);
-            if (newIssue)
-            {
-                sbText.append(" set");
-            }
-            else
-            {
-                sbText.append(" changed from ");
-                sbText.append(StringUtils.isEmpty(from) ? "blank" : "\"" + from + "\"");
-            }
-            sbText.append(" to ");
-            sbText.append(StringUtils.isEmpty(to) ? "blank" : "\"" + to + "\"");
-            sbText.append("\n");
-            String encFrom = PageFlowUtil.filter(from);
-            String encTo = PageFlowUtil.filter(to);
-            sbHTML.append("<tr><td>").append(encField).append("</td><td>").append(encFrom).append("</td><td>&raquo;</td><td>").append(encTo).append("</td></tr>\n");
-        }
-    }
-
-    public static class ChangeSummary
-    {
-        private Issue.Comment _comment;
-        private String _textChanges;
-        private String _summary;
-
-        private ChangeSummary(Issue.Comment comment, String textChanges, String summary)
-        {
-            _comment = comment;
-            _textChanges = textChanges;
-            _summary = summary;
-        }
-
-        public Issue.Comment getComment()
-        {
-            return _comment;
-        }
-
-        public String getTextChanges()
-        {
-            return _textChanges;
-        }
-
-        public String getSummary()
-        {
-            return _summary;
-        }
-    }
-
-    static public ChangeSummary createChangeSummary(Issue issue, Issue previous, @Nullable Issue duplicateOf, User user, Class<? extends Controller> action, String comment, CustomColumnConfiguration ccc, User currentUser)
-    {
-        StringBuilder sbHTMLChanges = new StringBuilder();
-        StringBuilder sbTextChanges = new StringBuilder();
-        String summary = null;
-
-        if (!action.equals(InsertAction.class) && !action.equals(UpdateAction.class))
-        {
-            summary = getActionName(action).toLowerCase();
-
-            if (action.equals(ResolveAction.class))
-            {
-                // Add the resolution; e.g. "resolve as Fixed"
-                summary += " as " + issue.getResolution();
-                if (duplicateOf != null)
-                    summary += " of " + duplicateOf.getIssueId();
-            }
-
-            sbHTMLChanges.append("<b>").append(summary);
-            sbHTMLChanges.append("</b><br>\n");
-        }
-        
-        // CONSIDER: write changes in wiki
-        // CONSIDER: and postpone formatting until render
-        if (null != previous)
-        {
-            // Keep track of whether this issue is new
-            boolean newIssue = previous.getIssueId() == 0;
-            String prevInt1StringVal = previous.getInt1() == null ? "" : String.valueOf(previous.getInt1());
-            String prevInt2StringVal = previous.getInt2() == null ? "" : String.valueOf(previous.getInt2());
-            String pevPriStringVal = previous.getPriority() == null ? "" : String.valueOf(previous.getPriority());
-
-            String priStringVal = issue.getPriority() == null ? "" : String.valueOf(issue.getPriority());
-            String int1StringVal = issue.getInt1() == null ? "" : String.valueOf(issue.getInt1());
-            String int2StringVal = issue.getInt2() == null ? "" : String.valueOf(issue.getInt2());
-
-            // issueChanges is not defined yet, but it leaves things flexible
-            sbHTMLChanges.append("<table class=issues-Changes>");
-            _appendChange(sbHTMLChanges, sbTextChanges, "Title", previous.getTitle(), issue.getTitle(), ccc, newIssue);
-            _appendChange(sbHTMLChanges, sbTextChanges, "Status", previous.getStatus(), issue.getStatus(), ccc, newIssue);
-            _appendChange(sbHTMLChanges, sbTextChanges, "Assigned To", previous.getAssignedToName(currentUser), issue.getAssignedToName(currentUser), ccc, newIssue);
-            _appendChange(sbHTMLChanges, sbTextChanges, "Notify",
-                    StringUtils.join(previous.getNotifyListDisplayNames(null),";"),
-                    StringUtils.join(issue.getNotifyListDisplayNames(null),";"),
-                    ccc, newIssue);
-            _appendChange(sbHTMLChanges, sbTextChanges, "Type", previous.getType(), issue.getType(), ccc, newIssue);
-            _appendChange(sbHTMLChanges, sbTextChanges, "Area", previous.getArea(), issue.getArea(), ccc, newIssue);
-            _appendChange(sbHTMLChanges, sbTextChanges, "Priority", pevPriStringVal, priStringVal, ccc, newIssue);
-            _appendChange(sbHTMLChanges, sbTextChanges, "Milestone", previous.getMilestone(), issue.getMilestone(), ccc, newIssue);
-            _appendChange(sbHTMLChanges, sbTextChanges, "Related", StringUtils.join(previous.getRelatedIssues(), ", "), StringUtils.join(issue.getRelatedIssues(), ", "), ccc, newIssue);
-
-            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "int1", prevInt1StringVal, int1StringVal, ccc, newIssue);
-            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "int2", prevInt2StringVal, int2StringVal, ccc, newIssue);
-            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string1", previous.getString1(), issue.getString1(), ccc, newIssue);
-            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string2", previous.getString2(), issue.getString2(), ccc, newIssue);
-            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string3", previous.getString3(), issue.getString3(), ccc, newIssue);
-            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string4", previous.getString4(), issue.getString4(), ccc, newIssue);
-            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string5", previous.getString5(), issue.getString5(), ccc, newIssue);
-
-            sbHTMLChanges.append("</table>\n");
-        }
-
-        //why we are wrapping issue comments in divs???
-        StringBuilder formattedComment = new StringBuilder();
-        formattedComment.append("<div class=\"wiki\">");
-        formattedComment.append(sbHTMLChanges);
-        //render issues as plain text with links
-        WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
-        if (null != wikiService)
-        {
-            String html = wikiService.getFormattedHtml(WikiRendererType.TEXT_WITH_LINKS, comment);
-            formattedComment.append(html);
-        }
-        else
-            formattedComment.append(comment);
-
-        formattedComment.append("</div>");
-
-        return new ChangeSummary(issue.addComment(user, formattedComment.toString()), sbTextChanges.toString(), summary);
-    }
-
-    private static void _appendCustomColumnChange(StringBuilder sbHtml, StringBuilder sbText, String internalFieldName, String from, String to, CustomColumnConfiguration ccc, boolean newIssue)
-    {
-        CustomColumn cc = ccc.getCustomColumn(internalFieldName);
-
-        // Record only fields with read permissions
-        if (null != cc && cc.getPermission().equals(ReadPermission.class))
-            _appendChange(sbHtml, sbText, internalFieldName, cc, from, to, newIssue);
-    }
-
-
-    //
-    // VIEWS
-    //
-    public static class AdminView extends JspView<AdminBean>
-    {
-        public AdminView(Container c, CustomColumnConfiguration ccc, BindException errors)
-        {
-            super("/org/labkey/issue/view/adminView.jsp", null, errors);
-
-            Set<String> columnNames = new LinkedHashSet<>();
-            columnNames.addAll(Arrays.asList(REQUIRED_FIELDS_COLUMNS.split(",")));
-
-            Collection<CustomColumn> customColumns = IssueManager.getCustomColumnConfiguration(c).getCustomColumns();
-
-            for (CustomColumn cc : customColumns)
-            {
-                columnNames.add(cc.getName());
-            }
-
-            List<ColumnInfo> cols = IssuesSchema.getInstance().getTableInfoIssues().getColumns(columnNames.toArray(new String[columnNames.size()]));
-
-            AdminBean bean = new AdminBean(cols, IssueManager.getRequiredIssueFields(c), IssueManager.getEntryTypeNames(c));
-
-            bean.ccc = ccc;
-            bean.entryTypeNames = IssueManager.getEntryTypeNames(c);
-            bean.assignedToGroup = IssueManager.getAssignedToGroup(c);
-            bean.defaultUser = IssueManager.getDefaultAssignedToUser(c);
-            bean.moveToContainers = IssueManager.getMoveDestinationContainers(c);
-            bean.commentSort = IssueManager.getCommentSortDirection(c);
-            bean.inheritFromContainer = IssueManager.getInheritFromContainer(c);
-
-            //handle custom column and required field section if admin settings are inherited
-            if(bean.inheritFromContainer != null)
-            {
-                // mutating cached values is really bad, this code shouldn't live here
-                bean.inheritFromContainerExists = true;
-                for (CustomColumn cc : customColumns)
-                {
-                    String columnLabel = cc.getName();
-                    String caption = cc.getCaption();
-                    int i = cc.getContainer().compareTo(bean.inheritFromContainer);
-                    if(i == 0)
-                    {
-                        setColumnFlag(columnLabel, caption, bean);
-                        cc.setInherited(true);
-                    }
-                }
-                bean.setRequiredFieldsofCurrentFolder(IssueManager.getMyRequiredIssueFields(c));
-                bean.setRequiredFieldsofParentFolder(IssueManager.getInheritedRequiredIssueFields(c));
-            }
-
-            //add/set keywords after its established whether custom fields are inherited or not.
-            KeywordAdminView keywordView = new KeywordAdminView(c, ccc);
-            keywordView.addKeywordPicker(ColumnTypeEnum.TYPE);
-            keywordView.addKeywordPicker(ColumnTypeEnum.AREA);
-            keywordView.addKeywordPicker(ColumnTypeEnum.PRIORITY);
-            keywordView.addKeywordPicker(ColumnTypeEnum.MILESTONE);
-            keywordView.addKeywordPicker(ColumnTypeEnum.RESOLUTION);
-            keywordView.addKeywordPicker(ColumnTypeEnum.STRING1);
-            keywordView.addKeywordPicker(ColumnTypeEnum.STRING2);
-            keywordView.addKeywordPicker(ColumnTypeEnum.STRING3);
-            keywordView.addKeywordPicker(ColumnTypeEnum.STRING4);
-            keywordView.addKeywordPicker(ColumnTypeEnum.STRING5);
-
-            bean.keywordView = keywordView;
-
-            bean.inheritingContainersExists = IssueManager.hasInheritingContainers(c);
-            setModelBean(bean);
-        }
-
-        //set column flags if column values are inherited
-        private void setColumnFlag(String colLabel, String caption, AdminBean bean)
-        {
-            if (StringUtils.isNotEmpty(caption))
-            {
-                if(colLabel.equals(bean.TYPE))
-                    bean.typeInherited = true;
-                else if(colLabel.equals(bean.AREA))
-                    bean.areaInherited = true;
-                else if(colLabel.equals(bean.PRIORITY))
-                    bean.priorityInherited = true;
-                else if(colLabel.equals(bean.MILESTONE))
-                    bean.milestoneInherited = true;
-                else if(colLabel.equals(bean.RESOLUTION))
-                    bean.resolutionInherited = true;
-                else if(colLabel.equals(bean.RELATED))
-                    bean.relatedInherited = true;
-                else if(colLabel.equals(bean.INT1))
-                    bean.int1Inherited = true;
-                else if(colLabel.equals(bean.INT2))
-                    bean.int2Inherited = true;
-                else if(colLabel.equals(bean.STRING1))
-                    bean.string1Inherited = true;
-                else if(colLabel.equals(bean.STRING2))
-                    bean.string2Inherited = true;
-                else if(colLabel.equals(bean.STRING3))
-                    bean.string3Inherited = true;
-                else if(colLabel.equals(bean.STRING4))
-                    bean.string4Inherited = true;
-                else if(colLabel.equals(bean.STRING5))
-                    bean.string5Inherited = true;
-            }
-
-        }
-    }
-
-
-    public static class AdminBean
-    {
-        private List<ColumnInfo> _columns;
-        private String _requiredFields;
-        private String _requiredFieldsOfCurrentFolder;
-        private String _requiredFieldsofParentFolder;
-
-        private EntryTypeNames _entryTypeNames;
-
-        public CustomColumnConfiguration ccc;
-        public KeywordAdminView keywordView;
-        public EntryTypeNames entryTypeNames;
-        public Group assignedToGroup;
-        public User defaultUser;
-        public List<Container> moveToContainers;
-        public Sort.SortDirection commentSort;
-        public Container inheritFromContainer;
-        public boolean inheritFromContainerExists = false; //flag will be set to 'true' if current Issues List has inherited admin settings (from a different Folder)
-        public boolean inheritingContainersExists = false; //flag will be set to 'true' if current Issues List has propagated its settings to different folders
-
-        //Custom Column settings
-        protected static final String TYPE = "type";
-        protected static final String AREA = "area";
-        protected static final String PRIORITY = "priority";
-        protected static final String MILESTONE = "milestone";
-        protected static final String RESOLUTION = "resolution";
-        protected static final String RELATED = "related";
-        protected static final String INT1 = "int1";
-        protected static final String INT2 = "int2";
-        protected static final String STRING1 = "string1";
-        protected static final String STRING2 = "string2";
-        protected static final String STRING3 = "string3";
-        protected static final String STRING4 = "string4";
-        protected static final String STRING5 = "string5";
-
-        //flags to set to 'true' when admin settings are inherited
-        protected boolean typeInherited = false;
-        protected boolean areaInherited = false;
-        protected boolean priorityInherited = false;
-        protected boolean milestoneInherited = false;
-        protected boolean resolutionInherited = false;
-        protected boolean relatedInherited = false;
-        protected boolean int1Inherited = false;
-        protected boolean int2Inherited = false;
-        protected boolean string1Inherited = false;
-        protected boolean string2Inherited = false;
-        protected boolean string3Inherited = false;
-        protected boolean string4Inherited = false;
-        protected boolean string5Inherited = false;
-
-        public AdminBean(List<ColumnInfo> columns, String requiredFields, EntryTypeNames typeNames)
-        {
-            _columns = columns;
-            _requiredFields = requiredFields;
-            _entryTypeNames = typeNames;
-        }
-
-        public List<ColumnInfo> getColumns(){return _columns;}
-        public String getRequiredFields(){return _requiredFields;}
-        public EntryTypeNames getEntryTypeNames() {return _entryTypeNames;}
-
-
-        public boolean isTypeInherited()
-        {
-            return typeInherited;
-        }
-
-        public boolean isAreaInherited()
-        {
-            return areaInherited;
-        }
-
-        public boolean isPriorityInherited()
-        {
-            return priorityInherited;
-        }
-
-        public boolean isMilestoneInherited()
-        {
-            return milestoneInherited;
-        }
-
-        public boolean isResolutionInherited()
-        {
-            return resolutionInherited;
-        }
-
-        public boolean isRelatedInherited()
-        {
-            return relatedInherited;
-        }
-
-        public boolean isInt1Inherited()
-        {
-            return int1Inherited;
-        }
-
-        public boolean isInt2Inherited()
-        {
-            return int2Inherited;
-        }
-
-        public boolean isString1Inherited()
-        {
-            return string1Inherited;
-        }
-
-        public boolean isString2Inherited()
-        {
-            return string2Inherited;
-        }
-
-        public boolean isString3Inherited()
-        {
-            return string3Inherited;
-        }
-
-        public boolean isString4Inherited()
-        {
-            return string4Inherited;
-        }
-
-        public boolean isString5Inherited()
-        {
-            return string5Inherited;
-        }
-
-        /**
-         *
-         * @param columnName
-         * @return true if custom column is a inherited value
-         */
-        public boolean getInheritedFlag(String columnName)
-        {
-            switch (columnName.toLowerCase())
-            {
-                case TYPE:
-                    return isTypeInherited();
-                case AREA:
-                    return isAreaInherited();
-                case PRIORITY:
-                    return isPriorityInherited();
-                case MILESTONE:
-                    return isMilestoneInherited();
-                case RESOLUTION:
-                    return isResolutionInherited();
-                case INT1:
-                    return isInt1Inherited();
-                case INT2:
-                    return isInt2Inherited();
-                case STRING1:
-                    return isString1Inherited();
-                case STRING2:
-                    return isString2Inherited();
-                case STRING3:
-                    return isString3Inherited();
-                case STRING4:
-                    return isString4Inherited();
-                case STRING5:
-                    return isString5Inherited();
-                default:
-                    return false;
-            }
-
-        }
-
-        public void setRequiredFieldsofCurrentFolder(String rf)
-        {
-            _requiredFieldsOfCurrentFolder = rf;
-        }
-
-        public void setRequiredFieldsofParentFolder(String rf)
-        {
-            _requiredFieldsofParentFolder = rf;
-        }
-
-        public String getRequiredFieldsOfCurrentFolder()
-        {
-            return _requiredFieldsOfCurrentFolder;
-        }
-
-        /**
-         *
-         * @param requiredField
-         * @return true if required field is an inherited value
-         */
-        public boolean isRequiredFieldInherited(String requiredField)
-        {
-            String rf = _requiredFieldsofParentFolder;
-
-            assert (StringUtils.isNotEmpty(rf));
-
-            String[] requiredFieldVals = rf.split(";");
-
-
-            for (int i = 0; i < requiredFieldVals.length; i++)
-            {
-                if(requiredField.toLowerCase().equals(requiredFieldVals[i].toLowerCase()))
-                 return true;
-            }
-            return false;
-        }
-
-    }
-
-
-    // Renders the pickers for all keywords; would be nice to render each picker independently, but that makes it hard to align
-    // all the top and bottom sections with each other.
-    public static class KeywordAdminView extends JspView<List<KeywordPicker>>
-    {
-        private Container _c;
-        private List<KeywordPicker> _keywordPickers = new LinkedList<>();
-        public CustomColumnConfiguration _ccc;
-
-        public KeywordAdminView(Container c, CustomColumnConfiguration ccc)
-        {
-            super("/org/labkey/issue/view/keywordAdmin.jsp");
-            setModelBean(_keywordPickers);
-            _c = c;
-            _ccc = ccc;
-        }
-
-        private void addKeywordPicker(ColumnTypeEnum type)
-        {
-            String columnName = type.getColumnName();
-
-            if (type.isCustomString() && !_ccc.hasPickList(columnName))
-                return;
-
-            String caption = _ccc.getCaption(type.getColumnName());
-
-            if (caption == null)
-                caption = StringUtils.capitalize(type.getColumnName());
-
-            _keywordPickers.add(new KeywordPicker(_c, caption, type));
-        }
-    }
-
-
-    public static class KeywordPicker
-    {
-        public String name;
-        public ColumnTypeEnum type;
-        public Collection<Keyword> keywords;
-
-        KeywordPicker(Container c, String name, ColumnTypeEnum type)
-        {
-            this.name = name;
-            this.type = type;
-            this.keywords = KeywordManager.getKeywords(c, type);
-        }
-    }
-
-
     public static class EmailPrefsBean
     {
         private int _emailPrefs;
@@ -3194,7 +2258,6 @@ public class IssuesController extends SpringActionController
             _issueId = issueId;
         }
     }
-
 
     public static class AdminForm
     {
@@ -3294,7 +2357,7 @@ public class IssuesController extends SpringActionController
 
         public String getIssueDefName()
         {
-            return _stringValues.get(org.labkey.issue.experimental.IssuesListView.ISSUE_LIST_DEF_NAME);
+            return _stringValues.get(IssuesListView.ISSUE_LIST_DEF_NAME);
         }
 
         public void setTable(TableInfo table)
@@ -3323,56 +2386,13 @@ public class IssuesController extends SpringActionController
             }
             else
             {
-                if (getViewContext().getActionURL().getAction().startsWith("new"))
-                    return AbstractIssueAction.getDetailsURL(getViewContext().getContainer(), getBean().getIssueId(), false);
-                else
-                    return getDetailsURL(getViewContext().getContainer(), getBean().getIssueId(), false);
+                return getDetailsURL(getViewContext().getContainer(), getBean().getIssueId(), false);
             }
         }
 
         public int getIssueId()
         {
             return NumberUtils.toInt(_stringValues.get("issueId"));
-        }
-    }
-
-
-    public static class SummaryWebPart extends JspView<SummaryBean>
-    {
-        public SummaryWebPart()
-        {
-            super("/org/labkey/issue/view/summaryWebpart.jsp", new SummaryBean());
-
-            SummaryBean bean = getModelBean();
-
-            ViewContext context = getViewContext();
-            Container c = context.getContainer();
-
-            //set specified web part title
-            Object title = context.get("title");
-            if (title == null)
-                title = IssueManager.getEntryTypeNames(c).pluralName + " Summary";
-            setTitle(title.toString());
-
-            User u = context.getUser();
-            bean.hasPermission = c.hasPermission(u, ReadPermission.class);
-            if (!bean.hasPermission)
-                return;
-
-            setTitleHref(getListURL(c));
-
-            bean.listURL = getListURL(c).deleteParameters();
-
-            bean.insertURL = IssuesController.issueURL(context.getContainer(), InsertAction.class);
-
-            try
-            {
-                bean.bugs = IssueManager.getSummary(c, null);
-            }
-            catch (SQLException x)
-            {
-                setVisible(false);
-            }
         }
     }
 
@@ -3390,35 +2410,6 @@ public class IssuesController extends SpringActionController
     {
         super.afterAction(t);
     }
-
-    /**
-     * Does this user have permission to update this issue?
-     */
-    private boolean hasUpdatePermission(User user, Issue issue)
-    {
-        return getContainer().hasPermission(user, UpdatePermission.class,
-                (issue.getCreatedBy() == user.getUserId() ? RoleManager.roleSet(OwnerRole.class) : null));
-    }
-
-    private boolean hasAdminPermission(User user, Issue issue)
-    {
-        return getContainer().hasPermission(user, AdminPermission.class,
-                (issue.getCreatedBy() == user.getUserId() ? RoleManager.roleSet(OwnerRole.class) : null));
-    }
-
-
-    /**
-     * Throw an exception if user does not have permission to update issue
-     */
-    private void requiresUpdatePermission(User user, Issue issue)
-            throws ServletException
-    {
-        if (!hasUpdatePermission(user, issue))
-        {
-            throw new UnauthorizedException();
-        }
-    }
-
 
     public static class ListForm extends QueryForm
     {

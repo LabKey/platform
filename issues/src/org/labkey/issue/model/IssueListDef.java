@@ -6,6 +6,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Entity;
+import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
@@ -27,9 +28,11 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.issue.query.IssueDefDomainKind;
+import ucar.nc2.util.HashMapLRU;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -38,6 +41,8 @@ import java.util.Set;
  */
 public class IssueListDef extends Entity
 {
+    public final static String DEFAULT_ISSUE_LIST_NAME = "issues";
+
     private int _rowId;
     private String _name;
     private String _label;
@@ -245,6 +250,7 @@ public class IssueListDef extends Entity
 
     private void setDefaultValues(Domain domain, Collection<PropertyStorageSpec> requiredProps) throws ExperimentException
     {
+        Map<DomainProperty, Object> defaultValues = new HashMap<>();
         for (PropertyStorageSpec spec : requiredProps)
         {
             // kind of a hack, if there is a default value for now assume it is of type fixed_editable
@@ -254,9 +260,12 @@ public class IssueListDef extends Entity
                 if (prop != null)
                 {
                     prop.setDefaultValueTypeEnum(DefaultValueType.FIXED_EDITABLE);
-                    DefaultValueService.get().setDefaultValues(domain.getContainer(), Collections.singletonMap(prop, spec.getDefaultValue()));
+                    defaultValues.put(prop, spec.getDefaultValue());
                 }
             }
         }
+
+        if (!defaultValues.isEmpty())
+            DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
     }
 }

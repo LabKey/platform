@@ -1,4 +1,4 @@
-package org.labkey.issue.experimental.actions;
+package org.labkey.issue.actions;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ActionButton;
@@ -32,7 +32,7 @@ public class InsertIssueDefAction extends UserSchemaAction
             {
                 LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
 
-                resources.add(ClientDependency.fromPath("issues/experimental/createIssueDef.js"));
+                resources.add(ClientDependency.fromPath("issues/createIssueDef.js"));
                 resources.addAll(super.getClientDependencies());
 
                 return resources;
@@ -54,7 +54,7 @@ public class InsertIssueDefAction extends UserSchemaAction
         bb.add(btnSubmit);
         bb.add(btnCancel);
 
-        view.getClientDependencies().add(ClientDependency.fromPath("issues/experimental/createRelated.js"));
+        view.getClientDependencies().add(ClientDependency.fromPath("issues/createRelated.js"));
         view.getDataRegion().setButtonBar(bb);
 
         return view;

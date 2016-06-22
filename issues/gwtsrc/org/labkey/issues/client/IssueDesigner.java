@@ -564,6 +564,7 @@ public class IssueDesigner implements EntryPoint, Saveable<GWTDomain>
             HorizontalPanel allPanel = new HorizontalPanel();
             allPanel.setSpacing(2);
             RadioButton allUsers = new RadioButton("assignedToMethod", "All Project Users");
+            allUsers.setStylePrimaryName("assigned-to-group-project");
             allUsers.setValue((_issueDef.getAssignedToGroup() == null));
             allUsers.addValueChangeHandler(new ValueChangeHandler<Boolean>()
             {
@@ -582,6 +583,7 @@ public class IssueDesigner implements EntryPoint, Saveable<GWTDomain>
             groupPanel.setSpacing(2);
             groupPanel.setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
             RadioButton specificGroup = new RadioButton("assignedToMethod", "Specific Group");
+            specificGroup.setStylePrimaryName("assigned-to-group-specific");
             specificGroup.setValue((_issueDef.getAssignedToGroup() != null));
             specificGroup.addValueChangeHandler(new ValueChangeHandler<Boolean>()
             {
@@ -598,6 +600,7 @@ public class IssueDesigner implements EntryPoint, Saveable<GWTDomain>
 
             // drop down for specific group
             _groupList = new ListBox(false);
+            _groupList.setStylePrimaryName("assigned-to-group");
             Integer idx = 0;
             int selectedIndex = 0;
 
@@ -639,6 +642,7 @@ public class IssueDesigner implements EntryPoint, Saveable<GWTDomain>
             HorizontalPanel defaultPanel = new HorizontalPanel();
             defaultPanel.setSpacing(2);
             RadioButton noDefault = new RadioButton("assignedToUser", "No default");
+            noDefault.setStylePrimaryName("assigned-to-empty");
             noDefault.setValue((_issueDef.getAssignedToUser() == null));
             noDefault.addValueChangeHandler(new ValueChangeHandler<Boolean>()
             {
@@ -656,6 +660,7 @@ public class IssueDesigner implements EntryPoint, Saveable<GWTDomain>
             HorizontalPanel specificPanel = new HorizontalPanel();
             specificPanel.setSpacing(2);
             RadioButton specificUser = new RadioButton("assignedToUser", "Specific User");
+            specificUser.setStylePrimaryName("assigned-to-specific-user");
             specificUser.setValue((_issueDef.getAssignedToUser() != null));
             specificUser.addValueChangeHandler(new ValueChangeHandler<Boolean>()
             {
@@ -673,6 +678,7 @@ public class IssueDesigner implements EntryPoint, Saveable<GWTDomain>
             // drop down for specific user
             _userList = new ListBox(false);
             _userList.setWidth("250px");
+            _userList.setStylePrimaryName("assigned-to-user");
             populateUserList(_issueDef.getAssignedToGroup());
             _userList.addChangeHandler(new ChangeHandler(){
                 public void onChange(ChangeEvent event)
@@ -694,38 +700,35 @@ public class IssueDesigner implements EntryPoint, Saveable<GWTDomain>
 
         private void populateUserList(Integer groupId)
         {
-            if (groupId != null)
+            getService().getUsersForGroup(groupId, new AsyncCallback<List<Map<String, String>>>()
             {
-                getService().getUsersForGroup(groupId, new AsyncCallback<List<Map<String, String>>>()
+                @Override
+                public void onFailure(Throwable caught)
                 {
-                    @Override
-                    public void onFailure(Throwable caught)
+                    Window.alert("ERROR: " + caught.getLocalizedMessage());
+                }
+
+                @Override
+                public void onSuccess(List<Map<String, String>> users)
+                {
+                    _userList.clear();
+
+                    Integer idx = 0;
+                    int selectedIndex = 0;
+
+                    for (Map<String, String> user : users)
                     {
-                        Window.alert("ERROR: " + caught.getLocalizedMessage());
-                    }
-
-                    @Override
-                    public void onSuccess(List<Map<String, String>> users)
-                    {
-                        _userList.clear();
-
-                        Integer idx = 0;
-                        int selectedIndex = 0;
-
-                        for (Map<String, String> user : users)
+                        _userList.addItem(user.get("name"), user.get("value"));
+                        if (_issueDef.getAssignedToUser() != null)
                         {
-                            _userList.addItem(user.get("name"), user.get("value"));
-                            if (_issueDef.getAssignedToUser() != null)
-                            {
-                                if (Integer.parseInt(user.get("value")) == _issueDef.getAssignedToUser())
-                                    selectedIndex = idx;
-                            }
-                            idx++;
+                            if (Integer.parseInt(user.get("value")) == _issueDef.getAssignedToUser())
+                                selectedIndex = idx;
                         }
-                        _userList.setSelectedIndex(selectedIndex);
+                        idx++;
                     }
-                });
-            }
+                    _userList.setSelectedIndex(selectedIndex);
+                }
+            });
         }
     }
 }

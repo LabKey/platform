@@ -58,10 +58,10 @@ public class IssueDefDomainKind extends AbstractDomainKind
 
     private static final Set<PropertyStorageSpec> BASE_PROPERTIES;
     private static final Set<PropertyStorageSpec> REQUIRED_PROPERTIES;
-    //private static final Set<PropertyStorageSpec.Index> INDEXES;
     private static final Set<String> RESERVED_NAMES;
     private static final Set<String> MANDATORY_PROPERTIES;
     private static final Set<PropertyStorageSpec.ForeignKey> FOREIGN_KEYS;
+    private static final Set<PropertyStorageSpec.Index> INDEXES;
 
     public static final String ISSUE_LOOKUP_TEMPLATE_GROUP = "issue-lookup";
     public static final String PRIORITY_LOOKUP = "priority";
@@ -97,7 +97,7 @@ public class IssueDefDomainKind extends AbstractDomainKind
                 new PropertyStorageSpec("NotifyList", JdbcType.VARCHAR),
                 new PropertyStorageSpec("Priority", JdbcType.INTEGER).setNullable(false).setDefaultValue(3),
                 new PropertyStorageSpec("Milestone", JdbcType.VARCHAR, 200),
-                new PropertyStorageSpec("Resolution", JdbcType.VARCHAR, 200)
+                new PropertyStorageSpec("Resolution", JdbcType.VARCHAR, 200).setDefaultValue("Fixed")
         )));
 
         FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
@@ -106,6 +106,11 @@ public class IssueDefDomainKind extends AbstractDomainKind
                 new PropertyStorageSpec.ForeignKey(AREA_LOOKUP, "Lists", AREA_LOOKUP, "value", null, false),
                 new PropertyStorageSpec.ForeignKey(MILESTONE_LOOKUP, "Lists", MILESTONE_LOOKUP, "value", null, false),
                 new PropertyStorageSpec.ForeignKey(RESOLUTION_LOOKUP, "Lists", RESOLUTION_LOOKUP, "value", null, false)
+        )));
+
+        INDEXES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
+                new PropertyStorageSpec.Index(false, "AssignedTo"),
+                new PropertyStorageSpec.Index(false, "Status")
         )));
 
         RESERVED_NAMES = BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet());
@@ -161,6 +166,12 @@ public class IssueDefDomainKind extends AbstractDomainKind
     public Set<String> getReservedPropertyNames(Domain domain)
     {
         return RESERVED_NAMES;
+    }
+
+    @Override
+    public Set<PropertyStorageSpec.Index> getPropertyIndices()
+    {
+        return INDEXES;
     }
 
     public Set<PropertyStorageSpec> getRequiredProperties()

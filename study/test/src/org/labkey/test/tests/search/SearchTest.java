@@ -24,6 +24,7 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.tests.IssuesTest;
 import org.labkey.test.tests.study.StudyTest;
+import org.labkey.test.util.IssuesHelper;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.SearchHelper;
 import org.labkey.test.util.WikiHelper;
@@ -31,6 +32,7 @@ import org.labkey.test.util.search.SearchAdminAPIHelper;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -82,7 +84,8 @@ public abstract class SearchTest extends StudyTest
     @Override
     protected String getProjectName()
     {
-        return "SearchTest" + TRICKY_CHARACTERS_FOR_PROJECT_NAMES + " Project";
+        //return "SearchTest" + TRICKY_CHARACTERS_FOR_PROJECT_NAMES + " Project";
+        return "SearchTest" + " Project";
     }
 
     public abstract SearchAdminAPIHelper.DirectoryType directoryType();
@@ -318,27 +321,25 @@ public abstract class SearchTest extends StudyTest
         _securityHelper.setProjectPerm(GROUP_NAME, "Editor");
         clickButton("Save and Finish");
         clickFolder(getFolderName());
-        portalHelper.addWebPart("Issues Summary");
 
-        // Setup issues options.
-        clickAndWait(Locator.linkWithText("Issues Summary"));
-        clickButton("Admin");
+        IssuesHelper issuesHelper = new IssuesHelper(this);
+        issuesHelper.createNewIssuesList("issues", _containerHelper);
 
         // Add Area
-        IssuesTest.addKeywordsAndVerify(this, "area", "Area", "Area51");
+        IssuesTest.addLookupValues(this, "issues", "area", Collections.singleton("Area51"));
 
         // Add Type
-        IssuesTest.addKeywordsAndVerify(this, "type", "Type", "UFO");
+        IssuesTest.addLookupValues(this, "issues", "type", Collections.singleton("UFO"));
 
         // Create new issue.
-        clickButton("Back to Issues");
+        goToModule("Issues");
         clickButton("New Issue");
         setFormElement(Locator.name("title"), ISSUE_TITLE);
         selectOptionByText(Locator.name("type"), "UFO");
         selectOptionByText(Locator.name("area"), "Area51");
         selectOptionByText(Locator.name("priority"), "1");
         setFormElement(Locator.id("comment"), ISSUE_BODY);
-        selectOptionByText(Locator.name("assignedTo"), displayNameFromEmail(USER1));
+        selectOptionByText(Locator.name("assignedto"), displayNameFromEmail(USER1));
         click(Locator.linkWithText("Attach a file"));
         File file = new File(TestFileUtils.getLabKeyRoot() + "/common.properties");
         setFormElement(Locator.name("formFiles[00]"), file);

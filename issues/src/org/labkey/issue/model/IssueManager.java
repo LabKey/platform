@@ -55,7 +55,6 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.JunitUtil;
@@ -983,6 +982,34 @@ public class IssueManager
         return containers;
     }
 
+    public static Collection<Container> getMoveDestinationContainers(Container c, User user, String issueDefName)
+    {
+        List<Container> containers = new ArrayList<>();
+
+        if (issueDefName != null)
+        {
+            IssueListDef issueListDef = IssueManager.getIssueListDef(c, issueDefName);
+            if (issueListDef != null)
+            {
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("name"), issueDefName);
+                SimpleFilter.FilterClause filterClause = IssueListDef.createFilterClause(issueListDef, user);
+
+                if (filterClause != null)
+                    filter.addClause(filterClause);
+                else
+                    filter.addCondition(FieldKey.fromParts("container"), c);
+
+                for (IssueListDef def : new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), filter, null).getArrayList(IssueListDef.class))
+                {
+                    // exclude current container
+                    if (!def.getContainerId().equals(c.getId()))
+                        containers.add(ContainerManager.getForId(def.getContainerId()));
+                }
+            }
+        }
+        return containers;
+    }
+
     public static void saveMoveDestinationContainers(Container c, @Nullable List<Container> containers)
     {
             String propsValue = null;
@@ -1020,25 +1047,38 @@ public class IssueManager
                         attachmentParents.add(comment);
                 }
             }
-            SQLFragment update = new SQLFragment("UPDATE issues.issues SET container = ? ", dest);
-            update.append("WHERE issueId ");
-            schema.getSqlDialect().appendInClauseSql(update, issueIds);
-            new SqlExecutor(schema).execute(update);
-
-            // change the container for the provisioned table provided all issues are moving within
-            // the same domain
             if (!issueDefs.isEmpty())
             {
+                // these should all be within the same domain so we don't care which issuedef we get, they
+                // should all be the same provisioned table
                 IssueListDef issueDef = getIssueListDef(issueDefs.iterator().next());
                 if (issueDef != null)
                 {
-                    TableInfo table = issueDef.createTable(user);
-                    SQLFragment sql = new SQLFragment("UPDATE ").append(table, "").
-                            append("SET container = ? WHERE entityId ");
-                    schema.getSqlDialect().appendInClauseSql(sql, entityIds);
-                    sql.add(dest);
+                    // get the destination issue definition
+                    IssueListDef destIssueDef = getIssueListDef(dest, issueDef.getName());
 
-                    new SqlExecutor(schema).execute(sql);
+                    if (destIssueDef != null)
+                    {
+                        SQLFragment update = new SQLFragment("UPDATE issues.issues SET Container = ?, IssueDefId = ? ", dest, destIssueDef.getRowId());
+                        update.append("WHERE issueId ");
+                        schema.getSqlDialect().appendInClauseSql(update, issueIds);
+                        new SqlExecutor(schema).execute(update);
+
+                        // change the container for the provisioned table provided all issues are moving within
+                        // the same domain
+                        TableInfo table = issueDef.createTable(user);
+                        SQLFragment sql = new SQLFragment("UPDATE ").append(table, "").
+                                append("SET container = ? WHERE entityId ");
+                        sql.add(dest);
+                        schema.getSqlDialect().appendInClauseSql(sql, entityIds);
+
+                        new SqlExecutor(schema).execute(sql);
+
+                        AttachmentService.get().moveAttachments(dest, attachmentParents, user);
+                        transaction.commit();
+                    }
+                    else
+                        _log.warn("Unable to locate the destination issue list definition");
                 }
                 else
                     _log.warn("Attempting to move an issue not associated with a domain");
@@ -1047,8 +1087,6 @@ public class IssueManager
             {
                 _log.warn("Attempting to move an issue not all within the same domain");
             }
-            AttachmentService.get().moveAttachments(dest, attachmentParents, user);
-            transaction.commit();
         }
     }
 
@@ -1201,29 +1239,19 @@ public class IssueManager
     {
         try (DbScope.Transaction transaction = _issuesSchema.getSchema().getScope().ensureTransaction())
         {
-            String deleteStmt = "DELETE FROM %s WHERE IssueId IN (SELECT IssueId FROM %s WHERE Container = ?)";
-
-            String deleteComments = String.format(deleteStmt, _issuesSchema.getTableInfoComments(), _issuesSchema.getTableInfoIssues());
-            new SqlExecutor(_issuesSchema.getSchema()).execute(deleteComments, c.getId());
-
-            String deleteRelatedIssues = String.format(deleteStmt, _issuesSchema.getTableInfoRelatedIssues(), _issuesSchema.getTableInfoIssues());
-            new SqlExecutor(_issuesSchema.getSchema()).execute(deleteRelatedIssues, c.getId());
-
-            ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssues(), c, null);
+            for (IssueListDef issueListDef : getIssueListDefs(c))
+            {
+                deleteIssueListDef(issueListDef.getRowId(), c, user);
+            }
             ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssueKeywords(), c, null);
             ContainerUtil.purgeTable(_issuesSchema.getTableInfoEmailPrefs(), c, null);
             ContainerUtil.purgeTable(_issuesSchema.getTableInfoCustomColumns(), c, null);
 
-            if (AppProps.getInstance().isExperimentalFeatureEnabled(IssueManager.NEW_ISSUES_EXPERIMENTAL_FEATURE))
-            {
-                for (IssueListDef issueDef : IssueManager.getIssueListDefs(c))
-                {
-                    TableInfo tableInfo = issueDef.createTable(user);
-                    ContainerUtil.purgeTable(tableInfo, c, null);
-                }
-                ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssueListDef(), c, null);
-            }
             transaction.commit();
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
         }
     }
 
@@ -1526,32 +1554,21 @@ public class IssueManager
         return new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), null, null).getObject(rowId, IssueListDef.class);
     }
 
-/*
-    public static void deleteAllIssueListDefs(User user) throws Exception
+    /**
+     * Returns the name of the first issue list definition in scope
+     */
+    @Nullable
+    public static String getDefaultIssueListDefName(Container container)
     {
-        try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
-        {
-            for (IssueListDef def : getIssueListDefs(null))
-            {
-                deleteIssueListDef(def.getRowId(), ContainerManager.getForId(def.getContainerId()), user);
-            }
+        if (getIssueListDef(container, IssueListDef.DEFAULT_ISSUE_LIST_NAME) != null)
+            return IssueListDef.DEFAULT_ISSUE_LIST_NAME;
 
-            Set<Container> allContainers = ContainerManager.getAllChildren(ContainerManager.getRoot());
-            for (Container container : allContainers)
-            {
-                for (Domain d : PropertyService.get().getDomains(container))
-                {
-                    DomainKind kind = d.getDomainKind();
-                    if (kind instanceof IssueDefDomainKind)
-                    {
-                        kind.deleteDomain(user, d);
-                    }
-                }
-            }
-            transaction.commit();
+        for (IssueListDef def : IssueManager.getIssueListDefs(container))
+        {
+            return def.getName();
         }
+        return null;
     }
-*/
 
     public static void deleteIssueListDef(int rowId, Container c, User user) throws DomainNotFoundException
     {
@@ -1568,7 +1585,7 @@ public class IssueManager
             TableInfo issueDefTable = IssuesSchema.getInstance().getTableInfoIssueListDef();
 
             deleteIssueRecords(def, c, user);
-            Table.delete(IssuesSchema.getInstance().getTableInfoIssueListDef(), rowId);
+            Table.delete(issueDefTable, rowId);
 
             // if there are no other containers referencing this domain, then it's safe to delete
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Name"), def.getName());

@@ -1,6 +1,5 @@
-package org.labkey.issue.experimental.actions;
+package org.labkey.issue.actions;
 
-import com.allen_sauer.gwt.dnd.client.util.StringUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;

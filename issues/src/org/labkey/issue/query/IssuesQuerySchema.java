@@ -19,27 +19,27 @@ package org.labkey.issue.query;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.module.Module;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.QuerySchema;
 import org.labkey.api.security.User;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.ViewContext;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 import org.springframework.validation.BindException;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.Collections;
 import java.util.stream.Collectors;
 
 public class IssuesQuerySchema extends UserSchema 
@@ -49,14 +49,6 @@ public class IssuesQuerySchema extends UserSchema
 
     public enum TableType
     {
-        Issues
-        {
-            @Override
-            public TableInfo createTable(IssuesQuerySchema schema)
-            {
-                return new IssuesTable(schema);
-            }
-        },
         RelatedIssues
         {
             @Override
@@ -93,10 +85,10 @@ public class IssuesQuerySchema extends UserSchema
     static
     {
         tableNames = Collections.unmodifiableSet(
-                Sets.newCaseInsensitiveHashSet(TableType.Issues.toString(), TableType.Comments.toString(), TableType.RelatedIssues.toString()));
+                Sets.newCaseInsensitiveHashSet(TableType.Comments.toString(), TableType.RelatedIssues.toString()));
 
         visibleTableNames = Collections.unmodifiableSet(
-                Sets.newCaseInsensitiveHashSet(TableType.Issues.toString(), TableType.Comments.toString()));
+                Sets.newCaseInsensitiveHashSet(TableType.Comments.toString()));
     }
 
     static public Set<String> getReservedTableNames()
@@ -131,11 +123,8 @@ public class IssuesQuerySchema extends UserSchema
         Set<String> names = new HashSet<>();
 
         names.addAll(tableNames);
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(IssueManager.NEW_ISSUES_EXPERIMENTAL_FEATURE))
-        {
-            names.add(TableType.IssueListDef.name());
-            names.addAll(IssueManager.getIssueListDefs(getContainer()).stream().map(IssueListDef::getName).collect(Collectors.toList()));
-        }
+        names.add(TableType.IssueListDef.name());
+        names.addAll(IssueManager.getIssueListDefs(getContainer()).stream().map(IssueListDef::getName).collect(Collectors.toList()));
         return names;
     }
 
@@ -145,11 +134,8 @@ public class IssuesQuerySchema extends UserSchema
         Set<String> names = new HashSet<>();
 
         names.addAll(visibleTableNames);
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(IssueManager.NEW_ISSUES_EXPERIMENTAL_FEATURE))
-        {
-            names.add(TableType.IssueListDef.name());
-            names.addAll(IssueManager.getIssueListDefs(getContainer()).stream().map(IssueListDef::getName).collect(Collectors.toList()));
-        }
+        names.add(TableType.IssueListDef.name());
+        names.addAll(IssueManager.getIssueListDefs(getContainer()).stream().map(IssueListDef::getName).collect(Collectors.toList()));
         return names;
     }
 
@@ -157,13 +143,10 @@ public class IssuesQuerySchema extends UserSchema
     {
         if (name != null)
         {
-            if (AppProps.getInstance().isExperimentalFeatureEnabled(IssueManager.NEW_ISSUES_EXPERIMENTAL_FEATURE))
+            TableInfo issueTable = getIssueTable(name);
+            if (issueTable != null)
             {
-                TableInfo issueTable = getIssueTable(name);
-                if (issueTable != null)
-                {
-                    return issueTable;
-                }
+                return issueTable;
             }
 
             TableType tableType = null;
@@ -184,20 +167,6 @@ public class IssuesQuerySchema extends UserSchema
         return null;
     }
 
-    public enum QueryType
-    {
-        Issues
-        {
-            @Override
-            public QueryView createView(ViewContext context, IssuesQuerySchema schema, QuerySettings settings, BindException errors)
-            {
-                return new IssuesQueryView(context, schema, settings, errors);
-            }
-        };
-
-        public abstract QueryView createView(ViewContext context, IssuesQuerySchema schema, QuerySettings settings, BindException errors);
-    }
-
     @Override
     public QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
     {
@@ -208,20 +177,8 @@ public class IssuesQuerySchema extends UserSchema
             IssueListDef def =  getIssueDefs().get(queryName);
             if (def != null)
             {
-                return new org.labkey.issue.experimental.query.IssuesQueryView(def, context, this, settings, errors);
+                return new IssuesQueryView(def, context, this, settings, errors);
             }
-
-            QueryType queryType = null;
-            for (QueryType qt : QueryType.values())
-            {
-                if (qt.name().equalsIgnoreCase(queryName))
-                {
-                    queryType = qt;
-                    break;
-                }
-            }
-            if (queryType != null)
-                return queryType.createView(context, this, settings, errors);
         }
 
         return super.createView(context, settings, errors);
@@ -234,7 +191,7 @@ public class IssuesQuerySchema extends UserSchema
         if (issueDef == null)
             return null;
 
-        return new org.labkey.issue.experimental.query.IssuesTable(this, issueDef);
+        return new IssuesTable(this, issueDef);
     }
 
     private Map<String, IssueListDef> getIssueDefs()

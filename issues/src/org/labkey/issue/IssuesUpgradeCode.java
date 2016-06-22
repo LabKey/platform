@@ -1,7 +1,7 @@
-package org.labkey.issue.view;
+package org.labkey.issue;
 
-import org.apache.commons.collections15.MultiMap;
-import org.apache.commons.collections15.multimap.MultiHashMap;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -13,7 +13,6 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
@@ -44,10 +43,6 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
-import org.labkey.issue.ColumnType;
-import org.labkey.issue.ColumnTypeEnum;
-import org.labkey.issue.CustomColumnConfiguration;
-import org.labkey.issue.IssuesModule;
 import org.labkey.issue.model.CustomColumn;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueListDef;
@@ -74,8 +69,7 @@ import java.util.Set;
 public class IssuesUpgradeCode implements UpgradeCode
 {
     private static final Logger _log = Logger.getLogger(IssuesUpgradeCode.class);
-    final String DEFAULT_ISSUE_LIST_NAME = "issues";
-    final String DEFAULT_SITE_ISSUE_LIST_NAME = "siteIssues";
+    private static final String DEFAULT_SITE_ISSUE_LIST_NAME = "siteIssues";
 
     /**
      * Invoked by issues-16.13-16.14.sql
@@ -83,47 +77,50 @@ public class IssuesUpgradeCode implements UpgradeCode
      * Upgrade to migrate existing issues to provisioned tables and to migrate legacy issues
      * admin setting to the domain and new tables
      */
-    // Invoked by issues-16.13-16.14.sql
     @DeferredUpgrade
     public void upgradeIssuesTables(final ModuleContext context)
     {
+        if (context.isNewInstall())
+            return;
+
         _log.info("Analyzing site-wide configuration to generate the issue list migration plan");
-        MultiMap<Container, IssueMigrationPlan> migrationPlans = generateMigrationPlan();
+        MultiValuedMap<Container, IssueMigrationPlan> migrationPlans = generateMigrationPlan();
         User upgradeUser = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.getRole(SiteAdminRole.class)), false);
-        ObjectFactory factory = ObjectFactory.Registry.getFactory(Issue.class);
+        ObjectFactory<Issue> factory = ObjectFactory.Registry.getFactory(Issue.class);
 
         try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
         {
             // create the issue list definitions and new domains
-            for (Map.Entry<Container, Collection<IssueMigrationPlan>> entry : migrationPlans.entrySet())
+            for (Map.Entry<Container, Collection<IssueMigrationPlan>> entry : migrationPlans.asMap().entrySet())
             {
                 Container defContainer = entry.getKey();
 
                 for (IssueMigrationPlan plan : entry.getValue())
                 {
-                    assert IssueManager.getIssueListDef(defContainer, plan.getIssueDefName()) == null : "An issue definition of name : " + plan.getIssueDefName() +
-                            " already exists in folder : " + defContainer.getPath();
-
-                    _log.info("Creating the issue def domain named : " + plan.getIssueDefName() + " in folder : " + defContainer.getPath());
-
-                    IssueListDef def = createNewIssueListDef(upgradeUser, plan.getIssueDefName(), defContainer);
-
-                    // initialize the domain with the saved settings
-                    configureIssueDomain(upgradeUser, def, plan.getConfig());
-
-                    // now create individual issue lists that share this configuration (if in a different container)
-                    for (Container folder : plan.getFolders())
+                    IssueListDef existingDef = IssueManager.getIssueListDef(defContainer, plan.getIssueDefName());
+                    if (existingDef == null)
                     {
-                        if (!defContainer.equals(folder))
+                        _log.info("Creating the issue def domain named : " + plan.getIssueDefName() + " in folder : " + defContainer.getPath());
+                        IssueListDef def = createNewIssueListDef(upgradeUser, plan.getIssueDefName(), defContainer);
+
+                        // initialize the domain with the saved settings
+                        configureIssueDomain(upgradeUser, def, plan.getConfig());
+
+                        // now create individual issue lists that share this configuration (if in a different container)
+                        for (Container folder : plan.getFolders())
                         {
-                            createNewIssueListDef(upgradeUser, plan.getIssueDefName(), folder);
+                            if (!defContainer.equals(folder))
+                            {
+                                createNewIssueListDef(upgradeUser, plan.getIssueDefName(), folder);
+                            }
+
+                            // migrate issue records specific to this folder
+                            _log.info("Populating provisioned table in folder : " + folder.getPath());
+                            populateProvisionedTable(folder, upgradeUser, factory, plan);
                         }
-
-                        // migrate issue records specific to this folder
-                        populateProvisionedTable(folder, upgradeUser, factory, plan);
-
-                        // fixup webparts
                     }
+                    else
+                        _log.error("An issue definition of name : " + plan.getIssueDefName() + " already exists in folder : " + defContainer.getPath());
                 }
             }
             transaction.commit();
@@ -139,7 +136,7 @@ public class IssuesUpgradeCode implements UpgradeCode
      * to the hard tables instead of using the query update service to avoid double writing to the legacy
      * issues table.
      */
-    void populateProvisionedTable(Container c, User user, ObjectFactory factory, IssueMigrationPlan plan) throws SQLException
+    void populateProvisionedTable(Container c, User user, ObjectFactory<Issue> factory, IssueMigrationPlan plan) throws SQLException
     {
         IssueListDef issueListDef = IssueManager.getIssueListDef(c, plan.getIssueDefName());
         if (issueListDef != null)
@@ -149,42 +146,38 @@ public class IssuesUpgradeCode implements UpgradeCode
             {
                 // add any custom parameters
                 Map<String, String> columnNameMap = new LinkedCaseInsensitiveMap<>();
-                for (CustomColumn cc : plan.getConfig().getColumnConfiguration().getCustomColumns())
-                {
-                    if (cc.getName().startsWith("string") || cc.getName().startsWith("int"))
-                    {
+                plan.getConfig().getColumnConfiguration().getCustomColumns()
+                    .stream()
+                    .filter(cc -> cc.getName().startsWith("string") || cc.getName().startsWith("int"))
+                    .forEach(cc -> {
                         String colName = ColumnInfo.legalNameFromName(cc.getCaption());
                         columnNameMap.put(cc.getName(), colName);
-                    }
-                }
+                    });
                 List<Map<String, Object>> rows = new ArrayList<>();
 
-                new TableSelector(IssuesSchema.getInstance().getTableInfoIssues(), SimpleFilter.createContainerFilter(c), null).forEachBatch(new Selector.ForEachBatchBlock<Issue>()
-                {
-                    @Override
-                    public void exec(List<Issue> batch) throws SQLException
+                new TableSelector(IssuesSchema.getInstance().getTableInfoIssues(), SimpleFilter.createContainerFilter(c), null).forEachBatch(batch -> {
+                    rows.clear();
+
+                    for (Issue issue : batch)
                     {
-                        for (Issue issue : batch)
+                        Map<String, Object> row = new CaseInsensitiveHashMap<>();
+                        factory.toMap(issue, row);
+
+                        row.putIfAbsent("AssignedTo", 0);
+
+                        for (Map.Entry<String, String> entry : columnNameMap.entrySet())
                         {
-                            Map<String, Object> row = new CaseInsensitiveHashMap<>();
-                            factory.toMap(issue, row);
-
-                            row.putIfAbsent("AssignedTo", 0);
-
-                            for (Map.Entry<String, String> entry : columnNameMap.entrySet())
-                            {
-                                if (row.get(entry.getKey()) != null)
-                                    row.put(entry.getValue(), row.get(entry.getKey()));
-                            }
-                            rows.add(row);
+                            if (row.get(entry.getKey()) != null)
+                                row.put(entry.getValue(), row.get(entry.getKey()));
                         }
+                        rows.add(row);
+                    }
+
+                    for (Map<String, Object> row : rows)
+                    {
+                        Table.insert(user, table, row);
                     }
                 }, Issue.class, 1000);
-
-                for (Map<String, Object> row : rows)
-                {
-                    Table.insert(user, table, row);
-                }
 
                 // need to set the issue def id in the issues table to be able to determine the issue definition for
                 // each individual issue record
@@ -310,6 +303,7 @@ public class IssuesUpgradeCode implements UpgradeCode
                 domain.save(user);
 
                 // set any default values
+                Map<DomainProperty, Object> defaultValues = new HashMap<>();
                 for (Map.Entry<String, String> entry : defaultValueMap.entrySet())
                 {
                     DomainProperty prop = domain.getPropertyByName(entry.getKey());
@@ -317,9 +311,12 @@ public class IssuesUpgradeCode implements UpgradeCode
                     if (prop != null)
                     {
                         prop.setDefaultValueTypeEnum(DefaultValueType.FIXED_EDITABLE);
-                        DefaultValueService.get().setDefaultValues(domain.getContainer(), Collections.singletonMap(prop, entry.getValue()));
+                        defaultValues.put(prop, entry.getValue());
                     }
                 }
+
+                if (!defaultValues.isEmpty())
+                    DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
             }
         }
     }
@@ -342,13 +339,13 @@ public class IssuesUpgradeCode implements UpgradeCode
             {
                 // delete any existing rows
                 final List<Map<String, Object>> rowsToDelete = new ArrayList<>();
-                new TableSelector(table).forEachMap(row -> rowsToDelete.add(row));
+                new TableSelector(table).forEachMap(rowsToDelete::add);
                 if (!rowsToDelete.isEmpty())
                 {
                     qus.deleteRows(user, c, rowsToDelete, null, null);
                 }
 
-                List<Map<String, Object>> rows = new ArrayList();
+                List<Map<String, Object>> rows = new ArrayList<>();
                 BatchValidationException errors = new BatchValidationException();
 
                 for (KeywordManager.Keyword keyword : keywords)
@@ -367,7 +364,7 @@ public class IssuesUpgradeCode implements UpgradeCode
      * Generate the migration plan for every container that needs to be upgraded.
      * @return
      */
-    private MultiMap<Container, IssueMigrationPlan> generateMigrationPlan()
+    private MultiValuedMap<Container, IssueMigrationPlan> generateMigrationPlan()
     {
         // get the set of folders that will need to be mapped to new IssueListDefs
         final Set<Container> issueListSet = new HashSet<>();
@@ -390,8 +387,8 @@ public class IssuesUpgradeCode implements UpgradeCode
         // settings
 
         // create the map of issue admin configurations that are shared, grouped by project
-        Map<Container, MultiMap<IssueAdminConfig, Container>> settingsProjectMap = new HashMap<>();
-        MultiMap<IssueAdminConfig, Container> sharedSettingsMap = new MultiHashMap<>();
+        Map<Container, MultiValuedMap<IssueAdminConfig, Container>> settingsProjectMap = new HashMap<>();
+        MultiValuedMap<IssueAdminConfig, Container> sharedSettingsMap = new ArrayListValuedHashMap<>();
 
         for (Container c : issueListSet)
         {
@@ -433,7 +430,7 @@ public class IssuesUpgradeCode implements UpgradeCode
             {
                 if (!settingsProjectMap.containsKey(project))
                 {
-                    settingsProjectMap.put(project, new MultiHashMap<>());
+                    settingsProjectMap.put(project, new ArrayListValuedHashMap<>());
                 }
                 settingsProjectMap.get(project).put(config, c);
             }
@@ -445,9 +442,9 @@ public class IssuesUpgradeCode implements UpgradeCode
         }
 
         // create the new issue definitions
-        MultiMap<Container, IssueMigrationPlan> migrationPlans = new MultiHashMap<>();
+        MultiValuedMap<Container, IssueMigrationPlan> migrationPlans = new ArrayListValuedHashMap<>();
 
-        for (Map.Entry<Container, MultiMap<IssueAdminConfig, Container>> project : settingsProjectMap.entrySet())
+        for (Map.Entry<Container, MultiValuedMap<IssueAdminConfig, Container>> project : settingsProjectMap.entrySet())
         {
             if (project.getValue().size() == 1)
             {
@@ -459,7 +456,7 @@ public class IssuesUpgradeCode implements UpgradeCode
             }
             else
             {
-                for (Map.Entry<IssueAdminConfig, Collection<Container>> entry : project.getValue().entrySet())
+                for (Map.Entry<IssueAdminConfig, Collection<Container>> entry : project.getValue().asMap().entrySet())
                 {
                     if (entry.getValue().size() > 1)
                     {
@@ -478,7 +475,7 @@ public class IssuesUpgradeCode implements UpgradeCode
 
         Set<String> siteNames = new HashSet<>();
         // now process the configurations that are configured to be inherited
-        for (Map.Entry<IssueAdminConfig, Collection<Container>> entry : sharedSettingsMap.entrySet())
+        for (Map.Entry<IssueAdminConfig, Collection<Container>> entry : sharedSettingsMap.asMap().entrySet())
         {
             if (entry.getValue().size() == 1)
             {
@@ -513,13 +510,13 @@ public class IssuesUpgradeCode implements UpgradeCode
 
         // need to fixup issue list definition names at the project level so they are unique, but we will allow the first non-default
         // configuration to use the default issue name of 'issues'
-        for (Map.Entry<Container, Collection<IssueMigrationPlan>> entry : migrationPlans.entrySet())
+        for (Map.Entry<Container, Collection<IssueMigrationPlan>> entry : migrationPlans.asMap().entrySet())
         {
             if (entry.getKey().isProject() && !ContainerManager.getSharedContainer().equals(entry.getKey()))
             {
                 if (entry.getValue().size() == 1)
                 {
-                    entry.getValue().iterator().next().setIssueDefName(DEFAULT_ISSUE_LIST_NAME);
+                    entry.getValue().iterator().next().setIssueDefName(IssueListDef.DEFAULT_ISSUE_LIST_NAME);
                 }
                 else
                 {
@@ -531,8 +528,8 @@ public class IssuesUpgradeCode implements UpgradeCode
 
                         if (plan.getIssueDefName() == null && (hasRequiredFields | hasCustomColumns))
                         {
-                            plan.setIssueDefName(DEFAULT_ISSUE_LIST_NAME);
-                            projectNames.add(DEFAULT_ISSUE_LIST_NAME);
+                            plan.setIssueDefName(IssueListDef.DEFAULT_ISSUE_LIST_NAME);
+                            projectNames.add(IssueListDef.DEFAULT_ISSUE_LIST_NAME);
                             break;
                         }
                     }
@@ -541,7 +538,7 @@ public class IssuesUpgradeCode implements UpgradeCode
                     {
                         if (plan.getIssueDefName() == null)
                         {
-                            String name = createUniqueName(DEFAULT_ISSUE_LIST_NAME, projectNames);
+                            String name = createUniqueName(IssueListDef.DEFAULT_ISSUE_LIST_NAME, projectNames);
                             plan.setIssueDefName(name);
                             projectNames.add(name);
                         }

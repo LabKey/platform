@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-Ext4.define('Issues.window.NewMoveIssue', {
+Ext4.define('Issues.window.MoveIssue', {
     extend: 'Ext.window.Window',
     modal: true,
     border: false,
@@ -15,7 +15,7 @@ Ext4.define('Issues.window.NewMoveIssue', {
     statics: {
         create : function(issueIds, issueDefName) {
             Ext4.onReady(function() {
-                Ext4.create('Issues.window.NewMoveIssue', {issueIds: issueIds, issueDefName : issueDefName}).show();
+                Ext4.create('Issues.window.MoveIssue', {issueIds: issueIds, issueDefName : issueDefName}).show();
             });
         }
     },
@@ -97,7 +97,7 @@ Ext4.define('Issues.window.NewMoveIssue', {
             autoLoad: true,
             proxy: {
                 type: 'ajax',
-                url: LABKEY.ActionURL.buildURL('issues', 'newGetMoveDestination', LABKEY.container.path, {issueDefName : this.issueDefName}),
+                url: LABKEY.ActionURL.buildURL('issues', 'getMoveDestination', LABKEY.container.path, {issueDefName : this.issueDefName}),
                 reader: {
                     type: 'json',
                     root: 'containers'

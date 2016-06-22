@@ -15,7 +15,6 @@ public interface CustomColumnConfiguration
 {
     CustomColumn getCustomColumn(String name);
 
-    // only used for experimental issues list
     Map<String, DomainProperty> getPropertyMap();
     Collection<DomainProperty> getCustomProperties();
 

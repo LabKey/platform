@@ -279,37 +279,6 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         _mode = mode;
     }
 
-    /**
-     * We should be migrating away form custom rendering of the fields to display column based rendering
-     */
-    @Deprecated
-    public String writeCustomColumn(ColumnType type, int tabIndex, boolean markIfRequired) throws IOException
-    {
-        if (_ccc.shouldDisplay(_user, type.getColumnName()))
-        {
-            String tableColumnName = type.getColumnName();
-            final StringBuilder sb = new StringBuilder();
-
-            sb.append("<tr><td class=\"labkey-form-label\">");
-            sb.append(getLabel(type, markIfRequired));
-            sb.append("</td><td>");
-
-            // If custom column has pick list, then show select with keywords, otherwise input box
-            if (_ccc.hasPickList(type.getColumnName()))
-                sb.append(writeSelect(type, tabIndex));
-            else if (type.isCustomInteger())
-                sb.append(writeIntegerInput(type, tabIndex));
-            else
-                sb.append(writeInput(tableColumnName, type.getValue(getIssue()), tabIndex));
-
-            sb.append("</td></tr>");
-
-            return sb.toString();
-        }
-
-        return "";
-    }
-
     private RenderContext getRenderContext(ViewContext context)
     {
         if (_renderContext == null)
@@ -467,54 +436,14 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return sb.toString();
     }
 
-    // Limit number of characters in an integer field
-    public String writeIntegerInput(ColumnType type, int tabIndex)
-    {
-        return writeInput(type.getColumnName(), type.getValue(getIssue()), "type=\"number\" maxlength=\"10\" tabIndex=\"" + tabIndex + "\" size=\"8\"");
-    }
-
     public String writeInput(String field, String value, int tabIndex)
     {
         return writeInput(field, value, "tabIndex=\"" + tabIndex + "\"");
     }
 
-    public String writeSelect(String field, String value, String display, String options, int tabIndex)
-    {
-        if (!isEditable(field))
-        {
-            return filter(display);
-        }
-        final StringBuilder sb = new StringBuilder();
-        sb.append("<select id=\"");
-        sb.append(PageFlowUtil.filter(field));
-        sb.append("\" name=\"");
-        sb.append(PageFlowUtil.filter(field));
-        sb.append("\" tabindex=\"");
-        sb.append(tabIndex);
-        sb.append("\" onchange=\"LABKEY.setDirty(true);return true;\" >");
-
-        if (null != display && 0 != display.length())
-        {
-            sb.append("<option value=\"");
-            sb.append(filter(value));
-            sb.append("\" selected>");
-            sb.append(filter(display));
-            sb.append("</option>");
-        }
-        sb.append(options);
-        sb.append("</select>");
-        return sb.toString();
-    }
-
     public boolean hasKeywords(ColumnType type)
     {
         return !KeywordManager.getKeywords(_c, type).isEmpty();
-    }
-
-    public String writeSelect(ColumnType type, int tabIndex) throws IOException
-    {
-        String value = type.getValue(getIssue());
-        return writeSelect(type.getColumnName(), value, value, KeywordManager.getKeywordOptions(_c, type), tabIndex);
     }
 
     public boolean isEditable(String field)

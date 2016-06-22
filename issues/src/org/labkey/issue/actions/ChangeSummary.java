@@ -1,12 +1,9 @@
-package org.labkey.issue.experimental.actions;
+package org.labkey.issue.actions;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
@@ -18,10 +15,8 @@ import org.labkey.issue.IssuesController;
 import org.labkey.issue.model.CustomColumn;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueListDef;
-import org.labkey.issue.query.IssuesQuerySchema;
 import org.springframework.web.servlet.mvc.Controller;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -84,11 +79,11 @@ public class ChangeSummary
         StringBuilder sbTextChanges = new StringBuilder();
         String summary = null;
 
-        if (!action.equals(NewInsertAction.class) && !action.equals(NewUpdateAction.class))
+        if (!action.equals(IssuesController.InsertAction.class) && !action.equals(IssuesController.UpdateAction.class))
         {
             summary = getActionName(action).toLowerCase();
 
-            if (action.equals(NewResolveAction.class))
+            if (action.equals(IssuesController.ResolveAction.class))
             {
                 // Add the resolution; e.g. "resolve as Fixed"
                 summary += " as " + issue.getResolution();

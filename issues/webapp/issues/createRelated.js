@@ -7,17 +7,9 @@ Ext4.define('Issues.window.CreateRelatedIssue', {
     extend: 'Ext.window.Window',
     modal: true,
     border: false,
-    width: 500,
+    width: 550,
     closeAction: 'destroy',
     title: 'Create Related Issue',
-
-    statics: {
-        create : function(issueIds, issueDefName) {
-            Ext4.onReady(function() {
-                Ext4.create('Issues.window.NewMoveIssue', {issueIds: issueIds, issueDefName : issueDefName}).show();
-            });
-        }
-    },
 
     initComponent : function() {
         this.buttons = ['->', {
@@ -43,12 +35,12 @@ Ext4.define('Issues.window.CreateRelatedIssue', {
         var items = [];
 
         this.createCombo = Ext4.create('Ext.form.field.ComboBox', {
-            store   : this.getStore(),
+            store           : this.getStore(),
             valueField      : 'containerPath',
-            displayField    : 'containerPath',
+            displayField    : 'displayName',
             fieldLabel      : 'Folder',
             triggerAction   : 'all',
-            width           : 400,
+            width           : 450,
             queryMode       : 'local',
             typeAhead       : true,
             msgTarget       : 'under',
@@ -60,7 +52,18 @@ Ext4.define('Issues.window.CreateRelatedIssue', {
                     '<tpl for=".">',
                     '<div class="x4-boundlist-item">{containerPath:htmlEncode}</div>',
                     '</tpl>'
-            )
+            ),
+            listeners : {
+                scope: this,
+                'change': function(cb, value) {
+
+                    rec = cb.getStore().findRecord('containerPath', value);
+                    if (rec){
+
+                        this.destIssueDefName = rec.get('issueDefName');
+                    }
+                }
+            }
         });
 
         items.push({
@@ -94,7 +97,9 @@ Ext4.define('Issues.window.CreateRelatedIssue', {
                 extend: 'Ext.data.Model',
                 fields: [
                     {name: 'containerId', type: 'string'},
-                    {name: 'containerPath', type: 'string'}
+                    {name: 'containerPath', type: 'string'},
+                    {name: 'displayName', type: 'string'},
+                    {name: 'issueDefName'}
                 ]
             });
         }
@@ -120,7 +125,7 @@ Ext4.define('Issues.window.CreateRelatedIssue', {
 
             var form = formPanel.getForm();
             form.submit({
-                url : LABKEY.ActionURL.buildURL('issues', 'newInsert.view', this.createCombo.getValue(), {issueDefName : this.issueDefName}),
+                url : LABKEY.ActionURL.buildURL('issues', 'insert.view', this.createCombo.getValue(), {issueDefName : this.destIssueDefName}),
                 standardSubmit : true
             })
         }

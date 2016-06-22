@@ -1,4 +1,4 @@
-package org.labkey.issue.experimental.actions;
+package org.labkey.issue.actions;
 
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.data.Container;
@@ -130,14 +130,28 @@ public class IssueServiceAction extends GWTServiceAction
         }
 
         @Override
-        public List<Map<String, String>> getUsersForGroup(int groupId)
+        public List<Map<String, String>> getUsersForGroup(Integer groupId)
         {
             List<Map<String, String>> users = new ArrayList<>();
 
-            Group group = SecurityManager.getGroup(groupId);
-            if (group != null)
+            if (groupId != null)
             {
-                for (User user : SecurityManager.getAllGroupMembers(group, MemberType.ACTIVE_USERS, group.isUsers()))
+                Group group = SecurityManager.getGroup(groupId);
+                if (group != null)
+                {
+                    for (User user : SecurityManager.getAllGroupMembers(group, MemberType.ACTIVE_USERS, group.isUsers()))
+                    {
+                        if (getContainer().hasPermission(user, UpdatePermission.class))
+                        {
+                            users.add(PageFlowUtil.map("name", user.getDisplayName(getUser()), "value", String.valueOf(user.getUserId())));
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // all project users
+                for (User user : SecurityManager.getProjectUsers(getContainer()))
                 {
                     if (getContainer().hasPermission(user, UpdatePermission.class))
                     {
