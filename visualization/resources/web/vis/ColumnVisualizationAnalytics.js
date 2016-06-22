@@ -131,18 +131,29 @@
                         categoryCountMap[val]++;
                     });
 
-                    var categoryData = [], hasData = false;
+                    var categoryData = [],
+                        categoryShowLabel = {},
+                        hasData = false;
+
                     for (var category in categoryCountMap)
                     {
                         if (categoryCountMap.hasOwnProperty(category))
                         {
                             categoryData.push({
-                                label: _truncateLabel(category, 10),
+                                label: category,
                                 value: categoryCountMap[category]
                             });
 
                             hasData = true;
                         }
+                    }
+
+                    // if we have a long list of categories, only show a total of 15 x-axis tick labels
+                    if (categoryData.length > 15)
+                    {
+                        var m = Math.floor(categoryData.length / 15);
+                        for (var i = 0; i < categoryData.length; i++)
+                            categoryShowLabel[categoryData[i].label] = i % m == 0;
                     }
 
                     if (chartType == "bar")
@@ -167,16 +178,26 @@
                                 }
                             },
                             scales: {
-                                x: {scaleType: 'discrete'},
-                                yLeft: {domain: [0,(hasData ? null : 1)]}
+                                x: {
+                                    scaleType: 'discrete',
+                                    tickFormat: function(v) {
+                                        var val = categoryShowLabel[v] == undefined || categoryShowLabel[v] ? v : '';
+                                        return _truncateLabel(val, 7);
+                                    },
+                                    tickHoverText: function(value) {
+                                        return value;
+                                    }
+                                },
+                                yLeft: {
+                                    domain: [0,(hasData ? null : 1)]
+                                }
                             },
                             options: {
                                 color: '#000000',
                                 fill: '#64A1C6'
                             },
-                            xAes: function(row){
-                                var val = row[columnName] ? row[columnName].displayValue || row[columnName].value : '';
-                                return _truncateLabel(val, 7);
+                            xAes: function(row) {
+                                return row[columnName] ? row[columnName].displayValue || row[columnName].value : '';
                             }
                         });
 
@@ -184,6 +205,8 @@
                     }
                     else if (chartType == "pie")
                     {
+                        var hideLabels = categoryData.length > 20;
+
                         new LABKEY.vis.PieChart({
                             renderTo: plotDivId,
                             rendererType: 'd3',
@@ -204,15 +227,21 @@
                             },
                             labels: {
                                 outer: {
-                                    pieDistance: 10
+                                    pieDistance: hideLabels ? 0 : 10,
+                                    hideWhenLessThanPercentage: hideLabels ? 100 : undefined
                                 },
                                 inner: {
                                     format: hasData ? 'percentage' : 'none',
                                     hideWhenLessThanPercentage: 10
                                 },
                                 lines: {
+                                    enabled: !hideLabels,
                                     style: 'straight',
                                     color: 'black'
+                                },
+                                truncation: {
+                                    enabled: true,
+                                    length: 10
                                 }
                             },
                             size: {
@@ -226,12 +255,19 @@
                                 }
                             },
                             effects: {
+                                highlightSegmentOnMouseover: false,
                                 load: {
                                     effect: 'none'
                                 },
                                 pullOutSegmentOnClick: {
                                     effect: 'none'
                                 }
+                            },
+                            tooltips: {
+                                enabled: true,
+                                type: 'placeholder',
+                                string: "{label}: {percentage}%",
+                                styles: {backgroundOpacity: 1}
                             }
                         });
                     }
