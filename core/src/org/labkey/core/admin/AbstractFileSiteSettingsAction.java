@@ -34,6 +34,7 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.springframework.validation.BindException;
@@ -69,7 +70,7 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
                 boolean isNewRoot = isNewRoot(_svc.getSiteDefaultRoot(), f);
                 if (!NetworkDrive.exists(f) || !f.isDirectory())
                 {
-                    errors.reject(SpringActionController.ERROR_MSG, "File Root '" + webRoot + "' does not appear to be a valid directory accessible to the server at " + getViewContext().getRequest().getServerName() + ".");
+                    errors.reject(SpringActionController.ERROR_MSG, "File root '" + webRoot + "' does not appear to be a valid directory accessible to the server at " + getViewContext().getRequest().getServerName() + ".");
                 }
                 else if (isNewRoot && !form.isUpgrade())
                 {
@@ -78,7 +79,7 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
 
                     if (children != null && children.length > 0)
                     {
-                        errors.reject(SpringActionController.ERROR_MSG, "File Root '" + webRoot + "' is not empty and cannot be used because files under the current site-level root must be moved to this new root. " +
+                        errors.reject(SpringActionController.ERROR_MSG, "File root '" + webRoot + "' is not empty and cannot be used because files under the current site-level root must be moved to this new root. " +
                                 "Either specify a different, non-existing root, or remove the files under the specified directory.");
                     }
                 }
@@ -90,6 +91,40 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
         }
         else
             errors.reject(SpringActionController.ERROR_MSG, "The site file root cannot be blank.");
+
+        String userRoot = StringUtils.trimToNull(form.getUserRootPath());
+
+        if (userRoot != null)
+        {
+            File f = new File(userRoot);
+
+            try
+            {
+                boolean isNewRoot = isNewRoot(_svc.getUserFilesRoot(), f);
+                if (!NetworkDrive.exists(f) || !f.isDirectory())
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, "User file root '" + userRoot + "' does not appear to be a valid directory accessible to the server at " + getViewContext().getRequest().getServerName() + ".");
+                }
+                //TODO: this isn't needed yet. And we may want to let them move files independantly? until we add move feature for User files
+//                else if (isNewRoot && !form.isUpgrade())
+//                {
+//                    // if this is a new root, make sure it is empty
+//                    String[] children = f.list();
+//
+//                    if (children != null && children.length > 0)
+//                    {
+//                        errors.reject(SpringActionController.ERROR_MSG, "User file root '" + userRoot + "' is not empty and cannot be used because files under the current site-level root must be moved to this new root. " +
+//                                "Either specify a different, non-existing root, or remove the files under the specified directory.");
+//                    }
+//                }
+            }
+            catch (IOException e)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "The specified file root is invalid.");
+            }
+        }
+        else
+            errors.reject(SpringActionController.ERROR_MSG, "The user file root cannot be blank.");
     }
 
     private boolean isNewRoot(File prev, File current) throws IOException
@@ -102,6 +137,12 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
     {
         File prev = _svc.getSiteDefaultRoot();
         _svc.setSiteDefaultRoot(FileUtil.getAbsoluteCaseSensitiveFile(new File(form.getRootPath())));
+
+        if(AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_USER_FOLDERS))
+        {
+            File prevUserRoot = _svc.getUserFilesRoot();
+            _svc.setUserFilesRoot(FileUtil.getAbsoluteCaseSensitiveFile(new File(form.getUserRootPath())));
+        }
 
         if (form.isUpgrade())
         {

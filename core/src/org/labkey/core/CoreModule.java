@@ -738,6 +738,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "Rserve Reports",
                 "Use an R Server for R script evaluation instead of running R from a command shell.",
                 false);
+        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_USER_FOLDERS,
+                "User Folders",
+                "Enable personal folders for users.",
+                false);
 
         PropertyService.get().registerDomainKind(new UsersDomainKind());
         UsersDomainKind.ensureDomain(moduleContext);

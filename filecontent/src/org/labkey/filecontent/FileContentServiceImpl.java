@@ -313,6 +313,19 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         return root;
     }
 
+    public File getUserFilesRoot()
+    {
+        File root = AppProps.getInstance().getUserFilesRoot();
+
+        if (root == null || !root.exists())
+            root = getDefaultRoot();
+
+        if (root != null && !root.exists())
+            root.mkdirs();
+
+        return root;
+    }
+
     private File getDefaultRoot()
     {
         File explodedPath = ModuleLoader.getInstance().getCoreModule().getExplodedPath();
@@ -344,6 +357,23 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         FileRootManager.get().clearCache();
         ContainerManager.ContainerPropertyChangeEvent evt = new ContainerManager.ContainerPropertyChangeEvent(
                 ContainerManager.getRoot(), ContainerManager.Property.SiteRoot, prevRoot, root);
+        ContainerManager.firePropertyChangeEvent(evt);
+    }
+
+    public void setUserFilesRoot(File root)
+    {
+        if (root == null || !root.exists())
+            throw new IllegalArgumentException("Invalid site root: does not exist");
+
+        File prevRoot = getUserFilesRoot();
+        WriteableAppProps props = AppProps.getWriteableInstance();
+
+        props.setUserFilesRoot(root.getAbsolutePath());
+        props.save();
+
+        FileRootManager.get().clearCache();
+        ContainerManager.ContainerPropertyChangeEvent evt = new ContainerManager.ContainerPropertyChangeEvent(
+                ContainerManager.getRoot(), ContainerManager.Property.UserFilesRoot, prevRoot, root);
         ContainerManager.firePropertyChangeEvent(evt);
     }
 

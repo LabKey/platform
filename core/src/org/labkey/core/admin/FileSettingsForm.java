@@ -23,6 +23,7 @@ public class FileSettingsForm
 {
     private String _rootPath;
     private boolean _upgrade;
+    private String _userRootPath;
 
     public String getRootPath()
     {
@@ -42,5 +43,15 @@ public class FileSettingsForm
     public void setUpgrade(boolean upgrade)
     {
         _upgrade = upgrade;
+    }
+
+    public String getUserRootPath()
+    {
+        return _userRootPath;
+    }
+
+    public void setUserRootPath(String userRootPath)
+    {
+        _userRootPath = userRootPath;
     }
 }

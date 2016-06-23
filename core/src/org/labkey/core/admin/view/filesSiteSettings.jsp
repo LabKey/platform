@@ -24,6 +24,8 @@
 <%@ page import="org.labkey.core.admin.FileListAction" %>
 <%@ page import="org.labkey.core.admin.FileSettingsForm" %>
 <%@ page import="org.labkey.core.admin.FilesSiteSettingsAction" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -62,7 +64,12 @@
                 " A site-level file root may be overridden at the project level from 'Project Settings'.")%></td>
             <td><input type="text" name="rootPath" size="64" value="<%=h(bean.getRootPath())%>"></td>
         </tr>
-
+        <% if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_USER_FOLDERS)) {%>
+        <tr>
+            <td class="labkey-form-label">User-Level&nbsp;File&nbsp;Root&nbsp;<%=helpPopup("User File Root", "Set the root folder for users personal folders. ")%></td>
+            <td><input type="text" name="userRootPath" size="64" value="<%=h(StringUtils.defaultIfBlank(bean.getUserRootPath(), bean.getRootPath() + "/Users" ))%>"></td>
+        </tr>
+        <%}%>
         <tr><td>&nbsp;</td></tr>
         <tr>
         <%

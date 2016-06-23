@@ -92,6 +92,7 @@ import org.labkey.api.view.template.BodyTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.webdav.DirectRequest;
+import org.labkey.api.webdav.UserResolverImpl;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
@@ -199,6 +200,7 @@ public class DavController extends SpringActionController
 
     WebdavResponse _webdavresponse;
     WebdavResolver _webdavresolver;
+    WebdavResolver _userresolver;
 
 
     protected Controller resolveHTMLActionName(Controller actionController, String actionName)
@@ -221,6 +223,12 @@ public class DavController extends SpringActionController
     {
         _webdavresolver = resolver;
         _requiresLogin = resolver.requiresLogin();
+    }
+
+    void setUserResolver(WebdavResolver resolver)
+    {
+        _userresolver = resolver;
+
     }
     
     WebdavResolver getResolver()
@@ -4394,6 +4402,7 @@ public class DavController extends SpringActionController
 
 
     static Path servletPrefix = WebdavService.getPath();
+    static Path userPrefix = WebdavService.getUserPath();
 
 
     /** allow html listing of this resource */
@@ -4450,7 +4459,8 @@ public class DavController extends SpringActionController
 
     boolean isStaticContent(Path path)
     {
-        return !path.startsWith(servletPrefix);
+        //If path starts with _webdav or _users return false
+        return !(path.startsWith(servletPrefix) || path.startsWith(userPrefix));
     }
 
 
@@ -5545,6 +5555,8 @@ public class DavController extends SpringActionController
             page.loginURL = getLoginURL();
             if (resource.getPath().startsWith(WebdavResolverImpl.get().getRootPath()))
                 page.root = WebdavResolverImpl.get().getRootPath();
+            else if (resource.getPath().startsWith(UserResolverImpl.get().getRootPath()))
+                page.root = UserResolverImpl.get().getRootPath();
 
             PageConfig config = new PageConfig(resource.getPath() + "-- webdav");
 
