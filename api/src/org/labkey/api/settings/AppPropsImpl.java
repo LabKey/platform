@@ -74,6 +74,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps.In
     static final String MAIL_RECORDER_ENABLED = "mailRecorderEnabled";
     static final String EXPERIMENTAL_FEATURE_PREFIX = "experimentalFeature.";
     static final String WEB_ROOT = "webRoot";
+    static final String USER_FILE_ROOT = "userFileRoot";
     static final String MAX_BLOB_SIZE = "maxBLOBSize";
     static final String EXT3_REQUIRED = "ext3Required";
     static final String EXT3API_REQUIRED = "ext3APIRequired";
@@ -402,6 +403,16 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps.In
         if (!StringUtils.isEmpty(webRoot))
         {
             return new File(webRoot);
+        }
+        return null;
+    }
+
+    public File getUserFilesRoot()
+    {
+        String userRoot = lookupStringValue(USER_FILE_ROOT, "");
+        if (!StringUtils.isEmpty(userRoot))
+        {
+            return new File(userRoot);
         }
         return null;
     }

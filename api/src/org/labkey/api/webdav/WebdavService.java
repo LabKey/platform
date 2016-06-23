@@ -96,9 +96,16 @@ public class WebdavService
 
     final private static Path _path = Path.parse("/_webdav/");
 
+    final private static Path _userPath = Path.parse("/_users/");
+
     public static Path getPath()
     {
         return _path;
+    }
+
+    public static Path getUserPath()
+    {
+        return _userPath;
     }
 
     public WebdavResource lookupHref(String href) throws URISyntaxException

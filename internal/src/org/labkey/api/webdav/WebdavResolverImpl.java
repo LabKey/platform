@@ -89,8 +89,6 @@ public class WebdavResolverImpl implements WebdavResolver
         return lookup(Path.rootPath);
     }
 
-
-
     public Path getRootPath()
     {
         return _rootPath;
@@ -246,7 +244,6 @@ public class WebdavResolverImpl implements WebdavResolver
         }
     }
 
-
     // Cache with short-lived entries to make webdav perform reasonably.  WebdavResolvedImpl is a singleton, so we
     // end up with just one of these.
     private Cache<Path, WebdavResource> _folderCache = CacheManager.getCache(CacheManager.UNLIMITED, 5 * CacheManager.MINUTE, "WebDAV folders");
@@ -395,6 +392,7 @@ public class WebdavResolverImpl implements WebdavResolver
                     break;
                 }
             }
+
             Container c = getContainer().getChild(child);
             if (name == null && c != null)
                 name = c.getName();

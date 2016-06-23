@@ -68,6 +68,9 @@ public interface FileContentService
     File getSiteDefaultRoot();
     void setSiteDefaultRoot(File root);
 
+    File getUserFilesRoot();
+    void setUserFilesRoot(File root);
+
     /**
      * Create an attachmentParent object that will allow storing files in the file system
      * @param c Container this will be attached to

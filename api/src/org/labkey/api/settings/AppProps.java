@@ -63,6 +63,7 @@ public class AppProps
         void setProjectRoot(String projectRoot);
         String getProjectRoot();
         File getFileSystemRoot();
+        File getUserFilesRoot();
         UsageReportingLevel getUsageReportingLevel();
         String getLabKeyVersionString();
         String getContextPath();
@@ -111,6 +112,8 @@ public class AppProps
     public static final String EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP = "javascriptMothership";
     public static final String EXPERIMENTAL_JAVASCRIPT_SERVER = "javascriptErrorServerLogging";
     public static final String EXPERIMENTAL_RSERVE_REPORTING = "rserveReports";
+    public static final String EXPERIMENTAL_USER_FOLDERS = "userFolders";
+
 
     // For Customisable web colour theme
     protected static final String WEB_THEME_CONFIG_NAME = "WebThemeConfig";

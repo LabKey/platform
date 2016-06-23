@@ -36,6 +36,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -44,6 +45,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
 import java.beans.PropertyChangeListener;
+import java.io.File;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -332,6 +334,23 @@ public class UserManager
         return (null != user);
     }
 
+    public static File getHomeDirectory(User user)
+    {
+        if (!AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_USER_FOLDERS))
+            throw new IllegalStateException("User Folders are not enabled.");
+
+        if (user.isGuest()) //TODO: better exception type?
+            throw new IllegalStateException("User folders are unavailable for Guest users", null);
+
+        File userFilesRoot = AppProps.getInstance().getUserFilesRoot();
+        if(userFilesRoot == null)
+            throw new IllegalStateException("User files root is not set");
+
+        File userFolder = new File(userFilesRoot, String.valueOf(user.getUserId()));
+        userFolder.mkdirs();
+
+        return userFolder;
+    }
 
     public static String sanitizeEmailAddress(String email)
     {
@@ -629,6 +648,8 @@ public class UserManager
         {
             clearUserList();
         }
+
+        //TODO: Delete User files
     }
 
     public static void setUserActive(User currentUser, int userIdToAdjust, boolean active) throws SecurityManager.UserManagementException
