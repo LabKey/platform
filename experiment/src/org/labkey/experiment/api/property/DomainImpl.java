@@ -729,4 +729,9 @@ public class DomainImpl implements Domain
     {
         return getStorageTableName() != null && getDomainKind().getStorageSchemaName() != null;
     }
+
+    public TemplateInfo getTemplateInfo()
+    {
+        return _dd.getTemplateInfo();
+    }
 }
