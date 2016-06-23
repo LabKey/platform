@@ -250,4 +250,13 @@ public class AsyncDataIterator implements DataIterator
             }
         }
     }
+
+    @Override
+    public void debugLogInfo(StringBuilder sb)
+    {
+        sb.append(this.getClass().getName() + "\n");
+        if (null != _it)
+            _it.debugLogInfo(sb);
+    }
+
 }

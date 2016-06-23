@@ -82,4 +82,9 @@ public interface DataIterator extends Closeable
     {
         return DataIteratorUtil.stream(this,false);
     }
+
+    default void debugLogInfo(StringBuilder sb)
+    {
+        sb.append(this.getClass().getName()+"\n");
+    }
 }

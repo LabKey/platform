@@ -244,6 +244,13 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
         return _data.getConstantValue(i);
     }
 
+    @Override
+    public void debugLogInfo(StringBuilder sb)
+    {
+        sb.append(this.getClass().getName() + "\n");
+        if (null != _data)
+            _data.debugLogInfo(sb);
+    }
 
     /*
     * Tests

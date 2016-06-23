@@ -34,6 +34,7 @@ import java.util.List;
  */
 public class BeanDataIterator<K> extends AbstractDataIterator implements DataIterator
 {
+    final Class _class;
     ArrayList<ColumnInfo> _cols = new ArrayList<>();
     ArrayList<Method> _readMethods = new ArrayList<>();
     final List<K> _rows;
@@ -44,6 +45,7 @@ public class BeanDataIterator<K> extends AbstractDataIterator implements DataIte
     {
         super(context);
 
+        this._class = cls;
         _cols.add(new ColumnInfo("_rowNumber", JdbcType.INTEGER));
         _readMethods.add(null);
         K bean = rows.isEmpty() ? null : rows.get(0);
@@ -114,6 +116,13 @@ public class BeanDataIterator<K> extends AbstractDataIterator implements DataIte
     @Override
     public void close() throws IOException
     {
+    }
+
+    @Override
+    public void debugLogInfo(StringBuilder sb)
+    {
+        sb.append(this.getClass().getName() + "\n");
+        sb.append("    " + _class.getName());
     }
 
 

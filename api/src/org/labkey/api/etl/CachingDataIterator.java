@@ -111,6 +111,14 @@ public class CachingDataIterator extends AbstractDataIterator implements Scrolla
         _in.close();
     }
 
+    @Override
+    public void debugLogInfo(StringBuilder sb)
+    {
+        sb.append(this.getClass().getName() + "\n");
+        if (null != _in)
+            _in.debugLogInfo(sb);
+    }
+
 
     private static String[] as(String... arr)
     {

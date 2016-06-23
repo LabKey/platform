@@ -486,6 +486,13 @@ public class StatementDataIterator extends AbstractDataIterator
     }
 
 
+    @Override
+    public void debugLogInfo(StringBuilder sb)
+    {
+        sb.append(this.getClass().getName() + "\n");
+        if (null != _data)
+            _data.debugLogInfo(sb);
+    }
 
 
     public static class TestCase extends Assert

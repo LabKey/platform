@@ -101,4 +101,12 @@ public abstract class WrapperDataIterator implements DataIterator, ScrollableDat
     {
         return _delegate.getConstantValue(i);
     }
+
+    @Override
+    public void debugLogInfo(StringBuilder sb)
+    {
+        sb.append(getDebugName() + ": " + this.getClass().getName() + "\n");
+        if (null != _delegate)
+            _delegate.debugLogInfo(sb);
+    }
 }

@@ -148,4 +148,12 @@ public class LoggingDataIterator extends AbstractDataIterator implements Scrolla
     {
         return ((MapDataIterator)_data).getMap();
     }
+
+    @Override
+    public void debugLogInfo(StringBuilder sb)
+    {
+        sb.append(this.getClass().getName() + "\n");
+        if (null != _data)
+            _data.debugLogInfo(sb);
+    }
 }

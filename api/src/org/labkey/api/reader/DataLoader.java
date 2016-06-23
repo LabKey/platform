@@ -967,5 +967,16 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                 IOUtils.closeQuietly(_it);
             DataLoader.this.close();
         }
+
+        @Override
+        public void debugLogInfo(StringBuilder sb)
+        {
+            sb.append(this.getClass().getName() + "\n");
+            Arrays.asList(this._columns).stream()
+                .forEach(c ->
+                {
+                    sb.append("    " + c.name + " " + c.clazz.getSimpleName() + "\n");
+                });
+        }
     }
 }

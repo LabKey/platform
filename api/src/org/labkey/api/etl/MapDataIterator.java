@@ -145,5 +145,14 @@ public interface MapDataIterator extends DataIterator
         {
             _input.close();
         }
+
+
+        @Override
+        public void debugLogInfo(StringBuilder sb)
+        {
+            sb.append(this.getClass().getName() + "\n");
+            if (null != _input)
+                _input.debugLogInfo(sb);
+        }
     }
 }

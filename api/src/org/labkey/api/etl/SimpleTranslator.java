@@ -1200,6 +1200,22 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     }
 
 
+    @Override
+    public void debugLogInfo(StringBuilder sb)
+    {
+        super.debugLogInfo(sb);
+
+        this._outputColumns.stream()
+            .forEach(p ->
+            {
+                sb.append("    " + p.first.getName() + " " + p.second.getClass().getSimpleName() + "\n");
+            });
+
+        if (null != _data)
+            _data.debugLogInfo(sb);
+    }
+
+
     /*
     * Tests
     */

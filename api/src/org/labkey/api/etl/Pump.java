@@ -15,6 +15,7 @@
  */
 package org.labkey.api.etl;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.exp.list.ListImportProgress;
 import org.labkey.api.query.BatchValidationException;
 
@@ -25,6 +26,7 @@ import java.io.IOException;
  */
 public class Pump implements Runnable
 {
+    static Logger log = Logger.getLogger(Pump.class);
     DataIterator _it;
     DataIteratorBuilder _builder;
     final DataIteratorContext _context;
@@ -57,6 +59,13 @@ public class Pump implements Runnable
     {
         if (null == _it && null != _builder)
             _it = _builder.getDataIterator(_context);
+
+        if (log.isTraceEnabled())
+        {
+            StringBuilder sb = new StringBuilder("PUMP\n");
+            _it.debugLogInfo(sb);
+            log.trace(sb.toString());
+        }
 
         try
         {
