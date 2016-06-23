@@ -47,26 +47,6 @@ public class MothershipHelper
         }
     }
 
-    public int getHighestIssueId()
-    {
-        Connection connection = driver.createDefaultConnection(true);
-        SelectRowsCommand command = new SelectRowsCommand("issues", "issues");
-        command.addSort("IssueId", Sort.Direction.DESCENDING);
-        command.setMaxRows(1);
-        command.setContainerFilter(ContainerFilter.AllFolders);
-        try
-        {
-            SelectRowsResponse response = command.execute(connection, "/");
-            if (response.getRows().isEmpty())
-                return 0;
-            return (Integer) response.getRows().get(0).get("IssueId");
-        }
-        catch (IOException|CommandException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
     public void resetStackTrace(int exceptionStackTraceId)
     {
         updateStackTrace(exceptionStackTraceId, "", "", "");

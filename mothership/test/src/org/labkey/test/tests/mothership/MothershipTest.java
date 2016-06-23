@@ -18,8 +18,10 @@ import org.labkey.test.pages.mothership.ShowExceptionsPage.ExceptionSummaryDataR
 import org.labkey.test.pages.mothership.StackTraceDetailsPage;
 import org.labkey.test.pages.test.TestActions;
 import org.labkey.test.util.ApiPermissionsHelper;
+import org.labkey.test.util.IssuesHelper;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
+import org.labkey.test.util.Maps;
 import org.labkey.test.util.PermissionsHelper.MemberType;
 import org.labkey.test.util.TextSearcher;
 import org.labkey.test.util.mothership.MothershipHelper;
@@ -41,6 +43,7 @@ public class MothershipTest extends BaseWebDriverTest
     private static final String MOTHERSHIP_GROUP = "Mothership Test Group";
     private static final String ISSUES_PROJECT = "MothershipTest Issues";
     private static final String ISSUES_GROUP = "Issues Group";
+    public static final String ISSUES_LIST = "MothershipIssues";
 
     private MothershipHelper _mothershipHelper;
     private ApiPermissionsHelper permissionsHelper = new ApiPermissionsHelper(this);
@@ -72,11 +75,13 @@ public class MothershipTest extends BaseWebDriverTest
         permissionsHelper.addMemberToRole(NON_ASSIGNEE, "Project Admin", MemberType.user, MOTHERSHIP_PROJECT);
 
         EditUpgradeMessagePage configurePage = EditUpgradeMessagePage.beginAt(this);
-        configurePage.createIssueURL().setValue(WebTestHelper.getContextPath() + "/" + ISSUES_PROJECT + "/issues-insert.view?");
+        configurePage.createIssueURL().setValue(WebTestHelper.getContextPath() + "/" +
+                WebTestHelper.buildRelativeUrl("issues", ISSUES_PROJECT, "insert", Maps.of("issueDefName", ISSUES_LIST)));
         configurePage.issuesContainer().setValue("/" + ISSUES_PROJECT);
         configurePage.save();
 
         _containerHelper.createProject(ISSUES_PROJECT, null);
+        new IssuesHelper(getDriver()).createNewIssuesList(ISSUES_LIST, _containerHelper);
         ApiPermissionsHelper permHelper = new ApiPermissionsHelper(this);
         permHelper.createProjectGroup(ISSUES_GROUP, ISSUES_PROJECT);
         permHelper.addUserToProjGroup(ASSIGNEE, ISSUES_PROJECT, ISSUES_GROUP);
@@ -93,7 +98,8 @@ public class MothershipTest extends BaseWebDriverTest
     @Test
     public void testCreateIssue() throws Exception
     {
-        Integer highestIssueId = _mothershipHelper.getHighestIssueId();
+        IssuesHelper issuesHelper = new IssuesHelper(getDriver());
+        Integer highestIssueId = issuesHelper.getHighestIssueId(ISSUES_PROJECT, ISSUES_LIST);
         Integer stackTraceId = ensureUnasignedException();
 
         ShowExceptionsPage showExceptionsPage = ShowExceptionsPage.beginAt(this);
@@ -112,7 +118,7 @@ public class MothershipTest extends BaseWebDriverTest
         assertEquals("New issue shouldn't be assigned by default", "", insertPage.assignedTo().getValue().trim());
         insertPage.assignedTo().setValue(displayNameFromEmail(ASSIGNEE));
         insertPage.save();
-        Integer newIssueId = _mothershipHelper.getHighestIssueId();
+        Integer newIssueId = issuesHelper.getHighestIssueId(ISSUES_PROJECT, ISSUES_LIST);
         assertNotEquals("Didn't create a new issue.", highestIssueId, newIssueId);
         showExceptionsPage = new ShowExceptionsPage(getDriver());
         exceptionSummary = showExceptionsPage.exceptionSummary();
