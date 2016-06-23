@@ -2991,67 +2991,67 @@ public class QueryController extends SpringActionController
             return super.getDefaultImportView(form, errors);
         }
 
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            (new SchemaAction(_form)).appendNavTrail(root);
-            root.addChild(_form.getQueryName(), _form.urlFor(QueryAction.executeQuery));
-            root.addChild("Import Data");
-            return root;
-        }
-    }
-
-
-    public static class ExportSqlForm
+    @Override
+    public NavTree appendNavTrail(NavTree root)
     {
-        private String _sql;
-        private String _schemaName;
-        private String _containerFilter;
-        private String _format = "excel";
+        (new SchemaAction(_form)).appendNavTrail(root);
+        root.addChild(_form.getQueryName(), _form.urlFor(QueryAction.executeQuery));
+        root.addChild("Import Data");
+        return root;
+    }
+}
 
-        public String getSql()
-        {
-            return _sql;
-        }
 
-        public void setSql(String sql)
-        {
-            _sql = sql;
-        }
+public static class ExportSqlForm
+{
+    private String _sql;
+    private String _schemaName;
+    private String _containerFilter;
+    private String _format = "excel";
 
-        public String getSchemaName()
-        {
-            return _schemaName;
-        }
-
-        public void setSchemaName(String schemaName)
-        {
-            _schemaName = schemaName;
-        }
-
-        public String getContainerFilter()
-        {
-            return _containerFilter;
-        }
-
-        public void setContainerFilter(String containerFilter)
-        {
-            _containerFilter = containerFilter;
-        }
-
-        public String getFormat()
-        {
-            return _format;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setFormat(String format)
-        {
-            _format = format;
-        }
+    public String getSql()
+    {
+        return _sql;
     }
 
-    @RequiresPermission(ReadPermission.class)
+    public void setSql(String sql)
+    {
+        _sql = sql;
+    }
+
+    public String getSchemaName()
+    {
+        return _schemaName;
+    }
+
+    public void setSchemaName(String schemaName)
+    {
+        _schemaName = schemaName;
+    }
+
+    public String getContainerFilter()
+    {
+        return _containerFilter;
+    }
+
+    public void setContainerFilter(String containerFilter)
+    {
+        _containerFilter = containerFilter;
+    }
+
+    public String getFormat()
+    {
+        return _format;
+    }
+
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void setFormat(String format)
+    {
+        _format = format;
+    }
+}
+
+@RequiresPermission(ReadPermission.class)
     @ApiVersion(9.2)
     @Action(ActionType.Export.class)
     public class ExportSqlAction extends ExportAction<ExportSqlForm>

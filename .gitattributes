@@ -2108,6 +2108,7 @@ study/src/org/labkey/study/model/CohortImpl.java -text
 study/src/org/labkey/study/model/CohortManager.java -text
 study/src/org/labkey/study/model/ContinuousDatasetDomainKind.java -text
 study/src/org/labkey/study/model/CustomParticipantView.java -text
+study/src/org/labkey/study/model/DatasetDataIteratorBuilder.java -text
 study/src/org/labkey/study/model/DatasetDefinition.java -text
 study/src/org/labkey/study/model/DatasetDefinitionEntry.java -text
 study/src/org/labkey/study/model/DatasetDomainKind.java -text
