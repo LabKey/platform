@@ -26,12 +26,14 @@ import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.Pair;
+import ucar.unidata.util.StringUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -197,12 +199,43 @@ public class SQLFragment implements Appendable, CharSequence
     }
 
 
-    /** this is a to allow us to compare fragments with CTE that haven't been collapsed yet (only used in assertions, debugging etc) **/
+    /**
+     * This is a to allow us to compare fragments with CTE that haven't been collapsed yet (only used in assertions, debugging etc)
+     * NOTE need to avoid recursive CTE
+     *
+     * CONSIDER: replace with
+     *      static boolean SQLFragment.compareSQL(SQLFragment sql1, SQLFragment sql2)
+     **/
     public String getCompareSQL()
     {
-        return getSQL();
+        return getCompareSQL(new HashSet<String>());
     }
+    private String getCompareSQL(Set<String> seen)
+    {
+        String select = null != sb ? sb.toString() : null != sql ? sql : "";
+        if (null == commonTableExpressionsMap || commonTableExpressionsMap.isEmpty())
+            return select;
 
+        for (Map.Entry<Object, CTE> e : commonTableExpressionsMap.entrySet())
+        {
+            CTE cte = e.getValue();
+            String replaceSQL = null;
+            for (String token : cte.tokens)
+            {
+                if (seen.add(token))
+                {
+                    if (null == replaceSQL)
+                        replaceSQL = cte.sqlf.getCompareSQL(seen);
+                    select = StringUtils.replace(select, token, " FROM (" + replaceSQL + ") ");
+                }
+                else
+                {
+                    select = StringUtil.replace(select, token, " FROM (RECUSRSIVE_CTE) ");
+                }
+            }
+        }
+        return select;
+    }
 
     // It is a little confusing that getString() does not return the same charsequence that this object purports to
     // represent.  However, this is a good "display value" for this object.
