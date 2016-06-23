@@ -19,7 +19,6 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.DefaultSystemMaintenanceTask;
-import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 
 /**
  * Created by adam on 9/29/2015.
@@ -46,8 +45,7 @@ public class DefragmentParticipantVisitIndexesTask extends DefaultSystemMaintena
         SqlDialect dialect = ti.getSqlDialect();
 
         dialect.defragmentIndex(schema, ti.getSelectName(), "PK_ParticipantVisit");
-        dialect.defragmentIndex(schema, ti.getSelectName(), "IX_ParticipantVisit_ParticipantId");
-        dialect.defragmentIndex(schema, ti.getSelectName(), "IX_ParticipantVisit_SequenceNum");
+        dialect.defragmentIndex(schema, ti.getSelectName(), "IX_PV_SequenceNum");
         dialect.defragmentIndex(schema, ti.getSelectName(), "UQ_ParticipantVisit_ParticipantSequenceNum");
     }
 }
