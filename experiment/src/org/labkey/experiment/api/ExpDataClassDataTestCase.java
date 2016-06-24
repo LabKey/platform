@@ -37,6 +37,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpLineage;
 import org.labkey.api.exp.api.ExpLineageOptions;
@@ -47,6 +48,7 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.property.Lookup;
@@ -507,12 +509,26 @@ public class ExpDataClassDataTestCase
 
         DomainTemplateGroup templateGroup = DomainTemplateGroup.get(c, "TestingFromTemplate");
         Assert.assertNotNull(templateGroup);
+        Assert.assertFalse(
+                "Errors in template: " + StringUtils.join(templateGroup.getErrors(), ", "),
+                templateGroup.hasErrors());
 
         DomainTemplate template = templateGroup.getTemplate("testingFromTemplate");
         Assert.assertNotNull(template);
 
         final Domain domain = template.createAndImport(c, user, domainName, true, false);
         Assert.assertNotNull(domain);
+
+        TemplateInfo t = domain.getTemplateInfo();
+        Assert.assertNotNull("Expected template information to be persisted", t);
+        Assert.assertEquals("simpletest", t.getModuleName());
+        Assert.assertEquals("TestingFromTemplate", t.getTemplateGroupName());
+        Assert.assertEquals("testingFromTemplate", t.getTableName());
+
+        DomainKind kind = domain.getDomainKind();
+        Assert.assertTrue(kind instanceof DataClassDomainKind);
+        Set<String> mandatory = kind.getMandatoryPropertyNames(domain);
+        Assert.assertTrue("Expected template to set 'aa' as mandatory: " + mandatory, mandatory.contains("aa"));
 
         ExpDataClassImpl dataClass = (ExpDataClassImpl)ExperimentService.get().getDataClass(c, domainName);
         Assert.assertNotNull(dataClass);

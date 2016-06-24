@@ -49,6 +49,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.BatchValidationException;
@@ -730,8 +731,19 @@ public class DomainImpl implements Domain
         return getStorageTableName() != null && getDomainKind().getStorageSchemaName() != null;
     }
 
+    @Override
+    @Nullable
     public TemplateInfo getTemplateInfo()
     {
         return _dd.getTemplateInfo();
+    }
+
+    /**
+     * Find the DomainTemplate used to create this Domain, if it is available.
+     */
+    @Nullable
+    public DomainTemplate getTemplate()
+    {
+        return DomainTemplate.findTemplate(getTemplateInfo());
     }
 }
