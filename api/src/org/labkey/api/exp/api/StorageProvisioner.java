@@ -472,9 +472,11 @@ public class StorageProvisioner
         ProvisionedSchemaOptions options = new ProvisionedSchemaOptions(schema, tableName, domain);
 
         SchemaTableInfo sti = schema.getTable(options);
-        boolean needsAliases = false;
+        if (null == sti)
+            throw new IllegalStateException("Table not found (deleted? race condition?): " + schemaName + "." + tableName);
 
         // check for any columns where storagecolumnname != name
+        boolean needsAliases = false;
         for (DomainProperty dp : domain.getProperties())
         {
             String scn = dp.getPropertyDescriptor().getStorageColumnName();
