@@ -81,7 +81,7 @@ public class MothershipTest extends BaseWebDriverTest
         configurePage.save();
 
         _containerHelper.createProject(ISSUES_PROJECT, null);
-        new IssuesHelper(getDriver()).createNewIssuesList(ISSUES_LIST, _containerHelper);
+        new IssuesHelper(this).createNewIssuesList(ISSUES_LIST, _containerHelper);
         ApiPermissionsHelper permHelper = new ApiPermissionsHelper(this);
         permHelper.createProjectGroup(ISSUES_GROUP, ISSUES_PROJECT);
         permHelper.addUserToProjGroup(ASSIGNEE, ISSUES_PROJECT, ISSUES_GROUP);
@@ -98,7 +98,7 @@ public class MothershipTest extends BaseWebDriverTest
     @Test
     public void testCreateIssue() throws Exception
     {
-        IssuesHelper issuesHelper = new IssuesHelper(getDriver());
+        IssuesHelper issuesHelper = new IssuesHelper(this);
         Integer highestIssueId = issuesHelper.getHighestIssueId(ISSUES_PROJECT, ISSUES_LIST);
         Integer stackTraceId = ensureUnasignedException();
 
