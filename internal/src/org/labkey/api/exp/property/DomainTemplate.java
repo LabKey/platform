@@ -15,16 +15,15 @@
  */
 package org.labkey.api.exp.property;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlCursor;
+import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.etl.DataIteratorContext;
@@ -48,6 +47,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.domainTemplate.DataClassOptionsType;
 import org.labkey.data.xml.domainTemplate.DataClassTemplateType;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
@@ -59,9 +59,6 @@ import org.labkey.data.xml.domainTemplate.SampleSetOptionsType;
 import org.labkey.data.xml.domainTemplate.SampleSetTemplateType;
 
 import java.io.IOException;
-import java.io.StringWriter;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,6 +68,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * User: kevink
@@ -87,6 +85,44 @@ public class DomainTemplate
     private final GWTDomain _domain;
     private final Map<String, Object> _options;
     private final InitialDataSettings _initialData;
+
+    /**
+     * Find the DomainTemplate used to create this Domain, if it is available.
+     */
+    @Nullable
+    public static DomainTemplate findTemplate(TemplateInfo info)
+    {
+        if (info == null)
+            return null;
+
+        return findTemplate(info.getModuleName(), info.getTemplateGroupName(), info.getTableName());
+    }
+
+    @Nullable
+    public static DomainTemplate findTemplate(String moduleName, String groupName, String templateName)
+    {
+        if (moduleName == null || groupName == null || templateName == null)
+        {
+            Logger.getLogger(DomainTemplate.class).warn("Module, group, and template name required to get domain template");
+            return null;
+        }
+
+        Module module = ModuleLoader.getInstance().getModule(moduleName);
+        if (module == null)
+        {
+            Logger.getLogger(DomainTemplate.class).warn("Module '" + moduleName + "' for domain template not found");
+            return null;
+        }
+
+        DomainTemplateGroup group = DomainTemplateGroup.get(module, groupName);
+        if (group == null)
+        {
+            Logger.getLogger(DomainTemplate.class).warn("Domain template group '" + groupName + "' not found in module '" + moduleName + "'");
+            return null;
+        }
+
+        return group.getTemplate(templateName);
+    }
 
     public static DomainTemplate parse(String moduleName, String groupName, DomainTemplateType template)
     {
@@ -113,6 +149,7 @@ public class DomainTemplate
             throw new IllegalArgumentException("Unknown template domain kind");
 
         List<GWTIndex> indices = getDomainTemplateUniqueIndices(templateName, template, properties);
+        Set<String> mandatoryFieldNames = getDomainTemplateMandatoryFields(templateName, template, properties);
         Map<String, Object> options = getDomainTemplateOptions(templateName, template, null, properties);
 
         GWTDomain<GWTPropertyDescriptor> domain = new GWTDomain<>();
@@ -120,7 +157,7 @@ public class DomainTemplate
         domain.setDescription(template.getTable().getDescription());
         domain.setFields(properties);
         domain.setIndices(indices);
-        //domain.setMandatoryFieldNames(mandatoryFieldNames);
+        domain.setMandatoryFieldNames(mandatoryFieldNames);
 
         InitialDataSettings importData = getImportDataSettings(templateName, template);
 
@@ -180,18 +217,54 @@ public class DomainTemplate
                 // Only unique is supported currently
                 if (index.getType() != null && TableInfo.IndexType.Unique.name().equalsIgnoreCase(index.getType().toString()))
                 {
-                    String[] colNames = index.getColumnArray();
-                    for (String colName : colNames)
+                    List<String> colNames = new ArrayList<>(4);
+                    for (String colName : index.getColumnArray())
                     {
-                        // ensure the index columns exist
+                        // ensure the column exists or throw an Exception
                         Pair<GWTPropertyDescriptor, Integer> pair = findProperty(templateName, properties, colName);
+                        colNames.add(colName);
                     }
-                    indices.add(new GWTIndex(Arrays.asList(colNames), true));
+                    indices.add(new GWTIndex(Collections.unmodifiableList(colNames), true));
                 }
             }
         }
 
         return Collections.unmodifiableList(indices);
+    }
+
+    private static Set<String> getDomainTemplateMandatoryFields(String templateName, DomainTemplateType template, List<GWTPropertyDescriptor> properties)
+    {
+        CaseInsensitiveHashSet set = new CaseInsensitiveHashSet();
+
+        ColumnType[] columns = null;
+        TableType tableType = template.getTable();
+        if (tableType != null && tableType.isSetColumns())
+            columns = template.getTable().getColumns().getColumnArray();
+
+        if (columns != null)
+        {
+            for (ColumnType column : columns)
+            {
+                // look for a "mandatory" attribute in the no-namespace
+                XmlObject xobj = column.selectAttribute(null, "mandatory");
+                if (xobj != null)
+                {
+                    XmlCursor cur = null;
+                    try
+                    {
+                        cur = xobj.newCursor();
+                        if ("true".equalsIgnoreCase(cur.getTextValue()))
+                            set.add(column.getColumnName());
+                    }
+                    catch (Exception e)
+                    {
+                        if (cur != null) cur.dispose();
+                    }
+                }
+            }
+        }
+
+        return Collections.unmodifiableSet(set);
     }
 
     private static Map<String, Object> getDomainTemplateOptions(String templateName, DomainTemplateType template, Container container, List<GWTPropertyDescriptor> properties)
@@ -258,7 +331,8 @@ public class DomainTemplate
     }
 
     private DomainTemplate(@NotNull String name, @NotNull String groupName, @NotNull String moduleName,
-                           @NotNull String domainKind, @NotNull GWTDomain domain, @NotNull Map<String, Object> options, @Nullable InitialDataSettings initialData)
+                           @NotNull String domainKind, @NotNull GWTDomain domain,
+                           @NotNull Map<String, Object> options, @Nullable InitialDataSettings initialData)
     {
         _moduleName = moduleName;
         _templateGroup = groupName;
@@ -456,6 +530,11 @@ public class DomainTemplate
     public Map<String, Object> getOptions()
     {
         return _options;
+    }
+
+    public Set<String> getMandatoryPropertyNames()
+    {
+        return _domain.getMandatoryFieldNames();
     }
 
 

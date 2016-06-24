@@ -106,5 +106,6 @@ public interface Domain extends IPropertyType
     boolean isShouldDeleteAllData();
     boolean isProvisioned();
 
+    @Nullable
     TemplateInfo getTemplateInfo();
 }

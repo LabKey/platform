@@ -379,9 +379,10 @@ public class DomainUtil
             @Nullable TemplateInfo templateInfo
     )
     {
+        // Create a copy of the GWTDomain to ensure the template's Domain is not modified
+        domain = new GWTDomain(domain);
         if (domainName != null)
         {
-            domain = new GWTDomain(domain);
             domain.setName(domainName);
         }
 

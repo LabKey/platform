@@ -195,7 +195,18 @@ public abstract class AbstractDomainKind extends DomainKind
         TreeSet<String> ret = new TreeSet<>();
         for (PropertyStorageSpec spec : getBaseProperties())
             ret.add(spec.getName());
+
+        DomainTemplate template = getDomainTemplate(domain);
+        if (template != null)
+            ret.addAll(template.getMandatoryPropertyNames());
+
         return ret;
+    }
+
+    @Nullable
+    protected DomainTemplate getDomainTemplate(Domain domain)
+    {
+        return DomainTemplate.findTemplate(domain.getTemplateInfo());
     }
 
 

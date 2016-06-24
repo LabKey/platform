@@ -61,7 +61,7 @@ public final class DomainDescriptor
             String domainURI, Container c, Container p, String name,
             int domainId, String description, String storageTableName, String storageSchemaName,
             int titlePropertyId, Object ts,
-            TemplateInfo templateInfo
+            @Nullable TemplateInfo templateInfo
     )
     {
         MemTracker.getInstance().put(this);
@@ -194,6 +194,7 @@ public final class DomainDescriptor
         return storageSchemaName;
     }
 
+    @Nullable
     public TemplateInfo getTemplateInfo()
     {
         return templateInfo;
