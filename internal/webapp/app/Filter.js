@@ -136,6 +136,8 @@ Ext.define('LABKEY.app.model.Filter', {
          *         description - optional description for the group
          *         filters - array of LABKEY.app.model.Filter instances to apply
          *         isLive - boolean, true if this is a query or false if just a group of participant ids.
+         *         isOwnerShared - boolean, true if owner ID should be set to value that means shared (-1 currently,
+         *                          see ParticipantCategory.java -> OWNER_SHARED)
          */
         doGroupSave : function(config) {
             if (!config)
@@ -145,6 +147,9 @@ Ext.define('LABKEY.app.model.Filter', {
                 throw "You must specify mdx, group, and success members in the config";
 
             var group = config.group;
+            var ownerId = LABKEY.user.id;
+            if(config.group.isOwnerShared)
+                ownerId = -1;  // shared owner ID, see ParticipantCategory.java -> OWNER_SHARED
 
             // setup config for save call
             var requestConfig = {
@@ -157,10 +162,10 @@ Ext.define('LABKEY.app.model.Filter', {
                     label: config.group.label,
                     participantIds: [],
                     description: config.group.description,
-                    ownerId: LABKEY.user.id,
+                    ownerId: ownerId,
                     type: 'list',
                     visibility: config.group.visibility,
-                    filters: LABKEY.app.model.Filter.toJSON(config.group.filters, config.group.isLive)
+                    filters: LABKEY.app.model.Filter.toJSON(config.group.filters, config.group.isLive),
                 },
                 headers: {"Content-Type": 'application/json'}
             };
