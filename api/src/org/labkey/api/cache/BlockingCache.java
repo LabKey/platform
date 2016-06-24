@@ -167,6 +167,22 @@ public class BlockingCache<K, V> implements Cache<K, V>
     }
 
 
+    /**
+     * Preload or replace existing value at this key. Similar to remove() followed by get(), but doesn't block get() callers
+     * and leaves existing value in place if load fails for any reason. This helps in cases of long-running and/or unreliable
+     * loads. Most callers would want to refresh() on a background thread.
+     */
+    public void refresh(K key, @Nullable Object argument)
+    {
+        if (null == _loader)
+            throw new IllegalStateException("cache loader is not set");
+
+        V value = _loader.load(key, argument);
+
+        put(key, value);
+    }
+
+
     @Override
     public void put(K key, final V value)
     {
