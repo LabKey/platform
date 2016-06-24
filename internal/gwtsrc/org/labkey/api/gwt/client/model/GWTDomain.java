@@ -21,6 +21,7 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -239,6 +240,16 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         {
             this.mandatoryPropertyDescriptorNames.add(mandatoryPropertyDescriptor.toLowerCase());
         }
+    }
+
+    /**
+     * Get the list of property names that can't be removed from the domain.  The set of mandatory fields is not modifiable in the designer.
+     */
+    public Set<String> getMandatoryFieldNames()
+    {
+        if (this.mandatoryPropertyDescriptorNames == null)
+            return Collections.emptySet();
+        return Collections.unmodifiableSet(this.mandatoryPropertyDescriptorNames);
     }
 
     public Set<String> getReservedFieldNames()
