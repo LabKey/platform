@@ -67,6 +67,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -634,7 +635,9 @@ public class ParticipantGroupController extends BaseStudyController
         private Set<String> _participantIds = new HashSet<>();
         private ParticipantCategoryImpl _category;
         private Integer _createdBy;
+        private Date _created;
         private Integer _modifiedBy;
+        private Date _modified;
 
         public JSONGroup(ParticipantGroup group, ParticipantCategoryImpl category)
         {
@@ -644,7 +647,9 @@ public class ParticipantGroupController extends BaseStudyController
             _filters = group.getFilters();
             _description = group.getDescription();
             _createdBy = group.getCreatedBy();
+            _created = group.getCreated();
             _modifiedBy = group.getModifiedBy();
+            _modified = group.getModified();
             _category = category;
             _type = GroupType.participantGroup;
         }
@@ -690,8 +695,12 @@ public class ParticipantGroupController extends BaseStudyController
                 json.put("category", _category.toJSON());
             if (_createdBy != null)
                 json.put("createdBy", getUserJSON(context, _createdBy));
+            if (_created != null)
+                json.put("created", _created);
             if (_modifiedBy != null)
                 json.put("modifiedBy", getUserJSON(context, _modifiedBy));
+            if (_modified != null)
+                json.put("modified", _modified);
 
             return json;
         }

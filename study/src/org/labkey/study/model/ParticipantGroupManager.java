@@ -573,6 +573,12 @@ public class ParticipantGroupManager
         if (categoryExists(c, user, def.getLabel(), def.isShared()))
             throw new ValidationException("There is already a category named '" + def.getLabel() + "' within this folder. Please choose a unique (case-insensitive) category name.");
 
+        if (def.isShared())
+        {
+            if (!c.hasPermission(user, SharedParticipantGroupPermission.class) && !c.hasPermission(user, AdminPermission.class))
+                throw new ValidationException("You must be in the Editor role or an Admin to create a shared participant category");
+        }
+
         if (def.isNew())
             ret = Table.insert(user, StudySchema.getInstance().getTableInfoParticipantCategory(), def);
         else
