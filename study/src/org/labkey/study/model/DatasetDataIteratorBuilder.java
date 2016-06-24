@@ -42,9 +42,6 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
-/**
- * Created by matthew on 6/23/2016.
- */
 class DatasetDataIteratorBuilder implements DataIteratorBuilder
 {
     private DatasetDefinition _datasetDefinition;
@@ -136,11 +133,13 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
         TimepointType timetype = _datasetDefinition.getStudy().getTimepointType();
         TableInfo table = _datasetDefinition.getTableInfo(user, false);
 
+        ColumnInfo subjectCol = table.getColumn(_datasetDefinition.getStudy().getSubjectColumnName());
         String keyColumnName = _datasetDefinition.getKeyPropertyName();
         ColumnInfo keyColumn = null == keyColumnName ? null : table.getColumn(keyColumnName);
         ColumnInfo lsidColumn = table.getColumn("lsid");
         ColumnInfo seqnumColumn = table.getColumn("sequenceNum");
         ColumnInfo containerColumn = table.getColumn("container");
+        ColumnInfo visitdateColumn = table.getColumn("date");
 
         if (null == input && null != builder)
             input = builder.getDataIterator(context);
@@ -225,12 +224,14 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
         Map<String, Integer> inputMap = DataIteratorUtil.createColumnAndPropertyMap(input);
         Map<String, Integer> outputMap = DataIteratorUtil.createColumnAndPropertyMap(it);
 
-        // find important columns in the input (CONSIDER: use standard etl alt
-        Integer indexPTIDInput = inputMap.get(DatasetDefinition.getParticipantIdURI());
-        Integer indexPTID = outputMap.get(DatasetDefinition.getParticipantIdURI());
-        Integer indexKeyProperty = null == keyColumn ? null : outputMap.get(keyColumn.getPropertyURI());
-        Integer indexVisitDate = outputMap.get(DatasetDefinition.getVisitDateURI());
-        Integer indexContainer = outputMap.get("container");
+        // find important columns in the input
+        // NOTE: Standard ETL usually is responsible for matching input columns by label/uri/importAlias
+        // NOTE: However, this Builder is _before_ StandardETL, so for these columns we have to duplicate that effort
+        Integer indexPTIDInput = findColumnInMap(inputMap, subjectCol);
+        Integer indexPTID = findColumnInMap(outputMap, subjectCol);
+        Integer indexKeyProperty = findColumnInMap(outputMap, keyColumn);
+        Integer indexVisitDate = findColumnInMap(outputMap, visitdateColumn);
+        Integer indexContainer = outputMap.get(containerColumn);
         Integer indexReplace = outputMap.get("replace");
 
         // do a conversion for PTID aliasing
@@ -277,10 +278,9 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
         // SequenceNum
         //
 
-        Integer indexVisitDateColumnInput = inputMap.get(DatasetDefinition.getVisitDateURI());
-        Integer indexSequenceNumColumnInput = inputMap.get(DatasetDefinition.getSequenceNumURI());
+        Integer indexVisitDateColumnInput = findColumnInMap(inputMap, visitdateColumn);
+        Integer indexSequenceNumColumnInput = findColumnInMap(inputMap, seqnumColumn);
         it.indexSequenceNumOutput = it.translateSequenceNum(indexSequenceNumColumnInput, indexVisitDateColumnInput);
-
 
         if (null == indexKeyProperty)
         {
@@ -348,13 +348,12 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
         if (needsQC)
         {
-            String qcStatePropertyURI = DatasetDefinition.getQCStateURI();
-            Integer indexInputQCState = inputMap.get(qcStatePropertyURI);
+            Integer indexInputQCState = findColumnInMap(inputMap, table.getColumn(DatasetTableImpl.QCSTATE_ID_COLNAME));
             Integer indexInputQCText = inputMap.get(DatasetTableImpl.QCSTATE_LABEL_COLNAME);
             if (null == indexInputQCState)
             {
                 int indexText = null == indexInputQCText ? -1 : indexInputQCText;
-                it.addQCStateColumn(indexText, qcStatePropertyURI, defaultQC);
+                it.addQCStateColumn(indexText,  DatasetDefinition.getQCStateURI(), defaultQC);
             }
         }
 
@@ -403,6 +402,24 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
         return ret;
     }
+
+
+    static <V> V findColumnInMap(Map<String,V> map, ColumnInfo c)
+    {
+        if (null == c)
+            return null;
+        if (map.containsKey(c.getName()))
+            return map.get(c.getName());
+        if (null != c.getPropertyURI() && map.containsKey(c.getPropertyURI()))
+            return map.get(c.getPropertyURI());
+        if (null != c.getLabelValue() && map.containsKey(c.getLabelValue()))
+            return map.get(c.getLabelValue());
+        for (String alias : c.getImportAliasSet())
+            if (map.containsKey(alias))
+                return map.get(alias);
+        return null;
+    }
+
 
     /**
      * Created by matthew on 6/23/2016.
