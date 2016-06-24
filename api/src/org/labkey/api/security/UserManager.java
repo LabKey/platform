@@ -40,6 +40,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.Result;
 import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -334,23 +335,24 @@ public class UserManager
         return (null != user);
     }
 
-    public static File getHomeDirectory(User user)
+    public static Result<File> getHomeDirectory(User user)
     {
         if (!AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_USER_FOLDERS))
-            throw new IllegalStateException("User Folders are not enabled.");
+            Result.failure("User Folders are not enabled.");
 
         if (user.isGuest()) //TODO: better exception type?
-            throw new IllegalStateException("User folders are unavailable for Guest users", null);
+            Result.failure("User folders are unavailable for Guest users");
 
         File userFilesRoot = AppProps.getInstance().getUserFilesRoot();
         if(userFilesRoot == null)
-            throw new IllegalStateException("User files root is not set");
+            Result.failure("User files root is not set");
 
         File userFolder = new File(userFilesRoot, String.valueOf(user.getUserId()));
         userFolder.mkdirs();
 
-        return userFolder;
+        return Result.success(userFolder);
     }
+
 
     public static String sanitizeEmailAddress(String email)
     {

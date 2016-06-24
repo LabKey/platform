@@ -7,6 +7,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.Result;
 import org.labkey.api.view.HttpView;
 
 import java.io.File;
@@ -179,7 +180,7 @@ public class UserResolverImpl implements WebdavResolver
 
         public synchronized List<String> getWebFoldersNames()
         {
-            File fileRoot = UserManager.getHomeDirectory(HttpView.getRootContext().getUser());
+            File fileRoot = UserManager.getHomeDirectory(HttpView.getRootContext().getUser()).get();
             Path relPath = getRootPath().relativize(getPath());
 
             File file = new File(fileRoot, relPath.toString());
@@ -193,8 +194,12 @@ public class UserResolverImpl implements WebdavResolver
 
         public WebdavResource find(String child)
         {
-            File fileRoot = UserManager.getHomeDirectory(HttpView.getRootContext().getUser());
             Path relPath = getRootPath().relativize(getPath()).append(child);
+
+            Result<File> r = UserManager.getHomeDirectory(HttpView.getRootContext().getUser());
+            if (!r.success())
+                return new WebdavResolverImpl.UnboundResource(relPath);
+            File fileRoot = r.get();
 
             for(String myChild:getWebFoldersNames())
             {
