@@ -74,7 +74,7 @@
         <td><%=text(isExternalProviderEnabled ? textLink("Enable", urls.getEnableConfigParameterURL(AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY)) : "&nbsp;")%></td>
         <% } %>
         <td colspan="2">&nbsp;</td>
-        <td>Accounts are created automatically when new users authenticate via LDAP or SSO.</td>
+        <td>Accounts are created automatically when new users authenticate via LDAP or SSO.<%=h(isExternalProviderEnabled ? "" : " This option is available only when an LDAP or SSO provider is enabled.")%></td>
     </tr>
     <tr>
         <td>&nbsp;</td>
