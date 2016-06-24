@@ -213,13 +213,15 @@ Ext4.define('LABKEY.ext.SampleSearchPanel', {
     },
 
     getGroupSearchItems: function(){
-        return [
-            [this.studyProps.subject.nounSingular, 'study', this.studyProps.subject.tableName, this.studyProps.subject.columnName + "/" + this.studyProps.subject.columnName, this.studyProps.subject.columnName, this.studyProps.subject.columnName, 'Any ' + this.studyProps.subject.nounSingular, null],
-            ['Visit', 'study', 'Visit', 'Visit/SequenceNumMin', 'Label', 'SequenceNumMin', 'Any Visit', null, 'DisplayOrder,SequenceNumMin'],
-            ['Primary Type', 'study', 'SpecimenPrimaryType', 'PrimaryType/Description', 'Description', 'Description', 'Any Primary Type', null],
-            ['Derivative Type', 'study', 'SpecimenDerivative', 'DerivativeType/Description', 'Description', 'Description', 'Any Derivative Type', null],
-            ['Additive Type', 'study', 'SpecimenAdditive', 'AdditiveType/Description', 'Description', 'Description', 'Any Additive Type', null]
-        ]
+        var items = [];
+
+        items.push([this.studyProps.subject.nounSingular, 'study', this.studyProps.subject.tableName, this.studyProps.subject.columnName + "/" + this.studyProps.subject.columnName, this.studyProps.subject.columnName, this.studyProps.subject.columnName, 'Any ' + this.studyProps.subject.nounSingular, null]);
+        if (this.studyProps.timepointType !== 'CONTINUOUS')
+            items.push(['Visit', 'study', 'Visit', 'Visit/SequenceNumMin', 'Label', 'SequenceNumMin', 'Any Visit', null, 'DisplayOrder,SequenceNumMin']);
+        items.push(['Primary Type', 'study', 'SpecimenPrimaryType', 'PrimaryType/Description', 'Description', 'Description', 'Any Primary Type', null]);
+        items.push(['Derivative Type', 'study', 'SpecimenDerivative', 'DerivativeType/Description', 'Description', 'Description', 'Any Derivative Type', null]);
+        items.push(['Additive Type', 'study', 'SpecimenAdditive', 'AdditiveType/Description', 'Description', 'Description', 'Any Additive Type', null]);
+        return items;
     },
 
     getComboCfg: function(label, schemaName, queryName, filterParam, displayColumn, valueColumn, defaultOptionText, defaultOptionValue, sort){
