@@ -339,7 +339,7 @@ public abstract class SearchTest extends StudyTest
         selectOptionByText(Locator.name("area"), "Area51");
         selectOptionByText(Locator.name("priority"), "1");
         setFormElement(Locator.id("comment"), ISSUE_BODY);
-        selectOptionByText(Locator.name("assignedto"), displayNameFromEmail(USER1));
+        selectOptionByText(Locator.name("assignedTo"), displayNameFromEmail(USER1));
         click(Locator.linkWithText("Attach a file"));
         File file = new File(TestFileUtils.getLabKeyRoot() + "/common.properties");
         setFormElement(Locator.name("formFiles[00]"), file);

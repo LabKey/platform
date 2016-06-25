@@ -19,7 +19,7 @@ import java.util.Map;
  */
 public class SummaryWebPart extends JspView<IssuesController.SummaryBean>
 {
-    public SummaryWebPart(Map<String, String> propertyMap)
+    public SummaryWebPart(String issueDefName, Map<String, String> propertyMap)
     {
         super("/org/labkey/issue/view/summaryWebpart.jsp", new IssuesController.SummaryBean());
 
@@ -27,10 +27,6 @@ public class SummaryWebPart extends JspView<IssuesController.SummaryBean>
 
         ViewContext context = getViewContext();
         Container c = context.getContainer();
-
-        String issueDefName = propertyMap.get(IssuesListView.ISSUE_LIST_DEF_NAME);
-        if (issueDefName == null)
-            issueDefName = IssueManager.getDefaultIssueListDefName(c);
 
         //set specified web part title
         Object title = propertyMap.get("title");
