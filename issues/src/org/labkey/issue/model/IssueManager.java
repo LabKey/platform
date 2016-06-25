@@ -309,32 +309,7 @@ public class IssueManager
         return false;
     }
 
-    /**
-     * Replace this method with newSaveIssue when data migration is performed
-     */
-    @Deprecated
-    public static void saveIssue(User user, Container c, Issue issue) throws SQLException
-    {
-        if (issue.assignedTo == null)
-            issue.assignedTo = 0;
-
-        if (issue.issueId == 0)
-        {
-            issue.beforeInsert(user, c.getId());
-            Table.insert(user, _issuesSchema.getTableInfoIssues(), issue);
-        }
-        else
-        {
-            issue.beforeUpdate(user);
-            Table.update(user, _issuesSchema.getTableInfoIssues(), issue, issue.getIssueId());
-        }
-        saveComments(user, issue);
-        saveRelatedIssues(user, issue);
-
-        indexIssue(null, issue);
-    }
-
-    public static void newSaveIssue(User user, Container container, Issue issue) throws SQLException
+    public static void saveIssue(User user, Container container, Issue issue) throws SQLException
     {
         if (issue.assignedTo == null)
             issue.assignedTo = 0;

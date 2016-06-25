@@ -30,7 +30,6 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.ViewContext;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
@@ -45,6 +44,7 @@ import java.util.stream.Collectors;
 public class IssuesQuerySchema extends UserSchema 
 {
     public static final String SCHEMA_NAME = "issues";
+    public static final String ALL_ISSUE_TABLE = "all_issues";      // legacy all issues
     public static final String SCHEMA_DESCR = "Contains one data table containing all the issues.";
 
     public enum TableType
@@ -85,7 +85,7 @@ public class IssuesQuerySchema extends UserSchema
     static
     {
         tableNames = Collections.unmodifiableSet(
-                Sets.newCaseInsensitiveHashSet(TableType.Comments.toString(), TableType.RelatedIssues.toString()));
+                Sets.newCaseInsensitiveHashSet(TableType.Comments.toString(), TableType.RelatedIssues.toString(), ALL_ISSUE_TABLE));
 
         visibleTableNames = Collections.unmodifiableSet(
                 Sets.newCaseInsensitiveHashSet(TableType.Comments.toString()));
@@ -162,6 +162,11 @@ public class IssuesQuerySchema extends UserSchema
             if (tableType != null)
             {
                 return tableType.createTable(this);
+            }
+
+            if (name.equalsIgnoreCase(ALL_ISSUE_TABLE))
+            {
+                return new AllIssuesTable(this);
             }
         }
         return null;

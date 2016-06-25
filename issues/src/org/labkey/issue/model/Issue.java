@@ -721,6 +721,7 @@ public class Issue extends Entity implements Serializable, Cloneable
         if (tag != null ? !tag.equals(issue.tag) : issue.tag != null) return false;
         if (title != null ? !title.equals(issue.title) : issue.title != null) return false;
         if (type != null ? !type.equals(issue.type) : issue.type != null) return false;
+        if (!_extraProperties.equals(issue._extraProperties)) return false;
 
         return true;
     }
@@ -758,6 +759,7 @@ public class Issue extends Entity implements Serializable, Cloneable
         result = 31 * result + (_comments != null ? _comments.hashCode() : 0);
         result = 31 * result + (_added != null ? _added.hashCode() : 0);
         result = 31 * result + (_notifyList != null ? _notifyList.hashCode() : 0);
+        result = 31 * result + (_extraProperties.hashCode());
         return result;
     }
 

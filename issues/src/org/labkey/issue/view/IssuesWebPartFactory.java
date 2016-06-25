@@ -8,6 +8,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
+import org.labkey.issue.IssuesController;
 import org.labkey.issue.model.IssueManager;
 
 import java.util.Map;
@@ -29,16 +30,17 @@ public class IssuesWebPartFactory extends BaseWebPartFactory
         if (issueDefName == null)
             issueDefName = IssueManager.getDefaultIssueListDefName(context.getContainer());
 
-        WebPartView result;
+        WebPartView view;
+
         if (issueDefName != null)
-            result = new IssuesListView(issueDefName);
+            view = new IssuesListView(issueDefName);
         else
-            result = new HtmlView("<span class='labkey-error'>There are no issues lists defined for this folder.</span>");
+            view = new HtmlView(IssuesController.getUndefinedIssueListMessage(context));
 
-        result.setTitle("Issues List : " + StringUtils.trimToEmpty(issueDefName));
-        result.setFrame(WebPartView.FrameType.PORTAL);
+        view.setTitle("Issues List : " + StringUtils.trimToEmpty(issueDefName));
+        view.setFrame(WebPartView.FrameType.PORTAL);
 
-        return result;
+        return view;
     }
 
     public HttpView getEditView(Portal.WebPart webPart, ViewContext context)

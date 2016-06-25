@@ -64,6 +64,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.issues.IssuesUrls;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
@@ -84,6 +85,7 @@ import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.Button;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
@@ -104,6 +106,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.issue.actions.ChangeSummary;
 import org.labkey.issue.actions.GetRelatedFolder;
 import org.labkey.issue.actions.InsertIssueDefAction;
@@ -305,7 +308,7 @@ public class IssuesController extends SpringActionController
 
                 return new IssuesListView(issueDefName);
             }
-            return new HtmlView("<span class='labkey-error'>There are no issues lists defined for this folder.</span>");
+            return new HtmlView(getUndefinedIssueListMessage(getViewContext()));
         }
 
         private String getIssueDefName()
@@ -509,7 +512,13 @@ public class IssuesController extends SpringActionController
             {
                 _issue.getExtraProperties().putAll(form.getStrings());
             }
-            _issue.setIssueDefName(form.getIssueDefName());
+
+            _issue.setIssueDefName(form.getIssueDefName() != null ? form.getIssueDefName() : IssueManager.getDefaultIssueListDefName(getContainer()));
+
+            if (_issue.getIssueDefName() == null)
+            {
+                return new HtmlView(getUndefinedIssueListMessage(getViewContext()));
+            }
 
 /*
             // if we have errors, then form.getBean() is likely to throw, but try anyway
@@ -587,6 +596,22 @@ public class IssuesController extends SpringActionController
 
             return new DetailsAction(_issue, getViewContext()).getURL();
         }
+    }
+
+    /**
+     * Generates a standard message if no issue list is available in the current folder (plus a link to create a list)
+     */
+    public static String getUndefinedIssueListMessage(ContainerUser context)
+    {
+        StringBuilder sb = new StringBuilder("<span class='labkey-error'>There are no issues lists defined for this folder.</span><p>");
+        Button button = PageFlowUtil.button("Create Issue List").href(QueryService.get().urlFor(context.getUser(),
+                context.getContainer(),
+                QueryAction.executeQuery,
+                "issues",
+                IssuesQuerySchema.TableType.IssueListDef.name())).build();
+        sb.append(button.toString());
+
+        return sb.toString();
     }
 
     abstract class AbstractIssueAction extends FormViewAction<IssuesForm>
@@ -679,7 +704,7 @@ public class IssuesController extends SpringActionController
                 issue.parseNotifyList(issue.getNotifyList());
 
                 changeSummary = ChangeSummary.createChangeSummary(getIssueListDef(), issue, prevIssue, duplicateOf, getContainer(), user, form.getAction(), form.getComment(), getColumnConfiguration(), getUser());
-                IssueManager.newSaveIssue(user, c, issue);
+                IssueManager.saveIssue(user, c, issue);
                 AttachmentService.get().addAttachments(changeSummary.getComment(), getAttachmentFileList(), user);
 
                 if (duplicateOf != null)
@@ -687,7 +712,7 @@ public class IssuesController extends SpringActionController
                     StringBuilder sb = new StringBuilder();
                     sb.append("<em>Issue ").append(issue.getIssueId()).append(" marked as duplicate of this issue.</em>");
                     duplicateOf.addComment(user, sb.toString());
-                    IssueManager.newSaveIssue(user, c, duplicateOf);
+                    IssueManager.saveIssue(user, c, duplicateOf);
                 }
 
                 Set<Integer> newRelatedIds = issue.getRelatedIssues();
@@ -700,7 +725,7 @@ public class IssuesController extends SpringActionController
                 for (int curIssueId : newIssues)
                 {
                     Issue relatedIssue = relatedIssueCommentHandler(issue.getIssueId(), curIssueId, user, false);
-                    IssueManager.newSaveIssue(user, getContainer(), relatedIssue);
+                    IssueManager.saveIssue(user, getContainer(), relatedIssue);
                 }
 
                 // this list represents all the ids which will need related handling for a droping a relatedIssue entry
@@ -712,7 +737,7 @@ public class IssuesController extends SpringActionController
                     for (int curIssueId : prevIssues)
                     {
                         Issue relatedIssue = relatedIssueCommentHandler(issue.getIssueId(), curIssueId, user, true);
-                        IssueManager.newSaveIssue(user, getContainer(), relatedIssue);
+                        IssueManager.saveIssue(user, getContainer(), relatedIssue);
                     }
                 }
                 transaction.commit();

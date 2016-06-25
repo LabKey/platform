@@ -24,25 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NamedObjectList;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
-import org.labkey.api.data.ForeignKey;
-import org.labkey.api.data.LookupColumn;
-import org.labkey.api.data.MultiValuedDisplayColumn;
-import org.labkey.api.data.MultiValuedForeignKey;
-import org.labkey.api.data.MultiValuedLookupColumn;
-import org.labkey.api.data.Parameter;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableExtension;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
@@ -171,10 +153,24 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         DetailsURL relatedURL = new DetailsURL(base, Collections.singletonMap("issueId", FieldKey.fromParts("Related", "IssueId")));
         relatedURL.setContainerContext(new ContainerContext.FieldKeyContext(FieldKey.fromParts("Related", "Folder")));
         related.setURL(relatedURL);
-        related.setFk(new MultiValuedForeignKey(
-                new QueryForeignKey(getUserSchema(), getContainer(), "RelatedIssues", "IssueId", null),
-                "RelatedIssueId",
-                "IssueId")
+
+        QueryForeignKey qfk = new QueryForeignKey(getUserSchema(), getContainer(), "RelatedIssues", "IssueId", null)
+        {
+            @Override
+            public TableInfo getLookupTableInfo()
+            {
+                TableInfo table = super.getLookupTableInfo();
+
+                ColumnInfo lookupColumn = table.getColumn(getLookupColumnName());
+                lookupColumn.setFk(new QueryForeignKey(getUserSchema(), getLookupContainer(), IssuesQuerySchema.ALL_ISSUE_TABLE, "issueid", null));
+                ColumnInfo junctionColumn = table.getColumn("RelatedIssueId");
+                junctionColumn.setFk(new QueryForeignKey(getUserSchema(), getLookupContainer(), IssuesQuerySchema.ALL_ISSUE_TABLE, "issueid", null));
+
+                return table;
+            }
+        };
+
+        related.setFk(new MultiValuedForeignKey(qfk, "RelatedIssueId", "IssueId")
         {
             @Override
             protected MultiValuedLookupColumn createMultiValuedLookupColumn(ColumnInfo relatedIssueId, ColumnInfo parent, ColumnInfo childKey, ColumnInfo junctionKey, ForeignKey fk)
