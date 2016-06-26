@@ -20,10 +20,8 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -61,10 +59,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * User: migra
@@ -73,12 +69,9 @@ import java.util.Set;
  */
 public class ReportManager implements DatasetManager.DatasetListener
 {
-    private static final String SCHEMA_NAME = "study";
-
     /** records the dataset id used for plotviews (charts not tied to a specific dataset view) */
     public static final int ALL_DATASETS = -1;
     public static final String ALL_DATASETS_KEY = StudySchema.getInstance().getSchemaName() + "/*";
-    public static final String DATASET_CHART_PREFIX = "showWithDataset";
 
     private static final ReportManager instance = new ReportManager();
     private static final Logger _log = Logger.getLogger(ReportManager.class);
@@ -91,11 +84,6 @@ public class ReportManager implements DatasetManager.DatasetListener
     private ReportManager()
     {
         DatasetManager.addDatasetListener(this);
-    }
-
-    private DbSchema getSchema()
-    {
-        return DbSchema.get(SCHEMA_NAME);
     }
 
     private static final String _datasetLabelQuery;
@@ -177,16 +165,12 @@ public class ReportManager implements DatasetManager.DatasetListener
                     labels.add(new Pair<>(view.getName(), view.getName()));
         }
 
-        Collections.sort(labels, new Comparator<Pair<String, String>>()
-        {
-            public int compare(Pair<String, String> o1, Pair<String, String> o2)
-            {
-                if (o1.getKey() == null && o2.getKey() == null) return 0;
-                if (o1.getKey() == null) return -1;
-                if (o2.getKey() == null) return 1;
+        Collections.sort(labels, (o1, o2) -> {
+            if (o1.getKey() == null && o2.getKey() == null) return 0;
+            if (o1.getKey() == null) return -1;
+            if (o2.getKey() == null) return 1;
 
-                return o1.getKey().compareTo(o2.getKey());
-            }
+            return o1.getKey().compareTo(o2.getKey());
         });
 
         // add the default grid as the first element
