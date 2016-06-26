@@ -1483,7 +1483,14 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         filter.addInClause(FieldKey.fromParts("RowId"), vialRowIds);
         List<Vial> vials = getVials(container, user, filter);
         if (vials.size() != vialRowIds.size())
-            throw new SpecimenRequestException("One or more specimen RowIds had no matching specimen.");
+        {
+            List<Long> unmatchedRowIds = new ArrayList<>(vialRowIds);
+            for (Vial vial : vials)
+            {
+                unmatchedRowIds.remove(vial.getRowId());
+            }
+            throw new SpecimenRequestException("One or more specimen RowIds had no matching specimen: " + unmatchedRowIds);
+        }
         return vials;
     }
 
