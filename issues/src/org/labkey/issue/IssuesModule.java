@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.property.PropertyService;
@@ -158,7 +159,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
     @Override
     public ActionURL getTabURL(Container c, User user)
     {
-        return IssuesController.getListURL(c);
+        return new ActionURL(IssuesController.BeginAction.class, c).addParameter(DataRegion.LAST_FILTER_PARAM, true);
     }
 
     @NotNull

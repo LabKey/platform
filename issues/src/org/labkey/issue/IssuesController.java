@@ -249,7 +249,13 @@ public class IssuesController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return HttpView.redirect(getListURL(getContainer()));
+            if (IssueManager.getIssueListDefs(getContainer()).size() > 1)
+            {
+                ActionURL url = QueryService.get().urlFor(getUser(), getContainer(), QueryAction.executeQuery, "issues", IssuesQuerySchema.TableType.IssueListDef.name());
+                return HttpView.redirect(url);
+            }
+            else
+                return HttpView.redirect(getListURL(getContainer()));
         }
 
         public NavTree appendNavTrail(NavTree root)

@@ -15,9 +15,7 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.InvalidKeyException;
-import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryParam;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.ValidationException;
@@ -28,6 +26,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
+import org.labkey.issue.IssuesController;
 import org.labkey.issue.actions.InsertIssueDefAction;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
@@ -77,10 +76,8 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
         nameCol.setShownInInsertView(false);
 
         ColumnInfo labelCol = addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Label")));
-        DetailsURL url = new DetailsURL(QueryService.get().urlFor(getUserSchema().getUser(), getContainer(),
-                QueryAction.executeQuery,
-                IssuesSchema.getInstance().getSchemaName(), null),
-                Collections.singletonMap("queryName", "name"));
+        DetailsURL url = new DetailsURL(new ActionURL(IssuesController.ListAction.class, getContainer()),
+                Collections.singletonMap("issueDefName", "name"));
         labelCol.setURL(url);
 
         ColumnInfo containerCol = addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Container")));
