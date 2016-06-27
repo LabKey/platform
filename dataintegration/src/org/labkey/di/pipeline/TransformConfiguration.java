@@ -15,6 +15,7 @@
  */
 package org.labkey.di.pipeline;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
@@ -199,7 +200,10 @@ public class TransformConfiguration extends Entity
     {
         if (null == getLastRunId())
             return null;
-        return TransformManager.get().getTransformRunlog(lookupContainer(), getLastRunId());
+        String transformRunLog = TransformManager.get().getTransformRunlog(lookupContainer(), getLastRunId());
+        // Don't display the full stack trace on the configuration admin page; still available by clicking through to the run from the ERROR link
+        transformRunLog = StringUtils.trim(StringUtils.substringBefore(transformRunLog, "\tat"));
+        return transformRunLog;
     }
 
     public String getTransformState()

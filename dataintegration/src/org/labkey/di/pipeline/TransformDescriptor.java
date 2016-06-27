@@ -293,7 +293,8 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             Container c = context.getContainer();
             if (null == c)
                 return false;
-
+            // Call this just to create the TransformConfiguration record if it doesn't exist
+            TransformManager.get().getTransformConfiguration(c, this);
             for (StepMeta stepMeta : _stepMetaDatas)
             {
                 TransformTask step = stepMeta.getProvider().createStepInstance(null, null, stepMeta, (TransformJobContext)context);

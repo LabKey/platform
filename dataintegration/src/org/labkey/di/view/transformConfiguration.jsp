@@ -242,7 +242,7 @@ function onTruncateAndReset(el, id)
     <%if(isAdmin) {%>
         <td class="labkey-column-header"></td>
         <td class="labkey-column-header"></td>
-        <td class="labkey-column-header">Last Transform Run Log</td>
+        <td class="labkey-column-header">Last Transform Run Log Error</td>
     <%}%>
     </tr><%
 
