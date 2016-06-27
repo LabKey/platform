@@ -239,7 +239,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             /**
              * Get the parameterized query values for this query.  These parameters
              * are named by the query itself.
-             * @param {booelan} lowercase If true, all parameter names will be converted to lowercase
+             * @param {boolean} lowercase If true, all parameter names will be converted to lowercase
              * returns params An Object of key/val pairs.
              */
             getParameters: function (lowercase)
