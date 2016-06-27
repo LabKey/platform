@@ -17,6 +17,7 @@ package org.labkey.api.writer;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.CheckedInputStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 
@@ -69,7 +70,8 @@ public class ZipUtil
     {
         List<File> files = new ArrayList<>();
 
-        try (ZipInputStream zis = new ZipInputStream(is))
+        // ZipInputStream.close() should close InputStream is. Use a CheckedInputStream to be sure.
+        try (ZipInputStream zis = new ZipInputStream(new CheckedInputStream(is)))
         {
             ZipEntry entry;
 
@@ -100,10 +102,6 @@ public class ZipUtil
                 files.add(destFile);
                 zis.closeEntry();
             }
-        }
-        finally
-        {
-            is.close();
         }
 
         return files;

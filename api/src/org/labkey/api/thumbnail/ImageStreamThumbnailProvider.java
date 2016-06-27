@@ -16,7 +16,6 @@
 package org.labkey.api.thumbnail;
 
 import org.apache.batik.transcoder.TranscoderException;
-import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.DocumentConversionService;

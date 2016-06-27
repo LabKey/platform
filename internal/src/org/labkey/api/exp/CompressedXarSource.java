@@ -65,38 +65,36 @@ public class CompressedXarSource extends AbstractFileXarSource
         {
             throw new ExperimentException("Failed to create directory " + outputDir);
         }
-        FileInputStream fIn = null;
-        try
+
+        try (FileInputStream fIn = new FileInputStream(_xarFile))
         {
-            fIn = new FileInputStream(_xarFile);
             ZipInputStream zIn = new ZipInputStream(new BufferedInputStream(fIn));
             ZipEntry entry;
             while ((entry = zIn.getNextEntry()) != null)
             {
-                int i;
-                OutputStream out = null;
-                try
+                byte data[] = new byte[BUFFER_SIZE];
+                File destFile = new File(outputDir, entry.getName());
+                if (entry.isDirectory())
                 {
-                    byte data[] = new byte[BUFFER_SIZE];
-                    File destFile = new File(outputDir, entry.getName());
-                    if (entry.isDirectory())
+                    destFile.mkdirs();
+                    if (!destFile.isDirectory())
                     {
-                        destFile.mkdirs();
-                        if (!destFile.isDirectory())
-                        {
-                            throw new ExperimentException("Failed to create directory " + destFile);
-                        }
+                        throw new ExperimentException("Failed to create directory " + destFile);
                     }
-                    else
+                }
+                else
+                {
+                    int i;
+                    File destDir = destFile.getParentFile();
+                    destDir.mkdirs();
+                    if (!destDir.isDirectory())
                     {
-                        File destDir = destFile.getParentFile();
-                        destDir.mkdirs();
-                        if (!destDir.isDirectory())
-                        {
-                            throw new ExperimentException("Failed to create directory " + destDir);
-                        }
-                        out = new BufferedOutputStream(new FileOutputStream(destFile), BUFFER_SIZE);
-                        while ((i= zIn.read(data, 0, BUFFER_SIZE)) != -1)
+                        throw new ExperimentException("Failed to create directory " + destDir);
+                    }
+
+                    try (OutputStream out = new BufferedOutputStream(new FileOutputStream(destFile), BUFFER_SIZE))
+                    {
+                        while ((i = zIn.read(data, 0, BUFFER_SIZE)) != -1)
                         {
                             out.write(data, 0, i);
                         }
@@ -110,20 +108,12 @@ public class CompressedXarSource extends AbstractFileXarSource
                         }
                     }
                 }
-                finally
-                {
-                    if (out != null) { try { out.close(); } catch (IOException e) {} }
-                }
             }
 
             if (_xmlFile == null)
             {
                 throw new XarFormatException("XAR file " + _xarFile + " does not contain any .xar.xml files");
             }
-        }
-        finally
-        {
-            if (fIn != null) { try { fIn.close(); } catch (IOException e) {} }
         }
     }
 
