@@ -58,7 +58,8 @@ import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
  * resource type, which was undesirable. Newer implementation adds bookkeeping to associate multiple listeners with a single
  * WatchService directory registration.)
  *
- * This class is thread-safe, for both listener registration and event invocation. FileSystemDirectoryListeners must be thread-safe.
+ * This class is thread-safe, for both listener registration and event invocation. Implementations of FileSystemDirectoryListener
+ * must be thread-safe.
  */
 public class FileSystemWatcherImpl implements FileSystemWatcher
 {
@@ -75,6 +76,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         thread.start();
     }
 
+    @SafeVarargs
     public final void addListener(Path directory, FileSystemDirectoryListener listener, Kind<Path>... events) throws IOException
     {
         // Associate a new PathListenerManager with this directory, if one doesn't already exist
@@ -121,6 +123,10 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
                     {
                         watchedPath = (Path)watchKey.watchable();
                         PathListenerManager plm = _listenerMap.get(watchedPath);
+
+                        // Should not happen, but this may help narrow down cause of #26934
+                        if (null == plm)
+                            throw new IllegalStateException("Received a file watcher event from " + watchedPath + " but its PathListenerManager was null!");
 
                         for (WatchEvent<?> watchEvent : watchKey.pollEvents())
                         {
@@ -199,8 +205,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
             {
                 LOG.info("Overflow! File system watcher events may have been lost.");
 
-                for (ListenerContext listenerContext : _list)
-                    listenerContext.fireOverflow();
+                _list.forEach(ListenerContext::fireOverflow);
             }
             else
             {
