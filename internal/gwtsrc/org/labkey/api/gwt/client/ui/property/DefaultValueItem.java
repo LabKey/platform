@@ -29,7 +29,6 @@ import org.labkey.api.gwt.client.ui.LabKeyLinkHTML;
 import org.labkey.api.gwt.client.ui.PropertyPane;
 import org.labkey.api.gwt.client.ui.Saveable;
 import org.labkey.api.gwt.client.ui.WindowUtil;
-import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.StringUtils;
 
 /**

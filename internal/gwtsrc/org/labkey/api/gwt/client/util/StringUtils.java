@@ -19,10 +19,15 @@ package org.labkey.api.gwt.client.util;
 import java.util.List;
 
 /**
+ * GWT client code is the only place we should be using these methods; use org.apache.commons.lang3.StringUtils instead.
+ * This class will be removed in a future release of LabKey.
+ *
  * User: Mark Igra
  * Date: Feb 15, 2007
  * Time: 10:20:35 PM
  */
+
+@Deprecated
 public class StringUtils
 {
     public static boolean isEmpty(String str)
@@ -50,11 +55,6 @@ public class StringUtils
     public static boolean equals(String a, String b)
     {
         return (null == a && null == b) || (null != a && a.equals(b));
-    }
-
-    public static String nullToEmpty(String str)
-    {
-        return null == str ? "" : str;
     }
 
     public static String join(List l, String join)
