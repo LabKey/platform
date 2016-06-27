@@ -144,12 +144,16 @@ public class FlagColumnRenderer extends DataColumn
         Object boundValue = getColumnInfo().getValue(ctx);
         if (boundValue == null)
             return;
-        FlagColumn displayField = (FlagColumn) getColumnInfo().getDisplayField();
-        String comment = (String) displayField.getValue(ctx);
-        String objectId = (String) getValue(ctx);
-        if (objectId == null)
-            return;
-        _renderFlag(ctx, out, objectId, comment);
+
+        if (getDisplayColumn() instanceof FlagColumn)
+        {
+            FlagColumn flagCol = (FlagColumn) getDisplayColumn();
+            String comment = (String) flagCol.getValue(ctx);
+            String objectId = (String) getValue(ctx);
+            if (objectId == null)
+                return;
+            _renderFlag(ctx, out, objectId, comment);
+        }
     }
 
 
