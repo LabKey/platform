@@ -17,6 +17,7 @@
 package org.labkey.query.metadata;
 
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -30,7 +31,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.gwt.client.model.GWTConditionalFormat;
-import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
