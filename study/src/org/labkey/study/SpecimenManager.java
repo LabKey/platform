@@ -1477,8 +1477,11 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         return getVials(container, user, rowIds);
     }
 
-    public List<Vial> getVials(Container container, User user, List<Long> vialRowIds)
+    public List<Vial> getVials(Container container, User user, Collection<Long> vialRowIds)
     {
+        // Copy into a set to eliminate dupes - issue 26940
+        vialRowIds = new HashSet<>(vialRowIds);
+
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addInClause(FieldKey.fromParts("RowId"), vialRowIds);
         List<Vial> vials = getVials(container, user, filter);
