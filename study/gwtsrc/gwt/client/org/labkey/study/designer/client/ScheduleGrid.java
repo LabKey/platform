@@ -16,7 +16,6 @@
 
 package gwt.client.org.labkey.study.designer.client;
 
-import gwt.client.org.labkey.study.designer.client.EditableGrid;
 import gwt.client.org.labkey.study.designer.client.model.GWTCohort;
 import gwt.client.org.labkey.study.designer.client.model.GWTTimepoint;
 import gwt.client.org.labkey.study.designer.client.model.Schedule;
