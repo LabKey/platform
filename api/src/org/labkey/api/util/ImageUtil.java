@@ -31,19 +31,18 @@ import javafx.stage.Stage;
 import net.coobird.thumbnailator.Thumbnails;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
-import org.apache.log4j.Priority;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailOutputStream;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.view.ViewContext;
 import org.w3c.dom.Document;
+import org.xhtmlrenderer.log4j.Log4JXRLogger;
 import org.xhtmlrenderer.resource.ImageResource;
 import org.xhtmlrenderer.resource.XMLResource;
 import org.xhtmlrenderer.swing.Java2DRenderer;
 import org.xhtmlrenderer.swing.NaiveUserAgent;
 import org.xhtmlrenderer.util.XRLog;
-import org.xhtmlrenderer.util.XRLogger;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -59,7 +58,6 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
 
 /**
  * Basic image manipulation, such as rescaling and conversion between image file formats.
@@ -72,50 +70,7 @@ public class ImageUtil
 
     static
     {
-        XRLog.setLoggerImpl(new XRLogger()
-        {
-            Priority toPriority(Level level)
-            {
-                int l = level.intValue();
-                if (l == Level.SEVERE.intValue())
-                    return org.apache.log4j.Level.ERROR;
-                if (l == Level.WARNING.intValue())
-                    return org.apache.log4j.Level.WARN;
-                if (l == Level.INFO.intValue())
-                    return org.apache.log4j.Level.INFO;
-                if (l == Level.CONFIG.intValue())
-                    return org.apache.log4j.Level.INFO;
-                if (l == Level.FINE.intValue())
-                    return org.apache.log4j.Level.DEBUG;
-                if (l == Level.FINER.intValue())
-                    return org.apache.log4j.Level.DEBUG;
-                if (l == Level.FINEST.intValue())
-                    return org.apache.log4j.Level.TRACE;
-                if (l == Level.ALL.intValue())
-                    return org.apache.log4j.Level.ALL;
-                if (l == Level.OFF.intValue())
-                    return org.apache.log4j.Level.OFF;
-                return org.apache.log4j.Level.DEBUG;
-            }
-
-            @Override
-            public void log(String where, Level level, String msg)
-            {
-                LOG.log(where, toPriority(level), msg, null);
-
-            }
-
-            @Override
-            public void log(String where, Level level, String msg, Throwable t)
-            {
-                LOG.log(where, toPriority(level), msg, t);
-            }
-
-            @Override
-            public void setLevel(String s, Level level)
-            {
-            }
-        });
+        XRLog.setLoggerImpl(new Log4JXRLogger());
     }
 
     /** Rewrite the output files so that they look nice and antialiased, and writes a PNG to the outputStream */
