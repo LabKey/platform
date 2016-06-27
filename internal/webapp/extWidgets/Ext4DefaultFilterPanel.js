@@ -6,6 +6,7 @@
 Ext4.define('LABKEY.ext4.DefaultFilterPanel', {
     extend : 'Ext.form.Panel',
     alias : 'widget.labkey-default-filterpanel',
+    cls : 'defaultfilterpanel',
     boundColumn : null,
     schemaName : null,
     queryName : null,

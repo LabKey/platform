@@ -100,7 +100,7 @@ Ext.define('LABKEY.app.panel.FilterDialog', {
         if (this.boundColumn.description) {
             items.push({
                 xtype: 'box',
-                autoEl: {tag: 'div', cls: 'x-body', html: Ext.htmlEncode(this.boundColumn.description)},
+                autoEl: {tag: 'div', cls: 'x-body windowdescription', html: Ext.htmlEncode(this.boundColumn.description)},
                 maxHeight: 125,
                 autoScroll: true
             });
@@ -129,9 +129,7 @@ Ext.define('LABKEY.app.panel.FilterDialog', {
 
                 // sizing and styling
                 autoHeight: true,
-                bodyStyle: 'padding: 5px;',
                 border: false,
-                width: this.width - 45,
                 items: views
             };
 
@@ -210,7 +208,6 @@ Ext.define('LABKEY.app.panel.FilterDialog', {
             itemId: 'labkey-filterdialog-default',
             boundColumn: this.boundColumn,
             filterArray: this.store.filterArray,
-            style: 'padding: 20px 35px;',
             schemaName: this.schemaName,
             queryName: this.queryName
         });
@@ -221,6 +218,7 @@ Ext.define('LABKEY.app.panel.FilterDialog', {
                 title: 'Choose Values',
                 xtype: 'labkey-faceted-filterpanel',
                 itemId: 'labkey-filterdialog-faceted',
+                cls: 'facetfilterpanel',
                 border: false,
                 overflowY: 'auto',
                 useGrouping: this.useFacetGrouping,
