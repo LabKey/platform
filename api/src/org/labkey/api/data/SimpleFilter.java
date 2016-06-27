@@ -1164,7 +1164,7 @@ public class SimpleFilter implements Filter
         return this;
     }
 
-    public SimpleFilter addInClause(FieldKey fieldKey, Collection paramVals)
+    public SimpleFilter addInClause(FieldKey fieldKey, Collection<?> paramVals)
     {
         _clauses.add(new InClause(fieldKey, paramVals));
         return this;
