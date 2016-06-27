@@ -21,6 +21,7 @@ import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriterImpl;
 import org.labkey.api.admin.PipelineJobLoggerGetter;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.portal.ProjectUrls;
@@ -48,7 +49,8 @@ import java.io.File;
 // Allows some sharing of code between snapshot/ancillary study publication and specimen refresh
 public abstract class AbstractStudyPipelineJob extends PipelineJob
 {
-    protected final transient Container _dstContainer;
+    protected transient Container _dstContainer;
+    protected String _dstContainerId;
 
     // TODO: This is legacy error handling that we should remove
     protected final BindException _errors;
@@ -57,7 +59,7 @@ public abstract class AbstractStudyPipelineJob extends PipelineJob
     {
         super(null, new ViewBackgroundInfo(source, user, url), root);
 
-        _dstContainer = destination;
+        setDstContainer(destination);
 
         File tempLogFile = new File(root.getRootPath(), FileUtil.makeFileNameWithTimestamp(getLogName(), "log"));
         setLogFile(tempLogFile);
@@ -65,12 +67,26 @@ public abstract class AbstractStudyPipelineJob extends PipelineJob
         _errors = new NullSafeBindException(this, getLogName());
     }
 
+    public Container getDstContainer()
+    {
+        if (null == _dstContainer)
+            _dstContainer = ContainerManager.getForId(_dstContainerId);
+
+        return _dstContainer;
+    }
+
+    public void setDstContainer(Container dstContainer)
+    {
+        _dstContainer = dstContainer;
+        _dstContainerId = dstContainer.getId();
+    }
+
     abstract protected String getLogName();
 
     @Override
     public URLHelper getStatusHref()
     {
-        return PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(_dstContainer);
+        return PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(getDstContainer());
     }
 
     @Override

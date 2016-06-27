@@ -73,7 +73,7 @@ public class SpecimenRefreshPipelineJob extends AbstractStudyPipelineJob
             if (null == sourceStudy)
                 throw new NotFoundException("Source study no longer exists");
 
-            StudyImpl destStudy = StudyManager.getInstance().getStudy(_dstContainer);
+            StudyImpl destStudy = StudyManager.getInstance().getStudy(getDstContainer());
 
             if (null == destStudy)
                 throw new NotFoundException("Destination study no longer exists");

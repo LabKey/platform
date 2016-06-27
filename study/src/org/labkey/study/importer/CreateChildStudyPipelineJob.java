@@ -119,7 +119,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
             if (null == sourceStudy)
                 throw new NotFoundException("Source study no longer exists");
 
-            StudyImpl destStudy = StudyManager.getInstance().getStudy(_dstContainer);
+            StudyImpl destStudy = StudyManager.getInstance().getStudy(getDstContainer());
             setStatus(TaskStatus.running);
 
             if (destStudy != null)
@@ -231,11 +231,11 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 folderExportContext.addContext(StudyExportContext.class, studyExportContext);
 
                 // Save these snapshot settings to support specimen refresh and provide history
-                StudySnapshot snapshot = new StudySnapshot(studyExportContext, _dstContainer, _form.isSpecimenRefresh(), _form);
+                StudySnapshot snapshot = new StudySnapshot(studyExportContext, getDstContainer(), _form.isSpecimenRefresh(), _form);
                 Table.insert(getUser(), StudySchema.getInstance().getTableInfoStudySnapshot(), snapshot);
 
                 // Save the snapshot RowId to the destination study
-                StudyImpl mutableStudy = StudyManager.getInstance().getStudy(_dstContainer).createMutable();
+                StudyImpl mutableStudy = StudyManager.getInstance().getStudy(getDstContainer()).createMutable();
                 mutableStudy.setStudySnapshot(snapshot.getRowId());
                 StudyManager.getInstance().updateStudy(user, mutableStudy);
 
@@ -288,7 +288,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         finally
         {
             if (!success && _destFolderCreated)
-                ContainerManager.delete(_dstContainer, getUser());
+                ContainerManager.delete(getDstContainer(), getUser());
         }
 
         return success;
@@ -493,7 +493,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
             if (!participantGroups.isEmpty())
             {
                 // get the participant categories that were copied to the ancillary study
-                for (ParticipantCategoryImpl category : ParticipantGroupManager.getInstance().getParticipantCategories(_dstContainer, user))
+                for (ParticipantCategoryImpl category : ParticipantGroupManager.getInstance().getParticipantCategories(getDstContainer(), user))
                 {
                     for (ParticipantGroup group : category.getGroups())
                     {
@@ -582,7 +582,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
             sql.append(" SELECT DISTINCT(ParticipantId), ? FROM ").append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap(), "");
             sql.append(" WHERE GroupId IN ").append(groupInClause).append(" AND Container = ?");
 
-            sql.add(_dstContainer.getId());
+            sql.add(getDstContainer());
             sql.add(sourceStudy.getContainer().getId());
             SqlSelector selector = new SqlSelector(schema.getSchema(), sql);
 
@@ -649,7 +649,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
 
             sql.append("INSERT INTO ").append(schema.getTableInfoParticipant()).append(" (ParticipantId, Container)");
             sql.append(" SELECT DISTINCT(").append(columnName).append("), ? FROM ").append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap(), "gm");
-            sql.add(_dstContainer);
+            sql.add(getDstContainer());
 
             if (useAlternateParticipantIds)
                 sql.append(" INNER JOIN ").append(schema.getTableInfoParticipant(), "p").append(" ON gm.Container = p.Container AND gm.ParticipantId = p.ParticipantId");
