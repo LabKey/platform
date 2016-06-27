@@ -81,7 +81,7 @@ abstract public class LaboratoryService
 
     abstract public Pair<ExpExperiment, ExpRun> saveAssayBatch(List<Map<String, Object>> results, JSONObject json, String basename, ViewContext ctx, AssayProvider provider, ExpProtocol protocol) throws ValidationException;
 
-    abstract public Pair<ExpExperiment, ExpRun> saveAssayBatch(List<Map<String, Object>> results, JSONObject json, File file, String fileName, ViewContext ctx, AssayProvider provider, ExpProtocol protocol) throws ValidationException;
+    abstract public Pair<ExpExperiment, ExpRun> saveAssayBatch(List<Map<String, Object>> results, JSONObject json, File file, ViewContext ctx, AssayProvider provider, ExpProtocol protocol) throws ValidationException;
 
     abstract public List<NavItem> getSettingsItems(Container c, User u);
 
