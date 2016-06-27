@@ -1203,38 +1203,37 @@ public class QueryController extends SpringActionController
             url.addParameter("schemaName", _schemaName);
             HttpView scopeInfo = new ScopeView("Scope and Schema Information", scope, _schemaName, url);
 
-            ModelAndView metaDataView;
-            ModelAndView pkView;
-            ModelAndView indexView;
-            ModelAndView ikView;
-            ModelAndView ekView;
-
             SqlDialect dialect = scope.getSqlDialect();
+
+            VBox result = new VBox();
 
             try (JdbcMetaDataLocator locator = dialect.getJdbcMetaDataLocator(scope, _schemaName, _tableName))
             {
                 JdbcMetaDataSelector columnSelector = new JdbcMetaDataSelector(locator,
                         (dbmd, l) -> dbmd.getColumns(l.getCatalogName(), l.getSchemaName(), l.getTableName(), null));
-                metaDataView = new ResultSetView(CachedResultSets.create(columnSelector.getResultSet(), true, Table.ALL_ROWS), "Table Meta Data");
+                result.addView(new ResultSetView(CachedResultSets.create(columnSelector.getResultSet(), true, Table.ALL_ROWS), "Table Meta Data"));
 
                 JdbcMetaDataSelector pkSelector = new JdbcMetaDataSelector(locator,
                         (dbmd, l) -> dbmd.getPrimaryKeys(l.getCatalogName(), l.getSchemaName(), l.getTableName()));
-                pkView = new ResultSetView(CachedResultSets.create(pkSelector.getResultSet(), true, Table.ALL_ROWS), "Primary Key Meta Data");
+                result.addView(new ResultSetView(CachedResultSets.create(pkSelector.getResultSet(), true, Table.ALL_ROWS), "Primary Key Meta Data"));
 
-                JdbcMetaDataSelector indexSelector = new JdbcMetaDataSelector(locator,
-                        (dbmd, l) -> dbmd.getIndexInfo(l.getCatalogName(), l.getSchemaName(), l.getTableName(), false, false));
-                indexView = new ResultSetView(CachedResultSets.create(indexSelector.getResultSet(), true, Table.ALL_ROWS), "Other Index Meta Data");
+                if (dialect.canCheckIndices(ti))
+                {
+                    JdbcMetaDataSelector indexSelector = new JdbcMetaDataSelector(locator,
+                            (dbmd, l) -> dbmd.getIndexInfo(l.getCatalogName(), l.getSchemaName(), l.getTableName(), false, false));
+                    result.addView(new ResultSetView(CachedResultSets.create(indexSelector.getResultSet(), true, Table.ALL_ROWS), "Other Index Meta Data"));
+                }
 
                 JdbcMetaDataSelector ikSelector = new JdbcMetaDataSelector(locator,
                         (dbmd, l) -> dbmd.getImportedKeys(l.getCatalogName(), l.getSchemaName(), l.getTableName()));
-                ikView = new ResultSetView(CachedResultSets.create(ikSelector.getResultSet(), true, Table.ALL_ROWS), "Imported Keys Meta Data");
+                result.addView(new ResultSetView(CachedResultSets.create(ikSelector.getResultSet(), true, Table.ALL_ROWS), "Imported Keys Meta Data"));
 
                 JdbcMetaDataSelector ekSelector = new JdbcMetaDataSelector(locator,
                         (dbmd, l) -> dbmd.getExportedKeys(l.getCatalogName(), l.getSchemaName(), l.getTableName()));
-                ekView = new ResultSetView(CachedResultSets.create(ekSelector.getResultSet(), true, Table.ALL_ROWS), "Exported Keys Meta Data");
+                result.addView(new ResultSetView(CachedResultSets.create(ekSelector.getResultSet(), true, Table.ALL_ROWS), "Exported Keys Meta Data"));
             }
 
-            return new VBox(scopeInfo, metaDataView, pkView, indexView, ikView, ekView);
+            return result;
         }
 
         public NavTree appendNavTrail(NavTree root)
