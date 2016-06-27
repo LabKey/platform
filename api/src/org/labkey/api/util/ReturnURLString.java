@@ -16,10 +16,10 @@
 package org.labkey.api.util;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ConvertHelper;
-import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewServlet;
 
