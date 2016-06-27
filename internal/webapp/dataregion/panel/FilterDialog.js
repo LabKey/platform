@@ -14,7 +14,10 @@ Ext4.define('LABKEY.dataregion.panel.FilterDialog', {
     filters: [],
     defaultFiltId: 'labkey-filterdialog-default',
     facetedFiltId: 'labkey-filterdialog-faceted',
+    useFacetGrouping: true,
     maxGroupSize: 20,
+    minFilterPanelHeight: undefined,
+    maxFilterPanelHeight: undefined,
 
     initComponent: function () {
 
@@ -119,6 +122,7 @@ Ext4.define('LABKEY.dataregion.panel.FilterDialog', {
             }
 
             var config = {
+                cls: 'filterdialogcontainer',
                 defaults: this.defaults,
                 deferredRender: false,
                 monitorValid: true,
@@ -219,8 +223,10 @@ Ext4.define('LABKEY.dataregion.panel.FilterDialog', {
                 itemId: 'labkey-filterdialog-faceted',
                 border: false,
                 overflowY: 'auto',
-                useGrouping: true,
+                useGrouping: this.useFacetGrouping,
                 maxGroup: this.maxGroupSize,
+                minHeight: this.minFilterPanelHeight,
+                maxHeight: this.maxFilterPanelHeight,
                 useStoreCache: false,
                 groupFilters: this.store.filterArray,
                 filters: this.store.filterArray,
