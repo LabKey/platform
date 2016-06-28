@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.controllers.property;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -36,6 +37,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.exp.property.DomainKind;
@@ -48,6 +50,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
@@ -66,6 +69,7 @@ import org.labkey.api.util.SessionTempFileHolder;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GWTView;
+import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
@@ -697,6 +701,21 @@ public class PropertyController extends SpringActionController
         return response;
     }
 
+    public static String convertDomainToJson(@NotNull GWTDomain domain)
+    {
+        ApiSimpleResponse response = new ApiSimpleResponse();
+        try
+        {
+            response.putBean(domain, "domainId", "name", "domainURI", "description");
+            response.putBeanList("fields", domain.getFields());
+            return JSONObject.valueToString(response.getProperties());
+        }
+        catch (Exception e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private static GWTDomain convertJsonToDomain(JSONObject obj) throws JSONException
     {
@@ -789,5 +808,69 @@ public class PropertyController extends SpringActionController
             prop.setScale((Integer)obj.get("scale"));
 
         return prop;
+    }
+
+
+    public static class CompareWithTemplateModel
+    {
+        public String queryName;
+        public String schemaName;
+        public GWTDomain domain;
+        public GWTDomain template;
+        public TemplateInfo info;
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class CompareWithTemplateAction extends SimpleViewAction<DomainForm>
+    {
+        @Override
+        public ModelAndView getView(DomainForm form, BindException errors) throws Exception
+        {
+            // NOTE could use just domainId or domainURI, but SaveDomain expects schema and query
+            String schema = form.getSchemaName();
+            String query = form.getQueryName();
+            if (StringUtils.isBlank(schema) || StringUtils.isBlank(query))
+                throw new NotFoundException();
+
+            GWTDomain gwt = getDomain(schema, query, getContainer(), getUser());
+            Domain domain = form.getDomain();
+
+            if (null == domain)
+                throw new NotFoundException();
+            if (!domain.getContainer().hasPermission(getUser(), AdminPermission.class))
+                throw new UnauthorizedException();
+
+            GWTDomain gwtFromTemplate = null;
+            TemplateInfo info = domain.getTemplateInfo();
+
+            findDomainTemplate:
+            {
+                if (null == info)
+                    break findDomainTemplate;
+                Module module = ModuleLoader.getInstance().getModule(info.getModuleName());
+                if (null == module)
+                    break findDomainTemplate;
+                DomainTemplateGroup group = DomainTemplateGroup.get(module, info.getTemplateGroupName());
+                if (null == group)
+                    break findDomainTemplate;
+                DomainTemplate template = group.getTemplate(info.getTableName());
+                if (null != template)
+                    gwtFromTemplate = template.getDomain();
+            }
+
+            CompareWithTemplateModel model = new CompareWithTemplateModel();
+            model.schemaName = form.getSchemaName();
+            model.queryName = form.getQueryName();
+            model.domain = gwt;
+            model.template = gwtFromTemplate;
+            model.info = info;
+            return new JspView<>(PropertyController.class, "templateUpdate.jsp", model);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
+        }
     }
 }

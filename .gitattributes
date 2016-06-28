@@ -867,6 +867,7 @@ experiment/src/org/labkey/experiment/controllers/exp/SampleSetServiceImpl.java -
 experiment/src/org/labkey/experiment/controllers/exp/exportSampleSetAsXar.jsp -text
 experiment/src/org/labkey/experiment/controllers/property/DomainForm.java -text
 experiment/src/org/labkey/experiment/controllers/property/PropertyController.java -text
+experiment/src/org/labkey/experiment/controllers/property/templateUpdate.jsp -text
 experiment/src/org/labkey/experiment/customizeRunWebPart.jsp -text
 experiment/src/org/labkey/experiment/defaults/DefaultValueServiceImpl.java -text
 experiment/src/org/labkey/experiment/deriveSamplesChooseTarget.jsp -text
@@ -909,6 +910,7 @@ experiment/test/sampledata/sampleSet.xlsx -text
 experiment/webapp/Experiment/ExperimentRunNotFound.gif -text
 experiment/webapp/Experiment/QCFlagToggle.css -text
 experiment/webapp/Experiment/QCFlagToggleWindow.js -text
+experiment/webapp/Experiment/domainTemplate.js -text
 experiment/webapp/Experiment/flagData.png -text
 experiment/webapp/Experiment/flagDefault.gif -text
 experiment/webapp/Experiment/flagRun.gif -text

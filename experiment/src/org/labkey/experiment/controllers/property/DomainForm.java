@@ -34,6 +34,7 @@ public class DomainForm extends ViewForm
     private String _schemaName;
     private String _queryName;
     private String _domainURI;
+    private Integer _domainId;
     private boolean _createOrEdit = false;
     private boolean _allowFileLinkProperties = false;
     private boolean _allowAttachmentProperties = false;
@@ -46,7 +47,7 @@ public class DomainForm extends ViewForm
 
     public void setDomainId(int domainId)
     {
-        _domain = PropertyService.get().getDomain(domainId);
+        _domainId = domainId;
     }
 
     public String getDomainURI()
@@ -63,12 +64,21 @@ public class DomainForm extends ViewForm
     {
         if (_domain == null)
         {
-            String domainURI = _domainURI;
-            if (domainURI == null && _schemaName != null && _queryName != null)
-                domainURI = PropertyService.get().getDomainURI(_schemaName, _queryName, getContainer(), getUser());
+            if (null != _domainId)
+            {
+                Domain d = PropertyService.get().getDomain(_domainId);
+                if (null != d && d.getContainer().equals(getContainer()))
+                    _domain = d;
+            }
+            else
+            {
+                String domainURI = _domainURI;
+                if (domainURI == null && _schemaName != null && _queryName != null)
+                    domainURI = PropertyService.get().getDomainURI(_schemaName, _queryName, getContainer(), getUser());
 
-            if (domainURI != null)
-                _domain = PropertyService.get().getDomain(getContainer(), domainURI);
+                if (domainURI != null)
+                    _domain = PropertyService.get().getDomain(getContainer(), domainURI);
+            }
         }
 
         return _domain;
