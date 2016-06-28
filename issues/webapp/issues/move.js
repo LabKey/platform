@@ -46,7 +46,7 @@ Ext4.define('Issues.window.MoveIssue', {
             name: 'moveIssueCombo',
             valueField: 'containerId',
             displayField: 'containerPath',
-            fieldLabel: 'Container',
+            fieldLabel: 'Target folder',
             triggerAction: 'all',
             labelWidth: 65,
             queryMode: 'local',
