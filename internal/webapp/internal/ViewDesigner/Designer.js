@@ -1219,6 +1219,9 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                 }
             }
 
+            // include the custom view analyticsProviders (note: we don't currently have a way to edit them from the ViewDesigner
+            edited.analyticsProviders = this.customView.analyticsProviders;
+
             Ext4.apply(edited, properties);
 
             LABKEY.Query.saveQueryViews({

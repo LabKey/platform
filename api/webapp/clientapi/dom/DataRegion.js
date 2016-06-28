@@ -2868,7 +2868,7 @@ if (!LABKEY.DataRegions) {
                         region.changeView.call(region, {type: 'view', viewName: o.name});
                     },
                     failure: function(json) {
-                        Ext4.Msg.alert('Error saving view', json.exception);
+                        Ext4.Msg.alert('Error saving view', json.exception || json.statusText);
                     },
                     scope: region
                 });
