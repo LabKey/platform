@@ -1558,7 +1558,7 @@ if (!LABKEY.DataRegions) {
     // Customize View
     //
     LABKEY.DataRegion.prototype._initCustomViews = function() {
-        if (this.view && this.view.session) {
+        if (this.view && this.view.session && this.getMessage('customizeview') == undefined) {
             var msg;
             if (this.view.savable) {
                 msg = (this.viewName ? "The current grid view '<em>" + LABKEY.Utils.encodeHtml(this.viewName) + "</em>'" : "The current <em>&lt;default&gt;</em> grid view") + " is unsaved.";
@@ -2191,6 +2191,152 @@ if (!LABKEY.DataRegions) {
     };
 
     /**
+     * Add or remove an aggregate for a given column in the DataRegion query view.
+     * @param viewName
+     * @param columnName
+     * @param aggType
+     */
+    LABKEY.DataRegion.prototype.toggleAggregateForCustomView = function(viewName, columnName, aggType) {
+        this.getQueryDetails(function(queryDetails)
+        {
+            var view = _getViewFromQueryDetails(queryDetails, viewName);
+            if (view != null)
+            {
+                var colFieldKey = LABKEY.FieldKey.fromString(columnName).toString();
+
+                if (_queryDetailsContainsColumn(queryDetails, colFieldKey))
+                {
+                    var colAggregateTypes = [];
+                    $.each(view.aggregates, function (index, existingAgg) {
+                        if (existingAgg.fieldKey == colFieldKey)
+                            colAggregateTypes.push(existingAgg.type);
+                    });
+
+                    var index = colAggregateTypes.indexOf(aggType);
+                    if (index == -1)
+                        colAggregateTypes.push(aggType);
+                    else
+                        colAggregateTypes.splice(index, 1);
+
+                    view = _applyAggregatesToCustomView(view, colFieldKey, colAggregateTypes);
+                    this._updateSessionCustomView(view, true);
+                }
+            }
+        }, null, this);
+    };
+
+    /**
+     * Remove a column from the given DataRegion query view.
+     * @param viewName
+     * @param columnName
+     */
+    LABKEY.DataRegion.prototype.removeColumn = function(viewName, columnName) {
+        this.getQueryDetails(function(queryDetails)
+        {
+            var view = _getViewFromQueryDetails(queryDetails, viewName);
+            if (view != null)
+            {
+                var colFieldKey = LABKEY.FieldKey.fromString(columnName).toString();
+
+                if (_queryDetailsContainsColumn(queryDetails, colFieldKey))
+                {
+                    var colFieldKeys = $.map(view.columns, function (c) {
+                        return c.fieldKey;
+                    }),
+                    fieldKeyIndex = colFieldKeys.indexOf(colFieldKey);
+
+                    if (fieldKeyIndex > -1)
+                    {
+                        view.columns.splice(fieldKeyIndex, 1);
+                        this._updateSessionCustomView(view, true);
+                    }
+                }
+            }
+        }, null, this);
+    };
+
+    /**
+     * Add the enabled analytics provider to the custom view definition based on the column fieldKey and provider name.
+     * In addition, disable the column menu item if the column is visible in the grid.
+     * @param viewName
+     * @param columnName
+     * @param providerName
+     */
+    LABKEY.DataRegion.prototype.addAnalyticsProviderForCustomView = function(viewName, columnName, providerName) {
+        this.getQueryDetails(function(queryDetails)
+        {
+            var view = _getViewFromQueryDetails(queryDetails, viewName);
+            if (view != null)
+            {
+                var colFieldKey = LABKEY.FieldKey.fromString(columnName).toString();
+
+                if (_queryDetailsContainsColumn(queryDetails, colFieldKey))
+                {
+                    var colProviderNames = [];
+                    $.each(view.analyticsProviders, function (index, existingProvider) {
+                        if (existingProvider.fieldKey == colFieldKey)
+                            colProviderNames.push(existingProvider.name);
+                    });
+
+                    if (colProviderNames.indexOf(providerName) == -1)
+                    {
+                        view.analyticsProviders.push({
+                            fieldKey: colFieldKey,
+                            name: providerName
+                        });
+
+                        this._updateSessionCustomView(view, false);
+                    }
+
+                    var elementId = this.name + ':' + colFieldKey + ':analytics-' + providerName;
+                    Ext4.each(Ext4.ComponentQuery.query('menuitem[elementId=' + elementId + ']'), function(menuItem) {
+                        menuItem.disable();
+                    });
+                }
+            }
+        }, null, this);
+    };
+
+    /**
+     * Remove an enabled analytics provider from the custom view definition based on the column fieldKey and provider name.
+     * In addition, enable the column menu item if the column is visible in the grid.
+     * @param viewName
+     * @param columnName
+     * @param providerName
+     */
+    LABKEY.DataRegion.prototype.removeAnalyticsProviderForCustomView = function(viewName, columnName, providerName) {
+        this.getQueryDetails(function(queryDetails)
+        {
+            var view = _getViewFromQueryDetails(queryDetails, viewName);
+            if (view != null)
+            {
+                var colFieldKey = LABKEY.FieldKey.fromString(columnName).toString();
+
+                if (_queryDetailsContainsColumn(queryDetails, colFieldKey))
+                {
+                    var indexToRemove = null;
+                    $.each(view.analyticsProviders, function (index, existingProvider) {
+                        if (existingProvider.fieldKey == colFieldKey && existingProvider.name == providerName) {
+                            indexToRemove = index;
+                            return false;
+                        }
+                    });
+
+                    if (indexToRemove != null) {
+                        view.analyticsProviders.splice(indexToRemove, 1);
+                        this._updateSessionCustomView(view, false);
+                    }
+
+                    var elementId = this.name + ':' + colFieldKey + ':analytics-' + providerName;
+                    Ext4.each(Ext4.ComponentQuery.query('menuitem[elementId=' + elementId + ']'), function(menuItem) {
+                        menuItem.enable();
+                    });
+                }
+            }
+        }, null, this);
+    };
+
+    /**
      * @private
      */
     LABKEY.DataRegion.prototype._openFilter = function(columnName) {
@@ -2211,6 +2357,31 @@ if (!LABKEY.DataRegions) {
                 }).show();
             }, this);
         }
+    };
+
+    LABKEY.DataRegion.prototype._updateSessionCustomView = function(customView, requiresRefresh) {
+        var viewConfig = $.extend({}, customView, {
+            shared: false,
+            inherit: false,
+            session: true
+        });
+
+        LABKEY.Query.saveQueryViews({
+            containerPath: this.containerFilter,
+            schemaName: this.schemaName,
+            queryName: this.queryName,
+            views: [viewConfig],
+            scope: this,
+            success: function(info) {
+                if (requiresRefresh) {
+                    this.refresh();
+                }
+                else if (info.views.length == 1) {
+                    this.view = info.views[0];
+                    this._initCustomViews();
+                }
+            }
+        });
     };
 
     //
@@ -2392,6 +2563,55 @@ if (!LABKEY.DataRegions) {
         }
 
         LABKEY.Query.deleteQueryView(config);
+    };
+
+    var _getViewFromQueryDetails = function(queryDetails, viewName)
+    {
+        var matchingView = null;
+
+        $.each(queryDetails.views, function(index, view)
+        {
+            if (view.name == viewName)
+            {
+                matchingView = view;
+                return false;
+            }
+        });
+
+        return matchingView;
+    };
+
+    var _queryDetailsContainsColumn = function(queryDetails, colFieldKey)
+    {
+        var keys = $.map(queryDetails.columns, function(c){ return c.fieldKey; }),
+            exists = keys.indexOf(colFieldKey) > -1;
+
+        if (!exists) {
+            console.warn('Unable to find column in query: ' + colFieldKey);
+        }
+
+        return exists;
+    };
+
+    var _applyAggregatesToCustomView = function(customView, fieldKey, newAggregates)
+    {
+        // first, keep any existing custom view aggregates that don't match this fieldKey
+        var aggregates = [];
+        $.each(customView.aggregates, function(index, existingAgg)
+        {
+            if (existingAgg.fieldKey != fieldKey)
+                aggregates.push(existingAgg);
+        });
+
+        // then add on the aggregates for the fieldKey selected
+        $.each(newAggregates, function(index, newAggType)
+        {
+            aggregates.push({fieldKey: fieldKey, type: newAggType});
+        });
+
+        customView.aggregates = aggregates;
+
+        return customView;
     };
 
     var _getAllRowSelectors = function(region) {

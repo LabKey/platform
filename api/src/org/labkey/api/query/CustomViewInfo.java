@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Aggregate;
+import org.labkey.api.data.AnalyticsProviderItem;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.FilterInfo;
 import org.labkey.api.data.Sort;
@@ -46,6 +47,7 @@ public interface CustomViewInfo
     public String FILTER_PARAM_PREFIX = "filter";
     public String CONTAINER_FILTER_NAME = "containerFilterName";
     public String AGGREGATE_PARAM_PREFIX = "agg";
+    public String ANALYTICSPROVIDER_PARAM_PREFIX = "analytics";
 
     enum ColumnProperty
     {
@@ -76,6 +78,7 @@ public interface CustomViewInfo
         private List<Sort.SortField> sort = new ArrayList<>();
         private List<String> containerFilterNames = Collections.emptyList();
         private List<Aggregate> aggregates = new ArrayList<>();
+        private List<AnalyticsProviderItem> analyticsProviders = new ArrayList<>();
 
         public List<FilterInfo> getFilter()
         {
@@ -95,6 +98,11 @@ public interface CustomViewInfo
         public List<Aggregate> getAggregates()
         {
             return aggregates;
+        }
+
+        public List<AnalyticsProviderItem> getAnalyticsProviders()
+        {
+            return analyticsProviders;
         }
 
         public static FilterAndSort fromString(String strFilter) throws URISyntaxException
@@ -126,20 +134,9 @@ public interface CustomViewInfo
 
                 List<Aggregate> aggregates = Aggregate.fromURL(filterSort, FILTER_PARAM_PREFIX);
                 fas.aggregates.addAll(aggregates);
-                /*
-                // XXX: can be replaced by the code in Aggregate.fromURL() ?
-                for (String key : filterSort.getKeysByPrefix(FILTER_PARAM_PREFIX + "." + AGGREGATE_PARAM_PREFIX + "."))
-                {
-                    String fieldKey = key.substring((FILTER_PARAM_PREFIX + "." + AGGREGATE_PARAM_PREFIX).length() + 1);
-                    for (String aggType : filterSort.getParameters(key))
-                    {
-                        FieldKey fk = FieldKey.fromString(fieldKey);
-                        String fieldKeyDecoded = StringUtils.join(fk.getParts(), "/");
-                        Aggregate agg = new Aggregate(fieldKeyDecoded, Aggregate.Type.valueOf(aggType.toUpperCase()));
-                        fas.aggregates.add(agg);
-                    }
-                }
-                */
+
+                List<AnalyticsProviderItem> analyticsProviders = AnalyticsProviderItem.fromURL(filterSort, FILTER_PARAM_PREFIX);
+                fas.analyticsProviders.addAll(analyticsProviders);
             }
 
             return fas;

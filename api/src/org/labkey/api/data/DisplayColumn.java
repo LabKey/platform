@@ -767,7 +767,6 @@ public abstract class DisplayColumn extends RenderColumn
             boolean disableAnalytics = BooleanUtils.toBoolean(ctx.getViewContext().getActionURL().getParameter(rgn.getName() + ".disableAnalytics"));
             if (!disableAnalytics && !getAnalyticsProviders().isEmpty())
             {
-                int counter = 0;
                 boolean toAddSeparator = true;
 
                 for (ColumnAnalyticsProvider analyticsProvider : getAnalyticsProviders())
@@ -783,8 +782,8 @@ public abstract class DisplayColumn extends RenderColumn
                         }
 
                         NavTree item = new NavTree();
-                        item.setId(baseId + ":analytics-" + counter++);
-                        item.setText(analyticsProvider.getName());
+                        item.setId(baseId + ":analytics-" + analyticsProvider.getName());
+                        item.setText(analyticsProvider.getLabel());
                         item.setImageCls(analyticsProvider.getIconCls(ctx, rgn.getSettings(), getColumnInfo()));
                         if (providerUrl != null)
                             item.setHref(providerUrl.getLocalURIString());

@@ -509,6 +509,12 @@ public class ClientDependency
     }
 
     @Override
+    public int hashCode()
+    {
+        return getUniqueKey().hashCode();
+    }
+
+    @Override
     public boolean equals(Object o)
     {
         if (o == null || !(o instanceof ClientDependency))

@@ -22,6 +22,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.analytics.AnalyticsProviderRegistry;
+import org.labkey.api.analytics.ColumnAnalyticsProvider;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.collections.RowMap;
@@ -38,6 +40,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.DateUtil;
@@ -54,6 +57,7 @@ import org.labkey.api.view.PopupMenu;
 import org.labkey.api.view.ViewContext;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -907,6 +911,39 @@ public class DataRegion extends AbstractDataRegion
         renderRegionEnd(ctx, out, renderButtons, renderers);
 
         renderHeaderScript(ctx, out, messages, showRecordSelectors);
+
+        renderAnalyticsProvidersScripts(ctx, out);
+    }
+
+    private void renderAnalyticsProvidersScripts(RenderContext ctx, Writer writer) throws IOException
+    {
+        AnalyticsProviderRegistry registry = ServiceRegistry.get().getService(AnalyticsProviderRegistry.class);
+        if (registry != null)
+        {
+            List<String> scripts = new ArrayList<>();
+            for (AnalyticsProviderItem analyticsProviderItem : ctx.getBaseAnalyticsProviders())
+            {
+                ColumnAnalyticsProvider analyticsProvider = registry.getColumnAnalyticsProvider(analyticsProviderItem.getName());
+                ColumnInfo colInfo = ctx.getFieldMap().get(analyticsProviderItem.getFieldKey());
+
+                if (colInfo != null && analyticsProvider != null && !analyticsProvider.requiresPageReload())
+                {
+                    scripts.add(analyticsProvider.getScript(ctx, getSettings(), colInfo));
+                }
+            }
+
+            if (!scripts.isEmpty())
+            {
+                StringWriter out = new StringWriter();
+                out.write("<script type=\"text/javascript\">\n");
+                for (String script : scripts)
+                {
+                    out.write(script);
+                }
+                out.write("</script>\n");
+                writer.write(out.toString());
+            }
+        }
     }
 
     private void addMissingCaptionMessage(StringBuilder headerMessage)

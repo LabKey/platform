@@ -14,11 +14,22 @@ public abstract class ColumnAnalyticsProvider implements AnalyticsProvider, Comp
 {
     public abstract boolean isApplicable(@NotNull ColumnInfo col);
 
+    @Override
+    public String getLabel()
+    {
+        return getName();
+    }
+
     @Nullable
     public abstract ActionURL getActionURL(RenderContext ctx, QuerySettings settings, ColumnInfo col);
 
     @Nullable
     public abstract String getScript(RenderContext ctx, QuerySettings settings, ColumnInfo col);
+
+    public boolean requiresPageReload()
+    {
+        return false;
+    }
 
     @SuppressWarnings("UnusedParameters")
     public void addClientDependencies(Set<ClientDependency> dependencies)

@@ -70,6 +70,7 @@ public class QuerySettings
 
     private String _containerFilterName;
     private List<Aggregate> _aggregates = new ArrayList<>();
+    private List<AnalyticsProviderItem> _analyticsProviders = new ArrayList<>();
 
     private SimpleFilter _baseFilter;
     private Sort _baseSort;
@@ -176,6 +177,16 @@ public class QuerySettings
         _aggregates.addAll(Arrays.asList(aggregates));
     }
 
+    public void setAnalyticsProviders(PropertyValues pvs)
+    {
+        _analyticsProviders.addAll(AnalyticsProviderItem.fromURL(pvs, getDataRegionName()));
+    }
+
+    public void addAnalyticsProviders(AnalyticsProviderItem... analyticsProviders)
+    {
+        _analyticsProviders.addAll(Arrays.asList(analyticsProviders));
+    }
+
 
     protected String _getParameter(String param)
     {
@@ -210,6 +221,7 @@ public class QuerySettings
             pvs = new MutablePropertyValues();
         setSortFilter(pvs);
         setAggregates(pvs);
+        setAnalyticsProviders(pvs);
 
         // Let URL parameter control which query we show, even if we don't show the Query drop-down menu to let the user choose
         String param = param(QueryParam.queryName);
@@ -658,6 +670,9 @@ public class QuerySettings
             List<Aggregate> aggregates = getAggregates();
             aggregates.addAll(Aggregate.fromURL(url, getDataRegionName()));
 
+            List<AnalyticsProviderItem> analyticsProviders = getAnalyticsProviders();
+            analyticsProviders.addAll(AnalyticsProviderItem.fromURL(url, getDataRegionName()));
+
             // XXX: containerFilter
         }
     }
@@ -691,6 +706,16 @@ public class QuerySettings
     public void setAggregates(List<Aggregate> aggregates)
     {
         _aggregates = aggregates;
+    }
+
+    public List<AnalyticsProviderItem> getAnalyticsProviders()
+    {
+        return _analyticsProviders;
+    }
+
+    public void setAnalyticsProviders(List<AnalyticsProviderItem> analyticsProviders)
+    {
+        _analyticsProviders = analyticsProviders;
     }
 
     public List<FieldKey> getFieldKeys()

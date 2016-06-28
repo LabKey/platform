@@ -72,6 +72,7 @@ public class RenderContext implements Map<String, Object>, Serializable
 
     private List<Aggregate> _aggregates;
     private Map<FieldKey, List<Aggregate>> _aggregatesByFieldKey;
+    private List<AnalyticsProviderItem> _analyticsProviders;
 
     private Results _rs;
 //    private Map<FieldKey, ColumnInfo> _fieldMap;
@@ -198,6 +199,16 @@ public class RenderContext implements Map<String, Object>, Serializable
 
             _aggregatesByFieldKey.get(aggregate.getFieldKey()).add(aggregate);
         }
+    }
+
+    public List<AnalyticsProviderItem> getBaseAnalyticsProviders()
+    {
+        return _analyticsProviders;
+    }
+
+    public void setBaseAnalyticsProviders(List<AnalyticsProviderItem> analyticsProviders)
+    {
+        _analyticsProviders = analyticsProviders;
     }
 
     public Results getResults()

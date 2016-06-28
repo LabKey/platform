@@ -6,4 +6,10 @@ import org.labkey.api.query.QuerySettings;
 public abstract class QueryAnalyticsProvider implements AnalyticsProvider
 {
     public abstract boolean isApplicable(@NotNull QuerySettings settings);
+
+    @Override
+    public String getLabel()
+    {
+        return getName();
+    }
 }

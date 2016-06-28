@@ -2049,16 +2049,22 @@ public class QueryView extends WebPartView<Object>
                 sort = new Sort();
             }
 
-            List<Aggregate> aggregates = new LinkedList<>();
-            if (ret.getRenderContext().getBaseAggregates() != null)
-                aggregates.addAll(ret.getRenderContext().getBaseAggregates());
-
             // We need to set the base sort/filter _before_ adding the customView sort/filter.
             // If the user has set a sort on their custom view, we want their sort to take precedence.
             filter.addAllClauses(getSettings().getBaseFilter());
             sort.insertSort(getSettings().getBaseSort());
+
+            List<Aggregate> aggregates = new LinkedList<>();
+            if (ret.getRenderContext().getBaseAggregates() != null)
+                aggregates.addAll(ret.getRenderContext().getBaseAggregates());
             if (getSettings().getAggregates() != null)
                 aggregates.addAll(getSettings().getAggregates());
+
+            List<AnalyticsProviderItem> analyticsProviders = new LinkedList<>();
+            if (ret.getRenderContext().getBaseAnalyticsProviders() != null)
+                analyticsProviders.addAll(ret.getRenderContext().getBaseAnalyticsProviders());
+            if (getSettings().getAnalyticsProviders() != null)
+                analyticsProviders.addAll(getSettings().getAnalyticsProviders());
 
             if (_customView != null && _customView.hasFilterOrSort())
             {
@@ -2068,11 +2074,13 @@ public class QueryView extends WebPartView<Object>
                 sort.addURLSort(url, getDataRegionName());
 
                 aggregates.addAll(Aggregate.fromURL(url, getDataRegionName()));
+                analyticsProviders.addAll(AnalyticsProviderItem.fromURL(url, getDataRegionName()));
             }
 
             ret.getRenderContext().setBaseFilter(filter);
             ret.getRenderContext().setBaseSort(sort);
             ret.getRenderContext().setBaseAggregates(aggregates);
+            ret.getRenderContext().setBaseAnalyticsProviders(analyticsProviders);
         }
 
         // XXX: Move to QuerySettings?
@@ -2889,6 +2897,11 @@ public class QueryView extends WebPartView<Object>
     public List<Aggregate> getAggregates()
     {
         return getSettings().getAggregates();
+    }
+
+    public List<AnalyticsProviderItem> getAnalyticsProviders()
+    {
+        return getSettings().getAnalyticsProviders();
     }
 
     private static class NavTreeMenuButton extends MenuButton
