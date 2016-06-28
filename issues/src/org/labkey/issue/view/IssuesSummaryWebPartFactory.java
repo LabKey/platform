@@ -40,7 +40,7 @@ public class IssuesSummaryWebPartFactory extends BaseWebPartFactory
             view = new SummaryWebPart(issueDefName, propertyMap);
         else
         {
-            view = new HtmlView(IssuesController.getUndefinedIssueListMessage(context));
+            view = new HtmlView(IssuesController.getUndefinedIssueListMessage(context, issueDefName));
             view.setFrame(WebPartView.FrameType.PORTAL);
             String title = IssueManager.getEntryTypeNames(context.getContainer()).pluralName + " Summary";
             view.setTitle(title);

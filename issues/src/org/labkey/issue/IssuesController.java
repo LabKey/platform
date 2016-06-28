@@ -297,7 +297,8 @@ public class IssuesController extends SpringActionController
             if (issueDefName == null)
                 issueDefName = IssueManager.getDefaultIssueListDefName(getContainer());
 
-            if (issueDefName != null)
+            IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issueDefName);
+            if (issueListDef != null)
             {
                 // convert AssignedTo/Email to AssignedTo/DisplayName: old bookmarks
                 // reference Email, which is no longer displayed.
@@ -314,7 +315,7 @@ public class IssuesController extends SpringActionController
 
                 return new IssuesListView(issueDefName);
             }
-            return new HtmlView(getUndefinedIssueListMessage(getViewContext()));
+            return new HtmlView(getUndefinedIssueListMessage(getViewContext(), issueDefName));
         }
 
         private String getIssueDefName()
@@ -521,9 +522,10 @@ public class IssuesController extends SpringActionController
 
             _issue.setIssueDefName(form.getIssueDefName() != null ? form.getIssueDefName() : IssueManager.getDefaultIssueListDefName(getContainer()));
 
-            if (_issue.getIssueDefName() == null)
+            IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), _issue.getIssueDefName());
+            if (issueListDef == null)
             {
-                return new HtmlView(getUndefinedIssueListMessage(getViewContext()));
+                return new HtmlView(getUndefinedIssueListMessage(getViewContext(), _issue.getIssueDefName()));
             }
 
 /*
@@ -607,10 +609,17 @@ public class IssuesController extends SpringActionController
     /**
      * Generates a standard message if no issue list is available in the current folder (plus a link to create a list)
      */
-    public static String getUndefinedIssueListMessage(ContainerUser context)
+    public static String getUndefinedIssueListMessage(ContainerUser context, String issueDefName)
     {
-        StringBuilder sb = new StringBuilder("<span class='labkey-error'>There are no issues lists defined for this folder.</span><p>");
-        Button button = PageFlowUtil.button("Create Issue List").href(QueryService.get().urlFor(context.getUser(),
+        String warningMessage =
+                issueDefName == null ?
+                (IssueManager.getIssueListDefs(context.getContainer()).isEmpty() ?
+                        "There are no issues lists defined for this folder." :
+                        String.format("'%s' not specified.", IssuesListView.ISSUE_LIST_DEF_NAME)) :
+                String.format("There is no issues list '%s' defined in this folder.", issueDefName);
+        StringBuilder sb = new StringBuilder().append("<span class='labkey-error'>").append(warningMessage).append("</span><p>");
+        boolean userHasAdmin = context.getContainer().hasPermission(context.getUser(), AdminPermission.class);
+        Button button = PageFlowUtil.button(userHasAdmin ? "Manage Issue List Definitions" : "Show Available Issue Lists").href(QueryService.get().urlFor(context.getUser(),
                 context.getContainer(),
                 QueryAction.executeQuery,
                 "issues",
@@ -1836,6 +1845,10 @@ public class IssuesController extends SpringActionController
         {
             String issueDefName = getViewContext().getActionURL().getParameter(IssuesListView.ISSUE_LIST_DEF_NAME);
             IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issueDefName);
+            if (issueListDef == null)
+            {
+                return new HtmlView(getUndefinedIssueListMessage(getViewContext(), issueDefName));
+            }
             Domain domain = issueListDef.getDomain(getUser());
 
             Map<String, String> props = new HashMap<>();

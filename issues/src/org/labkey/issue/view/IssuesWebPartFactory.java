@@ -35,7 +35,7 @@ public class IssuesWebPartFactory extends BaseWebPartFactory
         if (issueDefName != null)
             view = new IssuesListView(issueDefName);
         else
-            view = new HtmlView(IssuesController.getUndefinedIssueListMessage(context));
+            view = new HtmlView(IssuesController.getUndefinedIssueListMessage(context, issueDefName));
 
         view.setTitle("Issues List : " + StringUtils.trimToEmpty(issueDefName));
         view.setFrame(WebPartView.FrameType.PORTAL);
