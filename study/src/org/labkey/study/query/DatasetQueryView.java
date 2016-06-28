@@ -398,6 +398,7 @@ public class DatasetQueryView extends StudyQueryView
 
         User user = getUser();
         boolean canWrite = canWrite(_dataset, user);
+        boolean canManage = canManage(_dataset, user);
         boolean isSnapshot = QueryService.get().isQuerySnapshot(getContainer(), StudySchema.getInstance().getSchemaName(), _dataset.getName());
         boolean isAssayDataset = _dataset.isAssayData();
         ExpProtocol protocol = null;
@@ -413,7 +414,7 @@ public class DatasetQueryView extends StudyQueryView
         {
             if (!isAssayDataset) // admins always get the import and manage buttons
             {
-                if (canWrite)
+                if (canManage)
                 {
                     // manage dataset
                     ActionButton manageButton = new ActionButton(new ActionURL(StudyController.DatasetDetailsAction.class, getContainer()).addParameter("id", _dataset.getDatasetId()), "Manage");
@@ -421,7 +422,10 @@ public class DatasetQueryView extends StudyQueryView
                     manageButton.setActionType(ActionButton.Action.LINK);
                     manageButton.setDisplayPermission(InsertPermission.class);
                     bar.add(manageButton);
+                }
 
+                if (canWrite)
+                {
                     // insert menu button contain Insert New and Bulk import, or button for either option
                     ActionURL importURL = view.getTable().getImportDataURL(getContainer());
                     ActionButton insertButton = createInsertMenuButton(null, importURL);
@@ -540,6 +544,15 @@ public class DatasetQueryView extends StudyQueryView
     private boolean canWrite(DatasetDefinition def, User user)
     {
         return def.canWrite(user) && def.getContainer().hasPermission(user, UpdatePermission.class);
+    }
+
+    private boolean canManage(DatasetDefinition def, User user)
+    {
+        boolean userIsAdmin = user.isSiteAdmin() || def.getContainer().hasPermission(user, AdminPermission.class);
+        return userIsAdmin; //  && inDefinitionContainer;
+        // you can hide this for dataspace datasets if that's desireable
+        //boolean inDefinitionContainer = def.getDefinitionContainer().equals(def.getContainer());
+        //return userIsAdmin && inDefinitionContainer;
     }
 
     private boolean hasSourceLsids() throws SQLException
