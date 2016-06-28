@@ -368,7 +368,7 @@ public class RequestabilityManager
             _container = container;
         }
 
-        public abstract String getAvailabilityReason();
+        public abstract SQLFragment getAvailabilityReason();
 
         public int updateRequestability(User user, List<Vial> vials) throws InvalidRuleException
         {
@@ -376,12 +376,13 @@ public class RequestabilityManager
             if (null == tableInfoVial)
                 throw new IllegalStateException("Expected Vial table to exist.");
 
-            String reason = getAvailabilityReason();
+            SQLFragment reason = getAvailabilityReason();
             SQLFragment updateSQL = new SQLFragment("UPDATE ");
             updateSQL.append(tableInfoVial.getSelectName()).append(" SET ");
             updateSQL.append(getAvailableAssignmentSQL());
-            updateSQL.append(", AvailabilityReason = ? WHERE ");
-            updateSQL.add(reason);
+            updateSQL.append(", AvailabilityReason = ");
+            updateSQL.append(reason);
+            updateSQL.append(" WHERE ");
             updateSQL.append(getFilterSQL(_container, user, vials));
             return new SqlExecutor(StudySchema.getInstance().getSchema()).execute(updateSQL);
         }
@@ -544,9 +545,9 @@ public class RequestabilityManager
         }
 
         @Override
-        public String getAvailabilityReason()
+        public SQLFragment getAvailabilityReason()
         {
-            return "This vial is " + getMarkType().getLabel().toLowerCase() + " because it was found in the set called \"" + _queryName + "\".";
+            return new SQLFragment("'This vial is " + getMarkType().getLabel().toLowerCase() + " because it was found in the set called \"" + _queryName + "\".'");
         }
 
         public String getExtraName()
@@ -583,9 +584,9 @@ public class RequestabilityManager
         }
 
         @Override
-        public String getAvailabilityReason()
+        public SQLFragment getAvailabilityReason()
         {
-            return "This vial is unavailable because it is not currently held by a repository.";
+            return new SQLFragment("'This vial is unavailable because it is not currently held by a repository.'");
         }
     }
 
@@ -597,9 +598,11 @@ public class RequestabilityManager
         }
 
         @Override
-        public String getAvailabilityReason()
+        public SQLFragment getAvailabilityReason()
         {
-            return "This vial's availability status was set by an administrator. Please contact an administrator for more information.";
+            SQLFragment sql = new SQLFragment("CASE WHEN Requestable = ? THEN 'This vial''s availability status was set by an administrator. Please contact an administrator for more information.' ELSE ' ' END");
+            sql.add(false);
+            return sql;
         }
 
         @Override
@@ -645,9 +648,9 @@ public class RequestabilityManager
         }
 
         @Override
-        public String getAvailabilityReason()
+        public SQLFragment getAvailabilityReason()
         {
-            return "This vial is unavailable because it is locked in a specimen request.";
+            return new SQLFragment("'This vial is unavailable because it is locked in a specimen request.'");
         }
     }
 
@@ -696,9 +699,9 @@ public class RequestabilityManager
         }
 
         @Override
-        public String getAvailabilityReason()
+        public SQLFragment getAvailabilityReason()
         {
-            return "This vial is unavailable because it is being processed.";
+            return new SQLFragment("'This vial is unavailable because it is being processed.'");
         }
     }
 
