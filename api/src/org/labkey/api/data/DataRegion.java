@@ -918,7 +918,7 @@ public class DataRegion extends AbstractDataRegion
     private void renderAnalyticsProvidersScripts(RenderContext ctx, Writer writer) throws IOException
     {
         AnalyticsProviderRegistry registry = ServiceRegistry.get().getService(AnalyticsProviderRegistry.class);
-        if (registry != null)
+        if (registry != null && ctx != null && ctx.getBaseAnalyticsProviders() != null)
         {
             List<String> scripts = new ArrayList<>();
             for (AnalyticsProviderItem analyticsProviderItem : ctx.getBaseAnalyticsProviders())
