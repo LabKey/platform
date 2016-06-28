@@ -15,6 +15,7 @@
  */
 package org.labkey.core.query;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -68,6 +69,8 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
     List<FieldKey> _defaultColumns;
     Set<String> _illegalColumns;
     boolean _mustCheckPermissions = true;
+
+    private final static Logger LOG = Logger.getLogger(UsersTable.class);
 
     public UsersTable(UserSchema schema, TableInfo table)
     {
@@ -191,7 +194,8 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                         ColumnInfo col = getColumn(propColumn.getName());
                         if (col != null)
                         {
-                            assert col.getScale() == pd.getScale() : "Scale doesn't match for column " + col.getName() + ": " + col.getScale() + " vs " + pd.getScale();
+                            if (col.getScale() != pd.getScale())
+                                LOG.error("Scale doesn't match for column " + col.getName() + ": " + col.getScale() + " vs " + pd.getScale());
                             pd.copyTo(col);
                             if (!col.isHidden())
                                 defaultCols.add(FieldKey.fromParts(col.getName()));
