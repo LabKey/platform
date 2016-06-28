@@ -763,3 +763,7 @@ span.labkey-file-icon {
 .labkey-notification:hover {
     background-color: #<%= grid %>;
 }
+
+.labkey-dataregion-msg-plot-analytic .plot-analytics-remove {
+    color: #<%= link %>;
+}

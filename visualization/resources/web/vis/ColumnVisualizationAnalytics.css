@@ -1,4 +1,8 @@
 
+.labkey-dataregion-msg-plot-analytic {
+    display: inline-block;
+}
+
 .labkey-dataregion-msg-plot-analytic svg
 {
     margin-right: 3px;
@@ -13,4 +17,20 @@
 .labkey-dataregion-msg-plot-analytic a.box:hover,
 .labkey-dataregion-msg-plot-analytic svg text:hover {
     cursor: default;
+}
+
+.labkey-dataregion-msg-plot-analytic .plot-analytics-remove {
+    opacity: 0;
+    font-size: 15px;
+    position: relative;
+    right: 25px;
+    bottom: 180px;
+    cursor: pointer;
+}
+
+.labkey-dataregion-msg-plot-analytic:hover .plot-analytics-remove {
+    opacity: 0.6;
+}
+.labkey-dataregion-msg-plot-analytic .plot-analytics-remove:hover {
+    opacity: 1;
 }

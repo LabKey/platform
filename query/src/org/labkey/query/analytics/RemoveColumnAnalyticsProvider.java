@@ -17,6 +17,12 @@ public class RemoveColumnAnalyticsProvider extends ColumnAnalyticsProvider
     @Override
     public String getName()
     {
+        return "COL_REMOVE";
+    }
+
+    @Override
+    public String getLabel()
+    {
         return "Remove Column";
     }
 
@@ -46,6 +52,12 @@ public class RemoveColumnAnalyticsProvider extends ColumnAnalyticsProvider
                 PageFlowUtil.jsString(ctx.getCurrentRegion().getName()) + "," +
                 PageFlowUtil.jsString(col.getName()) +
             ");";
+    }
+
+    @Override
+    public boolean requiresPageReload()
+    {
+        return true;
     }
 
     @Override

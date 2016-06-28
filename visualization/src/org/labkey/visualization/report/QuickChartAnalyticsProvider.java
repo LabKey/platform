@@ -15,6 +15,12 @@ public class QuickChartAnalyticsProvider extends ColumnAnalyticsProvider
     @Override
     public String getName()
     {
+        return "COL_QUICK_CHART";
+    }
+
+    @Override
+    public String getLabel()
+    {
         return "Quick Chart";
     }
 

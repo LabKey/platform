@@ -19,6 +19,12 @@ public class DimensionPieChartAnalyticsProvider extends ColumnAnalyticsProvider
     @Override
     public String getName()
     {
+        return "VIS_PIE";
+    }
+
+    @Override
+    public String getLabel()
+    {
         return "Pie Chart";
     }
 
@@ -52,10 +58,10 @@ public class DimensionPieChartAnalyticsProvider extends ColumnAnalyticsProvider
     @Override
     public String getScript(RenderContext ctx, QuerySettings settings, ColumnInfo col)
     {
-        return "LABKEY.ColumnVisualizationAnalytics.showDimensionFromDataRegion(this, " +
+        return "LABKEY.ColumnVisualizationAnalytics.showDimensionFromDataRegion(" +
                 PageFlowUtil.jsString(ctx.getCurrentRegion().getName()) + "," +
                 PageFlowUtil.jsString(col.getName()) + "," +
-                PageFlowUtil.jsString("pie") +
+                PageFlowUtil.jsString(getName()) +
             ");";
     }
 

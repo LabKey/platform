@@ -19,13 +19,19 @@ public abstract class BaseAggregatesAnalyticsProvider extends ColumnAnalyticsPro
     @Override
     public String getName()
     {
+        return "AGG_" + getAggregateType().toString();
+    }
+
+    @Override
+    public String getLabel()
+    {
         return getAggregateType().getFriendlyName();
     }
 
     @Override
     public String getDescription()
     {
-        return "Aggregate " + getName() + " value function to apply to a given column.";
+        return "Aggregate " + getLabel() + " value function to apply to a given column.";
     }
 
     @Override
@@ -70,6 +76,12 @@ public abstract class BaseAggregatesAnalyticsProvider extends ColumnAnalyticsPro
                 PageFlowUtil.jsString(col.getName()) + "," +
                 PageFlowUtil.jsString(getAggregateType().name()) +
             ");";
+    }
+
+    @Override
+    public boolean requiresPageReload()
+    {
+        return true;
     }
 
     @Override

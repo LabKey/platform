@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.Aggregate;
+import org.labkey.api.data.AnalyticsProviderItem;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.FilterInfo;
@@ -59,6 +60,7 @@ import java.util.Set;
 import static org.labkey.api.query.CustomViewInfo.AGGREGATE_PARAM_PREFIX;
 import static org.labkey.api.query.CustomViewInfo.CONTAINER_FILTER_NAME;
 import static org.labkey.api.query.CustomViewInfo.FILTER_PARAM_PREFIX;
+import static org.labkey.api.query.CustomViewInfo.ANALYTICSPROVIDER_PARAM_PREFIX;
 
 // Helper class to serialize a CustomView to/from json
 public class CustomViewUtil
@@ -149,6 +151,20 @@ public class CustomViewUtil
                 }
 
                 url.addParameter(FILTER_PARAM_PREFIX + "." + AGGREGATE_PARAM_PREFIX + "." + fieldKey, ret.toString());
+            }
+        }
+
+        JSONArray jsonAnalyticsProviders = jsonView.optJSONArray("analyticsProviders");
+        if (jsonAnalyticsProviders != null && jsonAnalyticsProviders.length() > 0)
+        {
+            for (Map<String, Object> apInfo : jsonAnalyticsProviders.toMapList())
+            {
+                String fieldKey = StringUtils.trimToNull((String)apInfo.get("fieldKey"));
+                String name = StringUtils.trimToNull((String)apInfo.get("name"));
+                if (fieldKey == null || name == null)
+                    continue;
+
+                url.addParameter(FILTER_PARAM_PREFIX + "." + ANALYTICSPROVIDER_PARAM_PREFIX + "." + fieldKey, name);
             }
         }
 
@@ -257,6 +273,7 @@ public class CustomViewUtil
         List<Map<String, Object>> filterInfos = new ArrayList<>();
         List<Map<String, Object>> sortInfos = new ArrayList<>();
         List<Map<String, Object>> aggInfos = new ArrayList<>();
+        List<Map<String, Object>> analyticsProvidersInfos = new ArrayList<>();
         try
         {
             CustomViewInfo.FilterAndSort fas = CustomViewInfo.FilterAndSort.fromString(view.getFilterAndSort());
@@ -289,15 +306,24 @@ public class CustomViewUtil
                 aggInfos.add(aggInfo);
             }
 
+            for (AnalyticsProviderItem analyticsProvider : fas.getAnalyticsProviders())
+            {
+                Map<String, Object> apInfo = new HashMap<>();
+                apInfo.put("fieldKey", analyticsProvider.getFieldKey());
+                apInfo.put("name", analyticsProvider.getName());
+                allKeys.add(FieldKey.fromString(analyticsProvider.getFieldKey().toString()));
+                analyticsProvidersInfos.add(apInfo);
+            }
         }
         catch (URISyntaxException e)
         {
         }
+
         ret.put("filter", filterInfos);
         ret.put("sort", sortInfos);
         ret.put("aggregates", aggInfos);
+        ret.put("analyticsProviders", analyticsProvidersInfos);
         ret.put("containerFilter", view.getContainerFilterName());
-        
 
         if (includeFieldMeta)
         {

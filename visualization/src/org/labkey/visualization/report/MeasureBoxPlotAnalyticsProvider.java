@@ -19,6 +19,12 @@ public class MeasureBoxPlotAnalyticsProvider extends ColumnAnalyticsProvider
     @Override
     public String getName()
     {
+        return "VIS_BOX";
+    }
+
+    @Override
+    public String getLabel()
+    {
         return "Box & Whisker";
     }
 
@@ -52,9 +58,10 @@ public class MeasureBoxPlotAnalyticsProvider extends ColumnAnalyticsProvider
     @Override
     public String getScript(RenderContext ctx, QuerySettings settings, ColumnInfo col)
     {
-        return "LABKEY.ColumnVisualizationAnalytics.showMeasureFromDataRegion(this, " +
+        return "LABKEY.ColumnVisualizationAnalytics.showMeasureFromDataRegion(" +
                 PageFlowUtil.jsString(ctx.getCurrentRegion().getName()) + "," +
-                PageFlowUtil.jsString(col.getName()) +
+                PageFlowUtil.jsString(col.getName()) + "," +
+                PageFlowUtil.jsString(getName()) +
             ");";
     }
 

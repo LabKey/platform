@@ -1,5 +1,6 @@
 package org.labkey.core.analytics;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.analytics.AnalyticsProvider;
 import org.labkey.api.analytics.AnalyticsProviderRegistry;
@@ -21,7 +22,21 @@ public class AnalyticsProviderRegistryImpl implements AnalyticsProviderRegistry
     @Override
     public void registerProvider(AnalyticsProvider analyticsProvider)
     {
+        // TODO validate that provider name isn't already registered
         REGISTERED_PROVIDERS.add(analyticsProvider);
+    }
+
+    @Override
+    public ColumnAnalyticsProvider getColumnAnalyticsProvider(@NotNull String name)
+    {
+        for (AnalyticsProvider registeredProvider : REGISTERED_PROVIDERS)
+        {
+            if (registeredProvider instanceof ColumnAnalyticsProvider && name.equalsIgnoreCase(registeredProvider.getName()))
+            {
+                return (ColumnAnalyticsProvider) registeredProvider;
+            }
+        }
+        return null;
     }
 
     @Override
