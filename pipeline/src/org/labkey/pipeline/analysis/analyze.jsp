@@ -164,7 +164,8 @@
             document.getElementById("protocolDescriptionInput").value = "";
             document.getElementById("xmlParametersInput").value = "<?xml version=\"1.0\"?>\n" +
                         "<bioml>\n" +
-                        "<!-- Override default parameters here. -->\n" +
+                            "<!-- Override default parameters here. Example:-->\n" +
+                            "<!-- <note label=\"myParameterName\" type=\"input\">overrideValue</note>-->\n" +
                         "</bioml>";
             showFileStatus("", "Analyze");
         }
