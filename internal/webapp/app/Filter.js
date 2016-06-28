@@ -165,7 +165,7 @@ Ext.define('LABKEY.app.model.Filter', {
                     ownerId: ownerId,
                     type: 'list',
                     visibility: config.group.visibility,
-                    filters: LABKEY.app.model.Filter.toJSON(config.group.filters, config.group.isLive),
+                    filters: LABKEY.app.model.Filter.toJSON(config.group.filters, config.group.isLive)
                 },
                 headers: {"Content-Type": 'application/json'}
             };
