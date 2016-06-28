@@ -451,18 +451,20 @@ public class SecurityManager
         return null == u || u.isGuest() ? null : u;
     }
 
-    public static String getTransformSessionId()
+    @NotNull
+    /**
+     * Works like a standard HTTP session but intended for transform scripts and other
+     * API-style usage. Callers should call {@see endTransformSession} when finished, typically in a finally block
+     * @return the ID for the newly started session
+     */
+    public static String beginTransformSession(@NotNull User user)
     {
-        return GUID.makeHash();
+        String token = GUID.makeHash();
+        TRANSFORM_SESSIONID_MAP.put(token, user.getUserId());
+        return token;
     }
 
-    public static void addTransformSessionId(User user, String token)
-    {
-        if (null != user && null != token)
-            TRANSFORM_SESSIONID_MAP.put(token, user.getUserId());
-    }
-
-    public static void removeTransformSessionId(String token)
+    public static void endTransformSession(@NotNull String token)
     {
         if (TRANSFORM_SESSIONID_MAP.containsKey(token))
             TRANSFORM_SESSIONID_MAP.remove(token);

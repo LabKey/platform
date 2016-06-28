@@ -26,6 +26,7 @@ import org.labkey.api.reader.Readers;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.util.PageFlowUtil;
@@ -105,7 +106,8 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
                     // issue 13643: ensure script dir is initially empty
                     FileUtil.deleteDirectoryContents(scriptDir);
 
-                    final String transformSessionId = SecurityManager.getTransformSessionId();
+                    // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage
+                    final String transformSessionId = SecurityManager.beginTransformSession(context.getUser());
 
                     try
                     {
@@ -181,7 +183,7 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
                             }
                         }
 
-                        SecurityManager.removeTransformSessionId(transformSessionId);
+                        SecurityManager.endTransformSession(transformSessionId);
                     }
                 }
                 else
@@ -204,7 +206,7 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
     {
         if (context.getRequest() != null)
         {
-            return "JSESSIONID";
+            return CSRFUtil.SESSION_COOKIE_NAME;
         }
         // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage
         return SecurityManager.TRANSFORM_SESSION_ID;
@@ -252,10 +254,8 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
     {
         if (context.getRequest() != null)
         {
-            return PageFlowUtil.getCookieValue(context.getRequest().getCookies(), "JSESSIONID", "");
+            return PageFlowUtil.getCookieValue(context.getRequest().getCookies(), CSRFUtil.SESSION_COOKIE_NAME, "");
         }
-        // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage
-        SecurityManager.addTransformSessionId(context.getUser(), transformSessionId);
         return transformSessionId;
     }
 }

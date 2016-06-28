@@ -25,18 +25,24 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.view.RReportBean;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
+import org.springframework.mock.web.MockHttpServletRequest;
 
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.labkey.api.security.SecurityManager.TRANSFORM_SESSION_ID;
 
 /**
  * User: Karl Lum
@@ -132,7 +138,33 @@ public class RReportJob extends PipelineJob implements Serializable
             // Must be a background thread... push a fake ViewContext on the HttpView stack if so HttpView.currentContext() succeeds.
             try (ViewContext.StackResetter resetter = ViewContext.pushMockViewContext(getUser(), getContainer(), getActionURL()))
             {
-                runReport(resetter.getContext(), report);
+                String sessionId = null;
+                if (getUser() != null && !getUser().isGuest())
+                {
+                    // Issue 26957 - since we're running in the background, we won't magically piggyback on the user's
+                    // HTTP session, so set up a transform session ID
+                    sessionId = SecurityManager.beginTransformSession(getUser());
+                    HttpServletRequest request = resetter.getContext().getRequest();
+                    assert request instanceof MockHttpServletRequest : "Request should be a MockHttpServletRequest";
+                    if (request instanceof MockHttpServletRequest)
+                    {
+                        // It's a bit clunky to the ID through as a cookie on the request, but this avoids lots of
+                        // method signature changes
+                        ((MockHttpServletRequest) request).setCookies(new Cookie(TRANSFORM_SESSION_ID, sessionId));
+                    }
+                }
+                try
+                {
+                    runReport(resetter.getContext(), report);
+                }
+                finally
+                {
+                    if (sessionId != null)
+                    {
+                        // Stop the transform session to avoid leaving lots of them active
+                        SecurityManager.endTransformSession(sessionId);
+                    }
+                }
             }
         }
     }

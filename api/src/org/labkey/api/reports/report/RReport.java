@@ -35,9 +35,11 @@ import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.r.view.KnitrOutput;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.Thumbnail;
+import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -313,9 +315,25 @@ public class RReport extends ExternalScriptEngineReport
         // session information
         if (context.getRequest() != null)
         {
-            labkey.append("labkey.sessionCookieName = \"JSESSIONID\"\n");
+            String session = PageFlowUtil.getCookieValue(context.getRequest().getCookies(), CSRFUtil.SESSION_COOKIE_NAME, null);
+            String sessionName = CSRFUtil.SESSION_COOKIE_NAME;
+            if (session == null)
+            {
+                // Issue 26957 - R report running as pipeline job doesn't inherit user when making Rlabkey calls
+                session = PageFlowUtil.getCookieValue(context.getRequest().getCookies(), SecurityManager.TRANSFORM_SESSION_ID, null);
+                if (session != null)
+                {
+                    sessionName = SecurityManager.TRANSFORM_SESSION_ID;
+                }
+                else
+                {
+                    session = "";
+                }
+            }
+
+            labkey.append("labkey.sessionCookieName = \"").append(sessionName).append("\"\n");
             labkey.append("labkey.sessionCookieContents = \"");
-            labkey.append(PageFlowUtil.getCookieValue(context.getRequest().getCookies(), "JSESSIONID", ""));
+            labkey.append(session);
             labkey.append("\"\n");
         }
 

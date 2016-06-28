@@ -37,7 +37,7 @@ public class CSRFUtil
     public  static final String csrfName =    "X-LABKEY-CSRF";
     public  static final String csrfHeader =  "X-LABKEY-CSRF";
     private static final String csrfCookie =  "X-LABKEY-CSRF";
-    private static final String sessionCookie = "JSESSIONID";
+    public static final String SESSION_COOKIE_NAME = "JSESSIONID";
 
     public static String getExpectedToken(HttpServletRequest request, @Nullable HttpServletResponse response)
     {
@@ -98,7 +98,7 @@ public class CSRFUtil
             return;
 
         // try JESSIONID also for backward compatibility
-        String session = PageFlowUtil.getCookieValue(request.getCookies(),sessionCookie,null);
+        String session = PageFlowUtil.getCookieValue(request.getCookies(), SESSION_COOKIE_NAME,null);
         if (provided.equals(session))
             return;
 
