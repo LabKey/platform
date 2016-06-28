@@ -25,6 +25,8 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.LookupService;
@@ -141,7 +143,7 @@ public class DomainEditorServiceBase extends BaseRemoteService
             if (schema == null)
                 return availableQueries;
 
-            boolean isSampleSchema = schema.getName().equalsIgnoreCase("samples") && schema.getDbSchema().getName().equalsIgnoreCase("exp");
+            boolean isSampleSchema = SamplesSchema.SCHEMA_NAME.equalsIgnoreCase(schema.getName()) && ExpSchema.SCHEMA_NAME.equalsIgnoreCase(schema.getDbSchema().getName());
 
             for (String name : schema.getTableAndQueryNames(false))
             {
