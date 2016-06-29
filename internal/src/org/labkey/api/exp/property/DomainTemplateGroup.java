@@ -105,7 +105,13 @@ public class DomainTemplateGroup
                         XmlOptions opts = XmlBeansUtil.getDefaultParseOptions();
                         TemplatesDocument doc = TemplatesDocument.Factory.parse(xmlStream, opts);
                         XmlBeansUtil.validateXmlDocument(doc, null);
-                        return parse(module.getName(), groupName, doc);
+                        DomainTemplateGroup group = parse(module.getName(), groupName, doc);
+                        if (group.hasErrors())
+                        {
+                            LOG.warn("Error parsing domain template '" + groupName + "' in module '" + module.getName() + "'");
+                            group.getErrors().forEach(LOG::warn);
+                        }
+                        return group;
                     }
                 }
                 catch (IOException e)
@@ -146,7 +152,7 @@ public class DomainTemplateGroup
             if (t != null)
             {
                 templates.add(t);
-                errors.addAll(t.getErrors());
+                t.getErrors().forEach(error -> errors.add(t.getTemplateName() + ": " + error));
             }
         }
 
@@ -278,8 +284,25 @@ public class DomainTemplateGroup
     @Nullable
     public DomainTemplate getTemplate(@NotNull String templateName)
     {
+        return getTemplate(templateName, false);
+    }
+
+    @Nullable
+    public DomainTemplate getTemplate(@NotNull String templateName, boolean includeErrors)
+    {
         return _templates.stream()
-                .filter(t -> !t.hasErrors())
+                .filter(t -> includeErrors || !t.hasErrors())
+                .filter(t -> templateName.equals(t.getTemplateName()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    @Nullable
+    public DomainTemplate getTemplate(@NotNull String templateName, @Nullable String kind, boolean includeErrors)
+    {
+        return _templates.stream()
+                .filter(t -> includeErrors || !t.hasErrors())
+                .filter(t -> kind == null || kind.equalsIgnoreCase(t.getDomainKind()))
                 .filter(t -> templateName.equals(t.getTemplateName()))
                 .findFirst()
                 .orElse(null);

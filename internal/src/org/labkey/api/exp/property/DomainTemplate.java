@@ -179,7 +179,13 @@ public class DomainTemplate
     private static String getListDomainKind(String templateName, ListTemplateType template, List<GWTPropertyDescriptor> properties)
     {
         ListOptionsType options = template.getOptions();
+        if (options == null)
+            throw new IllegalArgumentException("List template requires specifying a keyCol");
+
         String keyName = options.getKeyCol();
+        if (keyName == null)
+            throw new IllegalArgumentException("List template requires specifying a keyCol");
+
         Pair<GWTPropertyDescriptor, Integer> pair = findProperty(templateName, properties, keyName);
         GWTPropertyDescriptor prop = pair.first;
 
@@ -290,15 +296,18 @@ public class DomainTemplate
         else if (template instanceof SampleSetTemplateType)
         {
             SampleSetOptionsType options = ((SampleSetTemplateType)template).getOptions();
-            String[] keyCols = options.getKeyColArray();
-            Integer[] idCols = new Integer[keyCols.length];
-            for (int i = 0; i < keyCols.length; i++)
+            if (options != null)
             {
-                String keyCol = keyCols[i];
-                Pair<GWTPropertyDescriptor, Integer> pair = findProperty(templateName, properties, keyCol);
-                idCols[i] = pair.second;
+                String[] keyCols = options.getKeyColArray();
+                Integer[] idCols = new Integer[keyCols.length];
+                for (int i = 0; i < keyCols.length; i++)
+                {
+                    String keyCol = keyCols[i];
+                    Pair<GWTPropertyDescriptor, Integer> pair = findProperty(templateName, properties, keyCol);
+                    idCols[i] = pair.second;
+                }
+                optionsMap.put("idCols", idCols);
             }
-            optionsMap.put("idCols", idCols);
         }
 
         return Collections.unmodifiableMap(optionsMap);
