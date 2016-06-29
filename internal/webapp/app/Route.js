@@ -14,7 +14,8 @@ Ext.define('LABKEY.app.controller.Route', {
     init : function() {
 
         var me = this;
-        var popState = false, oldUrl;
+        var popState = false, previousUrlHash = location.hash;
+        var oldUrl = previousUrlHash;
 
         var pathChangeTask = new Ext.util.DelayedTask(function() {
             me.route(me.getHashValue(location.hash), popState, me.getHashValue(oldUrl));
@@ -22,8 +23,9 @@ Ext.define('LABKEY.app.controller.Route', {
         });
 
         Ext.EventManager.on(window, 'hashchange', function(e) {
-            oldUrl = e.browserEvent.oldURL;
+            oldUrl = previousUrlHash;
             pathChangeTask.delay(50);
+            previousUrlHash = location.hash;
         });
 
         if (Ext.supports.History) {
