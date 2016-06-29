@@ -327,6 +327,7 @@
 
             var config = $.extend({}, dataRegion.getQueryConfig(), {
                 columns: columnName,
+                ignoreFilter: LABKEY.ActionURL.getParameter(dataRegion.name + '.ignoreFilter'),
                 filterArray: filterArray,
                 requiredVersion: '9.1',
                 success: successCallback
