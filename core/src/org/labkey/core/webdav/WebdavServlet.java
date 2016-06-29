@@ -80,7 +80,7 @@ public class WebdavServlet extends HttpServlet
             if (null != m)
             {
                 m = m.toUpperCase();
-                if ("POST".equals(method) || "PROPFIND".equals(m) || "OPTIONS".equals(m) || "JSON".equals(m) || "LASTERROR".equals(m) || "ZIP".equals(m) || "GET".equals(m))
+                if ("POST".equals(method) || "PROPFIND".equals(m) || "OPTIONS".equals(m) || "JSON".equals(m) || "LASTERROR".equals(m) || "ZIP".equals(m) || "GET".equals(m) || "MD5SUM".equals(m))
                     method = m;
                 else
                 {

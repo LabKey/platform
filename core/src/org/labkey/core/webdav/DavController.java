@@ -872,6 +872,40 @@ public class DavController extends SpringActionController
         }
     }
 
+    @RequiresNoPermission
+    public class Md5sumAction extends GetAction
+    {
+        public Md5sumAction()
+        {
+            super("MD5SUM");
+        }
+
+        protected WebdavStatus _doMethod() throws DavException, IOException
+        {
+            WebdavResource resource;
+            try
+            {
+                resource = resolvePath();
+            }
+            catch (DavException x)
+            {
+                if (x.getStatus() == WebdavStatus.SC_FORBIDDEN)
+                    return notFound();
+                throw x;
+            }
+            if (null == resource || resource instanceof WebdavResolverImpl.UnboundResource)
+                return notFound();
+            if (!resource.exists())
+                return notFound(resource.getPath());
+            if (resource.isCollection() || !resource.canRead(getUser(), true))
+                return unauthorized(resource);
+
+            // CONSIDER: replace with json response with file name
+            getResponse().setContentType("text/plain");
+            getResponse().getWriter().write(resource.getMD5(getUser()));
+            return WebdavStatus.SC_OK;
+        }
+    }
 
     @RequiresPermission(ReadPermission.class)
     public class ZipAction extends DavAction
