@@ -10,7 +10,7 @@ body, div, td, th, table, img, form, input, select, .gwt-TextBox
     margin: 0;
     color: #000000;
     letter-spacing: .3px;
-    line-height: 125%;
+    line-height: 1.25;
 }
 
 .x-btn, .x4-btn {
