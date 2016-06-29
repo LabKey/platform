@@ -9,8 +9,6 @@ Ext.define('LABKEY.app.panel.FilterDialog', {
     requires: ['Ext.form.field.ComboBox'],
 
     border: false,
-    padding: 25,
-    flex: 1,
     filters: [],
     defaultFiltId: 'labkey-filterdialog-default',
     facetedFiltId: 'labkey-filterdialog-faceted',
@@ -123,13 +121,10 @@ Ext.define('LABKEY.app.panel.FilterDialog', {
 
             var config = {
                 cls: 'filterdialogcontainer',
+                border: false,
                 defaults: this.defaults,
                 deferredRender: false,
                 monitorValid: true,
-
-                // sizing and styling
-                autoHeight: true,
-                border: false,
                 items: views
             };
 

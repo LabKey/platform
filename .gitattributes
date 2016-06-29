@@ -7094,7 +7094,6 @@ internal/webapp/dataregion/filter/Faceted.js -text
 internal/webapp/dataregion/filter/Model.js -text
 internal/webapp/dataregion/filter/Value.js -text
 internal/webapp/dataregion/panel/Facet.js -text
-internal/webapp/dataregion/panel/FilterDialog.js -text
 internal/webapp/designer/designer2.js -text
 internal/webapp/designer/wand.gif -text
 internal/webapp/dropzone/README.txt -text
