@@ -1007,14 +1007,6 @@ validNum:       {
     }
 
 
-    /** Format specified date using hard-coded, standard date & time pattern */
-    @Deprecated
-    public static String formatDateTime(Date date)
-    {
-        return formatDateTime(date, _standardDateTimeFormatString);
-    }
-
-
     /** Format current date & time using using folder-specified default date/time pattern */
     public static String formatDateTime(Container c)
     {
