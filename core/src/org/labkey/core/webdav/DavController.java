@@ -902,7 +902,12 @@ public class DavController extends SpringActionController
 
             // CONSIDER: replace with json response with file name
             getResponse().setContentType("text/plain");
-            getResponse().getWriter().write(resource.getMD5(getUser()));
+            Writer out = getResponse().getWriter();
+            out.write(resource.getMD5(getUser()));
+            out.write(" *");
+            out.write(resource.getName());
+            out.write("\n");
+            out.flush();
             return WebdavStatus.SC_OK;
         }
     }
