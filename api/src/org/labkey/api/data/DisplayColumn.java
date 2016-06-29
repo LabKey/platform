@@ -765,7 +765,8 @@ public abstract class DisplayColumn extends RenderColumn
             }
 
             boolean disableAnalytics = BooleanUtils.toBoolean(ctx.getViewContext().getActionURL().getParameter(rgn.getName() + ".disableAnalytics"));
-            if (!disableAnalytics && !getAnalyticsProviders().isEmpty() && rgn.getSettings().isAllowCustomizeView())
+            boolean allowCustomizeView = rgn.getSettings() != null && rgn.getSettings().isAllowCustomizeView();
+            if (!disableAnalytics && allowCustomizeView && !getAnalyticsProviders().isEmpty())
             {
                 boolean toAddSeparator = true;
 
