@@ -2031,7 +2031,14 @@ public class QueryView extends WebPartView<Object>
             ret.getRenderContext().setCache(false);
         }
 
-        // Apply base sorts and filters from custom view and from QuerySettings.
+        ActionURL customViewUrl = null;
+        if (_customView != null && _customView.hasFilterOrSort())
+        {
+            customViewUrl = new ActionURL();
+            _customView.applyFilterAndSortToURL(customViewUrl, getDataRegionName());
+        }
+
+            // Apply base sorts and filters from custom view and from QuerySettings.
         if (!ignoreUserFilter())
         {
             SimpleFilter filter;
@@ -2054,34 +2061,35 @@ public class QueryView extends WebPartView<Object>
             filter.addAllClauses(getSettings().getBaseFilter());
             sort.insertSort(getSettings().getBaseSort());
 
-            List<Aggregate> aggregates = new LinkedList<>();
-            if (ret.getRenderContext().getBaseAggregates() != null)
-                aggregates.addAll(ret.getRenderContext().getBaseAggregates());
-            if (getSettings().getAggregates() != null)
-                aggregates.addAll(getSettings().getAggregates());
-
-            List<AnalyticsProviderItem> analyticsProviders = new LinkedList<>();
-            if (ret.getRenderContext().getBaseAnalyticsProviders() != null)
-                analyticsProviders.addAll(ret.getRenderContext().getBaseAnalyticsProviders());
-            if (getSettings().getAnalyticsProviders() != null)
-                analyticsProviders.addAll(getSettings().getAnalyticsProviders());
-
-            if (_customView != null && _customView.hasFilterOrSort())
+            if (customViewUrl != null)
             {
-                ActionURL url = new ActionURL();
-                _customView.applyFilterAndSortToURL(url, getDataRegionName());
-                filter.addUrlFilters(url, getDataRegionName());
-                sort.addURLSort(url, getDataRegionName());
-
-                aggregates.addAll(Aggregate.fromURL(url, getDataRegionName()));
-                analyticsProviders.addAll(AnalyticsProviderItem.fromURL(url, getDataRegionName()));
+                filter.addUrlFilters(customViewUrl, getDataRegionName());
+                sort.addURLSort(customViewUrl, getDataRegionName());
             }
 
             ret.getRenderContext().setBaseFilter(filter);
             ret.getRenderContext().setBaseSort(sort);
-            ret.getRenderContext().setBaseAggregates(aggregates);
-            ret.getRenderContext().setBaseAnalyticsProviders(analyticsProviders);
         }
+
+        // Apply aggregates from custom view and query settings
+        List<Aggregate> aggregates = new LinkedList<>();
+        if (ret.getRenderContext().getBaseAggregates() != null)
+            aggregates.addAll(ret.getRenderContext().getBaseAggregates());
+        if (getSettings().getAggregates() != null)
+            aggregates.addAll(getSettings().getAggregates());
+        if (customViewUrl != null)
+            aggregates.addAll(Aggregate.fromURL(customViewUrl, getDataRegionName()));
+        ret.getRenderContext().setBaseAggregates(aggregates);
+
+        // Apply analytics providers from custom view and query settings
+        List<AnalyticsProviderItem> analyticsProviders = new LinkedList<>();
+        if (ret.getRenderContext().getBaseAnalyticsProviders() != null)
+            analyticsProviders.addAll(ret.getRenderContext().getBaseAnalyticsProviders());
+        if (getSettings().getAnalyticsProviders() != null)
+            analyticsProviders.addAll(getSettings().getAnalyticsProviders());
+        if (customViewUrl != null)
+            analyticsProviders.addAll(AnalyticsProviderItem.fromURL(customViewUrl, getDataRegionName()));
+        ret.getRenderContext().setBaseAnalyticsProviders(analyticsProviders);
 
         // XXX: Move to QuerySettings?
         if (_customView != null)
