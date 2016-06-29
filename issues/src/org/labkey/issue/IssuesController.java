@@ -617,7 +617,7 @@ public class IssuesController extends SpringActionController
                         "There are no issues lists defined for this folder." :
                         String.format("'%s' not specified.", IssuesListView.ISSUE_LIST_DEF_NAME)) :
                 String.format("There is no issues list '%s' defined in this folder.", issueDefName);
-        StringBuilder sb = new StringBuilder().append("<span class='labkey-error'>").append(warningMessage).append("</span><p>");
+        StringBuilder sb = new StringBuilder().append("<span class='labkey-error'>").append(PageFlowUtil.filter(warningMessage)).append("</span><p>");
         boolean userHasAdmin = context.getContainer().hasPermission(context.getUser(), AdminPermission.class);
         Button button = PageFlowUtil.button(userHasAdmin ? "Manage Issue List Definitions" : "Show Available Issue Lists").href(QueryService.get().urlFor(context.getUser(),
                 context.getContainer(),
