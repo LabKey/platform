@@ -207,7 +207,7 @@ public class PropertyController extends SpringActionController
             Domain domain = null;
             List<Domain> domains = null;
 
-            String kindName = jsonObj.getString("kind");
+            String kindName = jsonObj.optString("kind", jsonObj.getString("domainKind"));
             String domainGroup = jsonObj.getString("domainGroup");
             String domainName = jsonObj.optString("domainName", null);
 
@@ -230,14 +230,27 @@ public class PropertyController extends SpringActionController
 
                 if (domainTemplate != null)
                 {
-                    DomainTemplate template = templateGroup.getTemplate(domainTemplate);
+                    DomainTemplate template = templateGroup.getTemplate(domainTemplate, kindName, true);
                     if (template == null)
-                        throw new NotFoundException("Domain template '" + domainTemplate + "' not found in template group '" + domainGroup + "'");
+                        throw new NotFoundException("Domain template '" + domainTemplate + "' " + (kindName != null ? "of kind '" + kindName + "'" : "") + "not found in template group '" + domainGroup + "'");
 
+                    if (template.hasErrors())
+                    {
+                        errors.reject(ERROR_MSG, "Domain template '" + domainTemplate + "' has errors: " + StringUtils.join(template.getErrors(), "\n"));
+                        return null;
+                    }
+
+                    // CONSIDER: Include imported row count in response
                     domain = template.createAndImport(getContainer(), getUser(), domainName, createDomain, importData);
                 }
                 else
                 {
+                    if (templateGroup.hasErrors())
+                    {
+                        errors.reject(ERROR_MSG, "Domain template group '" + domainGroup + "' has errors: " + StringUtils.join(templateGroup.getErrors(), "\n"));
+                        return null;
+                    }
+
                     domains = templateGroup.createAndImport(getContainer(), getUser(), /*TODO: allow specifying a domain name for each template?, */ createDomain, importData);
                 }
             }
@@ -267,7 +280,7 @@ public class PropertyController extends SpringActionController
             }
 
 
-            ApiSimpleResponse resp;
+            ApiSimpleResponse resp = new ApiSimpleResponse();
             if (domain != null)
             {
                 resp = convertDomainToApiResponse(DomainUtil.getDomainDescriptor(getUser(), domain));
@@ -279,12 +292,13 @@ public class PropertyController extends SpringActionController
                 {
                     resps.add(convertDomainToApiResponse(DomainUtil.getDomainDescriptor(getUser(), d)));
                 }
-                resp = new ApiSimpleResponse();
                 resp.put("domains", resps);
             }
             else
             {
-                throw new ApiUsageException("Domain template or domain design required");
+                // Domain will be null if we requested to import data only
+                // CONSIDER: Include imported row count in response
+                resp = new ApiSimpleResponse();
             }
 
             resp.put("success", true);
