@@ -400,7 +400,7 @@ public class IssuesController extends SpringActionController
             int issueId = form.getIssueId();
             _issue = getIssue(issueId, true);
 
-            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer(), getIssueListDef().getName());
+            IssueManager.EntryTypeNames names =  getEntryTypeNames();
             if (null == _issue)
             {
                 throw new NotFoundException("Unable to find " + names.singularName + " " + form.getIssueId());
@@ -501,7 +501,7 @@ public class IssuesController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer(), getIssueListDef().getName());
+            IssueManager.EntryTypeNames names = getEntryTypeNames();
             return new ListAction(getViewContext()).appendNavTrail(root).addChild(names.singularName + " Details");
         }
     }
@@ -586,7 +586,7 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer(), getIssueListDef().getName());
+            IssueManager.EntryTypeNames names = getEntryTypeNames();
             return new ListAction(getViewContext()).appendNavTrail(root).addChild("Insert New " + names.singularName);
         }
 
@@ -855,7 +855,7 @@ public class IssuesController extends SpringActionController
 
         protected String getSingularEntityName()
         {
-            return IssueManager.getEntryTypeNames(getContainer(), getIssueListDef().getName()).singularName;
+            return getEntryTypeNames().singularName;
         }
 
         protected Set<String> getEditableFields(Class<? extends Controller> action, CustomColumnConfiguration ccc)
@@ -926,6 +926,7 @@ public class IssuesController extends SpringActionController
             return _columnConfiguration;
         }
 
+        @Nullable
         protected IssueListDef getIssueListDef()
         {
             if (_issueListDef == null)
@@ -1282,6 +1283,12 @@ public class IssuesController extends SpringActionController
             return relatedIssue;
         }
 
+        protected IssueManager.EntryTypeNames getEntryTypeNames()
+        {
+            IssueListDef issueListDef = getIssueListDef();
+            return IssueManager.getEntryTypeNames(getContainer(), issueListDef != null ? issueListDef.getName() : IssueListDef.DEFAULT_ISSUE_LIST_NAME);
+        }
+
         public class NewCustomColumnConfiguration implements CustomColumnConfiguration
         {
             private Map<String, CustomColumn> _columnMap = new LinkedHashMap<>();
@@ -1592,7 +1599,7 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer(), getIssueListDef().getName());
+            IssueManager.EntryTypeNames names = getEntryTypeNames();
             return (new DetailsAction(_issue, getViewContext()).appendNavTrail(root)).addChild("Resolve " + names.singularName);
         }
     }
@@ -1635,7 +1642,7 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer(), getIssueListDef().getName());
+            IssueManager.EntryTypeNames names = getEntryTypeNames();
             return (new DetailsAction(_issue, getViewContext()).appendNavTrail(root)).addChild("Close " + names.singularName);
         }
     }
@@ -1681,7 +1688,7 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer(), getIssueListDef().getName());
+            IssueManager.EntryTypeNames names = getEntryTypeNames();
             return (new DetailsAction(_issue, getViewContext()).appendNavTrail(root)).addChild("Reopen " + names.singularName);
         }
     }
