@@ -18,6 +18,8 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
     alias: 'widget.labkey-faceted-filterpanel',
     
     maxGroup: 20,
+    
+    maxRows: 250,
 
     /*** Overridden Methods ***/
     beforeInit : function() {
@@ -181,7 +183,7 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
             column: model.get('fieldKey'),
             container: model.get('container'),
             parameters: model.get('parameters'),
-            maxRows: 251
+            maxRows: this.maxRows + 1
         };
 
         var onSuccess = function() {
@@ -189,6 +191,12 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
                 var d = this.distinctValues;
                 var g = this.groupedValues;
                 var gmap = {};
+
+                if(Ext4.isDefined(this.onOverValueLimit) && Ext4.isFunction(this.onOverValueLimit) &&
+                        ((d.values.length > this.maxRows) || (g.values.length > this.maxRows))) {
+                    this.onOverValueLimit(this, this.scope);
+                    return;
+                }
 
                 if (g && g.values) {
                     Ext4.each(g.values, function(_g) {
@@ -295,7 +303,9 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
                 }
             }
         }
-        
+        if(Ext4.isDefined(this.onSuccessfulLoad) && Ext4.isFunction(this.onSuccessfulLoad))
+            this.onSuccessfulLoad(this, this.scope);
+
         this.changed = false;
     },
 

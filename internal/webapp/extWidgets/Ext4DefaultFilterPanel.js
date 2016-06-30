@@ -59,7 +59,7 @@ Ext4.define('LABKEY.ext4.DefaultFilterPanel', {
         if (null == this.filterArray)
             return;
 
-        if(this.filterArray.length < 1) {
+        if(this.filterArray.length == 0) {
             Ext4.each(this.getFilterCombos(), function(comb) {
                 comb.setValue("");
             }, this);

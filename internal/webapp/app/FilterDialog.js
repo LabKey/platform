@@ -39,16 +39,24 @@ Ext.define('LABKEY.app.panel.FilterDialog', {
             return;
         }
 
-        this.items = this.getHeaderItems();
-        this.items.push(this.getContainer());
-
+        this.items = this.getItems();
         this.dockedItems = this.getButtons();
 
         this.callParent(arguments);
-
-
     },
 
+    getItems: function () {
+        var items = this.getHeaderItems();
+        items.push(this.getContainer());
+        return items;
+    },
+
+    resetItems: function () {
+        this.viewcontainer = undefined;
+        this.removeAll();
+        this.add(this.getItems());
+    },
+    
     getButtons: function () {
         var buttons = [{
             xtype: 'toolbar',
@@ -66,7 +74,7 @@ Ext.define('LABKEY.app.panel.FilterDialog', {
     },
 
     onClose: function () {
-        this.close;
+        console.error('All uses of ', this.$className, ' should overwrite onClose()');
     },
 
     onApply: function () {
@@ -173,11 +181,11 @@ Ext.define('LABKEY.app.panel.FilterDialog', {
     },
 
     getDefaultPanel: function () {
-        return this.getContainer().getComponent('labkey-filterdialog-default');
+        return this.getContainer().getComponent(this.defaultFiltId);
     },
 
     getFacetedPanel: function () {
-        return this.getContainer().getComponent('labkey-filterdialog-faceted');
+        return this.getContainer().getComponent(this.facetedFiltId);
     },
 
     getColumnFilters: function (filters) {
@@ -200,7 +208,7 @@ Ext.define('LABKEY.app.panel.FilterDialog', {
         views.push({
             title: 'Choose Filters',
             xtype: 'labkey-default-filterpanel',
-            itemId: 'labkey-filterdialog-default',
+            itemId: this.defaultFiltId,
             boundColumn: this.boundColumn,
             filterArray: this.store.filterArray,
             schemaName: this.schemaName,
@@ -212,12 +220,15 @@ Ext.define('LABKEY.app.panel.FilterDialog', {
             views.push({
                 title: 'Choose Values',
                 xtype: 'labkey-faceted-filterpanel',
-                itemId: 'labkey-filterdialog-faceted',
+                itemId: this.facetedFiltId,
                 cls: 'facetfilterpanel',
                 border: false,
                 overflowY: 'auto',
                 useGrouping: this.useFacetGrouping,
                 maxGroup: this.maxGroupSize,
+                maxRows: this.maxRows,
+                onOverValueLimit: this.onOverValueLimit,
+                onSuccessfulLoad: this.onSuccessfulLoad,
                 minHeight: this.minFilterPanelHeight,
                 maxHeight: this.maxFilterPanelHeight,
                 useStoreCache: false,
