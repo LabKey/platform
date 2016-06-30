@@ -24,6 +24,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
+    final String LINK_HEADING = "More info";
     SiteValidationService validationService = ServiceRegistry.get().getService(SiteValidationService.class);
     if (null == validationService)
     { %>
@@ -57,6 +58,9 @@
                 <% for (SiteValidationResult result : moduleInfos) { %>
                 <li>
                     <%=h(result.getMessage())%>
+                    <% if (null != result.getLink()) { %>
+                    <span><%=textLink(LINK_HEADING, result.getLink())%></span>
+                    <% } %>
                 </li>
                 <% } %>
                 <% if (moduleErrors.size() > 0) { %>
@@ -67,7 +71,7 @@
                 <li>
                     <span class="labkey-error"><%=h(result.getMessage())%></span>
                     <% if (null != result.getLink()) { %>
-                    <span><%=textLink("Fix", result.getLink())%></span>
+                    <span><%=textLink(LINK_HEADING, result.getLink())%></span>
                     <% } %>
                 </li>
                 <% } %>
@@ -79,6 +83,9 @@
                 <% for (SiteValidationResult result : moduleWarnings) { %>
                 <li>
                     <%=h(result.getMessage())%>
+                    <% if (null != result.getLink()) { %>
+                    <span><%=textLink(LINK_HEADING, result.getLink())%></span>
+                    <% } %>
                 </li>
                 <% } %></ul></li>
                 <% } %></ul></li>
@@ -113,7 +120,11 @@
                                 containerErrors = subtreeResult.getValue().getResults(Level.ERROR);
                                 containerWarnings = subtreeResult.getValue().getResults(Level.WARN);
                                 for (SiteValidationResult result : containerInfos) { %>
-                                <li><%=h(result.getMessage())%></li>
+                                <li><%=h(result.getMessage())%>
+                                    <% if (null != result.getLink()) { %>
+                                    <span><%=textLink(LINK_HEADING, result.getLink())%></span>
+                                    <% } %>
+                                </li>
                                 <% } %>
                                 <% if (containerErrors.size() > 0) { %>
                                     <li>Errors:
@@ -121,7 +132,7 @@
                                     <% for (SiteValidationResult result : containerErrors) { %>
                                         <li><span class="labkey-error"><%=h(result.getMessage())%></span>
                                         <% if (null != result.getLink()) { %>
-                                        <span><%=textLink("Fix", result.getLink())%></span>
+                                        <span><%=textLink(LINK_HEADING, result.getLink())%></span>
                                         <% } %>
                                     </li>
                                     <% } %></ul></li>
@@ -130,7 +141,11 @@
                                     <li>Warnings:
                                         <ul>
                                         <% for (SiteValidationResult result : containerWarnings) { %>
-                                        <li><%=h(result.getMessage())%></li>
+                                        <li><%=h(result.getMessage())%>
+                                            <% if (null != result.getLink()) { %>
+                                            <span><%=textLink(LINK_HEADING, result.getLink())%></span>
+                                            <% } %>
+                                        </li>
                                     <% } %></ul></li>
                                 <% } %>
                             <% } %>
