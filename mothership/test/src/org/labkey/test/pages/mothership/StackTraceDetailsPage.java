@@ -4,14 +4,15 @@ import org.labkey.test.Locator;
 import org.labkey.test.WebDriverWrapper;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.components.html.Input;
-import org.labkey.test.components.html.LazySelect;
 import org.labkey.test.pages.issues.InsertPage;
+import org.labkey.test.selenium.Select;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Maps;
 import org.labkey.test.util.mothership.MothershipHelper;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.Select;
+
+import static org.labkey.test.selenium.Select.Select;
 
 public class StackTraceDetailsPage extends BaseMothershipPage
 {
@@ -76,7 +77,7 @@ public class StackTraceDetailsPage extends BaseMothershipPage
     {
         Input bugNumberInput = new Input(Locator.name("bugNumber").findWhenNeeded(this), getDriver());
         Input commentsTextArea = new Input(Locator.name("comments").findWhenNeeded(this), getDriver());
-        Select assignedToSelect = new LazySelect(Locator.name("assignedTo").findWhenNeeded(this));
+        Select assignedToSelect = Select(Locator.name("assignedTo")).findWhenNeeded(this);
         WebElement saveButton = Locator.lkButton("Save").findWhenNeeded(this);
         WebElement createIssueButton = Locator.lkButton("Create Issue").findWhenNeeded(this);
         DataRegionTable exceptionReportsDataRegion = new DataRegionTable("ExceptionReports", getDriver());

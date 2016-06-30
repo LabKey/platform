@@ -442,6 +442,7 @@ public class IssueDesigner implements EntryPoint, Saveable<GWTDomain>
             table.setWidget(0, 2, new Label("Comment sort direction"));
 
             final ListBox sortDirection = new ListBox(false);
+            sortDirection.setName("sortDirection");
             sortDirection.addItem("Oldest first", "ASC");
             sortDirection.addItem("Newest first", "DESC");
             sortDirection.setSelectedIndex("DESC".equals(_issueDef.getCommentSortDirection()) ? 1 : 0);
