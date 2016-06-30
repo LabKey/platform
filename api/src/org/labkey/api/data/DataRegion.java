@@ -938,7 +938,7 @@ public class DataRegion extends AbstractDataRegion
                 out.write("<script type=\"text/javascript\">\n");
                 for (String script : scripts)
                 {
-                    out.write(script);
+                    out.write(script + "\n");
                 }
                 out.write("</script>\n");
                 writer.write(out.toString());

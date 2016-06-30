@@ -73,6 +73,7 @@ public class RenderContext implements Map<String, Object>, Serializable
     private List<Aggregate> _aggregates;
     private Map<FieldKey, List<Aggregate>> _aggregatesByFieldKey;
     private List<AnalyticsProviderItem> _analyticsProviders;
+    private Map<FieldKey, List<String>> _analyticsProviderNamesByFieldKey;
 
     private Results _rs;
 //    private Map<FieldKey, ColumnInfo> _fieldMap;
@@ -209,6 +210,23 @@ public class RenderContext implements Map<String, Object>, Serializable
     public void setBaseAnalyticsProviders(List<AnalyticsProviderItem> analyticsProviders)
     {
         _analyticsProviders = analyticsProviders;
+
+        _analyticsProviderNamesByFieldKey = new HashMap<>();
+        for (AnalyticsProviderItem analyticsProvider : analyticsProviders)
+        {
+            if (!_analyticsProviderNamesByFieldKey.containsKey(analyticsProvider.getFieldKey()))
+                _analyticsProviderNamesByFieldKey.put(analyticsProvider.getFieldKey(), new ArrayList<>());
+
+            _analyticsProviderNamesByFieldKey.get(analyticsProvider.getFieldKey()).add(analyticsProvider.getName());
+        }
+    }
+
+    public boolean containsAnalyticsProvider(FieldKey fieldKey, String providerName)
+    {
+        if (_analyticsProviderNamesByFieldKey != null && !_analyticsProviderNamesByFieldKey.isEmpty())
+            return _analyticsProviderNamesByFieldKey.containsKey(fieldKey) && _analyticsProviderNamesByFieldKey.get(fieldKey).contains(providerName);
+
+        return false;
     }
 
     public Results getResults()

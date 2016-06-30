@@ -3,6 +3,7 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
@@ -43,14 +44,25 @@ public class AnalyticsProviderItem
         _name = name;
     }
 
-    /** Extracts analytic provider URL parameters from a URL. */
     @NotNull
     public static List<AnalyticsProviderItem> fromURL(URLHelper urlHelper, String regionName)
     {
-        return fromURL(urlHelper.getPropertyValues(), regionName);
+        List<AnalyticsProviderItem> analyticsProviderItems = new LinkedList<>();
+        String prefix = regionName + "." + CustomViewInfo.ANALYTICSPROVIDER_PARAM_PREFIX + ".";
+
+        for (Pair<String, String> paramPair : urlHelper.getParameters())
+        {
+            if (paramPair.getKey().startsWith(prefix))
+            {
+                FieldKey fieldKey = FieldKey.fromString(paramPair.getKey().substring(prefix.length()));
+                String providerName = paramPair.getValue();
+                analyticsProviderItems.add(new AnalyticsProviderItem(fieldKey, providerName));
+            }
+        }
+
+        return analyticsProviderItems;
     }
 
-    /** Extracts analytic provider URL parameters from a URL. */
     @NotNull
     public static List<AnalyticsProviderItem> fromURL(PropertyValues pvs, String regionName)
     {
