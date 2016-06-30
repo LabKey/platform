@@ -1061,8 +1061,7 @@ public class UserController extends SpringActionController
                 {
                     try (InputStream is = file.openInputStream())
                     {
-                        ImageStreamThumbnailProvider wrapper = new ImageStreamThumbnailProvider(user, is, file.getContentType(), imageType);
-                        wrapper.setMakeSquare(true);
+                        ImageStreamThumbnailProvider wrapper = new ImageStreamThumbnailProvider(user, is, file.getContentType(), imageType, true);
                         svc.replaceThumbnail(wrapper, imageType, null, getViewContext());
                     }
                 }

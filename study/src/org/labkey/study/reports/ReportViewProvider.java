@@ -368,7 +368,7 @@ public class ReportViewProvider implements DataViewProvider
                         InputStream is = (InputStream)props.get(Property.customThumbnail.name());
                         String filename = (String)props.get(Property.customThumbnailFileName.name());
                         String contentType = null != filename ? new MimeMap().getContentTypeFor(filename) : null;
-                        ThumbnailProvider wrapper = new ImageStreamThumbnailProvider(report, is, contentType, ImageType.Large);
+                        ThumbnailProvider wrapper = new ImageStreamThumbnailProvider(report, is, contentType, ImageType.Large, false);
 
                         ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
 
@@ -384,7 +384,7 @@ public class ReportViewProvider implements DataViewProvider
                         InputStream is = (InputStream)props.get(Property.customIcon.name());
                         String filename = (String)props.get(Property.customIconFileName.name());
                         String contentType = null != filename ? new MimeMap().getContentTypeFor(filename) : null;
-                        ThumbnailProvider wrapper = new ImageStreamThumbnailProvider(report, is, contentType, ImageType.Small);
+                        ThumbnailProvider wrapper = new ImageStreamThumbnailProvider(report, is, contentType, ImageType.Small, false);
 
                         ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
 
