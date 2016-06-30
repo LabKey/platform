@@ -94,37 +94,41 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
 
         String userRoot = StringUtils.trimToNull(form.getUserRootPath());
 
-        if (userRoot != null)
-        {
-            File f = new File(userRoot);
 
-            try
+        if(AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_USER_FOLDERS))
+        {
+            if (userRoot != null)
             {
-                boolean isNewRoot = isNewRoot(_svc.getUserFilesRoot(), f);
-                if (!NetworkDrive.exists(f) || !f.isDirectory())
+                File f = new File(userRoot);
+
+                try
                 {
-                    errors.reject(SpringActionController.ERROR_MSG, "User file root '" + userRoot + "' does not appear to be a valid directory accessible to the server at " + getViewContext().getRequest().getServerName() + ".");
+                    boolean isNewRoot = isNewRoot(_svc.getUserFilesRoot(), f);
+                    if (!NetworkDrive.exists(f) || !f.isDirectory())
+                    {
+                        errors.reject(SpringActionController.ERROR_MSG, "User file root '" + userRoot + "' does not appear to be a valid directory accessible to the server at " + getViewContext().getRequest().getServerName() + ".");
+                    }
+                    //TODO: this isn't needed yet. And we may want to let them move files independently? until we add move feature for User files
+    //                else if (isNewRoot && !form.isUpgrade())
+    //                {
+    //                    // if this is a new root, make sure it is empty
+    //                    String[] children = f.list();
+    //
+    //                    if (children != null && children.length > 0)
+    //                    {
+    //                        errors.reject(SpringActionController.ERROR_MSG, "User file root '" + userRoot + "' is not empty and cannot be used because files under the current site-level root must be moved to this new root. " +
+    //                                "Either specify a different, non-existing root, or remove the files under the specified directory.");
+    //                    }
+    //                }
                 }
-                //TODO: this isn't needed yet. And we may want to let them move files independantly? until we add move feature for User files
-//                else if (isNewRoot && !form.isUpgrade())
-//                {
-//                    // if this is a new root, make sure it is empty
-//                    String[] children = f.list();
-//
-//                    if (children != null && children.length > 0)
-//                    {
-//                        errors.reject(SpringActionController.ERROR_MSG, "User file root '" + userRoot + "' is not empty and cannot be used because files under the current site-level root must be moved to this new root. " +
-//                                "Either specify a different, non-existing root, or remove the files under the specified directory.");
-//                    }
-//                }
+                catch (IOException e)
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, "The specified file root is invalid.");
+                }
             }
-            catch (IOException e)
-            {
-                errors.reject(SpringActionController.ERROR_MSG, "The specified file root is invalid.");
-            }
+            else
+                errors.reject(SpringActionController.ERROR_MSG, "The user file root cannot be blank.");
         }
-        else
-            errors.reject(SpringActionController.ERROR_MSG, "The user file root cannot be blank.");
     }
 
     private boolean isNewRoot(File prev, File current) throws IOException
