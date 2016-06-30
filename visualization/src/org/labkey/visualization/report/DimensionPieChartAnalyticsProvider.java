@@ -37,8 +37,7 @@ public class DimensionPieChartAnalyticsProvider extends ColumnAnalyticsProvider
     @Override
     public boolean isApplicable(@NotNull ColumnInfo col)
     {
-        return AppProps.getInstance().isExperimentalFeatureEnabled(VisualizationModule.EXPERIMENTAL_VISUALIZATION_ANALYTICS_PROVIDER)
-                && col.isDimension() && !"entityid".equalsIgnoreCase(col.getSqlTypeName());
+        return col.isDimension() && !"entityid".equalsIgnoreCase(col.getSqlTypeName());
     }
 
     @Nullable

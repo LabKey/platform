@@ -37,8 +37,7 @@ public class MeasureBoxPlotAnalyticsProvider extends ColumnAnalyticsProvider
     @Override
     public boolean isApplicable(@NotNull ColumnInfo col)
     {
-        return AppProps.getInstance().isExperimentalFeatureEnabled(VisualizationModule.EXPERIMENTAL_VISUALIZATION_ANALYTICS_PROVIDER)
-                && col.isMeasure() && !"serial".equalsIgnoreCase(col.getSqlTypeName()) && !"entityid".equalsIgnoreCase(col.getSqlTypeName());
+        return col.isMeasure() && !"serial".equalsIgnoreCase(col.getSqlTypeName()) && !"entityid".equalsIgnoreCase(col.getSqlTypeName());
     }
 
     @Nullable

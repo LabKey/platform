@@ -51,8 +51,6 @@ public class VisualizationModule extends DefaultModule
 {
     public static final String NAME = "Visualization";
 
-    public static final String EXPERIMENTAL_VISUALIZATION_ANALYTICS_PROVIDER = "experimental-visualization-analytics-provider";
-
     @Override
     public String getName()
     {
@@ -117,11 +115,6 @@ public class VisualizationModule extends DefaultModule
         ReportService.get().addUIProvider(new VisualizationUIProvider());
 
         ServiceRegistry.get().registerService(VisualizationService.class, new VisualizationServiceImpl());
-
-        AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_VISUALIZATION_ANALYTICS_PROVIDER,
-                "Visualization Column Analytics Providers", "This feature allows columns marked as measures and "
-                    + "dimensions to display visualizations (pie chart, bar chart, or box plot) of their data in "
-                    + "the Data Region message area.", false);
     }
 
 
