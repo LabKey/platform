@@ -31,6 +31,7 @@ import javafx.stage.Stage;
 import net.coobird.thumbnailator.Thumbnails;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailOutputStream;
@@ -127,23 +128,20 @@ public class ImageUtil
         return os.getThumbnail("image/png");
     }
 
-    private static BufferedImage cropImageToSquare(BufferedImage image)
+    private static @NotNull BufferedImage cropImageToSquare(@NotNull BufferedImage image)
     {
-        if (image != null)
-        {
-            int height = image.getHeight();
-            int width = image.getWidth();
+        int height = image.getHeight();
+        int width = image.getWidth();
 
-            if (width > height)
-            {
-                int sizeDiff = width - height;
-                return image.getSubimage(sizeDiff / 2, 0, width - sizeDiff, height);
-            }
-            else if (height > width)
-            {
-                int sizeDiff = height - width;
-                return image.getSubimage(0, sizeDiff / 2, width, height - sizeDiff);
-            }
+        if (width > height)
+        {
+            int sizeDiff = width - height;
+            return image.getSubimage(sizeDiff / 2, 0, width - sizeDiff, height);
+        }
+        else if (height > width)
+        {
+            int sizeDiff = height - width;
+            return image.getSubimage(0, sizeDiff / 2, width, height - sizeDiff);
         }
 
         return image;

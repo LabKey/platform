@@ -46,19 +46,15 @@ public class ImageStreamThumbnailProvider implements ThumbnailProvider
     private final @Nullable String _contentType;
     private final ImageType _type;
     private final InputStream _is;
-    private boolean _makeSquare = false;
+    private final boolean _makeSquare;
 
     // Generates a thumbnail from the image in the inputstream and associates it with the provider
-    public ImageStreamThumbnailProvider(ThumbnailProvider provider, InputStream is, @Nullable String contentType, ImageType type)
+    public ImageStreamThumbnailProvider(ThumbnailProvider provider, InputStream is, @Nullable String contentType, ImageType type, boolean makeSquare)
     {
         _provider = provider;
         _contentType = contentType;
         _type = type;
         _is = new CheckedInputStream(is);
-    }
-
-    public void setMakeSquare(boolean makeSquare)
-    {
         _makeSquare = makeSquare;
     }
 
