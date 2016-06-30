@@ -23,7 +23,7 @@ import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.module.DefaultModule;
+import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.ModuleContext;
@@ -49,7 +49,6 @@ import org.labkey.wiki.renderer.RadeoxRenderer;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,7 +65,7 @@ import java.util.Set;
  * Date: Jul 18, 2005
  * Time: 3:07:21 PM
  */
-public class WikiModule extends DefaultModule implements SearchService.DocumentProvider
+public class WikiModule extends CodeOnlyModule implements SearchService.DocumentProvider
 {
     public static final String WEB_PART_NAME = "Wiki";
 
@@ -75,11 +74,6 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
     public String getName()
     {
         return "Wiki";
-    }
-
-    public double getVersion()
-    {
-        return 16.10;
     }
 
     protected void init()
@@ -96,11 +90,6 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
         return new ArrayList<>(Arrays.asList(new WikiWebPartFactory(),
                 new WikiTOCFactory(),
                 new MenuWikiWebPartFactory()));
-    }
-
-    public boolean hasScripts()
-    {
-        return false;
     }
 
     public void doStartup(ModuleContext moduleContext)
