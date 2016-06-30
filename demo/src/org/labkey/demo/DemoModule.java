@@ -47,7 +47,7 @@ public class DemoModule extends DefaultModule
 
     public double getVersion()
     {
-        return 16.10;
+        return 16.20;
     }
 
     protected void init()
@@ -58,7 +58,7 @@ public class DemoModule extends DefaultModule
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<WebPartFactory>(Collections.singletonList(new BaseWebPartFactory("Demo Summary", WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT)
+        return new ArrayList<>(Collections.singletonList(new BaseWebPartFactory("Demo Summary", WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT)
         {
             {
                 addLegacyNames("Narrow Demo Summary");

@@ -18,17 +18,17 @@ package org.labkey.cbcassay;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
-import org.labkey.api.module.DefaultModule;
-import org.labkey.api.module.ModuleContext;
-import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.module.CodeOnlyModule;
+import org.labkey.api.module.ModuleContext;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.view.WebPartFactory;
 import org.labkey.cbcassay.data.CBCDataProperty;
 
 import java.util.Collection;
 import java.util.Collections;
 
-public class CBCAssayModule extends DefaultModule
+public class CBCAssayModule extends CodeOnlyModule
 {
     public static final String NAME = "CBCAssay";
 
@@ -36,18 +36,6 @@ public class CBCAssayModule extends DefaultModule
     public String getName()
     {
         return NAME;
-    }
-
-    @Override
-    public double getVersion()
-    {
-        return 16.10;
-    }
-
-    @Override
-    public boolean hasScripts()
-    {
-        return false;
     }
 
     @Override

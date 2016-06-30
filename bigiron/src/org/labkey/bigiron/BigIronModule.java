@@ -18,6 +18,7 @@ package org.labkey.bigiron;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.dialect.SqlDialectManager;
+import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.QueryView;
@@ -33,7 +34,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 
-public class BigIronModule extends DefaultModule
+public class BigIronModule extends CodeOnlyModule
 {
     // Register these dialects extra early, since we need to initialize the data sources before calling DefaultModule.initialize()
     static
@@ -49,20 +50,10 @@ public class BigIronModule extends DefaultModule
         return "BigIron";
     }
 
-    public double getVersion()
-    {
-        return 16.10;
-    }
-
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return Collections.emptyList();
-    }
-
-    public boolean hasScripts()
-    {
-        return false;
     }
 
     protected void init()

@@ -63,7 +63,7 @@ public class SearchModule extends DefaultModule
 
     public double getVersion()
     {
-        return 16.13;
+        return 16.20;
     }
 
     public boolean hasScripts()
@@ -195,16 +195,8 @@ public class SearchModule extends DefaultModule
         {
             ss.start();
             DavCrawler.getInstance().start();
-        };
+        }
     }
-
-    @NotNull
-    @Override
-    public Collection<String> getSummary(Container c)
-    {
-        return Collections.emptyList();
-    }
-
 
     @Override
     public void afterUpdate(ModuleContext moduleContext)

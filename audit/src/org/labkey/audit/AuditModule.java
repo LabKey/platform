@@ -20,7 +20,6 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.SiteSettingsAuditProvider;
-import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.view.WebPartFactory;
@@ -52,7 +51,7 @@ public class AuditModule extends DefaultModule
 
     public double getVersion()
     {
-        return 16.10;
+        return 16.20;
     }
 
     protected void init()

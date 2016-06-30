@@ -140,7 +140,7 @@ public class QueryModule extends DefaultModule
 
     public double getVersion()
     {
-        return 16.10;
+        return 16.20;
     }
 
     protected void init()
@@ -276,14 +276,9 @@ public class QueryModule extends DefaultModule
 
         CacheManager.addListener(new ServerManager.CacheListener());
 
-        AdminLinkManager.getInstance().addListener(new AdminLinkManager.Listener()
-        {
-            @Override
-            public void addAdminLinks(NavTree adminNavTree, Container container, User user)
-            {
-                if (container.hasPermission(user, ReadPermission.class))
-                    adminNavTree.addChild(new NavTree("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(container)));
-            }
+        AdminLinkManager.getInstance().addListener((adminNavTree, container, user) -> {
+            if (container.hasPermission(user, ReadPermission.class))
+                adminNavTree.addChild(new NavTree("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(container)));
         });
 
         AnalyticsProviderRegistry analyticsProviderRegistry = ServiceRegistry.get().getService(AnalyticsProviderRegistry.class);

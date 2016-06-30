@@ -18,7 +18,7 @@ package org.labkey.timeline;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.module.DefaultModule;
+import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.BaseWebPartFactory;
@@ -35,18 +35,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 
-public class TimelineModule extends DefaultModule
+public class TimelineModule extends CodeOnlyModule
 {
     public static final String NAME = "Timeline";
 
     public String getName()
     {
         return "Timeline";
-    }
-
-    public double getVersion()
-    {
-        return 16.10;
     }
 
     protected void init()
@@ -61,8 +56,8 @@ public class TimelineModule extends DefaultModule
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<WebPartFactory>(Arrays.asList(new BaseWebPartFactory(NAME, true, true, WebPartFactory.LOCATION_BODY){
-
+        return new ArrayList<>(Arrays.asList(new BaseWebPartFactory(NAME, true, true, WebPartFactory.LOCATION_BODY)
+        {
             public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
                 TimelineSettings settings = new TimelineSettings();
@@ -83,10 +78,5 @@ public class TimelineModule extends DefaultModule
                 return new JspView<>(TimelineView.class, "customizeTimeline.jsp", webPart);
             }
         }));
-    }
-
-    public boolean hasScripts()
-    {
-        return false;
     }
 }

@@ -100,7 +100,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
     public double getVersion()
     {
-        return 16.10;
+        return 16.20;
     }
 
     protected void init()
@@ -164,7 +164,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<WebPartFactory>(Arrays.asList(
+        return new ArrayList<>(Arrays.asList(
             new BaseWebPartFactory(PipelineWebPart.getPartName())
             {
                 public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)

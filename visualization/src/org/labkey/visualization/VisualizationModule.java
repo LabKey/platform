@@ -18,7 +18,7 @@ package org.labkey.visualization;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.analytics.AnalyticsProviderRegistry;
-import org.labkey.api.module.DefaultModule;
+import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.DefaultSchema;
@@ -47,7 +47,7 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-public class VisualizationModule extends DefaultModule
+public class VisualizationModule extends CodeOnlyModule
 {
     public static final String NAME = "Visualization";
 
@@ -55,18 +55,6 @@ public class VisualizationModule extends DefaultModule
     public String getName()
     {
         return NAME;
-    }
-
-    @Override
-    public double getVersion()
-    {
-        return 16.10;
-    }
-
-    @Override
-    public boolean hasScripts()
-    {
-        return false;
     }
 
     @NotNull
