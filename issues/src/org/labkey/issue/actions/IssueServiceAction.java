@@ -67,14 +67,14 @@ public class IssueServiceAction extends GWTServiceAction
             GWTIssueDefinition def = new GWTIssueDefinition();
             Container c = getContainer();
 
-            IssueManager.EntryTypeNames typeNames = IssueManager.getEntryTypeNames(c);
-            Group assignedToGroup = IssueManager.getAssignedToGroup(c);
-            User defaultUser = IssueManager.getDefaultAssignedToUser(c);
-            //bean.moveToContainers = IssueManager.getMoveDestinationContainers(c);
+            IssueManager.EntryTypeNames typeNames = IssueManager.getEntryTypeNames(c, defName);
+            Group assignedToGroup = IssueManager.getAssignedToGroup(c, defName);
+            User defaultUser = IssueManager.getDefaultAssignedToUser(c, defName);
 
+            def.setIssueDefName(defName);
             def.setSingularItemName(typeNames.singularName);
             def.setPluralItemName(typeNames.pluralName);
-            def.setCommentSortDirection(IssueManager.getCommentSortDirection(c).name());
+            def.setCommentSortDirection(IssueManager.getCommentSortDirection(c, defName).name());
             if (assignedToGroup != null)
                 def.setAssignedToGroup(assignedToGroup.getUserId());
             if (defaultUser != null)
@@ -93,20 +93,18 @@ public class IssueServiceAction extends GWTServiceAction
                 names.singularName = def.getSingularItemName();
                 names.pluralName = def.getPluralItemName();
 
-                IssueManager.saveEntryTypeNames(getContainer(), names);
-                IssueManager.saveCommentSortDirection(getContainer(), Sort.SortDirection.fromString(def.getCommentSortDirection()));
-                //IssueManager.saveMoveDestinationContainers(getContainer(), _moveToContainers);
-                //IssueManager.saveRelatedIssuesList(getContainer(), form.getRelatedIssuesList());
+                IssueManager.saveEntryTypeNames(getContainer(), def.getIssueDefName(), names);
+                IssueManager.saveCommentSortDirection(getContainer(), def.getIssueDefName(), Sort.SortDirection.fromString(def.getCommentSortDirection()));
 
                 Group group = null;
                 if (def.getAssignedToGroup() != null)
                     group = SecurityManager.getGroup(def.getAssignedToGroup());
-                IssueManager.saveAssignedToGroup(getContainer(), group);
+                IssueManager.saveAssignedToGroup(getContainer(), def.getIssueDefName(), group);
 
                 User user = null;
                 if (def.getAssignedToUser() != null)
                     user = UserManager.getUser(def.getAssignedToUser());
-                IssueManager.saveDefaultAssignedToUser(getContainer(), user);
+                IssueManager.saveDefaultAssignedToUser(getContainer(), def.getIssueDefName(), user);
 
                 List<String> errors = super.updateDomainDescriptor(orig, dd);
                 if (errors.isEmpty())

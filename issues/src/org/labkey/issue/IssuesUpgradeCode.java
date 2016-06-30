@@ -9,11 +9,14 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
@@ -37,6 +40,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.Group;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -117,6 +121,10 @@ public class IssuesUpgradeCode implements UpgradeCode
                             // migrate issue records specific to this folder
                             _log.info("Populating provisioned table in folder : " + folder.getPath());
                             populateProvisionedTable(folder, upgradeUser, factory, plan);
+
+                            _log.info("Migrating custom views for issues query in folder : " + folder.getPath());
+                            migrateCustomViews(folder, upgradeUser, plan);
+                            migrateIssueProperties(folder, upgradeUser, plan);
                         }
                     }
                     else
@@ -187,6 +195,39 @@ public class IssuesUpgradeCode implements UpgradeCode
                 new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(sql);
             }
         }
+    }
+
+    void migrateCustomViews(Container c, User user, IssueMigrationPlan plan) throws SQLException
+    {
+        // only need to change for non-default issue def names
+        if (!IssueListDef.DEFAULT_ISSUE_LIST_NAME.equals(plan.getIssueDefName()))
+        {
+            TableInfo tinfoCustomView = DbSchema.get("query", DbSchemaType.Module).getTable("CustomView");
+
+            if (tinfoCustomView != null)
+            {
+                SQLFragment sql = new SQLFragment("UPDATE ").append(tinfoCustomView, "").
+                        append(" SET QueryName = ? WHERE QueryName = ? AND Container = ?");
+                sql.addAll(plan.getIssueDefName(), "Issues", c);
+
+                new SqlExecutor(tinfoCustomView.getSchema()).execute(sql);
+            }
+            else
+                _log.error("Unable to get the table info for query.CustomView");
+        }
+    }
+
+    void migrateIssueProperties(Container c, User user, IssueMigrationPlan plan)
+    {
+        IssueManager.EntryTypeNames typeNames = IssueManager.getEntryTypeNames(c);
+        Group assignedToGroup = IssueManager.getAssignedToGroup(c);
+        User defaultUser = IssueManager.getDefaultAssignedToUser(c);
+        Sort.SortDirection sortDirection = IssueManager.getCommentSortDirection(c);
+
+        IssueManager.saveEntryTypeNames(c, plan.getIssueDefName(), typeNames);
+        IssueManager.saveAssignedToGroup(c, plan.getIssueDefName(), assignedToGroup);
+        IssueManager.saveDefaultAssignedToUser(c, plan.getIssueDefName(), defaultUser);
+        IssueManager.saveCommentSortDirection(c, plan.getIssueDefName(), sortDirection);
     }
 
     IssueListDef createNewIssueListDef(User user, String name, Container container)
@@ -389,6 +430,8 @@ public class IssuesUpgradeCode implements UpgradeCode
         // create the map of issue admin configurations that are shared, grouped by project
         Map<Container, MultiValuedMap<IssueAdminConfig, Container>> settingsProjectMap = new HashMap<>();
         MultiValuedMap<IssueAdminConfig, Container> sharedSettingsMap = new ArrayListValuedHashMap<>();
+        Map<Container, IssueAdminConfig> allConfigs = new HashMap<>();
+        Set<Container> inheritedContainers = new HashSet<>();
 
         for (Container c : issueListSet)
         {
@@ -433,11 +476,30 @@ public class IssuesUpgradeCode implements UpgradeCode
                     settingsProjectMap.put(project, new ArrayListValuedHashMap<>());
                 }
                 settingsProjectMap.get(project).put(config, c);
+                allConfigs.put(c, config);
             }
             else
             {
                 config.setIgnoreRequiredFields(true);
                 sharedSettingsMap.put(config, c);
+                inheritedContainers.add(inheritContainer);
+                allConfigs.put(c, config);
+            }
+        }
+
+        // need to ensure that inherited configs are moved to the shared setting map so they get scoped correctly
+        for (Container c : inheritedContainers)
+        {
+            IssueAdminConfig inheritConfig = allConfigs.get(c);
+            if (inheritConfig != null)
+            {
+                MultiValuedMap<IssueAdminConfig, Container> mvm = settingsProjectMap.get(c.getProject());
+                if (mvm != null && mvm.containsKey(inheritConfig))
+                {
+                    mvm.removeMapping(inheritConfig, c);
+                    inheritConfig.setIgnoreRequiredFields(true);
+                    sharedSettingsMap.put(inheritConfig, c);
+                }
             }
         }
 
@@ -483,7 +545,7 @@ public class IssuesUpgradeCode implements UpgradeCode
                 Container folder = entry.getValue().iterator().next();
                 migrationPlans.put(folder, new IssueMigrationPlan(entry.getKey(), entry.getValue(), folder.getName()));
             }
-            else
+            else if (entry.getValue().size() > 1)
             {
                 Set<Container> projects = new HashSet<>();
                 for (Container c : entry.getValue())

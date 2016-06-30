@@ -511,7 +511,8 @@ public class Issue extends Entity implements Serializable, Cloneable
     public Collection<Issue.Comment> getComments()
     {
         List<Issue.Comment> result = new ArrayList<>(_comments);
-        final Sort.SortDirection sort = IssueManager.getCommentSortDirection(ContainerManager.getForId(getContainerId()));
+        IssueListDef issueListDef = IssueManager.getIssueListDef(this);
+        final Sort.SortDirection sort = IssueManager.getCommentSortDirection(ContainerManager.getForId(getContainerId()), issueListDef != null ? issueListDef.getName() : IssueListDef.DEFAULT_ISSUE_LIST_NAME);
         Collections.sort(result, new Comparator<Comment>()
         {
             @Override

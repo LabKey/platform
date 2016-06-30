@@ -31,7 +31,7 @@ public class SummaryWebPart extends JspView<IssuesController.SummaryBean>
         //set specified web part title
         Object title = propertyMap.get("title");
         if (title == null)
-            title = IssueManager.getEntryTypeNames(c).pluralName + " Summary : " + issueDefName;
+            title = IssueManager.getEntryTypeNames(c, issueDefName).pluralName + " Summary : " + issueDefName;
         setTitle(title.toString());
 
         User u = context.getUser();
@@ -45,6 +45,7 @@ public class SummaryWebPart extends JspView<IssuesController.SummaryBean>
 
         setTitleHref(listUrl);
 
+        bean.issueDefName = issueDefName;
         bean.listURL = listUrl;
         bean.insertURL = new ActionURL(IssuesController.InsertAction.class, c).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDefName);
 

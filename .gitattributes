@@ -1051,7 +1051,6 @@ issues/src/org/labkey/issue/view/detailList.jsp -text
 issues/src/org/labkey/issue/view/detailView.jsp -text
 issues/src/org/labkey/issue/view/emailPreferences.jsp -text
 issues/src/org/labkey/issue/view/issueListWebPartConfig.jsp -text
-issues/src/org/labkey/issue/view/issuesCustomize.jsp -text
 issues/src/org/labkey/issue/view/list.jsp -text
 issues/src/org/labkey/issue/view/rss.jsp -text
 issues/src/org/labkey/issue/view/searchSummary.jsp -text

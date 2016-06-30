@@ -40,7 +40,7 @@
     issueDefs.addAll(IssueManager.getIssueListDefs(getContainer()).stream().map(IssueListDef::getName).collect(Collectors.toSet()));
     String selected = pm.get(IssuesListView.ISSUE_LIST_DEF_NAME);
     String title = pm.get("title");
-    String singularName = IssueManager.getEntryTypeNames(getContainer()).singularName;
+    String singularName = IssueManager.getEntryTypeNames(getContainer(), selected != null ? selected : IssueListDef.DEFAULT_ISSUE_LIST_NAME).singularName;
 %>
 
 <labkey:form method="post" action="<%=h(webPart.getCustomizePostURL(context))%>">

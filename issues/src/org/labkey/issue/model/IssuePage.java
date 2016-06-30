@@ -568,11 +568,11 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
     public String renderIssueIdLink(Integer id)
     {
-        Issue issue = IssueManager.getIssue(null, id);
+        Issue issue = IssueManager.getIssue(null, _user, id);
         Container c = issue != null ? issue.lookupContainer() : null;
         if (c != null && c.hasPermission(_user, ReadPermission.class))
         {
-            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c);
+            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c, _issueListDef.getName());
             String title = String.format("%s %d: %s", PageFlowUtil.filter(names.singularName), issue.getIssueId(), PageFlowUtil.filter(issue.getTitle()));
             return String.format("<a href='%s' title='%s'>%d</a>", IssuesController.getDetailsURL(c, id, false), title, id);
         }

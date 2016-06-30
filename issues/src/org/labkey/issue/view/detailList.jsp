@@ -45,8 +45,8 @@
     Set<String> issueIds = bean.getIssueIds();
     final Container c = getContainer();
     final User user = getUser();
-    IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c);
     IssueListDef issueDef = bean.getIssueListDef();
+    IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c, issueDef.getName());
 
     ActionURL printLink = context.cloneActionURL().replaceParameter("_print", "1");
     if (bean.getDataRegionSelectionKey() != null)
@@ -68,7 +68,7 @@
 
     for (String issueId : issueIds )
     {
-        Issue issue = IssueManager.getNewIssue(getContainer(), getUser(), Integer.parseInt(issueId));
+        Issue issue = IssueManager.getIssue(getContainer(), getUser(), Integer.parseInt(issueId));
         boolean hasReadPermission = ContainerManager.getForId(issue.getContainerId()).hasPermission(getUser(), ReadPermission.class);
 
         if (!hasReadPermission)

@@ -214,7 +214,7 @@ public class IssuesController extends SpringActionController
      */
     private Issue getIssue(int issueId, boolean redirect) throws RedirectException
     {
-        Issue result = IssueManager.getIssue(redirect ? null : getContainer(), issueId);
+        Issue result = IssueManager.getIssue(redirect ? null : getContainer(), getUser(), issueId);
         // See if it's from a different container
         if (result != null && redirect && !result.getContainerId().equals(getContainer().getId()))
         {
@@ -292,7 +292,6 @@ public class IssuesController extends SpringActionController
         @Override
         public ModelAndView getView(IssuesController.ListForm form, BindException errors) throws Exception
         {
-            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
             String issueDefName = getViewContext().getActionURL().getParameter(IssuesListView.ISSUE_LIST_DEF_NAME);
             if (issueDefName == null)
                 issueDefName = IssueManager.getDefaultIssueListDefName(getContainer());
@@ -300,6 +299,8 @@ public class IssuesController extends SpringActionController
             IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issueDefName);
             if (issueListDef != null)
             {
+                IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer(), issueDefName);
+
                 // convert AssignedTo/Email to AssignedTo/DisplayName: old bookmarks
                 // reference Email, which is no longer displayed.
                 ActionURL url = getViewContext().cloneActionURL();
@@ -326,7 +327,7 @@ public class IssuesController extends SpringActionController
                 String issueId = getViewContext().getActionURL().getParameter("issueId");
                 if (issueId != null)
                 {
-                    Issue issue = IssueManager.getNewIssue(getContainer(), getUser(), NumberUtils.toInt(issueId));
+                    Issue issue = IssueManager.getIssue(getContainer(), getUser(), NumberUtils.toInt(issueId));
                     if (issue != null)
                     {
                         issueDefName = IssueManager.getIssueListDef(issue).getName();
@@ -338,7 +339,11 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
+            String issueDefName = getViewContext().getActionURL().getParameter(IssuesListView.ISSUE_LIST_DEF_NAME);
+            if (issueDefName == null)
+                issueDefName = IssueManager.getDefaultIssueListDefName(getContainer());
+
+            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer(), issueDefName != null ? issueDefName : IssueListDef.DEFAULT_ISSUE_LIST_NAME);
 
             ActionURL url = new ActionURL(ListAction.class, getContainer()).
                     addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, getIssueDefName()).
@@ -395,7 +400,7 @@ public class IssuesController extends SpringActionController
             int issueId = form.getIssueId();
             _issue = getIssue(issueId, true);
 
-            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
+            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer(), getIssueListDef().getName());
             if (null == _issue)
             {
                 throw new NotFoundException("Unable to find " + names.singularName + " " + form.getIssueId());
@@ -430,12 +435,6 @@ public class IssuesController extends SpringActionController
             return new ActionURL(DetailsAction.class, getContainer()).addParameter("issueId", _issue.getIssueId());
         }
     }
-
-    private String getSingularEntityName()
-    {
-        return IssueManager.getEntryTypeNames(getContainer()).singularName;
-    }
-
 
     @RequiresPermission(ReadPermission.class)
     public class DetailsListAction extends AbstractIssueAction
@@ -502,7 +501,7 @@ public class IssuesController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
+            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer(), getIssueListDef().getName());
             return new ListAction(getViewContext()).appendNavTrail(root).addChild(names.singularName + " Details");
         }
     }
@@ -557,7 +556,7 @@ public class IssuesController extends SpringActionController
                 }
             }
 
-            User defaultUser = IssueManager.getDefaultAssignedToUser(getContainer());
+            User defaultUser = IssueManager.getDefaultAssignedToUser(getContainer(), getIssueListDef().getName());
             if (defaultUser != null)
                 _issue.setAssignedTo(defaultUser.getUserId());
 
@@ -587,7 +586,7 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
+            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer(), getIssueListDef().getName());
             return new ListAction(getViewContext()).appendNavTrail(root).addChild("Insert New " + names.singularName);
         }
 
@@ -632,6 +631,7 @@ public class IssuesController extends SpringActionController
     abstract class AbstractIssueAction extends FormViewAction<IssuesForm>
     {
         protected Issue _issue = null;
+        private IssueListDef _issueListDef;
         private CustomColumnConfiguration _columnConfiguration;
 
         public boolean handlePost(IssuesForm form, BindException errors) throws Exception
@@ -678,7 +678,7 @@ public class IssuesController extends SpringActionController
                     errors.rejectValue("Duplicate", SpringActionController.ERROR_MSG, "An issue may not be a duplicate of itself");
                     return false;
                 }
-                duplicateOf = IssueManager.getIssue(null, issue.getDuplicate().intValue());
+                duplicateOf = IssueManager.getIssue(null, getUser(), issue.getDuplicate().intValue());
                 if (duplicateOf == null)
                 {
                     errors.rejectValue("Duplicate", SpringActionController.ERROR_MSG, "Duplicate issue '" + issue.getDuplicate().intValue() + "' not found");
@@ -783,7 +783,8 @@ public class IssuesController extends SpringActionController
             {
                 change += " as " + issue.getResolution(); // Issue 12273
             }
-            sendUpdateEmail(issue, prevIssue, changeSummary.getTextChanges(), changeSummary.getSummary(), form.getComment(), detailsUrl, change, getAttachmentFileList(), form.getAction(), user);
+            sendUpdateEmail(issueListDef, issue, prevIssue, changeSummary.getTextChanges(), changeSummary.getSummary(),
+                    form.getComment(), detailsUrl, change, getAttachmentFileList(), form.getAction(), user);
 
             return true;
         }
@@ -825,7 +826,7 @@ public class IssuesController extends SpringActionController
          */
         protected Issue getIssue(int issueId, boolean redirect) throws RedirectException
         {
-            Issue result = IssueManager.getNewIssue(redirect ? null : getContainer(), getUser(), issueId);
+            Issue result = IssueManager.getIssue(redirect ? null : getContainer(), getUser(), issueId);
             // See if it's from a different container
             if (result != null && redirect && !result.getContainerId().equals(getContainer().getId()))
             {
@@ -854,7 +855,7 @@ public class IssuesController extends SpringActionController
 
         protected String getSingularEntityName()
         {
-            return IssueManager.getEntryTypeNames(getContainer()).singularName;
+            return IssueManager.getEntryTypeNames(getContainer(), getIssueListDef().getName()).singularName;
         }
 
         protected Set<String> getEditableFields(Class<? extends Controller> action, CustomColumnConfiguration ccc)
@@ -927,15 +928,19 @@ public class IssuesController extends SpringActionController
 
         protected IssueListDef getIssueListDef()
         {
-            String issueDefName = getIssue().getIssueDefName();
-            if (issueDefName != null)
+            if (_issueListDef == null)
             {
-                return IssueManager.getIssueListDef(getContainer(), issueDefName);
+                String issueDefName = getIssue().getIssueDefName();
+                if (issueDefName != null)
+                {
+                    _issueListDef = IssueManager.getIssueListDef(getContainer(), issueDefName);
+                }
+                else
+                {
+                    _issueListDef = IssueManager.getIssueListDef(getIssue());
+                }
             }
-            else
-            {
-                return IssueManager.getIssueListDef(getIssue());
-            }
+            return _issueListDef;
         }
 
         public void setColumnConfiguration(CustomColumnConfiguration columnConfiguration)
@@ -1076,7 +1081,8 @@ public class IssuesController extends SpringActionController
             }
         }
 
-        private void sendUpdateEmail(Issue issue, Issue prevIssue, String fieldChanges, String summary, String comment, ActionURL detailsURL, String change, List<AttachmentFile> attachments, Class<? extends Controller> action, User createdByUser) throws ServletException
+        private void sendUpdateEmail(IssueListDef issueListDef, Issue issue, Issue prevIssue, String fieldChanges, String summary,
+                                     String comment, ActionURL detailsURL, String change, List<AttachmentFile> attachments, Class<? extends Controller> action, User createdByUser) throws ServletException
         {
             // Skip the email if no comment and no public fields have changed, #17304
             if (fieldChanges.isEmpty() && comment.isEmpty())
@@ -1118,13 +1124,13 @@ public class IssuesController extends SpringActionController
                                         "    <link itemprop=\"url\" href=\"" + PageFlowUtil.filter(detailsURL) + "\"></link>\n" +
                                         "    <meta itemprop=\"name\" content=\"View Commit\"></meta>\n" +
                                         "  </div>\n" +
-                                        "  <meta itemprop=\"description\" content=\"View this " + PageFlowUtil.filter(IssueManager.getEntryTypeNames(getContainer()).singularName) + "\"></meta>\n" +
+                                        "  <meta itemprop=\"description\" content=\"View this " + PageFlowUtil.filter(IssueManager.getEntryTypeNames(getContainer(), issueListDef.getName()).singularName) + "\"></meta>\n" +
                                         "</div>\n");
                         html.append("</body></html>");
                         m.setEncodedHtmlContent(html.toString());
 
                         NotificationService.get().sendMessage(getContainer(), createdByUser, user, m,
-                                "view " + IssueManager.getEntryTypeNames(getContainer()).singularName,
+                                "view " + IssueManager.getEntryTypeNames(getContainer(), issueListDef.getName()).singularName,
                                 new ActionURL(IssuesController.DetailsAction.class,getContainer()).addParameter("issueId",issue.getIssueId()).getLocalURIString(false),
                                 "issue:" + issue.getIssueId(),
                                 Issue.class.getName(), true);
@@ -1220,7 +1226,7 @@ public class IssuesController extends SpringActionController
                         return false;
                     }
 
-                    Issue related = IssueManager.getNewIssue(null, getUser(), relatedId);
+                    Issue related = IssueManager.getIssue(null, getUser(), relatedId);
                     if (related == null)
                     {
                         errors.rejectValue("Related", SpringActionController.ERROR_MSG, "Related issue '" + relatedId + "' not found");
@@ -1231,7 +1237,7 @@ public class IssuesController extends SpringActionController
             }
 
             // Fetch from IssueManager to make sure the related issues are populated
-            Issue originalIssue = IssueManager.getNewIssue(null, getUser(), issue.getIssueId());
+            Issue originalIssue = IssueManager.getIssue(null, getUser(), issue.getIssueId());
             Set<Integer> originalRelatedIssues = originalIssue == null ? Collections.emptySet() : originalIssue.getRelatedIssues();
 
             // Only check permissions if
@@ -1239,7 +1245,7 @@ public class IssuesController extends SpringActionController
             {
                 for (Integer relatedId : newRelatedIssues)
                 {
-                    Issue related = IssueManager.getIssue(null, relatedId);
+                    Issue related = IssueManager.getIssue(null, getUser(), relatedId);
                     if (!related.lookupContainer().hasPermission(user, ReadPermission.class))
                     {
                         errors.rejectValue("Related", SpringActionController.ERROR_MSG, "User does not have Read Permission for related issue '" + relatedId + "'");
@@ -1256,7 +1262,7 @@ public class IssuesController extends SpringActionController
         private Issue relatedIssueCommentHandler(int issueId, int relatedIssueId, User user, boolean drop)
         {
             StringBuilder sb = new StringBuilder();
-            Issue relatedIssue = IssueManager.getNewIssue(null, getUser(), relatedIssueId);
+            Issue relatedIssue = IssueManager.getIssue(null, getUser(), relatedIssueId);
             Set<Integer> prevRelated = relatedIssue.getRelatedIssues();
             Set<Integer> newRelated = new TreeSet<>();
             newRelated.addAll(prevRelated);
@@ -1586,7 +1592,7 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
+            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer(), getIssueListDef().getName());
             return (new DetailsAction(_issue, getViewContext()).appendNavTrail(root)).addChild("Resolve " + names.singularName);
         }
     }
@@ -1629,7 +1635,7 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
+            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer(), getIssueListDef().getName());
             return (new DetailsAction(_issue, getViewContext()).appendNavTrail(root)).addChild("Close " + names.singularName);
         }
     }
@@ -1675,7 +1681,7 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
+            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer(), getIssueListDef().getName());
             return (new DetailsAction(_issue, getViewContext()).appendNavTrail(root)).addChild("Reopen " + names.singularName);
         }
     }
@@ -1853,7 +1859,7 @@ public class IssuesController extends SpringActionController
 
             Map<String, String> props = new HashMap<>();
             props.put("typeURI", domain.getTypeURI());
-
+            props.put("defName", issueDefName);
             props.put("issueListUrl", new ActionURL(ListAction.class, getContainer()).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDefName).getLocalURIString());
             props.put("customizeEmailUrl", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(getContainer(), IssueUpdateEmailTemplate.class, getViewContext().getActionURL()).getLocalURIString());
             props.put("instructions", domain.getDomainKind().getDomainEditorInstructions());
@@ -1864,7 +1870,8 @@ public class IssuesController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
+            String issueDefName = getViewContext().getActionURL().getParameter(IssuesListView.ISSUE_LIST_DEF_NAME);
+            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer(), issueDefName != null ? issueDefName : IssueListDef.DEFAULT_ISSUE_LIST_NAME);
             return (new ListAction(getViewContext())).appendNavTrail(root).addChild(names.pluralName + " Admin Page", new ActionURL(AdminAction.class, getContainer()));
         }
     }
@@ -2165,8 +2172,9 @@ public class IssuesController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root, ViewContext ctx, @NotNull SearchScope scope, @Nullable String category)
         {
+            String issueListDefName = IssueManager.getDefaultIssueListDefName(ctx.getContainer());
             String status = ctx.getActionURL().getParameter("status");
-            String pluralName = IssueManager.getEntryTypeNames(ctx.getContainer()).pluralName;
+            String pluralName = IssueManager.getEntryTypeNames(ctx.getContainer(), issueListDefName != null ? issueListDefName : IssueListDef.DEFAULT_ISSUE_LIST_NAME).pluralName;
             root.addChild(pluralName + " List", issueURL(ctx.getContainer(), ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true"));
             root.addChild("Search " + (null != status ? status + " " : "") + pluralName);
 
@@ -2447,6 +2455,7 @@ public class IssuesController extends SpringActionController
         public Map[] bugs;
         public ActionURL listURL;
         public ActionURL insertURL;
+        public String issueDefName;
     }
 
 

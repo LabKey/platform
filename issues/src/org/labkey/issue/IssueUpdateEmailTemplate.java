@@ -24,6 +24,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.util.emailTemplate.UserOriginatedEmailTemplate;
 import org.labkey.api.view.ActionURL;
 import org.labkey.issue.model.Issue;
+import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 
 import java.util.ArrayList;
@@ -80,19 +81,19 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         });
         _replacements.add(new ReplacementParam<String>("itemName", String.class, "Potentially customized singular item name, typically 'Issue'")
         {
-            public String getValue(Container c) {return IssueManager.getEntryTypeNames(c).singularName.toString();}
+            public String getValue(Container c) {return  getEntryTypeName(c, _newIssue).singularName;}
         });
         _replacements.add(new ReplacementParam<String>("itemNameLowerCase", String.class, "Potentially customized singular item name in lower case, typically 'issue'")
         {
-            public String getValue(Container c) {return IssueManager.getEntryTypeNames(c).singularName.toString().toLowerCase();}
+            public String getValue(Container c) {return getEntryTypeName(c, _newIssue).singularName.toLowerCase();}
         });
         _replacements.add(new ReplacementParam<String>("itemNamePlural", String.class, "Potentially customized plural item name, typically 'Issues'")
         {
-            public String getValue(Container c) {return IssueManager.getEntryTypeNames(c).pluralName.toString();}
+            public String getValue(Container c) {return getEntryTypeName(c, _newIssue).pluralName;}
         });
         _replacements.add(new ReplacementParam<String>("itemNamePluralLowerCase", String.class, "Potentially customized plural item name in lower case, typically 'issues'")
         {
-            public String getValue(Container c) {return IssueManager.getEntryTypeNames(c).pluralName.toString().toLowerCase();}
+            public String getValue(Container c) {return getEntryTypeName(c, _newIssue).pluralName.toLowerCase();}
         });
         _replacements.add(new IssueUpdateEmailTemplate.UserIdReplacementParam("user", "The display name of the user performing the operation")
         {
@@ -238,6 +239,18 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         // modifiedFields
 
         _replacements.addAll(super.getValidReplacements());
+    }
+
+    private static IssueManager.EntryTypeNames getEntryTypeName(Container c, Issue issue)
+    {
+        String issueDefName = IssueListDef.DEFAULT_ISSUE_LIST_NAME;
+        if (issue != null)
+        {
+            IssueListDef issueListDef = IssueManager.getIssueListDef(issue);
+            if (issueListDef != null)
+                issueDefName = issueListDef.getName();
+        }
+        return IssueManager.getEntryTypeNames(c, issueDefName);
     }
 
     private abstract class StringReplacementParam extends ReplacementParam<String>

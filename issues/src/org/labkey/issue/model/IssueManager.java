@@ -22,7 +22,10 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
@@ -35,6 +38,8 @@ import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.issues.IssuesSchema;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -72,6 +77,7 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.issue.ColumnTypeEnum;
 import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.IssuesController;
+import org.labkey.issue.IssuesModule;
 import org.labkey.issue.query.IssuesQuerySchema;
 
 import javax.servlet.ServletException;
@@ -124,6 +130,8 @@ public class IssueManager
     private static final String ISSUES_PREF_MAP = "IssuesPreferencesMap";
     private static final String ISSUES_REQUIRED_FIELDS = "IssuesRequiredFields";
 
+    private static final String CAT_ISSUE_DEF_PROPERTIES = "IssueDefProperties-";
+
     private static final String CAT_ENTRY_TYPE_NAMES = "issueEntryTypeNames";
     private static final String PROP_ENTRY_TYPE_NAME_SINGULAR = "issueEntryTypeNameSingular";
     private static final String PROP_ENTRY_TYPE_NAME_PLURAL = "issueEntryTypeNamePlural";
@@ -145,9 +153,6 @@ public class IssueManager
 
     private static final String CAT_COMMENT_SORT = "issueCommentSort";
     public static final String PICK_LIST_NAME = "pickListColumns";
-
-    // temporary experimental feature for multi-milestone issues work
-    public static final String NEW_ISSUES_EXPERIMENTAL_FEATURE = "issues-experimental-feature";
 
     private IssueManager()
     {
@@ -175,8 +180,7 @@ public class IssueManager
         return false;
     }
 
-    @Deprecated
-    public static Issue getIssue(@Nullable Container c, int issueId)
+    private static Issue _getIssue(@Nullable Container c, int issueId)
     {
         SimpleFilter f = new SimpleFilter(FieldKey.fromParts("issueId"), issueId);
         if (null != c)
@@ -208,9 +212,9 @@ public class IssueManager
         return issue;
     }
 
-    public static Issue getNewIssue(@Nullable Container c, User user, int issueId)
+    public static Issue getIssue(@Nullable Container c, User user, int issueId)
     {
-        Issue issue = getIssue(c, issueId);
+        Issue issue = _getIssue(c, issueId);
 
         if (issue != null)
         {
@@ -264,7 +268,7 @@ public class IssueManager
         for (Integer relatedIssueInt : relatedIssues)
         {
             // only add related issues that the user has permission to see
-            Issue relatedIssue = IssueManager.getIssue(null, relatedIssueInt);
+            Issue relatedIssue = IssueManager.getIssue(null, user, relatedIssueInt);
             if (relatedIssue != null)
             {
                 boolean hasReadPermission = ContainerManager.getForId(relatedIssue.getContainerId()).hasPermission(user, ReadPermission.class);
@@ -278,7 +282,8 @@ public class IssueManager
         Comparator<Issue.Comment> comparator = (c1, c2) -> c1.getCreated().compareTo(c2.getCreated());
         // Respect the configuration's sorting order - issue 23524
         Container issueContainer = issue.lookupContainer();
-        if (Sort.SortDirection.DESC == getCommentSortDirection(issueContainer))
+        IssueListDef issueListDef = IssueManager.getIssueListDef(issue);
+        if (Sort.SortDirection.DESC == getCommentSortDirection(issueContainer, issueListDef.getName()))
         {
             comparator = new ReverseComparator<>(comparator);
         }
@@ -298,7 +303,7 @@ public class IssueManager
     {
         for (Integer relatedIssueInt : issue.getRelatedIssues())
         {
-            Issue relatedIssue = IssueManager.getIssue(null, relatedIssueInt);
+            Issue relatedIssue = IssueManager.getIssue(null, user, relatedIssueInt);
             if (relatedIssue != null && relatedIssue.getComments().size() > 0)
             {
                 boolean hasReadPermission = ContainerManager.getForId(relatedIssue.getContainerId()).hasPermission(user, ReadPermission.class);
@@ -717,9 +722,9 @@ public class IssueManager
 
     private static final Comparator<User> USER_COMPARATOR = new UserDisplayNameComparator();
 
-    public static @NotNull Collection<User> getAssignedToList(Container c, Issue issue)
+    public static @NotNull Collection<User> getAssignedToList(Container c, @Nullable Issue issue)
     {
-        Collection<User> initialAssignedTo = getInitialAssignedToList(c);
+        Collection<User> initialAssignedTo = getInitialAssignedToList(c, issue);
 
         // If this is an existing issue, add the user who opened the issue, unless they are a guest, inactive, already in the list, or don't have permissions.
         if (issue != null && 0 != issue.getIssueId())
@@ -743,15 +748,22 @@ public class IssueManager
 
     // Returns the assigned to list that is used for every new issue in this container.  We can cache it and share it
     // across requests.  The collection is unmodifiable.
-    private static @NotNull Collection<User> getInitialAssignedToList(final Container c)
+    private static @NotNull Collection<User> getInitialAssignedToList(final Container c, @Nullable Issue issue)
     {
-        String cacheKey = getCacheKey(c);
+        String issueDefName = IssueListDef.DEFAULT_ISSUE_LIST_NAME;
+        if (issue != null)
+        {
+            IssueListDef issueListDef = IssueManager.getIssueListDef(issue);
+            if (issueListDef != null)
+                issueDefName = issueListDef.getName();
+        }
+        String cacheKey = getCacheKey(c, issueDefName);
 
-        return ASSIGNED_TO_CACHE.get(cacheKey, null, new CacheLoader<String, Set<User>>() {
+        return ASSIGNED_TO_CACHE.get(cacheKey, issueDefName, new CacheLoader<String, Set<User>>() {
             @Override
-            public Set<User> load(String key, @Nullable Object argument)
+            public Set<User> load(String key, @Nullable Object issueDefName)
             {
-                Group group = getAssignedToGroup(c);
+                Group group = getAssignedToGroup(c, String.valueOf(issueDefName));
 
                 if (null != group)
                     return createAssignedToList(c, SecurityManager.getAllGroupMembers(group, MemberType.ACTIVE_USERS, true));
@@ -762,9 +774,9 @@ public class IssueManager
     }
 
 
-    public static String getCacheKey(@Nullable Container c)
+    public static String getCacheKey(@Nullable Container c, String issueDefName)
     {
-        String key = "AssignedTo";
+        String key = "AssignedTo-" + issueDefName;
         return null != c ? key + c.getId() : key;
     }
 
@@ -860,6 +872,7 @@ public class IssueManager
 
 
     @NotNull
+    @Deprecated
     public static EntryTypeNames getEntryTypeNames(Container container)
     {
         Map<String,String> props = PropertyManager.getProperties(getInheritFromOrCurrentContainer(container), CAT_ENTRY_TYPE_NAMES);
@@ -869,6 +882,26 @@ public class IssueManager
         if (props.containsKey(PROP_ENTRY_TYPE_NAME_PLURAL))
             ret.pluralName = props.get(PROP_ENTRY_TYPE_NAME_PLURAL);
         return ret;
+    }
+
+    @NotNull
+    public static EntryTypeNames getEntryTypeNames(Container container, String issueDefName)
+    {
+        Map<String,String> props = PropertyManager.getProperties(container, getPropMapName(issueDefName));
+        EntryTypeNames ret = new EntryTypeNames();
+        if (props.containsKey(PROP_ENTRY_TYPE_NAME_SINGULAR))
+            ret.singularName =props.get(PROP_ENTRY_TYPE_NAME_SINGULAR);
+        if (props.containsKey(PROP_ENTRY_TYPE_NAME_PLURAL))
+            ret.pluralName = props.get(PROP_ENTRY_TYPE_NAME_PLURAL);
+        return ret;
+    }
+
+    private static String getPropMapName(String issueDefName)
+    {
+        if (issueDefName == null)
+            throw new IllegalArgumentException("Issue def name must be specified");
+
+        return CAT_ISSUE_DEF_PROPERTIES + issueDefName;
     }
 
     /**
@@ -894,15 +927,15 @@ public class IssueManager
         return ret;
     }
 
-    public static void saveEntryTypeNames(Container container, EntryTypeNames names)
+    public static void saveEntryTypeNames(Container container, String issueDefName, EntryTypeNames names)
     {
-            PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(container, CAT_ENTRY_TYPE_NAMES, true);
-            props.put(PROP_ENTRY_TYPE_NAME_SINGULAR, names.singularName);
-            props.put(PROP_ENTRY_TYPE_NAME_PLURAL, names.pluralName);
-            props.save();
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(container, getPropMapName(issueDefName), true);
+        props.put(PROP_ENTRY_TYPE_NAME_SINGULAR, names.singularName);
+        props.put(PROP_ENTRY_TYPE_NAME_PLURAL, names.pluralName);
+        props.save();
     }
 
-
+    @Deprecated
     public static @Nullable Group getAssignedToGroup(Container c)
     {
         Map<String, String> props = PropertyManager.getProperties(c, CAT_ASSIGNED_TO_LIST);
@@ -915,14 +948,27 @@ public class IssueManager
         return SecurityManager.getGroup(Integer.valueOf(groupId));
     }
 
-    public static void saveAssignedToGroup(Container c, @Nullable Group group)
+    public static @Nullable Group getAssignedToGroup(Container c, String issueDefName)
     {
-            PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, CAT_ASSIGNED_TO_LIST, true);
-            props.put(PROP_ASSIGNED_TO_GROUP, null != group ? String.valueOf(group.getUserId()) : "0");
-            props.save();
-            uncache();  // uncache the assigned to list
+        Map<String, String> props = PropertyManager.getProperties(c, getPropMapName(issueDefName));
+
+        String groupId = props.get(PROP_ASSIGNED_TO_GROUP);
+
+        if (null == groupId)
+            return null;
+
+        return SecurityManager.getGroup(Integer.valueOf(groupId));
     }
 
+    public static void saveAssignedToGroup(Container c, String issueDefName,  @Nullable Group group)
+    {
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, getPropMapName(issueDefName), true);
+        props.put(PROP_ASSIGNED_TO_GROUP, null != group ? String.valueOf(group.getUserId()) : "0");
+        props.save();
+        uncache();  // uncache the assigned to list
+    }
+
+    @Deprecated
     public static @Nullable User getDefaultAssignedToUser(Container c)
     {
         Map<String, String> props = PropertyManager.getProperties(c, CAT_DEFAULT_ASSIGNED_TO_LIST);
@@ -937,24 +983,25 @@ public class IssueManager
         return user;
     }
 
-    public static void saveDefaultAssignedToUser(Container c, @Nullable User user)
+    public static @Nullable User getDefaultAssignedToUser(Container c, String issueDefName)
     {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, CAT_DEFAULT_ASSIGNED_TO_LIST, true);
-        props.put(PROP_DEFAULT_ASSIGNED_TO_USER, null != user ? String.valueOf(user.getUserId()) : null);
-        props.save();
+        Map<String, String> props = PropertyManager.getProperties(c, getPropMapName(issueDefName));
+        String userId = props.get(PROP_DEFAULT_ASSIGNED_TO_USER);
+        if (null == userId)
+            return null;
+        User user = UserManager.getUser(Integer.parseInt(userId));
+        if (user == null)
+            return null;
+        if (!canAssignTo(c, user))
+            return null;
+        return user;
     }
 
-    public static List<Container> getMoveDestinationContainers(Container c)
+    public static void saveDefaultAssignedToUser(Container c, String issueDefName, @Nullable User user)
     {
-        Map<String, String> props = PropertyManager.getProperties(getInheritFromOrCurrentContainer(c), CAT_DEFAULT_MOVE_TO_LIST);
-        String propsValue = props.get(PROP_DEFAULT_MOVE_TO_CONTAINER);
-        List<Container> containers = new LinkedList<>();
-
-        if (propsValue != null)
-            for (String containerId : StringUtils.split(propsValue, ';'))
-                containers.add( ContainerManager.getForId(containerId));
-
-        return containers;
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, getPropMapName(issueDefName), true);
+        props.put(PROP_DEFAULT_ASSIGNED_TO_USER, null != user ? String.valueOf(user.getUserId()) : null);
+        props.save();
     }
 
     public static Collection<Container> getMoveDestinationContainers(Container c, User user, String issueDefName)
@@ -985,23 +1032,7 @@ public class IssueManager
         return containers;
     }
 
-    public static void saveMoveDestinationContainers(Container c, @Nullable List<Container> containers)
-    {
-            String propsValue = null;
-            if (containers != null && containers.size() != 0)
-            {
-                StringBuilder sb = new StringBuilder();
-                for (Container container : containers)
-                    sb.append(String.format(";%s", container.getId()));
-                propsValue = sb.toString().substring(1);
-            }
-
-            PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, CAT_DEFAULT_MOVE_TO_LIST, true);
-            props.put(PROP_DEFAULT_MOVE_TO_CONTAINER, propsValue);
-            props.save();
-    }
-
-    public static void moveIssues(User user, List<Integer> issueIds, Container dest) throws IOException
+   public static void moveIssues(User user, List<Integer> issueIds, Container dest) throws IOException
     {
         DbSchema schema = IssuesSchema.getInstance().getSchema();
         try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
@@ -1011,7 +1042,7 @@ public class IssueManager
             List<String> entityIds = new ArrayList<>();
             for (int issueId : issueIds)
             {
-                Issue issue = IssueManager.getIssue(null, issueId);
+                Issue issue = IssueManager.getIssue(null, user, issueId);
                 if (issue != null)
                 {
                     if (issue.getIssueDefId() != null)
@@ -1084,50 +1115,7 @@ public class IssueManager
         return inheritFromContainer;
     }
 
-    /**
-     * Sets the property of 'current' container with id of a inheritFrom container.
-     * 'current' container's settings will "point" to 'inheritFrom' container's
-     * admin settings.
-     * @param current
-     * @param inheritFrom
-     */
-    public static void saveInheritFromContainer(Container current, @Nullable Container inheritFrom)
-    {
-        String propsValue = null;
-
-        if(inheritFrom != null)
-        {
-            propsValue = inheritFrom.getId();
-        }
-
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(current, CAT_DEFAULT_INHERIT_FROM_CONTAINER, true);
-        props.put(PROP_DEFAULT_INHERIT_FROM_CONTAINER, propsValue);
-        props.save();
-    }
-
-    public static void saveRelatedIssuesList(Container c, @Nullable String relatedIssuesList)
-    {
-
-            String propsValue = null;
-            if (relatedIssuesList != null)
-            {
-                propsValue = relatedIssuesList;
-            }
-
-            PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, CAT_DEFAULT_RELATED_ISSUES_LIST, true);
-            props.put(PROP_DEFAULT_RELATED_ISSUES_LIST, propsValue);
-            props.save();
-    }
-
-    public static @Nullable Container getRelatedIssuesList(Container c)
-    {
-        Map<String, String> props = PropertyManager.getProperties(getInheritFromOrCurrentContainer(c), CAT_DEFAULT_RELATED_ISSUES_LIST);
-        String containerStr = props.get(PROP_DEFAULT_RELATED_ISSUES_LIST);
-        Container container = containerStr == null ? null : ContainerManager.getForPath(containerStr);
-
-        return container;
-    }
-
+    @Deprecated
     public static Sort.SortDirection getCommentSortDirection(Container c)
     {
         Map<String, String> props = PropertyManager.getProperties(getInheritFromOrCurrentContainer(c), CAT_COMMENT_SORT);
@@ -1143,14 +1131,28 @@ public class IssueManager
         return Sort.SortDirection.ASC; 
     }
 
-    public static void saveCommentSortDirection(Container c, @NotNull Sort.SortDirection direction)
+    public static Sort.SortDirection getCommentSortDirection(Container c, String issueDefName)
     {
-            PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, CAT_COMMENT_SORT, true);
-            props.put(CAT_COMMENT_SORT, direction.toString());
-            props.save();
-            uncache();  // uncache the assigned to list
+        Map<String, String> props = PropertyManager.getProperties(c, getPropMapName(issueDefName));
+        String direction = props.get(CAT_COMMENT_SORT);
+        if (direction != null)
+        {
+            try
+            {
+                return Sort.SortDirection.valueOf(direction);
+            }
+            catch (IllegalArgumentException e) {}
+        }
+        return Sort.SortDirection.ASC;
     }
 
+    public static void saveCommentSortDirection(Container c, String issueDefName, @NotNull Sort.SortDirection direction)
+    {
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, getPropMapName(issueDefName), true);
+        props.put(CAT_COMMENT_SORT, direction.toString());
+        props.save();
+        uncache();  // uncache the assigned to list
+    }
 
     public static void setUserEmailPreferences(Container c, int userId, int emailPrefs, int currentUser)
     {
@@ -1489,7 +1491,7 @@ public class IssueManager
                     return null;
                 }
 
-                final Issue issue = getIssue(null, issueId);
+                final Issue issue = getIssue(null, user, issueId);
                 if (null == issue)
                     return null;
                 Container c = issue.lookupContainer();
@@ -1668,7 +1670,7 @@ public class IssueManager
             return null;
         }
 
-        final Issue issue = getIssue(null, issueId);
+        final Issue issue = getIssue(null, User.getSearchUser(), issueId);
         if (null == issue)
             return null;
 
@@ -1782,6 +1784,33 @@ public class IssueManager
 
     public static class TestCase extends Assert
     {
+        @BeforeClass
+        public static void setUp()
+        {
+            TestContext context = TestContext.get();
+            Container c = JunitUtil.getTestContainer();
+
+            if (IssueManager.getIssueListDef(c, IssueListDef.DEFAULT_ISSUE_LIST_NAME) == null)
+            {
+                // ensure the issue module is enabled for this folder
+                Module issueModule = ModuleLoader.getInstance().getModule(IssuesModule.NAME);
+                Set<Module> activeModules = c.getActiveModules();
+                if (!activeModules.contains(issueModule))
+                {
+                    Set<Module> newActiveModules = new HashSet<>();
+                    newActiveModules.addAll(activeModules);
+                    newActiveModules.add(issueModule);
+
+                    c.setActiveModules(newActiveModules);
+                }
+                IssueListDef def = new IssueListDef();
+                def.setName(IssueListDef.DEFAULT_ISSUE_LIST_NAME);
+                def.setLabel(IssueListDef.DEFAULT_ISSUE_LIST_NAME);
+                def.beforeInsert(context.getUser(), c.getId());
+                def.save(context.getUser());
+            }
+        }
+
         @Test
         public void testIssues() throws IOException, SQLException, ServletException
         {
@@ -1792,6 +1821,7 @@ public class IssueManager
             assertFalse("login before running this test", user.isGuest());
 
             Container c = JunitUtil.getTestContainer();
+            ObjectFactory factory = ObjectFactory.Registry.getFactory(Issue.class);
 
             int issueId;
 
@@ -1806,14 +1836,16 @@ public class IssueManager
                 issue.setTag("junit");
                 issue.addComment(user, "new issue");
                 issue.setPriority(3);
+                issue.setIssueDefName(IssueListDef.DEFAULT_ISSUE_LIST_NAME);
 
+                factory.toMap(issue, issue.getExtraProperties());
                 IssueManager.saveIssue(user, c, issue);
                 issueId = issue.getIssueId();
             }
 
             // verify
             {
-                Issue issue = IssueManager.getIssue(c, issueId);
+                Issue issue = IssueManager.getIssue(c, user, issueId);
                 assertEquals("This is a junit test bug", issue.getTitle());
                 assertEquals(user.getUserId(), issue.getCreatedBy());
                 assertTrue(issue.getCreated().getTime() != 0);
@@ -1829,14 +1861,15 @@ public class IssueManager
             // ADD COMMENT
             //
             {
-                Issue issue = IssueManager.getIssue(c, issueId);
+                Issue issue = IssueManager.getIssue(c, user, issueId);
                 issue.addComment(user, "what was I thinking");
+                factory.toMap(issue, issue.getExtraProperties());
                 IssueManager.saveIssue(user, c, issue);
             }
 
             // verify
             {
-                Issue issue = IssueManager.getIssue(c, issueId);
+                Issue issue = IssueManager.getIssue(c, user, issueId);
                 assertEquals(2, issue.getComments().size());
                 Iterator it = issue.getComments().iterator();
                 assertEquals("new issue", ((Issue.Comment) it.next()).getComment());
@@ -1847,17 +1880,16 @@ public class IssueManager
             // ADD INVALID COMMENT
             //
             {
-                Issue issue = IssueManager.getIssue(c, issueId);
+                Issue issue = IssueManager.getIssue(c, user, issueId);
                 issue.addComment(user, "invalid character <\u0010>");
                 try
                 {
                     IssueManager.saveIssue(user, c, issue);
                     fail("Expected to throw exception for an invalid character.");
                 }
-                catch (ConversionException ex)
+                catch (Exception e)
                 {
-                    // expected exception.
-                    assertEquals("comment has invalid characters", ex.getMessage());
+                    assertEquals("comment has invalid characters", e.getCause().getMessage());
                 }
             }
 
@@ -1865,19 +1897,18 @@ public class IssueManager
             // RESOLVE
             //
             {
-                Issue issue = IssueManager.getIssue(c, issueId);
+                Issue issue = IssueManager.getIssue(c, user, issueId);
                 assertNotNull("issue not found", issue);
                 issue.resolve(user);
-
-                Issue copy = (Issue) JunitUtil.copyObject(issue);
-                copy.setResolution("fixed");
-                copy.addComment(user, "fixed it");
-                IssueManager.saveIssue(user, c, copy);
+                issue.setResolution("fixed");
+                issue.addComment(user, "fixed it");
+                factory.toMap(issue, issue.getExtraProperties());
+                IssueManager.saveIssue(user, c, issue);
             }
 
             // verify
             {
-                Issue issue = IssueManager.getIssue(c, issueId);
+                Issue issue = IssueManager.getIssue(c, user, issueId);
                 assertEquals(Issue.statusRESOLVED, issue.getStatus());
                 assertEquals(3, issue.getComments().size());
             }
@@ -1886,18 +1917,17 @@ public class IssueManager
             // CLOSE
             //
             {
-                Issue issue = getIssue(c, issueId);
+                Issue issue = IssueManager.getIssue(c, user, issueId);
                 assertNotNull("issue not found", issue);
                 issue.close(user);
-
-                Issue copy = (Issue) JunitUtil.copyObject(issue);
-                copy.addComment(user, "closed");
-                IssueManager.saveIssue(user, c, copy);
+                issue.addComment(user, "closed");
+                factory.toMap(issue, issue.getExtraProperties());
+                IssueManager.saveIssue(user, c, issue);
             }
 
             // verify
             {
-                Issue issue = IssueManager.getIssue(c, issueId);
+                Issue issue = IssueManager.getIssue(c, user, issueId);
                 assertEquals(Issue.statusCLOSED, issue.getStatus());
                 assertEquals(4, issue.getComments().size());
             }
@@ -1933,17 +1963,13 @@ public class IssueManager
             }
         }
 
-        @After
-        public void tearDown()
+        @AfterClass
+        public static void tearDown() throws Exception
         {
             Container c = JunitUtil.getTestContainer();
-            SqlExecutor executor = new SqlExecutor(_issuesSchema.getSchema());
-
-            SQLFragment deleteComments = new SQLFragment("DELETE FROM " + _issuesSchema.getTableInfoComments() +
-                " WHERE IssueId IN (SELECT IssueId FROM " + _issuesSchema.getTableInfoIssues() + " WHERE Container = ?)", c.getId());
-            executor.execute(deleteComments);
-            SQLFragment deleteIssues = new SQLFragment("DELETE FROM " + _issuesSchema.getTableInfoIssues() + " WHERE Container = ?", c.getId());
-            executor.execute(deleteIssues);
+            IssueListDef issueListDef = IssueManager.getIssueListDef(c, IssueListDef.DEFAULT_ISSUE_LIST_NAME);
+            if (issueListDef != null)
+                IssueManager.deleteIssueListDef(issueListDef.getRowId(), c, TestContext.get().getUser());
         }
     }
 }

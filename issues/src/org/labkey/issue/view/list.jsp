@@ -26,8 +26,8 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Container c = getContainer();
-    IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c);
     String issueListDef = (String)getModelBean();
+    IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c, issueListDef);
 
     if (request.getParameter("error") != null)
     {%>

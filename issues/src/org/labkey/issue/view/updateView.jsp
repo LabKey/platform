@@ -58,7 +58,6 @@
     final User user = getUser();
     final String focusId = bean.isInsert() ? "title" : "comment";
     final int emailPrefs = IssueManager.getUserEmailPreferences(c, user.getUserId());
-    final String popup = getNotifyHelpPopup(emailPrefs, issue.getIssueId(), IssueManager.getEntryTypeNames(c));
 
     BindException errors = bean.getErrors();
     String completionUrl = urlProvider(SecurityUrls.class).getCompleteUserReadURLPrefix(c);
@@ -80,6 +79,7 @@
     IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issue.getIssueDefName());
     if (issueListDef == null)
         issueListDef = IssueManager.getIssueListDef(issue);
+    final String popup = getNotifyHelpPopup(emailPrefs, issue.getIssueId(), IssueManager.getEntryTypeNames(c, issueListDef.getName()));
 
     List<DomainProperty> extraColumns = new ArrayList<>();
     for (String name : Arrays.asList("type", "area", "priority", "milestone"))

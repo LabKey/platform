@@ -9,6 +9,7 @@ import org.labkey.api.gwt.client.util.StringProperty;
  */
 public class GWTIssueDefinition implements IsSerializable
 {
+    StringProperty _issueDefName = new StringProperty();
     StringProperty _singularItemName = new StringProperty();
     StringProperty _pluralItemName = new StringProperty();
     StringProperty _commentSortDirection = new StringProperty();
@@ -101,5 +102,15 @@ public class GWTIssueDefinition implements IsSerializable
     public void setAssignedToUser(Integer assignedToUser)
     {
         _assignedToUser.set(assignedToUser);
+    }
+
+    public String getIssueDefName()
+    {
+        return _issueDefName.getString();
+    }
+
+    public void setIssueDefName(String issueDefName)
+    {
+        _issueDefName.set(issueDefName);
     }
 }

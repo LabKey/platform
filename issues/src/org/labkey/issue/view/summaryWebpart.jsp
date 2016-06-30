@@ -25,7 +25,7 @@
 <%
     IssuesController.SummaryBean bean = ((JspView<IssuesController.SummaryBean>) HttpView.currentView()).getModelBean();
     User user = getUser();
-    IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
+    IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer(), bean.issueDefName);
 
     if (bean.hasPermission)
     {

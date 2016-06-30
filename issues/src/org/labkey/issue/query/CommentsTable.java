@@ -32,6 +32,7 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.issue.IssuesController;
+import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 
 import java.util.Collections;
@@ -52,7 +53,7 @@ public class CommentsTable extends FilteredTable<IssuesQuerySchema>
         commentIdColumn.setHidden(true);
         addColumn(commentIdColumn);
 
-        IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
+        IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer(), IssueListDef.DEFAULT_ISSUE_LIST_NAME);
         ColumnInfo issueIdColumn = wrapColumn(_rootTable.getColumn("IssueId"));
         issueIdColumn.setLabel(names.singularName);
         ActionURL base = IssuesController.issueURL(_userSchema.getContainer(), IssuesController.DetailsAction.class);

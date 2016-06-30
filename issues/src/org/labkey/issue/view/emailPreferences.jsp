@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
+<%@ page import="org.labkey.issue.model.IssueListDef" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -35,7 +36,7 @@
     BindException errors = bean.getErrors();
     String message = bean.getMessage();
     int issueId = bean.getIssueId();
-    IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c);
+    IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c, IssueListDef.DEFAULT_ISSUE_LIST_NAME);
     String indefArticle = names.getIndefiniteSingularArticle();
 
     if (message != null)

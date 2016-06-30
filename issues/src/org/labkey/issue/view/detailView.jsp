@@ -57,15 +57,10 @@
     final User user = getUser();
     final String issueId = Integer.toString(issue.getIssueId());
     final boolean hasUpdatePerms = bean.getHasUpdatePermissions();
-    IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c);
 
     List<Issue.Comment> commentLinkedList = IssueManager.getCommentsForRelatedIssues(issue, user);
     IssueListDef issueDef = IssueManager.getIssueListDef(issue);
-
-    // Create Issue from a Ticket
-    Container relatedIssueContainer = IssueManager.getRelatedIssuesList(c);
-    ActionURL insertURL = relatedIssueContainer == null ? null : new ActionURL(IssuesController.InsertAction.class, relatedIssueContainer).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDef.getName());
-    boolean showRelatedIssuesButton = relatedIssueContainer == null ? false : relatedIssueContainer.hasPermission(user, InsertPermission.class);
+    IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c, issueDef.getName());
 
     // create collections for additional custom columns and distribute them evenly in the form
     List<DomainProperty> column1Props = new ArrayList<>();

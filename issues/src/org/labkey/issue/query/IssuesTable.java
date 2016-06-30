@@ -119,13 +119,13 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         }
         baseProps.addAll(getDomainKind().getReservedPropertyNames(getDomain()));
 
-        setDescription("Contains one row per registered issue");
+        setDescription("Contains a row for each issue created in this folder.");
 
         ActionURL base = IssuesController.issueURL(_userSchema.getContainer(), IssuesController.DetailsAction.class);
         DetailsURL detailsURL = new DetailsURL(base, Collections.singletonMap("issueId", "IssueId"));
         setDetailsURL(detailsURL);
 
-        IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
+        IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer(), _issueDef.getName());
         ColumnInfo issueIdColumn = wrapColumn(_rootTable.getColumn("IssueId"));
         issueIdColumn.setFk(new RowIdForeignKey(issueIdColumn)
         {
@@ -632,7 +632,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
 
             if (issueId != null)
             {
-                issue = IssueManager.getNewIssue(_schema.getContainer(), _schema.getUser(), issueId);
+                issue = IssueManager.getIssue(_schema.getContainer(), _schema.getUser(), issueId);
             }
 
             for (User user : IssueManager.getAssignedToList(ctx.getContainer(), issue))
