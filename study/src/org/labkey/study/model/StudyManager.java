@@ -18,7 +18,6 @@ package org.labkey.study.model;
 
 import gwt.client.org.labkey.study.dataset.client.model.GWTDataset;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.Transformer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.log4j.Level;
@@ -148,7 +147,6 @@ import org.labkey.study.query.studydesign.StudyProductAntigenDomainKind;
 import org.labkey.study.query.studydesign.StudyProductDomainKind;
 import org.labkey.study.query.studydesign.StudyTreatmentDomainKind;
 import org.labkey.study.query.studydesign.StudyTreatmentProductDomainKind;
-import org.labkey.study.reports.ReportManager;
 import org.labkey.study.visitmanager.AbsoluteDateVisitManager;
 import org.labkey.study.visitmanager.RelativeDateVisitManager;
 import org.labkey.study.visitmanager.SequenceVisitManager;
@@ -2047,8 +2045,9 @@ public class StudyManager
         SQLFragment f = new SQLFragment();
         f.append("SELECT * FROM ").append(
                 StudySchema.getInstance().getTableInfoStudyData(study, null).getFromSQL("SD")).append(
-                " WHERE QCState = ?");
+                " WHERE QCState = ? AND Container = ?");
         f.add(state.getRowId());
+        f.add(state.getContainer());
 
         return new SqlSelector(StudySchema.getInstance().getSchema(), f).exists();
     }
