@@ -294,6 +294,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         propertyDock.add(_spacerImage, DockPanel.NORTH);
         propertyDock.add(_extraPropertiesTabPanel, DockPanel.CENTER);
         propertyDock.setVerticalAlignment(HasVerticalAlignment.ALIGN_TOP);
+        propertyDock.addStyleName("editor-property-dock");
 
         _panel.add(propertyDock, DockPanel.EAST);
         _panel.setCellHorizontalAlignment(propertyDock, HasHorizontalAlignment.ALIGN_RIGHT);
