@@ -897,16 +897,32 @@ public class DavController extends SpringActionController
                 return notFound();
             if (!resource.exists())
                 return notFound(resource.getPath());
-            if (resource.isCollection() || !resource.canRead(getUser(), true))
+
+            if (resource.isCollection() && !resource.canList(getUser(), true) || !resource.canRead(getUser(), true))
                 return unauthorized(resource);
 
-            // CONSIDER: replace with json response with file name
+            Collection<? extends WebdavResource> resources = null;
+            if (resource.isCollection())
+                resources = resource.list();
+            else
+                resources = Collections.singletonList(resource);
+
             getResponse().setContentType("text/plain");
             Writer out = getResponse().getWriter();
-            out.write(resource.getMD5(getUser()));
-            out.write(" *");
-            out.write(resource.getName());
-            out.write("\n");
+            for (WebdavResource r : resources)
+            {
+                String md5;
+                try
+                {
+                    // CONSIDER: replace with json response with file name
+                    if (r.isFile())
+                        out.write(r.getMD5(getUser()) + " *" + r.getName() + "\n");
+                }
+                catch (Exception x)
+                {
+                    out.write("ERROR: " + r.getName() + ": " + x.getMessage() + "\n");
+                }
+            }
             out.flush();
             return WebdavStatus.SC_OK;
         }
