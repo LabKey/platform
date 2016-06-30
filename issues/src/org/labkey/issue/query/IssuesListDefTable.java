@@ -28,6 +28,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.issue.IssuesController;
+import org.labkey.issue.actions.DeleteIssueListAction;
 import org.labkey.issue.actions.InsertIssueDefAction;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
@@ -75,6 +76,8 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
         ColumnInfo nameCol = addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Name")));
         nameCol.setHidden(true);
         nameCol.setShownInInsertView(false);
+
+        setDeleteURL(new DetailsURL(new ActionURL(DeleteIssueListAction.class, _userSchema.getContainer())));
 
         ColumnInfo labelCol = addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Label")));
         DetailsURL url = new DetailsURL(new ActionURL(IssuesController.ListAction.class, getContainer()),

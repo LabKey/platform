@@ -19,6 +19,7 @@ package org.labkey.issue.query;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.issues.IssuesSchema;
@@ -183,6 +184,22 @@ public class IssuesQuerySchema extends UserSchema
             if (def != null)
             {
                 return new IssuesQueryView(def, context, this, settings, errors);
+            }
+            else if (queryName.equals(TableType.IssueListDef.name()))
+            {
+                return new QueryView(this, settings, errors){
+
+                    @Override
+                    public ActionButton createDeleteButton()
+                    {
+                        ActionButton button = super.createDeleteButton();
+
+                        button.setRequiresSelection(true);
+                        button.setActionType(ActionButton.Action.GET);
+
+                        return button;
+                    }
+                };
             }
         }
 

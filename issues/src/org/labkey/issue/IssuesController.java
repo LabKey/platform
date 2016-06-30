@@ -108,6 +108,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.issue.actions.ChangeSummary;
+import org.labkey.issue.actions.DeleteIssueListAction;
 import org.labkey.issue.actions.GetRelatedFolder;
 import org.labkey.issue.actions.InsertIssueDefAction;
 import org.labkey.issue.actions.IssueServiceAction;
@@ -161,7 +162,8 @@ public class IssuesController extends SpringActionController
             GetRelatedFolder.class,
             InsertIssueDefAction.class,
             ValidateIssueDefNameAction.class,
-            UpgradeIssuesAction.class);
+            UpgradeIssuesAction.class,
+            DeleteIssueListAction.class);
 
     public IssuesController() throws Exception
     {

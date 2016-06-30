@@ -1024,6 +1024,7 @@ issues/src/org/labkey/issue/IssueUserListener.java -text
 issues/src/org/labkey/issue/IssuesModule.java -text
 issues/src/org/labkey/issue/IssuesUpgradeCode.java -text
 issues/src/org/labkey/issue/actions/ChangeSummary.java -text
+issues/src/org/labkey/issue/actions/DeleteIssueListAction.java -text
 issues/src/org/labkey/issue/actions/GetRelatedFolder.java -text
 issues/src/org/labkey/issue/actions/InsertIssueDefAction.java -text
 issues/src/org/labkey/issue/actions/IssueServiceAction.java -text
@@ -1047,6 +1048,7 @@ issues/src/org/labkey/issue/view/IssuesListView.java -text
 issues/src/org/labkey/issue/view/IssuesSummaryWebPartFactory.java -text
 issues/src/org/labkey/issue/view/IssuesWebPartFactory.java -text
 issues/src/org/labkey/issue/view/SummaryWebPart.java -text
+issues/src/org/labkey/issue/view/deleteIssueList.jsp -text
 issues/src/org/labkey/issue/view/detailList.jsp -text
 issues/src/org/labkey/issue/view/detailView.jsp -text
 issues/src/org/labkey/issue/view/emailPreferences.jsp -text
