@@ -21,6 +21,7 @@ body, div, td, th, table, img, form, input, select, .gwt-TextBox
 
 strong, b {
     font-family: 'Roboto-Bold', arial, helvetica, sans-serif;
+    font-weight: normal;
 }
 
 @font-face {
@@ -714,7 +715,7 @@ span.labkey-button:active
     color: #000000;
     text-transform: uppercase;
     /*font-size: 10px;*/
-    font-weight: bold;
+    /*font-weight: bold;*/
     cursor: pointer;
 
     border-radius: 5px;
