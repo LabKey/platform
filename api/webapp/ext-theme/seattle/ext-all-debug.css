@@ -5838,7 +5838,7 @@ a.x4-tab {
 /* line 99, ../../../../ext/packages/ext-theme-neutral/sass/src/ProgressBar.scss */
 .x4-progress-default .x4-progress-text {
   color: white;
-  font-weight: bold;
+  font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans serif;
   font-size: 11px;
   text-align: center;
   line-height: 18px;
@@ -7759,8 +7759,7 @@ body.x4-nbr .x4-btn-default-toolbar-small-frameInfo {
 /* line 253, ../../../../ext/packages/ext-theme-neutral/sass/src/button/Button.scss */
 .x4-btn-default-toolbar-small .x4-btn-inner {
   font-size: 11px;
-  font-weight: bold;
-  font-family: 'Roboto', Arial, Helvetica, sans serif;
+  font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans serif;
   color: #333333;
   padding: 0 4px;
 }
@@ -9469,8 +9468,7 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
 .x4-panel-header-text-container-default {
   color: white;
   font-size: 14px;
-  font-weight: bold;
-  font-family: 'Roboto', Arial, Helvetica, sans serif;
+  font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans serif;
   line-height: 15px;
   padding: 0 2px 1px;
   text-transform: none;
@@ -9720,8 +9718,7 @@ body.x4-nbr .x4-btn-default-toolbar-large-frameInfo {
 .x4-panel-header-text-container-default-framed {
   color: white;
   font-size: 11px;
-  font-weight: bold;
-  font-family: 'Roboto', Arial, Helvetica, sans serif;
+  font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans serif;
   line-height: 15px;
   padding: 0 2px 1px;
   text-transform: none;
@@ -11611,7 +11608,7 @@ body.x4-nbr .x4-tip-default-frameInfo {
 .x4-tip-header-text-container-default {
   color: #444444;
   font-size: 11px;
-  font-weight: bold;
+  font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans serif;
 }
 
 /* line 155, ../../../../ext/packages/ext-theme-neutral/sass/src/tip/Tip.scss */
@@ -11797,7 +11794,7 @@ body.x4-nbr .x4-tip-form-invalid-frameInfo {
 .x4-tip-header-text-container-form-invalid {
   color: #444444;
   font-size: 11px;
-  font-weight: bold;
+  font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans serif;
 }
 
 /* line 155, ../../../../ext/packages/ext-theme-neutral/sass/src/tip/Tip.scss */
@@ -12564,7 +12561,7 @@ body.x4-nbr .x4-window-default-frameInfo {
 /* line 233, ../../../../ext/packages/ext-theme-neutral/sass/src/window/Window.scss */
 .x4-window-header-text-container-default {
   color: white;
-  font-weight: bold;
+  font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans serif;
   line-height: 15px;
   font-family: 'Roboto', Arial, Helvetica, sans serif;
   font-size: 11px;
@@ -14650,7 +14647,7 @@ a.x4-datepicker-date:hover {
 /* line 146, ../../../../ext/packages/ext-theme-neutral/sass/src/picker/Date.scss */
 .x4-datepicker-selected .x4-datepicker-date {
   background-color: #dae5f3;
-  font-weight: bold;
+  font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans serif;
 }
 
 /* line 152, ../../../../ext/packages/ext-theme-neutral/sass/src/picker/Date.scss */
@@ -18145,8 +18142,7 @@ body.x4-nbr .x4-tab-default-right-frameInfo {
 /* line 312, ../../../../ext/packages/ext-theme-neutral/sass/src/tab/Tab.scss */
 .x4-tab-default .x4-tab-inner {
   font-size: 11px;
-  font-weight: bold;
-  font-family: 'Roboto', Arial, Helvetica, sans serif;
+  font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans serif;
   color: black;
   line-height: 13px;
 }
@@ -19310,7 +19306,7 @@ body.x4-nbr .x4-tab-default-right-frameInfo {
 /* line 89, ../../../../ext/packages/ext-theme-classic/sass/src/dom/Element.scss */
 .x4-box-mc h3 {
   font-size: 18px;
-  font-weight: bold;
+  font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans serif;
 }
 
 /* line 94, ../../../../ext/packages/ext-theme-classic/sass/src/dom/Element.scss */
