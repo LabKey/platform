@@ -47,7 +47,7 @@
     // first time study import or a study reload
     String noun = "Folder";
     String action = "Import";
-    String mainDescription = "You can import a folder archive to create and populate a new folder. A folder archive is " +
+    String mainDescription = "You can import a folder archive to populate a folder with data and configuration. A folder archive is " +
             "a .folder.zip file or a collection of individual files that comforms to the LabKey folder export conventions " +
             "and formats.  In most cases, a folder archive is created using the folder export feature.  Using export " +
             "and import, a folder can be moved from one server to another or a new folder can be created using a " +
