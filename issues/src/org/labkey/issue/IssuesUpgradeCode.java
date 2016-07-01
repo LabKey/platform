@@ -219,10 +219,11 @@ public class IssuesUpgradeCode implements UpgradeCode
 
     void migrateIssueProperties(Container c, User user, IssueMigrationPlan plan)
     {
-        IssueManager.EntryTypeNames typeNames = IssueManager.getEntryTypeNames(c);
+        Container adminContainer = IssueManager.getInheritFromOrCurrentContainer(c);
+        IssueManager.EntryTypeNames typeNames = IssueManager.getEntryTypeNames(adminContainer);
         Group assignedToGroup = IssueManager.getAssignedToGroup(c);
         User defaultUser = IssueManager.getDefaultAssignedToUser(c);
-        Sort.SortDirection sortDirection = IssueManager.getCommentSortDirection(c);
+        Sort.SortDirection sortDirection = IssueManager.getCommentSortDirection(adminContainer);
 
         IssueManager.saveEntryTypeNames(c, plan.getIssueDefName(), typeNames);
         IssueManager.saveAssignedToGroup(c, plan.getIssueDefName(), assignedToGroup);
