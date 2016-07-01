@@ -495,7 +495,7 @@ public class DomainImpl implements Domain
                     boolean hasRows = kind.hasNullValues(this, prop);
                     if (hasRows)
                     {
-                        throw new IllegalStateException("The property \"" + prop.getName() + "\" cannot be required when it contains rows with blank values.");
+                        throw new ChangePropertyDescriptorException("The property \"" + prop.getName() + "\" cannot be required when it contains rows with blank values.");
                     }
                 }
             }
