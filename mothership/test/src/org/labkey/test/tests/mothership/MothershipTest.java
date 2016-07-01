@@ -43,7 +43,7 @@ public class MothershipTest extends BaseWebDriverTest
     private static final String MOTHERSHIP_GROUP = "Mothership Test Group";
     private static final String ISSUES_PROJECT = "MothershipTest Issues";
     private static final String ISSUES_GROUP = "Issues Group";
-    public static final String ISSUES_LIST = "MothershipIssues";
+    public static final String ISSUES_LIST = "mothershipissues";
 
     private MothershipHelper _mothershipHelper;
     private ApiPermissionsHelper permissionsHelper = new ApiPermissionsHelper(this);
