@@ -250,7 +250,8 @@ public class SqlScriptController extends SpringActionController
             // and might not run during bootstrap.
             if (AppProps.getInstance().isDevMode())
             {
-                for (String name : new String[]{/* No special scripts anymore... might have them in the future */})
+                String[] specialScripts = CoreSchema.getInstance().getSqlDialect().isPostgreSQL() ? new String[]{"hdrl-16.11-16.12.sql", "labware.gw_labkey-16.11-16.12.sql" /* See #26135 */} : new String[]{};
+                for (String name : specialScripts)
                 {
                     if (-1 == html.indexOf(name))
                         html.insert(0, "<span class=\"labkey-error\">Warning: " + PageFlowUtil.filter(name) + " did not appear!</span><br>\n");
@@ -1192,7 +1193,7 @@ public class SqlScriptController extends SpringActionController
             });
 
             // Update this array after each release and each bump of ModuleLoader.EARLIEST_UPGRADE_VERSION
-            double[] fromVersions = new double[]{0.00, 13.3, 14.1, 14.2, 14.3, 15.1, 15.2, 15.3};
+            double[] fromVersions = new double[]{0.00, 14.1, 14.2, 14.3, 15.1, 15.2, 15.3, 16.1, 16.2};
             double toVersion = form.getToVersion();
 
             for (Module module : modules)
