@@ -75,15 +75,25 @@ function setUpDomains()
 }
 function dropDomains()
 {
+    var completeCt = 0;
+    var queries = ["sampleDataTest1", "sampleDataTest2", "sampleDataTest3"];
     var dropSuccess = function() {
-        console.log('dropped');
-        location.reload(); // add page refresh for automated test
+        dropComplete('dropped');
     };
     var dropFailure = function() {
-        console.log('drop failed');
-        location.reload(); // add page refresh for automated test
+        dropComplete('drop failed');
     };
-    LABKEY.Domain.drop({success: dropSuccess, failure: dropFailure, schemaName: 'Samples', queryName: 'sampleDataTest1'});
-    LABKEY.Domain.drop({success: dropSuccess, failure: dropFailure, schemaName: 'Samples', queryName: 'sampleDataTest2'});
-    LABKEY.Domain.drop({success: dropSuccess, failure: dropFailure, schemaName: 'Samples', queryName: 'sampleDataTest3'});
+    var dropComplete = function(msg) {
+        console.log(queries[completeCt] + ": " + msg);
+        completeCt++;
+        if (completeCt >= queries.length)
+            location.reload(); // add page refresh for automated test
+        else
+            drop(queries[completeCt]);
+    };
+    var drop = function(query)
+    {
+        LABKEY.Domain.drop({success: dropSuccess, failure: dropFailure, schemaName: 'Samples', queryName: query});
+    };
+    drop(queries[0]);
 }
