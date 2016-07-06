@@ -11,15 +11,11 @@ package org.labkey.api.exp;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.beanutils.Converter;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.JdbcType;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.HashMap;
 
 /* class used for persisting info about a template */
@@ -28,7 +24,7 @@ public class TemplateInfo
     final String moduleName;
     final String templateGroupName;
     final String tableName;
-    final BigDecimal createdModuleVersion;
+    final double createdModuleVersion;
 
     public String getModuleName()
     {
@@ -45,23 +41,17 @@ public class TemplateInfo
         return tableName;
     }
 
-    public BigDecimal getCreatedModuleVersion()
+    public double getCreatedModuleVersion()
     {
         return createdModuleVersion;
     }
 
-    public TemplateInfo(String module, String template, String table, BigDecimal moduleVersion)
+    public TemplateInfo(String module, String template, String table, Double moduleVersion)
     {
         this.moduleName = module;
         this.templateGroupName = template;
         this.tableName = table;
-        this.createdModuleVersion = moduleVersion;
-
-    }
-
-    public TemplateInfo(String module, String template, String table, double moduleVersion)
-    {
-        this(module, template, table, new BigDecimal(BigInteger.valueOf((long) (10000 * moduleVersion)), 4));
+        this.createdModuleVersion = null == moduleVersion ? 0.0 : moduleVersion;
     }
 
     public String toJSON()
@@ -83,15 +73,15 @@ public class TemplateInfo
     public static TemplateInfo fromJson(String json)
     {
         if (StringUtils.isBlank(json))
-            return new TemplateInfo(null,null,null,new BigDecimal(0.0));
+            return new TemplateInfo(null, null, null, null);
 
         try
         {
             ObjectMapper om = new ObjectMapper();
             HashMap map = om.readValue(json, HashMap.class);
-            BigDecimal createdModuleVersion = null;
+            Double createdModuleVersion = null;
             if (null != map.get("createdModuleVersion"))
-                createdModuleVersion = _toDecimal(map.get("createdModuleVersion"));
+                createdModuleVersion = (Double) JdbcType.DOUBLE.convert(map.get("createdModuleVersion"));
             TemplateInfo t1 = new TemplateInfo(
                     _toString(map.get("moduleName")),
                     _toString(map.get("templateGroupName")),
@@ -113,21 +103,23 @@ public class TemplateInfo
 
         TemplateInfo that = (TemplateInfo) o;
 
+        if (Double.compare(that.createdModuleVersion, createdModuleVersion) != 0) return false;
         if (moduleName != null ? !moduleName.equals(that.moduleName) : that.moduleName != null) return false;
         if (templateGroupName != null ? !templateGroupName.equals(that.templateGroupName) : that.templateGroupName != null)
             return false;
-        if (tableName != null ? !tableName.equals(that.tableName) : that.tableName != null) return false;
-        return createdModuleVersion != null ? createdModuleVersion.equals(that.createdModuleVersion) : that.createdModuleVersion == null;
-
+        return tableName != null ? tableName.equals(that.tableName) : that.tableName == null;
     }
 
     @Override
     public int hashCode()
     {
-        int result = moduleName != null ? moduleName.hashCode() : 0;
+        int result;
+        long temp;
+        result = moduleName != null ? moduleName.hashCode() : 0;
         result = 31 * result + (templateGroupName != null ? templateGroupName.hashCode() : 0);
         result = 31 * result + (tableName != null ? tableName.hashCode() : 0);
-        result = 31 * result + (createdModuleVersion != null ? createdModuleVersion.hashCode() : 0);
+        temp = Double.doubleToLongBits(createdModuleVersion);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
         return result;
     }
 
@@ -137,24 +129,8 @@ public class TemplateInfo
         return toJSON();
     }
 
-    private static BigDecimal _toDecimal(Object o)
-    {
-        return ((BigDecimal) JdbcType.DECIMAL.convert(o)).setScale(4,BigDecimal.ROUND_DOWN);
-    }
-
     private static String _toString(Object o)
     {
         return null == o ? null : StringUtils.trimToNull(String.valueOf(o));
     }
-
-//    static
-//    {
-//        ConvertUtils.register((type, value) -> {
-//            if (null==value || type != TemplateInfo.class)
-//                return null;
-//            if (value instanceof TemplateInfo)
-//                return value;
-//            return TemplateInfo.fromJson(String.valueOf(value));
-//        }, TemplateInfo.class);
-//    }
 }
