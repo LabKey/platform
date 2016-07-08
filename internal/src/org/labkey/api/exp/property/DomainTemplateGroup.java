@@ -281,22 +281,21 @@ public class DomainTemplateGroup
     }
 
 
+    /**
+     * Get the <b>first</b> template that matches the template name, regardless of the intended domain kind.
+     * If the domain template group has two templates of the same name, but of different kinds, use
+     * the {@link #getTemplate(String, String, boolean)} method instead.
+     */
     @Nullable
     public DomainTemplate getTemplate(@NotNull String templateName)
     {
-        return getTemplate(templateName, false);
+        return getTemplate(templateName, null, false);
     }
 
-    @Nullable
-    public DomainTemplate getTemplate(@NotNull String templateName, boolean includeErrors)
-    {
-        return _templates.stream()
-                .filter(t -> includeErrors || !t.hasErrors())
-                .filter(t -> templateName.equals(t.getTemplateName()))
-                .findFirst()
-                .orElse(null);
-    }
-
+    /**
+     * Get the template that matches the template name and kind.  If a template has a parse error it
+     * won't be returned unless <code>includeErrors</code> is true.
+     */
     @Nullable
     public DomainTemplate getTemplate(@NotNull String templateName, @Nullable String kind, boolean includeErrors)
     {

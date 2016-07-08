@@ -93,17 +93,61 @@ LABKEY.Domain = new function()
 
         /**
          * Create a new domain with the given kind, domainDesign, and options or
-         * specify a domain template group and name to use for the domain creation.
-         * <b>Note: this is an experimental API and may change unexpectedly.</b>
+         * specify a <a href='https://www.labkey.org/home/Documentation/wiki-page.view?name=domainTemplates'>domain template</a> to use for the domain creation.
+         * Not all domain kinds can be created through this API.  Currently supported domain kinds are:
+         * "IntList", "VarList", "SampleSet", and "DataClass".
          *
          * @param {Object} config An object which contains the following configuration properties.
          * @param {Function} config.success Required success callback.
          * @param {Function} [config.failure] Failure callback.
-         * @param {String} config.kind The domain kind name to create.
+         * @param {String} config.kind The domain kind to create. One of "IntList", "VarList", "SampleSet", or "DataClass".
+         * @param {String} config.domainName The name of the domain to create.
+         * @param {String} config.module The name of a module that contains the domain template group.
+         * @param {String} config.domainGroup The name of a domain template group.
+         * @param {String} config.domainTemplate The name of a domain template within the domain group.
+         * @param {Boolean} config.createDomain When using a domain template, create the domain.  Defaults to true.
+         * @param {Boolean} config.importData When using a domain template, import initial data associated in the template.  Defaults to true.
          * @param {LABKEY.Domain.DomainDesign} config.domainDesign The domain design to save.
          * @param {Object} [config.options] Arguments used to create the specific domain type.
          * @param {String} [config.containerPath] The container path in which to create the domain.
-         * @ignore hide from JsDoc for now
+         * @example Create domain:
+<pre name="code" class="xml">
+LABKEY.Domain.create({
+  kind: "IntList",
+  domainDesign: {
+    name: "LookupCodes",
+    description: "integer key list",
+    fields: [{
+      name: "id", rangeURI: "int"
+    },{
+      name: "code",
+      rangeURI: "string", scale: 4
+    }]
+  },
+  options: {
+    keyName: "id"
+  }
+});
+</pre>
+         * @example Create domain from a <a href='https://www.labkey.org/wiki/home/Documentation/page.view?name=domainTemplate'>domain template</a>:
+<pre name="code" class="xml">
+LABKEY.Domain.create({
+  module: "mymodule",
+  domainGroup: "codes",
+  domainTemplate: "LookupCodes",
+  importData: false
+});
+         </pre>
+         * @example Import the initial data from the domain template of a previously created domain:
+<pre name="code" class="xml">
+LABKEY.Domain.create({
+  module: "mymodule",
+  domainGroup: "codes",
+  domainTemplate: "LookupCodes",
+  createDomain: false,
+  importData: true
+});
+</pre>
          */
         create : function (config)
         {

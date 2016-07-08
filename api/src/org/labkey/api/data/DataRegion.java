@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -918,7 +919,9 @@ public class DataRegion extends AbstractDataRegion
     private void renderAnalyticsProvidersScripts(RenderContext ctx, Writer writer) throws IOException
     {
         AnalyticsProviderRegistry registry = ServiceRegistry.get().getService(AnalyticsProviderRegistry.class);
-        if (registry != null && ctx != null && ctx.getBaseAnalyticsProviders() != null)
+        boolean disableAnalytics = BooleanUtils.toBoolean(ctx.getViewContext().getActionURL().getParameter(ctx.getCurrentRegion().getName() + ".disableAnalytics"));
+
+        if (!disableAnalytics && registry != null && ctx.getBaseAnalyticsProviders() != null)
         {
             List<String> scripts = new ArrayList<>();
             for (AnalyticsProviderItem analyticsProviderItem : ctx.getBaseAnalyticsProviders())

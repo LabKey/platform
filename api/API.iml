@@ -475,6 +475,15 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/core-renderer.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
@@ -697,6 +706,5 @@
         </SOURCES>
       </library>
     </orderEntry>
-    <orderEntry type="library" name="flying-saucer-core-9.0.9" level="project" />
   </component>
 </module>

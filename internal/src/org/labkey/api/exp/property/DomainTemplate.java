@@ -90,16 +90,16 @@ public class DomainTemplate
      * Find the DomainTemplate used to create this Domain, if it is available.
      */
     @Nullable
-    public static DomainTemplate findTemplate(TemplateInfo info)
+    public static DomainTemplate findTemplate(TemplateInfo info, String kindName)
     {
         if (info == null)
             return null;
 
-        return findTemplate(info.getModuleName(), info.getTemplateGroupName(), info.getTableName());
+        return findTemplate(info.getModuleName(), info.getTemplateGroupName(), info.getTableName(), kindName);
     }
 
     @Nullable
-    public static DomainTemplate findTemplate(String moduleName, String groupName, String templateName)
+    public static DomainTemplate findTemplate(String moduleName, String groupName, String templateName, String kindName)
     {
         if (moduleName == null || groupName == null || templateName == null)
         {
@@ -121,7 +121,7 @@ public class DomainTemplate
             return null;
         }
 
-        return group.getTemplate(templateName);
+        return group.getTemplate(templateName, kindName, false);
     }
 
     public static DomainTemplate parse(String moduleName, String groupName, DomainTemplateType template)

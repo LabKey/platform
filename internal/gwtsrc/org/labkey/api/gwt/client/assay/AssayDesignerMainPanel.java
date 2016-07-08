@@ -278,7 +278,10 @@ public class AssayDesignerMainPanel extends AbstractDesignerMainPanel implements
         else
             setDirty(_copy);
 
-        _closeHandlerManager = Window.addWindowClosingHandler(new DesignerClosingListener());
+        if (_closeHandlerManager == null)
+        {
+            _closeHandlerManager = Window.addWindowClosingHandler(new DesignerClosingListener());
+        }
 
         syncAutoCopy();
     }

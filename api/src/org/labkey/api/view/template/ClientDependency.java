@@ -294,8 +294,10 @@ public class ClientDependency
     {
         if (TYPE.context.equals(_primaryType))
             return getCacheKey("moduleContext|" + _module.toString(), _mode);
-        else
+        else if (_filePath != null)
             return getCacheKey(_filePath.toString(), _mode);
+
+        return getCacheKey("", _mode);
     }
 
     private void processScript(Path filePath)

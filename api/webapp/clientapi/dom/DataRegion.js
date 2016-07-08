@@ -22,7 +22,6 @@ if (!LABKEY.DataRegions) {
     var CONTAINER_FILTER_NAME = '.containerFilterName';
     var CUSTOM_VIEW_PANELID = '~~customizeView~~';
     var VIEWNAME_PREFIX = '.viewName';
-    var DISABLE_ANALYTICS = '.disableAnalytics';
 
     var VALID_LISTENERS = [
         /**
@@ -1608,12 +1607,15 @@ if (!LABKEY.DataRegions) {
         if (view) {
             if (LABKEY.Utils.isString(view)) {
                 paramValPairs.push([VIEWNAME_PREFIX, view]);
+                this.viewName = view;
             }
             else if (view.type == 'report') {
                 paramValPairs.push([REPORTID_PREFIX, view.reportId]);
+                this.reportId = view.reportId;
             }
             else if (view.type == 'view' && view.viewName) {
                 paramValPairs.push([VIEWNAME_PREFIX, view.viewName]);
+                this.viewName = view.viewName;
             }
         }
 
@@ -2193,17 +2195,15 @@ if (!LABKEY.DataRegions) {
     /**
      * Add or remove an aggregate for a given column in the DataRegion query view.
      * @param viewName
-     * @param columnName
+     * @param colFieldKey
      * @param aggType
      */
-    LABKEY.DataRegion.prototype.toggleAggregateForCustomView = function(viewName, columnName, aggType) {
+    LABKEY.DataRegion.prototype.toggleAggregateForCustomView = function(viewName, colFieldKey, aggType) {
         this.getQueryDetails(function(queryDetails)
         {
             var view = _getViewFromQueryDetails(queryDetails, viewName);
             if (view != null)
             {
-                var colFieldKey = LABKEY.FieldKey.fromString(columnName).toString();
-
                 if (_queryDetailsContainsColumn(queryDetails, colFieldKey))
                 {
                     var colAggregateTypes = [];
@@ -2228,16 +2228,14 @@ if (!LABKEY.DataRegions) {
     /**
      * Remove a column from the given DataRegion query view.
      * @param viewName
-     * @param columnName
+     * @param colFieldKey
      */
-    LABKEY.DataRegion.prototype.removeColumn = function(viewName, columnName) {
+    LABKEY.DataRegion.prototype.removeColumn = function(viewName, colFieldKey) {
         this.getQueryDetails(function(queryDetails)
         {
             var view = _getViewFromQueryDetails(queryDetails, viewName);
             if (view != null)
             {
-                var colFieldKey = LABKEY.FieldKey.fromString(columnName).toString();
-
                 if (_queryDetailsContainsColumn(queryDetails, colFieldKey))
                 {
                     var colFieldKeys = $.map(view.columns, function (c) {
@@ -2259,17 +2257,15 @@ if (!LABKEY.DataRegions) {
      * Add the enabled analytics provider to the custom view definition based on the column fieldKey and provider name.
      * In addition, disable the column menu item if the column is visible in the grid.
      * @param viewName
-     * @param columnName
+     * @param colFieldKey
      * @param providerName
      */
-    LABKEY.DataRegion.prototype.addAnalyticsProviderForCustomView = function(viewName, columnName, providerName) {
+    LABKEY.DataRegion.prototype.addAnalyticsProviderForCustomView = function(viewName, colFieldKey, providerName) {
         this.getQueryDetails(function(queryDetails)
         {
             var view = _getViewFromQueryDetails(queryDetails, viewName);
             if (view != null)
             {
-                var colFieldKey = LABKEY.FieldKey.fromString(columnName).toString();
-
                 if (_queryDetailsContainsColumn(queryDetails, colFieldKey))
                 {
                     var colProviderNames = [];
@@ -2301,17 +2297,15 @@ if (!LABKEY.DataRegions) {
      * Remove an enabled analytics provider from the custom view definition based on the column fieldKey and provider name.
      * In addition, enable the column menu item if the column is visible in the grid.
      * @param viewName
-     * @param columnName
+     * @param colFieldKey
      * @param providerName
      */
-    LABKEY.DataRegion.prototype.removeAnalyticsProviderForCustomView = function(viewName, columnName, providerName) {
+    LABKEY.DataRegion.prototype.removeAnalyticsProviderForCustomView = function(viewName, colFieldKey, providerName) {
         this.getQueryDetails(function(queryDetails)
         {
             var view = _getViewFromQueryDetails(queryDetails, viewName);
             if (view != null)
             {
-                var colFieldKey = LABKEY.FieldKey.fromString(columnName).toString();
-
                 if (_queryDetailsContainsColumn(queryDetails, colFieldKey))
                 {
                     var indexToRemove = null;
@@ -3276,6 +3270,8 @@ if (!LABKEY.DataRegions) {
 
         params.dataRegionName = region.name;
         params.schemaName = region.schemaName;
+        params.viewName = region.viewName;
+        params.reportId = region.reportId;
         params.returnURL = window.location.href;
         params['webpart.name'] = 'Query';
 
