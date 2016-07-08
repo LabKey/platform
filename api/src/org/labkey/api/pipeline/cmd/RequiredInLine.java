@@ -86,7 +86,7 @@ public class RequiredInLine extends TaskToCommandArgs
 
     protected String getFullValue(CommandTask task) throws FileNotFoundException
     {
-        return isAddPipelineToolsDir() ? PipelineJobService.get().getExecutablePath(getValue(), null,  _softwarePackage, getVersion(task), task.getJob().getLogger()) : getValue();
+        return isAddPipelineToolsDir() ? PipelineJobService.get().getToolPath(getValue(), null,  _softwarePackage, getVersion(task), task.getJob().getLogger()) : getValue();
     }
 
     public List<String> toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException

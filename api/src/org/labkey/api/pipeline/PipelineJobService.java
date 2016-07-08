@@ -124,6 +124,14 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
     abstract public String getExecutablePath(String exeRel, @Nullable String installPath, String packageName, String ver, Logger jobLogger) throws FileNotFoundException;
 
     /**
+     * Similar to getExecutablePath(), but allows resolution of non-executable tool directory files
+     *
+     * @param exeRel if relative, interpreted based on either the installPath or tools directory
+     * @param installPath if non-null, use this as the path to the file instead of the standard tools directory
+     */
+    abstract public String getToolPath(String exeRel, @Nullable String installPath, String packageName, String ver, Logger jobLogger) throws FileNotFoundException;
+
+    /**
      * @param jarRel if relative, interpreted based on either the installPath or tools directory
      * @param installPath if non-null, use this as the path to the file instead of the standard tools directory
      */
