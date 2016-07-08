@@ -37,7 +37,6 @@ import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
-import org.labkey.api.pipeline.RemoteExecutionEngine;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.RemoteExecutionEngine;
 import org.labkey.api.pipeline.TaskFactory;
@@ -58,9 +57,9 @@ import org.labkey.api.util.URIUtil;
 import org.labkey.pipeline.api.properties.ApplicationPropertiesImpl;
 import org.labkey.pipeline.api.properties.ConfigPropertiesImpl;
 import org.labkey.pipeline.cluster.NoOpPipelineStatusWriter;
+import org.labkey.pipeline.mule.JMSStatusWriter;
 import org.labkey.pipeline.mule.test.DummyPipelineJob;
 import org.labkey.pipeline.mule.test.DummyRemoteExecutionEngine;
-import org.labkey.pipeline.mule.JMSStatusWriter;
 import org.labkey.pipeline.xml.TaskType;
 
 import java.io.File;
@@ -706,6 +705,11 @@ public class PipelineJobServiceImpl extends PipelineJobService
 
     public String getExecutablePath(String exeRel, String installPath, String packageName, String ver, Logger jobLogger) throws FileNotFoundException
     {
+        return getVersionedOsPath(exeRel, installPath, packageName, ver, true);
+    }
+
+    private String getVersionedOsPath(String exeRel, String installPath, String packageName, String ver, boolean expectExecutable) throws FileNotFoundException
+    {
         // Make string replacements
         exeRel = getVersionedPath(exeRel, packageName, ver);
 
@@ -719,6 +723,12 @@ public class PipelineJobServiceImpl extends PipelineJobService
         }
 
         return getPathToTool(installPath, exeRel, true);
+    }
+
+    @Override
+    public String getToolPath(String exeRel, @Nullable String installPath, String packageName, String ver, Logger jobLogger) throws FileNotFoundException
+    {
+        return getVersionedOsPath(exeRel, installPath, packageName, ver, false);
     }
 
     public String getJarPath(String jarRel, String installPath, String packageName, String ver) throws FileNotFoundException
