@@ -379,10 +379,20 @@ Ext4.define('File.panel.Upload', {
             items : [this.getSingleUpload(), this.getMultiUpload()]
         });
 
+        var narrowUploadsPanel = Ext4.create('Ext.panel.Panel', {
+            layout : 'card',
+            deferredRender : true,
+            activeItem : 0,
+            width: 238,
+            border : false,
+            cls : 'single-upload-panel',
+            items : [this.getMultiUpload()]
+        });
+
         var uploadsContainer = Ext4.create('Ext.container.Container', {
-            layout: 'hbox',
-            height: 60,
-            items: [radioPanel, uploadsPanel]
+            layout: this.narrowLayout ? 'vbox' : 'hbox',
+            height: this.narrowLayout ? 80 : 60,
+            items: [this.narrowLayout ? narrowUploadsPanel : uploadsPanel]
         });
 
         var closeBtn = Ext4.create('Ext.button.Button', {
@@ -414,7 +424,7 @@ Ext4.define('File.panel.Upload', {
 
         var outerContainer = Ext4.create('Ext.container.Container', {
             layout: {type: 'hbox', align: 'stretch'},
-            height: 60,
+            height: this.narrowLayout ? 90 : 60,
             // the flex box here eats up all the middle real estate to kick the btnContainer all the way right
             items: [uploadsContainer, {xtype: 'box', flex: 1}, btnContainer]
         });
