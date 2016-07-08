@@ -790,9 +790,9 @@ public class StudyManager
                 catch (DataIntegrityViolationException x)
                 {
                     if (datasetDefinition.isDemographicData())
-                        throw new IllegalArgumentException("Can not change dataset type to demographic");
+                        throw new IllegalArgumentException("Can not change dataset type to demographic for dataset " + datasetDefinition.getName());
                     else
-                        throw new IllegalArgumentException("Changing the dataset key would result in duplicate keys");
+                        throw new IllegalArgumentException("Changing the dataset key would result in duplicate keys for dataset " + datasetDefinition.getName());
                 }
             }
             Object[] pk = new Object[]{datasetDefinition.getContainer().getId(), datasetDefinition.getDatasetId()};
