@@ -168,13 +168,6 @@ Ext4.define('File.panel.Browser', {
     expandUpload : false,
 
     /**
-     * Specifies a narrow layout for the upload panel. Radio buttons and input fields will be stack vertically. 
-     * @cfg {Boolean} useNarrowUpload
-     */
-    useNarrowUpload : false,
-
-
-    /**
      * @cfg {Boolean} isWebDav
      */
     isWebDav : false,
@@ -659,19 +652,6 @@ Ext4.define('File.panel.Browser', {
                 actionType : File.panel.Action.Type.NOMIN,
                 handler : function() {
                     window.location = LABKEY.ActionURL.buildURL('filecontent', 'showFilesHistory', this.containerPath);
-                },
-                scope: this
-            });
-
-            this.actionsMap.manage = Ext4.create('File.panel.Action', {
-                text: 'Manage',
-                hardText: 'Manage',
-                itemId: 'manage',
-                fontCls: 'fa-archive',
-                tooltip: 'Use the file manager for more advanced actions',
-                actionType: File.panel.Action.Type.NOMIN,
-                handler : function() {
-                    window.location = LABKEY.ActionURL.buildURL('filecontent', 'begin', this.containerPath);
                 },
                 scope: this
             });
@@ -2262,7 +2242,6 @@ Ext4.define('File.panel.Browser', {
             hidden : !this.expandUpload,
             fileSystem : this.fileSystem,
             style: 'border-bottom: 1px solid #b4b4b4;',
-            narrowLayout: this.useNarrowUpload,
             listeners : {
                 transfercomplete : function(options) {
                     this.reload({
