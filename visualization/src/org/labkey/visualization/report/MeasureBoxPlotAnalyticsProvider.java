@@ -60,6 +60,7 @@ public class MeasureBoxPlotAnalyticsProvider extends ColumnAnalyticsProvider
         return "LABKEY.ColumnVisualizationAnalytics.showMeasureFromDataRegion(" +
                 PageFlowUtil.jsString(ctx.getCurrentRegion().getName()) + "," +
                 PageFlowUtil.jsString(col.getName()) + "," +
+                PageFlowUtil.jsString(col.getFieldKey().toString()) + "," +
                 PageFlowUtil.jsString(getName()) +
             ");";
     }

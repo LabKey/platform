@@ -10,10 +10,12 @@
 function diffDomainProperties(domainA, domainB)
 {
     var NOTUNIQUE = new Object('marker value');
+    var typePrefix = "http://www.w3.org/2001/XMLSchema#";
+
     function buildIndexMap(array, getter)
     {
         var map = {}, item, key;
-        for (i=0 ; i<array.length ; i++)
+        for (var i=0 ; i<array.length ; i++)
         {
             item = array[i];
             if (!item) continue;
@@ -35,8 +37,8 @@ function diffDomainProperties(domainA, domainB)
         {
             if (!(key in mapB) || mapA[key] == NOTUNIQUE || mapB[key] == NOTUNIQUE)
                     continue;
-                matches.push({a:fieldsA[mapA[key]], b:fieldsB[mapB[key]]});
-                fieldsA[mapA[key]] = fieldsB[mapB[key]] = null;
+            matches.push({a:fieldsA[mapA[key]], b:fieldsB[mapB[key]]});
+            fieldsA[mapA[key]] = fieldsB[mapB[key]] = null;
         }
     }
 
@@ -56,14 +58,25 @@ function diffDomainProperties(domainA, domainB)
         {
             var nameMatches = m.a.name == m.b.name;
             var conceptMatches = m.a.conceptURI == m.b.conceptURI;
-            var typeMatches = m.a.type == m.b.type;
+
+            var aType = m.a.rangeURI;
+            if (aType.indexOf(typePrefix) == 0)
+                aType = aType.substring(typePrefix.length);
+
+            var bType = m.b.rangeURI;
+            if (bType.indexOf(typePrefix) == 0)
+                bType = bType.substring(typePrefix.length);
+
+            var typeMatches = aType == bType;
+
             if (nameMatches)
             {
+                var changes = [];
                 if (!typeMatches)
-                    m.status = "TYPES";
+                    changes.push("TYPE");
                 if (!conceptMatches)
-                    m.status = "CONCEPT";
-                m.status = 'MATCH';
+                    changes.push("CONCEPT");
+                m.status = (changes.length == 0) ? "MATCH" : (changes.join(", ") + " CHANGED");
             }
             else
             {

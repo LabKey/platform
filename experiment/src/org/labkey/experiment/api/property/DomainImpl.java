@@ -744,6 +744,6 @@ public class DomainImpl implements Domain
     @Nullable
     public DomainTemplate getTemplate()
     {
-        return DomainTemplate.findTemplate(getTemplateInfo());
+        return DomainTemplate.findTemplate(getTemplateInfo(), getDomainKind().getKindName());
     }
 }

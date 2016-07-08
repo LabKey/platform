@@ -50,7 +50,6 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
-import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
@@ -844,33 +843,27 @@ public class PropertyController extends SpringActionController
             String schema = form.getSchemaName();
             String query = form.getQueryName();
             if (StringUtils.isBlank(schema) || StringUtils.isBlank(query))
-                throw new NotFoundException();
+                throw new IllegalArgumentException("schemaName and queryName required");
 
             GWTDomain gwt = getDomain(schema, query, getContainer(), getUser());
             Domain domain = form.getDomain();
 
             if (null == domain)
-                throw new NotFoundException();
+                throw new NotFoundException("Domain not found");
             if (!domain.getContainer().hasPermission(getUser(), AdminPermission.class))
                 throw new UnauthorizedException();
 
-            GWTDomain gwtFromTemplate = null;
+            DomainKind kind = domain.getDomainKind();
+            if (kind == null)
+                throw new NotFoundException("Domain kind not found for domain '" + domain.getName() + "': " + domain.getTypeURI());
+
+            String kindName = kind.getKindName();
             TemplateInfo info = domain.getTemplateInfo();
 
-            findDomainTemplate:
-            {
-                if (null == info)
-                    break findDomainTemplate;
-                Module module = ModuleLoader.getInstance().getModule(info.getModuleName());
-                if (null == module)
-                    break findDomainTemplate;
-                DomainTemplateGroup group = DomainTemplateGroup.get(module, info.getTemplateGroupName());
-                if (null == group)
-                    break findDomainTemplate;
-                DomainTemplate template = group.getTemplate(info.getTableName());
-                if (null != template)
-                    gwtFromTemplate = template.getDomain();
-            }
+            DomainTemplate template = DomainTemplate.findTemplate(info, kindName);
+            GWTDomain gwtFromTemplate = null;
+            if (template != null)
+                gwtFromTemplate = template.getDomain();
 
             CompareWithTemplateModel model = new CompareWithTemplateModel();
             model.schemaName = form.getSchemaName();

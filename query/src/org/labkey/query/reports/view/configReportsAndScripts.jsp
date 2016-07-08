@@ -81,7 +81,7 @@
     }
 
     function getEngineSpecificItems(record) {
-        if (record.name === R_ENGINE_NAME)
+        if (record.name === R_ENGINE_NAME || record.name === REMOTE_R_ENGINE_NAME)
         {
             return getRSpecificFields(record.pandocEnabled)
         }

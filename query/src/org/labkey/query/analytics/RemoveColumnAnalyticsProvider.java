@@ -50,7 +50,7 @@ public class RemoveColumnAnalyticsProvider extends ColumnAnalyticsProvider
     {
         return "LABKEY.ColumnQueryAnalytics.removeColumnFromDataRegion(" +
                 PageFlowUtil.jsString(ctx.getCurrentRegion().getName()) + "," +
-                PageFlowUtil.jsString(col.getName()) +
+                PageFlowUtil.jsString(col.getFieldKey().toString()) +
             ");";
     }
 

@@ -11,16 +11,17 @@
          * Used via MeasurePlotAnalyticsProvider to visualize data for the selected measure column.
          * @param dataRegionName
          * @param columnName
+         * @param colFieldKey
          * @param analyticsProviderName - VIS_BOX
          */
-        var showMeasureFromDataRegion = function(dataRegionName, columnName, analyticsProviderName)
+        var showMeasureFromDataRegion = function(dataRegionName, columnName, colFieldKey, analyticsProviderName)
         {
             var region = LABKEY.DataRegions[dataRegionName];
             if (region)
             {
                 var plotDivId = _appendPlotDiv(region);
 
-                _queryColumnData(region, columnName, function(data)
+                _queryColumnData(region, colFieldKey, function(data)
                 {
                     var regionViewName = region.viewName || "",
                         regionColumnNames = $.map(region.columns, function(c) { return c.name; }),
@@ -105,7 +106,7 @@
                     });
                     plot.render();
 
-                    _handleAnalyticsProvidersForCustomView(region, plotDivId, regionViewName, columnName, analyticsProviderName);
+                    _handleAnalyticsProvidersForCustomView(region, plotDivId, regionViewName, colFieldKey, analyticsProviderName);
                 });
             }
             else
@@ -118,16 +119,17 @@
          * Used via DimensionPlotAnalyticsProvider to visualize data for the selected dimension column.
          * @param dataRegionName
          * @param columnName
+         * @param colFieldKey
          * @param analyticsProviderName - VIS_BAR or VIS_PIE
          */
-        var showDimensionFromDataRegion = function(dataRegionName, columnName, analyticsProviderName)
+        var showDimensionFromDataRegion = function(dataRegionName, columnName, colFieldKey, analyticsProviderName)
         {
             var region = LABKEY.DataRegions[dataRegionName];
             if (region)
             {
                 var plotDivId = _appendPlotDiv(region);
 
-                _queryColumnData(region, columnName, function (data)
+                _queryColumnData(region, colFieldKey, function (data)
                 {
                     var regionViewName = region.viewName || "",
                         regionColumnNames = $.map(region.columns, function(c) { return c.name; }),
@@ -296,7 +298,7 @@
 
                     if (plot != null)
                     {
-                        _handleAnalyticsProvidersForCustomView(region, plotDivId, regionViewName, columnName, analyticsProviderName);
+                        _handleAnalyticsProvidersForCustomView(region, plotDivId, regionViewName, colFieldKey, analyticsProviderName);
                     }
                 });
             }
@@ -306,27 +308,27 @@
             }
         };
 
-        var _handleAnalyticsProvidersForCustomView = function(dataRegion, plotDivId, viewName, columnName, analyticsProviderName)
+        var _handleAnalyticsProvidersForCustomView = function(dataRegion, plotDivId, viewName, colFieldKey, analyticsProviderName)
         {
             // add the provider to the custom view, if it isn't already included
-            dataRegion.addAnalyticsProviderForCustomView(viewName, columnName, analyticsProviderName);
+            dataRegion.addAnalyticsProviderForCustomView(viewName, colFieldKey, analyticsProviderName);
 
             // add the remove icon and register click handler for removing the visualization provider
             $('#' + plotDivId).append('<div class="fa fa-times plot-analytics-remove"></div>');
             $('#' + plotDivId + ' div.plot-analytics-remove').on('click', function() {
                 $('#' + plotDivId).remove();
-                dataRegion.removeAnalyticsProviderForCustomView(viewName, columnName, analyticsProviderName);
+                dataRegion.removeAnalyticsProviderForCustomView(viewName, colFieldKey, analyticsProviderName);
             });
         };
 
-        var _queryColumnData = function(dataRegion, columnName, successCallback)
+        var _queryColumnData = function(dataRegion, colFieldKey, successCallback)
         {
             // Issue 26594: get the base filter for the QueryView and any user applied URL filters
             // using the data region's selectAllURL. See QueryView.java getSettings().getBaseFilter().applyToURL().
             var filterArray = LABKEY.Filter.getFiltersFromUrl(dataRegion.selectAllURL, 'query');
 
             var config = $.extend({}, dataRegion.getQueryConfig(), {
-                columns: columnName,
+                columns: colFieldKey,
                 ignoreFilter: LABKEY.ActionURL.getParameter(dataRegion.name + '.ignoreFilter'),
                 filterArray: filterArray,
                 requiredVersion: '9.1',

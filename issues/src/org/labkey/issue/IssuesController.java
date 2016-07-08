@@ -933,14 +933,18 @@ public class IssuesController extends SpringActionController
         {
             if (_issueListDef == null)
             {
-                String issueDefName = getIssue().getIssueDefName();
-                if (issueDefName != null)
+                Issue issue = getIssue();
+                if (issue != null)
                 {
-                    _issueListDef = IssueManager.getIssueListDef(getContainer(), issueDefName);
-                }
-                else
-                {
-                    _issueListDef = IssueManager.getIssueListDef(getIssue());
+                    String issueDefName = issue.getIssueDefName();
+                    if (issueDefName != null)
+                    {
+                        _issueListDef = IssueManager.getIssueListDef(getContainer(), issueDefName);
+                    }
+                    else
+                    {
+                        _issueListDef = IssueManager.getIssueListDef(getIssue());
+                    }
                 }
             }
             return _issueListDef;

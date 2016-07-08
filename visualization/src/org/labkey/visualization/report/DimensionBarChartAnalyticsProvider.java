@@ -60,6 +60,7 @@ public class DimensionBarChartAnalyticsProvider extends ColumnAnalyticsProvider
         return "LABKEY.ColumnVisualizationAnalytics.showDimensionFromDataRegion(" +
                 PageFlowUtil.jsString(ctx.getCurrentRegion().getName()) + "," +
                 PageFlowUtil.jsString(col.getName()) + "," +
+                PageFlowUtil.jsString(col.getFieldKey().toString()) + "," +
                 PageFlowUtil.jsString(getName()) +
             ");";
     }

@@ -73,7 +73,7 @@ public abstract class BaseAggregatesAnalyticsProvider extends ColumnAnalyticsPro
     {
         return "LABKEY.ColumnQueryAnalytics.applyAggregateFromDataRegion(" +
                 PageFlowUtil.jsString(ctx.getCurrentRegion().getName()) + "," +
-                PageFlowUtil.jsString(col.getName()) + "," +
+                PageFlowUtil.jsString(col.getFieldKey().toString()) + "," +
                 PageFlowUtil.jsString(getAggregateType().name()) +
             ");";
     }

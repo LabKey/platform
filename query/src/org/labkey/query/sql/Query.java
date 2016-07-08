@@ -1791,8 +1791,8 @@ public class Query
             // Query.setContainerFilter()
             QueryDefinition q = QueryService.get().createQueryDef(user, c, "issues", "testquery");
             q.setContainerFilter(custom);
-            q.setSql("SELECT DISTINCT title, folder.name\n" +
-                    "FROM (SELECT DISTINCT issueid, title, folder FROM issues WHERE EXISTS (SELECT * FROM issues WHERE issueid=5)) x");
+            q.setSql("SELECT DISTINCT label, container.name\n" +
+                    "FROM (SELECT DISTINCT rowid, container, label FROM issuelistdef WHERE EXISTS (SELECT * FROM issuelistdef WHERE rowid=5)) x");
             ArrayList<QueryException> errors = new ArrayList<>();
             TableInfo t = q.getTable(errors, false);
             assertTrue(errors.isEmpty());
@@ -1806,8 +1806,8 @@ public class Query
 
             // TableInfo.setContainerFilter()
             q = QueryService.get().createQueryDef(user, c, "issues", "testquery");
-            q.setSql("SELECT DISTINCT title, folder.name\n" +
-                    "FROM (SELECT DISTINCT issueid, title, folder FROM issues WHERE EXISTS (SELECT * FROM issues WHERE issueid=5)) x");
+            q.setSql("SELECT DISTINCT label, container.name\n" +
+                    "FROM (SELECT DISTINCT rowid, container, label FROM issuelistdef WHERE EXISTS (SELECT * FROM issuelistdef WHERE rowid=5)) x");
             errors = new ArrayList<>();
             t = q.getTable(errors, false);
             assertTrue(errors.isEmpty());
