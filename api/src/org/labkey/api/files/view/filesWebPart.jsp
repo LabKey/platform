@@ -25,7 +25,6 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     public void addClientDependencies(ClientDependencies dependencies)
@@ -116,11 +115,10 @@
             useServerFileProperties: false,
             showColumnHeaders: false,
             showFolderTree: false,
-            showToolbar: true,
-            showUpload: true,
-            listDirectories: true,
-            useNarrowUpload: true,
-            actions: ['parentFolder', 'refresh', <%=c.hasPermission(getUser(), InsertPermission.class)%> ? 'upload' : '',  'manage'],
+            showToolbar: false,
+            showUpload: false,
+            listDirectories: false,
+            actions: ['parentFolder', 'refresh'],
             columns: ['iconfacls', 'name'],
             folderTreeOptions: {
                 hidden: true,
