@@ -19,7 +19,6 @@ package org.labkey.bigiron;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.module.CodeOnlyModule;
-import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.view.WebPartFactory;

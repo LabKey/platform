@@ -25,7 +25,6 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.visualization.GenericChartReportDescriptor;
