@@ -31,7 +31,7 @@ public class MySql56Dialect extends MySqlDialect
     @Override
     protected Set<String> getReservedWords()
     {
-        // Add new reserved words in MySQL 5.6; see http://dev.mysql.com/doc/refman/5.6/en/reserved-words.html
+        // Add new reserved words in MySQL 5.6; see http://dev.mysql.com/doc/refman/5.6/en/keywords.html
         Set<String> words = super.getReservedWords();
 
         // NOTE: ONE_SHOT, SQL_AFTER_GTIDS, and SQL_BEFORE_GTIDS are listed as reserved words in the docs, but don't
