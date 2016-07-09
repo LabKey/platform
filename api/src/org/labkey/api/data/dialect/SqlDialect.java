@@ -741,10 +741,10 @@ public abstract class SqlDialect
         Set<String> shouldAdd = new TreeSet<>();
         Set<String> shouldRemove = new TreeSet<>();
 
-        // First, test the test: execute the test SQL with an identifier that definitely isn't a keyword.  If this
+        // First, test the test: execute the test SQL with an identifier that definitely isn't a keyword. If this
         // fails, there's a syntax issue with the test SQL.
         if (isKeyword(executor, "abcdefghi"))
-            throw new IllegalStateException("Legitimate keyword generated an error on " + getProductName());
+            throw new IllegalStateException("Legitimate identifier generated an error on " + getProductName());
 
         for (String candidate : candidates)
         {
@@ -767,13 +767,6 @@ public abstract class SqlDialect
 
         if (!shouldAdd.isEmpty())
             throw new IllegalStateException("Need to add " + shouldAdd.size() + " keywords to " + getProductName() + " reserved word list: " + shouldAdd);
-
-        // Removing this check because reserved words differ between postgres versions.  For example, going from 8.4 to
-        // 9.0 adds 'concurrently' but removes 'between', 'new', 'off', and 'old'.  With this check removed, the test
-        // now checks to ensure that a superset of all required keywords is present, but no longer enforces that the
-        // sets are a perfect match.
-        //if (!shouldRemove.isEmpty())
-        //    throw new IllegalStateException("Need to remove " + shouldRemove.size() + " keywords from " + getProductName() + " reserved word list: " + shouldRemove);
 
         if (!shouldRemove.isEmpty())
             LOG.info("Should remove " + shouldRemove.size() + " keywords from " + getClass().getName() + " reserved word list: " + shouldRemove);
