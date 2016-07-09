@@ -1,7 +1,6 @@
 package org.labkey.api.action;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.annotations.RefactorIn16_3;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
@@ -12,7 +11,6 @@ import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityManager;
@@ -142,14 +140,6 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         if (null != requiresAllOf)
         {
             Collections.addAll(permissionsRequired, requiresAllOf.value());
-        }
-
-        // TODO: Delete this and @RequiresPermissionClass
-        @RefactorIn16_3
-        RequiresPermissionClass requiresPermClass = actionClass.getAnnotation(RequiresPermissionClass.class);
-        if (null != requiresPermClass)
-        {
-            throw new IllegalStateException("@RequiresPermissionClass is no longer supported. Use @RequiresPermission instead.");
         }
 
         // Special handling for admin console actions to support TroubleShooter role. Only site admins can POST,

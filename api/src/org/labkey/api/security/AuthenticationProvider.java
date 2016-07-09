@@ -18,7 +18,6 @@ package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.annotations.RefactorIn16_3;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.AuthenticationManager.LinkFactory;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
@@ -63,14 +62,6 @@ public interface AuthenticationProvider
     default boolean isPermanent()
     {
         return false;
-    }
-
-    @Deprecated
-    @RefactorIn16_3
-    // This makes no sense for secondary auth, reset password, etc., so it's been moved to PrimaryAuthenticationProvider. But
-    // leaving it here temporarily to avoid breaking in-flight feature branches. TODO: remove in 16.3
-    default void logout(HttpServletRequest request)
-    {
     }
 
     interface PrimaryAuthenticationProvider extends AuthenticationProvider

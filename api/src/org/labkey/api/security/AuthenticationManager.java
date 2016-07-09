@@ -56,7 +56,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
-import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -89,7 +88,7 @@ public class AuthenticationManager
     // All registered authentication providers (DbLogin, LDAP, SSO, etc.)
     private static final List<AuthenticationProvider> _allProviders = new CopyOnWriteArrayList<>();
     // Map of user id to login provider. This is needed to handle clean up on logout.
-    private static final Map<Integer, AuthenticationProvider> _userProviders = new ConcurrentHashMap<>();
+    private static final Map<Integer, PrimaryAuthenticationProvider> _userProviders = new ConcurrentHashMap<>();
 
     public static final String HEADER_LOGO_PREFIX = "auth_header_logo_";
     public static final String LOGIN_PAGE_LOGO_PREFIX = "auth_login_page_logo_";
@@ -637,7 +636,7 @@ public class AuthenticationManager
     }
 
     @NotNull
-    public static PrimaryAuthenticationResult finalizePrimaryAuthentication(HttpServletRequest request, AuthenticationProvider authProvider, ValidEmail email)
+    public static PrimaryAuthenticationResult finalizePrimaryAuthentication(HttpServletRequest request, PrimaryAuthenticationProvider authProvider, ValidEmail email)
     {
         User user;
 
@@ -766,7 +765,7 @@ public class AuthenticationManager
 
     public static void logout(@NotNull User user, HttpServletRequest request)
     {
-        AuthenticationProvider provider = _userProviders.get(user.getUserId());
+        PrimaryAuthenticationProvider provider = _userProviders.get(user.getUserId());
 
         if (null != provider)
             provider.logout(request);
