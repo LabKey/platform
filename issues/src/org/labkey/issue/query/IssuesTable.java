@@ -71,6 +71,7 @@ import org.labkey.issue.IssuesController;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
+import org.labkey.issue.model.IssuePage;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -206,10 +207,20 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         TableInfo defTable = _issueDef.createTable(getUserSchema().getUser());
         _extension = TableExtension.create(this, defTable, "entityId", "entityId", LookupColumn.JoinType.inner);
 
+        HashMap<String,DomainProperty> properties = new HashMap<>();
+        for (DomainProperty dp : _issueDef.getDomain(getUserSchema().getUser()).getProperties())
+            properties.put(dp.getPropertyURI(), dp);
+
         // add the domain columns
         Collection<ColumnInfo> cols = new ArrayList<>(20);
         for (ColumnInfo col : defTable.getColumns())
         {
+            // omit protected columns
+            if (properties.containsKey(col.getPropertyURI()))
+            {
+                if (!IssuePage.shouldDisplay(properties.get(col.getPropertyURI()), _userSchema.getContainer(), _userSchema.getUser()))
+                    continue;
+            }
             // Skip the lookup column itself
             String colName = col.getName();
             if (colNameMap.containsKey(colName))
@@ -244,10 +255,6 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
                 _extraDefaultColumns.add(FieldKey.fromParts(colName));
             }
         }
-
-        HashMap<String,DomainProperty> properties = new HashMap<>();
-        for (DomainProperty dp : _issueDef.getDomain(getUserSchema().getUser()).getProperties())
-            properties.put(dp.getPropertyURI(), dp);
 
         for (ColumnInfo col : cols)
         {
@@ -628,6 +635,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         {
             NamedObjectList objectList = new NamedObjectList();
             Integer issueId = ctx.get(FieldKey.fromParts("IssueId"), Integer.class);
+            String issueDefName = ctx.get(FieldKey.fromParts("IssueDefName"), String.class);
             Issue issue = null;
 
             if (issueId != null)
@@ -635,7 +643,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
                 issue = IssueManager.getIssue(_schema.getContainer(), _schema.getUser(), issueId);
             }
 
-            for (User user : IssueManager.getAssignedToList(ctx.getContainer(), issue))
+            for (User user : IssueManager.getAssignedToList(ctx.getContainer(), issueDefName, issue))
             {
                 objectList.put(new SimpleNamedObject(String.valueOf(user.getUserId()), user.getDisplayName(_schema.getUser())));
             }
@@ -708,7 +716,9 @@ class NotifyListDisplayColumn extends DataColumn
             // TODO: consider update script for fixing this issue...
             try
             {
-                return UserManager.getUser(Integer.parseInt(part)).getDisplayName(_user);
+                User user = UserManager.getUser(Integer.parseInt(part));
+                if (user != null)
+                    return user.getDisplayName(_user);
             }
             catch (NumberFormatException e)
             {

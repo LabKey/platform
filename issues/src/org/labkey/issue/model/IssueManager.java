@@ -229,24 +229,29 @@ public class IssueManager
 
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("IssueId"), issueId);
 
-            try (Results rs = QueryService.get().select(table, table.getColumns(), filter, null, null, false))
+            if (table != null)
             {
-                Map<String, Object> rowMap = new CaseInsensitiveHashMap<>();
-                if (rs.next())
+                try (Results rs = QueryService.get().select(table, table.getColumns(), filter, null, null, false))
                 {
-                    for (String colName : table.getColumnNameSet())
+                    Map<String, Object> rowMap = new CaseInsensitiveHashMap<>();
+                    if (rs.next())
                     {
-                        Object value = rs.getObject(FieldKey.fromParts(colName));
-                        if (value != null)
-                            rowMap.put(colName, value);
+                        for (String colName : table.getColumnNameSet())
+                        {
+                            Object value = rs.getObject(FieldKey.fromParts(colName));
+                            if (value != null)
+                                rowMap.put(colName, value);
+                        }
                     }
+                    issue.setExtraProperties(rowMap);
                 }
-                issue.setExtraProperties(rowMap);
+                catch (SQLException e)
+                {
+                    throw new RuntimeException(e);
+                }
             }
-            catch (SQLException e)
-            {
-                throw new RuntimeException(e);
-            }
+            else
+                return null;
         }
         return issue;
     }
@@ -722,9 +727,9 @@ public class IssueManager
 
     private static final Comparator<User> USER_COMPARATOR = new UserDisplayNameComparator();
 
-    public static @NotNull Collection<User> getAssignedToList(Container c, @Nullable Issue issue)
+    public static @NotNull Collection<User> getAssignedToList(Container c, @Nullable String issueDefName, @Nullable Issue issue)
     {
-        Collection<User> initialAssignedTo = getInitialAssignedToList(c, issue);
+        Collection<User> initialAssignedTo = getInitialAssignedToList(c, issueDefName);
 
         // If this is an existing issue, add the user who opened the issue, unless they are a guest, inactive, already in the list, or don't have permissions.
         if (issue != null && 0 != issue.getIssueId())
@@ -748,15 +753,9 @@ public class IssueManager
 
     // Returns the assigned to list that is used for every new issue in this container.  We can cache it and share it
     // across requests.  The collection is unmodifiable.
-    private static @NotNull Collection<User> getInitialAssignedToList(final Container c, @Nullable Issue issue)
+    private static @NotNull Collection<User> getInitialAssignedToList(final Container c, @Nullable String issueDefName)
     {
-        String issueDefName = IssueListDef.DEFAULT_ISSUE_LIST_NAME;
-        if (issue != null)
-        {
-            IssueListDef issueListDef = IssueManager.getIssueListDef(issue);
-            if (issueListDef != null)
-                issueDefName = issueListDef.getName();
-        }
+        issueDefName = issueDefName != null ? issueDefName : IssueListDef.DEFAULT_ISSUE_LIST_NAME;
         String cacheKey = getCacheKey(c, issueDefName);
 
         return ASSIGNED_TO_CACHE.get(cacheKey, issueDefName, new CacheLoader<String, Set<User>>() {

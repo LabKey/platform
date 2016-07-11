@@ -328,7 +328,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
     public String renderColumn(DomainProperty prop, ViewContext context, boolean editable) throws IOException
     {
-        if (prop != null && shouldDisplay(prop, context))
+        if (prop != null && shouldDisplay(prop, context.getContainer(), context.getUser()))
         {
             final StringBuilder sb = new StringBuilder();
             TableInfo table = getIssueTable(context);
@@ -354,7 +354,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
     public String renderLabel(DomainProperty prop, ViewContext context) throws IOException
     {
-        if (prop != null && shouldDisplay(prop, context))
+        if (prop != null && shouldDisplay(prop, context.getContainer(), context.getUser()))
         {
             final StringBuilder sb = new StringBuilder();
             TableInfo table = getIssueTable(context);
@@ -380,7 +380,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
     public String renderInput(DomainProperty prop, ViewContext context, boolean editable) throws IOException
     {
-        if (prop != null && shouldDisplay(prop, context) && editable)
+        if (prop != null && shouldDisplay(prop, context.getContainer(), context.getUser()) && editable)
         {
             final StringBuilder sb = new StringBuilder();
             TableInfo table = getIssueTable(context);
@@ -406,10 +406,10 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return "";
     }
 
-    private boolean shouldDisplay(DomainProperty prop, ViewContext context)
+    public static boolean shouldDisplay(DomainProperty prop, Container container, User user)
     {
         Class<? extends Permission> permission = prop.isProtected() ? InsertPermission.class : ReadPermission.class;
-        return context.getContainer().hasPermission(context.getUser(), permission);
+        return container.hasPermission(user, permission);
     }
 
     // Field is always standard column name, which is HTML safe
@@ -450,23 +450,6 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     {
         return _editable.contains(field);
     }
-
-    public String getUserOptions()
-    {
-        Collection<User> members = IssueManager.getAssignedToList(_c, getIssue());
-        StringBuilder select = new StringBuilder();
-        select.append("<option value=\"\"></option>");
-
-        for (User member : members)
-        {
-            select.append("<option value=").append(member.getUserId()).append(">");
-            select.append(filter(member.getDisplayName(_user)));
-            select.append("</option>\n");
-        }
-
-        return select.toString();
-    }
-
 
     public String getNotifyListString(boolean asEmail)
     {

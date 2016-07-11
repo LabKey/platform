@@ -602,6 +602,7 @@ public class Issue extends Entity implements Serializable, Cloneable
     public void parseNotifyList(String notifyList)
     {
         _notifyList = UserManager.parseUserListInput(notifyList);
+        _extraProperties.put("notifyList", _notifyList);
     }
 
     public String getNotifyList()
