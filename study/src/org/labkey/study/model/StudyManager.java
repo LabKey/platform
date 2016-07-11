@@ -789,6 +789,13 @@ public class StudyManager
                 }
                 catch (DataIntegrityViolationException x)
                 {
+                    _log.debug("Old Dataset: " + old.getName());
+                    _log.debug("    Demographic: " + old.isDemographicData());
+                    _log.debug("    Key: " + old.getKeyPropertyName());
+                    _log.debug("New Dataset: " + datasetDefinition.getName());
+                    _log.debug("    Demographic: " + datasetDefinition.isDemographicData());
+                    _log.debug("    Key: " + datasetDefinition.getKeyPropertyName());
+
                     if (datasetDefinition.isDemographicData())
                         throw new IllegalArgumentException("Can not change dataset type to demographic for dataset " + datasetDefinition.getName());
                     else
