@@ -7296,9 +7296,8 @@ li.x-menu-item-active a.x-menu-item {
 /* Buttons */
 .x-btn button {
     font-size: 10px;
-    font-weight: bold;
     color: #126495;
-    font-family: 'Roboto', Arial, Helvetica, sans serif;
+    font-family: 'Roboto-Bold', Arial, Helvetica, sans serif;
     padding-bottom: 3px;
     text-transform: uppercase;
 }
