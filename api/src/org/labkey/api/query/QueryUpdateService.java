@@ -118,7 +118,7 @@ public interface QueryUpdateService
 
     /**
      * Inserts the given values as new rows into the source table of this query.  Same as insertRows() except for the use
-     * of DataIterator.  importRows() may be implmented using insertRows() or vice versa.
+     * of DataIterator.  importRows() may be implemented using insertRows() or vice versa.
      *
      * @param user The current user.
      * @param container The container in which the data should exist.
