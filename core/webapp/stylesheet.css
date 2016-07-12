@@ -3,7 +3,7 @@ html, body
     height: 100%;
 }
 
-body, div, td, th, table, img, form, input, select, .gwt-TextBox
+body, div, td, table, img, form, input, select, .gwt-TextBox
 {
     font-family: 'Roboto', arial, helvetica, sans-serif;
     font-size: 14px;
@@ -11,6 +11,11 @@ body, div, td, th, table, img, form, input, select, .gwt-TextBox
     color: #000000;
     letter-spacing: .3px;
     line-height: 1.25;
+}
+
+th
+{
+    font-weight: normal;
 }
 
 .x-btn, .x4-btn {
@@ -2059,7 +2064,7 @@ span.labkey-wp-icon-button-inactive:hover {
     color: #126495;
     text-transform: uppercase;
     /*font-size: 10px;*/
-    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif; 
+    font-family: 'Roboto', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
     white-space: nowrap;
 
 	border-radius: 5px;
@@ -2283,14 +2288,16 @@ div.labkey-wiki h1
 {
     font-size: 1.2em;
     margin: 0.83em 0;
-    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif; 
+    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
+    font-weight: normal;
 }
 
 .labkey-wiki .heading-1-1, div.labkey-wiki h3
 {
     font-size: 1.0em;
     margin: 0.83em 0;
-    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif; 
+    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
+    font-weight: normal;
 }
 
 .labkey-wiki .heading-1-1-1, div.labkey-wiki h4
@@ -2298,7 +2305,8 @@ div.labkey-wiki h1
     text-transform: uppercase;
     font-size: 0.8em;
     margin: 0.83em 0 0.0px 0;
-    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif; 
+    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
+    font-weight: normal;
 }
 
 .labkey-wiki .code
