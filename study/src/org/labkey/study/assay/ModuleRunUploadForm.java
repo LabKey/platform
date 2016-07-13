@@ -149,7 +149,7 @@ public class ModuleRunUploadForm extends AssayRunUploadForm<TsvAssayProvider> im
         {
             TsvDataHandler dataHandler = new TsvDataHandler();
             dataHandler.setAllowEmptyData(true);
-            dataHandler.importRows(insertedData, getUser(), run, getProtocol(), getProvider(), rawData);
+            dataHandler.importRows(insertedData, getUser(), run, getProtocol(), getProvider(), rawData, null);
         }
     }
 

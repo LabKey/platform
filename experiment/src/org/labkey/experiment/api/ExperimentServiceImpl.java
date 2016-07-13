@@ -497,6 +497,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new ExpDataImpl(data);
     }
 
+    @NotNull
     public List<ExpMaterialImpl> getExpMaterialsByName(String name, Container container, User user)
     {
         List<ExpMaterialImpl> result = getSamplesByName(container, user).get(name);
@@ -509,25 +510,22 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return material == null ? null : new ExpMaterialImpl(material);
     }
 
+    @NotNull
     public List<ExpMaterialImpl> getExpMaterials(Collection<Integer> rowids)
     {
         SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.RowId.name()), rowids);
         TableSelector selector = new TableSelector(getTinfoMaterial(), filter, null);
 
         final List<ExpMaterialImpl> materials = new ArrayList<>(rowids.size());
-        selector.forEach(new Selector.ForEachBlock<Material>()
-        {
-            @Override
-            public void exec(Material material) throws SQLException
-            {
-                materials.add(new ExpMaterialImpl(material));
-            }
+        selector.forEach(material -> {
+            materials.add(new ExpMaterialImpl(material));
         }, Material.class);
 
         return materials;
     }
 
     @Override
+    @NotNull
     public List<ExpMaterialImpl> getExpMaterials(Container container, User user, Set<String> sampleNames, @Nullable ExpSampleSet sampleSet, boolean throwIfMissing, boolean createIfMissing)
             throws ExperimentException
     {
