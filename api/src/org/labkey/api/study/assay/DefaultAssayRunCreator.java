@@ -48,6 +48,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.ValidatorContext;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
@@ -235,6 +236,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             }
         }
 
+        // TODO: remove need for this cast
         if (context instanceof ModuleRunUploadContext)
         {
             // allow module contexts to add data and materials directly
@@ -408,6 +410,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
     protected void importStandardResultData(AssayRunUploadContext<ProviderType> context, ExpRun run, Map<ExpData, String> inputDatas, Map<ExpData, String> outputDatas, ViewBackgroundInfo info, XarContext xarContext, TransformResult transformResult, List<ExpData> insertedDatas) throws ExperimentException, ValidationException
     {
+        // TODO: remove need for this cast
         if (context instanceof ModuleRunUploadContext)
         {
             // delegate the data import to the upload context as the imported data will not exist as uploaded files
@@ -475,12 +478,13 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 continue;
 
             DomainProperty dp = entry.getKey();
-            ExpSampleSet ss = getLookupSampleSet(dp, context.getContainer());
-            if (ss == null)
-                continue;
-
             PropertyType pt = dp.getPropertyType();
             if (pt == null)
+                continue;
+
+            // Lookup must point at "Samples.*" or "exp.Materials"
+            @Nullable ExpSampleSet ss = getLookupSampleSet(dp, context.getContainer());
+            if (ss == null && !isLookupToMaterials(dp))
                 continue;
 
             // Use the DomainProperty name as the role
@@ -489,7 +493,24 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             if (pt.getJdbcType().isText())
             {
                 String sampleName = entry.getValue();
-                ExpMaterial material = ss.getSample(sampleName);
+                ExpMaterial material = null;
+
+                List<? extends ExpMaterial> matches = ExperimentService.get().getExpMaterials(context.getContainer(), context.getUser(), Collections.singleton(sampleName), ss, false, false);
+                if (matches.size() == 0)
+                {
+                    Logger logger = context.getLogger() != null ? context.getLogger() : LOG;
+                    logger.warn("No sample found for sample name '" + sampleName + "'");
+                }
+                else if (matches.size() == 1)
+                {
+                    material = matches.get(0);
+                }
+                else if (matches.size() > 1)
+                {
+                    Logger logger = context.getLogger() != null ? context.getLogger() : LOG;
+                    logger.warn("More than one sample found for sample name '" + sampleName + "'");
+                }
+
                 if (material != null)
                     inputMaterials.put(material, role);
             }
@@ -519,7 +540,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             return null;
 
         // TODO: Use concept URI instead of the lookup target schema to determine if the column is a sample.
-        if (!SamplesSchema.SCHEMA_NAME.equalsIgnoreCase(lookup.getSchemaName()))
+        if (!(SamplesSchema.SCHEMA_NAME.equalsIgnoreCase(lookup.getSchemaName()) || "exp.materials".equalsIgnoreCase(lookup.getSchemaName())))
             return null;
 
         JdbcType type = dp.getPropertyType().getJdbcType();
@@ -528,6 +549,22 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
         Container c = lookup.getContainer() != null ? lookup.getContainer() : container;
         return ExperimentService.get().getSampleSet(c, lookup.getQueryName(), true);
+    }
+
+    public static boolean isLookupToMaterials(@NotNull DomainProperty dp)
+    {
+        Lookup lookup = dp.getLookup();
+        if (lookup == null)
+            return false;
+
+        if (!(ExpSchema.SCHEMA_NAME.equalsIgnoreCase(lookup.getSchemaName()) && ExpSchema.TableType.Materials.name().equalsIgnoreCase(lookup.getQueryName())))
+            return false;
+
+        JdbcType type = dp.getPropertyType().getJdbcType();
+        if (!(type.isText() || type.isInteger()))
+            return false;
+
+        return true;
     }
 
     protected void addInputDatas(AssayRunUploadContext<ProviderType> context, Map<ExpData, String> inputDatas, ParticipantVisitResolverType resolverType) throws ExperimentException
