@@ -252,6 +252,7 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
      * - Has a single primary key
      * - Has a unique index over a single column that isn't the primary key
      * - The column in the unique index must be a string type
+     * - As a fallback, the title column is allowed as an alternate key as well except callers must check that the display value is unique.
      */
     @Override
     public boolean allowImportByAlternateKey()
@@ -266,6 +267,7 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
 
         ColumnInfo pkCol = pkCols.get(0);
 
+        Set<ColumnInfo> seen = new HashSet<>();
         List<List<ColumnInfo>> candidates = new ArrayList<>();
         for (Pair<TableInfo.IndexType, List<ColumnInfo>> index : lookupTable.getIndices().values())
         {
@@ -276,6 +278,10 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
                 continue;
 
             ColumnInfo col = index.getValue().get(0);
+            if (seen.contains(col))
+                continue;
+            seen.add(col);
+
             if (pkCol == col)
                 continue;
 
@@ -283,6 +289,12 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
                 continue;
 
             candidates.add(index.getValue());
+        }
+
+        ColumnInfo titleCol = lookupTable.getTitleColumn() != null ? lookupTable.getColumn(lookupTable.getTitleColumn()) : null;
+        if (titleCol != null && !seen.contains(titleCol) && pkCol != titleCol && titleCol.getJdbcType().isText())
+        {
+            candidates.add(Collections.singletonList(titleCol));
         }
 
         return !candidates.isEmpty();

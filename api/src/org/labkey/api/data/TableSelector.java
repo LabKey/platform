@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -207,6 +208,14 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     {
         ensureStableColumnOrder("getValueMap()");
         return super.getValueMap();
+    }
+
+    @NotNull
+    @Override
+    public <K, V> MultiValuedMap<K, V> getMultiValuedMap()
+    {
+        ensureStableColumnOrder("getMultiValuedMap()");
+        return super.getMultiValuedMap();
     }
 
     @NotNull

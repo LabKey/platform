@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.collections4.MultiValuedMap;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.ResultSet;
@@ -91,6 +92,12 @@ public interface Selector
 
     /** Populate an existing map from a two-column query; the first column is the key, the second column is the value. */
     @NotNull <K, V> Map<K, V> fillValueMap(@NotNull Map<K, V> map);
+
+    /** Return a new MultiValuedMap from a two-column query; the first column is the key, the second column is the value of which there may be more than one for the key. */
+    @NotNull <K, V> MultiValuedMap<K, V> getMultiValuedMap();
+
+    /** Populate an existing MultiValuedMap from a two-column query; the first column is the key, the second column is the value of which there may be more than one for the key. */
+    @NotNull <K, V> MultiValuedMap<K, V> fillMultiValuedMap(@NotNull final MultiValuedMap<K, V> multiMap);
 
     /** Callback interface for dealing with objects streamed from the database one-by-one */
     interface ForEachBlock<T>

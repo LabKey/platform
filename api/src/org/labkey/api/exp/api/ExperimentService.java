@@ -171,19 +171,19 @@ public class ExperimentService
          * @return Resolved samples
          * @throws ExperimentException
          */
-        List<? extends ExpMaterial> getExpMaterials(Container container, @Nullable User user, Set<String> sampleNames, @Nullable ExpSampleSet sampleSet, boolean throwIfMissing, boolean createIfMissing) throws ExperimentException;
+        @NotNull List<? extends ExpMaterial> getExpMaterials(Container container, @Nullable User user, Set<String> sampleNames, @Nullable ExpSampleSet sampleSet, boolean throwIfMissing, boolean createIfMissing) throws ExperimentException;
 
         /* This version of createExpMaterial() takes name from lsid.getObjectId() */
         ExpMaterial createExpMaterial(Container container, Lsid lsid);
         ExpMaterial createExpMaterial(Container container, String lsid, String name);
         ExpMaterial getExpMaterial(int rowid);
-        List<? extends ExpMaterial> getExpMaterials(Collection<Integer> rowids);
+        @NotNull List<? extends ExpMaterial> getExpMaterials(Collection<Integer> rowids);
         ExpMaterial getExpMaterial(String lsid);
 
         /**
          * Looks in all the sample sets visible from the given container for a single match with the specified name 
          */
-        List<? extends ExpMaterial> getExpMaterialsByName(String name, Container container, User user);
+        @NotNull List<? extends ExpMaterial> getExpMaterialsByName(String name, Container container, User user);
 
         Map<String, ExpSampleSet> getSampleSetsForRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType type);
 

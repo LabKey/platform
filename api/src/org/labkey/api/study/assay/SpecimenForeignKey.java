@@ -754,4 +754,10 @@ public class SpecimenForeignKey extends LookupForeignKey
 
         return new ArrayList<>(containers);
     }
+
+    @Override
+    public boolean allowImportByAlternateKey()
+    {
+        return false;
+    }
 }

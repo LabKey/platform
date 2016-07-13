@@ -26,6 +26,7 @@ public class DataLoaderSettings
     private boolean _allowEmptyData;
     private boolean _throwOnErrors;
     private boolean _allowUnexpectedColumns;    // don't load columns not in target domain
+    private boolean _allowLookupByAlternateKey; // import lookup column by unique index on target column or by title display column (if unique)
 
     public boolean isBestEffortConversion()
     {
@@ -65,5 +66,15 @@ public class DataLoaderSettings
     public void setAllowUnexpectedColumns(boolean allowUnexpectedColumns)
     {
         _allowUnexpectedColumns = allowUnexpectedColumns;
+    }
+
+    public boolean isAllowLookupByAlternateKey()
+    {
+        return _allowLookupByAlternateKey;
+    }
+
+    public void setAllowLookupByAlternateKey(boolean allowLookupByAlternateKey)
+    {
+        _allowLookupByAlternateKey = allowLookupByAlternateKey;
     }
 }

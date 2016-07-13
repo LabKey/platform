@@ -15,6 +15,8 @@
  */
 package org.labkey.api.data;
 
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.RowMap;
@@ -32,6 +34,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 
 /**
  * A partial, base implementation of {@link org.labkey.api.data.Selector}. This class manipulates result sets but doesn't
@@ -392,8 +395,8 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
         return factory;
     }
 
-    @Override
-    public @NotNull <K, V> Map<K, V> fillValueMap(@NotNull final Map<K, V> fillMap)
+    // Unfortunately, Map and MultiValuedMap don't share an interface for the put method so we have to pass in a method reference instead.
+    private <K, V> void fillValues(BiFunction<K, V, ?> fn)
     {
         // Using a ResultSetIterator ensures that standard type conversion happens (vs. ResultSet enumeration and rs.getObject())
         handleResultSet(getStandardResultSetFactory(), (rs, conn) -> {
@@ -406,12 +409,17 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
             {
                 RowMap rowMap = (RowMap)iter.next();
                 //noinspection unchecked
-                fillMap.put((K)rowMap.get(1), (V)rowMap.get(2));
+                fn.apply((K)rowMap.get(1), (V)rowMap.get(2));
             }
 
             return null;
         });
+    }
 
+    @Override
+    public @NotNull <K, V> Map<K, V> fillValueMap(@NotNull final Map<K, V> fillMap)
+    {
+        fillValues(fillMap::put);
         return fillMap;
     }
 
@@ -419,5 +427,18 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
     public @NotNull <K, V> Map<K, V> getValueMap()
     {
         return fillValueMap(new HashMap<>());
+    }
+
+    @Override
+    public @NotNull <K, V> MultiValuedMap<K, V> fillMultiValuedMap(@NotNull final MultiValuedMap<K, V> multiMap)
+    {
+        fillValues(multiMap::put);
+        return multiMap;
+    }
+
+    @Override
+    public @NotNull <K, V> MultiValuedMap<K, V> getMultiValuedMap()
+    {
+        return fillMultiValuedMap(new ArrayListValuedHashMap<>());
     }
 }

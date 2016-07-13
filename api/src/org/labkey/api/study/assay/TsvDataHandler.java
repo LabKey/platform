@@ -16,21 +16,13 @@
 
 package org.labkey.api.study.assay;
 
-import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.qc.TransformDataHandler;
-import org.labkey.api.query.ValidationException;
-import org.labkey.api.study.assay.AbstractAssayTsvDataHandler;
-import org.labkey.api.study.assay.AssayDataType;
-import org.labkey.api.study.assay.AssayRunUploadContext;
 import org.labkey.api.util.FileType;
 
 import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 
 /**
  * User: brittp
@@ -84,15 +76,4 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
         return true;
     }
 
-    public void importTransformDataMap(ExpData data, AssayRunUploadContext context, ExpRun run, List<Map<String, Object>> dataMap) throws ExperimentException
-    {
-        try
-        {
-            importRows(data, context.getUser(), run, context.getProtocol(), context.getProvider(), dataMap);
-        }
-        catch (ValidationException e)
-        {
-            throw new ExperimentException(e.toString(), e);
-        }
-    }
 }

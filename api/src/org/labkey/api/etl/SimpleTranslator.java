@@ -17,6 +17,7 @@
 package org.labkey.api.etl;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -480,15 +481,19 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         final SimpleConvertColumn _convertCol;
         final ColumnInfo _toCol;
         final RemapMissingBehavior _missing;
-        List<Map<?, ?>> _maps = null;
+        final boolean _includeTitleColumn;
 
-        public RemapPostConvertColumn(final @NotNull SimpleConvertColumn convertCol, final int fromIndex, final @NotNull ColumnInfo toCol, RemapMissingBehavior missing)
+        List<Map<?, ?>> _maps = null;
+        MultiValuedMap<String, Object> _titleColumnLookupMap = null;
+
+        public RemapPostConvertColumn(final @NotNull SimpleConvertColumn convertCol, final int fromIndex, final @NotNull ColumnInfo toCol, RemapMissingBehavior missing, boolean includeTitleColumn)
         {
             super(convertCol.fieldName, convertCol.index, convertCol.type);
 //            assert _data.getColumnInfo(fromIndex).getFk() != null && _data.getColumnInfo(fromIndex).getFk().allowImportByAlternateKey();
             _convertCol = convertCol;
             _toCol = toCol;
             _missing = missing;
+            _includeTitleColumn = includeTitleColumn;
         }
 
         private List<Map<?,?>> getMaps()
@@ -499,6 +504,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
                 TableInfo targetTable = _toCol.getFkTableInfo();
                 ColumnInfo pkCol = targetTable.getPkColumns().get(0);
+                Set<ColumnInfo> seen = new HashSet<>();
 
                 // See similar check in AbstractForeignKey.allowImportByAlternateKey()
                 // The lookup table must meet the following requirements:
@@ -514,6 +520,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                         continue;
 
                     ColumnInfo col = index.getValue().get(0);
+                    if (seen.contains(col))
+                        continue;
+                    seen.add(col);
+
                     if (pkCol == col)
                         continue;
 
@@ -521,6 +531,16 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                         continue;
 
                     _maps.add(createMap(targetTable, pkCol, col));
+                }
+
+                if (_includeTitleColumn)
+                {
+                    ColumnInfo titleColumn = targetTable.getTitleColumn() != null ? targetTable.getColumn(targetTable.getTitleColumn()) : null;
+                    if (titleColumn != null && !seen.contains(titleColumn))
+                    {
+                        TableSelector ts = new TableSelector(targetTable, Arrays.asList(titleColumn, pkCol), null, null);
+                        _titleColumnLookupMap = ts.getMultiValuedMap();
+                    }
                 }
             }
             return _maps;
@@ -555,6 +575,19 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 Object v = map.get(k);
                 if (null != v || map.containsKey(k))
                     return v;
+            }
+
+            if (_titleColumnLookupMap != null)
+            {
+                Collection<Object> vs = _titleColumnLookupMap.get(String.valueOf(k));
+                if (vs != null && !vs.isEmpty())
+                {
+                    if (vs.size() == 1)
+                        return vs.iterator().next();
+
+                    if (vs.size() > 1)
+                        throw new ConversionException("More than one display value matched: " + String.valueOf(k));
+                }
             }
 
             switch (_missing)
@@ -768,7 +801,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         if (fk != null && _context.isAllowImportLookupByAlternateKey() && fk.allowImportByAlternateKey())
         {
             RemapMissingBehavior missing = col.isRequired() ? RemapMissingBehavior.Error : RemapMissingBehavior.Null;
-            c = new RemapPostConvertColumn(c, fromIndex, col, missing);
+            c = new RemapPostConvertColumn(c, fromIndex, col, missing, true);
         }
 
         boolean multiValue = fk instanceof MultiValuedForeignKey;
@@ -793,7 +826,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         if (fk != null && _context.isAllowImportLookupByAlternateKey() && fk.allowImportByAlternateKey())
         {
             RemapMissingBehavior missing = col.isRequired() ? RemapMissingBehavior.Error : RemapMissingBehavior.Null;
-            c = new RemapPostConvertColumn(c, fromIndex, col, missing);
+            c = new RemapPostConvertColumn(c, fromIndex, col, missing, true);
         }
 
         boolean multiValue = fk instanceof MultiValuedForeignKey;
@@ -856,7 +889,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         if (fk != null && _context.isAllowImportLookupByAlternateKey() && fk.allowImportByAlternateKey())
         {
             RemapMissingBehavior missing = col.isRequired() ? RemapMissingBehavior.Error : RemapMissingBehavior.Null;
-            c = new RemapPostConvertColumn(c, fromIndex, col, missing);
+            c = new RemapPostConvertColumn(c, fromIndex, col, missing, true);
         }
 
         return addColumn(col, c);
