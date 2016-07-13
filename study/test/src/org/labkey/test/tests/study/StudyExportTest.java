@@ -52,8 +52,11 @@ public class StudyExportTest extends StudyManualTest
     private static final String COLUMN_DESC = "Test Column Description";
     private static final String MODIFIED_VISIT = "Cycle 2";
 
-    @Rule
-    public Timeout testTimeout = new Timeout(40, TimeUnit.MINUTES);
+    @Override
+    public Timeout testTimeout()
+    {
+        return new Timeout(40, TimeUnit.MINUTES);
+    }
 
     @Override
     protected void doCreateSteps()
