@@ -770,7 +770,7 @@ public class StudyManager
                     ColumnInfo col = storageTableInfo.getColumn(datasetDefinition.getKeyPropertyName());
                     if (null == col)
                     {
-                        throw new IllegalArgumentException("Cannot find 'key' column: " + datasetDefinition.getKeyPropertyName());
+                        throw new IllegalArgumentException("Cannot find 'key' column: " + datasetDefinition.getKeyPropertyName() + " in table: " + tableName);
                     }
                     SQLFragment colFrag = col.getValueSql(tableName);
                     if (col.getJdbcType() == JdbcType.TIMESTAMP)
