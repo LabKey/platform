@@ -210,6 +210,7 @@ core/resources/schemas/dbscripts/postgresql/obsolete/test-0.00-1.00.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/test-0.00-12.10.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/test-13.10-13.20.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-0.00-14.10.sql -text
+core/resources/schemas/dbscripts/postgresql/prop-16.20-16.21.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-create.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-drop.sql -text
 core/resources/schemas/dbscripts/postgresql/test-0.00-13.20.sql -text
@@ -262,6 +263,7 @@ core/resources/schemas/dbscripts/sqlserver/obsolete/test-14.32-14.33.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-0.00-14.10.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-15.30-16.10.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-15.32-15.33.sql -text
+core/resources/schemas/dbscripts/sqlserver/prop-16.20-16.21.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-drop.sql -text
 core/resources/schemas/dbscripts/sqlserver/test-0.00-13.20.sql -text

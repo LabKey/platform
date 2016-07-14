@@ -188,7 +188,7 @@
             "<tr valign=top><td><code>.</code><td>Number<td>Yes<td>Decimal separator or monetary decimal separator</tr>" +
             "<tr valign=top class=\"labkey-alternate-row\"><td><code>-</code><td>Number<td>Yes<td>Minus sign</tr>" +
             "<tr valign=top><td><code>,</code><td>Number<td>Yes<td>Grouping separator</tr></table>";
-    String dateFormatHelp = "The format string for dates must be compatible with the format that the java class " +
+    String javaFormatDocs = "<br><br>The format string must be compatible with the format that the java class " +
             "<code>SimpleDateFormat</code> understands. For more information see the " +
             "<a href=\"" + DateUtil.getSimpleDateFormatDocumentationURL() + "\" target=\"blank\">java&nbsp;documentation</a>. " +
             "The following table has a partial guide to pattern symbols:<br/>" +
@@ -208,6 +208,8 @@
             "<tr class=\"labkey-alternate-row\"><td><code>k</code><td>Hour in day (1-24)<td><code>24</code></tr>" +
             "<tr><td><code>K</code><td>Hour in am/pm (0-11)<td><code>0</code></tr>" +
             "<tr class=\"labkey-alternate-row\"><td><code>h</code><td>Hour in am/pm (1-12)<td><code>12</code></tr></table>";
+    String dateFormatHelp = "This format is applied when displaying columns that are defined with a date-only data type or annotated with the \"Date\" meta type. Most standard LabKey columns use date-time data types (see below)." + javaFormatDocs;
+    String dateTimeFormatHelp = "This format is applied when displaying columns that are defined with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey columns use this format." + javaFormatDocs;
 %>
 <tr>
     <td colspan=2>Customize date and number formats (<%=text(bean.helpLink)%>)</td>
@@ -235,6 +237,10 @@
 <tr>
     <td class="labkey-form-label">Default display format for dates<%=PageFlowUtil.helpPopup("Date format", dateFormatHelp, true)%></td>
     <td><input type="text" name="defaultDateFormat" size="50" value="<%= h(laf.getDefaultDateFormat()) %>"></td>
+</tr>
+<tr>
+    <td class="labkey-form-label">Default display format for date-times<%=PageFlowUtil.helpPopup("Date-time format", dateTimeFormatHelp, true)%></td>
+    <td><input type="text" name="defaultDateTimeFormat" size="50" value="<%= h(laf.getDefaultDateTimeFormat()) %>"></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Default display format for numbers<%=PageFlowUtil.helpPopup("Number format", decimalFormatHelp, true)%></td>

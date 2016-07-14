@@ -55,7 +55,7 @@
         if (null == d || 0 == d.getProperties().size())
             countUndefined++;
     }
-    String dateFormat = DateUtil.getDateFormatString(c);
+    String dateTimeFormat = DateUtil.getDateTimeFormatString(c);
     String numberFormat = Formats.getNumberFormatString(c);
 %>
 <table>
@@ -127,7 +127,7 @@
 %>
 <labkey:form id="manageTypesForm" action="<%=h(buildURL(ManageTypesAction.class))%>" method="POST">
     <table>
-        <tr><td>Default date format:</td><td><%=h(StringUtils.trimToEmpty(dateFormat))%></td></tr>
+        <tr><td>Default date-time format:</td><td><%=h(StringUtils.trimToEmpty(dateTimeFormat))%></td></tr>
         <tr><td>Default number format:</td><td><%=h(StringUtils.trimToEmpty(numberFormat))%></td></tr>
         <tr><td colspan="2"><br>Default formats can be changed via the <%=textLink(name + " settings page", url)%></td></tr>
     </table>

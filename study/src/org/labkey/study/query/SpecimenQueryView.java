@@ -129,12 +129,6 @@ public class SpecimenQueryView extends BaseStudyQueryView
         {
             return ctx.getRow().get(getRequiredColumnAlias(columnName));
         }
-
-        public void prepareDisplayColumns(Container container)
-        {
-            super.prepareDisplayColumns(container);
-        }
-
     }
 
     private static class VialRestrictedDataRegion extends SpecimenDataRegion

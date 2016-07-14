@@ -2846,8 +2846,6 @@ public class ReportsController extends SpringActionController
 
             response.put("types", new JSONArray(types.values()));
 
-            String dateFormat = DateUtil.getDateFormatString(getContainer());
-
             //The purpose of this flag is so LABKEY.Query.getDataViews() can omit additional information only used to render the
             //webpart.  this also leaves flexibility to change that metadata
             if (form.includeMetadata())

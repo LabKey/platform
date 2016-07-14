@@ -67,7 +67,6 @@ import org.labkey.api.cache.CacheStats;
 import org.labkey.api.cache.TrackingCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
-import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Container.ContainerException;
@@ -83,7 +82,6 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
 import org.labkey.api.module.AllowedDuringUpgrade;
-import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
@@ -1268,27 +1266,27 @@ public class AdminController extends SpringActionController
         }
     }
 
-    public static interface FileManagementForm
+    public interface FileManagementForm
     {
-        public String getFolderRootPath();
+        String getFolderRootPath();
 
-        public void setFolderRootPath(String folderRootPath);
+        void setFolderRootPath(String folderRootPath);
 
-        public String getFileRootOption();
+        String getFileRootOption();
 
-        public void setFileRootOption(String fileRootOption);
+        void setFileRootOption(String fileRootOption);
 
-        public String getConfirmMessage();
+        String getConfirmMessage();
 
-        public void setConfirmMessage(String confirmMessage);
+        void setConfirmMessage(String confirmMessage);
 
-        public boolean isDisableFileSharing();
+        boolean isDisableFileSharing();
 
-        public boolean hasSiteDefaultRoot();
+        boolean hasSiteDefaultRoot();
 
-        public String[] getEnabledCloudStore();
+        String[] getEnabledCloudStore();
 
-        public void setEnabledCloudStore(String[] enabledCloudStore);
+        void setEnabledCloudStore(String[] enabledCloudStore);
     }
 
     public interface FolderSettingsForm
@@ -1298,15 +1296,20 @@ public class AdminController extends SpringActionController
         @SuppressWarnings("UnusedDeclaration")
         void setDefaultDateFormat(String defaultDateFormat);
 
+        String getDefaultDateTimeFormat();
+
+        @SuppressWarnings("UnusedDeclaration")
+        void setDefaultDateTimeFormat(String defaultDateTimeFormat);
+
         String getDefaultNumberFormat();
 
         @SuppressWarnings("UnusedDeclaration")
         void setDefaultNumberFormat(String defaultNumberFormat);
 
-        public boolean areRestrictedColumnsEnabled();
+        boolean areRestrictedColumnsEnabled();
 
         @SuppressWarnings("UnusedDeclaration")
-        public void setRestrictedColumnsEnabled(boolean restrictedColumnsEnabled);
+        void setRestrictedColumnsEnabled(boolean restrictedColumnsEnabled);
     }
 
     public static class ProjectSettingsForm extends SetupForm implements FileManagementForm, FolderSettingsForm
@@ -1330,6 +1333,7 @@ public class AdminController extends SpringActionController
         private String[] _enabledCloudStore;
         private String _dateParsingMode;
         private String _defaultDateFormat;
+        private String _defaultDateTimeFormat;
         private String _defaultNumberFormat;
         private boolean _restrictedColumnsEnabled;
         private String _customLogin;
@@ -1585,6 +1589,19 @@ public class AdminController extends SpringActionController
         public void setDefaultDateFormat(String defaultDateFormat)
         {
             _defaultDateFormat = defaultDateFormat;
+        }
+
+        @Override
+        public String getDefaultDateTimeFormat()
+        {
+            return _defaultDateTimeFormat;
+        }
+
+        @Override
+        @SuppressWarnings("UnusedDeclaration")
+        public void setDefaultDateTimeFormat(String defaultDateTimeFormat)
+        {
+            _defaultDateTimeFormat = defaultDateTimeFormat;
         }
 
         @Override

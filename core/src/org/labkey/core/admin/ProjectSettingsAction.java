@@ -572,6 +572,24 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
             }
         }
 
+        String defaultDateTimeFormat = StringUtils.trimToNull(form.getDefaultDateTimeFormat());
+        if (null == defaultDateTimeFormat)
+        {
+            props.clearDefaultDateTimeFormat();
+        }
+        else
+        {
+            try
+            {
+                props.setDefaultDateTimeFormat(defaultDateTimeFormat);
+            }
+            catch (IllegalArgumentException e)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "Invalid date time format: " + e.getMessage());
+                return false;
+            }
+        }
+
         String defaultNumberFormat = StringUtils.trimToNull(form.getDefaultNumberFormat());
         if (null == defaultNumberFormat)
         {

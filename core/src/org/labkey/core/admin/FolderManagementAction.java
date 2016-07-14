@@ -744,6 +744,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
         // default format settings
         private String _defaultDateFormat;
+        private String _defaultDateTimeFormat;
         private String _defaultNumberFormat;
         private boolean _restrictedColumnsEnabled;
 
@@ -1082,14 +1083,28 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             this.createSharedDatasets = createSharedDatasets;
         }
 
+        @Override
         public String getDefaultDateFormat()
         {
             return _defaultDateFormat;
         }
 
+        @Override
         public void setDefaultDateFormat(String defaultDateFormat)
         {
             _defaultDateFormat = defaultDateFormat;
+        }
+
+        @Override
+        public String getDefaultDateTimeFormat()
+        {
+            return _defaultDateTimeFormat;
+        }
+
+        @Override
+        public void setDefaultDateTimeFormat(String defaultDateTimeFormat)
+        {
+            _defaultDateTimeFormat = defaultDateTimeFormat;
         }
 
         public String getDefaultNumberFormat()
