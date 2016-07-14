@@ -436,6 +436,11 @@ public class SecurityManager
         {
             // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage
             String transformSessionId = PageFlowUtil.getCookieValue(request.getCookies(), TRANSFORM_SESSION_ID, null);
+            if (transformSessionId == null)
+            {
+                // Support as a GET or POST parameter as well, not just as a cookie
+                transformSessionId = request.getParameter(TRANSFORM_SESSION_ID);
+            }
             if (transformSessionId != null && TRANSFORM_SESSIONID_MAP.get(transformSessionId) != null)
             {
                 u = UserManager.getUser(TRANSFORM_SESSIONID_MAP.get(transformSessionId));
