@@ -21,6 +21,7 @@ import org.labkey.api.data.Container;
 import java.text.DecimalFormat;
 
 import static org.labkey.api.settings.LookAndFeelFolderProperties.DEFAULT_DATE_FORMAT;
+import static org.labkey.api.settings.LookAndFeelFolderProperties.DEFAULT_DATE_TIME_FORMAT;
 import static org.labkey.api.settings.LookAndFeelFolderProperties.DEFAULT_NUMBER_FORMAT;
 import static org.labkey.api.settings.LookAndFeelFolderProperties.RESTRICTED_COLUMNS_ENABLED;
 import static org.labkey.api.settings.LookAndFeelProperties.LOOK_AND_FEEL_SET_NAME;
@@ -69,10 +70,24 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
         storeStringValue(DEFAULT_DATE_FORMAT, defaultDateFormat);
     }
 
+    // Validate inside the set method, since this is called from multiple places
+    public void setDefaultDateTimeFormat(String defaultDateTimeFormat) throws IllegalArgumentException
+    {
+        // Check for legal format
+        FastDateFormat.getInstance(defaultDateTimeFormat);
+        storeStringValue(DEFAULT_DATE_TIME_FORMAT, defaultDateTimeFormat);
+    }
+
     // Allows clearing the property to allow inheriting of this property alone. Should make this more obvious and universal, via "inherit/override" checkboxes and highlighting in the UI
     public void clearDefaultDateFormat()
     {
         remove(DEFAULT_DATE_FORMAT);
+    }
+
+    // Allows clearing the property to allow inheriting of this property alone. Should make this more obvious and universal, via "inherit/override" checkboxes and highlighting in the UI
+    public void clearDefaultDateTimeFormat()
+    {
+        remove(DEFAULT_DATE_TIME_FORMAT);
     }
 
     // Convenience method to support import: validate and save just this property
@@ -80,6 +95,14 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
     {
         WriteableFolderLookAndFeelProperties props = LookAndFeelProperties.getWriteableFolderInstance(c);
         props.setDefaultDateFormat(defaultDateFormat);
+        props.save();
+    }
+
+    // Convenience method to support import: validate and save just this property
+    public static void saveDefaultDateTimeFormat(Container c, String defaultDateTimeFormat) throws IllegalArgumentException
+    {
+        WriteableFolderLookAndFeelProperties props = LookAndFeelProperties.getWriteableFolderInstance(c);
+        props.setDefaultDateTimeFormat(defaultDateTimeFormat);
         props.save();
     }
 

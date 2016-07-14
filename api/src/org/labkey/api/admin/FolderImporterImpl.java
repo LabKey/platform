@@ -35,12 +35,10 @@ public class FolderImporterImpl implements FolderImporter<FolderDocument.Folder>
 {
     private Collection<FolderImporter> _importers;
     private PipelineJob _job;
-    private boolean _usingVirtualFile = false;
 
     public FolderImporterImpl()
     {
         this(null);
-        _usingVirtualFile = true;
     }
 
     public FolderImporterImpl(@Nullable PipelineJob job)

@@ -106,9 +106,14 @@ public class FolderWriterImpl extends BaseFolderWriter
 
         // Ask LookAndFeelProperties for actual stored values (we don't want inherited values)
         LookAndFeelProperties props = LookAndFeelProperties.getInstance(ctx.getContainer());
+
         String defaultDateFormat = props.getDefaultDateFormatStored();
         if (null != defaultDateFormat)
             folderXml.setDefaultDateFormat(defaultDateFormat);
+
+        String defaultDateTimeFormat = props.getDefaultDateTimeFormatStored();
+        if (null != defaultDateTimeFormat)
+            folderXml.setDefaultDateTimeFormat(defaultDateTimeFormat);
 
         String defaultNumberFormat = props.getDefaultNumberFormatStored();
         if (null != defaultNumberFormat)

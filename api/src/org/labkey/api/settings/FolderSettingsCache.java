@@ -53,6 +53,11 @@ public class FolderSettingsCache
         return CACHE.get(c).getDefaultDateFormat();
     }
 
+    public static String getDefaultDateTimeFormat(Container c)
+    {
+        return CACHE.get(c).getDefaultDateTimeFormat();
+    }
+
     public static String getDefaultNumberFormat(Container c)
     {
         return CACHE.get(c).getDefaultNumberFormat();
@@ -76,6 +81,7 @@ public class FolderSettingsCache
     private static class FolderSettings
     {
         private final String _defaultDateFormat;
+        private final String _defaultDateTimeFormat;
         private final String _defaultNumberFormat;
         private final boolean _restrictedColumnsEnabled;
 
@@ -83,6 +89,7 @@ public class FolderSettingsCache
         {
             LookAndFeelProperties props = LookAndFeelProperties.getInstance(c);
             _defaultDateFormat = props.getDefaultDateFormat();
+            _defaultDateTimeFormat = props.getDefaultDateTimeFormat();
             _defaultNumberFormat = props.getDefaultNumberFormat();
             _restrictedColumnsEnabled = props.areRestrictedColumnsEnabled();
         }
@@ -95,6 +102,11 @@ public class FolderSettingsCache
         public String getDefaultDateFormat()
         {
             return _defaultDateFormat;
+        }
+
+        public String getDefaultDateTimeFormat()
+        {
+            return _defaultDateTimeFormat;
         }
 
         public boolean areRestrictedColumnsEnabled()

@@ -2464,10 +2464,11 @@ public class DataRegion extends AbstractDataRegion
 
             if (col.isDateTimeType())
             {
-                if (null == formatString || "Date".equalsIgnoreCase(formatString))
-                    dc.setFormatString(defaultDate);
-                else if ("DateTime".equalsIgnoreCase(formatString))
+                // TODO: More specific type checking here!
+                if (null == formatString || "DateTime".equalsIgnoreCase(formatString))
                     dc.setFormatString(defaultDateTime);
+                else if ("Date".equalsIgnoreCase(formatString))
+                    dc.setFormatString(defaultDate);
                 else if ("Time".equalsIgnoreCase(formatString))
                     dc.setFormatString(defaultTime);
             }

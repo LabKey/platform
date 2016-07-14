@@ -65,9 +65,6 @@ public class DateUtil
     private static final String ISO_DATE_TIME_FORMAT_STRING = ISO_DATE_FORMAT_STRING + " " + ISO_TIME_FORMAT_STRING;
     private static final String LONG_TIME_FORMAT_STRING = "HH:mm:ss";
 
-    @Deprecated
-    private static final String _standardDateTimeFormatString = ISO_DATE_TIME_FORMAT_STRING;
-
     /**
      * GregorianCalendar is expensive because it calls computeTime() in setTimeInMillis()
      * (which is called in the constructor)
@@ -782,7 +779,7 @@ validNum:       {
     // Lenient parsing using a variety of standard formats
     public static long parseDateTime(Container c, String s)
     {
-        String displayFormat = getDateFormatString(c);  // TODO: Pass this into parseDate() as a bonus format?
+        String displayFormat = getDateTimeFormatString(c);  // TODO: Pass this into parseDate() as a bonus format?
         MonthDayOption monthDayOption = LookAndFeelProperties.getInstance(c).getDateParsingMode().getDayMonth();
 
         return parseDateTime(s, monthDayOption);
@@ -933,7 +930,7 @@ validNum:       {
 
     public static String getStandardDateTimeFormatString()
     {
-        return _standardDateTimeFormatString;
+        return ISO_DATE_TIME_FORMAT_STRING;
     }
 
 
@@ -1015,10 +1012,9 @@ validNum:       {
 
 
     /** Get the default date/time format string set in this Container (or one of its parents) */
-    // TODO: In the future, let administrators explicitly set a full date time format in look & feel settings. For now, just tack on a hard-coded time portion.
     public static String getDateTimeFormatString(Container c)
     {
-        return getDateFormatString(c) + " " + ISO_TIME_FORMAT_STRING;
+        return FolderSettingsCache.getDefaultDateTimeFormat(c);
     }
 
 
