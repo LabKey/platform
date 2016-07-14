@@ -149,6 +149,10 @@
                     {
                         var val = row[columnName].displayValue || row[columnName].value;
 
+                        // Issue 27151: convert null to "[Blank]"
+                        if (val == null)
+                            val = '[Blank]';
+
                         if (!categoryCountMap[val])
                             categoryCountMap[val] = 0;
 
@@ -221,7 +225,10 @@
                                 fill: '#64A1C6'
                             },
                             xAes: function(row) {
-                                return row[columnName] ? row[columnName].displayValue || row[columnName].value : '';
+                                var val = row[columnName] ? row[columnName].displayValue || row[columnName].value : '';
+
+                                // Issue 27151: convert null to "[Blank]"
+                                return val == null ? '[Blank]' : val;
                             }
                         });
 
