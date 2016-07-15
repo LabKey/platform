@@ -638,8 +638,8 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return full + query;
     }
 
-    // JSPs must override addClientDependencies() to add their own dependencies. TODO: Make final in 16.3
-    public LinkedHashSet<ClientDependency> getClientDependencies()
+    // JSPs must override addClientDependencies(ClientDependencies) to add their own dependencies.
+    public final LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> dependencies = new LinkedHashSet<>();
         ClientDependencies clientDependencies = new ClientDependencies(dependencies);
