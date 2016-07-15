@@ -22,7 +22,7 @@ import org.labkey.remoteapi.CommandException;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
-import org.labkey.test.tests.IssuesTest;
+import org.labkey.test.tests.issues.IssuesTest;
 import org.labkey.test.tests.study.StudyTest;
 import org.labkey.test.util.IssuesHelper;
 import org.labkey.test.util.PortalHelper;
