@@ -110,7 +110,11 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         if (hasNameAsIdCol())
             return result;
 
-        result.add(getIdCol1());
+        DomainProperty idCol1 = getIdCol1();
+        if (idCol1 != null)
+        {
+            result.add(idCol1);
+        }
         DomainProperty idCol2 = getIdCol2();
         if (idCol2 != null)
         {
