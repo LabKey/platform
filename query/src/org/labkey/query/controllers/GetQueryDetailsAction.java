@@ -24,6 +24,7 @@ import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -132,6 +133,9 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
 
         resp.put("title", tinfo.getTitle());
         resp.put("titleColumn", tinfo.getTitleColumn());
+
+        resp.put("importUrlDisabled", AbstractTableInfo.LINK_DISABLER_ACTION_URL.equals(tinfo.getImportDataURL(container)));
+        resp.put("insertUrlDisabled", AbstractTableInfo.LINK_DISABLER_ACTION_URL.equals(tinfo.getInsertURL(container)));
 
         //8649: let the table provide the view data url
         if (schema instanceof UserSchema)
