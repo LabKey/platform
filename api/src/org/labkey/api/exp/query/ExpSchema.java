@@ -72,7 +72,7 @@ public class ExpSchema extends AbstractExpSchema
         {
             public TableInfo createTable(ExpSchema expSchema, String queryName)
             {
-                SamplesSchema schema = new SamplesSchema(expSchema.getPath(), expSchema.getUser(), expSchema.getContainer(), null);
+                SamplesSchema schema = new SamplesSchema(expSchema.getPath(), expSchema.getUser(), expSchema.getContainer());
                 schema.setContainerFilter(expSchema._containerFilter);
                 ExpMaterialTable result = schema.getSampleTable(null);
                 return result;
@@ -277,7 +277,7 @@ public class ExpSchema extends AbstractExpSchema
 
         // CONSIDER: also support hidden "samples" schema ?
         if (name.equals(NestedSchemas.materials.name()))
-            return new SamplesSchema(SchemaKey.fromParts(getName(), NestedSchemas.materials.name()), getUser(), getContainer(), null);
+            return new SamplesSchema(SchemaKey.fromParts(getName(), NestedSchemas.materials.name()), getUser(), getContainer());
 
         if (name.equals(NestedSchemas.data.name()))
             return new DataClassUserSchema(getContainer(), getUser());

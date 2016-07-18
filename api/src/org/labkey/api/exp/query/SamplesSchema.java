@@ -56,36 +56,27 @@ public class SamplesSchema extends AbstractExpSchema
             @Override
             public boolean isAvailable(DefaultSchema schema, Module module)
             {
-                // createSchema must check if the Samples schema is available since it passes the sample set map as a constructor argument
+                // The 'samples' schema is always available, but will be hidden if there are no SampleSets
                 return true;
             }
 
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
-                Map<String, ExpSampleSet> map = getSampleSetMap(schema.getContainer(), schema.getUser());
-                if (map.isEmpty())
-                    return null;
-                return new SamplesSchema(schema.getUser(), schema.getContainer(), map);
+                return new SamplesSchema(schema.getUser(), schema.getContainer());
             }
         });
     }
 
     public SamplesSchema(User user, Container container)
     {
-        this(user, container, null);
+        this(SchemaKey.fromParts(SCHEMA_NAME), user, container);
     }
 
-    private Map<String, ExpSampleSet> _sampleSetMap;
+    private Map<String, ExpSampleSet> _sampleSetMap = null;
 
-    private SamplesSchema(User user, Container container, Map<String, ExpSampleSet> sampleSetMap)
-    {
-        this(SchemaKey.fromParts(SCHEMA_NAME), user, container, sampleSetMap);
-    }
-
-    /*package*/ SamplesSchema(SchemaKey path, User user, Container container, Map<String, ExpSampleSet> sampleSetMap)
+    /*package*/ SamplesSchema(SchemaKey path, User user, Container container)
     {
         super(path, SCHEMA_DESCR, user, container, ExperimentService.get().getSchema());
-        _sampleSetMap = sampleSetMap;
     }
 
     protected Map<String, ExpSampleSet> getSampleSets()
@@ -95,6 +86,12 @@ public class SamplesSchema extends AbstractExpSchema
             _sampleSetMap = getSampleSetMap(getContainer(), getUser());
         }
         return _sampleSetMap;
+    }
+
+    @Override
+    public boolean isHidden()
+    {
+        return getSampleSets().isEmpty();
     }
 
     public Set<String> getTableNames()
