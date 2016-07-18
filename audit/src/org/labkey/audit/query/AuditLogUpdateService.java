@@ -31,7 +31,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 
 import java.sql.SQLException;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -84,7 +84,10 @@ public class AuditLogUpdateService extends AbstractQueryUpdateService
         event = AuditLogService.get().addEvent(user, event);
         try
         {
-            return getRow(user, container, Collections.singletonMap("RowId", event.getRowId()));
+            Map<String, Object> keys = new HashMap<>();
+            keys.put("RowId", event.getRowId());
+            keys.put("EventType", event.getEventType());
+            return getRow(user, container, keys);
         }
         catch (InvalidKeyException e)
         {
