@@ -131,6 +131,9 @@
 				</ns:fk>
 			</ns:column>
 			<ns:column columnName="Type">
+				<ns:displayColumnFactory>
+					<ns:className>NOLOOKUP</ns:className>
+				</ns:displayColumnFactory>
 				<ns:columnTitle>Type</ns:columnTitle>
 				<ns:inputType>text</ns:inputType>
                 <ns:displayWidth>75</ns:displayWidth>
@@ -139,6 +142,9 @@
 				<ns:isUserEditable>true</ns:isUserEditable>
 			</ns:column>
 			<ns:column columnName="Area">
+				<ns:displayColumnFactory>
+					<ns:className>NOLOOKUP</ns:className>
+				</ns:displayColumnFactory>
 				<ns:columnTitle>Area</ns:columnTitle>
 				<ns:inputType>text</ns:inputType>
 				<ns:displayWidth>75</ns:displayWidth>
@@ -147,6 +153,9 @@
 				<ns:isUserEditable>true</ns:isUserEditable>
 			</ns:column>
 			<ns:column columnName="Priority">
+				<ns:displayColumnFactory>
+					<ns:className>NOLOOKUP</ns:className>
+				</ns:displayColumnFactory>
 				<ns:columnTitle>Pri</ns:columnTitle>
 				<ns:inputType>text</ns:inputType>
 				<ns:displayWidth>35</ns:displayWidth>
@@ -156,6 +165,9 @@
 				<ns:isUserEditable>true</ns:isUserEditable>
 			</ns:column>
 			<ns:column columnName="Milestone">
+				<ns:displayColumnFactory>
+					<ns:className>NOLOOKUP</ns:className>
+				</ns:displayColumnFactory>
 				<ns:columnTitle>Milestone</ns:columnTitle>
 				<ns:inputType>text</ns:inputType>
 				<ns:displayWidth>70</ns:displayWidth>

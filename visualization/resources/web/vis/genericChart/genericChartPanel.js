@@ -1081,10 +1081,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         };
 
         if (this.dataRegionName) {
-            wpConfig.dataRegionName = this.dataRegionName;
+            wpConfig.dataRegionName = this.dataRegionName + '-chartdata';
         }
 
         wp = new LABKEY.QueryWebPart(wpConfig);
+
         // save the dataregion
         this.panelDataRegionName = wp.dataRegionName;
 

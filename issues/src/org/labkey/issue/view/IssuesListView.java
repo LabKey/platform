@@ -3,11 +3,14 @@ package org.labkey.issue.view;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.Sort;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.Portal;
@@ -33,6 +36,21 @@ public class IssuesListView extends VBox
 
         QueryView queryView = schema.createView(getViewContext(), settings, null);
 
+        // check for any legacy custom view parameters, and if so display a warning
+        if (settings.getViewName() == null)
+        {
+            QuerySettings legacySettings = schema.getSettings(getViewContext(), "Issues", issueDefName);
+            if (legacySettings.getViewName() != null)
+            {
+                ActionURL url = getViewContext().cloneActionURL().
+                        deleteParameter(legacySettings.param(QueryParam.viewName)).
+                        addParameter(settings.param(QueryParam.viewName), legacySettings.getViewName());
+
+                HtmlView warning = new HtmlView("<span class='labkey-error'>The specified URL contains an obsolete viewName parameter and is being ignored. " +
+                        "Please update your bookmark to this new URL : <a target='blank' href='" + PageFlowUtil.filter(url.getLocalURIString()) + "'>" + PageFlowUtil.filter(url.getURIString()) + "</a></span>");
+                addView(warning);
+            }
+        }
         // add the header for buttons and views
         addView(new JspView<>("/org/labkey/issue/view/list.jsp", issueDefName));
         addView(queryView);

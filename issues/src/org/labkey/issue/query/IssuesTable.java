@@ -148,6 +148,17 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         ContainerForeignKey.initColumn(folder, _userSchema);
         addColumn(folder);
 
+        // issue 27105, 27106 use modified, modifiedBy, createdBy from issues.issues table until a more permanent
+        // solution to import these fields to the provisioned tables can be made in 16.3
+        addWrapColumn("Modified", _rootTable.getColumn("modified"));
+        ColumnInfo modifiedBy = new AliasedColumn(this, "ModifiedBy", _rootTable.getColumn("ModifiedBy"));
+        UserIdForeignKey.initColumn(modifiedBy);
+        addColumn(modifiedBy);
+
+        ColumnInfo createdBy = new AliasedColumn(this, "CreatedBy", _rootTable.getColumn("CreatedBy"));
+        UserIdForeignKey.initColumn(createdBy);
+        addColumn(createdBy);
+
         ColumnInfo related = addColumn(new AliasedColumn(this, "Related", issueIdColumn));
         related.setKeyField(false);
 
@@ -226,7 +237,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
             if (colNameMap.containsKey(colName))
                 colName = colNameMap.get(colName);
 
-            if (colName.equalsIgnoreCase(_extension.getLookupColumnName()) || colName.equalsIgnoreCase("container"))
+            if (colName.equalsIgnoreCase(_extension.getLookupColumnName()) || ignoreColumn(colName))
                 continue;
 
             ColumnInfo extensionCol = _extension.addExtensionColumn(col, colName);
@@ -282,6 +293,14 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
                 }
             }
         }
+    }
+
+    private boolean ignoreColumn(String colName)
+    {
+        return colName.equalsIgnoreCase("container") ||
+                colName.equalsIgnoreCase("modified") ||
+                colName.equalsIgnoreCase("modifiedBy") ||
+                colName.equalsIgnoreCase("createdBy");
     }
 
     private boolean isUserId(String colName)
@@ -636,7 +655,9 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
             NamedObjectList objectList = new NamedObjectList();
             Integer issueId = ctx.get(FieldKey.fromParts("IssueId"), Integer.class);
             String issueDefName = ctx.get(FieldKey.fromParts("IssueDefName"), String.class);
+            Integer assignedTo = ctx.get(FieldKey.fromParts("AssignedTo"), Integer.class);
             Issue issue = null;
+            boolean hasAssignedTo = false;
 
             if (issueId != null)
             {
@@ -645,8 +666,16 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
 
             for (User user : IssueManager.getAssignedToList(ctx.getContainer(), issueDefName, issue))
             {
+                if (assignedTo != null && !hasAssignedTo && user.getUserId() == assignedTo)
+                    hasAssignedTo = true;
+
                 objectList.put(new SimpleNamedObject(String.valueOf(user.getUserId()), user.getDisplayName(_schema.getUser())));
             }
+
+            // make sure an entry is ensured for the current assigned to user
+            if (assignedTo != null && !hasAssignedTo)
+                objectList.put(new SimpleNamedObject(String.valueOf(assignedTo), UserManager.getDisplayName(assignedTo, _schema.getUser())));
+
             return objectList;
         }
     }

@@ -13,9 +13,21 @@ body, div, td, table, img, form, input, select, .gwt-TextBox
     line-height: 1.25;
 }
 
+h1, h2, h3, h4
+{
+    font-weight: normal;
+    font-family: 'Roboto-Bold', 'Arial-Bold', 'Helvetica-Bold', sans-serif;
+}
+
 th
 {
     font-weight: normal;
+    font-family: 'Roboto', arial, helvetica, sans-serif;
+    font-size: 14px;
+    margin: 0;
+    color: #000000;
+    letter-spacing: .3px;
+    line-height: 1.25;
 }
 
 .x-btn, .x4-btn {

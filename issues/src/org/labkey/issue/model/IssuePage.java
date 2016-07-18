@@ -30,12 +30,16 @@ import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -57,6 +61,7 @@ import org.springframework.web.servlet.mvc.Controller;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -300,6 +305,32 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                     {
                         row.put(entry.getKey().getName(), entry.getValue());
                     }
+                }
+            }
+
+            // issue 27109 : need to add additional bindings to the render context so display values for lookup columns
+            // don't render as broken lookups
+            TableInfo table = getIssueTable(context);
+            QueryDefinition queryDefinition = table.getUserSchema().getQueryDefForTable(_issueListDef.getName());
+            if (queryDefinition != null)
+            {
+                List<ColumnInfo> selectCols = RenderContext.getSelectColumns(queryDefinition.getDisplayColumns(null, table), table);
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("IssueId"), _issue.getIssueId());
+
+                try (Results results = new TableSelector(table, selectCols, filter, null).getResults())
+                {
+                    if (results.next())
+                    {
+                        Map<FieldKey, Object> rowMap = results.getFieldKeyRowMap();
+                        for (Map.Entry<FieldKey, Object> entry : rowMap.entrySet())
+                        {
+                            row.put(entry.getKey().encode(), entry.getValue());
+                        }
+                    }
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeException(e);
                 }
             }
             row.putAll(_issue.getExtraProperties());

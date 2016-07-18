@@ -27,25 +27,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.AttachmentParentEntity;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DbSequence;
-import org.labkey.api.data.DbSequenceManager;
-import org.labkey.api.data.LookupColumn;
-import org.labkey.api.data.MultiValuedForeignKey;
-import org.labkey.api.data.Parameter;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableExtension;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.*;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
@@ -229,6 +211,35 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                 aliasCol.setCalculated(false);
                 aliasCol.setNullable(true);
                 aliasCol.setRequired(false);
+                aliasCol.setDisplayColumnFactory(colInfo -> {
+                    DataColumn dataColumn = new DataColumn(colInfo);
+                    dataColumn.setInputType("text");
+                    return new MultiValuedDisplayColumn(dataColumn, true)
+                    {
+                        @Override
+                        public Object getInputValue(RenderContext ctx)
+                        {
+                            Object value =  super.getInputValue(ctx);
+                            StringBuilder sb = new StringBuilder();
+                            if (value instanceof List)
+                            {
+                                String delim = "";
+                                for (Object item : (List)value)
+                                {
+                                    if (item != null)
+                                    {
+                                        String name = new TableSelector(ExperimentService.get().getTinfoAlias(), Collections.singleton("Name")).getObject(item, String.class);
+
+                                        sb.append(delim);
+                                        sb.append(name);
+                                        delim = ",";
+                                    }
+                                }
+                            }
+                            return sb.toString();
+                        }
+                    };
+                });
                 return aliasCol;
 
             case Inputs:
@@ -1280,40 +1291,19 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                 if (row.get("Alias") instanceof String[])
                 {
                     String[] aa = (String[]) row.get("Alias");
-                    if (aa.length > 0)
+                    for (String alias : aa)
                     {
-                        for (int x = 0; x < aa.length; x++)
-                        {
-                            if (NumberUtils.isDigits(aa[x]))
-                            {
-                                params.add(NumberUtils.toInt(aa[x]));
-                            }
-                            else
-                            {
-                                aliases = aliases + "," + aa[x];
-                            }
-                        }
+                        if (NumberUtils.isDigits(alias))
+                            params.add(NumberUtils.toInt(alias));
+                        else
+                            parseAliasString(aliasNames, alias);
                     }
                 }
                 // LABKEY.Query.updateRows passes here a JSON String of an array of strings where each string is an alias
                 else
                 {
                     aliases = (String) row.get("Alias");
-                    if (aliases.startsWith("[") && aliases.endsWith("]"))
-                    {
-                        aliases = aliases.substring(1, aliases.length() - 1);
-                    }
-                    if (null != aliases)
-                    {
-                        aliases = aliases.replace("\"", "");
-                    }
-                    if (aliases.contains(","))
-                    {
-                        String[] parts = aliases.split(",");
-                        aliasNames.addAll(Arrays.asList(parts));
-                    }
-                    else
-                        aliasNames.add(aliases);
+                    parseAliasString(aliasNames, aliases);
                 }
                 params.addAll(getAliasIds(user, aliasNames));
                 deleteAliases(filter);
@@ -1335,6 +1325,28 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             }
 
             return ret;
+        }
+
+        private void parseAliasString(List<String> aliasNames, String aliases)
+        {
+            if (aliases != null)
+            {
+                if (aliases.startsWith("[") && aliases.endsWith("]"))
+                {
+                    aliases = aliases.substring(1, aliases.length() - 1);
+                }
+                if (null != aliases)
+                {
+                    aliases = aliases.replace("\"", "");
+                }
+                if (aliases.contains(","))
+                {
+                    String[] parts = aliases.split(",");
+                    aliasNames.addAll(Arrays.asList(parts));
+                }
+                else
+                    aliasNames.add(aliases);
+            }
         }
 
         @Override

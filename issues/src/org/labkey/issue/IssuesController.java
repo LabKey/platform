@@ -444,48 +444,61 @@ public class IssuesController extends SpringActionController
         @Override
         public ModelAndView getView(IssuesController.IssuesForm form, boolean reshow, BindException errors) throws Exception
         {
-            _issue = new Issue();
-            _issue.setIssueDefName(form.getIssueDefName());
+            IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), form.getIssueDefName());
+            HttpView view;
 
-            // convert AssignedTo/Email to AssignedTo/DisplayName: old bookmarks
-            // reference Email, which is no longer displayed.
-            ActionURL url = getViewContext().cloneActionURL();
-            String[] emailFilters = url.getKeysByPrefix(form.getIssueDefName() + ".AssignedTo/Email");
-            if (emailFilters != null && emailFilters.length > 0)
+            if (issueListDef != null)
             {
-                for (String emailFilter : emailFilters)
-                    url.deleteParameter(emailFilter);
-                return HttpView.redirect(url);
+                _issue = new Issue();
+                _issue.setIssueDefName(form.getIssueDefName());
+
+                // convert AssignedTo/Email to AssignedTo/DisplayName: old bookmarks
+                // reference Email, which is no longer displayed.
+                ActionURL url = getViewContext().cloneActionURL();
+                String[] emailFilters = url.getKeysByPrefix(form.getIssueDefName() + ".AssignedTo/Email");
+                if (emailFilters != null && emailFilters.length > 0)
+                {
+                    for (String emailFilter : emailFilters)
+                        url.deleteParameter(emailFilter);
+                    return HttpView.redirect(url);
+                }
+
+                Set<String> issueIds = DataRegionSelection.getSelected(getViewContext(), false);
+                if (issueIds.isEmpty())
+                {
+                    issueIds = new LinkedHashSet<>();
+
+                    UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), IssuesQuerySchema.SCHEMA_NAME);
+                    TableInfo table = userSchema.getTable(form.getIssueDefName());
+                    if (table != null)
+                    {
+                        List<String> ids = new TableSelector(table, Collections.singleton(table.getColumn(FieldKey.fromParts("issueId"))),
+                                null, null).getArrayList(String.class);
+
+                        issueIds.addAll(ids);
+                    }
+                }
+
+                IssuePage page = new IssuePage(getContainer(), getUser());
+                page.setPrint(isPrint());
+                view = new JspView<>("/org/labkey/issue/view/detailList.jsp", page);
+
+                page.setMode(DataRegion.MODE_DETAILS);
+                page.setIssueIds(issueIds);
+                page.setCustomColumnConfiguration(getColumnConfiguration());
+                page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
+                page.setDataRegionSelectionKey(getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY));
+                page.setIssueListDef(getIssueListDef());
+
+                getPageConfig().setNoIndex(); // We want crawlers to index the single issue detail page, no the multiple page
+                getPageConfig().setNoFollow();
+            }
+            else
+            {
+                view = new HtmlView("<span class='labkey-error'>Invalid or missing issue list name specified</span><p>");
             }
 
-            Set<String> issueIds = DataRegionSelection.getSelected(getViewContext(), false);
-            if (issueIds.isEmpty())
-            {
-                issueIds = new LinkedHashSet<>();
-
-                UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), IssuesQuerySchema.SCHEMA_NAME);
-                TableInfo table = userSchema.getTable(form.getIssueDefName());
-                List<String> ids = new TableSelector(table, Collections.singleton(table.getColumn(FieldKey.fromParts("issueId"))),
-                        null, null).getArrayList(String.class);
-
-                issueIds.addAll(ids);
-            }
-
-            IssuePage page = new IssuePage(getContainer(), getUser());
-            page.setPrint(isPrint());
-            JspView v = new JspView<>("/org/labkey/issue/view/detailList.jsp", page);
-
-            page.setMode(DataRegion.MODE_DETAILS);
-            page.setIssueIds(issueIds);
-            page.setCustomColumnConfiguration(getColumnConfiguration());
-            page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
-            page.setDataRegionSelectionKey(DataRegionSelection.getSelectionKeyFromRequest(getViewContext()));
-            page.setIssueListDef(getIssueListDef());
-
-            getPageConfig().setNoIndex(); // We want crawlers to index the single issue detail page, no the multiple page
-            getPageConfig().setNoFollow();
-
-            return v;
+            return view;
         }
 
         @Override
@@ -699,8 +712,6 @@ public class IssuesController extends SpringActionController
             ChangeSummary changeSummary;
             try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
             {
-                detailsUrl = new DetailsAction(issue, getViewContext()).getURL();
-
                 if (InsertAction.class.equals(form.getAction()))
                 {
                     // for new issues, the original is always the default.
@@ -722,6 +733,7 @@ public class IssuesController extends SpringActionController
 
                 changeSummary = ChangeSummary.createChangeSummary(getIssueListDef(), issue, prevIssue, duplicateOf, getContainer(), user, form.getAction(), form.getComment(), getColumnConfiguration(), getUser());
                 IssueManager.saveIssue(user, c, issue);
+                detailsUrl = new DetailsAction(issue, getViewContext()).getURL();
                 AttachmentService.get().addAttachments(changeSummary.getComment(), getAttachmentFileList(), user);
 
                 if (duplicateOf != null)

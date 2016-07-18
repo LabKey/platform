@@ -131,7 +131,7 @@ public class Issue extends Entity implements Serializable, Cloneable
         duplicate = null;
 
         if (resolvedBy != null && beforeView)
-            assignedTo = IssueManager.validateAssignedTo(c, resolvedBy);
+            syncAssignedTo(IssueManager.validateAssignedTo(c, resolvedBy));
 
         resolvedBy = null;
     }
@@ -139,7 +139,7 @@ public class Issue extends Entity implements Serializable, Cloneable
     public void beforeUpdate(Container c)
     {
         // Make sure assigned to user still has permission
-        assignedTo = IssueManager.validateAssignedTo(c, assignedTo);
+        syncAssignedTo(IssueManager.validateAssignedTo(c, assignedTo));
     }
 
 
@@ -150,7 +150,7 @@ public class Issue extends Entity implements Serializable, Cloneable
         resolvedBy = u.getUserId(); // Current user
         resolved = new Date();      // Current date
 
-        assignedTo = IssueManager.validateAssignedTo(c, getCreatedBy());
+        syncAssignedTo(IssueManager.validateAssignedTo(c, getCreatedBy()));
         if (getTitle().startsWith("**"))
         {
             setTitle(getTitle().substring(2));
@@ -178,9 +178,14 @@ public class Issue extends Entity implements Serializable, Cloneable
         // UNDONE: assignedTo is not nullable in database
         // UNDONE: let application enforce non-null for open/resolved bugs
         // UNDONE: currently AssignedTo list defaults to Guest (user 0)
-        assignedTo = 0;
+        syncAssignedTo(0);
     }
 
+    private void syncAssignedTo(Integer assignedTo)
+    {
+        this.assignedTo = assignedTo;
+        _extraProperties.put("assignedTo", this.assignedTo);
+    }
 
     public int getIssueId()
     {
@@ -226,7 +231,7 @@ public class Issue extends Entity implements Serializable, Cloneable
     public void setAssignedTo(Integer assignedTo)
     {
         if (null != assignedTo && assignedTo == 0) assignedTo = null;
-        this.assignedTo = assignedTo;
+        syncAssignedTo(assignedTo);
     }
 
 
@@ -591,6 +596,11 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     public String getIssueDefName()
     {
+        if (_issueDefName == null && _issueDefId != null)
+        {
+            IssueListDef issueListDef = IssueManager.getIssueListDef(_issueDefId);
+            _issueDefName = issueListDef != null ? issueListDef.getName() : null;
+        }
         return _issueDefName;
     }
 

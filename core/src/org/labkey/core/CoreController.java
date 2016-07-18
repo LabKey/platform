@@ -73,6 +73,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.CSRF;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
@@ -796,7 +797,8 @@ public class CoreController extends SpringActionController
 
     // Requires at least delete permission. Will check for admin if needed
     @RequiresPermission(DeletePermission.class)
-    public class DeleteContainerAction extends ApiAction<SimpleApiJsonForm>
+    @CSRF
+    public class DeleteContainerAction extends MutatingApiAction<SimpleApiJsonForm>
     {
         private Container target;
 

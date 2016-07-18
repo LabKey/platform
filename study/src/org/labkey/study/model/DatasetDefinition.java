@@ -2161,6 +2161,13 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         TableInfo tinfo = getStorageTableInfo();
         SimpleFilter filter = new SimpleFilter();
         filter.addWhereClause((demographic ?"ParticipantId":"LSID") + " IN (" + sbIn + ")", new Object[]{});
+        if (isShared())
+        {
+            Container rowsContainer = getContainer();
+            if (getDataSharingEnum() != DataSharing.NONE)
+                rowsContainer = getDefinitionContainer();
+            filter.addCondition(new FieldKey(null,"Container"), rowsContainer);
+        }
 
         new TableSelector(tinfo, filter, null).forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
         {

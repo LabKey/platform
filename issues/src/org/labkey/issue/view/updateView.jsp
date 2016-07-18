@@ -27,7 +27,6 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.issue.ColumnTypeEnum" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
 <%@ page import="org.labkey.issue.model.Issue" %>
 <%@ page import="org.labkey.issue.model.IssueListDef" %>
@@ -135,7 +134,48 @@
     {
         return filterRe(e, input, /^[\d,\s]+$/);
     }
+
+    (function($){
+
+        var column1 = [];
+        var column2 = [];
+        var startColOneIdx = 11;
+        var startColTwoIdx = 21;
+
+        <%
+            for (DomainProperty prop : column1Props)
+            {%>
+            column1.push(<%=q(prop.getName().toLowerCase())%>);<%
+            }
+            for (DomainProperty prop : column2Props)
+            {%>
+            column2.push(<%=q(prop.getName().toLowerCase())%>);<%
+            }
+        %>
+
+        LABKEY.Utils.onReady(function(){
+            $("input[name='title']").attr("tabindex", "1");
+            $("select[name='assignedTo']").attr("tabindex", "2");
+            $("select[name='type']").attr("tabindex", "3");
+            $("select[name='area']").attr("tabindex", "4");
+            $("select[name='priority']").attr("tabindex", "5");
+            $("select[name='milestone']").attr("tabindex", "6");
+            $("textarea[name='comment']").attr("tabindex", "7");
+            $("select[name='resolution']").attr("tabindex", "8");
+            $("input[name='duplicate']").attr("tabindex", "9");
+            $("input[name='related']").attr("tabindex", "10");
+
+            for (var i=0; i < column1.length; i++){
+                $("[name=" + column1[i] + "]").attr("tabindex", startColOneIdx++);
+            }
+
+            for (i=0; i < column2.length; i++){
+                $("[name=" + column2[i] + "]").attr("tabindex", startColTwoIdx++);
+            }
+        });
+    })(jQuery);
 </script>
+
 <labkey:form method="POST" onsubmit="LABKEY.setSubmit(true); return true;" enctype="multipart/form-data" action="<%=IssuesController.issueURL(c, bean.getAction())%>">
 
     <table><%
@@ -167,7 +207,7 @@
             <td class="labkey-form-label">Issue <%=issue.getIssueId()%></td><%
                 }%>
             <td colspan="3">
-                <%=text(bean.writeInput("title", issue.getTitle(), "id=title tabindex=\"1\" style=\"width:100%;\""))%>
+                <%=text(bean.writeInput("title", issue.getTitle(), "id=title style=\"width:100%;\""))%>
             </td></tr>
         <tr>
             <td class="labkey-form-label"><%=text(bean.getLabel("Status", true))%></td><td><%=h(issue.getStatus())%></td>
@@ -186,12 +226,12 @@
                             if("Duplicate".equals(issue.getResolution()))
                             {
                                 //Enabled duplicate field.%>
-                        <%=text(bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), "type=\"number\" min=\"1\" tabindex=\"2\""))%><%
+                        <%=text(bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), "type=\"number\" min=\"1\""))%><%
                         }
                         else
                         {
                             //Disabled duplicate field.%>
-                        <%=text(bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), "tabindex=\"2\" disabled"))%><%
+                        <%=text(bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), "disabled"))%><%
                             }
                         %>
                         <script type="text/javascript">
@@ -229,7 +269,7 @@
                     </td></tr><%
                     }%>
                     <tr><td class="labkey-form-label"><%=text(bean.getLabel("Related", false))%></td><td>
-                                <%=text(bean.writeInput("related", issue.getRelated() == null ? null : issue.getRelated(), "id=related tabindex=\"2\""))%>
+                                <%=text(bean.writeInput("related", issue.getRelated() == null ? null : issue.getRelated(), "id=related"))%>
 
                         <script type="text/javascript">
                             Ext4.EventManager.on(document.getElementsByName('related')[0], 'keypress', filterCommaSepNumber);
@@ -260,7 +300,7 @@
                             }%>
                     </td>
                     <td>
-                        <labkey:autoCompleteTextArea name="notifyList" id="notifyList" url="<%=h(completionUrl)%>" rows="4" tabindex="3" cols="40" value="<%=h(bean.getNotifyListString(false))%>"/>
+                        <labkey:autoCompleteTextArea name="notifyList" id="notifyList" url="<%=h(completionUrl)%>" rows="4" tabindex="20" cols="40" value="<%=h(bean.getNotifyListString(false))%>"/>
                     </td>
                 </tr><%
             }
@@ -282,10 +322,10 @@
         }%>
         <tr><td class="labkey-form-label"><%=bean.getLabel("Comment", bean.isInsert())%></td>
             <td colspan="3">
-                <textarea id="comment" name="comment" cols="150" rows="20" style="width: 99%;" onchange="LABKEY.setDirty(true);return true;" tabindex="1"><%=h(bean.getBody())%></textarea>
+                <textarea id="comment" name="comment" cols="150" rows="20" style="width: 99%;" onchange="LABKEY.setDirty(true);return true;"><%=h(bean.getBody())%></textarea>
             </td></tr>
         <tr>
-            <td align="right" valign="top"><%= button("Save").submit(true).attributes("tabindex=\"5\" name=\"" + bean.getAction() + "\"").disableOnClick(true) %><%= PageFlowUtil.button("Cancel").href(cancelURL).attributes("tabIndex=\"5\"") %></td>
+            <td align="right" valign="top"><%= button("Save").submit(true).attributes("name=\"" + bean.getAction() + "\"").disableOnClick(true) %><%= PageFlowUtil.button("Cancel").href(cancelURL)%></td>
         </tr>
     </table>
 
