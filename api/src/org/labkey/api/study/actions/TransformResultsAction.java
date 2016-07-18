@@ -38,15 +38,14 @@ public class TransformResultsAction extends BaseAssayAction<TransformResultsActi
     @Override
     public ModelAndView getView(TransformResultsForm form, BindException errors) throws Exception
     {
-
-        if (null != TsvDataExchangeHandler.workingDirectory)
+        File transformDir = TsvDataExchangeHandler.getWorkingDirectory(form, getUser());
+        if (null != transformDir)
         {
-            File transformFile = new File(TsvDataExchangeHandler.workingDirectory);
-            String path = transformFile.getParent() + File.separator + form.getUploadAttemptId() + File.separator + form.getName();
-            if(URIUtil.isDescendant(FileUtil.resolveFile(new File(transformFile.getParent())).toURI(), FileUtil.resolveFile(new File(path)).toURI()))
+            File downloadFile = new File(transformDir, form.getName());
+            if(URIUtil.isDescendant(FileUtil.resolveFile(new File(transformDir.getParent())).toURI(), FileUtil.resolveFile(downloadFile).toURI()))
             {
                 HttpServletResponse response = getViewContext().getResponse();
-                PageFlowUtil.streamFile(response, new File(path), true);
+                PageFlowUtil.streamFile(response, downloadFile, true);
             }
         }
 
@@ -56,7 +55,7 @@ public class TransformResultsAction extends BaseAssayAction<TransformResultsActi
     public static class TransformResultsForm extends ProtocolIdForm
     {
         private String _name;
-        private String _uploadAttemptId;
+        private String _uploadAttemptID;
 
         public String getName()
         {
@@ -68,14 +67,14 @@ public class TransformResultsAction extends BaseAssayAction<TransformResultsActi
             _name = name;
         }
 
-        public String getUploadAttemptId()
+        public String getUploadAttemptID()
         {
-            return _uploadAttemptId;
+            return _uploadAttemptID;
         }
 
-        public void setUploadAttemptId(String uploadAttemptId)
+        public void setUploadAttemptID(String uploadAttemptId)
         {
-            _uploadAttemptId = uploadAttemptId;
+            _uploadAttemptID = uploadAttemptId;
         }
     }
 }

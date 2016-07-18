@@ -959,6 +959,12 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
         var showHidden = this.showHiddenFields,
             view = this.fieldsTree.getView();
 
+        // collapse hidden nodes before hide them so that none-hidden children nodes of a hidden node won't stay visible
+        this.fieldsTree.getRootNode().cascadeBy(function(node) {
+            if (!showHidden && node.get('hidden')) {
+                    node.collapse();
+            }
+        });
         // show hidden fields in fieldsTree
         this.fieldsTree.getRootNode().cascadeBy(function(node) {
             if (node.isRoot()) {

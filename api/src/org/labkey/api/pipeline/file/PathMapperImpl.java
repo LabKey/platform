@@ -259,6 +259,10 @@ public class PathMapperImpl implements PathMapper
             String localURI = StringUtils.trimToNull((String) pairs.get("localURI"));
             String remoteURI = StringUtils.trimToNull((String) pairs.get("remoteURI"));
 
+            //Ignore blank rows, could throw an error here -- but lets be flexible
+            if (localURI == null && remoteURI == null)
+                continue;
+
             // CONSIDER: CustomApiForm.bindProperties() should accept an Errors object or allow throwing BindException
             if (localURI == null)
             {
@@ -289,6 +293,12 @@ public class PathMapperImpl implements PathMapper
                 remoteURI = remoteURI.concat("/");
 
             map.put(remoteURI, localURI);
+        }
+
+        if (map.size() == 0)
+        {
+            handleError("Paths", "No file shares enabled", errors);
+            return new PathMapperImpl(errors);
         }
 
         boolean localIgnoreCase = json.optBoolean("localIgnoreCase", false);

@@ -87,7 +87,10 @@ public class DataColumn extends DisplayColumn
         _inputType = _boundColumn.getInputType();
         try
         {
-            if (null != _displayColumn && _boundColumn != _displayColumn && null != _boundColumn.getFk() && null != _boundColumn.getFkTableInfo())
+            ColumnInfo inputDisplayColumn = _displayColumn;
+            if (!withLookups)
+                inputDisplayColumn = getDisplayField(col, true);
+            if (null != inputDisplayColumn && _boundColumn != inputDisplayColumn && null != _boundColumn.getFk() && null != _boundColumn.getFkTableInfo())
             {
                 if (_boundColumn.getFk() instanceof MultiValuedForeignKey)
                     _inputType = "select.multiple";

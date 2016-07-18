@@ -21,18 +21,9 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.*;
 import org.labkey.api.defaults.DefaultValueService;
-import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.ObjectProperty;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -41,18 +32,12 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.qc.DefaultTransformResult;
 import org.labkey.api.qc.TransformResult;
+import org.labkey.api.qc.TsvDataExchangeHandler;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.study.assay.AbstractAssayProvider;
-import org.labkey.api.study.assay.AssayDataCollector;
-import org.labkey.api.study.assay.AssayFileWriter;
-import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.api.study.assay.AssayRunUploadContext;
-import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.study.assay.ParticipantVisitResolverType;
+import org.labkey.api.study.assay.*;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -61,13 +46,7 @@ import org.springframework.validation.BindException;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * User: brittp
@@ -413,7 +392,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     {
         _successfulUploadComplete = successfulUploadComplete;
     }
-    
+
     public String getUploadAttemptID()
     {
         return _uploadAttemptID;
@@ -590,6 +569,8 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         {
             _uploadedData = collector.uploadComplete(this, run);
         }
+
+        TsvDataExchangeHandler.removeWorkingDirectory((AssayRunUploadContext)this);
     }
 
     @Override

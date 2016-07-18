@@ -23,11 +23,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.RedirectException;
-import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.ViewForm;
+import org.labkey.api.view.*;
 
 /**
  * User: brittp
@@ -42,9 +38,18 @@ public class ProtocolIdForm extends ViewForm
     /** If no rowId is specified, we attempt to find the assay definition based on name */
     private Integer _rowId;
     private String _assayName;
-
+    private String _uploadAttemptID;
     private String _providerName;
 
+    public String getUploadAttemptID()
+    {
+        return _uploadAttemptID;
+    }
+
+    public void setUploadAttemptID(String uploadAttemptId)
+    {
+        _uploadAttemptID = uploadAttemptId;
+    }
 
     public String getProviderName()
     {

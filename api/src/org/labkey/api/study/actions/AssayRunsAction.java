@@ -16,8 +16,10 @@
 
 package org.labkey.api.study.actions;
 
+import org.apache.commons.io.FileUtils;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.qc.TsvDataExchangeHandler;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.assay.AssayProvider;
@@ -29,6 +31,8 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
+
+import java.io.File;
 
 /**
  * User: brittp
@@ -78,6 +82,15 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.AssayRunsFo
 
         ModelAndView resultsView = provider.createRunsView(context, _protocol);
         setHelpTopic(new HelpTopic("workWithAssayData#runs"));
+
+        // If canceling out of transform warning, cleanup files
+        if(summaryForm.getUploadAttemptID() != null)
+        {
+            File tempDir = TsvDataExchangeHandler.removeWorkingDirectory(summaryForm, getUser());
+            if(null != tempDir && tempDir.exists())
+                FileUtils.deleteDirectory(tempDir);
+        }
+
         if (resultsView != null)
             return resultsView;
         return new AssayRunsView(_protocol, false, errors);

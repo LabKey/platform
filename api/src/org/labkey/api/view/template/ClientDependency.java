@@ -297,7 +297,7 @@ public class ClientDependency
         else if (_filePath != null)
             return getCacheKey(_filePath.toString(), _mode);
 
-        return getCacheKey("", _mode);
+        return getCacheKey(_uri, _mode);
     }
 
     private void processScript(Path filePath)
