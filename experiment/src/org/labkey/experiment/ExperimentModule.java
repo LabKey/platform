@@ -131,6 +131,11 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         QueryService.get().addCompareType(new ChildOfCompareType());
         QueryService.get().addCompareType(new ParentOfCompareType());
+
+        PropertyService.get().registerValidatorKind(new RegExValidator());
+        PropertyService.get().registerValidatorKind(new RangeValidator());
+        PropertyService.get().registerValidatorKind(new LookupValidator());
+        PropertyService.get().registerValidatorKind(new LengthValidator());
     }
 
     public boolean hasScripts()
@@ -293,11 +298,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         SystemProperty.registerProperties();
         TypesController.registerAdminConsoleLinks();
-
-        PropertyService.get().registerValidatorKind(new RegExValidator());
-        PropertyService.get().registerValidatorKind(new RangeValidator());
-        PropertyService.get().registerValidatorKind(new LookupValidator());
-        PropertyService.get().registerValidatorKind(new LengthValidator());
 
         FolderSerializationRegistry folderRegistry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
         if (null != folderRegistry)
