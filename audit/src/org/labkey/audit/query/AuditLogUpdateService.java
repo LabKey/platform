@@ -21,10 +21,12 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.ClientApiAuditProvider;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.DuplicateKeyException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
@@ -48,7 +50,11 @@ public class AuditLogUpdateService extends AbstractQueryUpdateService
     @Override
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException
     {
-        return new TableSelector(getQueryTable()).getObject(keys.get("RowId"), Map.class);
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("RowId"), keys.get("RowId"));
+        if (keys.get("EventType") != null)
+            filter.addCondition(FieldKey.fromParts("EventType"), keys.get("EventType"));
+        return new TableSelector(getQueryTable(), filter, null).getMap();
     }
 
     @Override
