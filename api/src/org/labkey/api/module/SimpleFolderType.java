@@ -66,7 +66,7 @@ public class SimpleFolderType extends MultiPortalFolderType
 
     private SimpleFolderType(Resource folderTypeFile, FolderType folderType)
     {
-        super(folderType.getName(), folderType.getDescription(), null, null, null, null);
+        super(folderType.getName(), folderType.getDescription(), null, null, null, null, folderType.getStartURL());
 
         FolderType type = parseFile(folderTypeFile);
         _name = type.getName();

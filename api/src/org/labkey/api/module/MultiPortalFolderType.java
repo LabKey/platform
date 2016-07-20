@@ -28,6 +28,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.NavTree;
@@ -53,11 +54,18 @@ import java.util.Set;
 public abstract class MultiPortalFolderType extends DefaultFolderType
 {
     private String _activePortalPage = null;
+    private  String _startUrl = null;
     protected FolderTab _defaultTab = null;
 
     public MultiPortalFolderType(String name, String description, @Nullable List<Portal.WebPart> requiredParts, @Nullable List<Portal.WebPart> preferredParts, Set<Module> activeModules, Module defaultModule)
     {
         super(name, description, requiredParts, preferredParts, activeModules, defaultModule);
+    }
+
+    public MultiPortalFolderType(String name, String description, @Nullable List<Portal.WebPart> requiredParts, @Nullable List<Portal.WebPart> preferredParts, Set<Module> activeModules, Module defaultModule, String startUrl)
+    {
+        super(name, description, requiredParts, preferredParts, activeModules, defaultModule);
+        _startUrl = startUrl;
     }
 
     @Override
@@ -230,15 +238,26 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
     {
         List<Portal.PortalPage> tabs = Portal.getTabPages(c);
 
-        for (Portal.PortalPage tab : tabs)
+
+        // if startURL for this folderType specified in the folderType.xml use that
+        if (_startUrl != null && !_startUrl.equals(""))
         {
-            FolderTab folderTab = findTab(tab.getPageId());
-            if (!tab.isHidden() && null != folderTab && folderTab.isVisible(c, user) && hasPermission(folderTab, c, user))
-            {
-                return folderTab.getURL(c, user);
-            }
+            String encodedContainerPath = PageFlowUtil.encode(c.getPath());
+            return new ActionURL(encodedContainerPath + "/" + _startUrl);
         }
-        return super.getStartURL(c, user);
+        // otherwise get the startURL from the tab configs
+        else
+        {
+            for (Portal.PortalPage tab : tabs)
+            {
+                FolderTab folderTab = findTab(tab.getPageId());
+                if (!tab.isHidden() && null != folderTab && folderTab.isVisible(c, user) && hasPermission(folderTab, c, user))
+                {
+                    return folderTab.getURL(c, user);
+                }
+            }
+            return super.getStartURL(c, user);
+        }
     }
 
 
