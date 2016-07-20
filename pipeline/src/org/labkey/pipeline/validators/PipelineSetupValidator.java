@@ -16,7 +16,7 @@
 package org.labkey.pipeline.validators;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.admin.sitevalidation.SiteValidationProviderImpl;
+import org.labkey.api.admin.sitevalidation.SiteValidationProvider;
 import org.labkey.api.admin.sitevalidation.SiteValidationResult;
 import org.labkey.api.admin.sitevalidation.SiteValidationResultList;
 import org.labkey.api.data.Container;
@@ -34,7 +34,7 @@ import java.util.List;
  *
  * Validates pipeline root for container.
  */
-public class PipelineSetupValidator extends SiteValidationProviderImpl
+public class PipelineSetupValidator implements SiteValidationProvider
 {
     @Override
     public String getName()

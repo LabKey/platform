@@ -15,6 +15,7 @@
  */
 package org.labkey.api.admin.sitevalidation;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
@@ -35,8 +36,26 @@ public interface SiteValidationProvider extends Comparable<SiteValidationProvide
      * validator is module-dependent and that module isn't enabled in this container.
      *
      */
-    boolean shouldRun(Container c, User u);
-    boolean isSiteScope();
+    default boolean shouldRun(Container c, User u)
+    {
+        return true;
+    }
+
+    /**
+     * Return tru to indicate this is a site-wide validator.
+     * False to indicate the validator should only run at container scope
+     */
+    default boolean isSiteScope()
+    {
+        return true;
+    }
+
+    @Override
+    default int compareTo(@NotNull SiteValidationProvider p)
+    {
+        return getName().compareToIgnoreCase(p.getName());
+    }
+
     @Nullable
     SiteValidationResultList runValidation(Container c, User u);
 }

@@ -15,7 +15,7 @@
  */
 package org.labkey.core.security.validators;
 
-import org.labkey.api.admin.sitevalidation.SiteValidationProviderImpl;
+import org.labkey.api.admin.sitevalidation.SiteValidationProvider;
 import org.labkey.api.admin.sitevalidation.SiteValidationResultList;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
@@ -33,7 +33,7 @@ import java.util.Set;
  *
  * Validates appropriate container level permissions for the guest user.
  */
-public class PermissionsValidator extends SiteValidationProviderImpl
+public class PermissionsValidator implements SiteValidationProvider
 {
     @Override
     public String getName()
