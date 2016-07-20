@@ -5,14 +5,14 @@ import org.labkey.test.WebDriverWrapper;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.components.html.Input;
 import org.labkey.test.pages.issues.InsertPage;
-import org.labkey.test.selenium.Select;
+import org.labkey.test.components.html.Select;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Maps;
 import org.labkey.test.util.mothership.MothershipHelper;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
-import static org.labkey.test.selenium.Select.Select;
+import static org.labkey.test.components.html.Select.Select;
 
 public class StackTraceDetailsPage extends BaseMothershipPage
 {
