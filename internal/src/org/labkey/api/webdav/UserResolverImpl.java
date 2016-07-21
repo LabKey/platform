@@ -180,7 +180,7 @@ public class UserResolverImpl implements WebdavResolver
 
         public synchronized List<String> getWebFoldersNames()
         {
-            File fileRoot = UserManager.getHomeDirectory(HttpView.getRootContext().getUser()).get();
+            File fileRoot = (File)UserManager.getHomeDirectory(HttpView.getRootContext().getUser()).get();
             Path relPath = getRootPath().relativize(getPath());
 
             File file = new File(fileRoot, relPath.toString());
@@ -196,10 +196,10 @@ public class UserResolverImpl implements WebdavResolver
         {
             Path relPath = getRootPath().relativize(getPath()).append(child);
 
-            Result<File> r = UserManager.getHomeDirectory(HttpView.getRootContext().getUser());
+            Result r = UserManager.getHomeDirectory(HttpView.getRootContext().getUser());
             if (!r.success())
                 return new WebdavResolverImpl.UnboundResource(relPath);
-            File fileRoot = r.get();
+            File fileRoot = (File)r.get();
 
             for(String myChild:getWebFoldersNames())
             {

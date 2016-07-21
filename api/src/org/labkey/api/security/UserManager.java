@@ -335,17 +335,17 @@ public class UserManager
         return (null != user);
     }
 
-    public static Result<File> getHomeDirectory(User user)
+    public static Result getHomeDirectory(User user)
     {
         if (!AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_USER_FOLDERS))
-            Result.failure("User Folders are not enabled.");
+            return Result.failure("User Folders are not enabled.");
 
         if (user.isGuest()) //TODO: better exception type?
-            Result.failure("User folders are unavailable for Guest users");
+            return Result.failure("User folders are unavailable for Guest users");
 
         File userFilesRoot = AppProps.getInstance().getUserFilesRoot();
         if(userFilesRoot == null)
-            Result.failure("User files root is not set");
+            return Result.failure("User files root is not set");
 
         File userFolder = new File(userFilesRoot, String.valueOf(user.getUserId()));
         userFolder.mkdirs();
