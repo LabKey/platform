@@ -722,7 +722,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
             return exeRel;
         }
 
-        return getPathToTool(installPath, exeRel, true);
+        return getPathToTool(installPath, exeRel, expectExecutable);
     }
 
     @Override
