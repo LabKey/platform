@@ -297,6 +297,9 @@ public class PropertyStorageSpec
         return size;
     }
 
+    /**
+     * The value size or -1 for max size.
+     */
     public PropertyStorageSpec setSize(int size)
     {
         _setSize(size, jdbcType);
