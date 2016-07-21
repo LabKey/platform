@@ -24,8 +24,29 @@ import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ConnectionWrapper;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.InClauseGenerator;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MetadataSqlSelector;
+import org.labkey.api.data.ParameterMarkerInClauseGenerator;
+import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.Selector.ForEachBlock;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.StopIteratingException;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableChange;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TempTableInClauseGenerator;
+import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.data.dialect.JdbcHelper;
@@ -1248,7 +1269,7 @@ class PostgreSql91Dialect extends SqlDialect
         colSpec.add(sqlTypeNameFromSqlType(prop));
 
         //Apply size and precision to varchar and Decimal types
-        if (prop.getJdbcType().sqlType == Types.VARCHAR && !prop.isEntityId() && prop.getSize() <= SqlDialect.MAX_VARCHAR_SIZE)
+        if (prop.getJdbcType().sqlType == Types.VARCHAR && !prop.isEntityId() && prop.getSize() != -1 && prop.getSize() <= SqlDialect.MAX_VARCHAR_SIZE)
             colSpec.add("(" + prop.getSize() + ")");
         else if (prop.getJdbcType() == JdbcType.DECIMAL)
             colSpec.add("(15,4)");

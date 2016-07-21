@@ -1444,8 +1444,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
         if (prop.getJdbcType().sqlType == Types.VARCHAR && !prop.isEntityId())
         {
-            //If size greater than Allowed size, change to Max
-            if (prop.getSize() > SqlDialect.MAX_VARCHAR_SIZE)
+            // If size is -1 or is greater than allowed size, change to Max
+            if (prop.getSize() == -1 || prop.getSize() > SqlDialect.MAX_VARCHAR_SIZE)
             {
                 colSpec.add("(MAX)");
             }
