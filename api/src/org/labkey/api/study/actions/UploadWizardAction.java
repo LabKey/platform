@@ -196,11 +196,10 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         else
         {
             // if a return url param was specified in the url then return the user to that
-            // for example a param like: &returnUrl=%2Flabkey%2Fbiologics%2Fbio0715r%2Fapp.view%3F
-            String returnURL = form.getReturnUrl();
-            if (form.getReturnUrl() != null)
+            // for  example a param like: &returnUrl=%2Flabkey%2Fbiologics%2Fbio0715r%2Fapp.view%3F
+            if (form != null && form.getReturnUrl() != null)
             {
-                returnActionURL= new ActionURL(returnURL);
+                returnActionURL= new ActionURL(form.getReturnUrl());
             }
             else
             {
@@ -331,7 +330,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         bbar.setStyle(ButtonBar.Style.separateButtons);
         addNextButton(bbar);
         addResetButton(runForm, insertView, bbar);
-        addCancelButton(bbar);
+        addCancelButton(bbar, runForm.getReturnUrl());
         insertView.getDataRegion().setButtonBar(bbar, DataRegion.MODE_INSERT);
 
         insertView.setTitle("Batch Properties");
@@ -366,6 +365,21 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     protected void addCancelButton(ButtonBar bbar)
     {
         ActionButton cancelButton = new ActionButton("Cancel", getSummaryLink(_protocol));
+        bbar.add(cancelButton);
+    }
+
+    protected void addCancelButton(ButtonBar bbar, String returnURL)
+    {
+        ActionURL link;
+        if (returnURL != null && !returnURL.equals(""))
+        {
+            link = new ActionURL(returnURL);
+        }
+        else
+        {
+            link = getSummaryLink(_protocol);
+        }
+        ActionButton cancelButton = new ActionButton("Cancel", link);
         bbar.add(cancelButton);
     }
 
@@ -443,7 +457,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         ButtonBar bbar = new ButtonBar();
         bbar.setStyle(ButtonBar.Style.separateButtons);
         addRunActionButtons(newRunForm, insertView, bbar);
-        addCancelButton(bbar);
+        addCancelButton(bbar, newRunForm.getReturnUrl());
 
         insertView.getDataRegion().setButtonBar(bbar, DataRegion.MODE_INSERT);
         insertView.setTitle("Run Properties");

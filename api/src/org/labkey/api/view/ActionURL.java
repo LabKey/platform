@@ -394,6 +394,7 @@ public class ActionURL extends URLHelper implements Cloneable
 
         setPath(path);
         setRawQuery(q);
+        setFragment(uri.getFragment());
     }
 
 
