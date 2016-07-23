@@ -449,7 +449,7 @@ public abstract class SimpleTaskFactory extends CommandTaskImpl.Factory
             {
                 // If the user included an extension and the matched path has a FileType, check the suffix matches.
                 if (keyExt != null && !keyExt.equals(existing.getType().getDefaultSuffix()))
-                    throw new IllegalArgumentException("File replacement '${" + key + "}' extension doesn't match exepcted file type: " + existing.getType());
+                    throw new IllegalArgumentException("File replacement '${" + key + "}' extension doesn't match expected file type: " + existing.getType());
             }
 //            else
 //            {
