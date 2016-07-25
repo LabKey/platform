@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.zip.GZIPInputStream;
 
 /**
  * Users of FastaLoader implementations can simply iterate the loader itself (if all they want is a stream of Ts) or
@@ -76,7 +77,7 @@ public abstract class FastaLoader<T> implements Iterable<T>
             try
             {
                 // Let tika figure out the Charset encoding used in the file
-                _reader = new AutoDetectReader(new FileInputStream(_fastaFile));
+                _reader = new AutoDetectReader(_fastaFile.getName().toLowerCase().endsWith(".gz") ? new GZIPInputStream(new FileInputStream(_fastaFile)): new FileInputStream(_fastaFile));
 
                 String line = getLine();
 
