@@ -21,6 +21,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
+    @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("query/browser");

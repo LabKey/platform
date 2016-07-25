@@ -42,6 +42,7 @@
     completionUrl.addParameter("groupId", bean.group.getUserId());
 %>
 <%!
+    @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("Ext4");

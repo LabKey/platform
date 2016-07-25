@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
+    @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("dataviews");

@@ -29,6 +29,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     // TODO: --Ext3-- This should be declared as part of the included views
+    @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("Ext3");

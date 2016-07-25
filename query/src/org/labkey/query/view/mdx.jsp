@@ -24,6 +24,7 @@
     OlapController.OlapForm form = (OlapController.OlapForm)HttpView.currentModel();
 %>
 <%!
+    @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("Ext4");

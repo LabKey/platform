@@ -26,6 +26,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
+    @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
         //Need to include the Helper for a use of the form panel configuration.

@@ -23,6 +23,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     // TODO: This doesn't currently load when used in a TabStripView.java -- need to bootstrap these view dependencies
+    @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("clientapi/ext4");

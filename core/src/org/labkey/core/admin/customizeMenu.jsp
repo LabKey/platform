@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.core.admin.CustomizeMenuForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
+    @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("clientapi/ext3");

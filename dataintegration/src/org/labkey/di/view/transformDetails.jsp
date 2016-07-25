@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.di.view.DataIntegrationController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
+    @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("clientapi/ext3");

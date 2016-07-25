@@ -31,6 +31,7 @@
 <%@ page import="java.util.LinkedList" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
+    @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("clientapi/ext4");

@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
+    @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
         //Need to include the Util for a use of the form panel configuration.

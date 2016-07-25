@@ -26,12 +26,13 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
+    @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
-      dependencies.add("Ext4ClientApi"); // needed for labkey-combo
-      dependencies.add("/extWidgets/IconPanel.js");
-      dependencies.add("extWidgets/IconPanel.css");
-  }
+        dependencies.add("Ext4ClientApi"); // needed for labkey-combo
+        dependencies.add("/extWidgets/IconPanel.js");
+        dependencies.add("extWidgets/IconPanel.css");
+    }
 %>
 <%
     JspView<Portal.WebPart> me = (JspView) HttpView.currentView();

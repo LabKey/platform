@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.query.reports.ReportsController.AttachmentReportForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
+    @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("dataviews");

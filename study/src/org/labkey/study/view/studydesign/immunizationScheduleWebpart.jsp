@@ -35,6 +35,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
+    @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("study/StudyVaccineDesign.js");

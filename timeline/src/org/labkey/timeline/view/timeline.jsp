@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.timeline.TimelineSettings" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
+    @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("Ext3");
