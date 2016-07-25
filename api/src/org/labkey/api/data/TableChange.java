@@ -53,6 +53,7 @@ public class TableChange
 
     private Collection<Index> _indices = new LinkedHashSet<>();
     private Collection<PropertyStorageSpec.ForeignKey> _foreignKeys = Collections.emptySet();
+    private Collection<Constraint> _constraints;
 
     /** In most cases, domain knows the storage table name **/
     public TableChange(Domain domain, ChangeType changeType)
@@ -127,6 +128,16 @@ public class TableChange
     public String getTableName()
     {
         return _tableName;
+    }
+
+    public Collection<Constraint> getConstraints()
+    {
+        return _constraints;
+    }
+
+    public void setConstraints(Collection<Constraint> constraints)
+    {
+        _constraints = constraints;
     }
 
     public Collection<PropertyStorageSpec> getColumns()
@@ -236,6 +247,8 @@ public class TableChange
         RenameColumns,
         DropIndices,
         AddIndices,
-        ResizeColumns
+        ResizeColumns,
+        DropConstraints,
+        AddConstraints
     }
 }

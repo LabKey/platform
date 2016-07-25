@@ -270,6 +270,24 @@ public class StorageProvisioner
         change.execute();
     }
 
+    public static void addOrDropConstraints(Domain domain, Collection<Constraint> constraints, boolean toAdd)
+    {
+        DomainKind kind = domain.getDomainKind();
+        DbScope scope = kind.getScope();
+
+        assert scope.isTransactionActive() : "should be in a transaction with propertydescriptor changes";
+
+        if (domain.getStorageTableName() == null)
+        {
+            throw new IllegalStateException("No storage table name set for domain: " + domain.getTypeURI());
+        }
+
+        TableChange change = new TableChange(domain, (toAdd?ChangeType.AddConstraints:ChangeType.DropConstraints));
+        change.setConstraints(constraints);
+
+        change.execute();
+    }
+
     public static void dropMvIndicator(DomainProperty... props)
     {
         assert (props.length > 0);
