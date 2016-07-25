@@ -1029,6 +1029,12 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             case ResizeColumns:
                 sql.addAll(getResizeColumnStatement(change));
                 break;
+            case DropConstraints:
+                sql.addAll(getDropConstraintsStatement(change));
+                break;
+            case AddConstraints:
+                sql.addAll(getAddConstraintsStatement(change));
+                break;
         }
 
         return sql;
@@ -1406,6 +1412,24 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         }
 
         return String.format("ALTER TABLE %s DROP COLUMN %s", change.getSchemaName() + "." + change.getTableName(), StringUtils.join(sqlParts, ",\n"));
+    }
+
+    private List<String> getDropConstraintsStatement(TableChange change)
+    {
+        List<String> statements = change.getConstraints().stream().map(constraint -> String.format("ALTER TABLE %s DROP CONSTRAINT %s",
+                change.getSchemaName() + "." + change.getTableName(), constraint.getName())).collect(Collectors.toList());
+
+        return statements;
+    }
+
+    private List<String> getAddConstraintsStatement(TableChange change)
+    {
+        List<String> statements = change.getConstraints().stream().map(constraint ->
+                String.format("ALTER TABLE %s ADD CONSTRAINT %s %s (%s)",
+                change.getSchemaName() + "." + change.getTableName(), constraint.getName(), constraint.getType(),
+                StringUtils.join(constraint.getColumns(), ","))).collect(Collectors.toList());
+
+        return statements;
     }
 
     private List<String> getAddColumnsStatements(TableChange change)

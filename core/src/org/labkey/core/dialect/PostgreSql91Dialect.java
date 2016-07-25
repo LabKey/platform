@@ -88,6 +88,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * User: arauch
@@ -1066,6 +1067,12 @@ class PostgreSql91Dialect extends SqlDialect
             case ResizeColumns:
                 sql.add(getResizeColumnStatement(change));
                 break;
+            case DropConstraints:
+                sql.addAll(getDropConstraintsStatement(change));
+                break;
+            case AddConstraints:
+                sql.addAll(getAddConstraintsStatement(change));
+                break;
         }
 
         return sql;
@@ -1176,6 +1183,24 @@ class PostgreSql91Dialect extends SqlDialect
                     change.getTableName() + "_pk",
                     makePropertyIdentifier(pkColumn)));
         }
+
+        return statements;
+    }
+
+    private List<String> getDropConstraintsStatement(TableChange change)
+    {
+        List<String> statements = change.getConstraints().stream().map(constraint -> String.format("ALTER TABLE %s DROP CONSTRAINT %s",
+                change.getSchemaName() + "." + change.getTableName(), constraint.getName())).collect(Collectors.toList());
+
+        return statements;
+    }
+
+    private List<String> getAddConstraintsStatement(TableChange change)
+    {
+        List<String> statements = change.getConstraints().stream().map(constraint ->
+                String.format("ALTER TABLE %s ADD CONSTRAINT %s %s (%s)",
+                        change.getSchemaName() + "." + change.getTableName(), constraint.getName(), constraint.getType(),
+                        StringUtils.join(constraint.getColumns(), ","))).collect(Collectors.toList());
 
         return statements;
     }
