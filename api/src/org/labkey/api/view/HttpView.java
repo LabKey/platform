@@ -732,13 +732,12 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
             }
         }
 
-        //necesary for hbox, vbox
+        // necessary for hbox, vbox
         if (_view != null && _view instanceof HttpView)
         {
             List<ModelAndView> views = ((HttpView) _view).getViews();
             if (views != null)
             {
-
                 for (ModelAndView v : views)
                 {
                     if (v instanceof HttpView)
