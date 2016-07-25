@@ -1263,17 +1263,6 @@ public class VisualizationController extends SpringActionController
             }
             else
                 return new HtmlView("No renderer for specified type: " + PageFlowUtil.filter(form.getRenderType()));
-/*
-            Report report = getReport(form);
-
-            if (report != null)
-            {
-                String title = "Discuss report - " + report.getDescriptor().getReportName();
-                DiscussionService.Service service = DiscussionService.get();
-                HttpView discussion = service.getDisussionArea(getViewContext(), report.getEntityId(), getViewContext().getActionURL(), title, true, false);
-                view.addView(discussion);
-            }
-*/
         }
 
         @Override
@@ -1429,7 +1418,8 @@ public class VisualizationController extends SpringActionController
         public ApiResponse execute(ColumnListForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            HashSet<String> columns = new HashSet<>();
+            HashSet<String> baseColumns = new HashSet<>();
+            HashSet<String> additionalColumns = new HashSet<>();
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName());
 
            if(schema != null)
@@ -1454,7 +1444,7 @@ public class VisualizationController extends SpringActionController
                         if (form.isIncludeCohort())
                         {
                             FieldKey cohort = FieldKey.fromParts(study.getSubjectColumnName(), "Cohort");
-                            columns.add(cohort.toString());
+                            additionalColumns.add(cohort.toString());
                         }
 
                         if (form.isIncludeParticipantCategory())
@@ -1462,7 +1452,7 @@ public class VisualizationController extends SpringActionController
                             for (ParticipantCategory category : study.getParticipantCategories(getUser()))
                             {
                                 FieldKey cohort = FieldKey.fromParts(study.getSubjectColumnName(), category.getLabel());
-                                columns.add(cohort.toString());
+                                additionalColumns.add(cohort.toString());
                             }
                         }
                     }
@@ -1474,12 +1464,19 @@ public class VisualizationController extends SpringActionController
                         ColumnInfo colInfo = column.getColumnInfo();
                         if (colInfo != null)
                         {
-                            columns.add(colInfo.getFieldKey().toString());
+                            baseColumns.add(colInfo.getFieldKey().toString());
                         }
                     }
                 }
             }
 
+            response.put("base", baseColumns);
+            response.put("additional", additionalColumns);
+
+            // keep for backwards compatibility
+            HashSet<String> columns = new HashSet<>();
+            columns.addAll(baseColumns);
+            columns.addAll(additionalColumns);
             response.put("columns", columns);
 
             return response;

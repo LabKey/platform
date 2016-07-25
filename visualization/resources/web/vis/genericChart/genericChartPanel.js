@@ -49,10 +49,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         params  : params,
                         success : function(response){
                             var o = Ext4.decode(response.responseText);
-                            if (this.savedColumns)
-                                this.initialColumnList = o.columns.concat(this.savedColumns);
-                            else
-                                this.initialColumnList = o.columns;
+                            // TODO switch to using base/additional columns (issue 23224)
+                            this.initialColumnList = o.columns;
 
                             this.subject = o.subject;
                             this.requestData();
@@ -111,32 +109,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (this.autoColumnYName) {
             fk = LABKEY.FieldKey.fromParts(this.autoColumnYName);
             this.autoColumnYName = fk.toString();
-        }
-
-        var typeConvert = function(value, record){
-            // We take the displayFieldJSONType if available because if the column is a look up the record.type will
-            // always be INT. The displayFieldJSONType is the actual type of the lookup.
-
-            if(record.data.displayFieldJsonType){
-                return record.data.displayFieldJsonType;
-            }
-            return record.data.type;
-        };
-
-        if (!Ext4.ModelManager.isRegistered('MeasureModel')) {
-            Ext4.define('MeasureModel',{
-                extend: 'Ext.data.Model',
-                fields: [
-                    {name: 'label', mapping: 'shortCaption', type: 'string'},
-                    {name: 'name', type: 'string'},
-                    {name: 'hidden', type: 'boolean'},
-                    {name: 'measure', type: 'boolean'},
-                    {name: 'dimension', type: 'boolean'},
-                    {name: 'type'},
-                    {name: 'displayFieldJsonType'},
-                    {name: 'normalizedType', convert: typeConvert}
-                ]
-            });
         }
 
         this.chartDefinitionChanged = new Ext4.util.DelayedTask(function(){
@@ -221,6 +193,23 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         return this.dataPanel;
     },
 
+    getChartTypeBtn : function()
+    {
+        if (!this.chartTypeBtn)
+        {
+            this.chartTypeBtn = Ext4.create('Ext.button.Button', {
+                text: 'Chart Type',
+                handler: function()
+                {
+                    this.getChartTypeWindow().setVisible(this.getChartTypeWindow().isHidden());
+                },
+                scope: this
+            });
+        }
+
+        return this.chartTypeBtn;
+    },
+
     initTbarItems: function(){
         this.showOptionsBtn = Ext4.create('Ext.button.Button', {
             text: 'Options',
@@ -303,6 +292,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 if(this.viewPanel.isHidden()){
                     this.centerPanel.getLayout().setActiveItem(0);
                     this.toggleBtn.setText('View Data');
+                    this.getChartTypeBtn().show();
                     this.showOptionsBtn.show();
                     this.groupingBtn.show();
                     this.exportBtn.show();
@@ -318,6 +308,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 } else {
                     this.centerPanel.getLayout().setActiveItem(1);
                     this.toggleBtn.setText('View Chart');
+                    this.getChartTypeBtn().hide();
                     this.showOptionsBtn.hide();
                     this.groupingBtn.hide();
                     this.exportBtn.hide();
@@ -345,6 +336,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             tbarItems.push(this.showOptionsBtn);
             tbarItems.push(this.groupingBtn);
             tbarItems.push(this.developerBtn);
+            //tbarItems.push(this.getChartTypeBtn());
 
             if(this.customButtons){
                 for(var i = 0; i < this.customButtons.length; i++){
@@ -382,7 +374,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     initXMeasureWindow: function(){
         this.xMeasureStore = Ext4.create('Ext.data.Store', {
-            model: 'MeasureModel',
+            model: 'LABKEY.vis.QueryColumnModel',
             proxy: {
                 type: 'memory',
                 reader: {
@@ -529,7 +521,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     initYMeasureWindow: function(){
         this.yMeasureStore = Ext4.create('Ext.data.Store', {
-            model: 'MeasureModel',
+            model: 'LABKEY.vis.QueryColumnModel',
             proxy: {
                 type: 'memory',
                 reader: {
@@ -807,7 +799,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     initGroupingWindow: function(){
         this.groupingMeasureStore = Ext4.create ('Ext.data.Store', {
-            model: 'MeasureModel',
+            model: 'LABKEY.vis.QueryColumnModel',
             proxy: {
                 type: 'memory',
                 reader: {
@@ -896,6 +888,55 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         });
 
         return this.groupingWindow;
+    },
+
+    getChartTypeWindow: function()
+    {
+        if (!this.chartTypeWindow)
+        {
+            this.chartTypeWindow = Ext4.create('Ext.window.Window', {
+                title: 'Chart Type',
+                cls: 'data-window',
+                hidden: true,
+                border: 1,
+                resizable: false,
+                modal: true,
+                draggable: false,
+                closable: true,
+                closeAction: 'hide',
+                expandOnShow: false,
+                relative: this.getChartTypeBtn(),
+                items: [this.getChartTypePanel()]
+            });
+        }
+
+        return this.chartTypeWindow;
+    },
+
+    getChartTypePanel : function()
+    {
+        if (!this.chartTypePanel)
+        {
+            this.chartTypePanel = Ext4.create('LABKEY.vis.ChartTypePanel', {
+                restrictColumnsEnabled: this.restrictColumnsEnabled,
+                selectedType: this.getSelectedChartType(),
+                selectedFields: this.measures,
+                listeners: {
+                    scope: this,
+                    cancelclick: function(panel)
+                    {
+                        this.getChartTypeWindow().hide();
+                    },
+                    doneclick: function(panel, values)
+                    {
+                        console.log(values);
+                        this.getChartTypeWindow().hide();
+                    }
+                }
+            });
+        }
+
+        return this.chartTypePanel;
     },
 
     initOptionsWindow: function(){
@@ -1149,6 +1190,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 });
 
                 // Issue 18157
+                this.getChartTypeBtn().setDisabled(true);
                 this.showOptionsBtn.setDisabled(true);
                 this.groupingBtn.setDisabled(true);
                 this.developerBtn.setDisabled(true);
@@ -1691,6 +1733,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
                 if(json.chartConfig.measures.color || json.chartConfig.measures.shape){
                     this.groupingPanel.setPanelOptionValues(json.chartConfig.measures);
+
+                    if (json.chartConfig.measures.color)
+                        this.measures.color = json.chartConfig.measures.color;
+                    if (json.chartConfig.measures.shape)
+                        this.measures.shape = json.chartConfig.measures.shape;
                 }
 
                 if (json.chartConfig.measures.pointClickFn){
@@ -1717,6 +1764,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             html: '<h3 style="color:red;">An unexpected error occurred while retrieving data.</h2>' + error,
             autoScroll: true
         });
+        this.getChartTypeBtn().setDisabled(true);
         this.showOptionsBtn.setDisabled(true);
         this.groupingBtn.setDisabled(true);
         this.developerBtn.setDisabled(true);
@@ -1862,6 +1910,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
 
         if (!forExport){
+            this.getChartTypeBtn().setDisabled(false);
             this.showOptionsBtn.setDisabled(false);
             this.groupingBtn.setDisabled(false);
             this.developerBtn.setDisabled(false);
@@ -2106,6 +2155,16 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         return (renderType == 'auto_plot' && (xAxisType == 'string' || xAxisType == 'boolean'));
     },
 
+    getSelectedChartType : function()
+    {
+        if (!this.measures.x || this.isBoxPlot(this.renderType, this.measures.x.normalizedType))
+            return 'box'
+        else if (this.measures.x && this.isScatterPlot(this.renderType, this.measures.x.normalizedType))
+            return 'scatter';
+
+        return null;
+    },
+
     clearChartPanel: function(){
         this.clearWarningText();
         this.viewPanel.removeAll();
@@ -2232,6 +2291,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         this.chartData = response;
         var sortedFields = this.sortFields(this.chartData.metaData.fields);
+        this.getChartTypePanel().loadQueryColumns(sortedFields);
         this.yMeasureStore.loadRawData(sortedFields);
         this.xMeasureStore.loadRawData(sortedFields);
         this.groupingMeasureStore.loadRawData(this.chartData.metaData.fields);
