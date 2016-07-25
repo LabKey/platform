@@ -2997,6 +2997,11 @@ visualization/src/org/labkey/visualization/test/VisTestSchema.java -text
 visualization/src/org/labkey/visualization/test/test.jsp -text
 visualization/src/org/labkey/visualization/views/genericChartWizard.jsp -text
 visualization/src/org/labkey/visualization/views/timeChartWizard.jsp -text
+visualization/webapp/visualization/images/barchart.png -text
+visualization/webapp/visualization/images/boxplot.png -text
+visualization/webapp/visualization/images/piechart.png -text
+visualization/webapp/visualization/images/scatterplot.png -text
+visualization/webapp/visualization/images/timechart.png -text
 visualization/webapp/visualization/report/box_plot.gif -text
 visualization/webapp/visualization/report/box_plot.png -text
 visualization/webapp/visualization/report/scatter_plot.gif -text
