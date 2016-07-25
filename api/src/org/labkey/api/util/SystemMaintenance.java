@@ -239,14 +239,23 @@ public class SystemMaintenance
         String getName();
 
         /** Can this task be disabled? */
-        boolean canDisable();
+        default boolean canDisable()
+        {
+            return true;
+        }
 
         /**
          * returns the default enabled state
          */
-        boolean isEnabledByDefault();
+        default boolean isEnabledByDefault()
+        {
+            return true;
+        }
 
         /** Hide this from the Admin page (because it will be controlled from elsewhere) */
-        boolean hideFromAdminPage();
+        default boolean hideFromAdminPage()
+        {
+            return false;
+        }
     }
 }

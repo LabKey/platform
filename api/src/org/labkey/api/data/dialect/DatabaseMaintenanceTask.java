@@ -20,11 +20,10 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.util.ConfigurationException;
-import org.labkey.api.util.DefaultSystemMaintenanceTask;
-import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 import org.springframework.jdbc.BadSqlGrammarException;
 
-class DatabaseMaintenanceTask extends DefaultSystemMaintenanceTask
+class DatabaseMaintenanceTask implements MaintenanceTask
 {
     private static final Logger _log = Logger.getLogger(DatabaseMaintenanceTask.class);
 

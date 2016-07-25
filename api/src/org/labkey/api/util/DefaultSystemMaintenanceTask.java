@@ -15,26 +15,12 @@
  */
 package org.labkey.api.util;
 
+import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
+
 /**
  * Created by klum on 9/29/2015.
  */
-public abstract class DefaultSystemMaintenanceTask implements SystemMaintenance.MaintenanceTask
+@Deprecated // No need for this... default methods are now implemented directly in MaintenanceTask interface
+public abstract class DefaultSystemMaintenanceTask implements MaintenanceTask
 {
-    @Override
-    public boolean isEnabledByDefault()
-    {
-        return true;
-    }
-
-    @Override
-    public boolean hideFromAdminPage()
-    {
-        return false;
-    }
-
-    @Override
-    public boolean canDisable()
-    {
-        return true;
-    }
 }
