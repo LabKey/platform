@@ -280,6 +280,9 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
                     if (pd.getLookupQuery() != null || pd.getConceptURI() != null)
                     {
                         col.setFk(new PdLookupForeignKey(schema.getUser(), pd, schema.getContainer()));
+                        TableInfo target = col.getFk().getLookupTableInfo();
+                        if (null != target && target.getPkColumnNames().size() == 1 &&StringUtils.equalsIgnoreCase(target.getTitleColumn(),target.getPkColumnNames().get(0)))
+                            col.setDisplayColumnFactory(ColumnInfo.NOLOOKUP_FACTORY);
                     }
 
                     if (pd.getPropertyType() == PropertyType.MULTI_LINE)

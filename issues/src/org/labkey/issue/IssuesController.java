@@ -529,11 +529,6 @@ public class IssuesController extends SpringActionController
         public ModelAndView getView(IssuesController.IssuesForm form, boolean reshow, BindException errors) throws Exception
         {
             _issue = reshow ? form.getBean() : new Issue();
-            if (_issue.getExtraProperties().isEmpty())
-            {
-                _issue.getExtraProperties().putAll(form.getStrings());
-            }
-
             _issue.setIssueDefName(form.getIssueDefName() != null ? form.getIssueDefName() : IssueManager.getDefaultIssueListDefName(getContainer()));
 
             IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), _issue.getIssueDefName());
@@ -580,6 +575,7 @@ public class IssuesController extends SpringActionController
             if (NumberUtils.isNumber(form.getPriority()))
                 _issue.setPriority(Integer.parseInt(form.getPriority()));
 
+            beforeReshow(reshow, form, _issue, issueListDef);
             IssuePage page = new IssuePage(getContainer(), getUser());
             JspView v = new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
 
@@ -1307,6 +1303,20 @@ public class IssuesController extends SpringActionController
             return IssueManager.getEntryTypeNames(getContainer(), issueListDef != null ? issueListDef.getName() : IssueListDef.DEFAULT_ISSUE_LIST_NAME);
         }
 
+        /**
+         * Prior to reshowing the form, we want to propagate any custom field values that may
+         * have been set before submitting.
+         */
+        protected void beforeReshow(boolean reshow, IssuesForm form, Issue issue, IssueListDef issueListDef)
+        {
+            if (reshow && issueListDef != null)
+            {
+                // bind the provisioned table to the form bean so we can get typed properties
+                form.setTable(issueListDef.createTable(getUser()));
+                issue.setExtraProperties(form.getTypedColumns());
+            }
+        }
+
         public class NewCustomColumnConfiguration implements CustomColumnConfiguration
         {
             private Map<String, CustomColumn> _columnMap = new LinkedHashMap<>();
@@ -1527,7 +1537,7 @@ public class IssuesController extends SpringActionController
         public ModelAndView getView(IssuesController.IssuesForm form, boolean reshow, BindException errors) throws Exception
         {
             int issueId = form.getIssueId();
-            _issue = getIssue(issueId, true);
+            _issue = reshow ? form.getBean() : getIssue(issueId, true);
             if (_issue == null)
             {
                 throw new NotFoundException();
@@ -1538,6 +1548,7 @@ public class IssuesController extends SpringActionController
             requiresUpdatePermission(user, _issue);
 
             _issue.beforeUpdate(getContainer());
+            beforeReshow(reshow, form, _issue, getIssueListDef());
 
             IssuePage page = new IssuePage(getContainer(), user);
             JspView v = new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
@@ -1570,7 +1581,7 @@ public class IssuesController extends SpringActionController
         public ModelAndView getView(IssuesController.IssuesForm form, boolean reshow, BindException errors) throws Exception
         {
             int issueId = form.getIssueId();
-            _issue = getIssue(issueId, true);
+            _issue = reshow ? form.getBean() : getIssue(issueId, true);
             if (null == _issue)
             {
                 throw new NotFoundException();
@@ -1597,6 +1608,7 @@ public class IssuesController extends SpringActionController
                     _issue.setResolution((String) form.get("resolution"));
                 }
             }
+            beforeReshow(reshow, form, _issue, getIssueListDef());
 
             IssuePage page = new IssuePage(getContainer(), user);
             JspView v = new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
@@ -1629,7 +1641,7 @@ public class IssuesController extends SpringActionController
         public ModelAndView getView(IssuesController.IssuesForm form, boolean reshow, BindException errors) throws Exception
         {
             int issueId = form.getIssueId();
-            _issue = getIssue(issueId, true);
+            _issue = reshow ? form.getBean() : getIssue(issueId, true);
             if (null == _issue)
             {
                 throw new NotFoundException();
@@ -1640,6 +1652,7 @@ public class IssuesController extends SpringActionController
             requiresUpdatePermission(user, _issue);
 
             _issue.close(user);
+            beforeReshow(reshow, form, _issue, getIssueListDef());
 
             IssuePage page = new IssuePage(getContainer(), user);
             JspView v = new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
@@ -1673,7 +1686,7 @@ public class IssuesController extends SpringActionController
         public ModelAndView getView(IssuesController.IssuesForm form, boolean reshow, BindException errors) throws Exception
         {
             int issueId = form.getIssueId();
-            _issue = getIssue(issueId, true);
+            _issue = reshow ? form.getBean() : getIssue(issueId, true);
             if (_issue == null)
             {
                 throw new NotFoundException();
@@ -1686,6 +1699,7 @@ public class IssuesController extends SpringActionController
 
             _issue.beforeReOpen(getContainer(), true);
             _issue.open(getContainer(), user);
+            beforeReshow(reshow, form, _issue, getIssueListDef());
 
             IssuePage page = new IssuePage(getContainer(), user);
             JspView v = new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
