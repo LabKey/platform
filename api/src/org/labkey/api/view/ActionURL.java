@@ -15,6 +15,7 @@
  */
 package org.labkey.api.view;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
@@ -374,6 +375,9 @@ public class ActionURL extends URLHelper implements Cloneable
 
         try
         {
+            // make sure the path does not contain any unencoded spaces cause that will cause new URI to fail
+            if (-1 != p.indexOf(' '))
+                p = StringUtils.replace(p, " ", "%20");
             uri = new URI(p);
         }
         catch (URISyntaxException use)

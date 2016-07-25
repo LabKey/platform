@@ -330,7 +330,9 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         bbar.setStyle(ButtonBar.Style.separateButtons);
         addNextButton(bbar);
         addResetButton(runForm, insertView, bbar);
-        addCancelButton(bbar, runForm.getReturnUrl());
+        ActionURL returnURL = runForm.getReturnActionURL();
+        addCancelButton(bbar, returnURL);
+
         insertView.getDataRegion().setButtonBar(bbar, DataRegion.MODE_INSERT);
 
         insertView.setTitle("Batch Properties");
@@ -374,6 +376,21 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         if (returnURL != null && !returnURL.equals(""))
         {
             link = new ActionURL(returnURL);
+        }
+        else
+        {
+            link = getSummaryLink(_protocol);
+        }
+        ActionButton cancelButton = new ActionButton("Cancel", link);
+        bbar.add(cancelButton);
+    }
+
+    protected void addCancelButton(ButtonBar bbar, ActionURL returnURL)
+    {
+        ActionURL link;
+        if (returnURL != null)
+        {
+            link = returnURL;
         }
         else
         {
@@ -457,7 +474,8 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         ButtonBar bbar = new ButtonBar();
         bbar.setStyle(ButtonBar.Style.separateButtons);
         addRunActionButtons(newRunForm, insertView, bbar);
-        addCancelButton(bbar, newRunForm.getReturnUrl());
+        ActionURL returnURL = newRunForm.getReturnActionURL();
+        addCancelButton(bbar, returnURL);
 
         insertView.getDataRegion().setButtonBar(bbar, DataRegion.MODE_INSERT);
         insertView.setTitle("Run Properties");
