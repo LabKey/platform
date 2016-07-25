@@ -106,6 +106,13 @@ public class StatusDataRegion extends DataRegion
         selected = !selSeen && value.equals(urlFilter.getParameter(name));
         renderTab(out, "Errors", url, selected);
 
+        name = "StatusFiles.Status~eq";
+        value = PipelineJob.TaskStatus.cancelled.toString();
+        url.deleteParameters();
+        url.addParameter(name, value);
+        selected = !selSeen && value.equals(urlFilter.getParameter(name));
+        renderTab(out, "Cancelled", url, selected);
+
         selSeen = selSeen || selected;
         url.deleteParameters();
         renderTab(out, "All", url, filters.getClauses().isEmpty() && !selSeen);

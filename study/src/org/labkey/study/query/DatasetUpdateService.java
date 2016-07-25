@@ -99,18 +99,24 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         return count;
     }
 
-
     @Override
-    public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<Enum,Object> configParameters, Map<String, Object> extraScriptContext) throws SQLException
+    public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext) throws SQLException
     {
-        DataIteratorContext context = getDataIteratorContext(errors, InsertOption.IMPORT, configParameters);
-        int count = super._importRowsUsingETL(user, container, rows, null, context, extraScriptContext);
+        int count = _importRowsUsingETL(user, container, rows, null, context, extraScriptContext);
         if (count > 0)
         {
             StudyManager.datasetModified(_dataset, user, true);
             resyncStudy(user, container, null, null, true);
         }
         return count;
+    }
+
+    @Override
+    public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<Enum,Object> configParameters, Map<String, Object> extraScriptContext) throws SQLException
+    {
+        DataIteratorContext context = getDataIteratorContext(errors, InsertOption.IMPORT, configParameters);
+
+        return loadRows(user, container, rows, context, extraScriptContext);
     }
 
     @Override
