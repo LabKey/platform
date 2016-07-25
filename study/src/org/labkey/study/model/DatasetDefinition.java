@@ -1296,6 +1296,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 ColumnInfo visitDateCol = newDatasetColumnInfo(this, column, getVisitDateURI());
                 if (!study.getTimepointType().isVisitBased())
                     visitDateCol.setNullable(false);
+                visitDateCol.setFormat("Date");  // #26844: Date vs. date time type support
                 addColumn(visitDateCol);
             }
 
