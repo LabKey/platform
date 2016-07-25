@@ -2464,13 +2464,21 @@ public class DataRegion extends AbstractDataRegion
 
             if (col.isDateTimeType())
             {
-                // TODO: More specific type checking here!
-                if (null == formatString || "DateTime".equalsIgnoreCase(formatString))
-                    dc.setFormatString(defaultDateTime);
-                else if ("Date".equalsIgnoreCase(formatString))
-                    dc.setFormatString(defaultDate);
-                else if ("Time".equalsIgnoreCase(formatString))
-                    dc.setFormatString(defaultTime);
+                if (null == formatString)
+                {
+                    // No display format on this column, so apply the appropriate default display format based on underlying type
+                    dc.setFormatString(col.getJdbcType() == JdbcType.DATE ? defaultDate : defaultDateTime);
+                }
+                else
+                {
+                    // Replace special named formats with the current default display format strings in this folder
+                    if ("DateTime".equalsIgnoreCase(formatString))
+                        dc.setFormatString(defaultDateTime);
+                    else if ("Date".equalsIgnoreCase(formatString))
+                        dc.setFormatString(defaultDate);
+                    else if ("Time".equalsIgnoreCase(formatString))
+                        dc.setFormatString(defaultTime);
+                }
             }
             else if (null == formatString && col.isNumericType())
             {
