@@ -86,7 +86,18 @@
         %>
         <tr>
             <td />
-            <td><%= button("Next" ).submit(true) %><%= button("Cancel").href(new ActionURL(AssayController.BeginAction.class, getContainer())) %></td>
+                <%
+                    if(null != bean.getReturnURL()) {
+                %>
+                <td><%= button("Next" ).submit(true) %><%= button("Cancel").href(bean.getReturnURL()) %></td>
+                <%
+                    } else {
+                %>
+                <td><%= button("Next" ).submit(true) %><%= button("Cancel").href(new ActionURL(AssayController.BeginAction.class, getContainer())) %></td>
+                <%
+                    }
+                %>
+            </td>
         </tr>
     </table>
 </labkey:form>
