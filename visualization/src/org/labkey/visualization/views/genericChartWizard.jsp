@@ -114,15 +114,5 @@
         Ext4.EventManager.onWindowResize(resize);
     });
 
-    function customizeGenericReport(elementId) {
-
-        function initPanel() {
-            var panel = Ext4.getCmp(elementId);
-
-            if (panel) { panel.customize(); }
-        }
-        Ext4.onReady(initPanel);
-    }
-
 </script>
 
