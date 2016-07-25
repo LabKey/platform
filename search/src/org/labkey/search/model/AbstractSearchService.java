@@ -36,7 +36,6 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContextListener;
-import org.labkey.api.util.DefaultSystemMaintenanceTask;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.GUID;
@@ -47,6 +46,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -74,7 +74,6 @@ import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
 
 /**
  * User: matthewb
@@ -1504,7 +1503,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    private static class SearchServiceMaintenanceTask extends DefaultSystemMaintenanceTask
+    private static class SearchServiceMaintenanceTask implements MaintenanceTask
     {
         public String getDescription()
         {

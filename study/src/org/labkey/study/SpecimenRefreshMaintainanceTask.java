@@ -24,9 +24,9 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.util.DefaultSystemMaintenanceTask;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 import org.labkey.study.importer.SpecimenRefreshPipelineJob;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -40,7 +40,7 @@ import java.util.Collection;
  * Date: 9/22/12
  * Time: 12:11 PM
  */
-public class SpecimenRefreshMaintainanceTask extends DefaultSystemMaintenanceTask
+public class SpecimenRefreshMaintainanceTask implements MaintenanceTask
 {
     private static final Logger LOG = Logger.getLogger(SpecimenRefreshMaintainanceTask.class);
 

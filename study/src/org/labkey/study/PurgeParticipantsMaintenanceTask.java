@@ -15,8 +15,7 @@
  */
 package org.labkey.study;
 
-import org.labkey.api.util.DefaultSystemMaintenanceTask;
-import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.visitmanager.VisitManager;
@@ -25,7 +24,7 @@ import org.labkey.study.visitmanager.VisitManager;
  * User: jeckels
  * Date: 7/27/11
  */
-public class PurgeParticipantsMaintenanceTask extends DefaultSystemMaintenanceTask
+public class PurgeParticipantsMaintenanceTask implements MaintenanceTask
 {
     @Override
     public String getDescription()

@@ -76,12 +76,12 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ContainerUtil;
-import org.labkey.api.util.DefaultSystemMaintenanceTask;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.ContainerUser;
@@ -1202,7 +1202,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         }
     }
 
-    private static class ReportServiceMaintenanceTask extends DefaultSystemMaintenanceTask
+    private static class ReportServiceMaintenanceTask implements MaintenanceTask
     {
         public String getDescription()
         {
