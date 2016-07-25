@@ -117,18 +117,20 @@ public class ReportManager implements DatasetManager.DatasetListener
 
     public List<Pair<String, String>> getReportLabelsForDataset(ViewContext context, Dataset def) throws Exception
     {
+        String reportKey = ReportUtil.getReportKey(StudySchema.getInstance().getSchemaName(), def.getName());
+        List<Pair<String, String>> oldLabels = new ArrayList<>();
+
+        // TODO: Delete code below
+
         SimpleFilter filter = new SimpleFilter();
         Container container = context.getContainer();
-        String reportKey = ReportUtil.getReportKey(StudySchema.getInstance().getSchemaName(), def.getName());
-
-        List<Pair<String, String>> labels = new ArrayList<>();
 
         // reports in this container
         filter.addWhereClause(_datasetLabelQuery, new Object[]{
                 container.getId(),
                 context.getUser().getUserId(),
                 ALL_DATASETS_KEY, reportKey});
-        _addReportLabels(ReportService.get().getReports(filter), labels, context);
+        _addReportLabels(ReportService.get().getReports(filter), oldLabels, context);
 
         // any inherited reports
         while (!container.isRoot())
@@ -141,7 +143,7 @@ public class ReportManager implements DatasetManager.DatasetListener
                     context.getUser().getUserId(),
                     ALL_DATASETS_KEY, reportKey});
             filter.addWhereClause("(((Flags) & ?) = ?)", new Object[]{ReportDescriptor.FLAG_INHERITABLE, 1});
-            _addReportLabels(ReportService.get().getReports(filter), labels, context);
+            _addReportLabels(ReportService.get().getReports(filter), oldLabels, context);
         }
 
         // look for any reports in the shared project
@@ -150,7 +152,31 @@ public class ReportManager implements DatasetManager.DatasetListener
                 ContainerManager.getSharedContainer().getId(),
                 context.getUser().getUserId(),
                 ALL_DATASETS_KEY, reportKey});
-        _addReportLabels(ReportService.get().getReports(filter), labels, context);
+        _addReportLabels(ReportService.get().getReports(filter), oldLabels, context);
+
+        oldLabels.sort((p1, p2) -> p1.getKey().compareTo(p2.getKey()));
+
+        // TODO: Delete code above
+
+        // TODO: Test this new approach and delete all the code above plus _addReportLabels(), ReportService.getReports(Filter), etc.
+        List<Pair<String, String>> labels = new ArrayList<>();
+
+        for (Report report : ReportUtil.getReportsIncludingInherited(context.getContainer(), context.getUser(), reportKey))
+        {
+            String label = report.getDescriptor().getReportName();
+            labels.add(new Pair<>(label, report.getDescriptor().getReportId().toString()));
+        }
+
+        labels.sort((p1, p2) -> p1.getKey().compareTo(p2.getKey()));
+
+        if (!oldLabels.equals(labels))
+        {
+            StringBuilder output = new StringBuilder();
+            oldLabels.forEach(pair -> output.append(" (").append(String.valueOf(pair.first)).append(",").append(String.valueOf(pair.second)).append(")"));
+            output.append(" vs. ");
+            labels.forEach(pair -> output.append(" (").append(String.valueOf(pair.first)).append(",").append(String.valueOf(pair.second)).append(")"));
+            throw new IllegalStateException(output.toString());
+        }
 
         // add any custom query views
         UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), "study");
