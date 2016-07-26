@@ -75,9 +75,9 @@ public class MothershipTest extends BaseWebDriverTest
         permissionsHelper.addMemberToRole(NON_ASSIGNEE, "Project Admin", MemberType.user, MOTHERSHIP_PROJECT);
 
         EditUpgradeMessagePage configurePage = EditUpgradeMessagePage.beginAt(this);
-        configurePage.createIssueURL().setValue(WebTestHelper.getContextPath() + "/" +
+        configurePage.createIssueURL().set(WebTestHelper.getContextPath() + "/" +
                 WebTestHelper.buildRelativeUrl("issues", ISSUES_PROJECT, "insert", Maps.of("issueDefName", ISSUES_LIST)));
-        configurePage.issuesContainer().setValue("/" + ISSUES_PROJECT);
+        configurePage.issuesContainer().set("/" + ISSUES_PROJECT);
         configurePage.save();
 
         _containerHelper.createProject(ISSUES_PROJECT, null);
@@ -108,22 +108,22 @@ public class MothershipTest extends BaseWebDriverTest
         String stackDetailsUrl = getDriver().getCurrentUrl();
         InsertPage insertPage = detailsPage.clickCreateIssue();
         String expectedTitle = "NullPointerException in org.labkey.core.test.TestController$NpeAction.getView()";
-        String issueTitle = insertPage.title().getValue();
+        String issueTitle = insertPage.title().get();
         assertEquals("Wrong issue title", expectedTitle, issueTitle);
         String[] expectedComments = new String[] {
                 "Created from crash report: " + stackDetailsUrl,
                 "java.lang.NullPointerException",
                 "TestController.java"};
-        assertTextPresentInThisOrder(new TextSearcher(() -> insertPage.comment().getValue()), expectedComments);
-        assertEquals("New issue shouldn't be assigned by default", "", insertPage.assignedTo().getValue().trim());
-        insertPage.assignedTo().setValue(displayNameFromEmail(ASSIGNEE));
+        assertTextPresentInThisOrder(new TextSearcher(() -> insertPage.comment().get()), expectedComments);
+        assertEquals("New issue shouldn't be assigned by default", "", insertPage.assignedTo().get().trim());
+        insertPage.assignedTo().set(displayNameFromEmail(ASSIGNEE));
         insertPage.save();
         Integer newIssueId = issuesHelper.getHighestIssueId(ISSUES_PROJECT, ISSUES_LIST);
         assertNotEquals("Didn't create a new issue.", highestIssueId, newIssueId);
         showExceptionsPage = new ShowExceptionsPage(getDriver());
         exceptionSummary = showExceptionsPage.exceptionSummary();
         detailsPage = exceptionSummary.clickStackTrace(stackTraceId);
-        Integer bugNumber = Integer.parseInt(detailsPage.bugNumber().getValue());
+        Integer bugNumber = Integer.parseInt(detailsPage.bugNumber().get());
         assertEquals("Exception's related issue not set", newIssueId, bugNumber);
     }
 
@@ -162,7 +162,7 @@ public class MothershipTest extends BaseWebDriverTest
         exceptionSummary.ignoreSelected();
 
         StackTraceDetailsPage detailsPage = exceptionSummary.clickStackTrace(stackTraceId);
-        assertEquals("Ignoring exception should set bugNumber", "-1", detailsPage.bugNumber().getValue());
+        assertEquals("Ignoring exception should set bugNumber", "-1", detailsPage.bugNumber().get());
     }
 
     @Test
@@ -179,7 +179,7 @@ public class MothershipTest extends BaseWebDriverTest
         StackTraceDetailsPage detailsPage = exceptionSummary.clickStackTrace(stackTraceId);
         InsertPage insertPage = detailsPage.clickCreateIssue();
         assertEquals("Exception assignment != New issue assignment",
-                displayNameFromEmail(ASSIGNEE), insertPage.assignedTo().getValue());
+                displayNameFromEmail(ASSIGNEE), insertPage.assignedTo().get());
     }
 
     @Test
