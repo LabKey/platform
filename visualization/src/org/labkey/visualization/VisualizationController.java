@@ -1269,8 +1269,7 @@ public class VisualizationController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("quickchart");
-            if (null != _renderType)
-                root.addChild(_renderType.getName());
+            root.addChild("Chart Wizard");
             return root;
         }
     }
@@ -1419,7 +1418,8 @@ public class VisualizationController extends SpringActionController
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             HashSet<String> baseColumns = new HashSet<>();
-            HashSet<String> additionalColumns = new HashSet<>();
+            HashSet<String> cohortColumns = new HashSet<>();
+            HashSet<String> subjectGroupColumns = new HashSet<>();
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName());
 
            if(schema != null)
@@ -1444,7 +1444,7 @@ public class VisualizationController extends SpringActionController
                         if (form.isIncludeCohort())
                         {
                             FieldKey cohort = FieldKey.fromParts(study.getSubjectColumnName(), "Cohort");
-                            additionalColumns.add(cohort.toString());
+                            cohortColumns.add(cohort.toString());
                         }
 
                         if (form.isIncludeParticipantCategory())
@@ -1452,7 +1452,7 @@ public class VisualizationController extends SpringActionController
                             for (ParticipantCategory category : study.getParticipantCategories(getUser()))
                             {
                                 FieldKey cohort = FieldKey.fromParts(study.getSubjectColumnName(), category.getLabel());
-                                additionalColumns.add(cohort.toString());
+                                subjectGroupColumns.add(cohort.toString());
                             }
                         }
                     }
@@ -1470,15 +1470,19 @@ public class VisualizationController extends SpringActionController
                 }
             }
 
-            response.put("base", baseColumns);
-            response.put("additional", additionalColumns);
+            Map<String, HashSet<String>> columns = new HashMap<>();
+            columns.put("base", baseColumns);
+            columns.put("cohort", cohortColumns);
+            columns.put("subjectGroup", subjectGroupColumns);
 
             // keep for backwards compatibility
-            HashSet<String> columns = new HashSet<>();
-            columns.addAll(baseColumns);
-            columns.addAll(additionalColumns);
-            response.put("columns", columns);
+            HashSet<String> allColumns = new HashSet<>();
+            allColumns.addAll(baseColumns);
+            allColumns.addAll(cohortColumns);
+            allColumns.addAll(subjectGroupColumns);
+            columns.put("all", allColumns);
 
+            response.put("columns", columns);
             return response;
         }
     }

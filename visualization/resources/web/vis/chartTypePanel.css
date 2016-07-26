@@ -17,6 +17,10 @@
     margin: 10px;
 }
 
+.chart-type-panel .query-columns .x4-grid-cell {
+    cursor: pointer;
+}
+
 .chart-type-panel .mapping-panel {
     border: solid #c0c0c0 1px;
 }

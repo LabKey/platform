@@ -6,9 +6,12 @@
 LABKEY.requiresCss("_images/icons.css");
 LABKEY.requiresCss("dataview/DataViewsPanel.css");
 
+LABKEY.vis.USE_NEW_CHART_WIZARD = false;
+
 Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     extend : 'Ext.panel.Panel',
+
     alias: 'widget.labkey-genericchartpanel',
 
     measures: {},
@@ -49,8 +52,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         params  : params,
                         success : function(response){
                             var o = Ext4.decode(response.responseText);
-                            // TODO switch to using base/additional columns (issue 23224)
-                            this.initialColumnList = o.columns;
+                            this.initialColumnList = o.columns.all;
+                            this.columnTypes = o.columns;
 
                             this.subject = o.subject;
                             this.requestData();
@@ -251,15 +254,17 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             this.chartTypeBtn = Ext4.create('Ext.button.Button', {
                 text: 'Chart Type',
-                handler: function()
-                {
-                    this.getChartTypeWindow().setVisible(this.getChartTypeWindow().isHidden());
-                },
+                handler: this.showChartTypeWindow,
                 scope: this
             });
         }
 
         return this.chartTypeBtn;
+    },
+
+    showChartTypeWindow : function()
+    {
+        this.getChartTypeWindow().show();
     },
 
     getExportBtn : function()
@@ -425,7 +430,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             tbarItems.push(this.getOptionsBtn());
             tbarItems.push(this.getGroupingBtn());
             tbarItems.push(this.getDeveloperBtn());
-            //tbarItems.push(this.getChartTypeBtn());
+
+            if (LABKEY.vis.USE_NEW_CHART_WIZARD)
+                tbarItems.push(this.getChartTypeBtn());
 
             if (this.customButtons)
             {
@@ -459,7 +466,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             this.xOkBtn = Ext4.create("Ext.Button", {
                 text: 'Ok',
-                disabled: true,
+                disabled: !LABKEY.vis.USE_NEW_CHART_WIZARD,
                 handler: function ()
                 {
                     this.xMeasureWindow.hide();
@@ -495,7 +502,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         this.initialPanelValues = this.getXMeasurePanel().getPanelOptionValues();
                         this.initialPanelValues.measure = this.getXMeasureGrid().getSelectionModel().getLastSelected();
 
-                        this.xOkBtn.setDisabled(!this.getXMeasureGrid().getSelectionModel().hasSelection());
+                        if (!LABKEY.vis.USE_NEW_CHART_WIZARD)
+                            this.xOkBtn.setDisabled(!this.getXMeasureGrid().getSelectionModel().hasSelection());
 
                         if (!this.measures.x)
                         {
@@ -539,15 +547,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 border: false,
                 frame: false,
                 store: this.getXMeasureStore(),
-                measureGrid: this.getXMeasureGrid(),
+                measureGrid: !LABKEY.vis.USE_NEW_CHART_WIZARD ? this.getXMeasureGrid() : undefined,
                 queryName: this.queryName,
                 buttons: [this.xOkBtn, this.xCancelBtn],
                 listeners: {
-                    chartDefinitionChanged: function()
-                    {
-                        this.getCenterPanel().getEl().mask('Rendering Chart...');
-                        this.chartDefinitionChanged.delay(250);
-                    },
+                    chartDefinitionChanged: this.renderChart,
                     scope: this
                 }
             });
@@ -590,10 +594,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     },
                     select: function(selModel, record, index)
                     {
-                        this.measures.x = selModel.getSelection()[0].data;
-                        this.getXMeasurePanel().measure = selModel.getSelection()[0].data;
+                        this.setXAxisMeasure(selModel.getSelection()[0], false);
                         this.xOkBtn.enable();
-                        this.getXMeasurePanel().selectionChange();
                     },
                     scope: this
                 }
@@ -645,7 +647,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             this.yOkBtn = Ext4.create("Ext.Button", {
                 text: 'Ok',
-                disabled: true,
+                disabled: !LABKEY.vis.USE_NEW_CHART_WIZARD,
                 handler: function ()
                 {
                     this.yMeasureWindow.hide();
@@ -681,7 +683,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         this.initialPanelValues = this.getYMeasurePanel().getPanelOptionValues();
                         this.initialPanelValues.measure = this.getYMeasureGrid().getSelectionModel().getLastSelected();
 
-                        this.yOkBtn.setDisabled(!this.getYMeasureGrid().getSelectionModel().hasSelection());
+                        if (!LABKEY.vis.USE_NEW_CHART_WIZARD)
+                            this.yOkBtn.setDisabled(!this.getYMeasureGrid().getSelectionModel().hasSelection());
 
                         if (!this.measures.y)
                         {
@@ -726,14 +729,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 frame: false,
                 store: this.getYMeasureStore(),
                 queryName: this.queryName,
-                measureGrid: this.getYMeasureGrid(),
+                measureGrid: !LABKEY.vis.USE_NEW_CHART_WIZARD ? this.getYMeasureGrid() : undefined,
                 buttons: [this.yOkBtn, this.yCancelBtn],
                 listeners: {
-                    chartDefinitionChanged: function()
-                    {
-                        this.getCenterPanel().getEl().mask('Rendering Chart...');
-                        this.chartDefinitionChanged.delay(250);
-                    },
+                    chartDefinitionChanged: this.renderChart,
                     scope: this
                 }
             });
@@ -776,10 +775,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     },
                     select: function(selModel, record, index)
                     {
-                        this.measures.y = selModel.getSelection()[0].data;
-                        this.getYMeasurePanel().measure = selModel.getSelection()[0].data;
+                        this.setYAxisMeasure(selModel.getSelection()[0], false);
                         this.yOkBtn.enable();
-                        this.getYMeasurePanel().selectionChange();
                     },
                     scope: this
                 }
@@ -874,10 +871,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                             this.getMainTitleWindow().fireEvent('beforeclose');
                         this.getMainTitleWindow().hide();
                     },
-                    chartDefinitionChanged: function(){
-                        this.getCenterPanel().getEl().mask('Rendering Chart...');
-                        this.chartDefinitionChanged.delay(250);
-                    },
+                    chartDefinitionChanged: this.renderChart,
                     resetTitle: function() {
                         // need a reset title function.
                         this.mainTitlePanel.setMainTitle((this.queryLabel || this.queryName) + ' - ' + Ext4.util.Format.htmlEncode(this.measures.y.label))
@@ -1002,7 +996,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 closable: true,
                 closeAction: 'hide',
                 expandOnShow: false,
-                relative: this.getGroupingBtn(),
                 items: [this.getGroupingPanel()],
                 listeners: {
                     scope: this,
@@ -1031,11 +1024,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 width: '100%',
                 store: this.getGroupingMeasureStore(),
                 listeners: {
-                    chartDefinitionChanged: function()
-                    {
-                        this.getCenterPanel().getEl().mask('Rendering Chart...');
-                        this.chartDefinitionChanged.delay(500);
-                    },
+                    chartDefinitionChanged: this.renderChart,
                     closeOptionsWindow: function(canceling)
                     {
                         if (canceling)
@@ -1106,17 +1095,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (!this.chartTypeWindow)
         {
             this.chartTypeWindow = Ext4.create('Ext.window.Window', {
-                title: 'Chart Type',
                 cls: 'data-window',
-                hidden: true,
-                border: 1,
-                resizable: false,
                 modal: true,
-                draggable: false,
-                closable: true,
+                header: false,
+                resizable: false,
                 closeAction: 'hide',
-                expandOnShow: false,
-                relative: this.getChartTypeBtn(),
                 items: [this.getChartTypePanel()]
             });
         }
@@ -1134,13 +1117,24 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 selectedFields: this.measures,
                 listeners: {
                     scope: this,
-                    cancelclick: function(panel)
+                    cancel: function(panel)
                     {
                         this.getChartTypeWindow().hide();
                     },
-                    doneclick: function(panel, values)
+                    apply: function(panel, values)
                     {
                         console.log(values);
+
+                        // TODO handle chart render type selection
+                        this.measures = values.fields;
+
+                        // TODO how to handle changes from the chart type that affect the other look-and-feel options
+                        this.setXAxisMeasure(this.measures.x, true);
+                        this.setYAxisMeasure(this.measures.y, true);
+
+                        // TODO should we only call this.renderChart if chartDefinitionChanged?
+                        this.renderChart();
+
                         this.getChartTypeWindow().hide();
                     }
                 }
@@ -1166,7 +1160,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 closeAction: 'hide',
                 expandOnShow: false,
                 items: [this.getOptionsPanel()],
-                relative: this.getOptionsBtn(),
                 draggable: false,
                 listeners: {
                     scope: this,
@@ -1216,8 +1209,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                             if (!this.reportId)
                                 this.updateWebpartTitle(this.typeToLabel[renderType]);
                         }
-                        this.getCenterPanel().getEl().mask('Rendering Chart...');
-                        this.chartDefinitionChanged.delay(500);
+
+                        this.renderChart();
                     },
                     'closeOptionsWindow': function (canceling)
                     {
@@ -1249,7 +1242,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 closable: true,
                 closeAction: 'hide',
                 expandOnShow: false,
-                relative: this.getDeveloperBtn(),
                 items: [this.getDeveloperPanel()],
                 listeners: {
                     scope: this,
@@ -1280,10 +1272,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 defaultPointClickFn: this.getDefaultPointClickFn(),
                 pointClickFnHelp: this.getPointClickFnHelp(),
                 listeners: {
-                    chartDefinitionChanged: function(){
-                        this.getCenterPanel().getEl().mask('Rendering Chart...');
-                        this.chartDefinitionChanged.delay(500);
-                    },
+                    chartDefinitionChanged: this.renderChart,
                     'closeOptionsWindow': function(canceling){
                         if (canceling)
                             this.getDeveloperWindow().fireEvent('beforeclose');
@@ -1307,7 +1296,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 border: false,
                 frame: false,
                 modal: true,
-                relative: this.getExportBtn(),
                 width: 800,
                 resizable: false,
                 closeAction: 'hide',
@@ -1521,7 +1509,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 columns.push(this.autoColumnYName);
 
             if (measures.color)
-                columns.push(measures.color.name)
+                columns.push(measures.color.name);
 
             if (measures.shape)
                 columns.push(measures.shape.name);
@@ -1577,14 +1565,24 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             config.labels.main = mainTitle;
         }
 
-        config.measures = Ext4.apply({}, this.measures);
-
-        if (groupingOptions.color) {
-            config.measures.color = groupingOptions.color;
+        if (LABKEY.vis.USE_NEW_CHART_WIZARD)
+        {
+            config.measures = Ext4.apply({}, this.measures);
         }
+        else
+        {
+            config.measures = {
+                x: this.measures.x,
+                y: this.measures.y
+            };
 
-        if (groupingOptions.shape) {
-            config.measures.shape = groupingOptions.shape;
+            if (groupingOptions.color) {
+                config.measures.color = groupingOptions.color;
+            }
+
+            if (groupingOptions.shape) {
+                config.measures.shape = groupingOptions.shape;
+            }
         }
 
         if (developerOptions.pointClickFn) {
@@ -2079,8 +2077,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         var chartConfig = this.getChartConfig();
         var customRenderType, chartType, geom, aes, scales, labels, layerConfig, plotConfig, width, height;
 
-        chartConfig.measures.x = this.measures.x;
-        chartConfig.measures.y = this.measures.y;
         chartConfig.geomOptions.showOutliers = chartConfig.pointType ? chartConfig.pointType == 'outliers' : true;
 
         if (this.customRenderTypes && this.customRenderTypes[this.renderType]) {
@@ -2226,18 +2222,19 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 // In some cases the column name is escaped, so we need to unescape it when searching.
                 fk = LABKEY.FieldKey.fromString(this.autoColumnYName);
                 measure = this.getYMeasureStore().findRecord('name', fk.name, 0, false, true, true);
-                if (measure){
-                    this.measures.y = measure.data;
-                    this.getYMeasurePanel().measure = measure.data;
-                    this.getYMeasureGrid().getSelectionModel().select(measure, false, true);
-                    this.getYMeasurePanel().selectionChange(true);
-                }
+                if (measure)
+                    this.setYAxisMeasure(measure, true);
             }
 
             if (!this.measures.y)
             {
                 this.getCenterPanel().getEl().unmask();
-                this.showYMeasureWindow();
+
+                if (LABKEY.vis.USE_NEW_CHART_WIZARD)
+                    this.showChartTypeWindow();
+                else
+                    this.showYMeasureWindow();
+
                 return false;
             }
         }
@@ -2250,35 +2247,57 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 {
                     fk = LABKEY.FieldKey.fromString(this.autoColumnXName);
                     measure = this.getXMeasureStore().findRecord('name', fk.name, 0, false, true, true);
-                    if (measure) {
-                        this.measures.x = measure.data;
-                        this.getXMeasurePanel().measure = measure.data;
-                        this.getXMeasureGrid().getSelectionModel().select(measure, false, true);
-                        this.getXMeasurePanel().selectionChange(true);
-                    }
+                    if (measure)
+                        this.setXAxisMeasure(measure, true);
                 }
 
                 if (!this.measures.x)
                 {
                     this.getCenterPanel().getEl().unmask();
-                    this.showXMeasureWindow();
+
+                    if (LABKEY.vis.USE_NEW_CHART_WIZARD)
+                        this.showChartTypeWindow();
+                    else
+                        this.showXMeasureWindow();
+
                     return false;
                 }
             }
-            else
+            else if (!LABKEY.vis.USE_NEW_CHART_WIZARD || Ext4.isString(this.autoColumnYName))
             {
                 measure = this.getXMeasureStore().findRecord('label', 'Cohort', 0, false, true, true);
                 if (measure)
-                {
-                    this.measures.x = measure.data;
-                    this.getXMeasurePanel().measure = measure.data;
-                    this.getXMeasureGrid().getSelectionModel().select(measure, false, true);
-                    this.getXMeasurePanel().selectionChange(true);
-                }
+                    this.setXAxisMeasure(measure, true);
             }
         }
 
         return true;
+    },
+
+    setYAxisMeasure : function(measure, suppressEvents)
+    {
+        if (measure)
+        {
+            this.measures.y = measure.data ? measure.data : measure;
+
+            this.getYMeasurePanel().measure = this.measures.y;
+            if (suppressEvents)
+                this.getYMeasureGrid().getSelectionModel().select(measure, false, true);
+            this.getYMeasurePanel().selectionChange(suppressEvents);
+        }
+    },
+
+    setXAxisMeasure : function(measure, suppressEvents)
+    {
+        if (measure)
+        {
+            this.measures.x = measure.data ? measure.data : measure;
+
+            this.getXMeasurePanel().measure = this.measures.x;
+            if (suppressEvents)
+                this.getXMeasureGrid().getSelectionModel().select(measure, false, true);
+            this.getXMeasurePanel().selectionChange(suppressEvents);
+        }
     },
 
     validateYAxis: function(chartType, chartConfig, aes, scales, data){
@@ -2298,7 +2317,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
             if (this.editMode)
             {
-                Ext4.Msg.alert('Error', validation.message, this.showYMeasureWindow, this);
+                Ext4.Msg.alert('Error', validation.message, LABKEY.vis.USE_NEW_CHART_WIZARD ? this.showChartTypeWindow : this.showYMeasureWindow, this);
             }
             else
             {
@@ -2333,7 +2352,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
             if (this.editMode)
             {
-                Ext4.Msg.alert('Error', validation.message, this.showXMeasureWindow, this);
+                Ext4.Msg.alert('Error', validation.message, LABKEY.vis.USE_NEW_CHART_WIZARD ? this.showChartTypeWindow : this.showXMeasureWindow, this);
             }
             else
             {
@@ -2358,8 +2377,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             this.addWarningText(
                     '<p style="color: red; text-align: center;">The saved category for point color, "' +
-                            measures.color.label +
-                            '", is not available. It may have been deleted or renamed. </p>'
+                            measures.color.label + '", is not available. It may have been deleted or renamed. </p>'
             );
 
             measures.color = undefined;
@@ -2369,8 +2387,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             this.addWarningText(
                     '<p style="color: red; text-align: center;">The saved category for point shape, "' +
-                            measures.shape.label +
-                            '", is not available. It may have been deleted or renamed. </p>'
+                            measures.shape.label + '", is not available. It may have been deleted or renamed. </p>'
             );
 
             measures.shape = undefined;
@@ -2446,7 +2463,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     getSelectedChartType : function()
     {
-        if (!this.measures.x || this.isBoxPlot(this.renderType, this.measures.x.normalizedType))
+        if (this.renderType !== 'auto_plot')
+            return this.renderType === 'scatter_plot' ? 'scatter' : 'box';
+        else if (!this.measures.x || this.isBoxPlot(this.renderType, this.measures.x.normalizedType))
             return 'box';
         else if (this.measures.x && this.isScatterPlot(this.renderType, this.measures.x.normalizedType))
             return 'scatter';
@@ -2583,10 +2602,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.getCenterPanel().getEl().unmask();
 
         this.chartData = response;
+
+        var queryFields = this.getQueryFields(this.chartData.metaData.fields);
+        this.getChartTypePanel().loadQueryColumns(queryFields);
+
         var sortedFields = this.sortFields(this.chartData.metaData.fields);
-        this.getChartTypePanel().loadQueryColumns(sortedFields);
         this.getYMeasureStore().loadRawData(sortedFields);
         this.getXMeasureStore().loadRawData(sortedFields);
+
         this.getGroupingMeasureStore().loadRawData(this.chartData.metaData.fields);
         this.getGroupingPanel().loadStore(this.getGroupingMeasureStore());
 
@@ -2618,6 +2641,47 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 this.fireEvent('dataRequested');
             }
         }
+    },
+
+    getQueryFields : function(fields)
+    {
+        var queryFields = [];
+
+        Ext4.each(fields, function(field)
+        {
+            var f = Ext4.clone(field);
+            f.isCohortColumn = false;
+            f.isSubjectGroupColumn = false;
+
+            // issue 23224: distinguish cohort and subject group fields in the list of query columns
+            if (this.columnTypes.cohort && this.columnTypes.cohort.indexOf(f.name) > -1)
+            {
+                f.shortCaption = 'Study: ' + f.shortCaption;
+                f.isCohortColumn = true;
+            }
+            else if (this.columnTypes.subjectGroup && this.columnTypes.subjectGroup.indexOf(f.name) > -1)
+            {
+                f.shortCaption = this.subject.nounSingular + ' Group: ' + f.shortCaption;
+                f.isSubjectGroupColumn = true;
+            }
+
+            queryFields.push(f);
+        }, this);
+
+        // Sorts fields by their shortCaption, but put participant groups/categories/cohort at the end.
+        queryFields.sort(function(a, b)
+        {
+            if (a.isSubjectGroupColumn != b.isSubjectGroupColumn)
+                return a.isSubjectGroupColumn ? 1 : -1;
+            else if (a.isCohortColumn != b.isCohortColumn)
+                return a.isCohortColumn ? 1 : -1;
+            else if (a.shortCaption != b.shortCaption)
+                return a.shortCaption < b.shortCaption ? -1 : 1;
+
+            return 0;
+        });
+
+        return queryFields;
     },
 
     sortFields: function(fields){
@@ -2783,6 +2847,12 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.setRenderRequested(true);
         else
             this.renderPlot(forExport);
+    },
+
+    renderChart : function()
+    {
+        this.getCenterPanel().getEl().mask('Rendering Chart...');
+        this.chartDefinitionChanged.delay(500);
     },
 
     onSaveBtnClicked: function(isSaveAs){

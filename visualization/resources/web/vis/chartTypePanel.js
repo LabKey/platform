@@ -89,7 +89,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
 
         this.callParent();
 
-        this.addEvents('cancelclick', 'doneclick');
+        this.addEvents('cancel', 'apply');
     },
 
     getTitlePanel : function()
@@ -175,14 +175,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
                     cls: 'mapping-query-col',
                     border: false,
                     hidden: true,
-                    items: [
-                        {
-                            cls: 'description',
-                            border: false,
-                            html: 'Select a column and drag it to the field selection area to apply it to the plot.'
-                        },
-                        this.getQueryColumnsPanel()
-                    ]
+                    items: [this.getQueryColumnsPanel()]
                 }]
             });
         }
@@ -225,18 +218,16 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
                 listeners: {
                     load: function(store)
                     {
-                        if (!this.restrictColumnsEnabled) // TODO make this a single filterBy function and move restrictColumnsEnabled check within function
+                        store.filterBy(function(record)
                         {
-                            store.filterBy(function(record){
-                                return !record.get('hidden');
-                            });
-                        }
-                        else
-                        {
-                            store.filterBy(function(record){
-                                return !record.get('hidden') && (record.get('measure') || record.get('dimension'));
-                            });
-                        }
+                            if (record.get('hidden'))
+                                return false;
+
+                            if (this.restrictColumnsEnabled && !(record.get('measure') || record.get('dimension')))
+                                return false;
+
+                            return true;
+                        }, this);
                     },
                     scope: this
                 }
@@ -245,7 +236,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
             this.queryColumnsGrid = Ext4.create('Ext.grid.Panel', {
                 store: store,
                 autoScroll: true,
-                height: 400,
+                height: 455,
                 enableColumnHide: false,
                 columns: [
                     {
@@ -268,16 +259,42 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
                     {
                         this.getFieldSelectionsPanel().destroyFieldSelectionDropTargets();
                     },
-                    select: function(sm, selected, index)
+                    select: function(sm, selected)
                     {
-                        var ddGroup = this.getGridViewDragPluginConfig().ddGroup;
-                        this.getFieldSelectionsPanel().addFieldSelectionDropTargets(this.queryColumnsGrid, ddGroup, selected);
+                        this.showSelectionTargetsForColumn(selected);
                     }
                 }
             });
+
+            // show allowable field targets on hover of grid row on mouseenter
+            // and revert back to the selected field for allowable field targets on mouseleave
+            var showHoverTargets = new Ext4.util.DelayedTask();
+            var showSelectedTargets = new Ext4.util.DelayedTask();
+            this.queryColumnsGrid.on('itemmouseenter', function(grid, record)
+            {
+                showSelectedTargets.cancel();
+                showHoverTargets.delay(250, function(hoverRec) { this.showSelectionTargetsForColumn(hoverRec); }, this, [record]);
+            }, this);
+            this.queryColumnsGrid.on('itemmouseleave', function(grid, record)
+            {
+                var selection = this.queryColumnsGrid.getSelectionModel().getSelection();
+
+                showHoverTargets.cancel();
+                if (selection.length > 0)
+                    showSelectedTargets.delay(250, function () { this.showSelectionTargetsForColumn(selection[0]); }, this);
+                else
+                    showSelectedTargets.delay(250, function () { this.getFieldSelectionsPanel().destroyFieldSelectionDropTargets() }, this);
+            }, this);
         }
 
         return this.queryColumnsGrid;
+    },
+
+    showSelectionTargetsForColumn : function(col)
+    {
+        this.getFieldSelectionsPanel().destroyFieldSelectionDropTargets();
+        var ddGroup = this.getGridViewDragPluginConfig().ddGroup;
+        this.getFieldSelectionsPanel().addFieldSelectionDropTargets(this.queryColumnsGrid, ddGroup, col);
     },
 
     loadQueryColumns : function(columns)
@@ -325,7 +342,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
                 items: [
                     '->',
                     this.getCancelButton(),
-                    this.getDoneButton()
+                    this.getApplyButton()
                 ]
             });
         }
@@ -343,7 +360,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
                 handler: function ()
                 {
                     // TODO revert the panel back to initial values and deselect any grid column
-                    this.fireEvent('cancelclick', this);
+                    this.fireEvent('cancel', this);
                 }
             });
         }
@@ -351,23 +368,23 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
         return this.cancelButton;
     },
 
-    getDoneButton : function()
+    getApplyButton : function()
     {
-        if (!this.doneButton)
+        if (!this.applyButton)
         {
-            this.doneButton = Ext4.create('Ext.button.Button', {
-                text: 'Done',
+            this.applyButton = Ext4.create('Ext.button.Button', {
+                text: 'Apply',
                 scope: this,
                 handler: function() {
                     if (this.hasAllRequiredFields())
-                        this.fireEvent('doneclick', this, this.getValues());
+                        this.fireEvent('apply', this, this.getValues());
                     else
                         this.getFieldSelectionsPanel().flagRequiredFields();
                 }
             });
         }
 
-        return this.doneButton;
+        return this.applyButton;
     },
 
     allowTypeSelect : function(view, selected)
@@ -556,12 +573,21 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
         {
             this.fieldTitleCmp = Ext4.create('Ext.Component', {
                 cls: 'field-title',
-                border: false,
-                html: this.field.label + (this.field.required ? ' *' : '')
+                border: false
             });
+
+            this.setFieldTitle();
         }
 
         return this.fieldTitleCmp;
+    },
+
+    setFieldTitle : function(title)
+    {
+        if (title)
+            this.getFieldTitle().update(title);
+        else
+            this.getFieldTitle().update(this.field.label + (this.field.required ? ' *' : ''));
     },
 
     getFieldArea : function()
@@ -646,7 +672,10 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
     flagIfRequired : function()
     {
         if (this.field.required && this.selection == null)
+        {
             this.addCls('missing-required');
+            this.setFieldTitle(this.field.label + ' (Required)');
+        }
     },
 
     removeSelection : function()
@@ -662,7 +691,10 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
         this.selection = Ext4.clone(column && column.data ? column.data : column);
 
         if (this.selection != null)
+        {
             this.removeCls('missing-required');
+            this.setFieldTitle();
+        }
 
         this.getFieldArea().update(this.selection);
         this.getFieldArea().fireEvent('refresh', this.getFieldArea());

@@ -35,8 +35,7 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
                     if(!this.suppressEvents){
                         this.hasChanges = true;
                     }
-                },
-                'specialkey': this.specialKeyPressed
+                }
             }
         });
 
@@ -73,11 +72,14 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             }
         });
 
-        this.items = [
+        var items = [
             this.axisLabelField,
-            this.scaleTypeRadioGroup,
-            this.measureGrid
+            this.scaleTypeRadioGroup
         ];
+        if (this.measureGrid)
+            items.push(this.measureGrid);
+
+        this.items = items;
         
         this.callParent();
     },
@@ -89,17 +91,21 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
         this.hasChanges = false;
     },
 
-    disableScaleAndRange: function() {
-        var measure = this.measureGrid.getSelectionModel().getSelection();
-        var disable = true;
-        if(measure.length > 0){
-            measure = measure[0];
-            if(measure.data.normalizedType == 'int' || measure.data.normalizedType == 'float' || measure.data.normalizedType == 'double'){
-                disable = false;
+    disableScaleAndRange: function()
+    {
+        if (this.measureGrid)
+        {
+            var measure = this.measureGrid.getSelectionModel().getSelection();
+            var disable = true;
+            if (measure.length > 0)
+            {
+                measure = measure[0];
+                if (measure.data.normalizedType == 'int' || measure.data.normalizedType == 'float' || measure.data.normalizedType == 'double')
+                    disable = false;
             }
+
+            this.scaleTypeRadioGroup.setDisabled(disable);
         }
-        
-        this.scaleTypeRadioGroup.setDisabled(disable);
     },
 
     selectionChange: function(suppressEvents){
@@ -178,12 +184,5 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
     showNonMeasureElements: function(){
         this.axisLabelField.show();
         this.scaleTypeRadioGroup.show();
-    },
-
-    specialKeyPressed: function(f, e) {
-        if(e.getKey() == e.ENTER){
-            console.log("enter hit");
-        }
     }
-
 });
