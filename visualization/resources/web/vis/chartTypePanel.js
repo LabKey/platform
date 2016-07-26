@@ -5,7 +5,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
     layout: 'border',
     border: false,
     width: 900,
-    height: 620,
+    height: 525,
 
     initValues: {},
     selectedType: null,
@@ -240,7 +240,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
             this.queryColumnsGrid = Ext4.create('Ext.grid.Panel', {
                 store: store,
                 autoScroll: true,
-                height: 455,
+                height: this.height - 165,
                 enableColumnHide: false,
                 columns: [
                     {
@@ -511,6 +511,8 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionsPanel', {
 
     addFieldSelectionDropTargets : function(grid, ddGroup, selectedCol)
     {
+        var gridSelection = grid.getSelectionModel().getSelection();
+
         // destroy any previous drop targets based on the last selected column
         this.destroyFieldSelectionDropTargets();
 
@@ -521,6 +523,16 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionsPanel', {
             if (fieldSelPanel.getAllowableTypes().indexOf(selectedColType) > -1)
             {
                 var dropTarget = fieldSelPanel.createDropTarget(grid, ddGroup);
+
+                // for automated test, allow click on field area to apply grid column selection
+                if (gridSelection.length > 0)
+                {
+                    fieldSelPanel.getEl().on('click', function(event)
+                    {
+                        dropTarget.notifyDrop(null, event, {records: gridSelection});
+                    }, this);
+                }
+
                 this.fieldSelectionDropTargets.push(dropTarget);
             }
         }, this);
@@ -528,10 +540,11 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionsPanel', {
 
     destroyFieldSelectionDropTargets : function()
     {
-        // remove the cls uses for display and hide the drop text
+        // remove the cls used for display drop target and remove any click listeners
         Ext4.each(this.query('panel'), function(fieldSelPanel)
         {
             fieldSelPanel.removeDropTargetCls();
+            fieldSelPanel.getEl().removeAllListeners();
         }, this);
 
         // destroy the actual DropTarget components
@@ -660,6 +673,7 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
             this.fieldAreaCmp = Ext4.create('Ext.view.View', {
                 cls: 'field-area',
                 minHeight: 50,
+                data: this.selection,
                 tpl: new Ext4.XTemplate(
                     '<tpl if="name">',
                         '<div class="field-selection-display">',
@@ -667,8 +681,7 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
                             '<div class="fa fa-times field-selection-remove"></div>',
                         '</div>',
                     '</tpl>'
-                ),
-                data: this.selection
+                )
             });
 
             this.fieldAreaCmp.on('refresh', function(view)
