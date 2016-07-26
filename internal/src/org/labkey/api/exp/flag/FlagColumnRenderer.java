@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.flag;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
@@ -207,4 +208,10 @@ public class FlagColumnRenderer extends DataColumn
         return displayField;
     }
 
+    @Override
+    public Object getDisplayValue(RenderContext ctx)
+    {
+        // never return null
+        return StringUtils.trimToEmpty((String)super.getDisplayValue(ctx));
+    }
 }
