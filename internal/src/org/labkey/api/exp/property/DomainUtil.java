@@ -448,7 +448,9 @@ public class DomainUtil
                     if (ptype.equalsIgnoreCase(PropertyType.DATE_TIME.getTypeUri()))
                     {
                         type = " for type " + PropertyType.DATE_TIME.getXarName();
-                        FastDateFormat.getInstance(format);
+                        // Allow special named formats (these would otherwise fail validation)
+                        if (!DateUtil.isSpecialNamedFormat(format))
+                            FastDateFormat.getInstance(format);
                     }
                     else if (ptype.equalsIgnoreCase(PropertyType.DOUBLE.getTypeUri()))
                     {

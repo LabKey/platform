@@ -1032,8 +1032,19 @@ validNum:       {
 
 
     /**
+     * Test a date format string to determine if it matches one of LabKey's special named date formats (Date, DateTime, Time)
+     * @param dateFormat Format string to test
+     * @return True if the dateFormat matches one of LabKey's special named date formats, otherwise False
+     */
+    public static boolean isSpecialNamedFormat(String dateFormat)
+    {
+        return "Date".equals(dateFormat) || "DateTime".equals(dateFormat) || "Time".equals(dateFormat);
+    }
+
+
+    /**
      * Format date & time using specified pattern
-     * Note: This implementation is thread-safe and reuses formatters -- SimpleDateFormat is neither
+     * Note: Unlike SimpleDateFormat, this implementation is thread-safe and reuses formatters
      */
     public static String formatDateTime(Date date, String pattern)
     {
