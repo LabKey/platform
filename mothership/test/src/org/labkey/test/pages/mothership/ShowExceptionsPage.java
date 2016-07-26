@@ -54,7 +54,7 @@ public class ShowExceptionsPage extends BaseMothershipPage
         public StackTraceDetailsPage clickStackTrace(int stackTraceId)
         {
             clickAndWait(Locator.linkWithHref("exceptionStackTraceId=" + stackTraceId).findElement(getComponentElement()));
-            return new StackTraceDetailsPage(getDriver().getDriver());
+            return new StackTraceDetailsPage(getWrapper().getDriver());
         }
 
         public void ignoreSelected()
