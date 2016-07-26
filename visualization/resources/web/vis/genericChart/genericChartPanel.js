@@ -1105,6 +1105,12 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 closeAction: 'hide',
                 items: [this.getChartTypePanel()]
             });
+
+            // propagate the show event to the panel so it can stash the initial values
+            this.chartTypeWindow.on('show', function(window)
+            {
+                this.getChartTypePanel().fireEvent('show', this.getChartTypePanel());
+            }, this);
         }
 
         return this.chartTypeWindow;
@@ -1126,18 +1132,15 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     },
                     apply: function(panel, values)
                     {
-                        // TODO should we only call this.renderChart if chartDefinitionChanged?
+                        // note: this event will only fire if a change was made in the Chart Type panel
 
-                        // update chart render type selection
+                        // update chart render type selection and measures for x/y/color/shape/etc.
                         this.setRenderType(values.type);
-
-                        // update the measures for x/y/color/shape/etc.
                         this.measures = values.fields;
                         this.setXAxisMeasure(this.measures.x, true);
                         this.setYAxisMeasure(this.measures.y, true);
 
                         this.renderChart();
-
                         this.getChartTypeWindow().hide();
                     }
                 }

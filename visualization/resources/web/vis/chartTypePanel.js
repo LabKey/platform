@@ -7,6 +7,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
     width: 900,
     height: 620,
 
+    initValues: {},
     selectedType: null,
     selectedFields: null,
     requiredFieldNames: null,
@@ -57,12 +58,12 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
                     {name: 'color', label: 'Color', nonNumericOnly: true},
                     {name: 'shape', label: 'Shape', nonNumericOnly: true}
                 ]
-            },
-            {
-                name: 'time_chart',
-                title: 'Time',
-                imgUrl: LABKEY.contextPath + '/visualization/images/timechart.png'
             }
+            //{
+            //    name: 'time_chart',
+            //    title: 'Time',
+            //    imgUrl: LABKEY.contextPath + '/visualization/images/timechart.png'
+            //}
         ];
 
         this.typesStore = Ext4.create('Ext.data.Store', {
@@ -90,6 +91,9 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
         this.callParent();
 
         this.addEvents('cancel', 'apply');
+
+        // on show, stash the initial values so we can use for comparison and cancel reset
+        this.on('show', function() { this.initValues = this.getValues(); }, this);
     },
 
     getTitlePanel : function()
@@ -364,7 +368,18 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
                 scope: this,
                 handler: function ()
                 {
-                    // TODO revert the panel back to initial values and deselect any grid column
+                    // if we have changes, revert the panel back to initial values
+                    if (this.hasSelectionsChanged(this.getValues()))
+                    {
+                        this.selectedType = this.typesStore.findRecord('name', this.initValues.type, 0, false, true, true);
+                        this.getTypesPanel().getSelectionModel().select(this.selectedType);
+                        this.selectedFields = this.initValues.fields;
+                        this.getFieldSelectionsPanel().setSelection(this.selectedFields);
+                    }
+
+                    // deselect any grid columns
+                    this.getQueryColumnsGrid().getSelectionModel().deselectAll();
+
                     this.fireEvent('cancel', this);
                 }
             });
@@ -380,16 +395,43 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
             this.applyButton = Ext4.create('Ext.button.Button', {
                 text: 'Apply',
                 scope: this,
-                handler: function() {
-                    if (this.hasAllRequiredFields())
-                        this.fireEvent('apply', this, this.getValues());
-                    else
+                handler: function()
+                {
+                    // check required fields and if they all exist and
+                    // nothing has changed, just treat this as a click on 'cancel'
+                    var values = this.getValues();
+                    if (!this.hasAllRequiredFields())
                         this.getFieldSelectionsPanel().flagRequiredFields();
+                    else if (!this.hasSelectionsChanged(values))
+                        this.fireEvent('cancel', this);
+                    else
+                        this.fireEvent('apply', this, values);
                 }
             });
         }
 
         return this.applyButton;
+    },
+
+    hasSelectionsChanged : function(newValues)
+    {
+        if (Ext4.isObject(this.initValues) && Ext4.isObject(newValues))
+        {
+            if (this.initValues.type != newValues.type)
+                return true;
+
+            var initKeys = Ext4.Object.getKeys(this.initValues.fields),
+                newKeys = Ext4.Object.getKeys(newValues.fields);
+            if (!Ext4.Array.equals(initKeys, newKeys))
+                return true;
+
+            var initFieldNames = Ext4.Array.pluck(Ext4.Object.getValues(this.initValues.fields), 'name'),
+                newFieldNames = Ext4.Array.pluck(Ext4.Object.getValues(newValues.fields), 'name');
+            if (!Ext4.Array.equals(initFieldNames, newFieldNames))
+                return true;
+        }
+
+        return false;
     },
 
     allowTypeSelect : function(view, selected)
@@ -441,10 +483,17 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
 
     getValues : function()
     {
-        return {
+        var values = {
             type: this.selectedType != null ? this.selectedType.get('name') : null,
-            fields: this.selectedFields
-        }
+            fields: {}
+        };
+
+        Ext4.Object.each(this.selectedFields, function(key, val)
+        {
+            values.fields[key] = Ext4.clone(val);
+        });
+
+        return values;
     }
 });
 
@@ -526,6 +575,15 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionsPanel', {
             cls: 'type-footer',
             html: '* Required fields'
         }));
+    },
+
+    setSelection : function(selection)
+    {
+        if (Ext4.isObject(selection))
+        {
+            this.selection = selection;
+            this.update(this.chartType);
+        }
     },
 
     getSelection : function()
