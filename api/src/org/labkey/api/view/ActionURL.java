@@ -48,8 +48,9 @@ public class ActionURL extends URLHelper implements Cloneable
     public enum Param
     {
         returnUrl,
-        redirectUrl,
-        cancelUrl
+        redirectUrl,    // mostly deprecated for returnUrl
+        cancelUrl,
+        successUrl
     }
 
     private boolean _baseServerPropsInitialized = false;

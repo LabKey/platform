@@ -90,9 +90,14 @@ public class ResultsQueryView extends AssayBaseQueryView
         sort.appendSortColumn(AssayService.get().getProvider(_protocol).getTableMetadata(_protocol).getResultRowIdFieldKey(), Sort.SortDirection.ASC, false);
         view.getDataRegion().addHiddenFormField("rowId", "" + _protocol.getRowId());
         String returnURL = getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name());
+
         if (returnURL == null)
             returnURL = getViewContext().getActionURL().toString();
         view.getDataRegion().addHiddenFormField(ActionURL.Param.returnUrl, returnURL);
+
+        String redirectUrl = getViewContext().getRequest().getParameter(ActionURL.Param.redirectUrl.name());
+        if (redirectUrl != null)
+            view.getDataRegion().addHiddenFormField(ActionURL.Param.redirectUrl, redirectUrl);
 
         view.getTable();
         SimpleFilter filter = (SimpleFilter) view.getRenderContext().getBaseFilter();

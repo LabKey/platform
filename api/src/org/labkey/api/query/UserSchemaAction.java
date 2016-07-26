@@ -124,10 +124,20 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
         return null;
     }
 
+    /*
+     * NOTE (MAB) UserSchemaAction.appendNavTrail() uses getSuccessURL(null) for the nav trail link.
+     * That's not really right, since the success url and the back/cancel url could be different.
+     *
+     * I changed getSuccessURL(null) to return cancelUrl if it is provided.
+     */
     public ActionURL getSuccessURL(QueryUpdateForm form)
     {
-        ActionURL returnURL = getActionURLParam(ActionURL.Param.returnUrl);
-        if (returnURL == null)
+        ActionURL returnURL = null;
+        if (null == form)
+            returnURL = getActionURLParam(ActionURL.Param.cancelUrl);
+        if (null == returnURL)
+            returnURL = getActionURLParam(ActionURL.Param.returnUrl);
+        if (null == returnURL)
         {
             if (_schema != null && _table != null)
                 returnURL = _schema.urlFor(QueryAction.executeQuery, _form.getQueryDef());
@@ -159,7 +169,7 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
         return root;
     }
 
-    protected void doInsertUpdate(QueryUpdateForm form, BindException errors, boolean insert) throws Exception
+    protected List<Map<String, Object>> doInsertUpdate(QueryUpdateForm form, BindException errors, boolean insert) throws Exception
     {
         TableInfo table = form.getTable();
         if (!table.hasPermission(form.getUser(), insert ? InsertPermission.class : UpdatePermission.class))
@@ -192,6 +202,8 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
 
 
         List<Map<String, Object>> rows;
+        List<Map<String, Object>> ret = null;
+
         if (form.isBulkUpdate())
         {
             rows = new ArrayList<>();
@@ -237,7 +249,7 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
                 if (insert)
                 {
                     BatchValidationException batchErrors = new BatchValidationException();
-                    qus.insertRows(form.getUser(), form.getContainer(), rows, batchErrors, null, null);
+                    ret = qus.insertRows(form.getUser(), form.getContainer(), rows, batchErrors, null, null);
                     if (batchErrors.hasErrors())
                         batchErrors.addToErrors(errors);
                 }
@@ -246,7 +258,7 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
                     // Currently, bulkUpdate doesn't support oldValues due to the need to re-query...
                     if (form.isBulkUpdate())
                     {
-                        qus.updateRows(form.getUser(), form.getContainer(), rows, null, null, null);
+                        ret = qus.updateRows(form.getUser(), form.getContainer(), rows, null, null, null);
                     }
                     else
                     {
@@ -260,7 +272,7 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
 
                         // 18292 - updateRows expects a null list in the case of an "empty" or null map.
                         List<Map<String, Object>> oldKeys = (oldValues == null || oldValues.isEmpty()) ? null : Collections.singletonList(oldValues);
-                        qus.updateRows(form.getUser(), form.getContainer(), rows, oldKeys, null, null);
+                        ret = qus.updateRows(form.getUser(), form.getContainer(), rows, oldKeys, null, null);
                     }
                 }
                 if (!errors.hasErrors())
@@ -280,6 +292,7 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
             {
                 x.addToErrors(errors);
             }
+            return ret;
         }
         catch (Exception x)
         {
@@ -288,6 +301,7 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
             // reused when submitting the exception report.
             errors.reject(SpringActionController.ERROR_MSG, null == x.getMessage() ? x.toString() : x.getMessage());
             ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), x);
+            return null;
         }
     }
 }

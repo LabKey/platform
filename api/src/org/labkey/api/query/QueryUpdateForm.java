@@ -36,6 +36,8 @@ public class QueryUpdateForm extends TableViewForm
      */
     public static final String PREFIX = "quf_";
 
+    public String _successUrl = null;
+
     public QueryUpdateForm(@NotNull TableInfo table, @NotNull ViewContext ctx)
     {
         this(table, ctx, null);
@@ -74,4 +76,12 @@ public class QueryUpdateForm extends TableViewForm
         return PREFIX + column.getName();
     }
 
+    public void setSuccessUrl(String s)
+    {
+        _successUrl = s;
+    }
+    public String getSuccessUrl()
+    {
+        return _successUrl;
+    }
 }
