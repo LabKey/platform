@@ -1790,7 +1790,7 @@ public class QueryController extends SpringActionController
         boolean canEdit = view == null || session || view.canEdit(container, errors);
         if (errors.hasErrors())
             return null;
-        
+
         if (canEdit)
         {
             // Issue 13594: Disallow setting of the customview inherit bit for query views
@@ -2339,6 +2339,20 @@ public class QueryController extends SpringActionController
     @RequiresPermission(InsertPermission.class)
     public static class InsertQueryRowAction extends UserSchemaAction
     {
+        @Override
+        public BindException bindParameters(PropertyValues m) throws Exception
+        {
+            BindException bind = super.bindParameters(m);
+
+            // what is going on with UserSchemaAction and form binding?  Why doesn't successUrl bind?
+            QueryUpdateForm form = (QueryUpdateForm)bind.getTarget();
+            if (null == form.getSuccessUrl() && null != m.getPropertyValue(ActionURL.Param.successUrl.name()))
+                form.setSuccessUrl(m.getPropertyValue(ActionURL.Param.successUrl.name()).getValue().toString());
+            return bind;
+        }
+
+        Map<String,Object> insertedRow = null;
+
         public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors) throws Exception
         {
             InsertView view = new InsertView(tableForm, errors);
@@ -2348,8 +2362,42 @@ public class QueryController extends SpringActionController
 
         public boolean handlePost(QueryUpdateForm tableForm, BindException errors) throws Exception
         {
-            doInsertUpdate(tableForm, errors, true);
+            List<Map<String,Object>> list = doInsertUpdate(tableForm, errors, true);
+            if (null != list && list.size() == 1)
+                insertedRow = list.get(0);
             return 0 == errors.getErrorCount();
+        }
+
+        /**
+         * NOTE: UserSchemaAction.appendNavTrail() uses this method getSuccessURL() for the nav trail link (form==null).
+         * It is used for where to go on success, and also as a "back" link in the nav trail
+         * If there is a setSuccessUrl specified, we will use that for successful submit
+         */
+        @Override
+        public ActionURL getSuccessURL(QueryUpdateForm form)
+        {
+            if (null == form)
+                return super.getSuccessURL(null);
+
+            String str = form.getSuccessUrl();
+            if (StringUtils.isBlank(str))
+                str = form.getReturnUrl();
+
+            if (StringUtils.equals(str,"details.view"))
+            {
+                if (null == insertedRow)
+                    return super.getSuccessURL(form);
+                StringExpression se = form.getTable().getDetailsURL(null, getContainer());
+                str = se.eval(insertedRow);
+            }
+            try
+            {
+                return new ActionURL(str);
+            }
+            catch (IllegalArgumentException x)
+            {
+                return super.getSuccessURL(form);
+            }
         }
 
         public NavTree appendNavTrail(NavTree root)
