@@ -114,6 +114,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.autoColumnYName = fk.toString();
         }
 
+        if (LABKEY.vis.USE_NEW_CHART_WIZARD && this.renderType === 'auto_plot')
+            this.setRenderType('box_plot');
+
         this.chartDefinitionChanged = new Ext4.util.DelayedTask(function(){
             this.markDirty(true);
             this.requestRender(false);
@@ -428,9 +431,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (this.editMode)
         {
             tbarItems.push(this.getOptionsBtn());
-            tbarItems.push(this.getGroupingBtn());
+            if (!LABKEY.vis.USE_NEW_CHART_WIZARD)
+                tbarItems.push(this.getGroupingBtn());
             tbarItems.push(this.getDeveloperBtn());
-
             if (LABKEY.vis.USE_NEW_CHART_WIZARD)
                 tbarItems.push(this.getChartTypeBtn());
 
@@ -1123,16 +1126,16 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     },
                     apply: function(panel, values)
                     {
-                        console.log(values);
+                        // TODO should we only call this.renderChart if chartDefinitionChanged?
 
-                        // TODO handle chart render type selection
+                        // update chart render type selection
+                        this.setRenderType(values.type);
+
+                        // update the measures for x/y/color/shape/etc.
                         this.measures = values.fields;
-
-                        // TODO how to handle changes from the chart type that affect the other look-and-feel options
                         this.setXAxisMeasure(this.measures.x, true);
                         this.setYAxisMeasure(this.measures.y, true);
 
-                        // TODO should we only call this.renderChart if chartDefinitionChanged?
                         this.renderChart();
 
                         this.getChartTypeWindow().hide();
@@ -1201,15 +1204,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 listeners: {
                     chartDefinitionChanged: function ()
                     {
-                        var renderType = this.optionsPanel.getRenderType();
-                        if (this.renderType != renderType)
-                        {
-                            this.renderType = renderType;
-
-                            if (!this.reportId)
-                                this.updateWebpartTitle(this.typeToLabel[renderType]);
-                        }
-
+                        this.setRenderType(this.optionsPanel.getRenderType());
                         this.renderChart();
                     },
                     'closeOptionsWindow': function (canceling)
@@ -1224,6 +1219,17 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
 
         return this.optionsPanel;
+    },
+
+    setRenderType : function(newRenderType)
+    {
+        if (this.renderType != newRenderType)
+        {
+            this.renderType = newRenderType;
+
+            if (!this.reportId)
+                this.updateWebpartTitle(this.typeToLabel[this.renderType]);
+        }
     },
 
     getDeveloperWindow: function()
@@ -2265,7 +2271,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
             else if (!LABKEY.vis.USE_NEW_CHART_WIZARD || Ext4.isString(this.autoColumnYName))
             {
-                measure = this.getXMeasureStore().findRecord('label', 'Cohort', 0, false, true, true);
+                if (LABKEY.vis.USE_NEW_CHART_WIZARD)
+                    measure = this.getChartTypePanel().getStore().findRecord('label', 'Study: Cohort', 0, false, true, true);
+                else
+                    measure = this.getXMeasureStore().findRecord('label', 'Cohort', 0, false, true, true);
+
                 if (measure)
                     this.setXAxisMeasure(measure, true);
             }
@@ -2463,12 +2473,12 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     getSelectedChartType : function()
     {
-        if (this.renderType !== 'auto_plot')
-            return this.renderType === 'scatter_plot' ? 'scatter' : 'box';
+        if (Ext4.isString(this.renderType) && this.renderType !== 'auto_plot')
+            return this.renderType;
         else if (!this.measures.x || this.isBoxPlot(this.renderType, this.measures.x.normalizedType))
-            return 'box';
+            return 'box_plot';
         else if (this.measures.x && this.isScatterPlot(this.renderType, this.measures.x.normalizedType))
-            return 'scatter';
+            return 'scatter_plot';
 
         return null;
     },
@@ -2668,7 +2678,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             queryFields.push(f);
         }, this);
 
-        // Sorts fields by their shortCaption, but put participant groups/categories/cohort at the end.
+        // Sorts fields by their shortCaption, but put subject groups/categories/cohort at the end.
         queryFields.sort(function(a, b)
         {
             if (a.isSubjectGroupColumn != b.isSubjectGroupColumn)
@@ -2686,9 +2696,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     sortFields: function(fields){
         // Sorts fields by their shortCaption, but puts
-        // participant groups/categories/cohort at the beginning.
+        // subject groups/categories/cohort at the beginning.
         var otherFields = [],
-            participantFields = [],
+            subjectFields = [],
             sortFunction = function(a, b)
             {
                 if (a.shortCaption < b.shortCaption)
@@ -2704,15 +2714,15 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             for (var i = 0; i < fields.length; i++)
             {
                 if (fields[i].name.indexOf(this.subject.column) > -1)
-                    participantFields.push(fields[i]);
+                    subjectFields.push(fields[i]);
                 else
                     otherFields.push(fields[i]);
             }
 
-            participantFields.sort(sortFunction);
+            subjectFields.sort(sortFunction);
             otherFields.sort(sortFunction);
 
-            return participantFields.concat(otherFields);
+            return subjectFields.concat(otherFields);
         }
         else
         {

@@ -16,7 +16,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
     {
         var typesArr = [
             {
-                name: 'bar',
+                name: 'bar_chart',
                 title: 'Bar',
                 //active: true,
                 imgUrl: LABKEY.contextPath + '/visualization/images/barchart.png',
@@ -26,7 +26,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
                 ]
             },
             {
-                name: 'box',
+                name: 'box_plot',
                 title: 'Box',
                 active: true,
                 imgUrl: LABKEY.contextPath + '/visualization/images/boxplot.png',
@@ -38,7 +38,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
                 ]
             },
             {
-                name: 'pie',
+                name: 'pie_chart',
                 title: 'Pie',
                 //active: true,
                 imgUrl: LABKEY.contextPath + '/visualization/images/piechart.png',
@@ -47,7 +47,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
                 ]
             },
             {
-                name: 'scatter',
+                name: 'scatter_plot',
                 title: 'Scatter',
                 active: true,
                 imgUrl: LABKEY.contextPath + '/visualization/images/scatterplot.png',
@@ -59,7 +59,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
                 ]
             },
             {
-                name: 'time',
+                name: 'time_chart',
                 title: 'Time',
                 imgUrl: LABKEY.contextPath + '/visualization/images/timechart.png'
             }
@@ -295,6 +295,11 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
         this.getFieldSelectionsPanel().destroyFieldSelectionDropTargets();
         var ddGroup = this.getGridViewDragPluginConfig().ddGroup;
         this.getFieldSelectionsPanel().addFieldSelectionDropTargets(this.queryColumnsGrid, ddGroup, col);
+    },
+
+    getStore : function()
+    {
+        return this.getQueryColumnsGrid().getStore();
     },
 
     loadQueryColumns : function(columns)

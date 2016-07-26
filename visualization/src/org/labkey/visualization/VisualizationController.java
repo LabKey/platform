@@ -1451,8 +1451,8 @@ public class VisualizationController extends SpringActionController
                         {
                             for (ParticipantCategory category : study.getParticipantCategories(getUser()))
                             {
-                                FieldKey cohort = FieldKey.fromParts(study.getSubjectColumnName(), category.getLabel());
-                                subjectGroupColumns.add(cohort.toString());
+                                FieldKey group = FieldKey.fromParts(study.getSubjectColumnName(), category.getLabel());
+                                subjectGroupColumns.add(group.toString());
                             }
                         }
                     }
