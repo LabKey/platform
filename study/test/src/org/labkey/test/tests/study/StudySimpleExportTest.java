@@ -30,6 +30,7 @@ import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.ListHelper;
+import org.labkey.test.util.ListHelper.ListColumn;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -45,7 +46,7 @@ import static org.junit.Assert.*;
 
 /**
  * This test is designed to test individual parts/properties of the study import/export archive.
- * The @BeforeClass creates a new study manuall using the default settings.
+ * The @BeforeClass creates a new study manually using the default settings.
  * Each @Test then sets a property in that study, exports the study, and reimports it into a subfolder
  */
 @Category({DailyB.class, FileBrowser.class})
@@ -131,12 +132,15 @@ public class StudySimpleExportTest extends StudyBaseTest
         waitForElement(Locator.name("ff_name0"));
         _listHelper.deleteField("Dataset Fields", 0);
         _listHelper.addField("Dataset Fields", "TestInt", "TestInt", ListHelper.ListColumnType.Integer);
-        _listHelper.addField("Dataset Fields", "TestDate", "TestDate", ListHelper.ListColumnType.DateTime);
+        // Format "TestDate" as "Date"
+        _listHelper.addField(new ListColumn("TestDate", "TestDate", ListHelper.ListColumnType.DateTime, "TestDate", "Date"));
+        // "TestDateTime" format will default to date-time
+        _listHelper.addField("Dataset Fields", "TestDateTime", "TestDateTime", ListHelper.ListColumnType.DateTime);
         clickButton("Save");
         clickButton("View Data");
         DataRegionTable.findDataRegion(this).clickHeaderButton("Insert", "Import Data");
         waitForElement(Locator.name("text"));
-        setFormElement(Locator.name("text"), "ParticipantId\tSequenceNum\tTestInt\tTestDate\nPTID123\t1.0\t999\t2013-10-29");
+        setFormElement(Locator.name("text"), "ParticipantId\tSequenceNum\tTestInt\tTestDate\nPTID123\t1.0\t999\t2013-10-29\t2013-10-28 01:23");
         clickButton("Submit");
     }
 
@@ -233,6 +237,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         goToFolderManagement();
         clickAndWait(Locator.linkWithText("Formats"));
         setFormElement(Locator.name("defaultDateFormat"), "MMM dd, yyyy");
+        setFormElement(Locator.name("defaultDateTimeFormat"), "MMM dd, yyyy HH:mm");
         setFormElement(Locator.name("defaultNumberFormat"), "#.000");
         checkCheckbox(Locator.name("restrictedColumnsEnabled"));
         clickButton("Save");
@@ -251,6 +256,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         goToFolderManagement();
         clickAndWait(Locator.linkWithText("Formats"));
         assertFormElementEquals(Locator.name("defaultDateFormat"), "MMM dd, yyyy");
+        assertFormElementEquals(Locator.name("defaultDateTimeFormat"), "MMM dd, yyyy HH:mm");
         assertFormElementEquals(Locator.name("defaultNumberFormat"), "#.000");
         assertChecked(Locator.name("restrictedColumnsEnabled"));
 
@@ -850,7 +856,7 @@ public class StudySimpleExportTest extends StudyBaseTest
                 {"scope", FOLDER_SCOPE},
                 {"Label", "Product label"},
                 {"Role", "Product role"},
-                {"cust_product", "2014-03-26"}
+                {"cust_product", "2014-03-26 00:00"}
         }));
         tableData.put("Product", productData);
 
