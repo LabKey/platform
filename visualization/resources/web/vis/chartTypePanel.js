@@ -677,7 +677,7 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
                 tpl: new Ext4.XTemplate(
                     '<tpl if="name">',
                         '<div class="field-selection-display">',
-                            '{label}',
+                            '{label:htmlEncode}',
                             '<div class="fa fa-times field-selection-remove"></div>',
                         '</div>',
                     '</tpl>'

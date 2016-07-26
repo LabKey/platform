@@ -72,6 +72,9 @@
     color: white;
     border-radius: 8px;
     border: solid transparent 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .chart-type-panel .field-selections .field-selection-display .field-selection-remove {
     display: none;
