@@ -360,18 +360,44 @@ public class ActionURL extends URLHelper implements Cloneable
         String context = getContextPath();
         URI uri;
 
-        String p;
-        String q;
+        String p = "";
+        String q = "";
+        String f = "";
         int i = url.indexOf('?');
-        if (i == -1)
+        int k = url.indexOf('#');
+
+        // be sure to not look for '?' query indicator to the right of the '#' fragment indicator
+        // https://tools.ietf.org/html/rfc3986#section-3.5
+
+        if (i == -1 && k == -1)
         {
             p = url;
             q = "";
+            f = "";
         }
-        else
+        else if (i != -1 && k == -1)
         {
             p = url.substring(0,i);
             q = url.substring(i+1);
+            f = "";
+        }
+        else if (i == -1 && k != -1)
+        {
+            p = url.substring(0,k);
+            q = "";
+            f = url.substring(k+1);
+        }
+        else if (i != -1 && k != -1 && i < k)
+        {
+            p = url.substring(0,i);
+            q = url.substring(i+1, k);
+            f = url.substring(k+1);
+        }
+        else if (i != -1 && k != -1 && i > k)
+        {
+            p = url.substring(0,i);
+            q = "";
+            f = url.substring(k+1);
         }
 
         try
@@ -399,9 +425,8 @@ public class ActionURL extends URLHelper implements Cloneable
 
         setPath(path);
         setRawQuery(q);
-        setFragment(uri.getFragment());
+        setFragment(f);
     }
-
 
     public ActionURL setContainer(Container c)
     {
