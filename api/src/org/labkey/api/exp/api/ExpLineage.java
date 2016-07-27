@@ -108,7 +108,9 @@ public class ExpLineage
         // walk from start through edges looking for all sample children, ignoring data children
         Set<ExpMaterial> materials = new HashSet<>();
         Queue<ExpObject> stack = new LinkedList<>();
+        Set<ExpObject> seen = new HashSet<>();
         stack.add(seed);
+        seen.add(seed);
         while (!stack.isEmpty())
         {
             ExpObject curr = stack.poll();
@@ -122,11 +124,19 @@ public class ExpLineage
                 ExpObject child = nodes.get(childLsid);
                 if (child instanceof ExpRun)
                 {
-                    stack.add(child);
+                    if (!seen.contains(child))
+                    {
+                        stack.add(child);
+                        seen.add(child);
+                    }
                 }
                 else if (child instanceof ExpMaterial)
                 {
-                    stack.add(child);
+                    if (!seen.contains(child))
+                    {
+                        stack.add(child);
+                        seen.add(child);
+                    }
                     materials.add((ExpMaterial)child);
                 }
             }
@@ -153,7 +163,9 @@ public class ExpLineage
         // walk from start through edges looking for all sample children, stopping at first datas found
         Set<ExpData> datas = new HashSet<>();
         Queue<ExpObject> stack = new LinkedList<>();
+        Set<ExpObject> seen = new HashSet<>();
         stack.add(seed);
+        seen.add(seed);
         while (!stack.isEmpty())
         {
             ExpObject curr = stack.poll();
@@ -167,11 +179,19 @@ public class ExpLineage
                 ExpObject parent = nodes.get(parentLsid);
                 if (parent instanceof ExpRun)
                 {
-                    stack.add(parent);
+                    if (!seen.contains(parent))
+                    {
+                        stack.add(parent);
+                        seen.add(parent);
+                    }
                 }
                 else if (parent instanceof ExpMaterial)
                 {
-                    stack.add(parent);
+                    if (!seen.contains(parent))
+                    {
+                        stack.add(parent);
+                        seen.add(parent);
+                    }
                 }
                 else if (parent instanceof ExpData)
                 {
