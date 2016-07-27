@@ -7,37 +7,28 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
     extend : 'LABKEY.vis.GenericOptionsPanel',
 
-    constructor : function(config){
-        if (!config.renderType || config.renderType == 'null') {
-            config.renderType = 'box_plot';
-        }
+    layout: 'column',
 
-        if (config.pointType == null) {
-           config.pointType = 'outliers';
-        }
+    renderType: 'box_plot',
+    pointType: 'outliers',
 
-        Ext4.applyIf(config, {
-            renderType: 'box_plot',
-            width: 310
-        });
-
+    constructor : function(config)
+    {
         this.callParent([config]);
-
-        this.addEvents(
-                'chartDefinitionChanged'
-        );
+        this.addEvents('chartDefinitionChanged');
     },
 
     initComponent : function() {
 
         var labelSeparator = '';
-        var labelWidth = 85;
+        var labelWidth = 95;
 
         this.jitterCheckbox = Ext4.create('Ext.form.field.Checkbox', {
             name: 'jitter',
             fieldLabel: "Jitter Points?",
             labelSeparator: labelSeparator,
             labelWidth: labelWidth,
+            padding: '0 0 10px 0',
             value: this.position == 'jitter',
             listeners: {
                 change: function(cb, newVal, oldVal){
@@ -53,7 +44,8 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             labelSeparator: labelSeparator,
             labelWidth: labelWidth,
             fieldLabel: 'Point Opacity',
-            width: '100%',
+            width: 270,
+            padding: '0 0 10px 0',
             value: 50,
             increment: 10,
             minValue: 10,
@@ -72,7 +64,8 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             labelSeparator: labelSeparator,
             labelWidth: labelWidth,
             fieldLabel: 'Point Size',
-            width: '100%',
+            width: 270,
+            padding: '0 0 10px 0',
             value: 5,
             increment: 1,
             minValue: 1,
@@ -94,9 +87,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
         this.pointColorPicker = Ext4.create('Ext.picker.Color', {
             value: '3366FF',  // initial selected color
-            fieldLabel: 'Point Color',
-            width: 275,
-            height: 60,
+            width: 180,
             listeners: {
                 select: function(picker, selColor) {
                     if(!this.suppressEvents){
@@ -119,9 +110,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
         this.lineColorPicker = Ext4.create('Ext.picker.Color', {
             value: '000000',  // initial selected color
-            fieldLabel: 'Line Color',
-            width: 275,
-            height: 60,
+            width: 180,
             listeners: {
                 select: function(picker, selColor) {
                     if(!this.suppressEvents){
@@ -145,9 +134,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
         this.fillColorPicker = Ext4.create('Ext.picker.Color', {
             value: '3366FF',  // initial selected color
-            fieldLabel: 'Fill Color',
-            width: 275,
-            height: 60,
+            width: 180,
             listeners: {
                 select: function(picker, selColor) {
                     if(!this.suppressEvents){
@@ -167,7 +154,8 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             labelSeparator: labelSeparator,
             labelWidth: labelWidth,
             fieldLabel: 'Line Width',
-            width: '100%',
+            width: 270,
+            padding: '0 0 10px 0',
             value: 1,
             increment: 1,
             minValue: 1,
@@ -186,7 +174,8 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             fieldLabel: 'Width',
             labelSeparator: labelSeparator,
             labelWidth: labelWidth,
-            width: 293,
+            width: 275,
+            padding: '0 0 10px 0',
             allowDecimals: false,
             hideTrigger: true,
             listeners: {
@@ -203,7 +192,8 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             fieldLabel: 'Height',
             labelSeparator: labelSeparator,
             labelWidth: labelWidth,
-            width: 293,
+            width: 275,
+            padding: '0 0 10px 0',
             allowDecimals: false,
             hideTrigger: true,
             listeners: {
@@ -216,29 +206,42 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             }
         });
 
-        this.items = [
-            this.getRenderTypeCombo(labelWidth, labelSeparator),
-            this.getPointCombo(labelWidth, labelSeparator),
-            this.jitterCheckbox,
-            this.lineWidthSlider,
-            this.opacitySlider,
-            this.pointSizeSlider,
-            this.colorFieldContainer,
-            this.lineColorContainer,
-            this.fillColorContainer,
-            this.widthBox,
-            this.heightBox
-        ];
-
-        this.buttons = [{
-            text: 'OK',
-            handler: this.applyChangesButtonClicked,
-            scope: this
+        this.items = [{
+            columnWidth: 0.5,
+            border: false,
+            padding: '0 20px 0 0',
+            items: [
+                this.getRenderTypeCombo(labelWidth, labelSeparator),
+                this.widthBox,
+                this.heightBox,
+                this.opacitySlider,
+                this.pointSizeSlider,
+                this.colorFieldContainer
+            ]
         },{
-            text: 'Cancel',
-            handler: this.cancelChangesButtonClicked,
-            scope: this
+            columnWidth: 0.5,
+            border: false,
+            items: [
+                this.getPointCombo(labelWidth, labelSeparator),
+                this.jitterCheckbox,
+                this.lineWidthSlider,
+                this.lineColorContainer,
+                this.fillColorContainer
+            ]
         }];
+
+        if (!LABKEY.vis.USE_NEW_CHART_WIZARD)
+        {
+            this.buttons = [{
+                text: 'OK',
+                handler: this.applyChangesButtonClicked,
+                scope: this
+            }, {
+                text: 'Cancel',
+                handler: this.cancelChangesButtonClicked,
+                scope: this
+            }];
+        }
 
         this.callParent();
     },
@@ -270,7 +273,8 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
                 store: this.renderTypeStore,
                 labelSeparator: labelSeparator,
                 labelWidth: labelWidth,
-                width: 293, // It'd be great if this didn't have to be hard-coded
+                width: 275,
+                padding: '0 0 10px 0',
                 queryMode: 'local',
                 editable: false,
                 forceSelection: true,
@@ -309,7 +313,8 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
                 store: this.pointTypeStore,
                 labelSeparator: labelSeparator,
                 labelWidth: labelWidth,
-                width: 293, // It'd be great if this didn't have to be hard-coded
+                width: 275,
+                padding: '0 0 10px 0',
                 queryMode: 'local',
                 editable: false,
                 forceSelection: true,

@@ -95,7 +95,7 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
             ]
         });
 
-        if (this.isDeveloper)
+        if (this.isDeveloper || LABKEY.vis.USE_NEW_CHART_WIZARD)
         {
             this.items = [
                 {
@@ -112,15 +112,18 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
             ];
         }
 
-        this.buttons = [{
-            text: 'OK',
-            handler: this.applyChangesButtonClicked,
-            scope: this
-        },{
-            text: 'Cancel',
-            handler: this.cancelChangesButtonClicked,
-            scope: this
-        }];
+        if (!LABKEY.vis.USE_NEW_CHART_WIZARD)
+        {
+            this.buttons = [{
+                text: 'OK',
+                handler: this.applyChangesButtonClicked,
+                scope: this
+            }, {
+                text: 'Cancel',
+                handler: this.cancelChangesButtonClicked,
+                scope: this
+            }];
+        }
 
         this.callParent();
     },

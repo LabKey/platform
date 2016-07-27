@@ -368,6 +368,8 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
                 scope: this,
                 handler: function ()
                 {
+                    // TODO need to also reset the values on ESC key close
+
                     // if we have changes, revert the panel back to initial values
                     if (this.hasSelectionsChanged(this.getValues()))
                     {

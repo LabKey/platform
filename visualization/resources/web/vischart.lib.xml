@@ -1,7 +1,8 @@
 <libraries xmlns="http://labkey.org/clientLibrary/xml/">
     <library compileInProductionMode="true">
         <script path="vis/chartTypePanel.js"/>
-        <script path="vis/chartTypePanel.css"/>
+        <script path="vis/lookAndFeelPanel.js"/>
+        <script path="vis/chartWizardPanel.css"/>
 
         <script path="vis/genericOptionsPanel.js"/>
         <script path="vis/mainTitleOptionsPanel.js"/>

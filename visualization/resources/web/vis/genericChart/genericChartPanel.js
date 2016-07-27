@@ -270,6 +270,25 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.getChartTypeWindow().show();
     },
 
+    getLookAndFeelBtn : function()
+    {
+        if (!this.lookAndFeelBtn)
+        {
+            this.lookAndFeelBtn = Ext4.create('Ext.button.Button', {
+                text: 'Look & Feel',
+                handler: this.showLookAndFeelWindow,
+                scope: this
+            });
+        }
+
+        return this.lookAndFeelBtn;
+    },
+
+    showLookAndFeelWindow : function()
+    {
+        this.getLookAndFeelWindow().show();
+    },
+
     getExportBtn : function()
     {
         if (!this.exportBtn)
@@ -430,12 +449,17 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         if (this.editMode)
         {
-            tbarItems.push(this.getOptionsBtn());
-            if (!LABKEY.vis.USE_NEW_CHART_WIZARD)
-                tbarItems.push(this.getGroupingBtn());
-            tbarItems.push(this.getDeveloperBtn());
             if (LABKEY.vis.USE_NEW_CHART_WIZARD)
+            {
                 tbarItems.push(this.getChartTypeBtn());
+                tbarItems.push(this.getLookAndFeelBtn());
+            }
+            else
+            {
+                tbarItems.push(this.getOptionsBtn());
+                tbarItems.push(this.getGroupingBtn());
+                tbarItems.push(this.getDeveloperBtn());
+            }
 
             if (this.customButtons)
             {
@@ -546,9 +570,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     {
         if (!this.xMeasurePanel)
         {
-            this.xMeasurePanel = Ext4.create('LABKEY.vis.GenericChartAxisPanel',{
-                border: false,
-                frame: false,
+            this.xMeasurePanel = Ext4.create('LABKEY.vis.GenericChartAxisPanel', {
                 store: this.getXMeasureStore(),
                 measureGrid: !LABKEY.vis.USE_NEW_CHART_WIZARD ? this.getXMeasureGrid() : undefined,
                 queryName: this.queryName,
@@ -1093,12 +1115,12 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         return this.groupingMeasureStore;
     },
 
-    getChartTypeWindow: function()
+    getChartTypeWindow : function()
     {
         if (!this.chartTypeWindow)
         {
             this.chartTypeWindow = Ext4.create('Ext.window.Window', {
-                cls: 'data-window',
+                cls: 'data-window chart-wizard-dialog',
                 modal: true,
                 header: false,
                 resizable: false,
@@ -1150,6 +1172,54 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         return this.chartTypePanel;
     },
 
+    getLookAndFeelWindow : function()
+    {
+        if (!this.lookAndFeelWindow)
+        {
+            this.lookAndFeelWindow = Ext4.create('Ext.window.Window', {
+                cls: 'data-window chart-wizard-dialog',
+                modal: true,
+                header: false,
+                resizable: false,
+                closeAction: 'hide',
+                items: [this.getLookAndFeelPanel()]
+            });
+
+            // propagate the show event to the panel so it can stash the initial values
+            this.lookAndFeelWindow.on('show', function(window)
+            {
+                this.getLookAndFeelPanel().fireEvent('show', this.getLookAndFeelPanel());
+            }, this);
+        }
+
+        return this.lookAndFeelWindow;
+    },
+
+    getLookAndFeelPanel : function()
+    {
+        if (!this.lookAndFeelPanel)
+        {
+            this.lookAndFeelPanel = Ext4.create('LABKEY.vis.LookAndFeelPanel', {
+                isDeveloper: this.isDeveloper,
+                listeners: {
+                    scope: this,
+                    cancel: function(panel)
+                    {
+                        console.log('look and feel cancel');
+                        this.getLookAndFeelWindow().hide();
+                    },
+                    apply: function(panel, values)
+                    {
+                        console.log('look and feel apply');
+                        this.getLookAndFeelWindow().hide();
+                    }
+                }
+            });
+        }
+
+        return this.lookAndFeelPanel;
+    },
+
     getOptionsWindow: function()
     {
         if (!this.optionsWindow)
@@ -1158,7 +1228,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 title: 'Plot Options',
                 hidden: true,
                 border: 1,
-                width: 330,
                 resizable: false,
                 cls: 'data-window',
                 modal: true,
@@ -1198,12 +1267,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.optionsPanel = Ext4.create('LABKEY.vis.GenericChartOptionsPanel', {
                 renderType: this.renderType,
                 customRenderTypes: this.customRenderTypes,
-                width: '100%',
-                defaults: {
-                    labelAlign: 'left',
-                    labelWidth: 45,
-                    labelSeparator: ''
-                },
                 listeners: {
                     chartDefinitionChanged: function ()
                     {

@@ -1,18 +1,25 @@
-.chart-type-panel {
+.chart-wizard-dialog {
+    padding: 0;
+}
+
+.chart-type-panel,
+.look-and-feel-panel {
     background-color: #eeeeee;
     padding: 10px;
 }
 
-.chart-type-panel div,
-.chart-type-panel span {
+.chart-type-panel div, .chart-type-panel span,
+.look-and-feel-panel div, .look-and-feel-panel span {
     color: #404040;
 }
 
-.chart-type-panel .x4-border-layout-ct {
+.chart-type-panel .x4-border-layout-ct,
+.look-and-feel-panel .x4-border-layout-ct {
     background-color: transparent;
 }
 
-.chart-type-panel .region-panel {
+.chart-type-panel .region-panel,
+.look-and-feel-panel .region-panel {
     background-color: #eeeeee;
     margin: 10px;
 }
@@ -93,7 +100,8 @@
     color: #404040;
 }
 
-.chart-type-panel .title-panel div {
+.chart-type-panel .title-panel div,
+.look-and-feel-panel .title-panel div {
     background-color: #eeeeee;
     color: #707070;
     font-size: 20px;
@@ -125,4 +133,19 @@
 }
 .chart-type-panel .types-panel .item-active:hover {
     border: solid #41c49f 2px;
+}
+
+.look-and-feel-panel .navigation-panel .item {
+    padding: 2px 15px 8px 0;
+    color: #707070;
+}
+.look-and-feel-panel .navigation-panel .item-over {
+    color: #404040;
+    font-weight: bold;
+    cursor: pointer;
+}
+.look-and-feel-panel .navigation-panel .item-selected {
+    color: #41c49f;
+    font-weight: bold;
+    cursor: default;
 }
