@@ -45,6 +45,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.etl.ListofMapsDataIterator;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.*;
@@ -1201,6 +1202,19 @@ public class QueryController extends SpringActionController
 
             ActionURL url = new ActionURL(RawSchemaMetaDataAction.class, getContainer());
             url.addParameter("schemaName", _schemaName);
+
+            if (ti.getDomain() != null)
+            {
+                Domain domain = ti.getDomain();
+                if (domain.getStorageTableName() != null)
+                {
+                    // Use the real table and schema names for getting the metadata
+                    _tableName = domain.getStorageTableName();
+                    _schemaName = domain.getDomainKind().getStorageSchemaName();
+                }
+            }
+
+
             HttpView scopeInfo = new ScopeView("Scope and Schema Information", scope, _schemaName, url);
 
             SqlDialect dialect = scope.getSqlDialect();
@@ -1361,9 +1375,9 @@ public class QueryController extends SpringActionController
 
                 for (int i = 1; i <= columnCount; i++)
                 {
-                    out.print("<th class=\"labkey-column-header\">");
+                    out.print("<td class=\"labkey-column-header\">");
                     out.print(PageFlowUtil.filter(md.getColumnLabel(i)));
-                    out.print("</th>");
+                    out.print("</td>");
                 }
 
                 out.println("</tr>\n");
