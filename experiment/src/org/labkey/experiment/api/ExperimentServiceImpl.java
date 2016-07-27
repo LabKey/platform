@@ -1470,6 +1470,18 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 newHotness.second.equals(oldAndBusted.second))
             return true; // short-circuit if everything matches
 
+        // when there is a recursive lineage, the old lineage includes the seed but the new lineage doesn't
+        if (oldAndBusted.first.contains(seed) || oldAndBusted.second.contains(seed))
+        {
+            Set<ExpData> recursiveDataCheck = new HashSet<>(oldAndBusted.first);
+            recursiveDataCheck.remove(seed);
+            Set<ExpMaterial> recursiveMaterialCheck = new HashSet<>(oldAndBusted.second);
+            recursiveMaterialCheck.remove(seed);
+            if (newHotness.first.equals(recursiveDataCheck) &&
+                    newHotness.second.equals(recursiveMaterialCheck))
+                return true;
+        }
+
         Set<ExpData> newExpDataUniques = new HashSet<>(newHotness.first);
         Set<ExpData> oldExpDataUniques = new HashSet<>(oldAndBusted.first);
         Set<ExpMaterial> newExpMaterialUniques = new HashSet<>(newHotness.second);
