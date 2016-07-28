@@ -97,7 +97,7 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
                         name: 'reportThumbnailType',
                         boxLabel: 'Auto-generate',
                         description: 'Auto-generate a new thumbnail based on the first chart in this report',
-                        thumbnailPreview: null, // to be poplulated by calls to updateCurrentChartThumbnail
+                        thumbnailPreview: null, // to be populated by calls to updateCurrentChartThumbnail
                         inputValue: 'AUTO',
                         checked: this.thumbnailType == 'AUTO'
                     },
@@ -107,7 +107,7 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
                         name: 'reportThumbnailType',
                         boxLabel: 'None',
                         description: 'Use the default static image for this report type',
-                        thumbnailPreview: '<img src="' + LABKEY.contextPath + '/visualization/report/timechart.png"/>', 
+                        thumbnailPreview: '<img src="' + LABKEY.contextPath + '/visualization/images/timechart.png"/>',
                         inputValue: 'NONE',
                         checked: this.thumbnailType == 'NONE'
                     },

@@ -67,7 +67,7 @@ public class TimeChartReportImpl extends TimeChartReport implements SvgThumbnail
     @Override
     public String getStaticThumbnailPath()
     {
-        return "visualization/report/timechart.png";
+        return "visualization/images/timechart.png";
     }
 
     @Override

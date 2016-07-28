@@ -95,7 +95,7 @@ public class GenericChartReportImpl extends GenericChartReport implements SvgThu
         RenderType type = getRenderType();
         String name = null != type ? type.getThumbnailName() : RenderType.AUTO_PLOT.getThumbnailName();
 
-        return "/visualization/report/" + name;
+        return "/visualization/images/" + name;
     }
 
     @Override

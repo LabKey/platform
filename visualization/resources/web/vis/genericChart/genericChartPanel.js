@@ -3002,12 +3002,12 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     },
 
     getNoneThumbnailURL: function(){
-        if (!this.measures.x || this.isBoxPlot(this.renderType, this.measures.x.normalizedType))
-            return LABKEY.contextPath + '/visualization/report/box_plot.png';
+        //if (!this.measures.x || this.isBoxPlot(this.renderType, this.measures.x.normalizedType))
+        //    return LABKEY.contextPath + '/visualization/images/boxplot.png';
 
         if (this.measures.x && this.isScatterPlot(this.renderType, this.measures.x.normalizedType))
-            return LABKEY.contextPath + '/visualization/report/scatter_plot.png';
+            return LABKEY.contextPath + '/visualization/images/scatterplot.png';
 
-        return LABKEY.contextPath + '/visualization/report/box_plot.png';
+        return LABKEY.contextPath + '/visualization/images/boxplot.png';
     }
 });

@@ -3008,11 +3008,8 @@ visualization/webapp/visualization/images/piechart.png -text
 visualization/webapp/visualization/images/scatterplot.png -text
 visualization/webapp/visualization/images/timechart.png -text
 visualization/webapp/visualization/report/box_plot.gif -text
-visualization/webapp/visualization/report/box_plot.png -text
 visualization/webapp/visualization/report/scatter_plot.gif -text
-visualization/webapp/visualization/report/scatter_plot.png -text
 visualization/webapp/visualization/report/timechart.gif -text
-visualization/webapp/visualization/report/timechart.png -text
 wiki/build.xml -text
 wiki/lib/radeox-api.jar -text
 wiki/lib/radeox.jar -text
