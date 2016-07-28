@@ -413,12 +413,30 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.supportedBrowser = !(Ext4.isIE6 || Ext4.isIE7 || Ext4.isIE8); // issue 15372
 
         // setup export menu (items to be added later)
-        this.exportMenu = Ext4.create('Ext.menu.Menu', {cls: 'extContainer'});
+        this.exportPdfMenu = Ext4.create('Ext.menu.Menu', {showSeparator: false});
+        this.exportPngMenu = Ext4.create('Ext.menu.Menu', {showSeparator: false});
         this.exportMenuBtn = Ext4.create('Ext.button.Button', {
             text: 'Export',
-            menu: this.exportMenu,
             disabled: true,
-            scope: this
+            scope: this,
+            menu: Ext4.create('Ext.menu.Menu', {
+                showSeparator: false,
+                items: [{
+                    text: 'PDF',
+                    iconCls: 'fa fa-file-pdf-o',
+                    menu: this.exportPdfMenu
+                },{
+                    text: 'PNG',
+                    iconCls: 'fa fa-file-image-o',
+                    menu: this.exportPngMenu
+                },{
+                    text: 'Script',
+                    iconCls: 'fa fa-file-text-o',
+                    hidden: !this.isDeveloper,
+                    handler: this.exportChartToScript,
+                    scope: this
+                }]
+            })
         });
 
         // setup buttons for the charting options panels (items to be added to the toolbar)
@@ -438,7 +456,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         if (!this.supportedBrowser)
         {
             this.developerButton.setTooltip("Developer options not supported for IE6, IE7, or IE8.");
-            this.exportMenuBtn.setTooltip("Export not supported for IE6, IE7, or IE8.");
+            this.exportMenuBtn.setTooltip("Export to PDF and PNG not supported for IE6, IE7, or IE8.");
         }
 
         this.saveButton = Ext4.create('Ext.button.Button', {text: 'Save', hidden: !this.canEdit,
@@ -1037,7 +1055,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.chart.removeAll();
         this.chart.removeListener('resize', this.resizeCharts);
         this.plotConfigInfoArr = [];
-        this.exportMenu.removeAll();
+        this.exportPdfMenu.removeAll();
+        this.exportPngMenu.removeAll();
 
         var charts = [];
 
@@ -1059,26 +1078,28 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 );
             charts.push(newChart);
 
-            this.exportMenu.add({
+            this.exportPdfMenu.add({
                 text: this.plotConfigInfoArr[configIndex].title,
-                icon: LABKEY.contextPath + '/_icons/pdf.gif',
+                cls: 'export-pdf-menu-item', // for selenium test
                 configIndex: configIndex,
-                handler: this.exportChartToPdf,
+                exportType: 'pdf',
+                handler: this.exportChartToFile,
+                scope: this
+            });
+
+            this.exportPngMenu.add({
+                text: this.plotConfigInfoArr[configIndex].title,
+                cls: 'export-png-menu-item', // for selenium test
+                configIndex: configIndex,
+                exportType: 'png',
+                handler: this.exportChartToFile,
                 scope: this
             });
         }
 
-        // add the export to script menu item for developers
-        if (this.isDeveloper)
-        {
-            this.exportMenu.add({
-                text: 'Export as Script',
-                icon: LABKEY.contextPath + '/_icons/text.png',
-                handler: this.exportChartToScript,
-                scope: this
-            });
-        }
-        this.exportMenuBtn.setDisabled(!this.supportedBrowser);
+        this.exportPdfMenu.setDisabled(!this.supportedBrowser);
+        this.exportPngMenu.setDisabled(!this.supportedBrowser);
+        this.exportMenuBtn.enable();
 
         // show warning message, if there is one
         if (this.warningText.length > 0)
@@ -1111,7 +1132,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.chart.addListener('resize', this.resizeCharts, this, {buffer: 500});
     },
 
-    exportChartToPdf : function(item) {
+    exportChartToFile : function(item) {
         if (item.configIndex == undefined)
         {
             console.error("The item to be exported does not reference a plot config index.");
@@ -1122,8 +1143,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         var tempChart = this.generatePlot(item.configIndex, 610, null, true);
         if (tempChart)
         {
-            // export the temp chart as a pdf with the chart title as the file name
-            LABKEY.vis.SVGConverter.convert(Ext4.get(tempChart.renderTo).child('svg').dom, 'pdf', this.plotConfigInfoArr[item.configIndex].title);
+            // export the temp chart as a pdf or png with the chart title as the file name
+            LABKEY.vis.SVGConverter.convert(Ext4.get(tempChart.renderTo).child('svg').dom, item.exportType, this.plotConfigInfoArr[item.configIndex].title);
             Ext4.getCmp(tempChart.renderTo).destroy();
         }
     },

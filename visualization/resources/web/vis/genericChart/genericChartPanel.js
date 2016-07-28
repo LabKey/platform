@@ -297,16 +297,23 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 text: 'Export',
                 scope: this,
                 menu: {
+                    showSeparator: false,
                     items: [
                         {
-                            text: 'Export as PDF',
-                            icon: LABKEY.contextPath + '/_icons/pdf.gif',
+                            text: 'PDF',
+                            iconCls: 'fa fa-file-pdf-o',
                             disabled: true,
                             tooltip: !this.supportedBrowser ? "Export to PDF not supported for IE6, IE7, or IE8." : null
                         },
                         {
-                            text: 'Export as Script',
-                            icon: LABKEY.contextPath + '/_icons/text.png',
+                            text: 'PNG',
+                            iconCls: 'fa fa-file-image-o',
+                            disabled: true,
+                            tooltip: !this.supportedBrowser ? "Export to PNG not supported for IE6, IE7, or IE8." : null
+                        },
+                        {
+                            text: 'Script',
+                            iconCls: 'fa fa-file-text-o',
                             hidden: !this.isDeveloper,
                             disabled: true
                         }
@@ -1366,7 +1373,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 title: "Export Script",
                 cls: 'data-window',
                 border: false,
-                frame: false,
                 modal: true,
                 width: 800,
                 resizable: false,
@@ -2107,8 +2113,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.getSaveBtn().disable();
         this.getSaveAsBtn().disable();
 
-        this.disableExportPdf();
-        this.disableExportScript();
+        this.disableExport();
 
         // Keep the toggle button enabled so the user can remove filters
         this.getToggleViewBtn().enable();
@@ -2260,8 +2265,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.getSaveBtn().enable();
             this.getSaveAsBtn().enable();
 
-            this.enableExportPdf();
-            this.enableExportScript();
+            this.enableExport();
+
             this.getCenterPanel().getEl().unmask();
             if (this.editMode && this.supportedBrowser)
             {
@@ -2552,9 +2557,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     clearChartPanel: function(){
         this.clearWarningText();
         this.viewPanel.removeAll();
-
-        this.disableExportPdf();
-        this.disableExportScript();
+        this.disableExport();
     },
 
     clearWarningText: function(){
@@ -2570,57 +2573,66 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     getExportItem: function(menuLabel) {
         var menuItems = this.getExportBtn().menu.items.items;
-        var exportPdfItem;
+        var exportMenuItem;
 
         for (var i = 0; i < menuItems.length; i++)
         {
             if (menuItems[i].text == menuLabel)
             {
-                exportPdfItem = menuItems[i];
+                exportMenuItem = menuItems[i];
                 break;
             }
         }
 
-        return exportPdfItem;
+        return exportMenuItem;
     },
 
-    enableExportPdf: function() {
+    disableExport: function()
+    {
         var exportPdfItem = this.getExportItem("Export as PDF");
-
-        if (exportPdfItem)
-        {
-            exportPdfItem.setDisabled(!this.supportedBrowser);
-            exportPdfItem.addListener('click', this.exportChartToPdf, this);
-        }
-    },
-
-    disableExportPdf: function() {
-        var exportPdfItem = this.getExportItem("Export as PDF");
-
         if (exportPdfItem)
         {
             exportPdfItem.disable();
             exportPdfItem.removeListener('click', this.exportChartToPdf);
         }
-    },
 
-    enableExportScript: function() {
-        var exportPdfItem = this.getExportItem("Export as Script");
-
-        if (exportPdfItem)
+        var exportPngItem = this.getExportItem("Export as PNG");
+        if (exportPngItem)
         {
-            exportPdfItem.enable();
-            exportPdfItem.addListener('click', this.exportChartToScript, this);
+            exportPngItem.disable();
+            exportPngItem.removeListener('click', this.exportChartToPng);
         }
+
+        var exportScriptItem = this.getExportItem("Export as Script");
+        if (exportScriptItem)
+        {
+            exportScriptItem.disable();
+            exportScriptItem.removeListener('click', this.exportChartToScript);
+        }
+
     },
 
-    disableExportScript: function() {
-        var exportPdfItem = this.getExportItem("Export as Script");
-
+    enableExport: function()
+    {
+        var exportPdfItem = this.getExportItem("PDF");
         if (exportPdfItem)
         {
-            exportPdfItem.disable();
-            exportPdfItem.removeListener('click', this.exportChartToScript);
+            exportPdfItem.setDisabled(!this.supportedBrowser);
+            exportPdfItem.addListener('click', this.exportChartToPdf, this);
+        }
+
+        var exportPngItem = this.getExportItem("PNG");
+        if (exportPngItem)
+        {
+            exportPngItem.setDisabled(!this.supportedBrowser);
+            exportPngItem.addListener('click', this.exportChartToPng, this);
+        }
+
+        var exportScriptItem = this.getExportItem("Script");
+        if (exportScriptItem)
+        {
+            exportScriptItem.enable();
+            exportScriptItem.addListener('click', this.exportChartToScript, this);
         }
     },
 
@@ -2630,6 +2642,16 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             // export the temp chart as a pdf with the chart title as the file name
             LABKEY.vis.SVGConverter.convert(Ext4.get(tempDivId).child('svg').dom, 'pdf', this.getChartConfig().labels.main);
+            Ext4.getCmp(tempDivId).destroy();
+        }
+    },
+
+    exportChartToPng: function() {
+        var tempDivId = this.renderPlot(true);
+        if (tempDivId)
+        {
+            // export the temp chart as a png with the chart title as the file name
+            LABKEY.vis.SVGConverter.convert(Ext4.get(tempDivId).child('svg').dom, 'png', this.getChartConfig().labels.main);
             Ext4.getCmp(tempDivId).destroy();
         }
     },
