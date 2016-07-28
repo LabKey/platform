@@ -138,13 +138,6 @@ Ext4.define('LABKEY.query.browser.Browser', {
     _initTbar : function() {
         var tbar = [{
             xtype: 'querybutton',
-            text: 'Refresh',
-            tooltip: 'Refreshes the tree of schemas and queries, or a particular schema if one is selected.',
-            fontCls: 'fa-refresh',
-            handler: this.onRefresh,
-            scope: this
-        },{
-            xtype: 'querybutton',
             text: 'Validate Queries',
             fontCls: 'fa-check-circle',
             tooltip: 'Opens the validate queries tab where you can validate all the queries defined in this folder.',
@@ -387,21 +380,6 @@ Ext4.define('LABKEY.query.browser.Browser', {
         else {
             this.selectQuery(schemaName, queryName);
         }
-    },
-
-    onRefresh : function() {
-        // clear the query details cache
-        LABKEY.query.browser.cache.Query.clearAll();
-        LABKEY.query.browser.cache.QueryDetails.clearAll();
-
-        // remove all tabs except for the first one (home)
-        var tabs = this.getComponent('lk-sb-details');
-        while (tabs.items.length > 1) {
-            tabs.remove(tabs.items.length - 1, true);
-        }
-
-        // reload schema tree
-        this.getTree().getRootNode().reload();
     },
 
     onSelectQuery : function(schemaName, queryName) {
