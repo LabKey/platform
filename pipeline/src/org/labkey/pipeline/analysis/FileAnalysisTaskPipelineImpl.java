@@ -63,6 +63,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     private PipelineActionConfig.displayState _defaultDisplayState;
     private boolean _splittable = true;
     private boolean _writeJobInfoFile = false;
+    private String _workflowProcessKey;
 
     public FileAnalysisTaskPipelineImpl()
     {
@@ -133,6 +134,11 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         if (settings.getDefaultDisplayState() != null)
         {
             _defaultDisplayState = settings.getDefaultDisplayState();
+        }
+
+        if (settings.getWorkflowProcessKey() != null)
+        {
+            _workflowProcessKey = settings.getWorkflowProcessKey();
         }
 
         return this;
@@ -207,6 +213,12 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     public boolean isSplittable()
     {
         return _splittable;
+    }
+
+    @Override
+    public String getWorkflowProcessKey()
+    {
+        return _workflowProcessKey;
     }
 
     @Override
