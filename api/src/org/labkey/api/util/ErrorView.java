@@ -73,6 +73,7 @@ class ErrorView extends HttpView
     {
         Container c = null;
 
+        out.println("<!DOCTYPE html>");
         out.println("<html><head>");
 
         // If it's a startup failure we likely don't have a database, so don't try to handle containers.  Instead, hard-code
