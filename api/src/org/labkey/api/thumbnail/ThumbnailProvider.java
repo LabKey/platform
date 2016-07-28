@@ -36,7 +36,7 @@ import org.labkey.api.view.ViewContext;
 public interface ThumbnailProvider extends AttachmentParent
 {
     /**
-     * Simple path to browser accessible thumbnail image in the webapp, e.g., "report/timechart.png". Callers will prepend
+     * Simple path to browser accessible thumbnail image in the webapp, e.g., "visualization/images/timechart.png". Callers will prepend
      * context path and append look-and-feel version parameter to turn this into a legal relative URL.
      *
      * @return Path to the thumbnail image

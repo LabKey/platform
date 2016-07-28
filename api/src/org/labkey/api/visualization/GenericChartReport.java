@@ -63,7 +63,7 @@ public abstract class GenericChartReport extends AbstractReport
             @Override
             public String getThumbnailName()
             {
-                return "box_plot.png";
+                return "boxplot.png";
             }
             @Override
             public String getIconCls()
@@ -97,7 +97,7 @@ public abstract class GenericChartReport extends AbstractReport
             @Override
             public String getThumbnailName()
             {
-                return "scatter_plot.png";
+                return "scatterplot.png";
             }
             @Override
             public String getIconCls()
@@ -130,7 +130,7 @@ public abstract class GenericChartReport extends AbstractReport
             @Override
             public String getThumbnailName()
             {
-                return "box_plot.png";
+                return "boxplot.png";
             }
             @Override
             public String getIconCls()
