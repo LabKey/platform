@@ -19,8 +19,6 @@ import org.labkey.api.pipeline.PipelineActionConfig;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipelineSettings;
 import org.labkey.api.util.FileType;
-import org.labkey.api.util.StringExpression;
-import org.labkey.api.util.StringExpressionFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -82,6 +80,8 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
     private String _analyzeURL;
     /** If set, the default location for the action in the UI */
     private PipelineActionConfig.displayState _defaultDisplayState;
+
+    private String _workflowProcessKey;
 
     public FileAnalysisTaskPipelineSettings(String name)
     {
@@ -167,5 +167,15 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
     public void setDefaultDisplayState(PipelineActionConfig.displayState defaultDisplayState)
     {
         _defaultDisplayState = defaultDisplayState;
+    }
+
+    public String getWorkflowProcessKey()
+    {
+        return _workflowProcessKey;
+    }
+
+    public void setWorkflowProcessKey(String workflowProcessKey)
+    {
+        _workflowProcessKey = workflowProcessKey;
     }
 }
