@@ -5,6 +5,7 @@ import org.labkey.api.pipeline.AbstractTaskFactory;
 import org.labkey.api.pipeline.AbstractTaskFactorySettings;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.util.FileType;
 
@@ -20,6 +21,8 @@ import java.util.List;
  */
 public class FileImportTask extends PipelineJob.Task<FileImportTask.Factory>
 {
+    private static final String ROLE = "File Import";
+
     private FileImportTask(Factory factory, PipelineJob job)
     {
         super(factory, job);
@@ -30,7 +33,13 @@ public class FileImportTask extends PipelineJob.Task<FileImportTask.Factory>
     public RecordedActionSet run() throws PipelineJobException
     {
         RecordedActionSet records = new RecordedActionSet();
-        getJob().getJobSupport(FileAnalysisJobSupport.class).getInputFiles().forEach(file -> records.add(file, "File Import"));
+        getJob().getJobSupport(FileAnalysisJobSupport.class).getInputFiles().forEach(file ->
+                {
+                    RecordedAction action = new RecordedAction(ROLE);
+                    action.addInput(file, ROLE);
+                    action.addOutput(file, ROLE, false);
+                    records.add(action);
+                });
         return records;
     }
 
@@ -56,7 +65,7 @@ public class FileImportTask extends PipelineJob.Task<FileImportTask.Factory>
         @Override
         public List<String> getProtocolActionNames()
         {
-            return Collections.emptyList();
+            return Collections.singletonList(ROLE);
         }
 
         @Override
