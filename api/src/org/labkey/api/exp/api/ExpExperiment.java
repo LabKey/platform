@@ -19,6 +19,7 @@ package org.labkey.api.exp.api;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.User;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -70,4 +71,9 @@ public interface ExpExperiment extends ExpObject
     String getComments();
     /** Stored in the exp.experimentrun table */
     void setComments(String comments);
+
+    /** Stored in the exp.experimentrun table
+     *  @param created override the default created date.
+     */
+    void setCreated(Date created);
 }
