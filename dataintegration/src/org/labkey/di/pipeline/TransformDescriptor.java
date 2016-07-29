@@ -487,6 +487,14 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
                     PipelineJobService.get().addTaskFactory(factorySettings);
                     progressionSpec.add(factorySettings.getId());
                 }
+                // Optionally set the workflowProcessKey from the parent pipeline
+                TaskId parentPipelineTaskId = ((ExternalPipelineTaskMeta) meta).getParentPipelineTaskId();
+                if (null != parentPipelineTaskId)
+                {
+                    TaskPipeline tp = PipelineJobService.get().getTaskPipeline(parentPipelineTaskId);
+                    if (null != tp)
+                        settings.setWorkflowProcessKey(tp.getWorkflowProcessKey());
+                }
             }
             else
             {

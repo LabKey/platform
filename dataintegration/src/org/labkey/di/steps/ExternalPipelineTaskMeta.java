@@ -16,6 +16,7 @@
 package org.labkey.di.steps;
 
 import org.apache.xmlbeans.XmlException;
+import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.etl.xml.TransformType;
@@ -31,11 +32,13 @@ import org.labkey.etl.xml.TransformType;
 public class ExternalPipelineTaskMeta extends StepMetaImpl
 {
     private TaskId externalTaskId;
+    private TaskId parentPipelineTaskId;
 
     @Override
     protected void parseWorkOptions(TransformType transformXML) throws XmlException
     {
         if (transformXML.getExternalTaskId() != null)
+        {
             try
             {
                 externalTaskId = new TaskId(transformXML.getExternalTaskId());
@@ -44,12 +47,34 @@ public class ExternalPipelineTaskMeta extends StepMetaImpl
             {
                 throw new XmlException("Bad external taskId " + transformXML.getExternalTaskId(), e);
             }
-        else throw new XmlException("Pipeline TaskId is required");
+        }
+        else
+            throw new XmlException("Pipeline ExternalTaskId is required");
+
+        if (transformXML.getParentPipelineTaskId() != null)
+        {
+            try
+            {
+                parentPipelineTaskId = new TaskId(transformXML.getParentPipelineTaskId());
+            }
+            catch (ClassNotFoundException e)
+            {
+                throw new XmlException("Bad parent pipeline taskId " + transformXML.getParentPipelineTaskId(), e);
+            }
+            // Verify this pipeline exists. But can't persist the TaskPipeline as property because it doesn't serialize
+            if (PipelineJobService.get().getTaskPipeline(parentPipelineTaskId) == null)
+                throw new XmlException("No pipeline found for parent pipeline taskId " + transformXML.getParentPipelineTaskId());
+        }
      }
 
     public TaskId getExternalTaskId()
     {
         return externalTaskId;
+    }
+
+    public TaskId getParentPipelineTaskId()
+    {
+        return parentPipelineTaskId;
     }
 
     @Override

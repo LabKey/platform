@@ -234,6 +234,15 @@
             </documentation>
           </annotation>
         </attribute>
+        <attribute name="parentPipelineTaskId" type="string">
+          <annotation>
+            <documentation>
+                If an externalTaskId command task is defined, settings from this pipeline
+                (to date, workflow process key) will be applied to the pipeline wrapping the externalTask
+                E.g., 'org.labkey.api.pipeline.file.FileAnalysisTaskPipeline:myPipelineName'
+            </documentation>
+          </annotation>
+        </attribute>
         <attribute name="saveState" type="boolean" default="false">
             <annotation>
                 <documentation>

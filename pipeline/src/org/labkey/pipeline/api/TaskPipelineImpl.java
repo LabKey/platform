@@ -27,6 +27,7 @@ import org.labkey.api.pipeline.TaskPipelineSettings;
  */
 public class TaskPipelineImpl<SettingsType extends TaskPipelineSettings> implements TaskPipeline<SettingsType>, Cloneable
 {
+    protected String _workflowProcessKey;
     /**
      * Used to identify the pipeline in configuration.
      */
@@ -105,6 +106,11 @@ public class TaskPipelineImpl<SettingsType extends TaskPipelineSettings> impleme
         if (settings.getProtocolName() != null)
             _protocolShortDescription = settings.getProtocolName();
 
+        if (settings.getWorkflowProcessKey() != null)
+        {
+            _workflowProcessKey = settings.getWorkflowProcessKey();
+        }
+
         return this;
     }
 
@@ -142,5 +148,11 @@ public class TaskPipelineImpl<SettingsType extends TaskPipelineSettings> impleme
             throw new IllegalStateException("Declaring module already set");
 
         _declaringModule = declaringModule;
+    }
+
+    @Override
+    public String getWorkflowProcessKey()
+    {
+        return _workflowProcessKey;
     }
 }
