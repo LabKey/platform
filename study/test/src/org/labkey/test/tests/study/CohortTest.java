@@ -20,9 +20,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
+import org.labkey.test.SortDirection;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyB;
-import org.labkey.test.components.study.DatasetFacetPanel;
 import org.labkey.test.util.DataRegionExportHelper;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
@@ -270,7 +270,7 @@ public class CohortTest extends BaseWebDriverTest
         clickAndWait(Locator.linkWithText("2 datasets"));
         clickAndWait(Locator.linkWithText("Test Results"));
         _customizeViewsHelper.openCustomizeViewPanel();
-        _customizeViewsHelper.addSort("ParticipantId", "Ascending");
+        _customizeViewsHelper.addSort("ParticipantId", SortDirection.ASC);
         _customizeViewsHelper.applyCustomView();
 
         setCohortFilter("Positive", AdvancedCohortType.DATA_COLLECTION);
