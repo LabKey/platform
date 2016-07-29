@@ -394,6 +394,7 @@ public class JunitController extends SpringActionController
 
                     // Send back both the class name and the timeout
                     Map<String, Object> testClass = new HashMap<>();
+                    testClass.put("module", module);
                     testClass.put("className", clazz.getName());
                     testClass.put("timeout", timeout);
                     testClass.put("when", when.name());
