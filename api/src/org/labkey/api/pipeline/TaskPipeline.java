@@ -15,6 +15,7 @@
  */
 package org.labkey.api.pipeline;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.module.Module;
 
 /**
@@ -47,4 +48,11 @@ public interface TaskPipeline<SettingsType extends TaskPipelineSettings>
     void setDeclaringModule(Module declaringModule);
 
     Module getDeclaringModule();
+
+    /**
+     * For pipelines integrated with workflows, the correct workflow process to use.
+     * @return
+     */
+    @Nullable
+    String getWorkflowProcessKey();
 }

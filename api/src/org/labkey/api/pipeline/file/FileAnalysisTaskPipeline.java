@@ -85,10 +85,4 @@ public interface FileAnalysisTaskPipeline extends TaskPipeline<FileAnalysisTaskP
      */
     boolean isSplittable();
 
-    /**
-     * For pipelines integrated with workflows, the correct workflow process to use.
-     * @return
-     */
-    @Nullable
-    String getWorkflowProcessKey();
 }

@@ -45,6 +45,8 @@ public class TaskPipelineSettings
     /** Module in which the task pipeline is declared. */
     private Module _declaringModule;
 
+    private String _workflowProcessKey;
+
 
     public TaskPipelineSettings(TaskId id)
     {
@@ -138,5 +140,19 @@ public class TaskPipelineSettings
     public Module getDeclaringModule()
     {
         return _declaringModule;
+    }
+
+    /**
+     *
+     * @return For pipelines which integrate with workflows, the workflow to use.
+     */
+    public String getWorkflowProcessKey()
+    {
+        return _workflowProcessKey;
+    }
+
+    public void setWorkflowProcessKey(String workflowProcessKey)
+    {
+        _workflowProcessKey = workflowProcessKey;
     }
 }

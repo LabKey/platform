@@ -81,8 +81,6 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
     /** If set, the default location for the action in the UI */
     private PipelineActionConfig.displayState _defaultDisplayState;
 
-    private String _workflowProcessKey;
-
     public FileAnalysisTaskPipelineSettings(String name)
     {
         super(FileAnalysisTaskPipeline.class, name);
@@ -167,15 +165,5 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
     public void setDefaultDisplayState(PipelineActionConfig.displayState defaultDisplayState)
     {
         _defaultDisplayState = defaultDisplayState;
-    }
-
-    public String getWorkflowProcessKey()
-    {
-        return _workflowProcessKey;
-    }
-
-    public void setWorkflowProcessKey(String workflowProcessKey)
-    {
-        _workflowProcessKey = workflowProcessKey;
     }
 }
