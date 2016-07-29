@@ -20,13 +20,11 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
     initComponent : function() {
 
-        var labelSeparator = '';
         var labelWidth = 95;
 
         this.jitterCheckbox = Ext4.create('Ext.form.field.Checkbox', {
             name: 'jitter',
-            fieldLabel: "Jitter Points?",
-            labelSeparator: labelSeparator,
+            fieldLabel: 'Jitter Points',
             labelWidth: labelWidth,
             padding: '0 0 10px 0',
             value: this.position == 'jitter',
@@ -41,7 +39,6 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         });
 
         this.opacitySlider = Ext4.create('Ext.slider.Single', {
-            labelSeparator: labelSeparator,
             labelWidth: labelWidth,
             fieldLabel: 'Point Opacity',
             width: 270,
@@ -61,7 +58,6 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         });
 
         this.pointSizeSlider = Ext4.create('Ext.slider.Single', {
-            labelSeparator: labelSeparator,
             labelWidth: labelWidth,
             fieldLabel: 'Point Size',
             width: 270,
@@ -82,12 +78,13 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
         this.colorLabel = Ext4.create('Ext.form.Label', {
             width: labelWidth,
-            text: 'Point Color'
+            text: 'Point Color:'
         });
 
         this.pointColorPicker = Ext4.create('Ext.picker.Color', {
             value: '3366FF',  // initial selected color
-            width: 180,
+            width: 280,
+            padding: '0 0 0 100px',
             listeners: {
                 select: function(picker, selColor) {
                     if(!this.suppressEvents){
@@ -96,21 +93,17 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
                 },
                 scope: this
             }
-        });
-
-        this.colorFieldContainer = Ext4.create('Ext.form.FieldContainer', {
-            layout: 'hbox',
-            items: [this.colorLabel, this.pointColorPicker]
         });
 
         this.lineColorLabel = Ext4.create('Ext.form.Label', {
             width: labelWidth,
-            text: 'Line Color'
+            text: 'Line Color:'
         });
 
         this.lineColorPicker = Ext4.create('Ext.picker.Color', {
             value: '000000',  // initial selected color
-            width: 180,
+            width: 280,
+            padding: '0 0 0 100px',
             listeners: {
                 select: function(picker, selColor) {
                     if(!this.suppressEvents){
@@ -121,20 +114,15 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             }
         });
 
-        this.lineColorContainer = Ext4.create('Ext.form.FieldContainer', {
-            layout: 'hbox',
-            items: [this.lineColorLabel, this.lineColorPicker]
-        });
-
-
         this.fillColorLabel = Ext4.create('Ext.form.Label', {
             width: labelWidth,
-            text: 'Fill Color'
+            text: 'Fill Color:'
         });
 
         this.fillColorPicker = Ext4.create('Ext.picker.Color', {
             value: '3366FF',  // initial selected color
-            width: 180,
+            width: 280,
+            padding: '0 0 0 100px',
             listeners: {
                 select: function(picker, selColor) {
                     if(!this.suppressEvents){
@@ -145,13 +133,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             }
         });
 
-        this.fillColorContainer = Ext4.create('Ext.form.FieldContainer', {
-            layout: 'hbox',
-            items: [this.fillColorLabel, this.fillColorPicker]
-        });
-
         this.lineWidthSlider = Ext4.create('Ext.slider.Single', {
-            labelSeparator: labelSeparator,
             labelWidth: labelWidth,
             fieldLabel: 'Line Width',
             width: 270,
@@ -172,7 +154,6 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
         this.widthBox = Ext4.create('Ext.form.field.Number', {
             fieldLabel: 'Width',
-            labelSeparator: labelSeparator,
             labelWidth: labelWidth,
             width: 275,
             padding: '0 0 10px 0',
@@ -190,7 +171,6 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
         this.heightBox = Ext4.create('Ext.form.field.Number', {
             fieldLabel: 'Height',
-            labelSeparator: labelSeparator,
             labelWidth: labelWidth,
             width: 275,
             padding: '0 0 10px 0',
@@ -211,22 +191,22 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             border: false,
             padding: '0 20px 0 0',
             items: [
-                this.getRenderTypeCombo(labelWidth, labelSeparator),
+                this.getRenderTypeCombo(labelWidth),
                 this.widthBox,
                 this.heightBox,
                 this.opacitySlider,
                 this.pointSizeSlider,
-                this.colorFieldContainer
+                this.colorLabel, this.pointColorPicker
             ]
         },{
             columnWidth: 0.5,
             border: false,
             items: [
-                this.getPointCombo(labelWidth, labelSeparator),
+                this.getPointCombo(labelWidth),
                 this.jitterCheckbox,
                 this.lineWidthSlider,
-                this.lineColorContainer,
-                this.fillColorContainer
+                this.lineColorLabel, this.lineColorPicker,
+                this.fillColorLabel, this.fillColorPicker
             ]
         }];
 
@@ -246,7 +226,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         this.callParent();
     },
 
-    getRenderTypeCombo: function(labelWidth, labelSeparator){
+    getRenderTypeCombo: function(labelWidth){
         if (!this.renderTypeCombo) {
             var renderTypes = [
                 {renderType: 'scatter_plot', label: 'Scatter Plot'},
@@ -271,7 +251,6 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             this.renderTypeCombo = Ext4.create('Ext.form.ComboBox', {
                 fieldLabel: 'Plot Type',
                 store: this.renderTypeStore,
-                labelSeparator: labelSeparator,
                 labelWidth: labelWidth,
                 width: 275,
                 padding: '0 0 10px 0',
@@ -295,7 +274,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         return this.renderTypeCombo;
     },
 
-    getPointCombo: function(labelWidth, labelSeparator){
+    getPointCombo: function(labelWidth){
         if (!this.pointCombo) {
             var pointTypes = [
                 {pointType: 'outliers', label: 'Outliers Only'},
@@ -311,7 +290,6 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             this.pointTypeCombo = Ext4.create('Ext.form.ComboBox', {
                 fieldLabel: 'Show Points',
                 store: this.pointTypeStore,
-                labelSeparator: labelSeparator,
                 labelWidth: labelWidth,
                 width: 275,
                 padding: '0 0 10px 0',
@@ -397,49 +375,52 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
     setPanelOptionValues: function(chartConfig){
         this.suppressEvents = true;
 
-        if(chartConfig.renderType){
+        if (chartConfig.renderType)
             this.setRenderType(chartConfig.renderType);
-        }
 
-        if(chartConfig.pointType) {
-            this.setPointType(chartConfig.pointType);
-        }
-
-        if(chartConfig.geomOptions.position) {
-            this.setPosition(chartConfig.geomOptions.position);
-        }
-
-        if(chartConfig.geomOptions.opacity){
-            this.setOpacity(chartConfig.geomOptions.opacity);
-        }
-
-        if(chartConfig.geomOptions.pointSize){
-            this.setPointSize(chartConfig.geomOptions.pointSize);
-        }
-
-        if(chartConfig.geomOptions.pointFillColor){
-            this.setPointColor(chartConfig.geomOptions.pointFillColor);
-        }
-
-        if(chartConfig.geomOptions.lineWidth){
-            this.setLineWidth(chartConfig.geomOptions.lineWidth);
-        }
-
-        if(chartConfig.geomOptions.lineColor){
-            this.setLineColor(chartConfig.geomOptions.lineColor);
-        }
-
-        if(chartConfig.geomOptions.boxFillColor){
-            this.setFillColor(chartConfig.geomOptions.boxFillColor);
-        }
-
-        if(chartConfig.width){
+        if (chartConfig.width)
             this.setWidth(chartConfig.width);
-        }
 
-        if(chartConfig.height){
+        if (chartConfig.height)
             this.setHeight(chartConfig.height);
-        }
+
+        if (chartConfig.pointType)
+            this.setPointType(chartConfig.pointType);
+
+        if (chartConfig.position)
+            this.setPosition(chartConfig.position);
+        else if (chartConfig.geomOptions.position)
+            this.setPosition(chartConfig.geomOptions.position);
+
+        if (chartConfig.opacity)
+            this.setOpacity(chartConfig.opacity);
+        else if (chartConfig.geomOptions.opacity)
+            this.setOpacity(chartConfig.geomOptions.opacity);
+
+        if (chartConfig.pointSize)
+            this.setPointSize(chartConfig.pointSize);
+        else if (chartConfig.geomOptions.pointSize)
+            this.setPointSize(chartConfig.geomOptions.pointSize);
+
+        if (chartConfig.pointFillColor)
+            this.setPointColor(chartConfig.pointFillColor);
+        else if (chartConfig.geomOptions.pointFillColor)
+            this.setPointColor(chartConfig.geomOptions.pointFillColor);
+
+        if (chartConfig.lineWidth)
+            this.setLineWidth(chartConfig.lineWidth);
+        else if (chartConfig.geomOptions.lineWidth)
+            this.setLineWidth(chartConfig.geomOptions.lineWidth);
+
+        if (chartConfig.lineColor)
+            this.setLineColor(chartConfig.lineColor);
+        else if (chartConfig.geomOptions.lineColor)
+            this.setLineColor(chartConfig.geomOptions.lineColor);
+
+        if (chartConfig.boxFillColor)
+            this.setFillColor(chartConfig.boxFillColor);
+        else if (chartConfig.geomOptions.boxFillColor)
+            this.setFillColor(chartConfig.geomOptions.boxFillColor);
 
         this.suppressEvents = false;
     },

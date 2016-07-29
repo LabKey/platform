@@ -30,7 +30,7 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
 
         this.fnErrorDiv = 'error-' + Ext4.id();
         this.pointClickFnDesc = Ext4.create('Ext.container.Container', {
-            width: 675,
+            width: 670,
             html: 'A developer can provide a JavaScript function that will be called when a data point in the chart is clicked. '
                     + 'See the "Help" tab for more information on the parameters available to the function.'
                     + '<br/><div id="' + this.fnErrorDiv + '">&nbsp;</div>'
@@ -44,7 +44,7 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
 
         this.pointClickTextAreaId = 'textarea-' + Ext4.id();
         this.pointClickTextAreaHtml = Ext4.create('Ext.Panel', {
-            padding : '10px 0 0 0',
+            height: 285,
             border: false,
             disabled: this.pointClickFn == null,                    // name is for selenium testing
             html: '<textarea id="' + this.pointClickTextAreaId + '" name="point-click-fn-textarea" onchange="Ext4.ComponentManager.get(\'' + this.getId() + '\').hasChanges = true;"'
@@ -77,20 +77,22 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
         });
 
         this.pointClickFnTabPanel = Ext4.create('Ext.tab.Panel', {
-            height: 400,
             items: [
                 Ext4.create('Ext.Panel', {
                     title: 'Source',
-                    width: 600,
                     layout: 'fit',
                     items: this.pointClickTextAreaHtml
                 }),
                 Ext4.create('Ext.Panel', {
                     title: 'Help',
-                    width: 600,
-                    padding: 5,
+                    height: 285,
                     autoScroll: true,
-                    html: this.getPointClickFnHelp()
+                    items: [{
+                        xtype: 'panel',
+                        border: false,
+                        padding: 10,
+                        html: this.getPointClickFnHelp()
+                    }]
                 })
             ]
         });

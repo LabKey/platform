@@ -735,6 +735,7 @@ span.labkey-file-icon {
     color: #<%= link %>;
 }
 
+/* See Notification.css for the rest of the styles. */
 .labkey-notification-panel, .labkey-notification-footer {
     background-color: #<%= webpart %>;
 }
@@ -764,6 +765,7 @@ span.labkey-file-icon {
     background-color: #<%= grid %>;
 }
 
+/* See ColumnVisualizationAnalytics.css for the rest of the styles. */
 .labkey-dataregion-msg-plot-analytic .plot-analytics-remove {
     color: #<%= link %>;
 }

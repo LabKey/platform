@@ -7,7 +7,6 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
     width: 900,
     height: 525,
 
-    initValues: {},
     selectedType: null,
     selectedFields: null,
     requiredFieldNames: null,
@@ -59,11 +58,6 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
                     {name: 'shape', label: 'Shape', nonNumericOnly: true}
                 ]
             }
-            //{
-            //    name: 'time_chart',
-            //    title: 'Time',
-            //    imgUrl: LABKEY.contextPath + '/visualization/images/timechart.png'
-            //}
         ];
 
         this.typesStore = Ext4.create('Ext.data.Store', {
@@ -93,7 +87,10 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
         this.addEvents('cancel', 'apply');
 
         // on show, stash the initial values so we can use for comparison and cancel reset
-        this.on('show', function() { this.initValues = this.getValues(); }, this);
+        this.initValues = {};
+        this.on('show', function() {
+            this.initValues = this.getValues();
+        }, this);
     },
 
     getTitlePanel : function()

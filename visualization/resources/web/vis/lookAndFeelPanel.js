@@ -21,6 +21,12 @@ Ext4.define('LABKEY.vis.LookAndFeelPanel', {
         this.callParent();
 
         this.addEvents('cancel', 'apply');
+
+        // on show, stash the initial values so we can use for comparison and cancel reset
+        this.initValues = {};
+        this.on('show', function() {
+            this.initValues = this.getValues();
+        }, this);
     },
 
     getTitlePanel : function()
@@ -43,14 +49,17 @@ Ext4.define('LABKEY.vis.LookAndFeelPanel', {
         if (!this.navigationPanel)
         {
             var data = [{
+                name: 'general',
                 cardId: 'card-1',
                 label: 'General',
                 cardClass: 'LABKEY.vis.GenericChartOptionsPanel'
             },{
+                name: 'x',
                 cardId: 'card-2',
                 label: 'X-Axis',
                 cardClass: 'LABKEY.vis.GenericChartAxisPanel'
             },{
+                name: 'y',
                 cardId: 'card-3',
                 label: 'Y-Axis',
                 cardClass: 'LABKEY.vis.GenericChartAxisPanel'
@@ -62,7 +71,11 @@ Ext4.define('LABKEY.vis.LookAndFeelPanel', {
                     name: 'developer',
                     label: 'Developer',
                     cardId: 'card-4',
-                    cardClass: 'LABKEY.vis.DeveloperOptionsPanel'
+                    cardClass: 'LABKEY.vis.DeveloperOptionsPanel',
+                    config: {
+                        defaultPointClickFn: this.defaultPointClickFn,
+                        pointClickFnHelp: this.pointClickFnHelp
+                    }
                 });
             }
 
@@ -70,6 +83,13 @@ Ext4.define('LABKEY.vis.LookAndFeelPanel', {
                 model: 'LABKEY.vis.LookAndFeelCardModel',
                 data: data
             });
+
+            // populate the center card panel with the initial set of panels
+            Ext4.each(store.getRange(), function(record)
+            {
+                var newCardPanel = this.initOptionPanel(record);
+                this.getCenterPanel().add(newCardPanel);
+            }, this);
 
             this.navigationPanel = Ext4.create('Ext.view.View', {
                 region: 'west',
@@ -92,30 +112,6 @@ Ext4.define('LABKEY.vis.LookAndFeelPanel', {
                     },
                     select: function(view, record)
                     {
-                        // if the card for the selected item does not yet exist, create it
-                        if (this.getCenterPanel().getCardItemIds().indexOf(record.get('cardId')) == -1)
-                        {
-                            // TODO what about the properties to pass to the newly created component?
-                            var newCardPanel;
-                            if (record.get('cardClass'))
-                            {
-                                newCardPanel = Ext4.create(record.get('cardClass'), {
-                                    itemId: record.get('cardId'),
-                                    autoScroll: true
-                                });
-                            }
-                            else
-                            {
-                                newCardPanel = Ext4.create('Ext.Component', {
-                                    itemId: record.get('cardId'),
-                                    html: 'No cardClass defined for ' + record.get('cardId') + '.'
-                                });
-                            }
-
-                            this.getCenterPanel().add(newCardPanel);
-                            this.getCenterPanel().updateCardItemIds();
-                        }
-
                         this.getCenterPanel().getLayout().setActiveItem(record.get('cardId'));
                     }
                 }
@@ -123,6 +119,36 @@ Ext4.define('LABKEY.vis.LookAndFeelPanel', {
         }
 
         return this.navigationPanel;
+    },
+
+    initOptionPanel : function(record)
+    {
+        var newCardPanel;
+
+        if (record.get('cardClass'))
+        {
+            // join together the config properties from the record with the ones we need for the card layout
+            var config = Ext4.apply({
+                itemId: record.get('cardId'),
+                panelName: record.get('name'),
+                autoScroll: true
+            }, record.get('config'));
+
+            newCardPanel = Ext4.create(record.get('cardClass'), config);
+
+            // set initial values based on the config props loaded from the saved config
+            if (this.options[record.get('name')] && newCardPanel.setPanelOptionValues)
+                newCardPanel.setPanelOptionValues(this.options[record.get('name')]);
+        }
+        else
+        {
+            newCardPanel = Ext4.create('Ext.Component', {
+                itemId: record.get('cardId'),
+                html: 'No cardClass defined for ' + record.get('cardId') + '.'
+            });
+        }
+
+        return newCardPanel;
     },
 
     getCenterPanel : function()
@@ -134,22 +160,8 @@ Ext4.define('LABKEY.vis.LookAndFeelPanel', {
                 cls: 'region-panel center-panel',
                 layout: 'card',
                 activeItem: 0,
-                cardItemIds: [],
-                items: [],
-
-                updateCardItemIds : function()
-                {
-                    this.cardItemIds = Ext4.Array.pluck(this.getLayout().getLayoutItems(), 'itemId');
-                },
-
-                getCardItemIds : function()
-                {
-                    return this.cardItemIds;
-                }
+                items: []
             });
-
-            // stash the card itemId's for reference
-            this.centerPanel.updateCardItemIds();
         }
 
         return this.centerPanel;
@@ -185,7 +197,19 @@ Ext4.define('LABKEY.vis.LookAndFeelPanel', {
                 scope: this,
                 handler: function ()
                 {
-                    // TODO if we have changes, revert the panel back to initial values
+                    // TODO need to also reset the values on ESC key close
+
+                    // if we have changes, revert the panels back to initial values
+                    if (this.hasSelectionsChanged(this.getValues()))
+                    {
+                        Ext4.each(this.getCenterPanel().items.items, function(panel)
+                        {
+                            // TODO: this reset not working for the developer pointClickFn
+                            if (panel.setPanelOptionValues)
+                                panel.setPanelOptionValues(this.initValues[panel.panelName]);
+                        }, this);
+
+                    }
 
                     this.fireEvent('cancel', this);
                 }
@@ -204,12 +228,54 @@ Ext4.define('LABKEY.vis.LookAndFeelPanel', {
                 scope: this,
                 handler: function()
                 {
-                    this.fireEvent('apply', this, values);
+                    // if nothing has changed, just treat this as a click on 'cancel'
+                    var values = this.getValues();
+                    if (!this.hasSelectionsChanged(values))
+                        this.fireEvent('cancel', this);
+                    else
+                        this.fireEvent('apply', this, values);
                 }
             });
         }
 
         return this.applyButton;
+    },
+
+    getValues : function()
+    {
+        var values = {};
+
+        Ext4.each(this.getCenterPanel().items.items, function(panel)
+        {
+            if (panel.getPanelOptionValues)
+                values[panel.panelName] = panel.getPanelOptionValues();
+        });
+
+        return values;
+    },
+
+    hasSelectionsChanged : function(values)
+    {
+        // compare the keys for the two value objects
+        var initKeys = Object.keys(this.initValues),
+            newKeys = Object.keys(values);
+        if (!Ext4.Array.equals(initKeys, newKeys))
+            return true;
+
+        // compare the object in the new values to the init values
+        // note: we know we have all the same keys here
+        var hasChanges = false;
+        Ext4.Object.each(values, function(key, value)
+        {
+            // TODO: this check is not working for the developer pointClickFn
+            if (!Ext4.Object.equals(value, this.initValues[key]))
+            {
+                hasChanges = true;
+                return false; // break
+            }
+        }, this);
+
+        return hasChanges;
     }
 });
 
@@ -219,6 +285,7 @@ Ext4.define('LABKEY.vis.LookAndFeelCardModel', {
         {name: 'name', type: 'string'},
         {name: 'label', type: 'string'},
         {name: 'cardId', type: 'string'},
-        {name: 'cardClass', type: 'string'}
+        {name: 'cardClass', type: 'string'},
+        {name: 'config'}
     ]
 });

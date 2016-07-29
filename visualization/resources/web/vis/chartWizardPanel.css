@@ -1,3 +1,8 @@
+.generic-chart-panel .x4-mask {
+    opacity: .75;
+    background: #ffffff;
+}
+
 .chart-wizard-dialog {
     padding: 0;
 }
