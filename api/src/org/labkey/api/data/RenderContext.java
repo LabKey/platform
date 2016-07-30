@@ -26,6 +26,7 @@ import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -615,7 +616,17 @@ public class RenderContext implements Map<String, Object>, Serializable
                 try
                 {
                     ColumnInfo col = _rs.findColumnInfo((FieldKey) key);
-                    return col == null ? null : col.getValue(_row);
+
+                    if (null == col)
+                        return null;
+
+                    Object value = col.getValue(_row);
+
+                    // Hack for DATE columns on SQL Server jTDS, see #27332
+                    if (col.getJdbcType() == JdbcType.DATE && value instanceof String)
+                        value = DateUtil.parseISODateTime((String) value);
+
+                    return value;
                 }
                 catch (SQLException x)
                 {
