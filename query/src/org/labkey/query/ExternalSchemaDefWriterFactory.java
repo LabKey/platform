@@ -102,11 +102,14 @@ public class ExternalSchemaDefWriterFactory implements FolderWriterFactory
                 LinkedSchemaType defXml = defDoc.addNewLinkedSchema();
 
                 Container sourceContainer = def.lookupSourceContainer();
-                defXml.setSourceContainer(sourceContainer.getPath());
+                if (null != sourceContainer)
+                {
+                    defXml.setSourceContainer(sourceContainer.getPath());
 
-                addCommonProperties(defXml, def);
+                    addCommonProperties(defXml, def);
 
-                extSchemasDir.saveXmlBean(def.getUserSchemaName() + LINKED_SCHEMA_FILE_EXTENSION, defDoc);
+                    extSchemasDir.saveXmlBean(def.getUserSchemaName() + LINKED_SCHEMA_FILE_EXTENSION, defDoc);
+                }
             }
         }
 

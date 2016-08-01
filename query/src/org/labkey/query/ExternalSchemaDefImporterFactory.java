@@ -144,6 +144,8 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
                     container = ContainerManager.getForId(containerPath);
                 if (container != null)
                     form.setTypedValue("dataSource", container.getId());
+                else
+                    ctx.getLogger().warn("LinkedSchemaDef's source container '" + containerPath + "' does not exist; ignoring schema.");
             }
             else
                 throw new ImportException("Unable to get an instance of external or linked schema from " + relativePath);
@@ -151,7 +153,8 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
             addCommonProperties(ctx.getContainer(), ctx.getUser(), exportedXml, form);
 
             // TODO: this should use QueryManager.get().insert(ctx.getUser(), externalSchemaDef);
-            form.doInsert();
+            if (null != form.getTypedValue("dataSource"))
+                form.doInsert();
         }
 
         private void addCommonProperties(Container c, User user, ExportedSchemaType exportedXml, AbstractExternalSchemaForm form)
