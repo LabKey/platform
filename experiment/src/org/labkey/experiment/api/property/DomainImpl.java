@@ -442,8 +442,8 @@ public class DomainImpl implements Domain
                                 checkRequiredStatus.add(impl);
                             }
 
-                            //if size constraints have decreased check
-                            if(impl._pdOld.getScale() > impl._pd.getScale())
+                            // check if size constraints have decreased
+                            if (isSmallerSize(impl._pdOld.getScale(), impl._pd.getScale()))
                                 checkAndThrowSizeConstraints(kind, this, impl);
                         }
 
@@ -506,6 +506,18 @@ public class DomainImpl implements Domain
 
             transaction.commit();
         }
+    }
+
+    // Return true if newSize is smaller than oldSize taking into account -1 is max size
+    private boolean isSmallerSize(int oldSize, int newSize)
+    {
+        if (newSize == oldSize)
+            return false;
+        if (newSize == -1)
+            return false;
+        if (oldSize == -1)
+            return true;
+        return oldSize > newSize;
     }
 
     private void checkAndThrowSizeConstraints(DomainKind kind, Domain domain, DomainProperty prop)
