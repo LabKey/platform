@@ -2409,12 +2409,14 @@ public class QueryController extends SpringActionController
             }
             try
             {
-                return new ActionURL(str);
+                if (!StringUtils.isBlank(str))
+                    return new ActionURL(str);
             }
             catch (IllegalArgumentException x)
             {
-                return super.getSuccessURL(form);
+                // pass
             }
+            return super.getSuccessURL(form);
         }
 
         public NavTree appendNavTrail(NavTree root)
