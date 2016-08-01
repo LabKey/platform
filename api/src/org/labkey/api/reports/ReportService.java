@@ -110,9 +110,6 @@ public class ReportService
         // TODO: This is only used by ReportUtils... remove from interface?
         Collection<Report> getInheritableReports(User user, Container c, String reportKey);
 
-        @Deprecated
-        Report[] getReports(Filter filter);
-
         @Nullable
         Report getReport(ReportDB reportDB);
 
