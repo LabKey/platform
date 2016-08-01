@@ -90,10 +90,12 @@ announcements/webapp/announcements/EditTour.js -text
 announcements/webapp/announcements/discuss.js -text
 audit/module.properties -text
 audit/resources/schemas/dbscripts/postgresql/audit-0.00-14.10.sql -text
+audit/resources/schemas/dbscripts/postgresql/audit-16.20-16.21.sql -text
 audit/resources/schemas/dbscripts/postgresql/obsolete/audit-0.00-12.10.sql -text
 audit/resources/schemas/dbscripts/postgresql/obsolete/audit-0.00-12.30.sql -text
 audit/resources/schemas/dbscripts/postgresql/obsolete/audit-13.30-14.10.sql -text
 audit/resources/schemas/dbscripts/sqlserver/audit-0.00-14.10.sql -text
+audit/resources/schemas/dbscripts/sqlserver/audit-16.20-16.21.sql -text
 audit/resources/schemas/dbscripts/sqlserver/obsolete/audit-0.00-12.10.sql -text
 audit/resources/schemas/dbscripts/sqlserver/obsolete/audit-0.00-12.30.sql -text
 audit/resources/schemas/dbscripts/sqlserver/obsolete/audit-13.30-14.10.sql -text

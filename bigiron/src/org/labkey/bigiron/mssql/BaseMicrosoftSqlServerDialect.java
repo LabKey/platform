@@ -1064,7 +1064,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         {
             //T-SQL will throw an error for nvarchar sizes >4000
             //Use the common default max size to make type change to nvarchar(max)/text consistent
-            String size = column.getSize() > SqlDialect.MAX_VARCHAR_SIZE ?
+            String size = column.getSize() == -1 || column.getSize() > SqlDialect.MAX_VARCHAR_SIZE ?
                     "max" :
                     column.getSize().toString();
 
@@ -1286,7 +1286,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                 if (spec.isEntityId())
                     return 36; /* GUID */
 
-                if (size > SqlDialect.MAX_VARCHAR_SIZE)
+                if (size == -1 || size > SqlDialect.MAX_VARCHAR_SIZE)
                     return Integer.MAX_VALUE; /* 2^31-1 */
                 else
                     return size * 2; /* NVARCHAR is two bytes */

@@ -1098,8 +1098,8 @@ class PostgreSql91Dialect extends SqlDialect
         for (PropertyStorageSpec column : change.getColumns())
         {
             //Using the common default max size to make type change to text
-            String dbType = column.getSize() > SqlDialect.MAX_VARCHAR_SIZE ?
-                    "text" :
+            String dbType = column.getSize() == -1 || column.getSize() > SqlDialect.MAX_VARCHAR_SIZE ?
+                    sqlTypeNameFromSqlType(Types.LONGVARCHAR) :
                     sqlTypeNameFromJdbcType(column.getJdbcType()) + "(" + column.getSize().toString() + ")";
 
             sb.append(comma);
@@ -1358,7 +1358,7 @@ class PostgreSql91Dialect extends SqlDialect
             }
         }
         //If varchar longer than common limit, then switch type to Text
-        else if (prop.getJdbcType().sqlType == Types.VARCHAR && prop.getSize() > SqlDialect.MAX_VARCHAR_SIZE)
+        else if (prop.getJdbcType().sqlType == Types.VARCHAR && (prop.getSize() == -1 || prop.getSize() > SqlDialect.MAX_VARCHAR_SIZE))
         {
             return sqlTypeNameFromSqlType(Types.LONGVARCHAR);
         }
