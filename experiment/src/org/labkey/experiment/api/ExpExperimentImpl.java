@@ -228,10 +228,4 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
         }
         return Collections.unmodifiableList(result);
     }
-
-    @Override
-    public void setCreated(Date created)
-    {
-        _object.setCreated(created);
-    }
 }
