@@ -53,14 +53,12 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 
 import java.sql.SQLException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.labkey.api.util.DateUtil;
 
 /**
  * User: jeckels
@@ -134,20 +132,6 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
         {
             batch.setComments(batchJsonObject.getString(ExperimentJSONConverter.COMMENT));
         }
-
-        // deterimine if the created dated is being specified that will override the default created date of this run wich is today
-        if (batchJsonObject.has(ExperimentJSONConverter.CREATED))
-        {
-            try
-            {
-                batch.setCreated(DateUtil.parseDateTime(batchJsonObject.getString(ExperimentJSONConverter.CREATED), "yyyy-MM-dd"));
-            }
-            catch (ParseException e)
-            {
-                throw new ApiUsageException(e);
-            }
-        }
-
         handleStandardProperties(context, batchJsonObject, batch, _provider.getBatchDomain(protocol).getProperties());
 
         List<ExpRun> runs = new ArrayList<>();
@@ -226,19 +210,6 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
         if (runJsonObject.has(ExperimentJSONConverter.COMMENT))
         {
             run.setComments(runJsonObject.getString(ExperimentJSONConverter.COMMENT));
-        }
-
-        // deterimine if the created dated is being specified that will override the default created date of this run wich is today
-        if (runJsonObject.has(ExperimentJSONConverter.CREATED))
-        {
-            try
-            {
-                run.setCreated(DateUtil.parseDateTime(runJsonObject.getString(ExperimentJSONConverter.CREATED), "yyyy-MM-dd"));
-            }
-            catch (ParseException e)
-            {
-                throw new ApiUsageException(e);
-            }
         }
 
         handleStandardProperties(context, runJsonObject, run, _provider.getRunDomain(protocol).getProperties());
