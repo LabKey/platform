@@ -19,12 +19,10 @@ import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.FieldKey;
@@ -34,7 +32,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -61,6 +58,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * User: migra
@@ -86,96 +84,15 @@ public class ReportManager implements DatasetManager.DatasetListener
         DatasetManager.addDatasetListener(this);
     }
 
-    private static final String _datasetLabelQuery;
-    static
-    {
-        StringBuilder sql = new StringBuilder();
-        final SqlDialect dialect = StudySchema.getInstance().getSchema().getSqlDialect();
-
-        sql.append("(ContainerId = ?) AND (ReportOwner IS NULL OR ReportOwner = ?) ");
-        sql.append("AND (ReportKey = ? ");
-        sql.append("OR ReportKey ");
-        sql.append(dialect.getCaseInsensitiveLikeOperator());
-        sql.append(" ");
-        sql.append(dialect.concatenate("?", "'%'"));
-        sql.append(")");
-
-        _datasetLabelQuery = sql.toString();
-    }
-
-    private void _addReportLabels(Report[] reports, List<Pair<String, String>> labels, ViewContext context)
-    {
-        for (Report report : reports)
-        {
-            if (!canReadReport(context.getUser(), context.getContainer(), report))
-                continue;
-
-            String label = report.getDescriptor().getReportName();
-            labels.add(new Pair<>(label, report.getDescriptor().getReportId().toString()));
-        }
-    }
-
     public List<Pair<String, String>> getReportLabelsForDataset(ViewContext context, Dataset def) throws Exception
     {
-        String reportKey = ReportUtil.getReportKey(StudySchema.getInstance().getSchemaName(), def.getName());
-        List<Pair<String, String>> oldLabels = new ArrayList<>();
-
-        // TODO: Delete code below
-
-        SimpleFilter filter = new SimpleFilter();
-        Container container = context.getContainer();
-
-        // reports in this container
-        filter.addWhereClause(_datasetLabelQuery, new Object[]{
-                container.getId(),
-                context.getUser().getUserId(),
-                ALL_DATASETS_KEY, reportKey});
-        _addReportLabels(ReportService.get().getReports(filter), oldLabels, context);
-
-        // any inherited reports
-        while (!container.isRoot())
-        {
-            container = container.getParent();
-
-            filter = new SimpleFilter();
-            filter.addWhereClause(_datasetLabelQuery, new Object[]{
-                    container.getId(),
-                    context.getUser().getUserId(),
-                    ALL_DATASETS_KEY, reportKey});
-            filter.addWhereClause("(((Flags) & ?) = ?)", new Object[]{ReportDescriptor.FLAG_INHERITABLE, 1});
-            _addReportLabels(ReportService.get().getReports(filter), oldLabels, context);
-        }
-
-        // look for any reports in the shared project
-        filter = new SimpleFilter();
-        filter.addWhereClause(_datasetLabelQuery, new Object[]{
-                ContainerManager.getSharedContainer().getId(),
-                context.getUser().getUserId(),
-                ALL_DATASETS_KEY, reportKey});
-        _addReportLabels(ReportService.get().getReports(filter), oldLabels, context);
-
-        oldLabels.sort((p1, p2) -> p1.getKey().compareTo(p2.getKey()));
-
-        // TODO: Delete code above
-
-        // TODO: Test this new approach and delete all the code above plus _addReportLabels(), ReportService.getReports(Filter), etc.
         List<Pair<String, String>> labels = new ArrayList<>();
+        String reportKey = ReportUtil.getReportKey(StudySchema.getInstance().getSchemaName(), def.getName());
 
         for (Report report : ReportUtil.getReportsIncludingInherited(context.getContainer(), context.getUser(), reportKey))
         {
             String label = report.getDescriptor().getReportName();
             labels.add(new Pair<>(label, report.getDescriptor().getReportId().toString()));
-        }
-
-        labels.sort((p1, p2) -> p1.getKey().compareTo(p2.getKey()));
-
-        if (!oldLabels.equals(labels))
-        {
-            StringBuilder output = new StringBuilder();
-            oldLabels.forEach(pair -> output.append(" (").append(String.valueOf(pair.first)).append(",").append(String.valueOf(pair.second)).append(")"));
-            output.append(" vs. ");
-            labels.forEach(pair -> output.append(" (").append(String.valueOf(pair.first)).append(",").append(String.valueOf(pair.second)).append(")"));
-            throw new IllegalStateException(output.toString());
         }
 
         // add any custom query views
@@ -186,9 +103,11 @@ public class ReportManager implements DatasetManager.DatasetListener
         Map<String, CustomView> views = qd.getCustomViews(context.getUser(), context.getRequest(), false, false);
         if (views != null)
         {
-            for (CustomView view: views.values())
-                if (null != view.getName())
-                    labels.add(new Pair<>(view.getName(), view.getName()));
+            labels.addAll(views.values()
+                .stream()
+                .filter(view -> null != view.getName())
+                .map(view -> new Pair<>(view.getName(), view.getName()))
+                .collect(Collectors.toList()));
         }
 
         Collections.sort(labels, (o1, o2) -> {

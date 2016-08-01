@@ -30,7 +30,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.AbstractContainerListener;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.Filter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
@@ -840,28 +839,6 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         return readableReports;
     }
 
-    @Deprecated  // Use a getReports() method that uses the cache instead!
-    @Override
-    public Report[] getReports(Filter filter)
-    {
-        List<Report> reports = new ArrayList<>();
-
-        for (ReportDB r : new TableSelector(getTable(), filter, null).getArray(ReportDB.class))
-        {
-            Report report = _getInstance(r);
-            if (report != null)
-                reports.add(report);
-        }
-
-        if (!reports.isEmpty())
-        {
-            Collections.sort(reports, ReportComparator.getInstance());
-            return reports.toArray(new Report[reports.size()]);
-        }
-
-        return EMPTY_REPORT_ARRAY;
-    }
-
     @Nullable
     public Report getReport(ReportDB reportDB)
     {
@@ -942,8 +919,6 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         // No report provider claimed this, so don't return an icon (we should always have an image icon to fall back on anyway)
         return null;
     }
-
-    private static final Report[] EMPTY_REPORT_ARRAY = new Report[0];
 
     private boolean reportExists(int reportId)
     {
