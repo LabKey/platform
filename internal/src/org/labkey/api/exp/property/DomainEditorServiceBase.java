@@ -94,30 +94,34 @@ public class DomainEditorServiceBase extends BaseRemoteService
         try
         {
             Container c = getContainer(containerId);
-            if (c == null)
+            if (null != c)
             {
-                return Collections.emptyList();
-            }
-            QuerySchema defaultLookupSchema = DefaultSchema.get(getUser(), c, null != defaultLookupSchemaName ? defaultLookupSchemaName : "lists");
-            DbScope defaultLookupScope = defaultLookupSchema.getDbSchema().getScope();
-            Set<SchemaKey> schemaPaths = DefaultSchema.get(getUser(), c).getUserSchemaPaths(false);
-            List<String> names = new ArrayList<>();
-
-            for (SchemaKey schemaPath : schemaPaths)
-            {
-                QuerySchema qs = DefaultSchema.get(getUser(), c, schemaPath);
-                if (null != qs)
+                QuerySchema defaultLookupSchema = DefaultSchema.get(getUser(), c, null != defaultLookupSchemaName ? defaultLookupSchemaName : "lists");
+                if (null != defaultLookupSchema)
                 {
-                    DbScope scope = qs.getDbSchema().getScope();
+                    DbScope defaultLookupScope = defaultLookupSchema.getDbSchema().getScope();
+                    Set<SchemaKey> schemaPaths = DefaultSchema.get(getUser(), c).getUserSchemaPaths(false);
+                    List<String> names = new ArrayList<>();
 
-                    // Return only schemas in the lookup scope, #18179
-                    if (!defaultLookupScope.equals(scope))
-                        continue;
-                    names.add(schemaPath.toString());
+                    for (SchemaKey schemaPath : schemaPaths)
+                    {
+                        QuerySchema qs = DefaultSchema.get(getUser(), c, schemaPath);
+                        if (null != qs)
+                        {
+                            DbScope scope = qs.getDbSchema().getScope();
+
+                            // Return only schemas in the lookup scope, #18179
+                            if (!defaultLookupScope.equals(scope))
+                                continue;
+                            names.add(schemaPath.toString());
+                        }
+                    }
+
+                    return names;
                 }
             }
 
-            return names;
+            return Collections.emptyList();
         }
         catch (RuntimeException x)
         {
