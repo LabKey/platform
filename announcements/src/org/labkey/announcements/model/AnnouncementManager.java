@@ -16,7 +16,6 @@
 package org.labkey.announcements.model;
 
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -79,11 +78,9 @@ import javax.mail.MessagingException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -111,53 +108,31 @@ public class AnnouncementManager
     {
     }
 
-    protected static void attachResponses(Container c, AnnouncementModel... announcementModels)
-    {
-        for (AnnouncementModel announcementModel : announcementModels)
-        {
-            AnnouncementModel[] res = getAnnouncements(c, announcementModel.getEntityId());
-            announcementModel.setResponses(Arrays.asList(res));
-        }
-    }
-
-
-    protected static void attachMemberLists(AnnouncementModel... announcementModels)
-    {
-        for (AnnouncementModel announcementModel : announcementModels)
-            announcementModel.setMemberListIds(getMemberList(announcementModel));
-    }
-
-
     // Get first rowlimit threads in this container, filtered using filter
-    public static Pair<AnnouncementModel[], Boolean> getAnnouncements(Container c, SimpleFilter filter, Sort sort, int rowLimit)
+    public static Pair<Collection<AnnouncementModel>, Boolean> getAnnouncements(Container c, SimpleFilter filter, Sort sort, int rowLimit)
     {
         filter.addCondition(FieldKey.fromParts("Container"), c);
-        AnnouncementModel[] recent = new TableSelector(_comm.getTableInfoThreads(), filter, sort).setMaxRows(rowLimit + 1).getArray(AnnouncementModel.class);
+        ArrayList<AnnouncementModel> recent = new TableSelector(_comm.getTableInfoThreads(), filter, sort).setMaxRows(rowLimit + 1).getArrayList(AnnouncementModel.class);
 
-        Boolean limited = (recent.length > rowLimit);
+        Boolean limited = (recent.size() > rowLimit);
 
         if (limited)
-            recent = ArrayUtils.subarray(recent, 0, rowLimit);
+            recent.remove(rowLimit); // Remove the last element to get back to size == rowLimit
 
         return new Pair<>(recent, limited);
     }
 
-    // marker for non fully loaded announcementModel
-    public static class BareAnnouncementModel extends AnnouncementModel
-    {
-    }
 
-
-    // Get all threads in this container, filtered using filter, no attachments, no responses
-    public static AnnouncementModel[] getBareAnnouncements(Container c, SimpleFilter filter, Sort sort)
+    // Get all threads in this container, filtered using filter
+    public static @NotNull Collection<AnnouncementModel> getAnnouncements(Container c, SimpleFilter filter, Sort sort)
     {
         filter.addCondition(FieldKey.fromParts("Container"), c);
 
-        return new TableSelector(_comm.getTableInfoThreads(), filter, sort).getArray(BareAnnouncementModel.class);
+        return new TableSelector(_comm.getTableInfoThreads(), filter, sort).getCollection(AnnouncementModel.class);
     }
 
-    // Return a list of announcementModels from a set of containers sorted by date created (newest first).
-    public static AnnouncementModel[] getAnnouncements(Container... containers)
+    // Return a collection of announcementModels from a set of containers sorted by date created (newest first).
+    public static @NotNull Collection<AnnouncementModel> getAnnouncements(Container... containers)
     {
         List<String> ids = new ArrayList<>();
 
@@ -167,25 +142,19 @@ public class AnnouncementManager
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), ids, CompareType.IN);
         Sort sort = new Sort("-Created");
 
-        return new TableSelector(_comm.getTableInfoAnnouncements(), filter, sort).getArray(AnnouncementModel.class);
+        return new TableSelector(_comm.getTableInfoAnnouncements(), filter, sort).getCollection(AnnouncementModel.class);
     }
 
-    public static AnnouncementModel[] getAnnouncements(@Nullable Container c, String parent)
+    public static Collection<AnnouncementModel> getResponses(AnnouncementModel parent)
     {
-        SimpleFilter filter = new SimpleFilter();
-        if (c != null)
-        {
-            filter.addCondition(FieldKey.fromParts("container"), c);
-        }
+//        assert null == parent.getParent();  // TODO: Either assert or short circuit with empty collection
 
-        if (null == parent)
-            filter.addCondition(FieldKey.fromParts("parent"), null, CompareType.ISBLANK);
-        else
-            filter.addCondition(FieldKey.fromParts("parent"), parent);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("container"), parent.getContainerId());
+        filter.addCondition(FieldKey.fromParts("parent"), parent.getEntityId());
 
         Sort sort = new Sort("Created");
 
-        return new TableSelector(_comm.getTableInfoAnnouncements(), filter, sort).getArray(AnnouncementModel.class);
+        return new TableSelector(_comm.getTableInfoAnnouncements(), filter, sort).getCollection(AnnouncementModel.class);
     }
 
 
@@ -195,26 +164,14 @@ public class AnnouncementManager
     }
 
 
-    public static AnnouncementModel getAnnouncement(@Nullable Container c, String entityId, boolean eager)
+    public static @Nullable AnnouncementModel getAnnouncement(@Nullable Container c, String entityId, boolean eager)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("EntityId"), entityId);
         if (c != null)
         {
             filter.addCondition(FieldKey.fromParts("Container"), c);
         }
-        Selector selector = new TableSelector(_comm.getTableInfoAnnouncements(), filter, null);
-        AnnouncementModel[] ann = selector.getArray(AnnouncementModel.class);
-
-        if (ann.length < 1)
-            return null;
-
-        if (eager)
-        {
-            attachResponses(c, ann);
-            attachMemberLists(ann);
-        }
-
-        return ann[0];
+        return new TableSelector(_comm.getTableInfoAnnouncements(), filter, null).getObject(AnnouncementModel.class);
     }
 
     private static MessageConfigService.ConfigTypeProvider _configProvider;
@@ -246,7 +203,6 @@ public class AnnouncementManager
 
     public static final int INCLUDE_NOTHING = 0;
     public static final int INCLUDE_RESPONSES = 2;
-    public static final int INCLUDE_MEMBERLIST = 4;
 
     public static AnnouncementModel getAnnouncement(@Nullable Container c, int rowId, int mask)
     {
@@ -256,18 +212,7 @@ public class AnnouncementManager
             filter.addCondition(FieldKey.fromParts("Container"), c);
         }
         Selector selector = new TableSelector(_comm.getTableInfoAnnouncements(), filter, null);
-        AnnouncementModel ann = selector.getObject(AnnouncementModel.class);
-
-        if (null == ann)
-            return null;
-
-        // TODO: Eliminate bitmasks and proactive retrieval of responses and memberlists; replace with lazy loading (similar to wiki)
-        if ((mask & INCLUDE_RESPONSES) != 0)
-            attachResponses(c, ann);
-        if ((mask & INCLUDE_MEMBERLIST) != 0)
-            attachMemberLists(ann);
-
-        return ann;
+        return selector.getObject(AnnouncementModel.class);
     }
 
 
@@ -282,7 +227,7 @@ public class AnnouncementManager
         if (null == postId)
             throw new NotFoundException("Can't find most recent post");
 
-        return getAnnouncement(c, postId, INCLUDE_MEMBERLIST);
+        return getAnnouncement(c, postId, INCLUDE_NOTHING);
     }
 
 
@@ -351,7 +296,7 @@ public class AnnouncementManager
                     String messageId = "<" + a.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
                     String references = messageId + " <" + parent.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
 
-                    List<Integer> memberList = getMemberList(a);
+                    List<Integer> memberList = a.getMemberListIds();
 
                     for (User recipient : recipients)
                     {
@@ -438,7 +383,7 @@ public class AnnouncementManager
     }
 
 
-    private static List<Integer> getMemberList(AnnouncementModel ann)
+    static List<Integer> getMemberList(AnnouncementModel ann)
     {
         SQLFragment sql;
 
@@ -494,16 +439,7 @@ public class AnnouncementManager
                 // Delete the member list associated with this thread
                 Table.delete(_comm.getTableInfoMemberList(), new SimpleFilter(FieldKey.fromParts("MessageId"), ann.getRowId()));
 
-                Collection<AnnouncementModel> responses = ann.getResponses();
-                if (null == responses)
-                {
-                    transaction.commit();
-                    return;
-                }
-                for (AnnouncementModel response : responses)
-                {
-                    deleteAnnouncement(response);
-                }
+                ann.getResponses().forEach(AnnouncementManager::deleteAnnouncement);
             }
 
             transaction.commit();
@@ -623,7 +559,7 @@ public class AnnouncementManager
 
 
     // TODO: Fix inconsistency -- cid is @NotNull and we check c != null, yet some code below allows for c == null
-    public static void indexMessages(final SearchService.IndexTask task, final @NotNull String containerId, Date modifiedSince, String threadId)
+    public static void indexMessages(final SearchService.IndexTask task, final @NotNull String containerId, Date modifiedSince, @Nullable String threadId)
     {
         assert null != containerId;
         if (null == containerId || (null != modifiedSince && null != threadId))
@@ -650,16 +586,22 @@ public class AnnouncementManager
                 sql.append(and).append(modified);
         }
 
-        new SqlSelector(_comm.getSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
+        new SqlSelector(_comm.getSchema(), sql).forEach(rs ->
         {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
+            String entityId = rs.getString(1);
+            String docid = "thread:" + entityId;
+            ActionURL url = new ActionURL(AnnouncementsController.ThreadAction.class, null);
+            url.setExtraPath(containerId);
+            url.addParameter("entityId", entityId);
+            ActionResource r = new ActionResource(searchCategory, docid, url)
             {
-                String entityId = rs.getString(1);
-                _indexThread(task, containerId, entityId);
-                if (Thread.interrupted())
-                    return;
-            }
+                @Override
+                public void setLastIndexed(long ms, long modified)
+                {
+                    AnnouncementManager.setLastIndexed(entityId, ms);
+                }
+            };
+            task.addResource(r, SearchService.PRIORITY.item);
         });
 
         // Get the attachments... unfortunately, they're attached to individual announcementModels, not to the thread,
@@ -686,23 +628,19 @@ public class AnnouncementManager
         final Collection<String> annIds = new HashSet<>();
         final Map<String, AnnouncementModel> map = new HashMap<>();
 
-        new SqlSelector(_comm.getSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
+        new SqlSelector(_comm.getSchema(), sql).forEach(rs ->
         {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                String entityId = rs.getString(1);
-                String parent = rs.getString(2);
-                String title = rs.getString(3);
+            String entityId = rs.getString(1);
+            String parent = rs.getString(2);
+            String title = rs.getString(3);
 
-                annIds.add(entityId);
-                AnnouncementModel ann = new AnnouncementModel();
-                ann.setEntityId(entityId);
-                ann.setParent(parent);
-                ann.setContainer(containerId);
-                ann.setTitle(title);
-                map.put(entityId, ann);
-            }
+            annIds.add(entityId);
+            AnnouncementModel ann = new AnnouncementModel();
+            ann.setEntityId(entityId);
+            ann.setParent(parent);
+            ann.setContainer(containerId);
+            ann.setTitle(title);
+            map.put(entityId, ann);
         });
 
         if (!annIds.isEmpty())
@@ -769,27 +707,8 @@ public class AnnouncementManager
         {
             ss.deleteResource(docid);
         }
-        // UNDONE attachments!
+        // Note: Attachments are unindexed by attachment service
     }
-
-
-    public static void _indexThread(SearchService.IndexTask task, String c, final String entityId)
-    {
-        String docid = "thread:" + entityId;
-        ActionURL url = new ActionURL(AnnouncementsController.ThreadAction.class, null);
-        url.setExtraPath(c);
-        url.addParameter("entityId", entityId);
-        ActionResource r = new ActionResource(searchCategory, docid, url)
-        {
-            @Override
-            public void setLastIndexed(long ms, long modified)
-            {
-                AnnouncementManager.setLastIndexed(entityId, ms);
-            }
-        };
-        task.addResource(r, SearchService.PRIORITY.item);
-    }
-
 
 
     static void indexThread(AnnouncementModel ann)
@@ -859,9 +778,9 @@ public class AnnouncementManager
                 AnnouncementModel a = AnnouncementManager.getAnnouncement(c, rowA, INCLUDE_RESPONSES);
                 assertNotNull(a);
                 assertEquals("new announcementModel", a.getTitle());
-                AnnouncementModel[] responses = a.getResponses().toArray(new AnnouncementModel[a.getResponses().size()]);
-                assertEquals(1, responses.length);
-                AnnouncementModel response = responses[0];
+                Collection<AnnouncementModel> responses = a.getResponses();
+                assertEquals(1, responses.size());
+                AnnouncementModel response = responses.iterator().next();
                 assertEquals(a.getEntityId(), response.getParent());
                 assertEquals("response", response.getTitle());
                 assertEquals("bah", response.getBody());

@@ -27,6 +27,8 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="java.util.HashSet" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="org.jetbrains.annotations.NotNull" %>
+<%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     DiscussionServiceImpl.PickerView me = (DiscussionServiceImpl.PickerView) HttpView.currentView();
@@ -37,9 +39,7 @@
     boolean isAdmin = !isGuest && c.hasPermission(user, AdminPermission.class);
     boolean canInsert = !isGuest && c.hasPermission(user, InsertPermission.class);
 
-    AnnouncementModel[] announcementModels = me.announcementModels;
-    if (null == announcementModels)
-        announcementModels = new AnnouncementModel[0];
+    @NotNull Collection<AnnouncementModel> announcementModels = me.announcementModels;
     URLHelper pageURL = me.pageURL;
 
     boolean longFormat = false;
@@ -90,7 +90,7 @@ var discussionMenu = {};
                 comma = ",";
             }
         }
-        else if (announcementModels.length > 0)
+        else if (!announcementModels.isEmpty())
         {
             if (me.isDiscussionVisible)
             {
@@ -98,12 +98,12 @@ var discussionMenu = {};
             }
             else
             {
-                AnnouncementModel a = announcementModels[0];
+                AnnouncementModel a = announcementModels.iterator().next();
                 %><%=text(comma)%>{text:'Show discussion',href:discussionMenu.pageUrl+'&discussion.id=<%=a.getRowId()%>#discussionArea'},<%
             }
             comma = ",";
         }
-        if ((me.allowMultipleDiscussions || announcementModels.length == 0) && canInsert)
+        if ((me.allowMultipleDiscussions || announcementModels.isEmpty()) && canInsert)
         {
             %><%=text(comma)%>{text:'Start <%=h(me.allowMultipleDiscussions ? "new " : "")%>discussion',href:discussionMenu.pageUrl+'&discussion.start=true#discussionArea', iconCls:'discuss-discuss-icon'}<%
             comma = ",";
@@ -140,9 +140,9 @@ var discussionMenu = {};
 })();
 </script>
 <span id=discussionMenuToggle><%
-    if (announcementModels.length > 0 && me.allowMultipleDiscussions)
+    if (!announcementModels.isEmpty() && me.allowMultipleDiscussions)
     {
-        %><%=PageFlowUtil.textLink("see discussions (" + announcementModels.length + ")", "#", "return false;", "")%><%
+        %><%=PageFlowUtil.textLink("see discussions (" + announcementModels.size() + ")", "#", "return false;", "")%><%
     }
     else
     {

@@ -503,7 +503,7 @@ public class AnnouncementsController extends SpringActionController
             User user = getUser();
             Settings settings = getSettings();
 
-            AnnouncementModel thread = AnnouncementManager.getAnnouncement(getContainer(), form.getMessageId(), AnnouncementManager.INCLUDE_MEMBERLIST);
+            AnnouncementModel thread = AnnouncementManager.getAnnouncement(getContainer(), form.getMessageId(), AnnouncementManager.INCLUDE_NOTHING);
 
             if (form.getUserId() != user.getUserId())
             {
@@ -1428,7 +1428,7 @@ public class AnnouncementsController extends SpringActionController
             SimpleFilter filter = getFilter(getSettings(), getPermissions(), true);
 
             // TODO: This only grabs announcementModels... add responses too?
-            Pair<AnnouncementModel[], Boolean> pair = AnnouncementManager.getAnnouncements(c, filter, getSettings().getSort(), 100);
+            Pair<Collection<AnnouncementModel>, Boolean> pair = AnnouncementManager.getAnnouncements(c, filter, getSettings().getSort(), 100);
 
             ActionURL url = getThreadURL(c, "", 0).deleteParameters().addParameter("rowId", null);
 
@@ -1454,7 +1454,7 @@ public class AnnouncementsController extends SpringActionController
 
     public static class RssView extends JspView<RssView.RssBean>
     {
-        private RssView(AnnouncementModel[] announcementModels, String url)
+        private RssView(Collection<AnnouncementModel> announcementModels, String url)
         {
             super("/org/labkey/announcements/rss.jsp", new RssBean(announcementModels, url));
             setFrame(WebPartView.FrameType.NOT_HTML);
@@ -1462,10 +1462,10 @@ public class AnnouncementsController extends SpringActionController
 
         public static class RssBean
         {
-            public AnnouncementModel[] announcementModels;
+            public Collection<AnnouncementModel> announcementModels;
             public String url;
 
-            private RssBean(AnnouncementModel[] announcementModels, String url)
+            private RssBean(Collection<AnnouncementModel> announcementModels, String url)
             {
                 this.announcementModels = announcementModels;
                 this.url = url;
@@ -1857,7 +1857,7 @@ public class AnnouncementsController extends SpringActionController
                 if (null != bean.getEntityId())
                     _selectedAnnouncementModel = AnnouncementManager.getAnnouncement(getContainer(), bean.getEntityId(), true);  // Need member list
                 if (null == _selectedAnnouncementModel)
-                    _selectedAnnouncementModel = AnnouncementManager.getAnnouncement(getContainer(), bean.getRowId(), AnnouncementManager.INCLUDE_MEMBERLIST);
+                    _selectedAnnouncementModel = AnnouncementManager.getAnnouncement(getContainer(), bean.getRowId(), AnnouncementManager.INCLUDE_NOTHING);
             }
             return _selectedAnnouncementModel;
         }
@@ -2305,7 +2305,7 @@ public class AnnouncementsController extends SpringActionController
 
         public static class MessagesBean extends LinkBarBean
         {
-            public AnnouncementModel[] announcementModels;
+            public Collection<AnnouncementModel> announcementModels;
             public ActionURL listURL;
             public boolean isPrint=false;
 
@@ -2313,7 +2313,7 @@ public class AnnouncementsController extends SpringActionController
             {
                 Permissions perm = getPermissions(c, user, settings);
                 SimpleFilter filter = getFilter(settings, perm, displayAll);
-                Pair<AnnouncementModel[], Boolean> pair = AnnouncementManager.getAnnouncements(c, filter, settings.getSort(), 100);
+                Pair<Collection<AnnouncementModel>, Boolean> pair = AnnouncementManager.getAnnouncements(c, filter, settings.getSort(), 100);
 
                 init(c, url, user, settings, perm, displayAll, false, pair.second ? 100 : 0);
                 
@@ -2629,9 +2629,6 @@ public class AnnouncementsController extends SpringActionController
             if (null == ann)
                 throw createThreadNotFoundException(c);
 
-            if (ann instanceof AnnouncementManager.BareAnnouncementModel)
-                throw new IllegalArgumentException("can't use getBareAnnoucements() with this view");
-
             ThreadViewBean bean = getModelBean();
             bean.announcementModel = ann;
             bean.currentURL = currentURL;
@@ -2750,7 +2747,7 @@ public class AnnouncementsController extends SpringActionController
         }
 
         if (0 != rowId)
-            return AnnouncementManager.getAnnouncement(c, rowId, AnnouncementManager.INCLUDE_RESPONSES + AnnouncementManager.INCLUDE_MEMBERLIST);
+            return AnnouncementManager.getAnnouncement(c, rowId, AnnouncementManager.INCLUDE_RESPONSES);
         else if (null == entityId)
             throw createThreadNotFoundException(c);
 

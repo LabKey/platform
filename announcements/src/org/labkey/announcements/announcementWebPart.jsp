@@ -43,7 +43,7 @@
             <div style="padding-top: 5px;">Showing: <%=h(bean.filterText)%></div>
         </td>
     </tr><%
-    if (0 == bean.announcementModels.length)
+    if (bean.announcementModels.isEmpty())
     {%>
     <tr><td colspan=3 style="padding-top:4px;">No <%=h(bean.filterText.replace("all ", ""))%></td></tr><%
     }
@@ -63,14 +63,14 @@
     <tr><td colspan=3 class="labkey-title-area-line"></td></tr>
     <tr><td colspan=3 class="labkey-force-word-break"><%=h(a.translateBody(c))%></td></tr>
 <%
-    if (a.getAttachments().size() > 0)
+    if (!a.getAttachments().isEmpty())
         { %>
     <tr><td colspan=3><%
         for (Attachment d : a.getAttachments())
         {
     %>
         <a href="<%=h(d.getDownloadUrl(DownloadAction.class))%>"><img src="<%=getContextPath()%><%=h(d.getFileIcon())%>">&nbsp;<%=h(d.getName())%></a>&nbsp;<%
-            }
+        }
         %>
     </td></tr>
 <%      } %>    <tr><td style="padding-bottom:4px;" colspan=3 align="left"><%=textLink("view " + bean.settings.getConversationName().toLowerCase() + (null != bean.insertURL ? " or respond" : ""), a.getThreadURL(c) + "rowId=" + a.getRowId())%></td></tr>

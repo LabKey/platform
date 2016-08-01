@@ -130,7 +130,7 @@ if (null != announcementModel.getBody())
     <td colspan="3" class="labkey-force-word-break"><%=text(announcementModel.translateBody(c))%></td>
 </tr><%
 
-if (0 < announcementModel.getAttachments().size())
+if (!announcementModel.getAttachments().isEmpty())
 { %>
 <tr>
     <td colspan="3"><div><%
@@ -146,7 +146,7 @@ if (0 < announcementModel.getAttachments().size())
     <td colspan="3">&nbsp;</td>
 </tr><%
 
-if (0 < announcementModel.getResponses().size())
+if (!announcementModel.getResponses().isEmpty())
 {
     AnnouncementModel prev = announcementModel;
     %>
@@ -213,7 +213,7 @@ if (0 < announcementModel.getResponses().size())
             <tr>
                 <td colspan="2"><%=r.translateBody(c)%></td>
             </tr><%
-            if (0 < r.getAttachments().size())
+            if (!r.getAttachments().isEmpty())
             { %>
             <tr>
                 <td colspan="2"><div><%

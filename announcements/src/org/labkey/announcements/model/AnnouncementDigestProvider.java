@@ -35,14 +35,11 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewContext;
 
 import javax.mail.Message;
 import javax.mail.internet.InternetAddress;
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -90,22 +87,22 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
     private void sendDigest(Container c, Date start, Date end) throws Exception
     {
         DiscussionService.Settings settings = AnnouncementManager.getMessageBoardSettings(c);
-        AnnouncementModel[] announcementModels = getRecentAnnouncementsInContainer(c, start, end);
+        Collection<AnnouncementModel> announcements = getRecentAnnouncementsInContainer(c, start, end);
 
         DailyDigestEmailPrefsSelector sel = new DailyDigestEmailPrefsSelector(c);
 
         for (User recipient : sel.getNotificationCandidates())
         {
-            List<AnnouncementModel> announcementModelList = new ArrayList<>(announcementModels.length);
+            List<AnnouncementModel> announcementsForRecipient = new ArrayList<>(announcements.size());
 
-            for (AnnouncementModel ann : announcementModels)
+            for (AnnouncementModel ann : announcements)
                 if (sel.shouldSend(ann, recipient))
-                    announcementModelList.add(ann);
+                    announcementsForRecipient.add(ann);
 
-            if (!announcementModelList.isEmpty())
+            if (!announcementsForRecipient.isEmpty())
             {
                 Permissions perm = AnnouncementsController.getPermissions(c, recipient, settings);
-                MailHelper.MultipartMessage m = getDailyDigestMessage(c, settings, perm, announcementModelList, recipient);
+                MailHelper.MultipartMessage m = getDailyDigestMessage(c, settings, perm, announcementsForRecipient, recipient);
 
                 try
                 {
@@ -120,11 +117,9 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
         }
     }
 
-    private static AnnouncementModel[] getRecentAnnouncementsInContainer(Container c, Date min, Date max)
+    private static Collection<AnnouncementModel> getRecentAnnouncementsInContainer(Container c, Date min, Date max)
     {
-        AnnouncementModel[] announcementModels = new SqlSelector(_comm.getSchema(), RECENT_ANN_SQL, c, min, max, c, min, max).getArray(AnnouncementManager.BareAnnouncementModel.class);
-        AnnouncementManager.attachMemberLists(announcementModels);
-        return announcementModels;
+        return new SqlSelector(_comm.getSchema(), RECENT_ANN_SQL, c, min, max, c, min, max).getCollection(AnnouncementModel.class);
     }
 
     private static MailHelper.MultipartMessage getDailyDigestMessage(Container c, DiscussionService.Settings settings, Permissions perm, List<AnnouncementModel> announcementModels, User recipient) throws Exception

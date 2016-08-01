@@ -17,9 +17,9 @@
 package org.labkey.announcements.model;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.announcements.AnnouncementsController;
 import org.labkey.api.announcements.DiscussionService;
-import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -61,10 +61,10 @@ public class DiscussionServiceImpl implements DiscussionService.Service
     {
         if (!allowMultipleDiscussions)
         {
-            AnnouncementModel[] discussions = getDiscussions(c, identifier);
+            Collection<AnnouncementModel> discussions = getDiscussions(c, identifier);
 
-            if (discussions.length > 0)
-                return getDiscussion(c, cancelURL, discussions[0], user); // TODO: cancelURL is probably not right
+            if (!discussions.isEmpty())
+                return getDiscussion(c, cancelURL, discussions.iterator().next(), user); // TODO: cancelURL is probably not right
         }
 
         String viewTitle = "New Discussion";
@@ -106,16 +106,16 @@ public class DiscussionServiceImpl implements DiscussionService.Service
     }
 
 
-    public AnnouncementModel[] getDiscussions(Container c, String identifier)
+    public @NotNull Collection<AnnouncementModel> getDiscussions(Container c, String identifier)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("discussionSrcIdentifier"), identifier);
-        return AnnouncementManager.getBareAnnouncements(c, filter, new Sort("Created"));
+        return AnnouncementManager.getAnnouncements(c, filter, new Sort("Created"));
     }
 
-    public AnnouncementModel[] getDiscussions(Container c, String[] identifiers)
+    public @NotNull Collection<AnnouncementModel> getDiscussions(Container c, String[] identifiers)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("discussionSrcIdentifier"), Arrays.asList(identifiers), CompareType.IN);
-        return AnnouncementManager.getBareAnnouncements(c, filter, new Sort("Created"));
+        return AnnouncementManager.getAnnouncements(c, filter, new Sort("Created"));
     }
 
     public WebPartView getDiscussion(Container c, URLHelper currentURL, AnnouncementModel ann, User user)
@@ -145,7 +145,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
     {
         // get discussion parameters
         Map<String, String> params = currentURL.getScopeParameters("discussion");
-        AnnouncementModel[] announcementModels = getDiscussions(c, objectId);
+        Collection<AnnouncementModel> announcementModels = getDiscussions(c, objectId);
 
         int discussionId = 0;
         try
@@ -155,9 +155,9 @@ public class DiscussionServiceImpl implements DiscussionService.Service
             {
                 discussionId = Integer.parseInt(id);
             }
-            else if (displayFirstDiscussionByDefault && params.isEmpty() && announcementModels.length > 0)
+            else if (displayFirstDiscussionByDefault && params.isEmpty() && announcementModels.size() > 0)
             {
-                discussionId = announcementModels[0].getRowId();
+                discussionId = announcementModels.iterator().next().getRowId();
             }
         }
         catch (Exception x) {/* */}
@@ -243,7 +243,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
 
     public void deleteDiscussions(Container c, User user, String... identifiers)
     {
-        AnnouncementModel[] anns = getDiscussions(c, identifiers);
+        Collection<AnnouncementModel> anns = getDiscussions(c, identifiers);
         for (AnnouncementModel ann : anns)
         {
             AnnouncementManager.deleteAnnouncement(c, ann.getRowId());
@@ -253,7 +253,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
     @Override
     public void deleteDiscussions(Container container, User user, Collection<String> identifiers)
     {
-        AnnouncementModel[] anns = getDiscussions(container, identifiers.toArray(new String[identifiers.size()]));
+        Collection<AnnouncementModel> anns = getDiscussions(container, identifiers.toArray(new String[identifiers.size()]));
         for (AnnouncementModel ann : anns)
         {
             AnnouncementManager.deleteAnnouncement(container, ann.getRowId());
@@ -262,7 +262,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
 
     public void unlinkDiscussions(Container c, String identifier, User user)
     {
-        AnnouncementModel[] anns = getDiscussions(c, identifier);
+        Collection<AnnouncementModel> anns = getDiscussions(c, identifier);
         for (AnnouncementModel ann : anns)
         {
             try
@@ -280,7 +280,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
 
     public boolean hasDiscussions(Container container, String identifier)
     {
-        return getDiscussions(container, identifier).length > 0;
+        return !getDiscussions(container, identifier).isEmpty();
     }
 
 
@@ -394,12 +394,12 @@ public class DiscussionServiceImpl implements DiscussionService.Service
         final public ActionURL emailPreferencesURL;
         final public ActionURL adminEmailURL;
         final public ActionURL customizeURL;
-        final public AnnouncementModel[] announcementModels;
+        final public @NotNull Collection<AnnouncementModel> announcementModels;
         final public boolean isDiscussionVisible;
         final public boolean allowMultipleDiscussions;
         final public String title;
 
-        PickerView(Container c, String discussionAreaId, URLHelper pageURL, String title, AnnouncementModel[] announcementModels, boolean isDiscussionVisible, boolean allowMultipleDiscussions, String objectId)
+        PickerView(Container c, String discussionAreaId, URLHelper pageURL, String title, @NotNull Collection<AnnouncementModel> announcementModels, boolean isDiscussionVisible, boolean allowMultipleDiscussions, String objectId)
         {
             super("/org/labkey/announcements/discussionMenu.jsp");
             setFrame(FrameType.NONE);

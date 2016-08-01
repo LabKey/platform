@@ -31,6 +31,7 @@ import org.labkey.api.view.UnauthorizedException;
 import javax.mail.MessagingException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -94,7 +95,7 @@ public class AnnouncementServiceImpl implements AnnouncementService.Interface
     {
         List<Announcement> announcements = new ArrayList<>();
 
-        AnnouncementModel[] announcementModels = AnnouncementManager.getAnnouncements(containers); // doesn't allow a filter to be applied
+        Collection<AnnouncementModel> announcementModels = AnnouncementManager.getAnnouncements(containers); // doesn't allow a filter to be applied
 
         for (AnnouncementModel announcementModel : announcementModels)
         {

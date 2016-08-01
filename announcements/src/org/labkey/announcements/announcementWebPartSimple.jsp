@@ -167,7 +167,7 @@ TD.message-short .message-less, TD.message-short .message-more
 <table style="table-layout: fixed; width: 100%;" id="<%=h(tableId)%>">
 <%
 
-if (0 == bean.announcementModels.length)
+if (bean.announcementModels.isEmpty())
 {
     %><tr><td colspan=3 style="padding-top:4px;">No <%=h(bean.filterText.replace("all ", ""))%></td></tr><%
 }
@@ -190,7 +190,7 @@ for (AnnouncementModel a : bean.announcementModels)
         %></div>
     </tr><%
 
-    if (a.getAttachments().size() > 0)
+    if (!a.getAttachments().isEmpty())
     {
         %><tr><td colspan=3><%
         for (Attachment d : a.getAttachments())

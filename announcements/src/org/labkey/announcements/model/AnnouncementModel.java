@@ -71,7 +71,7 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
 
     private int _responseCount = 0;
 
-    private Collection<AnnouncementModel> _responses = new ArrayList<>();
+    private Collection<AnnouncementModel> _responses = null;
     private Set<User> _authors;
 
 
@@ -222,14 +222,18 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
     }
 
 
-    public Collection<Attachment> getAttachments()
+    public @NotNull Collection<Attachment> getAttachments()
     {
         return AttachmentService.get().getAttachments(this);
     }
 
 
-    public Collection<AnnouncementModel> getResponses()
+    public @NotNull Collection<AnnouncementModel> getResponses()
     {
+        if (null == _responses)
+        {
+            _responses = AnnouncementManager.getResponses(this);
+        }
         return _responses;
     }
 
@@ -317,7 +321,7 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
     {
         if (_memberListIds == null)
         {
-            AnnouncementManager.attachMemberLists(this);
+            _memberListIds = AnnouncementManager.getMemberList(this);
         }
         return _memberListIds;
     }
