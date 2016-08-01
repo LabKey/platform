@@ -6,7 +6,10 @@ DECLARE
 
     SELECT @tempName = storagetablename
         FROM exp.domaindescriptor WHERE name = 'SelectQueryAuditDomain';
-    EXEC ('ALTER TABLE audit.' + @tempName + ' ALTER COLUMN identifieddata NVARCHAR(MAX)');
+    IF (@tempName IS NOT NULL)
+    BEGIN
+        EXEC ('ALTER TABLE audit.' + @tempName + ' ALTER COLUMN identifieddata NVARCHAR(MAX)')
+    END
     RETURN 0;
 END
 GO

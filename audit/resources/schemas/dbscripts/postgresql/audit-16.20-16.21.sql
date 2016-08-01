@@ -6,7 +6,10 @@ DECLARE
 BEGIN
     SELECT INTO tempName storagetablename
         FROM exp.domaindescriptor WHERE name = 'SelectQueryAuditDomain';
-    EXECUTE 'ALTER TABLE audit.' || tempName || ' ALTER COLUMN identifieddata TYPE TEXT';
+    IF (tempName IS NOT NULL)
+    THEN
+        EXECUTE 'ALTER TABLE audit.' || tempName || ' ALTER COLUMN identifieddata TYPE TEXT';
+    END IF;
     RETURN 0;
 END
 
