@@ -101,6 +101,7 @@ import org.labkey.data.xml.externalSchema.TemplateSchemaType;
 import org.labkey.query.CustomViewImpl;
 import org.labkey.query.CustomViewUtil;
 import org.labkey.query.EditableCustomView;
+import org.labkey.query.LinkedTableInfo;
 import org.labkey.query.ModuleCustomView;
 import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.TableXML;
@@ -1197,6 +1198,8 @@ public class QueryController extends SpringActionController
 
             if (ti instanceof SchemaTableInfo)
                 _tableName = ti.getMetaDataName();
+            else if (ti instanceof LinkedTableInfo)
+                _tableName = ti.getName();
             else
                 _tableName = ti.getSelectName();
 
