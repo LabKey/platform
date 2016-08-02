@@ -957,8 +957,10 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             {
                 int dbDelimiter = url.indexOf(";database=");
                 if (-1 == dbDelimiter)
+                    dbDelimiter = url.indexOf(";databaseName=");
+                if (-1 == dbDelimiter)
                     throw new ServletException("Invalid sql server connection url: " + url);
-                dbDelimiter += ";database=".length();
+                dbDelimiter = url.indexOf("=",dbDelimiter)+1;
                 int dbEnd = url.indexOf(";",dbDelimiter);
                 if (-1 == dbEnd)
                     dbEnd = url.length();
@@ -1539,7 +1541,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
     private Edition getEdition(DbScope scope)
     {
-        String edition = new SqlSelector(scope, "SELECT SERVERPROPERTY ('edition')").getObject(String.class);
+        String edition = new SqlSelector(scope, "SELECT CAST(SERVERPROPERTY('edition') AS NVARCHAR(128))").getObject(String.class);
         String name = edition.split(" ")[0];
 
         return Edition.getByEdition(name);

@@ -2829,17 +2829,18 @@ public class QueryServiceImpl extends QueryService
                 ResultSetMetaData rsmd = rs.getMetaData();
                 assertEquals(JdbcType.BIGINT.sqlType, rsmd.getColumnType(rs.findColumn("bint")));
                 assertTrue(Types.BIT==rsmd.getColumnType(rs.findColumn("bit")) || Types.BOOLEAN==rsmd.getColumnType(rs.findColumn("bit")));
-                assertEquals(JdbcType.CHAR.sqlType, rsmd.getColumnType(rs.findColumn("char")));
+                assertTrue(Types.CHAR==rsmd.getColumnType(rs.findColumn("char")) || Types.NCHAR==rsmd.getColumnType(rs.findColumn("char")));
                 assertTrue(Types.DECIMAL==rsmd.getColumnType(rs.findColumn("dec"))||Types.NUMERIC==rsmd.getColumnType(rs.findColumn("dec")));
                 assertEquals(JdbcType.DOUBLE.sqlType, rsmd.getColumnType(rs.findColumn("d")));
                 assertEquals(JdbcType.INTEGER.sqlType, rsmd.getColumnType(rs.findColumn("i")));
-                assertTrue(Types.LONGVARCHAR == rsmd.getColumnType(rs.findColumn("text")) || Types.CLOB == rsmd.getColumnType(rs.findColumn("text")) || Types.VARCHAR == rsmd.getColumnType(rs.findColumn("text")));
+                int columntype = rsmd.getColumnType(rs.findColumn("text"));
+                assertTrue(Types.LONGVARCHAR == columntype || Types.CLOB == columntype || Types.VARCHAR == columntype || Types.LONGNVARCHAR == columntype);
                 assertTrue(Types.DECIMAL==rsmd.getColumnType(rs.findColumn("num"))||Types.NUMERIC==rsmd.getColumnType(rs.findColumn("num")));
                 assertEquals(JdbcType.REAL.sqlType, rsmd.getColumnType(rs.findColumn("real")));
                 assertEquals(JdbcType.SMALLINT.sqlType, rsmd.getColumnType(rs.findColumn("sint")));
                 assertEquals(JdbcType.TIMESTAMP.sqlType, rsmd.getColumnType(rs.findColumn("ts")));
                 assertEquals(JdbcType.TINYINT.sqlType, rsmd.getColumnType(rs.findColumn("ti")));
-                assertEquals(JdbcType.VARCHAR.sqlType, rsmd.getColumnType(rs.findColumn("s")));
+                assertTrue(JdbcType.VARCHAR.sqlType==rsmd.getColumnType(rs.findColumn("s")) || Types.NVARCHAR==rsmd.getColumnType(rs.findColumn("s")));
             }
         }
     }
