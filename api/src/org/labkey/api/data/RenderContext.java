@@ -621,10 +621,11 @@ public class RenderContext implements Map<String, Object>, Serializable
                         return null;
 
                     Object value = col.getValue(_row);
+                    JdbcType type = col.getJdbcType();
 
-                    // Hack for DATE columns on SQL Server jTDS, see #27332
-                    if (col.getJdbcType() == JdbcType.DATE && value instanceof String)
-                        value = DateUtil.parseISODateTime((String) value);
+                    // Hack for DATE and TIMESTAMP columns on SQL Server jTDS, see #27332
+                    if ((type == JdbcType.DATE || type == JdbcType.TIMESTAMP) && value instanceof String)
+                        value = type.convert(value);
 
                     return value;
                 }
