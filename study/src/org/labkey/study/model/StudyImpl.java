@@ -1214,7 +1214,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     @Override
     public boolean isDataspaceStudy()
     {
-        return getContainer().getFolderType() instanceof DataspaceStudyFolderType;
+        return getContainer().isProject() && (_shareDatasetDefinitions || _shareVisitDefinitions);
     }
 
 
