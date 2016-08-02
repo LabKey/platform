@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.jetbrains.annotations.NotNull" %>
 <%@ page import="org.labkey.announcements.model.AnnouncementModel" %>
 <%@ page import="org.labkey.announcements.model.DiscussionServiceImpl" %>
 <%@ page import="org.labkey.api.data.Container" %>
@@ -26,9 +27,8 @@
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="java.util.HashSet" %>
+<%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="org.jetbrains.annotations.NotNull" %>
-<%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     DiscussionServiceImpl.PickerView me = (DiscussionServiceImpl.PickerView) HttpView.currentView();
@@ -39,7 +39,7 @@
     boolean isAdmin = !isGuest && c.hasPermission(user, AdminPermission.class);
     boolean canInsert = !isGuest && c.hasPermission(user, InsertPermission.class);
 
-    @NotNull Collection<AnnouncementModel> announcementModels = me.announcementModels;
+    @NotNull List<AnnouncementModel> discussions = me.discussions;
     URLHelper pageURL = me.pageURL;
 
     boolean longFormat = false;
@@ -47,7 +47,7 @@
 
     if (me.allowMultipleDiscussions)
     {
-        for (AnnouncementModel a : announcementModels)
+        for (AnnouncementModel a : discussions)
             longFormat |= !menuItems.add(a.getCreatedByName(user) + "|" + DateUtil.formatDate(c, a.getCreated()));
     }
 %>
@@ -82,7 +82,7 @@ var discussionMenu = {};
         String comma = "";
         if (me.allowMultipleDiscussions)
         {
-            for (AnnouncementModel a : announcementModels)
+            for (AnnouncementModel a : discussions)
             {
                 String title = a.getTitle();
                 String help = a.getCreatedByName(user) + ' ' + (longFormat ? DateUtil.formatDateTime(c, a.getCreated()) : DateUtil.formatDate(c, a.getCreated()));
@@ -90,7 +90,7 @@ var discussionMenu = {};
                 comma = ",";
             }
         }
-        else if (!announcementModels.isEmpty())
+        else if (!discussions.isEmpty())
         {
             if (me.isDiscussionVisible)
             {
@@ -98,12 +98,12 @@ var discussionMenu = {};
             }
             else
             {
-                AnnouncementModel a = announcementModels.iterator().next();
+                AnnouncementModel a = discussions.get(0);
                 %><%=text(comma)%>{text:'Show discussion',href:discussionMenu.pageUrl+'&discussion.id=<%=a.getRowId()%>#discussionArea'},<%
             }
             comma = ",";
         }
-        if ((me.allowMultipleDiscussions || announcementModels.isEmpty()) && canInsert)
+        if ((me.allowMultipleDiscussions || discussions.isEmpty()) && canInsert)
         {
             %><%=text(comma)%>{text:'Start <%=h(me.allowMultipleDiscussions ? "new " : "")%>discussion',href:discussionMenu.pageUrl+'&discussion.start=true#discussionArea', iconCls:'discuss-discuss-icon'}<%
             comma = ",";
@@ -140,9 +140,9 @@ var discussionMenu = {};
 })();
 </script>
 <span id=discussionMenuToggle><%
-    if (!announcementModels.isEmpty() && me.allowMultipleDiscussions)
+    if (!discussions.isEmpty() && me.allowMultipleDiscussions)
     {
-        %><%=PageFlowUtil.textLink("see discussions (" + announcementModels.size() + ")", "#", "return false;", "")%><%
+        %><%=PageFlowUtil.textLink("see discussions (" + discussions.size() + ")", "#", "return false;", "")%><%
     }
     else
     {

@@ -395,7 +395,7 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
     {
         if (null == _authors)
         {
-            AnnouncementModel a = AnnouncementManager.getAnnouncement(lookupContainer(), getParent() == null ? getEntityId() : getParent(), true);
+            AnnouncementModel a = AnnouncementManager.getAnnouncement(lookupContainer(), getParent() == null ? getEntityId() : getParent());
 
             if (a == null)
             {

@@ -48,6 +48,7 @@ import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -61,10 +62,10 @@ public class DiscussionServiceImpl implements DiscussionService.Service
     {
         if (!allowMultipleDiscussions)
         {
-            Collection<AnnouncementModel> discussions = getDiscussions(c, identifier);
+            List<AnnouncementModel> discussions = getDiscussions(c, identifier);
 
             if (!discussions.isEmpty())
-                return getDiscussion(c, cancelURL, discussions.iterator().next(), user); // TODO: cancelURL is probably not right
+                return getDiscussion(c, cancelURL, discussions.get(0), user); // TODO: cancelURL is probably not right
         }
 
         String viewTitle = "New Discussion";
@@ -106,7 +107,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
     }
 
 
-    public @NotNull Collection<AnnouncementModel> getDiscussions(Container c, String identifier)
+    public @NotNull List<AnnouncementModel> getDiscussions(Container c, String identifier)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("discussionSrcIdentifier"), identifier);
         return AnnouncementManager.getAnnouncements(c, filter, new Sort("Created"));
@@ -145,7 +146,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
     {
         // get discussion parameters
         Map<String, String> params = currentURL.getScopeParameters("discussion");
-        Collection<AnnouncementModel> announcementModels = getDiscussions(c, objectId);
+        List<AnnouncementModel> discussions = getDiscussions(c, objectId);
 
         int discussionId = 0;
         try
@@ -155,9 +156,9 @@ public class DiscussionServiceImpl implements DiscussionService.Service
             {
                 discussionId = Integer.parseInt(id);
             }
-            else if (displayFirstDiscussionByDefault && params.isEmpty() && announcementModels.size() > 0)
+            else if (displayFirstDiscussionByDefault && params.isEmpty() && discussions.size() > 0)
             {
-                discussionId = announcementModels.iterator().next().getRowId();
+                discussionId = discussions.get(0).getRowId();
             }
         }
         catch (Exception x) {/* */}
@@ -201,7 +202,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
 
             if (discussionId != 0)
             {
-                for (AnnouncementModel ann : announcementModels)
+                for (AnnouncementModel ann : discussions)
                 {
                     if (ann.getRowId() == discussionId)
                     {
@@ -230,7 +231,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
         if (discussionBox == null)
             discussionBox = new ThreadWrapper(currentURL, "Discussion");
 
-        ModelAndView pickerView = new PickerView(c, discussionBox.getId(), adjustedCurrentURL, newDiscussionTitle, announcementModels, true, allowMultipleDiscussions, objectId);
+        ModelAndView pickerView = new PickerView(c, discussionBox.getId(), adjustedCurrentURL, newDiscussionTitle, discussions, true, allowMultipleDiscussions, objectId);
         DiscussionService.DiscussionView view = new DiscussionService.DiscussionView(pickerView);
 
         view.addView(discussionBox);
@@ -243,8 +244,8 @@ public class DiscussionServiceImpl implements DiscussionService.Service
 
     public void deleteDiscussions(Container c, User user, String... identifiers)
     {
-        Collection<AnnouncementModel> anns = getDiscussions(c, identifiers);
-        for (AnnouncementModel ann : anns)
+        Collection<AnnouncementModel> discussions = getDiscussions(c, identifiers);
+        for (AnnouncementModel ann : discussions)
         {
             AnnouncementManager.deleteAnnouncement(c, ann.getRowId());
         }
@@ -253,8 +254,8 @@ public class DiscussionServiceImpl implements DiscussionService.Service
     @Override
     public void deleteDiscussions(Container container, User user, Collection<String> identifiers)
     {
-        Collection<AnnouncementModel> anns = getDiscussions(container, identifiers.toArray(new String[identifiers.size()]));
-        for (AnnouncementModel ann : anns)
+        Collection<AnnouncementModel> discussions = getDiscussions(container, identifiers.toArray(new String[identifiers.size()]));
+        for (AnnouncementModel ann : discussions)
         {
             AnnouncementManager.deleteAnnouncement(container, ann.getRowId());
         }
@@ -262,8 +263,8 @@ public class DiscussionServiceImpl implements DiscussionService.Service
 
     public void unlinkDiscussions(Container c, String identifier, User user)
     {
-        Collection<AnnouncementModel> anns = getDiscussions(c, identifier);
-        for (AnnouncementModel ann : anns)
+        Collection<AnnouncementModel> discussions = getDiscussions(c, identifier);
+        for (AnnouncementModel ann : discussions)
         {
             try
             {
@@ -394,12 +395,12 @@ public class DiscussionServiceImpl implements DiscussionService.Service
         final public ActionURL emailPreferencesURL;
         final public ActionURL adminEmailURL;
         final public ActionURL customizeURL;
-        final public @NotNull Collection<AnnouncementModel> announcementModels;
+        final public @NotNull List<AnnouncementModel> discussions;
         final public boolean isDiscussionVisible;
         final public boolean allowMultipleDiscussions;
         final public String title;
 
-        PickerView(Container c, String discussionAreaId, URLHelper pageURL, String title, @NotNull Collection<AnnouncementModel> announcementModels, boolean isDiscussionVisible, boolean allowMultipleDiscussions, String objectId)
+        PickerView(Container c, String discussionAreaId, URLHelper pageURL, String title, @NotNull List<AnnouncementModel> discussions, boolean isDiscussionVisible, boolean allowMultipleDiscussions, String objectId)
         {
             super("/org/labkey/announcements/discussionMenu.jsp");
             setFrame(FrameType.NONE);
@@ -409,7 +410,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
             this.emailPreferencesURL = AnnouncementsController.getEmailPreferencesURL(c, pageURL, objectId);
             this.adminEmailURL = AnnouncementsController.getAdminEmailURL(c, pageURL);
             this.customizeURL = AnnouncementsController.getAdminURL(c, pageURL);
-            this.announcementModels = announcementModels;
+            this.discussions = discussions;
             this.isDiscussionVisible = isDiscussionVisible;
             this.allowMultipleDiscussions = allowMultipleDiscussions;
         }

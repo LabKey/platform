@@ -130,7 +130,7 @@ public class AnnouncementSubscriptionTable extends AbstractSubscriptionTable
         {
             Pair<User, AnnouncementModel> targets = getTargets(keys, user);
             SimpleFilter filter = createFilter(targets);
-            return new TableSelector(AnnouncementSubscriptionTable.this).getObject(filter, Map.class);
+            return new TableSelector(AnnouncementSubscriptionTable.this, filter, null).getMap();
         }
 
         private SimpleFilter createFilter(Pair<User, AnnouncementModel> targets)

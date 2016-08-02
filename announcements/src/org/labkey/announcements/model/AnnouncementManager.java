@@ -124,11 +124,11 @@ public class AnnouncementManager
 
 
     // Get all threads in this container, filtered using filter
-    public static @NotNull Collection<AnnouncementModel> getAnnouncements(Container c, SimpleFilter filter, Sort sort)
+    public static @NotNull List<AnnouncementModel> getAnnouncements(Container c, SimpleFilter filter, Sort sort)
     {
         filter.addCondition(FieldKey.fromParts("Container"), c);
 
-        return new TableSelector(_comm.getTableInfoThreads(), filter, sort).getCollection(AnnouncementModel.class);
+        return new TableSelector(_comm.getTableInfoThreads(), filter, sort).getArrayList(AnnouncementModel.class);
     }
 
     // Return a collection of announcementModels from a set of containers sorted by date created (newest first).
@@ -158,13 +158,7 @@ public class AnnouncementManager
     }
 
 
-    public static AnnouncementModel getAnnouncement(@Nullable Container c, String entityId)
-    {
-        return getAnnouncement(c, entityId, false);
-    }
-
-
-    public static @Nullable AnnouncementModel getAnnouncement(@Nullable Container c, String entityId, boolean eager)
+    public static @Nullable AnnouncementModel getAnnouncement(@Nullable Container c, String entityId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("EntityId"), entityId);
         if (c != null)
@@ -185,11 +179,6 @@ public class AnnouncementManager
         return _configProvider;
     }
 
-    public static AnnouncementModel getAnnouncement(Container c, int rowId)
-    {
-        return getAnnouncement(c, rowId, INCLUDE_NOTHING);
-    }
-
     public static void saveEmailPreference(User user, Container c, int emailPreference, String srcIdentifier)
     {
         saveEmailPreference(user, c, user, emailPreference, srcIdentifier);
@@ -201,10 +190,7 @@ public class AnnouncementManager
     }
 
 
-    public static final int INCLUDE_NOTHING = 0;
-    public static final int INCLUDE_RESPONSES = 2;
-
-    public static AnnouncementModel getAnnouncement(@Nullable Container c, int rowId, int mask)
+    public static AnnouncementModel getAnnouncement(@Nullable Container c, int rowId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowId);
         if (c != null)
@@ -227,7 +213,7 @@ public class AnnouncementManager
         if (null == postId)
             throw new NotFoundException("Can't find most recent post");
 
-        return getAnnouncement(c, postId, INCLUDE_NOTHING);
+        return getAnnouncement(c, postId);
     }
 
 
@@ -431,7 +417,7 @@ public class AnnouncementManager
 
         try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
         {
-            ann = getAnnouncement(c, rowId, INCLUDE_RESPONSES);
+            ann = getAnnouncement(c, rowId);
             if (ann != null)
             {
                 deleteAnnouncement(ann);
@@ -775,7 +761,7 @@ public class AnnouncementManager
             }
 
             {
-                AnnouncementModel a = AnnouncementManager.getAnnouncement(c, rowA, INCLUDE_RESPONSES);
+                AnnouncementModel a = AnnouncementManager.getAnnouncement(c, rowA);
                 assertNotNull(a);
                 assertEquals("new announcementModel", a.getTitle());
                 Collection<AnnouncementModel> responses = a.getResponses();

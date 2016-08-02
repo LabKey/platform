@@ -327,9 +327,9 @@ public class AnnouncementsController extends SpringActionController
 
             AnnouncementModel ann = null;
             if (null != form.getEntityId())
-                ann = AnnouncementManager.getAnnouncement(getContainer(), form.getEntityId(), true);
+                ann = AnnouncementManager.getAnnouncement(getContainer(), form.getEntityId());
             if (null == ann)
-                ann = AnnouncementManager.getAnnouncement(getContainer(), form.getRowId(), AnnouncementManager.INCLUDE_RESPONSES);
+                ann = AnnouncementManager.getAnnouncement(getContainer(), form.getRowId());
 
             if (null == ann)
             {
@@ -362,9 +362,9 @@ public class AnnouncementsController extends SpringActionController
 
             AnnouncementModel ann = null;
             if (null != form.getEntityId())
-                ann = AnnouncementManager.getAnnouncement(c, form.getEntityId(), true);
+                ann = AnnouncementManager.getAnnouncement(c, form.getEntityId());
             if (null == ann)
-                ann = AnnouncementManager.getAnnouncement(c, form.getRowId(), AnnouncementManager.INCLUDE_RESPONSES);
+                ann = AnnouncementManager.getAnnouncement(c, form.getRowId());
 
             if (ann == null)
                 throw new NotFoundException("Could not find response");
@@ -503,7 +503,7 @@ public class AnnouncementsController extends SpringActionController
             User user = getUser();
             Settings settings = getSettings();
 
-            AnnouncementModel thread = AnnouncementManager.getAnnouncement(getContainer(), form.getMessageId(), AnnouncementManager.INCLUDE_NOTHING);
+            AnnouncementModel thread = AnnouncementManager.getAnnouncement(getContainer(), form.getMessageId());
 
             if (form.getUserId() != user.getUserId())
             {
@@ -553,7 +553,7 @@ public class AnnouncementsController extends SpringActionController
 
     private AnnouncementModel getAnnouncement(AttachmentForm form)
     {
-        AnnouncementModel ann = AnnouncementManager.getAnnouncement(getContainer(), form.getEntityId(), true);  // Force member list to be selected
+        AnnouncementModel ann = AnnouncementManager.getAnnouncement(getContainer(), form.getEntityId());  // Force member list to be selected
 
         if (null == ann)
             throw createThreadNotFoundException(getContainer());
@@ -796,7 +796,7 @@ public class AnnouncementsController extends SpringActionController
                 AnnouncementManager.insertAnnouncement(c, u, insert, files);
 
                 // update the parent message setting it match the status of the update
-                AnnouncementModel parent = AnnouncementManager.getAnnouncement(getContainer(), insert.getParent(), true);
+                AnnouncementModel parent = AnnouncementManager.getAnnouncement(getContainer(), insert.getParent());
                 if (parent != null)
                 {
                     parent.setStatus(insert.getStatus());
@@ -816,7 +816,7 @@ public class AnnouncementsController extends SpringActionController
             {
                 AnnouncementModel thread = insert;
                 if (null != insert.getParent())
-                    thread = AnnouncementManager.getAnnouncement(getContainer(), insert.getParent(), true);
+                    thread = AnnouncementManager.getAnnouncement(getContainer(), insert.getParent());
 
                 if (form.isFromDiscussion() && null != thread.getDiscussionSrcIdentifier())
                 {
@@ -926,7 +926,7 @@ public class AnnouncementsController extends SpringActionController
             Container c = getContainer();
 
             if (null != form.getParentId())
-                parent = AnnouncementManager.getAnnouncement(c, form.getParentId(), true);
+                parent = AnnouncementManager.getAnnouncement(c, form.getParentId());
 
             if (null == parent)
             {
@@ -1855,9 +1855,9 @@ public class AnnouncementsController extends SpringActionController
             {
                 AnnouncementModel bean = getBean();
                 if (null != bean.getEntityId())
-                    _selectedAnnouncementModel = AnnouncementManager.getAnnouncement(getContainer(), bean.getEntityId(), true);  // Need member list
+                    _selectedAnnouncementModel = AnnouncementManager.getAnnouncement(getContainer(), bean.getEntityId());  // Need member list
                 if (null == _selectedAnnouncementModel)
-                    _selectedAnnouncementModel = AnnouncementManager.getAnnouncement(getContainer(), bean.getRowId(), AnnouncementManager.INCLUDE_NOTHING);
+                    _selectedAnnouncementModel = AnnouncementManager.getAnnouncement(getContainer(), bean.getRowId());
             }
             return _selectedAnnouncementModel;
         }
@@ -2747,11 +2747,11 @@ public class AnnouncementsController extends SpringActionController
         }
 
         if (0 != rowId)
-            return AnnouncementManager.getAnnouncement(c, rowId, AnnouncementManager.INCLUDE_RESPONSES);
+            return AnnouncementManager.getAnnouncement(c, rowId);
         else if (null == entityId)
             throw createThreadNotFoundException(c);
 
-        return AnnouncementManager.getAnnouncement(c, entityId, true);
+        return AnnouncementManager.getAnnouncement(c, entityId);
     }
 
     public static class SubscriptionBean extends ReturnUrlForm
@@ -2798,7 +2798,7 @@ public class AnnouncementsController extends SpringActionController
                 throw new NotFoundException("No message thread specified");
             }
             // Don't filter by container to make it easier for client API users that are going cross-container
-            AnnouncementModel ann = AnnouncementManager.getAnnouncement(null, id, true);
+            AnnouncementModel ann = AnnouncementManager.getAnnouncement(null, id);
             if (ann == null)
             {
                 throw new NotFoundException("No such message thread: " + id);

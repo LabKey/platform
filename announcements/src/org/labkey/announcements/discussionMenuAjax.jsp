@@ -32,6 +32,7 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="org.jetbrains.annotations.NotNull" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -44,7 +45,7 @@
     DiscussionServiceImpl.PickerView me = (DiscussionServiceImpl.PickerView) HttpView.currentView();
     Container c = getContainer();
     User user = getUser();
-    @NotNull Collection<AnnouncementModel> announcementModels = me.announcementModels;
+    @NotNull List<AnnouncementModel> discussions = me.discussions;
     URLHelper pageURL = me.pageURL;
 
     boolean longFormat = false;
@@ -52,7 +53,7 @@
 
     if (me.allowMultipleDiscussions)
     {
-        for (AnnouncementModel a : announcementModels)
+        for (AnnouncementModel a : discussions)
             longFormat |= !menuItems.add(a.getCreatedByName(user) + "|" + DateUtil.formatDate(c, a.getCreated()));
     }
 
@@ -118,7 +119,7 @@
         String comma = "\n";
         if (me.allowMultipleDiscussions)
         {
-            for (AnnouncementModel a : announcementModels)
+            for (AnnouncementModel a : discussions)
             {
                 String title = a.getTitle();
                 String help = a.getCreatedByName(user) + ' ' + (longFormat ? DateUtil.formatDateTime(c, a.getCreated()) : DateUtil.formatDate(c, a.getCreated()));
@@ -129,7 +130,7 @@
                 comma = "\n,";
             }
         }
-        else if (!announcementModels.isEmpty())
+        else if (!discussions.isEmpty())
         {
             if (me.isDiscussionVisible)
             {
@@ -138,12 +139,12 @@
             }
             else
             {
-                AnnouncementModel a = announcementModels.iterator().next();
+                AnnouncementModel a = discussions.get(0);
                 %><%=text(comma)%>{text:'Show discussion',href:discussionMenu.pageUrl+'&discussion.id=<%=a.getRowId()%>#discussionArea'},<%
                 comma = "\n,";
             }
         }
-        if ((me.allowMultipleDiscussions || announcementModels.isEmpty()) && c.hasPermission(getUser(), InsertPermission.class))
+        if ((me.allowMultipleDiscussions || discussions.isEmpty()) && c.hasPermission(getUser(), InsertPermission.class))
         {
             %><%=text(comma)%>{text:'Start <%=text(me.allowMultipleDiscussions ? "new " : "")%>discussion',href:discussionMenu.pageUrl+'&discussion.start=true#discussionArea'},<%
             comma = "\n,";
@@ -172,9 +173,9 @@
 })();
 </script>
 <span id="<%=h(discussionAreaToggleId)%>"><%
-    if (!announcementModels.isEmpty() && me.allowMultipleDiscussions)
+    if (!discussions.isEmpty() && me.allowMultipleDiscussions)
     {
-        %><%=PageFlowUtil.textLink("see discussions (" + announcementModels.size() + ")", "#", "return false;", "")%><%
+        %><%=PageFlowUtil.textLink("see discussions (" + discussions.size() + ")", "#", "return false;", "")%><%
     }
     else
     {
