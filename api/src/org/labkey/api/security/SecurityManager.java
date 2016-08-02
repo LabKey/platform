@@ -1892,7 +1892,7 @@ public class SecurityManager
             }
             else
             {
-                sql += "AND Active=?" + "\nORDER BY Users.Name";
+                sql += " AND Active=?" + "\nORDER BY Users.Name";
                 sqlFragment = new SQLFragment(sql, groupId, true);
             }
             new SqlSelector(core.getSchema(), sqlFragment).forEach(new Selector.ForEachBlock<ResultSet>() {
