@@ -29,6 +29,7 @@ import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.CachedResultSet;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
@@ -36,8 +37,11 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.OORDisplayColumnFactory;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.exp.PropertyType;
@@ -93,14 +97,15 @@ import java.io.InputStream;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1047,16 +1052,17 @@ public class Query
             QueryTestCase.assertTrue("Expected one row: " + sql, rs.next());
             Object o = rs.getObject(1);
             QueryTestCase.assertFalse("Expected one row: " + sql, rs.next());
-            Object value = null==_call ? _value : _call.call();
-            assertSqlEquals(value,o);
+            Object value = null == _call ? _value : _call.call();
+            assertSqlEquals(value, o);
         }
 
-        public void assertSqlEquals(Object a, Object b)
+        private void assertSqlEquals(Object a, Object b)
         {
             if (null == a)
                 QueryTestCase.assertNull("Expected NULL value: + sql", b);
             if (null == b)
                 QueryTestCase.fail("Did not expect null value: " + sql);
+//            QueryTestCase.assertEquals(sql, _type.getJavaClass(), b.getClass());
             if (a instanceof Number && b instanceof Number)
             {
                 if (((Number)a).doubleValue() == ((Number)b).doubleValue())
@@ -1073,7 +1079,7 @@ public class Query
             }
             if (a.equals(b))
                 return;
-            QueryTestCase.assertEquals("expected:<" + a + "> bug was:<" + b + "> " + sql, a,b);
+            QueryTestCase.assertEquals("expected:<" + a + "> bug was:<" + b + "> " + sql, a, b);
         }
     }
 
@@ -1090,7 +1096,7 @@ public class Query
         void validate(QueryTestCase test, @Nullable Container container)
         {
 
-            try (CachedResultSet rs = (CachedResultSet) QueryService.get().select(test.lists, sql))
+            try (CachedResultSet ignored = (CachedResultSet) QueryService.get().select(test.lists, sql))
             {
                 QueryTestCase.fail("should fail: " + sql);
             }
@@ -1111,7 +1117,8 @@ public class Query
 
     private static class InvolvedColumnsTest extends SqlTest
     {
-        private  final List<String> _expectedInvolvedColumns;
+        private final List<String> _expectedInvolvedColumns;
+
         private InvolvedColumnsTest(String sql, List<String> expectedInvolvedColumns)
         {
             super(sql);
@@ -1234,34 +1241,85 @@ public class Query
                 "</table>\n" +
                 "</tables>",
                 10, Rsize),
-            new SqlTest("SELECT Rquery.d FROM Rquery", 1, Rsize),
+        new SqlTest("SELECT Rquery.d FROM Rquery", 1, Rsize),
 
-            new SqlTest("Squery",
-                    "SELECT S.rowid, S.d, S.seven, S.twelve, S.day, S.month, S.date, S.duration, S.guid FROM Folder.qtest.lists.S S",
-                    null,
-                    9, Rsize),
-            new SqlTest("SELECT S.rowid, S.d FROM Squery S", 2, Rsize),
+        new SqlTest("Squery",
+                "SELECT S.rowid, S.d, S.seven, S.twelve, S.day, S.month, S.date, S.duration, S.guid FROM Folder.qtest.lists.S S",
+                null,
+                9, Rsize),
+        new SqlTest("SELECT S.rowid, S.d FROM Squery S", 2, Rsize),
 
-            new SqlTest("SELECT Rquery.rowid, Rquery.rowid.duration FROM Rquery", 2, Rsize),
-            new SqlTest("SELECT Rquery.rowid2, Rquery.rowid2.duration FROM Rquery", 2, Rsize),
-            new SqlTest("SELECT Rquery.rowid, Rquery.rowid.date, Rquery.rowid2, Rquery.rowid2.duration FROM Rquery", 4, Rsize),
+        new SqlTest("SELECT Rquery.rowid, Rquery.rowid.duration FROM Rquery", 2, Rsize),
+        new SqlTest("SELECT Rquery.rowid2, Rquery.rowid2.duration FROM Rquery", 2, Rsize),
+        new SqlTest("SELECT Rquery.rowid, Rquery.rowid.date, Rquery.rowid2, Rquery.rowid2.duration FROM Rquery", 4, Rsize),
 
-            // NOTE: DISTINCT means lookups can not be pushed down
-            new SqlTest("Rdistinct", "SELECT DISTINCT R.twelve FROM R",
-                    "<tables xmlns=\"http://labkey.org/data/xml\">\n" +
-                    "<table tableName=\"Rdistinct\" tableDbType=\"NOT_IN_DB\">\n" +
-                    "<columns>\n" +
-                    " <column columnName=\"twelve\">\n" +
-                    "  <fk>\n" +
-                    "  <fkTable>Squery</fkTable>\n" +
-                    "  <fkColumnName>rowid</fkColumnName>\n" +
-                    "  </fk>\n" +
-                    " </column>\n" +
-                    "</columns>\n" +
-                    "</table>\n" +
-                    "</tables>",
-                    1, 12),
+        // NOTE: DISTINCT means lookups can not be pushed down
+        new SqlTest("Rdistinct", "SELECT DISTINCT R.twelve FROM R",
+                "<tables xmlns=\"http://labkey.org/data/xml\">\n" +
+                "<table tableName=\"Rdistinct\" tableDbType=\"NOT_IN_DB\">\n" +
+                "<columns>\n" +
+                " <column columnName=\"twelve\">\n" +
+                "  <fk>\n" +
+                "  <fkTable>Squery</fkTable>\n" +
+                "  <fkColumnName>rowid</fkColumnName>\n" +
+                "  </fk>\n" +
+                " </column>\n" +
+                "</columns>\n" +
+                "</table>\n" +
+                "</tables>",
+                1, 12),
         new SqlTest("SELECT Rdistinct.twelve, Rdistinct.twelve.duration from Rdistinct", 2, 12),
+
+        // Test DATE vs. TIMESTAMP and display formats
+        new SqlTest("DateFormatTest",
+                "SELECT R.date, CAST(R.date AS DATE) AS D1, CAST(R.date AS TIMESTAMP) AS D2, CAST(R.date AS TIMESTAMP) AS T1, CAST(R.date AS DATE) AS T2 FROM R",
+                "<tables xmlns=\"http://labkey.org/data/xml\">\n" +
+                "  <table tableName=\"DateFormatTest\" tableDbType=\"NOT_IN_DB\">\n" +
+                "    <columns>\n" +
+                "      <column columnName=\"D2\">\n" +
+                "        <formatString>Date</formatString>\n" +
+                "      </column>\n" +
+                "      <column columnName=\"T2\">\n" +
+                "        <formatString>DateTime</formatString>\n" +
+                "      </column>\n" +
+                "    </columns>\n" +
+                "  </table>\n" +
+                "</tables>",
+                5, Rsize) {
+            @Override
+            void validate(QueryTestCase test, @Nullable Container container)
+            {
+                super.validate(test, container);
+
+                QueryDefinition queryDef = QueryService.get().getQueryDef(TestContext.get().getUser(), JunitUtil.getTestContainer(), "lists", "DateFormatTest");
+                List<QueryException> errors = new LinkedList<>();
+                TableInfo table = queryDef.getTable(errors, true);
+
+                QueryTestCase.assertNotNull(table);
+
+                if (!errors.isEmpty())
+                    throw new RuntimeException(errors.get(0));
+
+                try (Results results = new TableSelector(table).getResults())
+                {
+                    verifyType(results.getColumn(1), JdbcType.TIMESTAMP, null);
+                    verifyType(results.getColumn(2), JdbcType.DATE, null);
+                    verifyType(results.getColumn(3), JdbcType.TIMESTAMP, "Date");
+                    verifyType(results.getColumn(4), JdbcType.TIMESTAMP, null);
+                    verifyType(results.getColumn(5), JdbcType.DATE, "DateTime");
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeSQLException(e);
+                }
+            }
+
+            private void verifyType(ColumnInfo column, JdbcType expectedType, @Nullable String expectedFormat)
+            {
+                QueryTestCase.assertEquals("Type discrepancy for " + column.getName(), column.getJdbcType(), expectedType);
+                QueryTestCase.assertEquals("Format discrepancy for " + column.getName(), column.getFormat(), expectedFormat);
+            }
+        },
 
         // GROUPING
         new SqlTest("SELECT R.seven, MAX(R.twelve) AS _max FROM R GROUP BY R.seven", 2, 7),
@@ -1275,26 +1333,20 @@ public class Query
             // TODO: asin
             // TODO: atan
             // TODO: atan2
-        new MethodSqlTest("SELECT CAST(AGE(CAST('02 Jan 2003' AS TIMESTAMP),CAST('02 Jan 2004' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 1),
-        new MethodSqlTest("SELECT CAST(AGE(CAST('02 Jan 2004' AS TIMESTAMP),CAST('02 Jan 2003' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, -1),
-        new MethodSqlTest("SELECT CAST(AGE(CAST('02 Jan 2003' AS TIMESTAMP),CAST('03 Jan 2004' AS TIMESTAMP), SQL_TSI_YEAR) AS INTEGER)", JdbcType.INTEGER, 1),
-        new MethodSqlTest("SELECT CAST(AGE(CAST('02 Jan 2003' AS TIMESTAMP),CAST('01 Feb 2004' AS TIMESTAMP), SQL_TSI_MONTH) AS INTEGER)", JdbcType.INTEGER, 12),
-        new MethodSqlTest("SELECT CAST(AGE(CAST('02 Jan 2003' AS TIMESTAMP),CAST('02 Feb 2004' AS TIMESTAMP), SQL_TSI_MONTH) AS INTEGER)", JdbcType.INTEGER, 13),
+        new MethodSqlTest("SELECT CAST(AGE(CAST('02 Jan 2003' AS TIMESTAMP), CAST('02 Jan 2004' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 1),
+        new MethodSqlTest("SELECT CAST(AGE(CAST('02 Jan 2004' AS TIMESTAMP), CAST('02 Jan 2003' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, -1),
+        new MethodSqlTest("SELECT CAST(AGE(CAST('02 Jan 2003' AS TIMESTAMP), CAST('03 Jan 2004' AS TIMESTAMP), SQL_TSI_YEAR) AS INTEGER)", JdbcType.INTEGER, 1),
+        new MethodSqlTest("SELECT CAST(AGE(CAST('02 Jan 2003' AS TIMESTAMP), CAST('01 Feb 2004' AS TIMESTAMP), SQL_TSI_MONTH) AS INTEGER)", JdbcType.INTEGER, 12),
+        new MethodSqlTest("SELECT CAST(AGE(CAST('02 Jan 2003' AS TIMESTAMP), CAST('02 Feb 2004' AS TIMESTAMP), SQL_TSI_MONTH) AS INTEGER)", JdbcType.INTEGER, 13),
         new MethodSqlTest("SELECT CAST('1' AS SQL_INTEGER) ", JdbcType.INTEGER, 1),
         new MethodSqlTest("SELECT CAST('1' AS INTEGER) ", JdbcType.INTEGER, 1),
         new MethodSqlTest("SELECT CAST('1.5' AS DOUBLE) ", JdbcType.DOUBLE, 1.5),
         new MethodSqlTest("SELECT CAST(1 AS VARCHAR) ", JdbcType.VARCHAR, '1'),
-        new MethodSqlTest("SELECT CEILING(1.5) FROM R WHERE rowid=1", JdbcType.INTEGER, 2),
+        new MethodSqlTest("SELECT CEILING(1.5) FROM R WHERE rowid=1", JdbcType.DECIMAL, 2),
         new MethodSqlTest("SELECT COALESCE(NULL, 'empty') FROM R WHERE rowid=1", JdbcType.VARCHAR, "empty"),
-        new MethodSqlTest("SELECT concat('concat', concat('in',concat('the','hat'))) FROM R WHERE rowid=1", JdbcType.INTEGER, "concatinthehat"),
-        new MethodSqlTest("SELECT contextPath()", JdbcType.VARCHAR, new Callable(){
-            @Override
-            public Object call() throws Exception
-            {
-                return new ActionURL().getContextPath();
-            }
-        }),
-        new MethodSqlTest("SELECT CONVERT(123,VARCHAR) FROM R WHERE rowid=1", JdbcType.VARCHAR, "123"),
+        new MethodSqlTest("SELECT concat('concat', concat('in', concat('the', 'hat'))) FROM R WHERE rowid=1", JdbcType.VARCHAR, "concatinthehat"),
+        new MethodSqlTest("SELECT contextPath()", JdbcType.VARCHAR, () -> new ActionURL().getContextPath()),
+        new MethodSqlTest("SELECT CONVERT(123, VARCHAR) FROM R WHERE rowid=1", JdbcType.VARCHAR, "123"),
             // TODO: cos
             // TODO: cot
             // TODO: curdate
@@ -1304,20 +1356,8 @@ public class Query
             // TODO: degrees
             // TODO: exp
             // TODO: floor
-        new MethodSqlTest("SELECT folderName()", JdbcType.VARCHAR, new Callable(){
-            @Override
-            public Object call() throws Exception
-            {
-                return JunitUtil.getTestContainer().getName();
-            }
-        }),
-        new MethodSqlTest("SELECT folderPath()", JdbcType.VARCHAR, new Callable(){
-            @Override
-            public Object call() throws Exception
-            {
-                return JunitUtil.getTestContainer().getPath();
-            }
-        }),
+        new MethodSqlTest("SELECT folderName()", JdbcType.VARCHAR, () -> JunitUtil.getTestContainer().getName()),
+        new MethodSqlTest("SELECT folderPath()", JdbcType.VARCHAR, () -> JunitUtil.getTestContainer().getPath()),
             // TODO: hour
         new MethodSqlTest("SELECT IFNULL(NULL, 'empty') FROM R WHERE rowid=1", JdbcType.VARCHAR, "empty"),
         new MethodSqlTest("SELECT ISEQUAL(NULL, NULL) FROM R WHERE rowid=1", JdbcType.BOOLEAN, true),
@@ -1353,29 +1393,24 @@ public class Query
         new MethodSqlTest("SELECT SUBSTRING('FRED ',2,2)", JdbcType.VARCHAR, "RE"),
         new MethodSqlTest("SELECT SUBSTRING('FRED',3)", JdbcType.VARCHAR, "ED"),
             // TODO: tan
-            // TODO: timestampadd
-        new MethodSqlTest("SELECT CAST(TIMESTAMPDIFF(SQL_TSI_DAY, CAST('01 Jan 2003' AS TIMESTAMP),CAST('31 Jan 2004' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 395),
-        new MethodSqlTest("SELECT CAST(TIMESTAMPDIFF(SQL_TSI_DAY, CAST('31 Jan 2004' AS TIMESTAMP),CAST('01 Jan 2003' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, -395),
-        new MethodSqlTest("SELECT CAST(TIMESTAMPDIFF(SQL_TSI_MINUTE, CAST('01 Jan 2003' AS TIMESTAMP),CAST('01 Jan 2004' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 525600),
-        new MethodSqlTest("SELECT CAST(TIMESTAMPDIFF(SQL_TSI_MINUTE, CAST('01 Jan 2004' AS TIMESTAMP),CAST('01 Jan 2005' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 527040), // leap year
-        new MethodSqlTest("SELECT CAST(TIMESTAMPDIFF(SQL_TSI_SECOND, CAST('01 Jan 2004 5:00' AS TIMESTAMP),CAST('01 Jan 2004 6:00' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 3600),
+        new MethodSqlTest("SELECT TIMESTAMPADD(SQL_TSI_SECOND, 3, CAST('01 Jan 2003' AS TIMESTAMP))", JdbcType.TIMESTAMP, new Timestamp(DateUtil.parseISODateTime("2003-01-01 00:00:03"))),
+        new MethodSqlTest("SELECT TIMESTAMPADD(SQL_TSI_MINUTE, 3, CAST('01 Jan 2003' AS TIMESTAMP))", JdbcType.TIMESTAMP, new Timestamp(DateUtil.parseISODateTime("2003-01-01 00:03"))),
+        new MethodSqlTest("SELECT TIMESTAMPADD(SQL_TSI_HOUR, 3, CAST('01 Jan 2003' AS TIMESTAMP))", JdbcType.TIMESTAMP, new Timestamp(DateUtil.parseISODateTime("2003-01-01 03:00"))),
+        new MethodSqlTest("SELECT TIMESTAMPADD(SQL_TSI_DAY, 3, CAST('01 Jan 2003' AS TIMESTAMP))", JdbcType.TIMESTAMP, new Timestamp(DateUtil.parseISODateTime("2003-01-04"))),
+        new MethodSqlTest("SELECT TIMESTAMPADD(SQL_TSI_WEEK, 3, CAST('01 Jan 2003' AS TIMESTAMP))", JdbcType.TIMESTAMP, new Timestamp(DateUtil.parseISODateTime("2003-01-22"))),
+        new MethodSqlTest("SELECT TIMESTAMPADD(SQL_TSI_MONTH, 3, CAST('01 Jan 2003' AS TIMESTAMP))", JdbcType.TIMESTAMP, new Timestamp(DateUtil.parseISODateTime("2003-04-01"))),
+        new MethodSqlTest("SELECT TIMESTAMPADD(SQL_TSI_QUARTER, 3, CAST('01 Jan 2003' AS TIMESTAMP))", JdbcType.TIMESTAMP, new Timestamp(DateUtil.parseISODateTime("2003-10-01"))),
+        new MethodSqlTest("SELECT TIMESTAMPADD(SQL_TSI_YEAR, 3, CAST('01 Jan 2003' AS TIMESTAMP))", JdbcType.TIMESTAMP, new Timestamp(DateUtil.parseISODateTime("2006-01-01"))),
+
+        new MethodSqlTest("SELECT CAST(TIMESTAMPDIFF(SQL_TSI_DAY, CAST('01 Jan 2003' AS TIMESTAMP), CAST('31 Jan 2004' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 395),
+        new MethodSqlTest("SELECT CAST(TIMESTAMPDIFF(SQL_TSI_DAY, CAST('31 Jan 2004' AS TIMESTAMP), CAST('01 Jan 2003' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, -395),
+        new MethodSqlTest("SELECT CAST(TIMESTAMPDIFF(SQL_TSI_MINUTE, CAST('01 Jan 2003' AS TIMESTAMP), CAST('01 Jan 2004' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 525600),
+        new MethodSqlTest("SELECT CAST(TIMESTAMPDIFF(SQL_TSI_MINUTE, CAST('01 Jan 2004' AS TIMESTAMP), CAST('01 Jan 2005' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 527040), // leap year
+        new MethodSqlTest("SELECT CAST(TIMESTAMPDIFF(SQL_TSI_SECOND, CAST('01 Jan 2004 5:00' AS TIMESTAMP), CAST('01 Jan 2004 6:00' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 3600),
             // TODO: week
             // TODO: year
-        new MethodSqlTest("SELECT USERID()", JdbcType.INTEGER, new Callable(){
-            @Override
-            public Object call() throws Exception
-            {
-                return TestContext.get().getUser().getUserId();
-            }
-
-        }),
-            new MethodSqlTest("SELECT username()", JdbcType.INTEGER, new Callable(){
-                @Override
-                public Object call() throws Exception
-                {
-                    return TestContext.get().getUser().getDisplayName(TestContext.get().getUser());
-                }
-            }),
+        new MethodSqlTest("SELECT USERID()", JdbcType.INTEGER, () -> TestContext.get().getUser().getUserId()),
+        new MethodSqlTest("SELECT username()", JdbcType.INTEGER, () -> TestContext.get().getUser().getDisplayName(TestContext.get().getUser())),
         new MethodSqlTest("SELECT UCASE('Fred')", JdbcType.VARCHAR, "FRED"),
         new MethodSqlTest("SELECT UPPER('fred')", JdbcType.VARCHAR, "FRED"),
 
@@ -1385,7 +1420,6 @@ public class Query
         new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R LIMIT 5", 3, 5),
         new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R ORDER BY date LIMIT 5", 3, 5),
 
-
         // misc regression related
             //17852
         new SqlTest("SELECT parent.name FROM (SELECT Parent FROM core.containers) AS X", 1, -1),
@@ -1393,7 +1427,7 @@ public class Query
         new SqlTest("SELECT X.parent.name FROM (SELECT Parent FROM core.containers) AS X", 1, -1),
 
         // Issue 18257: postgres error executing query selecting empty string value
-        new SqlTest("SELECT '' AS EmptyString"),
+        new SqlTest("SELECT '' AS EmptyString")
     };
 
 
