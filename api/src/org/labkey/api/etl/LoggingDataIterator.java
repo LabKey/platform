@@ -91,14 +91,18 @@ public class LoggingDataIterator extends AbstractDataIterator implements Scrolla
             String cls = null == value ? "NULL" : value.getClass().getSimpleName();
             if (null == value)
                 value = "";
+            if (value instanceof Map)
+                value = value.getClass() + "@" + System.identityHashCode(value);
             formatter.format("%50s %10s| %s\n", name, cls, value);
         }
 
         if (supportsGetMap())
         {
             Map<String,Object> map = getMap();
-            String json = new JSONObject(map).toString();
-            sb.append(json);
+            JSONObject json = new JSONObject(map);
+            // avoid recursion bombs
+            json.remove("extraProperties");
+            sb.append(json.toString());
             sb.append("\n");
         }
 
