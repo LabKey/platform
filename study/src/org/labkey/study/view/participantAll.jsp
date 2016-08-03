@@ -149,7 +149,7 @@
     f.append("SELECT ParticipantId, SequenceNum, DatasetId, COUNT(*) AS _RowCount FROM ");
     f.append(StudySchema.getInstance().getTableInfoStudyDataFiltered(study, datasets, user).getFromSQL("SD"));
     f.append("\nWHERE ParticipantId = ?");
-    f.append("GROUP BY ParticipantId, SequenceNum, DatasetId");
+    f.append("\nGROUP BY ParticipantId, SequenceNum, DatasetId");
     f.add(bean.getParticipantId());
 
     new SqlSelector(dbSchema, f).forEach(rs -> {
