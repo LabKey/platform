@@ -85,7 +85,7 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
                 typeFrag.add(provider.getName());
             }
         }
-        typeFrag.append("END)");
+        typeFrag.append(" END)");
         ColumnInfo typeColumn = new ExprColumn(this, "Type", typeFrag, JdbcType.VARCHAR);
         typeColumn.setFk(new QueryForeignKey(getUserSchema(), null, AssaySchema.ASSAY_PROVIDERS_TABLE_NAME, "Name", "Name"));
         typeColumn.setDisplayColumnFactory(new DisplayColumnFactory()
