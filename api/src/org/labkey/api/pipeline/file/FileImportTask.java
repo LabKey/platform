@@ -36,7 +36,6 @@ public class FileImportTask extends PipelineJob.Task<FileImportTask.Factory>
         getJob().getJobSupport(FileAnalysisJobSupport.class).getInputFiles().forEach(file ->
                 {
                     RecordedAction action = new RecordedAction(ROLE);
-                    action.addInput(file, ROLE);
                     action.addOutput(file, ROLE, false);
                     records.add(action);
                 });
