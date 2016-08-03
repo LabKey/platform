@@ -26,7 +26,6 @@ import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -54,9 +53,7 @@ public class RenderContext implements Map<String, Object>, Serializable
 
     private boolean _useContainerFilter = true;
     private ViewContext _viewContext;
-    private
-    @Nullable
-    Errors _errors;
+    private @Nullable Errors _errors;
     private TableViewForm _form;
     private DataRegion _currentRegion;
     private Filter _baseFilter;
@@ -101,9 +98,7 @@ public class RenderContext implements Map<String, Object>, Serializable
         _viewContext = context;
     }
 
-    public
-    @Nullable
-    Errors getErrors()
+    public @Nullable Errors getErrors()
     {
         return _errors;
     }

@@ -545,6 +545,7 @@ public enum JdbcType
             assert LONGVARCHAR.convert(5) instanceof String;        // should this be an error?
 
             assert TIMESTAMP.convert("2001-02-03") instanceof Timestamp;
+            assert DATE.convert("2001-02-03") instanceof Date;
 
             try {BOOLEAN.convert(2.3); fail();} catch (ConversionException x){}
             try {BOOLEAN.convert(2.3); fail();} catch (ConversionException x){}
