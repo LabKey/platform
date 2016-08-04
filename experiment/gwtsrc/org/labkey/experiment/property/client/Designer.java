@@ -116,6 +116,11 @@ public class Designer implements EntryPoint, Saveable<GWTDomain>
             return;
         _domain = d;
 
+        if (null != PropertyUtil.getServerProperty("schemaName"))
+            _propTable.setSchemaName(PropertyUtil.getServerProperty("schemaName"));
+        if (null != PropertyUtil.getServerProperty("queryName"))
+            _propTable.setQueryName(PropertyUtil.getServerProperty("queryName"));
+
         _propTable.init(new GWTDomain(d));
 
         showUI();

@@ -172,6 +172,10 @@ public class PropertyController extends SpringActionController
             props.put("allowAttachmentProperties", String.valueOf(form.getAllowAttachmentProperties()));
             props.put("showDefaultValueSettings", String.valueOf(form.isShowDefaultValueSettings()));
             props.put("instructions", _domain.getDomainKind().getDomainEditorInstructions());
+            if (null != form.getSchemaName())
+                props.put("schemaName", form.getSchemaName());
+            if (null != form.getQueryName())
+                props.put("queryName", form.getQueryName());
 
             return new GWTView("org.labkey.experiment.property.Designer", props);
         }

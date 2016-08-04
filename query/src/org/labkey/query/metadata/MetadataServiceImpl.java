@@ -71,6 +71,8 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
         List<GWTColumnInfo> orderedPDs = new ArrayList<>();
         Set<String> injectedColumnNames = new CaseInsensitiveHashSet();
         GWTTableInfo gwtTableInfo = new GWTTableInfo();
+        gwtTableInfo.setSchemaName(schemaName);
+        gwtTableInfo.setQueryName(tableName);
         gwtTableInfo.setName(tableName);
 
         UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), schemaName);
