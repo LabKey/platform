@@ -375,49 +375,49 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
     setPanelOptionValues: function(chartConfig){
         this.suppressEvents = true;
 
-        if (chartConfig.renderType)
+        if (Ext4.isDefined(chartConfig.renderType))
             this.setRenderType(chartConfig.renderType);
 
-        if (chartConfig.width)
+        if (Ext4.isDefined(chartConfig.width))
             this.setWidth(chartConfig.width);
 
-        if (chartConfig.height)
+        if (Ext4.isDefined(chartConfig.height))
             this.setHeight(chartConfig.height);
 
-        if (chartConfig.pointType)
+        if (Ext4.isDefined(chartConfig.pointType))
             this.setPointType(chartConfig.pointType);
 
-        if (chartConfig.position)
+        if (Ext4.isDefined(chartConfig.position))
             this.setPosition(chartConfig.position);
         else if (chartConfig.geomOptions.position)
             this.setPosition(chartConfig.geomOptions.position);
 
-        if (chartConfig.opacity)
+        if (Ext4.isDefined(chartConfig.opacity))
             this.setOpacity(chartConfig.opacity);
         else if (chartConfig.geomOptions.opacity)
             this.setOpacity(chartConfig.geomOptions.opacity);
 
-        if (chartConfig.pointSize)
+        if (Ext4.isDefined(chartConfig.pointSize))
             this.setPointSize(chartConfig.pointSize);
         else if (chartConfig.geomOptions.pointSize)
             this.setPointSize(chartConfig.geomOptions.pointSize);
 
-        if (chartConfig.pointFillColor)
+        if (Ext4.isDefined(chartConfig.pointFillColor))
             this.setPointColor(chartConfig.pointFillColor);
         else if (chartConfig.geomOptions.pointFillColor)
             this.setPointColor(chartConfig.geomOptions.pointFillColor);
 
-        if (chartConfig.lineWidth)
+        if (Ext4.isDefined(chartConfig.lineWidth))
             this.setLineWidth(chartConfig.lineWidth);
         else if (chartConfig.geomOptions.lineWidth)
             this.setLineWidth(chartConfig.geomOptions.lineWidth);
 
-        if (chartConfig.lineColor)
+        if (Ext4.isDefined(chartConfig.lineColor))
             this.setLineColor(chartConfig.lineColor);
         else if (chartConfig.geomOptions.lineColor)
             this.setLineColor(chartConfig.geomOptions.lineColor);
 
-        if (chartConfig.boxFillColor)
+        if (Ext4.isDefined(chartConfig.boxFillColor))
             this.setFillColor(chartConfig.boxFillColor);
         else if (chartConfig.geomOptions.boxFillColor)
             this.setFillColor(chartConfig.geomOptions.boxFillColor);

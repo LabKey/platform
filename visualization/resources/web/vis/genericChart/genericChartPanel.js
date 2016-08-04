@@ -1096,6 +1096,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         // note: this event will only fire if a change was made in the Chart Type panel
                         this.setRenderType(values.type);
                         this.measures = values.fields;
+
+                        // if we haven't set the initial chart layout options yet, get the default values now
+                        if (Object.keys(this.options).length == 0)
+                            this.options = this.getLookAndFeelPanel().getValues();
+
                         this.renderChart();
                         this.getChartTypeWindow().hide();
                     }
