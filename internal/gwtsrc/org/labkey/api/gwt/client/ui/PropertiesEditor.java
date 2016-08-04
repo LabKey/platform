@@ -16,7 +16,11 @@
 
 package org.labkey.api.gwt.client.ui;
 
-import com.extjs.gxt.ui.client.event.*;
+import com.extjs.gxt.ui.client.event.ComponentEvent;
+import com.extjs.gxt.ui.client.event.Events;
+import com.extjs.gxt.ui.client.event.FieldEvent;
+import com.extjs.gxt.ui.client.event.Listener;
+import com.extjs.gxt.ui.client.event.TabPanelEvent;
 import com.extjs.gxt.ui.client.util.Size;
 import com.extjs.gxt.ui.client.widget.TabItem;
 import com.extjs.gxt.ui.client.widget.form.Field;
@@ -24,16 +28,61 @@ import com.extjs.gxt.ui.client.widget.form.TextField;
 import com.extjs.gxt.ui.client.widget.form.Validator;
 import com.extjs.gxt.ui.client.widget.layout.FitLayout;
 import com.google.gwt.dom.client.Node;
-import com.google.gwt.event.dom.client.*;
+import com.google.gwt.event.dom.client.ChangeEvent;
+import com.google.gwt.event.dom.client.ChangeHandler;
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.event.dom.client.FocusEvent;
+import com.google.gwt.event.dom.client.FocusHandler;
+import com.google.gwt.event.dom.client.HasAllMouseHandlers;
+import com.google.gwt.event.dom.client.KeyPressEvent;
+import com.google.gwt.event.dom.client.KeyPressHandler;
+import com.google.gwt.event.dom.client.MouseOutEvent;
+import com.google.gwt.event.dom.client.MouseOutHandler;
+import com.google.gwt.event.dom.client.MouseOverEvent;
+import com.google.gwt.event.dom.client.MouseOverHandler;
+import com.google.gwt.http.client.URL;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.ui.*;
+import com.google.gwt.user.client.ui.ChangeListener;
 import com.google.gwt.user.client.ui.DockPanel;
+import com.google.gwt.user.client.ui.FlexTable;
+import com.google.gwt.user.client.ui.FocusWidget;
+import com.google.gwt.user.client.ui.HTML;
+import com.google.gwt.user.client.ui.HTMLTable;
+import com.google.gwt.user.client.ui.HasHorizontalAlignment;
+import com.google.gwt.user.client.ui.HasVerticalAlignment;
+import com.google.gwt.user.client.ui.HorizontalPanel;
+import com.google.gwt.user.client.ui.Image;
+import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.PopupPanel;
+import com.google.gwt.user.client.ui.PushButton;
+import com.google.gwt.user.client.ui.RootPanel;
+import com.google.gwt.user.client.ui.TextBox;
+import com.google.gwt.user.client.ui.VerticalPanel;
+import com.google.gwt.user.client.ui.Widget;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.gwt.client.ui.property.*;
+import org.labkey.api.gwt.client.ui.property.ConditionalFormatItem;
+import org.labkey.api.gwt.client.ui.property.DefaultScaleItem;
+import org.labkey.api.gwt.client.ui.property.DefaultValueItem;
+import org.labkey.api.gwt.client.ui.property.DescriptionItem;
+import org.labkey.api.gwt.client.ui.property.DimensionItem;
+import org.labkey.api.gwt.client.ui.property.ExcludeFromShiftingItem;
+import org.labkey.api.gwt.client.ui.property.FacetingBehaviorItem;
+import org.labkey.api.gwt.client.ui.property.FormatItem;
+import org.labkey.api.gwt.client.ui.property.ImportAliasesItem;
+import org.labkey.api.gwt.client.ui.property.MaxLengthItem;
+import org.labkey.api.gwt.client.ui.property.MeasureItem;
+import org.labkey.api.gwt.client.ui.property.MvEnabledItem;
+import org.labkey.api.gwt.client.ui.property.ProtectedItem;
+import org.labkey.api.gwt.client.ui.property.RecommendedVariableItem;
+import org.labkey.api.gwt.client.ui.property.RequiredItem;
+import org.labkey.api.gwt.client.ui.property.URLItem;
+import org.labkey.api.gwt.client.ui.property.ValidatorItem;
+import org.labkey.api.gwt.client.ui.property.VisibilityItem;
 import org.labkey.api.gwt.client.util.IPropertyWrapper;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.StringUtils;
@@ -116,12 +165,16 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     private boolean _alwaysAllowImportSchema = false;
     private ImageButton _exportSchemaButton;
     private ImageButton _inferSchemaButton;
+    private ImageButton _compareTemplateButton;
     private DefaultValueItem<DomainType, FieldType> _defaultValueSelector;
 
     protected DomainType _domain;
     ArrayList<Row> _rows;
     private final RootPanel _rootPanel;
     FieldType _newPropertyDescriptor;
+
+    String _schemaName = null;
+    String _queryName = null;
 
     String prefixInputId = "";
 
@@ -228,6 +281,14 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             }
         };
 
+        ClickHandler compareTemplateListener = new ClickHandler()
+        {
+            public void onClick(ClickEvent e)
+            {
+                _navigate("./property-compareWithTemplate.view?schemaName=" + URL.decode(_schemaName) + "&queryName=" + URL.encode(_queryName));
+            }
+        };
+
         _importSchemaButton = new ImageButton("Import Fields", importSchemaListener);
         // Assume this button will be hidden; conditionally setVisible(true) in init.
         _importSchemaButton.setVisible(false);
@@ -235,6 +296,9 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         // Visibility rules for InferSchema button are the same as ImportSchema
         _inferSchemaButton = new ImageButton("Infer Fields from File", inferSchemaListener);
         _inferSchemaButton.setVisible(false);
+
+        _compareTemplateButton = new ImageButton("Compare with template", compareTemplateListener);
+        _compareTemplateButton.setVisible(false);
 
         _contentPanel = new VerticalPanel();
         _contentPanel.add(_noColumnsPanel);
@@ -319,6 +383,16 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     }
 
 
+    public void setSchemaName(String schemaName)
+    {
+        this._schemaName = schemaName;
+    }
+
+    public void setQueryName(String queryName)
+    {
+        this._queryName = queryName;
+    }
+
     protected int getExtraPropertiesHeight()
     {
         return 260;
@@ -399,6 +473,11 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         _domain = domain;
         _rows = new ArrayList<Row>();
 
+        if (null == _schemaName && null != domain.getSchemaName())
+            _schemaName = domain.getSchemaName();
+        if (null == _queryName && null != domain.getQueryName())
+            _queryName = domain.getQueryName();
+
         List<FieldType> fields = domain.getFields();
         if (null != fields)
         {
@@ -420,6 +499,12 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         {
             _importSchemaButton.setVisible(true);
             _inferSchemaButton.setVisible(true);
+        }
+        //if (domain.getTemplateInfo() != null)
+        if (null != domain.getTemplateDescription() && null != _schemaName && null != _queryName)
+        {
+            _compareTemplateButton.setEnabled(!isDirty());
+            _compareTemplateButton.setVisible(true);
         }
 
         fireChangeEvent();
@@ -515,21 +600,19 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     {
         if (_readOnly)
         {
-            if (buttonPanel.getWidgetCount() == 1)
-                return;
             buttonPanel.clear();
             buttonPanel.add(_exportSchemaButton);
         }
         else
         {
-            if (buttonPanel.getWidgetCount() > 1)
-                return;
+
             buttonPanel.clear();
             buttonPanel.add(_addFieldButton);
             buttonPanel.add(_importSchemaButton);
             buttonPanel.add(_exportSchemaButton);
             buttonPanel.add(_inferSchemaButton);
         }
+        buttonPanel.add(_compareTemplateButton);
     }
 
 
@@ -1654,6 +1737,11 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     private static native void _logConsole(String s) /*-{
         if ('console' in window) window.console.log(s);
     }-*/;
+
+    private static void _navigate(String url)
+    {
+        Window.Location.assign(url);
+    }
 
     private static void _logGwtDebug(String s)
     {

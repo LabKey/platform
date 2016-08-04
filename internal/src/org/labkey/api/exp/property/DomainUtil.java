@@ -190,6 +190,14 @@ public class DomainUtil
         d.setMandatoryFieldNames(new HashSet<>(domainKind.getMandatoryPropertyNames(domain)));
         d.setExcludeFromExportFieldNames(new HashSet<>(domainKind.getAdditionalProtectedPropertyNames(domain)));
         d.setProvisioned(domain.isProvisioned());
+
+        d.setSchemaName(domainKind.getMetaDataSchemaName());
+        d.setQueryName(domainKind.getMetaDataTableName());
+        if (null != domain.getTemplateInfo())
+        {
+            TemplateInfo t = domain.getTemplateInfo();
+            d.setTemplateDescription(t.getModuleName() + ": " + t.getTemplateGroupName() + "#" + t.getTableName());
+        }
         return d;
     }
 

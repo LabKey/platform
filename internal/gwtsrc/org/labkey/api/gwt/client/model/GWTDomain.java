@@ -55,6 +55,13 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     private Set<String> excludeFromExportFieldNames = new HashSet<String>();
     private boolean provisioned = false;
 
+    // schema,query,template are not part of the domain, but it's handy to pass
+    // these values to the PropertiedEditor along with the GWTDomain.
+    // NOTE queryName is not necessarily == name
+    private String schemaName=null;
+    private String queryName=null;
+    private String templateDescription=null; // null if no template
+
     public GWTDomain()
     {
     }
@@ -101,6 +108,10 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         {
             this.getExcludeFromExportFieldNames().addAll(src.getExcludeFromExportFieldNames());
         }
+
+        this.schemaName = src.schemaName;
+        this.queryName = src.queryName;
+        this.templateDescription = src.templateDescription;
     }
 
     //  String representation of database _ts (rowversion) column
@@ -131,6 +142,36 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     public void setName(String name)
     {
         this.name = name;
+    }
+
+    public String getSchemaName()
+    {
+        return this.schemaName;
+    }
+
+    public void setSchemaName(String name)
+    {
+        this.schemaName = name;
+    }
+
+    public String getQueryName()
+    {
+        return this.queryName;
+    }
+
+    public void setQueryName(String name)
+    {
+        this.queryName = name;
+    }
+
+    public String getTemplateDescription()
+    {
+        return templateDescription;
+    }
+
+    public void setTemplateDescription(String templateDescription)
+    {
+        this.templateDescription = templateDescription;
     }
 
     public String getDomainURI()
