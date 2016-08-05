@@ -9,6 +9,12 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.issues.IssuesListDefProvider;
+import org.labkey.api.issues.IssuesListDefService;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
@@ -20,12 +26,13 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.actions.DeleteIssueListAction;
@@ -33,8 +40,12 @@ import org.labkey.issue.actions.InsertIssueDefAction;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -87,6 +98,22 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
         ColumnInfo containerCol = addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Container")));
         ContainerForeignKey.initColumn(containerCol, getUserSchema());
 
+        List<Pair<String, String>> inputValues = new ArrayList<>();
+        for (IssuesListDefProvider provider : IssuesListDefService.get().getIssuesListDefProviders())
+        {
+            inputValues.add(new Pair<>(provider.getName(), provider.getLabel()));
+        }
+
+        ColumnInfo kindCol = addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Kind")));
+        kindCol.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            @Override
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new MultiValueInputColumn(colInfo, inputValues);
+            }
+        });
+
         addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Created")));
         UserIdForeignKey.initColumn(addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("CreatedBy"))));
         addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Modified")));
@@ -131,6 +158,10 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
             if (StringUtils.isBlank(label))
                 throw new ValidationException("Label required", "label");
 
+            String kind = (String)row.get("kind");
+            if (StringUtils.isBlank(label))
+                throw new ValidationException("Kind required", "kind");
+
             if (IssuesQuerySchema.getReservedTableNames().contains(label))
                 throw new ValidationException("The table name : " + label + " is reserved.");
 
@@ -139,6 +170,7 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
                 IssueListDef def = new IssueListDef();
                 def.setName(nameFromLabel(label));
                 def.setLabel(label);
+                def.setKind(kind);
                 BeanUtils.populate(def, row);
 
                 def = def.save(user);
@@ -172,6 +204,51 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
             {
                 throw new RuntimeException(e.getMessage());
             }
+        }
+    }
+
+    public class MultiValueInputColumn extends DataColumn
+    {
+        private final List<Pair<String, String>> _values;
+
+        public MultiValueInputColumn(ColumnInfo col, @NotNull List<Pair<String, String>> values)
+        {
+            super(col);
+            _values = values;
+        }
+
+        @Override
+        public void renderInputHtml(RenderContext ctx, Writer out, Object val) throws IOException
+        {
+            String formFieldName = ctx.getForm().getFormFieldName(getColumnInfo());
+
+            out.write("<select name='");
+            out.write(formFieldName);
+            out.write("'>\n");
+
+            if (_values.size() > 0)
+            {
+                for (Pair<String, String> value : _values)
+                {
+                    out.write("<option value='");
+                    out.write(PageFlowUtil.filter(value.first));
+                    out.write("'>");
+                    out.write(PageFlowUtil.filter(value.second));
+                    out.write("</option>\n");
+                }
+            }
+            else
+            {
+                out.write("<option value=''/>");
+            }
+            out.write("</select>\n");
+        }
+
+        @Override
+        protected Object getInputValue(RenderContext ctx)
+        {
+            // HACK:
+            return _values;
         }
     }
 }

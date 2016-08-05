@@ -21,16 +21,27 @@ public class ValidateIssueDefNameAction extends ApiAction<ValidateIssueDefNameAc
     public ApiResponse execute(IssueDefForm form, BindException errors) throws Exception
     {
         ApiSimpleResponse response = new ApiSimpleResponse();
+        response.put("success", true);
 
         if (!StringUtils.isBlank(form.getIssueDefName()))
         {
             String message = "A new Issue Definition will be generated in this folder: " + getContainer().getPath();
-            Domain domain = IssueListDef.findExistingDomain(getContainer(), getUser(), IssuesListDefTable.nameFromLabel(form.getIssueDefName()));
+            Domain domain = IssueListDef.findExistingDomain(getContainer(), getUser(),
+                                                            IssuesListDefTable.nameFromLabel(form.getIssueDefName()), form.getIssueDefKind());
 
             if (domain != null)
             {
-                message = "An existing Issue Definition was found in this folder: " + domain.getContainer().getPath() +
-                        ". This existing definition will be shared with your new issue list if created.";
+                if (domain.getDomainKind().getKindName().equalsIgnoreCase(form.getIssueDefKind()))
+                {
+                    message = "An existing Issue Definition was found in this folder: " + domain.getContainer().getPath() +
+                    ". This existing definition will be shared with your new issue list if created.";
+                }
+                else
+                {
+                    message = "An existing Issue Tracker Definition was found in this folder: " + domain.getContainer().getPath() +
+                    ". But the existing definition is a different kind of tracker. Therefore you must choose a different name.";
+                    response.put("success", false);
+                }
             }
 
             response.put("message", message);
@@ -41,6 +52,7 @@ public class ValidateIssueDefNameAction extends ApiAction<ValidateIssueDefNameAc
     public static class IssueDefForm
     {
         String _issueDefName;
+        private String _issueDefKind;
 
         public String getIssueDefName()
         {
@@ -50,6 +62,16 @@ public class ValidateIssueDefNameAction extends ApiAction<ValidateIssueDefNameAc
         public void setIssueDefName(String issueDefName)
         {
             _issueDefName = issueDefName;
+        }
+
+        public String getIssueDefKind()
+        {
+            return _issueDefKind;
+        }
+
+        public void setIssueDefKind(String issueDefKind)
+        {
+            _issueDefKind = issueDefKind;
         }
     }
 }

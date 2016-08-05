@@ -24,6 +24,7 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.issues.IssuesListDefService;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
@@ -45,6 +46,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
+import org.labkey.issue.model.GeneralIssuesListDefProvider;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.query.IssueDefDomainKind;
@@ -75,7 +77,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
 
     public double getVersion()
     {
-        return 16.20;
+        return 16.21;
     }
 
     protected void init()
@@ -85,6 +87,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
 
         EmailTemplateService.get().registerTemplate(IssueUpdateEmailTemplate.class);
         PropertyService.get().registerDomainKind(new IssueDefDomainKind());
+        IssuesListDefService.get().registerIssuesListDefProvider(new GeneralIssuesListDefProvider());
 
         NotificationService.get().registerNotificationType(Issue.class.getName(), "Issues", "fa-bug");
     }

@@ -330,6 +330,7 @@
 				<ns:isHidden>true</ns:isHidden>
 			</ns:column>
 			<ns:column columnName="Label"/>
+			<ns:column columnName="Kind"/>
 			<ns:column columnName="Container"/>
 			<ns:column columnName="Created"/>
 			<ns:column columnName="Modified"/>

@@ -6,13 +6,11 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Entity;
-import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.defaults.DefaultValueService;
-import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -28,10 +26,8 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.issue.query.IssueDefDomainKind;
-import ucar.nc2.util.HashMapLRU;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -46,6 +42,7 @@ public class IssueListDef extends Entity
     private int _rowId;
     private String _name;
     private String _label;
+    private String _kind;
     private Container _domainContainer;
 
     public int getRowId()
@@ -78,6 +75,16 @@ public class IssueListDef extends Entity
         _label = label;
     }
 
+    public String getKind()
+    {
+        return _kind;
+    }
+
+    public void setKind(String kind)
+    {
+        _kind = kind;
+    }
+
     @Nullable
     public TableInfo createTable(User user)
     {
@@ -100,7 +107,7 @@ public class IssueListDef extends Entity
                 Container container = ContainerManager.getForId(id);
                 if (container != null)
                 {
-                    Domain domain = findExistingDomain(container, user, getName());
+                    Domain domain = findExistingDomain(container, user, getName(), getKind());
 
                     // if a domain already existing for this definition, return the domain container, else
                     // create the domain in the current container
@@ -120,11 +127,11 @@ public class IssueListDef extends Entity
 
     public Domain getDomain(User user)
     {
-        String uri = generateDomainURI(getDomainContainer(user), user, getName());
+        String uri = generateDomainURI(getDomainContainer(user), user, getName(), getKind());
         return PropertyService.get().getDomain(getDomainContainer(user), uri);
     }
 
-    private static String generateDomainURI(Container c, User user, String name)
+    private static String generateDomainURI(Container c, User user, String name, String kind)
     {
         DomainKind domainKind = PropertyService.get().getDomainKindByName(IssueDefDomainKind.NAME);
         return domainKind.generateDomainURI(IssuesSchema.getInstance().getSchemaName(), name, c, user);
@@ -143,7 +150,7 @@ public class IssueListDef extends Entity
         {
             // need to transact this
             def = Table.insert(user, IssuesSchema.getInstance().getTableInfoIssueListDef(), this);
-            String uri = generateDomainURI(getDomainContainer(user), user, getName());
+            String uri = generateDomainURI(getDomainContainer(user), user, getName(), getKind());
             Container domainContainer = getDomainContainer(user);
 
             Domain domain = PropertyService.get().getDomain(domainContainer, uri);
@@ -151,7 +158,7 @@ public class IssueListDef extends Entity
             {
                 try
                 {
-                    IssueDefDomainKind domainKind = (IssueDefDomainKind)PropertyService.get().getDomainKindByName(IssueDefDomainKind.NAME);
+                    IssueDefDomainKind domainKind = (IssueDefDomainKind)PropertyService.get().getDomainKindByName(getDomainKindName(getKind()));
                     domainKind.createLookupDomains(domainContainer, user, getName());
                     domain = PropertyService.get().createDomain(getDomainContainer(user), uri, getName());
 
@@ -174,19 +181,19 @@ public class IssueListDef extends Entity
      * @return null if no domain was located
      */
     @Nullable
-    public static Domain findExistingDomain(Container c, User user, String name)
+    public static Domain findExistingDomain(Container c, User user, String name, String kind)
     {
         Domain domain;
-        String uri = generateDomainURI(c, user, name);
+        String uri = generateDomainURI(c, user, name, kind);
         domain = PropertyService.get().getDomain(c, uri);
 
         if (domain == null)
         {
-            uri = generateDomainURI(c.getProject(), user, name);
+            uri = generateDomainURI(c.getProject(), user, name, kind);
             domain = PropertyService.get().getDomain(c.getProject(), uri);
             if (domain == null)
             {
-                uri = generateDomainURI(ContainerManager.getSharedContainer(), user, name);
+                uri = generateDomainURI(ContainerManager.getSharedContainer(), user, name, kind);
                 domain = PropertyService.get().getDomain(ContainerManager.getSharedContainer(), uri);
             }
         }
@@ -267,5 +274,12 @@ public class IssueListDef extends Entity
 
         if (!defaultValues.isEmpty())
             DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
+    }
+
+    private String getDomainKindName(String kind)
+    {
+        if (null == kind)
+            return IssueDefDomainKind.NAME;
+        return kind;
     }
 }
