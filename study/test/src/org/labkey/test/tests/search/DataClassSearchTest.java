@@ -31,8 +31,7 @@ import org.labkey.remoteapi.query.UpdateRowsCommand;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestTimeoutException;
-import org.labkey.test.categories.BVT;
-import org.labkey.test.categories.DailyB;
+import org.labkey.test.categories.DailyA;
 import org.labkey.test.categories.Search;
 import org.labkey.test.util.SearchHelper;
 import org.labkey.test.util.search.SearchAdminAPIHelper;
@@ -43,7 +42,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Category({BVT.class, Search.class})
+@Category({DailyA.class, Search.class})
 public class DataClassSearchTest extends BaseWebDriverTest
 {
     public SearchAdminAPIHelper.DirectoryType directoryType()
