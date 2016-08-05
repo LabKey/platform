@@ -78,6 +78,7 @@ import org.labkey.issue.ColumnTypeEnum;
 import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.IssuesModule;
+import org.labkey.issue.query.IssueDefDomainKind;
 import org.labkey.issue.query.IssuesQuerySchema;
 
 import javax.servlet.ServletException;
@@ -1805,6 +1806,7 @@ public class IssueManager
                 IssueListDef def = new IssueListDef();
                 def.setName(IssueListDef.DEFAULT_ISSUE_LIST_NAME);
                 def.setLabel(IssueListDef.DEFAULT_ISSUE_LIST_NAME);
+                def.setKind(IssueDefDomainKind.NAME);
                 def.beforeInsert(context.getUser(), c.getId());
                 def.save(context.getUser());
             }
