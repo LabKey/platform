@@ -134,8 +134,6 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         resp.put("title", tinfo.getTitle());
         resp.put("titleColumn", tinfo.getTitleColumn());
 
-        resp.put("importUrlDisabled", AbstractTableInfo.LINK_DISABLER_ACTION_URL.equals(tinfo.getImportDataURL(container)));
-        resp.put("insertUrlDisabled", AbstractTableInfo.LINK_DISABLER_ACTION_URL.equals(tinfo.getInsertURL(container)));
 
         //8649: let the table provide the view data url
         if (schema instanceof UserSchema)
@@ -145,6 +143,23 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
             ActionURL viewDataUrl = qdef == null ? null : uschema.urlFor(QueryAction.executeQuery, qdef);
             if (null != viewDataUrl)
                 resp.put("viewDataUrl", viewDataUrl);
+
+            ActionURL importDataUrl = qdef == null ? null : uschema.urlFor(QueryAction.importData, qdef);
+            if (null != importDataUrl)
+            {
+                if (AbstractTableInfo.LINK_DISABLER_ACTION_URL.equals(importDataUrl))
+                    resp.put("importUrlDisabled", true);
+                else
+                    resp.put("importUrl", importDataUrl);
+            }
+
+            ActionURL insertDataUrl = qdef == null ? null : uschema.urlFor(QueryAction.insertQueryRow, qdef);
+            if (null != insertDataUrl) {
+                if (AbstractTableInfo.LINK_DISABLER_ACTION_URL.equals(insertDataUrl))
+                    resp.put("insertUrlDisabled", true);
+                else
+                    resp.put("insertUrl", insertDataUrl);
+            }
         }
 
         Map<FieldKey, Map<String, Object>> columnMetadata;
