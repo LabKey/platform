@@ -172,6 +172,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         ret.setInputType("text");
         ret.setMeasure(false);
         ret.setDimension(false);
+        ret.setConceptURI(org.labkey.api.gwt.client.ui.PropertyType.expFlag.getURI());
         ret.setImportAliasesSet(Sets.newCaseInsensitiveHashSet("comment"));
         return ret;
     }
