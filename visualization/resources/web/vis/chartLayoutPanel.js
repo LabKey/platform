@@ -1,7 +1,7 @@
-Ext4.define('LABKEY.vis.LookAndFeelPanel', {
+Ext4.define('LABKEY.vis.ChartLayoutPanel', {
     extend: 'Ext.panel.Panel',
 
-    cls: 'look-and-feel-panel',
+    cls: 'chart-layout-panel',
     layout: 'border',
     border: false,
     width: 900,
@@ -80,7 +80,7 @@ Ext4.define('LABKEY.vis.LookAndFeelPanel', {
             }
 
             var store = Ext4.create('Ext.data.Store', {
-                model: 'LABKEY.vis.LookAndFeelCardModel',
+                model: 'LABKEY.vis.ChartLayoutCardModel',
                 data: data
             });
 
@@ -204,12 +204,17 @@ Ext4.define('LABKEY.vis.LookAndFeelPanel', {
                     {
                         Ext4.each(this.getCenterPanel().items.items, function(panel)
                         {
-                            // TODO: this reset not working for the developer pointClickFn
                             if (panel.setPanelOptionValues)
+                            {
+                                this.getCenterPanel().getLayout().setActiveItem(panel.itemId);
                                 panel.setPanelOptionValues(this.initValues[panel.panelName]);
+                            }
                         }, this);
-
                     }
+
+                    // change the selected panel back to the first item
+                    this.getNavigationPanel().getSelectionModel().select(0);
+                    this.getCenterPanel().getLayout().setActiveItem(0);
 
                     this.fireEvent('cancel', this);
                 }
@@ -231,9 +236,33 @@ Ext4.define('LABKEY.vis.LookAndFeelPanel', {
                     // if nothing has changed, just treat this as a click on 'cancel'
                     var values = this.getValues();
                     if (!this.hasSelectionsChanged(values))
+                    {
                         this.fireEvent('cancel', this);
+                    }
                     else
-                        this.fireEvent('apply', this, values);
+                    {
+                        // give each panel a chance to validate before applying changes
+                        var valid = true;
+                        Ext4.each(this.getCenterPanel().items.items, function(panel)
+                        {
+                            if (panel.validateChanges)
+                            {
+                                if (!panel.validateChanges())
+                                {
+                                    // select the panel with invalid state
+                                    var navIndex = this.getNavigationPanel().getStore().findExact('cardId', panel.itemId);
+                                    this.getNavigationPanel().getSelectionModel().select(navIndex);
+                                    this.getCenterPanel().getLayout().setActiveItem(panel.itemId);
+
+                                    valid = false;
+                                    return false; // break;
+                                }
+                            }
+                        }, this);
+
+                        if (valid)
+                            this.fireEvent('apply', this, values);
+                    }
                 }
             });
         }
@@ -267,7 +296,6 @@ Ext4.define('LABKEY.vis.LookAndFeelPanel', {
         var hasChanges = false;
         Ext4.Object.each(values, function(key, value)
         {
-            // TODO: this check is not working for the developer pointClickFn
             if (!Ext4.Object.equals(value, this.initValues[key]))
             {
                 hasChanges = true;
@@ -279,7 +307,7 @@ Ext4.define('LABKEY.vis.LookAndFeelPanel', {
     }
 });
 
-Ext4.define('LABKEY.vis.LookAndFeelCardModel', {
+Ext4.define('LABKEY.vis.ChartLayoutCardModel', {
     extend: 'Ext.data.Model',
     fields: [
         {name: 'name', type: 'string'},

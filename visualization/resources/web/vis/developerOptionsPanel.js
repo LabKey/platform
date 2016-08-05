@@ -25,9 +25,6 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
     initComponent : function(){
         this.id = 'developerPanel-' + Ext4.id();
 
-        // track if the panel has changed
-        this.hasChanges = false;
-
         this.fnErrorDiv = 'error-' + Ext4.id();
         this.pointClickFnDesc = Ext4.create('Ext.container.Container', {
             width: 670,
@@ -47,7 +44,7 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
             height: 285,
             border: false,
             disabled: this.pointClickFn == null,                    // name is for selenium testing
-            html: '<textarea id="' + this.pointClickTextAreaId + '" name="point-click-fn-textarea" onchange="Ext4.ComponentManager.get(\'' + this.getId() + '\').hasChanges = true;"'
+            html: '<textarea id="' + this.pointClickTextAreaId + '" name="point-click-fn-textarea" '
                     + 'wrap="on" rows="21" cols="120" style="width: 100%;"></textarea>',
             listeners: {
                 afterrender: function(cmp) {
@@ -61,10 +58,7 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
                             mode            : 'text/javascript',
                             lineNumbers     : true,
                             lineWrapping    : true,
-                            indentUnit      : 3,
-                            onChange : function(cmp){
-                                Ext4.ComponentManager.get(me.getId()).hasChanges = true;
-                            }
+                            indentUnit      : 3
                         });
 
                         this.codeMirror.setSize(null, size.height + 'px');
@@ -150,7 +144,6 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
                 scope: this
             });
         }
-        this.hasChanges = true;
     },
 
     setEditorEnabled: function(editorValue) {
@@ -172,10 +165,6 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
         this.pointClickFnBtn.setText('Enable');
     },
 
-    setDefaultPointClickFn: function(defaultPointClickFn) {
-        this.defaultPointClickFn = defaultPointClickFn;
-    },
-
     getDefaultPointClickFn: function() {
         return this.defaultPointClickFn != null ? this.defaultPointClickFn : "function () {\n\n}";
     },
@@ -185,18 +174,22 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
         fnText = fnText.trim();
         while (fnText.indexOf("//") == 0 || fnText.indexOf("/*") == 0)
         {
-            var start = 0;
             if (fnText.indexOf("//") == 0)
-                start = fnText.indexOf("\n") + 1;
+            {
+                var endLineIndex = fnText.indexOf("\n");
+                fnText = endLineIndex > -1 ? fnText.substring(endLineIndex + 1).trim() : '';
+            }
+            else if (fnText.indexOf("*/") > -1)
+            {
+                fnText = fnText.substring(fnText.indexOf("*/") + 2).trim()
+            }
             else
-                start = fnText.indexOf("*/") + 2;
-            fnText = fnText.substring(start).trim();
+            {
+                break;
+            }
         }
-        return fnText;
-    },
 
-    setPointClickFnHelp: function(pointClickFnHelp) {
-        this.pointClickFnHelp = pointClickFnHelp;
+        return fnText;
     },
 
     getPointClickFnHelp: function() {
@@ -204,30 +197,13 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
     },
 
     applyChangesButtonClicked: function() {
-        // verify the pointClickFn for JS errors
+
         if (!this.pointClickTextAreaHtml.isDisabled())
         {
-            var fnText = this.codeMirror.getValue();
-            fnText = this.removeLeadingComments(fnText);
-
-            if (fnText == null || fnText.length == 0 || fnText.indexOf("function") != 0)
-            {
-                Ext4.getDom(this.fnErrorDiv).innerHTML = '<span class="labkey-error">Error: the value provided does not begin with a function declaration.</span>';
-                return;
-            }
-
-            try
-            {
-                var verifyFn = new Function("", "return " + fnText);
-            }
-            catch(err)
-            {
-                console.error(err.message);
-                Ext4.getDom(this.fnErrorDiv).innerHTML = '<span class="labkey-error">Error parsing the function: ' + err.message + '</span>';
-                return;
-            }
-            Ext4.getDom(this.fnErrorDiv).innerHTML = '&nbsp;';
-            this.pointClickFn = this.codeMirror.getValue();
+            // true param to verify the pointClickFn for JS errors
+            this.pointClickFn = this.getPointClickFnValue(true);
+            if (this.pointClickFn == null)
+                return; // don't close window as there was a validation error
         }
 
         this.fireEvent('closeOptionsWindow', false);
@@ -238,8 +214,50 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
         this.fireEvent('closeOptionsWindow', true);
     },
 
+    getPointClickFnValue : function(validate)
+    {
+        if (validate)
+        {
+            var fnText = this.codeMirror.getValue();
+            fnText = this.removeLeadingComments(fnText);
+
+            if (fnText == null || fnText.length == 0 || fnText.indexOf("function") != 0)
+            {
+                Ext4.getDom(this.fnErrorDiv).innerHTML = '<span class="labkey-error">Error: the value provided does not begin with a function declaration.</span>';
+                return null;
+            }
+
+            try
+            {
+                var verifyFn = new Function("", "return " + fnText);
+            }
+            catch(err)
+            {
+                Ext4.getDom(this.fnErrorDiv).innerHTML = '<span class="labkey-error">Error parsing the function: ' + err.message + '</span>';
+                return null;
+            }
+
+            Ext4.getDom(this.fnErrorDiv).innerHTML = '&nbsp;';
+        }
+
+        if (this.codeMirror)
+            return this.codeMirror.getValue();
+        else
+            return this.pointClickFn;
+    },
+
     getPanelOptionValues : function() {
-        return {pointClickFn: !this.pointClickTextAreaHtml.isDisabled() ? this.pointClickFn : null};
+        return {
+            pointClickFn: !this.pointClickTextAreaHtml.isDisabled()
+                    // TODO the removeLeadingComments should only be applied when the function is being used, not here
+                    ? this.removeLeadingComments(this.getPointClickFnValue(false))
+                    : null
+        };
+    },
+
+    validateChanges : function()
+    {
+        return this.pointClickTextAreaHtml.isDisabled() || this.getPointClickFnValue(true) != null;
     },
 
     restoreValues : function(initValues) {
@@ -250,21 +268,13 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
             else
                 this.setEditorDisabled();
         }
-
-        this.hasChanges = false;
     },
 
     setPanelOptionValues: function(config){
-        this.suppressEvents = true;
         this.restoreValues(config);
-        this.suppressEvents = false;
     },
 
     checkForChangesAndFireEvents : function() {
-        if (this.hasChanges)
-            this.fireEvent('chartDefinitionChanged', false);
-
-        // reset the changes flags
-        this.hasChanges = false;
+        this.fireEvent('chartDefinitionChanged', false);
     }
 });

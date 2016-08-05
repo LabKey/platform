@@ -261,23 +261,23 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.getChartTypeWindow().show();
     },
 
-    getLookAndFeelBtn : function()
+    getChartLayoutBtn : function()
     {
-        if (!this.lookAndFeelBtn)
+        if (!this.chartLayoutBtn)
         {
-            this.lookAndFeelBtn = Ext4.create('Ext.button.Button', {
-                text: 'Look & Feel',
-                handler: this.showLookAndFeelWindow,
+            this.chartLayoutBtn = Ext4.create('Ext.button.Button', {
+                text: 'Chart Layout',
+                handler: this.showChartLayoutWindow,
                 scope: this
             });
         }
 
-        return this.lookAndFeelBtn;
+        return this.chartLayoutBtn;
     },
 
-    showLookAndFeelWindow : function()
+    showChartLayoutWindow : function()
     {
-        this.getLookAndFeelWindow().show();
+        this.getChartLayoutWindow().show();
     },
 
     getExportBtn : function()
@@ -397,7 +397,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         this.toggleViewBtn.setText('View Data');
 
                         this.getChartTypeBtn().show();
-                        this.getLookAndFeelBtn().show();
+                        this.getChartLayoutBtn().show();
                         this.getOptionsBtn().show();
                         this.getGroupingBtn().show();
                         this.getExportBtn().show();
@@ -417,7 +417,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         this.toggleViewBtn.setText('View Chart');
 
                         this.getChartTypeBtn().hide();
-                        this.getLookAndFeelBtn().hide();
+                        this.getChartLayoutBtn().hide();
                         this.getOptionsBtn().hide();
                         this.getGroupingBtn().hide();
                         this.getExportBtn().hide();
@@ -470,7 +470,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             if (LABKEY.vis.USE_NEW_CHART_WIZARD)
             {
                 tbarItems.push(this.getChartTypeBtn());
-                tbarItems.push(this.getLookAndFeelBtn());
+                tbarItems.push(this.getChartLayoutBtn());
                 tbarItems.push(''); // horizontal spacer
             }
             else
@@ -1099,7 +1099,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
                         // if we haven't set the initial chart layout options yet, get the default values now
                         if (Object.keys(this.options).length == 0)
-                            this.options = this.getLookAndFeelPanel().getValues();
+                            this.options = this.getChartLayoutPanel().getValues();
 
                         this.renderChart();
                         this.getChartTypeWindow().hide();
@@ -1111,31 +1111,31 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         return this.chartTypePanel;
     },
 
-    getLookAndFeelWindow : function()
+    getChartLayoutWindow : function()
     {
-        if (!this.lookAndFeelWindow)
+        if (!this.chartLayoutWindow)
         {
-            this.lookAndFeelWindow = Ext4.create('LABKEY.vis.ChartWizardWindow', {
+            this.chartLayoutWindow = Ext4.create('LABKEY.vis.ChartWizardWindow', {
                 header: false,
                 panelToMask: this,
-                items: [this.getLookAndFeelPanel()]
+                items: [this.getChartLayoutPanel()]
             });
 
             // propagate the show event to the panel so it can stash the initial values
-            this.lookAndFeelWindow.on('show', function(window)
+            this.chartLayoutWindow.on('show', function(window)
             {
-                this.getLookAndFeelPanel().fireEvent('show', this.getLookAndFeelPanel());
+                this.getChartLayoutPanel().fireEvent('show', this.getChartLayoutPanel());
             }, this);
         }
 
-        return this.lookAndFeelWindow;
+        return this.chartLayoutWindow;
     },
 
-    getLookAndFeelPanel : function()
+    getChartLayoutPanel : function()
     {
-        if (!this.lookAndFeelPanel)
+        if (!this.chartLayoutPanel)
         {
-            this.lookAndFeelPanel = Ext4.create('LABKEY.vis.LookAndFeelPanel', {
+            this.chartLayoutPanel = Ext4.create('LABKEY.vis.ChartLayoutPanel', {
                 options: this.options,
                 isDeveloper: this.isDeveloper,
                 defaultPointClickFn: this.getDefaultPointClickFn(),
@@ -1144,20 +1144,20 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     scope: this,
                     cancel: function(panel)
                     {
-                        this.getLookAndFeelWindow().hide();
+                        this.getChartLayoutWindow().hide();
                     },
                     apply: function(panel, values)
                     {
                         // note: this event will only fire if a change was made in the Chart Type panel
                         this.options = values;
                         this.renderChart();
-                        this.getLookAndFeelWindow().hide();
+                        this.getChartLayoutWindow().hide();
                     }
                 }
             });
         }
 
-        return this.lookAndFeelPanel;
+        return this.chartLayoutPanel;
     },
 
     getOptionsWindow: function()
@@ -1206,7 +1206,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             this.optionsPanel = Ext4.create('LABKEY.vis.GenericChartOptionsPanel', {
                 renderType: this.renderType,
-                customRenderTypes: this.customRenderTypes, // TODO how to handle this for the new Look and Feel dialog?
+                customRenderTypes: this.customRenderTypes, // TODO how to handle this for the new Chart Layout dialog?
                 listeners: {
                     chartDefinitionChanged: function ()
                     {
@@ -1281,8 +1281,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.developerPanel = Ext4.create('LABKEY.vis.DeveloperOptionsPanel', {
                 isDeveloper: this.isDeveloper || false,
                 pointClickFn: null,
-                defaultPointClickFn: this.getDefaultPointClickFn(), // TODO how to handle this for Look and Feel dialog?
-                pointClickFnHelp: this.getPointClickFnHelp(), // TODO how to handle this for Look and Feel dialog?
+                defaultPointClickFn: this.getDefaultPointClickFn(), // TODO how to handle this for Chart Layout dialog?
+                pointClickFnHelp: this.getPointClickFnHelp(), // TODO how to handle this for Chart Layout dialog?
                 listeners: {
                     chartDefinitionChanged: this.renderChart,
                     'closeOptionsWindow': function(canceling){
@@ -1440,7 +1440,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
                 // Issue 18157
                 this.getChartTypeBtn().disable();
-                this.getLookAndFeelBtn().disable();
+                this.getChartLayoutBtn().disable();
                 this.getOptionsBtn().disable();
                 this.getGroupingBtn().disable();
                 this.getDeveloperBtn().disable();
@@ -1570,7 +1570,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
             if (this.options.developer)
             {
-                // TODO this.getDeveloperPanel().removeLeadingComments()
                 config.measures.pointClickFn = this.options.developer.pointClickFn;
             }
         }
@@ -2119,7 +2118,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         });
 
         this.getChartTypeBtn().disable();
-        this.getLookAndFeelBtn().disable();
+        this.getChartLayoutBtn().disable();
         this.getOptionsBtn().disable();
         this.getGroupingBtn().disable();
         this.getDeveloperBtn().disable();
@@ -2272,7 +2271,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (!forExport)
         {
             this.getChartTypeBtn().enable();
-            this.getLookAndFeelBtn().enable();
+            this.getChartLayoutBtn().enable();
             this.getOptionsBtn().enable();
             this.getGroupingBtn().enable();
             this.getDeveloperBtn().enable();

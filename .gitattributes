@@ -2960,6 +2960,7 @@ visualization/resources/web/timechart.lib.xml -text
 visualization/resources/web/vis/ColumnVisualizationAnalytics.css -text
 visualization/resources/web/vis/ColumnVisualizationAnalytics.js -text
 visualization/resources/web/vis/baseExportScriptPanel.js -text
+visualization/resources/web/vis/chartLayoutPanel.js -text
 visualization/resources/web/vis/chartTypePanel.js -text
 visualization/resources/web/vis/chartWizardPanel.css -text
 visualization/resources/web/vis/developerOptionsPanel.js -text
@@ -2970,7 +2971,6 @@ visualization/resources/web/vis/genericChart/genericChartOptionsPanel.js -text
 visualization/resources/web/vis/genericChart/genericChartPanel.js -text
 visualization/resources/web/vis/genericChart/genericChartScriptPanel.js -text
 visualization/resources/web/vis/genericOptionsPanel.js -text
-visualization/resources/web/vis/lookAndFeelPanel.js -text
 visualization/resources/web/vis/mainTitleOptionsPanel.js -text
 visualization/resources/web/vis/saveOptionsPanel.js -text
 visualization/resources/web/vis/timeChart/aestheticOptionsPanel.js -text
