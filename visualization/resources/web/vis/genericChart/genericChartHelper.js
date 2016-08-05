@@ -390,9 +390,12 @@ LABKEY.vis.GenericChartHelper = new function(){
         var measureInfo = {
             schemaName: schemaName,
             queryName: queryName,
-            xAxis: measures.x.name,
             yAxis: measures.y.name
         };
+
+        if (measures.x) {
+            measureInfo.xAxis = measures.x.name;
+        }
 
         if (measures.shape) {
             measureInfo.shapeName = measures.shape.name;
