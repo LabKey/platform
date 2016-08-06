@@ -788,6 +788,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
                             dilutionRow.put("dilution", wellGroup.getDilution());
                             dilutionRow.put("percentNeutralization", summary.getPercent(wellGroup));
                             dilutionRow.put("neutralizationPlusMinus", summary.getPlusMinus(wellGroup));
+                            dilutionRow.put("plateNumber", wellGroup.getPlate().getPlateNumber());
                             setGroupStats(wellGroup, dilutionRow);
                             dilutionRow.put("replicateName", wellGroup.getName());
 
