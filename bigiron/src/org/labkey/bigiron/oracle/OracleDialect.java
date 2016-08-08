@@ -88,8 +88,9 @@ abstract class OracleDialect extends SimpleSqlDialect
     @Override
     public int getIdentifierMaxLength()
     {
-        // the limit for Oracle is 30, but we reserve 2 characters for appending qualifiers to create aliases
-        return 28;
+        // the limit for Oracle is 30, but we reserve 3 characters for
+        // appending qualifiers ("_", and a two digit alias counter) to create aliases
+        return 27;
     }
 
     @Override
