@@ -23,6 +23,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.CacheTimeChooser;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.cache.Wrapper;
+import org.labkey.api.util.ExceptionUtil;
 
 /*
 * User: adam
@@ -86,9 +87,15 @@ public class SchemaTableInfoCache
 
                 return options.getSchema().loadTable(options.getTableName(), options);
             }
-            catch (Exception e)
+            catch (Throwable t)
             {
-                throw new RuntimeException(e);  // Changed from "return null" to "throw runtimeexception" so admin is made aware of the cause of the problem
+                // Log all problems to mothership so admin and LabKey are made aware of the cause of the problem, but
+                // return null so other tables in this schema can load. One current example: we don't properly handle
+                // MV indicators on list columns with very long names. That needs to be fixed, of course, but there
+                // may be other scenarios that throw.
+                ExceptionUtil.logExceptionToMothership(null, t);
+
+                return null;
             }
         }
     }
