@@ -127,30 +127,26 @@ import static org.labkey.api.util.ExceptionUtil.ExceptionInfo.QuerySchema;
 
 public class Query
 {
-    String _name = null;
     private final QuerySchema _schema;
-	String _querySource;
-    boolean _strictColumnList = false;
+    private final IdentityHashMap<QuerySchema, HashMap<FieldKey, Pair<QuerySchema, TableInfo>>> _resolveCache = new IdentityHashMap<>();
+    private final Set<QueryTable.TableColumn> _involvedTableColumns = new HashSet<>();
+
     // TableInfos handed to Query that will be used if a table isn't found.
     private Map<String, TableInfo> _tableMap;
-	private ArrayList<QueryException> _parseErrors = new ArrayList<>();
+    private ArrayList<QueryException> _parseErrors = new ArrayList<>();
     private ArrayList<QueryParseException> _parseWarnings = new ArrayList<>();
-
     private TablesDocument _metadata = null;
     private ContainerFilter _containerFilter;
     private QueryRelation _queryRoot;
-    ArrayList<QParameter> _parameters;
-
-    IdentityHashMap<QuerySchema, HashMap<FieldKey,Pair<QuerySchema,TableInfo>>> _resolveCache = new IdentityHashMap<>();
-
-
     private Query _parent; // only used to avoid recursion for now
-
     private int _aliasCounter = 0;
 
-    IdentityHashMap<QueryTable, Map<FieldKey,QueryRelation.RelationColumn>> qtableColumnMaps = new IdentityHashMap<>();
+    boolean _strictColumnList = false;
+    String _name = null;
+	String _querySource;
+    ArrayList<QParameter> _parameters;
 
-    private final Set<QueryTable.TableColumn> _involvedTableColumns = new HashSet<>();
+    final IdentityHashMap<QueryTable, Map<FieldKey, QueryRelation.RelationColumn>> qtableColumnMaps = new IdentityHashMap<>();
 
     public Query(@NotNull QuerySchema schema)
     {
@@ -348,7 +344,7 @@ public class Query
             if (null == table)
             {
                 // can't generate good sql text if the source query can't be parsed
-                // we should have an error to display if null==table
+                // we should have an error to display if null == table
 
                 // TODO caller should check and display the parse error
                 // instead of returning message in the generated SQL
@@ -386,8 +382,8 @@ public class Query
 			}
             if (!foundColumn)
             {
-                List<String> pkNames = null==table ? null : table.getPkColumnNames();
-                if (null==pkNames || pkNames.isEmpty())
+                List<String> pkNames = null == table ? null : table.getPkColumnNames();
+                if (null == pkNames || pkNames.isEmpty())
                 {
                     builder.append("'No columns selected' AS message");
                 }
@@ -719,8 +715,8 @@ public class Query
 
         // check if we've resolved the exact same table
         if (null == _resolveCache.get(currentSchema))
-            _resolveCache.put(currentSchema,new HashMap<FieldKey, Pair<QuerySchema, TableInfo>>());
-        Pair<QuerySchema,TableInfo> found = _resolveCache.get(currentSchema).get(key);
+            _resolveCache.put(currentSchema, new HashMap<>());
+        Pair<QuerySchema, TableInfo> found = _resolveCache.get(currentSchema).get(key);
         if (null != found)
         {
             TableInfo ti = found.second;
@@ -742,7 +738,7 @@ public class Query
                 resolvedSchema = new QuerySchemaWrapper(DbSchema.getTemp());
 			if (resolvedSchema == null)
 			{
-                throw new QueryNotFoundException(StringUtils.join(names,"."), null==node?0:node.getLine(), null==node?0:node.getColumn());
+                throw new QueryNotFoundException(StringUtils.join(names, "."), null == node ? 0 : node.getLine(), null == node ? 0 : node.getColumn());
 			}
 		}
 
@@ -779,12 +775,12 @@ public class Query
 
 		if (t == null)
 		{
-            throw new QueryNotFoundException(StringUtils.join(names,"."), null==node?0:node.getLine(), null==node?0:node.getColumn());
+            throw new QueryNotFoundException(StringUtils.join(names, "."), null == node ? 0 : node.getLine(), null == node ? 0 : node.getColumn());
 		}
 
         if (t instanceof TableInfo)
         {
-            _resolveCache.get(currentSchema).put(key,new Pair(resolvedSchema, t));
+            _resolveCache.get(currentSchema).put(key, new Pair(resolvedSchema, t));
             return new QueryTable(this, resolvedSchema, (TableInfo)t, alias);
         }
 
@@ -857,7 +853,7 @@ public class Query
         if (null == _parameters)
             _parameters = new ArrayList<>();
         for (QParameter p : _parameters)
-            map.put(p.getName(),p);
+            map.put(p.getName(), p);
         if (null != fromQuery._parameters)
         {
             for (QParameter p : fromQuery._parameters)
@@ -1177,7 +1173,7 @@ public class Query
 		new SqlTest("SELECT R.rowid, R.twelve, R.month FROM R WHERE R.month BETWEEN 'L' and 'O'", 3, 3*7), // March, May, Nov
         new SqlTest("SELECT R.rowid, R.twelve, (SELECT S.month FROM Folder.qtest.lists.S S WHERE S.rowid=R.rowid) as M FROM R WHERE R.day='Monday'", 3, 12),
         new SqlTest("SELECT T.R, T.T, T.M FROM (SELECT R.rowid as R, R.twelve as T, (SELECT S.month FROM Folder.qtest.lists.S S WHERE S.rowid=R.rowid) as M FROM R WHERE R.day='Monday') T", 3, 12),
-		new SqlTest("SELECT R.rowid, R.twelve FROM R WHERE R.seven in (SELECT S.seven FROM Folder.qtest.lists.S S WHERE S.seven in (1,4))", 2, Rsize*2/7),
+		new SqlTest("SELECT R.rowid, R.twelve FROM R WHERE R.seven in (SELECT S.seven FROM Folder.qtest.lists.S S WHERE S.seven in (1, 4))", 2, Rsize*2/7),
 
 		new SqlTest("SELECT S.rowid AS Srow, T.rowid AS Trow FROM R S inner join R T on S.rowid=T.rowid"),
 		new SqlTest("SELECT S.rowid AS Srow, T.rowid AS Trow FROM R AS S left join R T on S.rowid=T.rowid"),
@@ -1212,12 +1208,12 @@ public class Query
         // PIVOT
         new SqlTest("SELECT seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven", 9, 12),
         new SqlTest("SELECT seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0 AS ZERO, 1 ONE, 2 AS TWO, 3 THREE, 4 FOUR, 5 FIVE, 6 SIX, NULL AS UNKNOWN)", 10, 12),
-        new SqlTest("SELECT seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0,1,2,3,4,5,6) ORDER BY twelve LIMIT 4", 9, 4),
-        new SqlTest("SELECT seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0,1,2,3,4,5,6) ORDER BY \"0::C\" LIMIT 12", 9, 12),
+        new SqlTest("SELECT seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0, 1, 2, 3, 4, 5, 6) ORDER BY twelve LIMIT 4", 9, 4),
+        new SqlTest("SELECT seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0, 1, 2, 3, 4, 5, 6) ORDER BY \"0::C\" LIMIT 12", 9, 12),
         new SqlTest("SELECT seven, month, count(*) C\n" +
                 "FROM R\n" +
                 "GROUP BY seven, month\n" +
-                "PIVOT C BY month IN('January','February','March','April','May','June','July','August','September','October','November','December')"),
+                "PIVOT C BY month IN('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')"),
 
         // saved queries
         new SqlTest("Rquery",
@@ -1327,7 +1323,7 @@ public class Query
         new SqlTest("SELECT R.seven, MAX(R.twelve) AS _max FROM R GROUP BY R.seven HAVING SUM(R.twelve) > 5", 2, 7),
 
         // METHODS
-        new SqlTest("SELECT ROUND(R.d) AS _d, ROUND(R.d,1) AS _rnd, ROUND(3.1415,2) AS _pi, CONVERT(R.d,SQL_VARCHAR) AS _str FROM R", 4, Rsize),
+        new SqlTest("SELECT ROUND(R.d) AS _d, ROUND(R.d, 1) AS _rnd, ROUND(3.1415, 2) AS _pi, CONVERT(R.d, SQL_VARCHAR) AS _str FROM R", 4, Rsize),
         new MethodSqlTest("SELECT ABS(-1) FROM R WHERE rowid=1", JdbcType.INTEGER, 1),
             // TODO: acos
             // TODO: asin
@@ -1367,7 +1363,7 @@ public class Query
         new MethodSqlTest("SELECT javaConstant('java.lang.Integer.MAX_VALUE')", JdbcType.VARCHAR, String.valueOf(Integer.MAX_VALUE)),
         new MethodSqlTest("SELECT ISMEMBEROF(-1) FROM R WHERE rowid=1", JdbcType.BOOLEAN, true),   // admin is required for junit tests
         new MethodSqlTest("SELECT LCASE('FRED') FROM R WHERE rowid=1", JdbcType.VARCHAR, "fred"),
-        new MethodSqlTest("SELECT LEFT('FRED',2) FROM R WHERE rowid=1", JdbcType.VARCHAR, "FR"),
+        new MethodSqlTest("SELECT LEFT('FRED', 2) FROM R WHERE rowid=1", JdbcType.VARCHAR, "FR"),
         new MethodSqlTest("SELECT lower('FRED') FROM R WHERE rowid=1", JdbcType.VARCHAR, "fred"),
             // TODO: ltrim
             // TODO: minute
@@ -1387,10 +1383,10 @@ public class Query
             // TODO: sign
             // TODO: sin
             // TODO: sqrt
-        new MethodSqlTest("SELECT STARTSWITH('FRED ','FR')", JdbcType.BOOLEAN, true),
-        new MethodSqlTest("SELECT STARTSWITH('FRED ','Z')", JdbcType.BOOLEAN, false),
-        new MethodSqlTest("SELECT SUBSTRING('FRED ',2,3)", JdbcType.VARCHAR, "RED"),
-        new MethodSqlTest("SELECT SUBSTRING('FRED ',2,2)", JdbcType.VARCHAR, "RE"),
+        new MethodSqlTest("SELECT STARTSWITH('FRED ', 'FR')", JdbcType.BOOLEAN, true),
+        new MethodSqlTest("SELECT STARTSWITH('FRED ', 'Z')", JdbcType.BOOLEAN, false),
+        new MethodSqlTest("SELECT SUBSTRING('FRED ', 2, 3)", JdbcType.VARCHAR, "RED"),
+        new MethodSqlTest("SELECT SUBSTRING('FRED ', 2, 2)", JdbcType.VARCHAR, "RE"),
         new MethodSqlTest("SELECT SUBSTRING('FRED',3)", JdbcType.VARCHAR, "ED"),
             // TODO: tan
         new MethodSqlTest("SELECT TIMESTAMPADD(SQL_TSI_SECOND, 3, CAST('01 Jan 2003' AS TIMESTAMP))", JdbcType.TIMESTAMP, new Timestamp(DateUtil.parseISODateTime("2003-01-01 00:00:03"))),
@@ -1436,7 +1432,7 @@ public class Query
 		// ORDER BY tests
 		new SqlTest("SELECT R.day, R.month, R.date FROM R ORDER BY R.date", 3, Rsize),
         new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R ORDER BY date"),
-        new SqlTest("SELECT R.guid FROM R WHERE overlaps(CAST('2001-01-01' AS DATE),CAST('2001-01-10' AS DATE),CAST('2001-01-05' AS DATE),CAST('2001-01-15' AS DATE))", 1, Rsize)
+        new SqlTest("SELECT R.guid FROM R WHERE overlaps(CAST('2001-01-01' AS DATE), CAST('2001-01-10' AS DATE), CAST('2001-01-05' AS DATE), CAST('2001-01-15' AS DATE))", 1, Rsize)
     };
 
 
@@ -1459,7 +1455,7 @@ public class Query
         new FailTest("SELECT A.d FROM lists.R A WHERE A.d.StartsWith('x')"),     // bad method
 
         // UNDONE: should work since R.seven and seven are the same
-        new FailTest("SELECT R.seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0,1,2,3,4,5,6)"),
+        new FailTest("SELECT R.seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0, 1, 2, 3, 4, 5, 6)"),
 	};
 
     private static final InvolvedColumnsTest[] involvedColumnsTests = new InvolvedColumnsTest[]
@@ -1490,7 +1486,7 @@ public class Query
 
         new InvolvedColumnsTest("SELECT R.seven FROM R ORDER BY twelve",
                                 Arrays.asList("R/seven", "R/twelve")),
-        new InvolvedColumnsTest("SELECT seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0,1,2,3,4,5,6) ORDER BY twelve LIMIT 4",
+        new InvolvedColumnsTest("SELECT seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0, 1, 2, 3, 4, 5, 6) ORDER BY twelve LIMIT 4",
                                 Arrays.asList("R/seven", "R/twelve")),
         new InvolvedColumnsTest("SELECT MAX(R.seven) FROM R GROUP BY twelve",
                                    Arrays.asList("R/seven", "R/twelve")),
@@ -1562,9 +1558,9 @@ public class Query
             R.setKeyName("rowid");
             addProperties(R);
             R.save(user);
-            TableInfo rTableInfo = DefaultSchema.get(user,c).getSchema("lists").getTable("R");
+            TableInfo rTableInfo = DefaultSchema.get(user, c).getSchema("lists").getTable("R");
             DataIteratorContext context = new DataIteratorContext();
-            rTableInfo.getUpdateService().importRows(user, c, new TestDataLoader(R.getName() + hash, Rsize), context.getErrors(), null,null);
+            rTableInfo.getUpdateService().importRows(user, c, new TestDataLoader(R.getName() + hash, Rsize), context.getErrors(), null, null);
             if (context.getErrors().hasErrors())
                 fail(context.getErrors().getRowErrors().get(0).toString());
 
@@ -1572,7 +1568,7 @@ public class Query
             S.setKeyName("rowid");
             addProperties(S);
             S.save(user);
-            TableInfo sTableInfo = DefaultSchema.get(user,qtest).getSchema("lists").getTable("S");
+            TableInfo sTableInfo = DefaultSchema.get(user, qtest).getSchema("lists").getTable("S");
             context = new DataIteratorContext();
             sTableInfo.getUpdateService().importRows(user, qtest, new TestDataLoader(S.getName() + hash, Rsize), context.getErrors(), null, null);
             if (context.getErrors().hasErrors())
@@ -1618,7 +1614,7 @@ public class Query
 
 			Container c = JunitUtil.getTestContainer();
 			{
-				Map<String,ListDefinition> m = s.getLists(c);
+				Map<String, ListDefinition> m = s.getLists(c);
 				if (m.containsKey("R"))
 					m.get("R").delete(user);
 				if (m.containsKey("S"))
@@ -1627,7 +1623,7 @@ public class Query
 
 			Container qtest = getSubfolder();
 			{
-				Map<String,ListDefinition> m = s.getLists(qtest);
+				Map<String, ListDefinition> m = s.getLists(qtest);
 				if (m.containsKey("S"))
 					m.get("S").delete(user);
 			}
