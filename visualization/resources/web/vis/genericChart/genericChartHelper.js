@@ -98,7 +98,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             var yMin = d3.min(data, aes.y);
             var yMax = d3.max(data, aes.y);
             var yPadding = ((yMax - yMin) * .1);
-            if (savedScales.y.trans == "log")
+            if (savedScales.y && savedScales.y.trans == "log")
             {
                 // When subtracting padding we have to make sure we still produce valid values for a log scale.
                 // log([value less than 0]) = NaN.
@@ -117,7 +117,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 min: yMin,
                 max: yMax + yPadding,
                 scaleType: 'continuous',
-                trans: savedScales.y.trans
+                trans: savedScales.y ? savedScales.y.trans : 'linear'
             };
         }
         else {
@@ -125,7 +125,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             {
                 scales.x = {
                     scaleType: 'continuous',
-                    trans: savedScales.x.trans
+                    trans: savedScales.x ? savedScales.x.trans : 'linear'
                 };
             } else
             {
@@ -138,7 +138,7 @@ LABKEY.vis.GenericChartHelper = new function(){
 
             scales.y = {
                 scaleType: 'continuous',
-                trans: savedScales.y.trans
+                trans: savedScales.y ? savedScales.y.trans : 'linear'
             };
         }
 

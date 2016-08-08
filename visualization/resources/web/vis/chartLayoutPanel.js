@@ -8,6 +8,7 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
     height: 525,
 
     isDeveloper: false,
+    defaultTitle: null,
 
     initComponent : function()
     {
@@ -52,7 +53,10 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
                 name: 'general',
                 cardId: 'card-1',
                 label: 'General',
-                cardClass: 'LABKEY.vis.GenericChartOptionsPanel'
+                cardClass: 'LABKEY.vis.GenericChartOptionsPanel',
+                config: {
+                    defaultChartLabel: this.defaultChartLabel
+                }
             },{
                 name: 'x',
                 cardId: 'card-2',
@@ -304,6 +308,20 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
         }, this);
 
         return hasChanges;
+    },
+
+    onMeasuresChange : function(measures)
+    {
+        Ext4.Object.each(measures, function(key, props)
+        {
+            var navIndex = this.getNavigationPanel().getStore().findExact('name', key);
+            if (navIndex > -1)
+            {
+                var panel = this.getCenterPanel().getLayout().getLayoutItems()[navIndex];
+                if (panel.onMeasureChange)
+                    panel.onMeasureChange(props);
+            }
+        }, this);
     }
 });
 

@@ -5,12 +5,12 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
     layout: 'border',
     border: false,
     width: 900,
-    height: 525,
 
     selectedType: null,
     selectedFields: null,
     requiredFieldNames: null,
     restrictColumnsEnabled: false,
+    customRenderTypes: null,
 
     initComponent : function()
     {
@@ -18,7 +18,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
             {
                 name: 'bar_chart',
                 title: 'Bar',
-                //active: true,
+                active: false,
                 imgUrl: LABKEY.contextPath + '/visualization/images/barchart.png',
                 fields: [
                     {name: 'x', label: 'X Axis Grouping', required: true, nonNumericOnly: true},
@@ -28,7 +28,6 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
             {
                 name: 'box_plot',
                 title: 'Box',
-                active: true,
                 imgUrl: LABKEY.contextPath + '/visualization/images/boxplot.png',
                 fields: [
                     {name: 'x', label: 'X Axis Grouping'},
@@ -40,7 +39,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
             {
                 name: 'pie_chart',
                 title: 'Pie',
-                //active: true,
+                active: false,
                 imgUrl: LABKEY.contextPath + '/visualization/images/piechart.png',
                 fields: [
                     {name: 'x', label: 'Grouping', required: true, nonNumericOnly: true}
@@ -49,7 +48,6 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
             {
                 name: 'scatter_plot',
                 title: 'Scatter',
-                active: true,
                 imgUrl: LABKEY.contextPath + '/visualization/images/scatterplot.png',
                 fields: [
                     {name: 'x', label: 'X Axis', required: true},
@@ -60,10 +58,24 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
             }
         ];
 
+        if (this.customRenderTypes)
+        {
+            Ext4.Object.each(this.customRenderTypes, function(key, properties)
+            {
+                if (!properties.name)
+                    properties.name = key;
+                if (!properties.title && properties.label)
+                    properties.title = properties.label;
+                typesArr.push(properties);
+            }, this);
+        }
+
         this.typesStore = Ext4.create('Ext.data.Store', {
             model: 'LABKEY.vis.ChartTypeModel',
             data: typesArr
         });
+
+        this.height = Math.max((85 * typesArr.length) + 185, 525);
 
         // lookup type by name, default to the first active chart type if none selected/found
         if (Ext4.isString(this.selectedType))
@@ -806,7 +818,7 @@ Ext4.define('LABKEY.vis.ChartTypeModel', {
         {name: 'name', type: 'string'},
         {name: 'title', type: 'string'},
         {name: 'imgUrl', type: 'string'},
-        {name: 'active', type: 'boolean'},
+        {name: 'active', type: 'boolean', defaultValue: true},
         // array of field selection object definitions of the type:
         // {name: 'x', label: 'X Axis Grouping', required: true, numericOnly: true, nonNumericOnly: true}
         {name: 'fields', defaultValue: []}

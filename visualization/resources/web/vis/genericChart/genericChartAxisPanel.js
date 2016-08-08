@@ -177,7 +177,7 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
         var radioComp = this.scaleTypeRadioGroup.down('radio[inputValue="' + value + '"]');
         if (radioComp)
             radioComp.setValue(true);
-},
+    },
 
     hideNonMeasureElements: function(){
         this.axisLabelField.hide();
@@ -187,5 +187,16 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
     showNonMeasureElements: function(){
         this.axisLabelField.show();
         this.scaleTypeRadioGroup.show();
+    },
+
+    onMeasureChange : function(properties)
+    {
+        if (!this.userEditedLabel)
+        {
+            if (properties.label)
+                this.axisLabelField.setValue(properties.label);
+            else if (properties.queryName)
+                this.axisLabelField.setValue(properties.queryName);
+        }
     }
 });

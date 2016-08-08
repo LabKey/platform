@@ -11,6 +11,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
     renderType: 'box_plot',
     pointType: 'outliers',
+    defaultChartLabel: null,
 
     constructor : function(config)
     {
@@ -186,11 +187,21 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             }
         });
 
+        this.labelBox = Ext4.create('Ext.form.field.Text', {
+            hidden: !LABKEY.vis.USE_NEW_CHART_WIZARD,
+            fieldLabel: 'Title',
+            labelWidth: labelWidth,
+            width: 275,
+            padding: '0 0 10px 0',
+            value: this.defaultChartLabel
+        });
+
         this.items = [{
             columnWidth: 0.5,
             border: false,
             padding: '0 20px 0 0',
             items: [
+                this.labelBox,
                 this.getRenderTypeCombo(labelWidth),
                 this.widthBox,
                 this.heightBox,
@@ -249,6 +260,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             });
 
             this.renderTypeCombo = Ext4.create('Ext.form.ComboBox', {
+                hidden: LABKEY.vis.USE_NEW_CHART_WIZARD,
                 fieldLabel: 'Plot Type',
                 store: this.renderTypeStore,
                 labelWidth: labelWidth,
@@ -341,11 +353,13 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             lineColor: this.getLineColor(),
             boxFillColor: this.getFillColor(),
             width: this.getWidth(),
-            height: this.getHeight()
+            height: this.getHeight(),
+            label: this.getLabel()
         };
     },
 
     restoreValues: function(initValues) {
+        // TODO do we need a usage of setLabel?
         if (initValues.hasOwnProperty("renderType"))
             this.setRenderType(initValues.renderType);
         if (initValues.hasOwnProperty("lineWidth"))
@@ -374,6 +388,9 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
     setPanelOptionValues: function(chartConfig){
         this.suppressEvents = true;
+
+        if (Ext4.isDefined(chartConfig.label))
+            this.setLabel(chartConfig.label);
 
         if (Ext4.isDefined(chartConfig.renderType))
             this.setRenderType(chartConfig.renderType);
@@ -517,5 +534,13 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
     setHeight: function(value){
         this.heightBox.setValue(value);
+    },
+
+    getLabel: function(){
+        return this.labelBox.getValue();
+    },
+
+    setLabel: function(value){
+        this.labelBox.setValue(value);
     }
 });

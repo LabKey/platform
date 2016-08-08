@@ -4,15 +4,13 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 LABKEY.requiresCss("_images/icons.css");
-LABKEY.requiresCss("dataview/DataViewsPanel.css");
+LABKEY.requiresCss("dataview/DataViewsPanel.css"); // TODO can these be removed once we convert to new chart wizard?
 
 LABKEY.vis.USE_NEW_CHART_WIZARD = false;
 
 Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     extend : 'Ext.panel.Panel',
-
-    alias: 'widget.labkey-genericchartpanel',
 
     cls : 'generic-chart-panel',
     layout : 'fit',
@@ -21,6 +19,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     minWidth : 800,
 
     dataLimit : 5000,
+    hideViewData : false,
 
     constructor : function(config) {
 
@@ -388,6 +387,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             this.toggleViewBtn = Ext4.create('Ext.button.Button', {
                 text:'View Data',
+                hidden: this.hideViewData,
                 scope: this,
                 handler: function()
                 {
@@ -457,13 +457,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     initTbarItems: function()
     {
-        var tbarItems = [
-            this.getToggleViewBtn(),
-            '', // horizontal spacer
-            this.getExportBtn(),
-            this.getHelpBtn(),
-            '->'
-        ];
+        var tbarItems = [];
+        tbarItems.push(this.getToggleViewBtn());
+        if (!this.hideViewData)
+            tbarItems.push(''); // horizontal spacer
+        tbarItems.push(this.getExportBtn());
+        tbarItems.push(this.getHelpBtn());
+        tbarItems.push('->'); // rest of buttons will be right aligned
 
         if (this.editMode)
         {
@@ -471,18 +471,17 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             {
                 tbarItems.push(this.getChartTypeBtn());
                 tbarItems.push(this.getChartLayoutBtn());
-                tbarItems.push(''); // horizontal spacer
             }
             else
             {
                 tbarItems.push(this.getOptionsBtn());
                 tbarItems.push(this.getGroupingBtn());
                 tbarItems.push(this.getDeveloperBtn());
-                tbarItems.push(''); // horizontal spacer
             }
 
             if (this.customButtons)
             {
+                tbarItems.push(''); // horizontal spacer
                 for (var i = 0; i < this.customButtons.length; i++)
                 {
                     var btn = this.customButtons[i];
@@ -491,6 +490,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 }
             }
 
+            if (!this.hideSave)
+                tbarItems.push(''); // horizontal spacer
             if (this.canEdit)
                 tbarItems.push(this.getSaveBtn());
             tbarItems.push(this.getSaveAsBtn());
@@ -1082,9 +1083,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (!this.chartTypePanel)
         {
             this.chartTypePanel = Ext4.create('LABKEY.vis.ChartTypePanel', {
-                restrictColumnsEnabled: this.restrictColumnsEnabled,
                 selectedType: this.getSelectedChartType(),
                 selectedFields: this.measures,
+                restrictColumnsEnabled: this.restrictColumnsEnabled,
+                customRenderTypes: this.customRenderTypes,
                 listeners: {
                     scope: this,
                     cancel: function(panel)
@@ -1097,9 +1099,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         this.setRenderType(values.type);
                         this.measures = values.fields;
 
-                        // if we haven't set the initial chart layout options yet, get the default values now
-                        if (Object.keys(this.options).length == 0)
-                            this.options = this.getChartLayoutPanel().getValues();
+                        this.getChartLayoutPanel().onMeasuresChange(this.measures);
+                        this.ensureChartLayoutOptions();
 
                         this.renderChart();
                         this.getChartTypeWindow().hide();
@@ -1140,6 +1141,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 isDeveloper: this.isDeveloper,
                 defaultPointClickFn: this.getDefaultPointClickFn(),
                 pointClickFnHelp: this.getPointClickFnHelp(),
+                defaultChartLabel: this.getDefaultTitle(),
                 listeners: {
                     scope: this,
                     cancel: function(panel)
@@ -1158,6 +1160,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
 
         return this.chartLayoutPanel;
+    },
+
+    ensureChartLayoutOptions: function()
+    {
+        // make sure that we have the latest chart layout panel values, note: this will get the initial default values
+        // if the user has not yet opened the chart layout dialog
+        this.options = this.getChartLayoutPanel().getValues();
     },
 
     getOptionsWindow: function()
@@ -1206,7 +1215,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             this.optionsPanel = Ext4.create('LABKEY.vis.GenericChartOptionsPanel', {
                 renderType: this.renderType,
-                customRenderTypes: this.customRenderTypes, // TODO how to handle this for the new Chart Layout dialog?
+                customRenderTypes: this.customRenderTypes,
                 listeners: {
                     chartDefinitionChanged: function ()
                     {
@@ -1542,6 +1551,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             config.scales = {};
             config.labels = {};
 
+            this.ensureChartLayoutOptions();
             if (this.options.general)
             {
                 config.width = this.options.general.width;
@@ -1830,7 +1840,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     },
 
     beforeUnload : function() {
-        if (this.isDirty()) {
+        if (!this.hideSave && this.isDirty()) {
             return 'please save your changes';
         }
     },
@@ -2078,12 +2088,15 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 this.options.general.height = chartConfig.height;
             if (chartConfig.width)
                 this.options.general.width = chartConfig.width;
-            if (chartConfig.labels && chartConfig.labels.main)
-                this.options.general.label = chartConfig.labels.main;
             if (chartConfig.pointType)
                 this.options.general.pointType = chartConfig.pointType;
             if (chartConfig.geomOptions)
                 Ext4.apply(this.options.general, chartConfig.geomOptions);
+
+            if (chartConfig.labels && chartConfig.labels.main)
+                this.options.general.label = chartConfig.labels.main;
+            else
+                this.options.general.label = this.getDefaultTitle();
 
             this.options.x = {};
             if (chartConfig.labels && chartConfig.labels.x)
@@ -2227,8 +2240,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
             layers.push(new LABKEY.vis.Layer({data: this.chartData.rows, geom: geom}));
 
-            // client has specified a line type
-            if (this.curveFit) {
+            // client has specified a line type (only applicable for scatter plot)
+            if (this.curveFit && this.isScatterPlot(this.renderType, this.measures.x.normalizedType)) {
                 var factory = this.lineRenderers[this.curveFit.type];
                 if (factory) {
                     layers.push(
@@ -2374,10 +2387,17 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             this.measures.y = measure.data ? measure.data : measure;
 
-            this.getYMeasurePanel().measure = this.measures.y;
-            if (suppressEvents)
-                this.getYMeasureGrid().getSelectionModel().select(measure, false, true);
-            this.getYMeasurePanel().selectionChange(suppressEvents);
+            if (LABKEY.vis.USE_NEW_CHART_WIZARD)
+            {
+                this.getChartLayoutPanel().onMeasuresChange(this.measures);
+            }
+            else
+            {
+                this.getYMeasurePanel().measure = this.measures.y;
+                if (suppressEvents)
+                    this.getYMeasureGrid().getSelectionModel().select(measure, false, true);
+                this.getYMeasurePanel().selectionChange(suppressEvents);
+            }
         }
     },
 
@@ -2387,10 +2407,17 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             this.measures.x = measure.data ? measure.data : measure;
 
-            this.getXMeasurePanel().measure = this.measures.x;
-            if (suppressEvents)
-                this.getXMeasureGrid().getSelectionModel().select(measure, false, true);
-            this.getXMeasurePanel().selectionChange(suppressEvents);
+            if (LABKEY.vis.USE_NEW_CHART_WIZARD)
+            {
+                this.getChartLayoutPanel().onMeasuresChange(this.measures);
+            }
+            else
+            {
+                this.getXMeasurePanel().measure = this.measures.x;
+                if (suppressEvents)
+                    this.getXMeasureGrid().getSelectionModel().select(measure, false, true);
+                this.getXMeasurePanel().selectionChange(suppressEvents);
+            }
         }
     },
 
@@ -2853,7 +2880,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (this.defaultTitleFn)
             return this.defaultTitleFn(this.queryName, this.queryLabel, this.measures.y ? this.measures.y.label : null, this.measures.x ? this.measures.x.label : null);
 
-        return (this.queryLabel || this.queryName) + (this.measures.y ? ' - ' + this.measures.y.label : '');
+        return this.queryLabel || this.queryName;
     },
 
     getDefaultYAxisLabel: function(){
