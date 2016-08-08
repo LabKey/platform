@@ -16,6 +16,7 @@
 
 package org.labkey.bigiron.oracle;
 
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.ResultSetWrapper;
@@ -309,7 +310,7 @@ abstract class OracleDialect extends SimpleSqlDialect
             if ("NUMBER".equals(typeName) && 0 == _rsCols.getInt("DECIMAL_DIGITS"))
                 return "INTEGER";
 
-            return typeName;
+                return typeName;
         }
     }
 
@@ -360,6 +361,30 @@ abstract class OracleDialect extends SimpleSqlDialect
             // Oracle always returns BigDecimal.  Use scale to determine if this is really an Integer.
             if (Types.NUMERIC == rsmd.getColumnType(i) && 0 == rsmd.getScale(i) && value instanceof BigDecimal)
                 return ((BigDecimal)value).intValue();
+
+            /* Secure Issue 27345: Conversion failed when converting from a character string to uniqueidentifier */
+            // As per Oracle Docs - The RAW data is intended for binary data or byte strings. It is not
+            // interpreted/converted when moving data between different systems by Oracle Database.
+            else if (("RAW").equalsIgnoreCase(rsmd.getColumnTypeName(i)))
+            {
+                byte[] val = (byte[]) value;
+
+                //Handle GUID. A GUID in oracle is a 32 character representation of a 16 byte RAW value
+                if(val.length == 16 && rsmd.getColumnDisplaySize(i) == 32)
+                {
+                    String hexVal = String.valueOf(Hex.encodeHex(val)); //get the 32 character representation
+
+                    //format with dashes : 8 chars - 4 chars - 4 chars - 4 chars - 12 chars
+                    String guidVal = hexVal.substring(0, 8) + "-" +
+                            hexVal.substring(8, 12) + "-" +
+                            hexVal.substring(12, 16) + "-" +
+                            hexVal.substring(16, 20) + "-" +
+                            hexVal.substring(20);
+
+                    return guidVal.toUpperCase();
+                }
+                return val;
+            }
             else
                 return value;
         }
