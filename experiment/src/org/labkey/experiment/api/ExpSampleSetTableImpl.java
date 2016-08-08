@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
@@ -114,6 +115,7 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
                 Collections.singletonMap("rowId", "RowId"));
         detailsURL.setContainerContext(_userSchema.getContainer());
         setDetailsURL(detailsURL);
+        setImportURL(AbstractTableInfo.LINK_DISABLER);
     }
 
 }
