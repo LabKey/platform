@@ -24,6 +24,7 @@ import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.SharedConfigType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
@@ -32,6 +33,8 @@ import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -102,6 +105,8 @@ public class SchemaXmlReader implements SchemaReader
 
             _datasetInfoMap.put(tableProps.getId(), info);
 
+            applySharedColumns(tableXml, tablesDoc);
+
             ImportTypesHelper importHelper = new ImportTypesHelper(tableXml, NAME_KEY, datasetName)
             {
                 @Override
@@ -144,6 +149,48 @@ public class SchemaXmlReader implements SchemaReader
             catch (Exception e)
             {
                 throw new IllegalStateException(e);
+            }
+        }
+    }
+
+    private void applySharedColumns(TableType tableXml, TablesDocument tablesDoc)
+    {
+        SharedConfigType[] scArray = tablesDoc.getTables().getSharedConfigArray();
+
+        if (scArray == null || scArray.length == 0)
+        {
+            return;
+        }
+
+        SharedConfigType sc = scArray[0];
+        ColumnType[] sharedColumns = sc.getColumns().getColumnArray();
+
+        if (sharedColumns.length > 0)
+        {
+            ColumnType[] columnArray = tableXml.getColumns().getColumnArray();
+
+            List<String> columnNames = new ArrayList<>();
+
+            for (ColumnType aColumnArray : columnArray)
+            {
+                columnNames.add(aColumnArray.getColumnName());
+            }
+
+            List<ColumnType> columnTypeArrayList = null;
+            for (ColumnType sharedColumn : sharedColumns)
+            {
+                if (!columnNames.contains(sharedColumn.getColumnName()))
+                {
+                    if (columnTypeArrayList == null)
+                    {
+                        columnTypeArrayList = new ArrayList<>(Arrays.asList(columnArray));
+                    }
+                    columnTypeArrayList.add(sharedColumn);
+                }
+            }
+            if (columnTypeArrayList != null)
+            {
+                tableXml.getColumns().setColumnArray(columnTypeArrayList.toArray(new ColumnType[columnTypeArrayList.size()]));
             }
         }
     }
