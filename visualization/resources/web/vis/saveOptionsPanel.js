@@ -5,7 +5,12 @@
  */
 Ext4.define('LABKEY.vis.SaveOptionsPanel', {
 
-    extend : 'LABKEY.vis.GenericOptionsPanel',
+    extend : 'LABKEY.vis.ChartWizardPanel',
+
+    mainTitle: 'Save',
+    border: false,
+    height: 475,
+    width: 505,
 
     constructor : function(config){
         Ext4.applyIf(config, {
@@ -33,137 +38,167 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
         // generate unique id for the thumbnail preview div
         this.thumbnailPreviewId = Ext4.id();
 
-        this.items = [
-            Ext4.create('Ext.form.field.Text', {
-                itemId: 'reportName',
-                name: 'reportName',
-                fieldLabel: 'Report Name',
-                labelWidth: 125,
-                hidden: this.isSavedReport() || !this.canSaveChanges(),
-                value: (this.isSavedReport() ? this.reportInfo.name : null),
-                allowBlank: true,
-                anchor: '100%',
-                maxLength: 200
-            }),
-            Ext4.create('Ext.form.field.Display', {
-                itemId: 'reportNameDisplay',
-                name: 'reportNameDisplay',
-                fieldLabel: 'Report Name',
-                labelWidth: 125,
-                hidden: !this.isSavedReport() && this.canSaveChanges(),
-                value: Ext4.util.Format.htmlEncode(this.isSavedReport() ? this.reportInfo.name : null),
-                anchor: '100%'
-            }),
-            Ext4.create('Ext.form.field.TextArea', {
-                itemId: 'reportDescription',
-                name: 'reportDescription',
-                fieldLabel: 'Report Description',
-                labelWidth: 125,
-                hidden: !this.canSaveChanges(),
-                value: (this.isSavedReport() ? this.reportInfo.description : null),
-                allowBlank: true,
-                anchor: '100%',
-                height: 35
-            }),
-            Ext4.create('Ext.form.field.Display', {
-                itemId: 'reportDescriptionDisplay',
-                name: 'reportDescriptionDisplay',
-                fieldLabel: 'Report Description',
-                labelWidth: 125,
-                hidden: this.canSaveChanges(),
-                value: Ext4.util.Format.htmlEncode(this.isSavedReport() ? this.reportInfo.description : null),
-                anchor: '100%'
-            }),
-            Ext4.create('Ext.form.RadioGroup', {
-                itemId: 'reportShared',
-                fieldLabel: 'Viewable By',
-                labelWidth: 125,
-                width: 350,
-                items : [
-                        { itemId: 'allReaders', name: 'reportShared', boxLabel: 'All readers', inputValue: 'true', disabled: !this.canSaveSharedCharts(), checked: this.currentlyShared, width: 140 },
-                        { itemId: 'onlyMe', name: 'reportShared', boxLabel: 'Only me', inputValue: 'false', disabled: !this.canSaveSharedCharts(), checked: !this.currentlyShared, width: 140 }
-                    ]
-            }),
-            Ext4.create('Ext.form.RadioGroup', {
-                itemId: 'reportThumbnailType',
-                fieldLabel: 'Thumbnail',
-                labelWidth: 125,
-                width: 480,
-                hidden: (Ext4.isIE6 || Ext4.isIE7 || Ext4.isIE8),
-                items: [
-                    {
-                        itemId: 'autoGenerate',
-                        width: 140,
-                        name: 'reportThumbnailType',
-                        boxLabel: 'Auto-generate',
-                        description: 'Auto-generate a new thumbnail based on the first chart in this report',
-                        thumbnailPreview: null, // to be populated by calls to updateCurrentChartThumbnail
-                        inputValue: 'AUTO',
-                        checked: this.thumbnailType == 'AUTO'
-                    },
-                    {
-                        itemId: 'none',
-                        width: 75,
-                        name: 'reportThumbnailType',
-                        boxLabel: 'None',
-                        description: 'Use the default static image for this report type',
-                        thumbnailPreview: '<img src="' + LABKEY.contextPath + '/visualization/images/timechart.png"/>',
-                        inputValue: 'NONE',
-                        checked: this.thumbnailType == 'NONE'
-                    },
-                    {
-                        itemId: 'keepCustom',
-                        width: 140,
-                        name: 'reportThumbnailType',
-                        boxLabel: 'Keep existing',
-                        description: 'Keep the existing custom thumbnail that has been provided for this report',
-                        thumbnailPreview: (this.isSavedReport() ? '<img src="' + this.reportInfo.thumbnailURL + '"/>'  : null),
-                        inputValue: 'CUSTOM',
-                        checked: this.thumbnailType == 'CUSTOM'
-                    }
-                ],
-                listeners: {
-                    afterrender: function(cmp) {
-                        Ext4.each(Ext4.ComponentQuery.query('#reportThumbnailType radio'), function(item) {
-                            Ext4.create('Ext.tip.ToolTip', {
-                                target: item.getId(),
-                                html: item.description
-                            });
-                        }, this);
-
-                        this.setThumbnailPreview();
-                    },
-                    change: this.setThumbnailPreview,
-                    scope: this
-                }
-            }),
-            Ext4.create('Ext.form.field.Display', {
-                itemId: 'thumbnailPreview',
-                fieldLabel: ' ',
-                labelSeparator: '',
-                labelWidth: 125,
-                height: 175,
-                value: '<div class="thumbnail" id="' + this.thumbnailPreviewId + '" style="border: solid #C0C0C0 1px;"></div>'
-            })
+        this.bottomButtons = [
+            '->',
+            this.getCancelButton(),
+            this.getSaveButton()
         ];
 
-        this.buttons = [
-            {
-                itemId: 'reportSaveButton',
+        this.items = [
+            this.getTitlePanel(),
+            this.getSaveForm(),
+            this.getButtonBar()
+        ];
+
+        this.callParent();
+    },
+
+    getSaveForm : function()
+    {
+        if (!this.saveForm)
+        {
+            this.saveForm = Ext4.create('Ext.form.Panel', {
+                region: 'center',
+                cls: 'region-panel save-form-panel',
+                border: false,
+                items: [
+                    Ext4.create('Ext.form.field.Text', {
+                        itemId: 'reportName',
+                        name: 'reportName',
+                        fieldLabel: 'Report Name',
+                        labelWidth: 125,
+                        hidden: this.isSavedReport() || !this.canSaveChanges(),
+                        value: (this.isSavedReport() ? this.reportInfo.name : null),
+                        allowBlank: true,
+                        anchor: '100%',
+                        maxLength: 200
+                    }),
+                    Ext4.create('Ext.form.field.Display', {
+                        itemId: 'reportNameDisplay',
+                        name: 'reportNameDisplay',
+                        fieldLabel: 'Report Name',
+                        labelWidth: 125,
+                        hidden: !this.isSavedReport() && this.canSaveChanges(),
+                        value: Ext4.util.Format.htmlEncode(this.isSavedReport() ? this.reportInfo.name : null),
+                        anchor: '100%'
+                    }),
+                    Ext4.create('Ext.form.field.TextArea', {
+                        itemId: 'reportDescription',
+                        name: 'reportDescription',
+                        fieldLabel: 'Report Description',
+                        labelWidth: 125,
+                        hidden: !this.canSaveChanges(),
+                        value: (this.isSavedReport() ? this.reportInfo.description : null),
+                        allowBlank: true,
+                        anchor: '100%',
+                        height: 35
+                    }),
+                    Ext4.create('Ext.form.field.Display', {
+                        itemId: 'reportDescriptionDisplay',
+                        name: 'reportDescriptionDisplay',
+                        fieldLabel: 'Report Description',
+                        labelWidth: 125,
+                        hidden: this.canSaveChanges(),
+                        value: Ext4.util.Format.htmlEncode(this.isSavedReport() ? this.reportInfo.description : null),
+                        anchor: '100%'
+                    }),
+                    Ext4.create('Ext.form.RadioGroup', {
+                        itemId: 'reportShared',
+                        fieldLabel: 'Viewable By',
+                        labelWidth: 125,
+                        width: 350,
+                        items : [
+                            { itemId: 'allReaders', name: 'reportShared', boxLabel: 'All readers', inputValue: 'true', disabled: !this.canSaveSharedCharts(), checked: this.currentlyShared, width: 140 },
+                            { itemId: 'onlyMe', name: 'reportShared', boxLabel: 'Only me', inputValue: 'false', disabled: !this.canSaveSharedCharts(), checked: !this.currentlyShared, width: 140 }
+                        ]
+                    }),
+                    Ext4.create('Ext.form.RadioGroup', {
+                        itemId: 'reportThumbnailType',
+                        fieldLabel: 'Thumbnail',
+                        labelWidth: 125,
+                        width: 480,
+                        hidden: (Ext4.isIE6 || Ext4.isIE7 || Ext4.isIE8),
+                        items: [
+                            {
+                                itemId: 'autoGenerate',
+                                width: 140,
+                                name: 'reportThumbnailType',
+                                boxLabel: 'Auto-generate',
+                                description: 'Auto-generate a new thumbnail based on the first chart in this report',
+                                thumbnailPreview: null, // to be populated by calls to updateCurrentChartThumbnail
+                                inputValue: 'AUTO',
+                                checked: this.thumbnailType == 'AUTO'
+                            },
+                            {
+                                itemId: 'none',
+                                width: 75,
+                                name: 'reportThumbnailType',
+                                boxLabel: 'None',
+                                description: 'Use the default static image for this report type',
+                                thumbnailPreview: '<img src="' + LABKEY.contextPath + '/visualization/images/timechart.png"/>',
+                                inputValue: 'NONE',
+                                checked: this.thumbnailType == 'NONE'
+                            },
+                            {
+                                itemId: 'keepCustom',
+                                width: 140,
+                                name: 'reportThumbnailType',
+                                boxLabel: 'Keep existing',
+                                description: 'Keep the existing custom thumbnail that has been provided for this report',
+                                thumbnailPreview: (this.isSavedReport() ? '<img src="' + this.reportInfo.thumbnailURL + '"/>'  : null),
+                                inputValue: 'CUSTOM',
+                                checked: this.thumbnailType == 'CUSTOM'
+                            }
+                        ],
+                        listeners: {
+                            afterrender: function(cmp) {
+                                Ext4.each(Ext4.ComponentQuery.query('#reportThumbnailType radio'), function(item) {
+                                    Ext4.create('Ext.tip.ToolTip', {
+                                        target: item.getId(),
+                                        html: item.description
+                                    });
+                                }, this);
+
+                                this.setThumbnailPreview();
+                            },
+                            change: this.setThumbnailPreview,
+                            scope: this
+                        }
+                    }),
+                    Ext4.create('Ext.form.field.Display', {
+                        itemId: 'thumbnailPreview',
+                        fieldLabel: ' ',
+                        labelSeparator: '',
+                        labelWidth: 125,
+                        height: 175,
+                        value: '<div class="thumbnail" id="' + this.thumbnailPreviewId + '" style="border: solid #C0C0C0 1px;"></div>'
+                    })
+                ]
+            })
+        }
+
+        return this.saveForm;
+    },
+
+    getSaveButton : function()
+    {
+        if (!this.saveButton)
+        {
+            this.saveButton = Ext4.create('Ext.button.Button', {
                 text: "Save",
                 hidden: !this.canSaveChanges(),
                 handler: function() {
-                    var formVals = this.getForm().getValues();
+                    var formVals = this.getSaveForm().getForm().getValues();
 
                     // report name is required for saving
                     if(!formVals.reportName){
-                       Ext4.Msg.show({
+                        Ext4.Msg.show({
                             title: "Error",
                             msg: "Report name must be specified when saving a chart.",
                             buttons: Ext4.MessageBox.OK,
                             icon: Ext4.MessageBox.ERROR
-                       });
-                       return;
+                        });
+                        return;
                     }
 
                     // the save button will not allow for replace if this is a new chart,
@@ -192,15 +227,24 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
                 },
                 scope: this,
                 formBind: true
-            },
-            {
+            });
+        }
+
+        return this.saveButton;
+    },
+
+    getCancelButton : function()
+    {
+        if (!this.cancelButton)
+        {
+            this.cancelButton = Ext4.create('Ext.button.Button', {
                 text: 'Cancel',
                 handler: this.cancelChangesButtonClicked,
                 scope: this
-            }
-        ];
+            });
+        }
 
-        this.callParent();
+        return this.cancelButton;
     },
 
     cancelChangesButtonClicked: function(){
@@ -245,7 +289,7 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
             this.down('#reportThumbnailType').setValue({reportThumbnailType: 'AUTO'});
             this.down('#keepCustom').hide();
 
-            this.down('#reportSaveButton').show();
+            this.getSaveButton().show();
         }
         else
         {
@@ -271,7 +315,7 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
             else
                 this.down('#keepCustom').hide();
 
-            this.down('#reportSaveButton').setVisible(this.canEdit);
+            this.getSaveButton().setVisible(this.canEdit);
         }
 
         this.setThumbnailPreview();

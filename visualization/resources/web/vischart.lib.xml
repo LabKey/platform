@@ -1,5 +1,6 @@
 <libraries xmlns="http://labkey.org/clientLibrary/xml/">
     <library compileInProductionMode="true">
+        <script path="vis/chartWizardWindow.js"/>
         <script path="vis/chartTypePanel.js"/>
         <script path="vis/chartLayoutPanel.js"/>
         <script path="vis/chartWizardPanel.css"/>

@@ -1063,7 +1063,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (!this.chartTypeWindow)
         {
             this.chartTypeWindow = Ext4.create('LABKEY.vis.ChartWizardWindow', {
-                header: false,
                 panelToMask: this,
                 items: [this.getChartTypePanel()]
             });
@@ -1117,7 +1116,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (!this.chartLayoutWindow)
         {
             this.chartLayoutWindow = Ext4.create('LABKEY.vis.ChartWizardWindow', {
-                header: false,
                 panelToMask: this,
                 items: [this.getChartLayoutPanel()]
             });
@@ -1312,14 +1310,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (!this.exportScriptWindow)
         {
             this.exportScriptWindow = Ext4.create('LABKEY.vis.ChartWizardWindow', {
-                title: "Export Script",
-                cls: 'data-window',
-                width: 800,
                 panelToMask: this,
-                items: [{
-                    xtype: 'panel',
-                    items: [this.getExportScriptPanel()]
-                }]
+                items: [this.getExportScriptPanel()]
             });
         }
 
@@ -1331,6 +1323,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (!this.exportScriptPanel)
         {
             this.exportScriptPanel = Ext4.create('LABKEY.vis.GenericChartScriptPanel', {
+                width: 800,
                 listeners: {
                     scope: this,
                     closeOptionsWindow: function(){
@@ -1979,7 +1972,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.getSavePanel().setReportInfo({
             name: config.name,
             description: config.description,
-            shared: config["public"],
+            shared: config["public"], // note: config.public does not work with yuicompressor
             reportProps: config.reportProps,
             thumbnailURL: config.thumbnailURL
         });
@@ -2991,10 +2984,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.chartDefinitionChanged.delay(500);
     },
 
-    onSaveBtnClicked: function(isSaveAs){
+    onSaveBtnClicked: function(isSaveAs)
+    {
         this.getSavePanel().setNoneThumbnail(this.getNoneThumbnailURL());
         this.getSavePanel().setSaveAs(isSaveAs);
-        this.getSaveWindow().setTitle(isSaveAs ? "Save As" : "Save");
+        this.getSavePanel().setMainTitle(isSaveAs ? "Save as" : "Save");
         this.getSaveWindow().show();
     },
 
@@ -3003,11 +2997,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (!this.saveWindow)
         {
             this.saveWindow = Ext4.create('LABKEY.vis.ChartWizardWindow', {
-                title: "Save",
-                width: 500,
-                autoHeight: true,
-                cls: 'data-window',
-                layout: 'fit',
                 panelToMask: this,
                 items: [this.getSavePanel()]
             });
@@ -3045,26 +3034,5 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             return LABKEY.contextPath + '/visualization/images/scatterplot.png';
 
         return LABKEY.contextPath + '/visualization/images/boxplot.png';
-    }
-});
-
-Ext4.define('LABKEY.vis.ChartWizardWindow', {
-    extend: 'Ext.window.Window',
-    cls: 'data-window chart-wizard-dialog',
-    //header: false,
-    resizable: false,
-    closeAction: 'hide',
-    panelToMask: null,
-    listeners: {
-        show: function()
-        {
-            if (this.panelToMask)
-                this.panelToMask.getEl().mask();
-        },
-        hide: function()
-        {
-            if (this.panelToMask)
-                this.panelToMask.getEl().unmask();
-        }
     }
 });

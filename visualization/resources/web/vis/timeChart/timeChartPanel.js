@@ -218,6 +218,10 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         this.editorSavePanel = Ext4.create('LABKEY.vis.SaveOptionsPanel', {
             title: 'Save',
+            header: false,
+            mainTitle: null,
+            padding: 10,
+            height: 380,
             reportInfo: this.saveReportInfo,
             canEdit: this.canEdit,
             canShare: this.canShare,
@@ -462,14 +466,16 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.saveButton = Ext4.create('Ext.button.Button', {text: 'Save', hidden: !this.canEdit,
                         handler: function(btn){
                                 this.editorSavePanel.setSaveAs(false);
-                                this.optionsButtonClicked(btn, this.editorSavePanel, 850, 420, 'right');
+                                this.editorSavePanel.title = 'Save';
+                                this.optionsButtonClicked(btn, this.editorSavePanel, 475, null, 'right');
                         }, scope: this});
 
 
         this.saveAsButton = Ext4.create('Ext.button.Button', {text: 'Save As', hidden: !this.editorSavePanel.isSavedReport() || LABKEY.Security.currentUser.isGuest,
                         handler: function(btn){
                                 this.editorSavePanel.setSaveAs(true);
-                                this.optionsButtonClicked(btn, this.editorSavePanel, 850, 420, 'right');
+                                this.editorSavePanel.title = 'Save As';
+                                this.optionsButtonClicked(btn, this.editorSavePanel, 475, null, 'right');
                         }, scope: this});
 
         var params = LABKEY.ActionURL.getParameters();

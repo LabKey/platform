@@ -1,11 +1,9 @@
 Ext4.define('LABKEY.vis.ChartTypePanel', {
-    extend: 'Ext.panel.Panel',
+    extend: 'LABKEY.vis.ChartWizardPanel',
 
-    cls: 'chart-type-panel',
-    layout: 'border',
-    border: false,
+    cls: 'chart-wizard-panel chart-type-panel',
+    mainTitle: 'Create a plot',
     width: 900,
-
     selectedType: null,
     selectedFields: null,
     requiredFieldNames: null,
@@ -87,6 +85,12 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
         if (this.selectedFields == null)
             this.selectedFields = {};
 
+        this.bottomButtons = [
+            '->',
+            this.getCancelButton(),
+            this.getApplyButton()
+        ];
+
         this.items = [
             this.getTitlePanel(),
             this.getTypesPanel(),
@@ -103,21 +107,6 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
         this.on('show', function() {
             this.initValues = this.getValues();
         }, this);
-    },
-
-    getTitlePanel : function()
-    {
-        if (!this.titlePanel)
-        {
-            this.titlePanel = Ext4.create('Ext.panel.Panel', {
-                region: 'north',
-                cls: 'region-panel title-panel',
-                border: false,
-                html: 'Create a plot'
-            });
-        }
-
-        return this.titlePanel;
     },
 
     getTypesPanel : function()
@@ -345,27 +334,6 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
         }
 
         return this.fieldSelectionsPanel;
-    },
-
-    getButtonBar : function()
-    {
-        if (!this.buttonBar)
-        {
-            this.buttonBar = Ext4.create('Ext.toolbar.Toolbar', {
-                region: 'south',
-                cls: 'region-panel button-bar',
-                border: false,
-                ui: 'footer',
-                defaults: {width: 65},
-                items: [
-                    '->',
-                    this.getCancelButton(),
-                    this.getApplyButton()
-                ]
-            });
-        }
-
-        return this.buttonBar;
     },
 
     getCancelButton : function()

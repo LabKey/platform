@@ -1,17 +1,21 @@
 Ext4.define('LABKEY.vis.ChartLayoutPanel', {
-    extend: 'Ext.panel.Panel',
+    extend: 'LABKEY.vis.ChartWizardPanel',
 
-    cls: 'chart-layout-panel',
-    layout: 'border',
-    border: false,
+    cls: 'chart-wizard-panel chart-layout-panel',
+    mainTitle: 'Customize look and feel',
     width: 900,
     height: 525,
-
     isDeveloper: false,
-    defaultTitle: null,
+    defaultChartLabel: null,
 
     initComponent : function()
     {
+        this.bottomButtons = [
+            '->',
+            this.getCancelButton(),
+            this.getApplyButton()
+        ];
+
         this.items = [
             this.getTitlePanel(),
             this.getNavigationPanel(),
@@ -28,21 +32,6 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
         this.on('show', function() {
             this.initValues = this.getValues();
         }, this);
-    },
-
-    getTitlePanel : function()
-    {
-        if (!this.titlePanel)
-        {
-            this.titlePanel = Ext4.create('Ext.panel.Panel', {
-                region: 'north',
-                cls: 'region-panel title-panel',
-                border: false,
-                html: 'Customize look and feel'
-            });
-        }
-
-        return this.titlePanel;
     },
 
     getNavigationPanel : function()
@@ -169,27 +158,6 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
         }
 
         return this.centerPanel;
-    },
-
-    getButtonBar : function()
-    {
-        if (!this.buttonBar)
-        {
-            this.buttonBar = Ext4.create('Ext.toolbar.Toolbar', {
-                region: 'south',
-                cls: 'region-panel button-bar',
-                border: false,
-                ui: 'footer',
-                defaults: {width: 65},
-                items: [
-                    '->',
-                    this.getCancelButton(),
-                    this.getApplyButton()
-                ]
-            });
-        }
-
-        return this.buttonBar;
     },
 
     getCancelButton : function()

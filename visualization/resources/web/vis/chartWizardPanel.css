@@ -7,30 +7,33 @@
     padding: 0;
 }
 
-.chart-type-panel,
-.chart-layout-panel {
+.chart-wizard-panel {
     background-color: #eeeeee;
     padding: 10px;
 }
 
-.chart-type-panel div, .chart-type-panel span,
-.chart-layout-panel div, .chart-layout-panel span {
+.chart-wizard-panel div, .chart-wizard-panel span {
     color: #404040;
 }
 
-.chart-type-panel .labkey-error, .chart-layout-panel .labkey-error {
+.chart-wizard-panel .labkey-error {
     color: #FF0000;
 }
 
-.chart-type-panel .x4-border-layout-ct,
-.chart-layout-panel .x4-border-layout-ct {
+.chart-wizard-panel .x4-border-layout-ct {
     background-color: transparent;
 }
 
-.chart-type-panel .region-panel,
-.chart-layout-panel .region-panel {
+.chart-wizard-panel .region-panel {
     background-color: #eeeeee;
     margin: 10px;
+}
+
+.chart-wizard-panel .title-panel div {
+    background-color: #eeeeee;
+    color: #707070;
+    font-size: 20px;
+    font-weight: bold;
 }
 
 .chart-type-panel .query-columns .x4-grid-cell {
@@ -109,14 +112,6 @@
     color: #404040;
 }
 
-.chart-type-panel .title-panel div,
-.chart-layout-panel .title-panel div {
-    background-color: #eeeeee;
-    color: #707070;
-    font-size: 20px;
-    font-weight: bold;
-}
-
 .chart-type-panel .types-panel {
     background-color: #ffffff;
     border: solid #c0c0c0 1px;
@@ -157,4 +152,10 @@
     color: #41c49f;
     font-weight: bold;
     cursor: default;
+}
+
+.save-form-panel {
+    padding: 10px;
+    background-color: #ffffff !important;
+    border: solid 1px #b4b4b4;
 }
