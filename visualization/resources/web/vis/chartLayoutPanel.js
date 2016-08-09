@@ -66,8 +66,9 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
                     cardId: 'card-4',
                     cardClass: 'LABKEY.vis.DeveloperOptionsPanel',
                     config: {
-                        defaultPointClickFn: this.defaultPointClickFn,
-                        pointClickFnHelp: this.pointClickFnHelp
+                        isDeveloper: this.isDeveloper,
+                        defaultPointClickFn: this.getDefaultPointClickFn(),
+                        pointClickFnHelp: this.getPointClickFnHelp()
                     }
                 });
             }
@@ -290,6 +291,40 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
                     panel.onMeasureChange(props);
             }
         }, this);
+    },
+
+    getDefaultPointClickFn : function()
+    {
+        return "function (data, measureInfo, clickEvent) {\n"
+            + "   // use LABKEY.ActionURL.buildURL to generate a link to a different controller/action within LabKey server\n"
+            + "   var queryHref = LABKEY.ActionURL.buildURL('query', 'executeQuery', LABKEY.container.path, \n"
+            + "                      {schemaName: measureInfo[\"schemaName\"], \"query.queryName\": measureInfo[\"queryName\"]});\n\n"
+            + "   // display an Ext message box with some information from the function parameters\n"
+            + "   Ext4.Msg.alert('Data Point Information',\n"
+            + "       'Schema: ' + measureInfo[\"schemaName\"]\n"
+            + "       + '<br/> Query: <a href=\"' + queryHref + '\">' + measureInfo[\"queryName\"] + '</a>'\n"
+            + "       + '<br/>' + measureInfo[\"xAxis\"] + ': ' + (data[measureInfo[\"xAxis\"]].displayValue ? data[measureInfo[\"xAxis\"]].displayValue : data[measureInfo[\"xAxis\"]].value)\n"
+            + "       + '<br/>' + measureInfo[\"yAxis\"] + ': ' + (data[measureInfo[\"yAxis\"]].displayValue ? data[measureInfo[\"yAxis\"]].displayValue : data[measureInfo[\"yAxis\"]].value)\n"
+            + "   );\n\n"
+            + "   // you could also directly navigate away from the chart using window.location\n"
+            + "   // window.location = queryHref;\n"
+            + "}";
+    },
+
+    getPointClickFnHelp : function()
+    {
+        return 'Your code should define a single function to be called when a data point in the chart is clicked. '
+            + 'The function will be called with the following parameters:<br/>'
+            + '<ul>'
+            + '<li><b>data:</b> the set of data values for the selected data point. Example: </li>'
+            + '<div style="margin-left: 40px;">{</div>'
+            + '<div style="margin-left: 60px;">YAxisMeasure: {displayValue: "250", value: 250},<br/>XAxisMeasure: {displayValue: "0.45", value: 0.45000},<br/>ColorMeasure: {value: "Color Value 1"},<br/>PointMeasure: {value: "Point Value 1"}</div>'
+            + '<div style="margin-left: 40px;">}</div>'
+            + '<li><b>measureInfo:</b> the schema name, query name, and measure names selected for the plot. Example:</li>'
+            + '<div style="margin-left: 40px;">{</div>'
+            + '<div style="margin-left: 60px;">schemaName: "study",<br/>queryName: "Dataset1",<br/>yAxis: "YAxisMeasure",<br/>xAxis: "XAxisMeasure",<br/>colorName: "ColorMeasure",<br/>pointName: "PointMeasure"</div>'
+            + '<div style="margin-left: 40px;">}</div>'
+            + '<li><b>clickEvent:</b> information from the browser about the click event (i.e. target, position, etc.)</li></ul>';
     }
 });
 

@@ -50,7 +50,7 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
 
         this.scaleTypeRadioGroup = Ext4.create('Ext.form.RadioGroup', {
             fieldLabel: 'Scale Type',
-            columns: LABKEY.vis.USE_NEW_CHART_WIZARD ? 1 : 'auto',
+            columns: 1,
             items: [
                 Ext4.create('Ext.form.field.Radio', {
                     width: 100,

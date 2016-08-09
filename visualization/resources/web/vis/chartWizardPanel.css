@@ -5,6 +5,13 @@
 
 .chart-wizard-dialog {
     padding: 0;
+    border-color: #b4b4b4;
+    background-color: #eeeeee;
+    box-shadow: none;
+}
+
+.chart-wizard-dialog .x4-window-body-default {
+    border-color:  transparent !important;
 }
 
 .chart-wizard-panel {
@@ -158,4 +165,9 @@
     padding: 10px;
     background-color: #ffffff !important;
     border: solid 1px #b4b4b4;
+}
+
+div.thumbnail img {
+    max-width: 300px;
+    display: block;
 }

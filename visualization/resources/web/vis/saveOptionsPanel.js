@@ -345,7 +345,10 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
         // resize the svg by resetting the viewBox and width/height attributes
         chartSVGStr = chartSVGStr.replace(/width="\d+"/, 'width="300"');
         chartSVGStr = chartSVGStr.replace(/height="\d+"/, 'height="175"');
-        chartSVGStr = chartSVGStr.replace(/<svg /, '<svg viewBox="0 0 ' + size.width + ' ' + size.height + '"');
+        if (size)
+            chartSVGStr = chartSVGStr.replace(/<svg /, '<svg viewBox="0 0 ' + size.width + ' ' + size.height + '"');
+        else
+            chartSVGStr = chartSVGStr.replace(/<svg /, '<svg viewBox="0 150 1150 300"');
         // remove the id reference so that updates to the original aren't confused
         chartSVGStr = chartSVGStr.replace(/id="[\w\-]+"/, '');
 

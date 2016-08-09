@@ -368,6 +368,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             pointClickFn: this.chartInfo.pointClickFn || null,
             defaultPointClickFn: this.getDefaultPointClickFn(),
             pointClickFnHelp: this.getPointClickFnHelp(),
+            showButtons: true,
             bubbleEvents: ['closeOptionsWindow'],
             listeners: {
                 scope: this,

@@ -7,13 +7,13 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
 
     extend : 'LABKEY.vis.GenericOptionsPanel',
 
-    constructor : function(config){
+    isDeveloper: false,
+    defaultPointClickFn : null,
+    pointClickFnHelp : null,
+    showButtons: false,
 
-        Ext4.applyIf(config, {
-            defaultPointClickFn: null,
-            pointClickFnHelp: null
-        });
-
+    constructor : function(config)
+    {
         this.callParent([config]);
 
         this.addEvents(
@@ -91,7 +91,7 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
             ]
         });
 
-        if (this.isDeveloper || LABKEY.vis.USE_NEW_CHART_WIZARD)
+        if (this.isDeveloper)
         {
             this.items = [
                 {
@@ -108,7 +108,7 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
             ];
         }
 
-        if (!LABKEY.vis.USE_NEW_CHART_WIZARD)
+        if (this.showButtons)
         {
             this.buttons = [{
                 text: 'OK',

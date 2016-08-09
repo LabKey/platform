@@ -6,15 +6,12 @@
         <script path="vis/chartWizardPanel.css"/>
 
         <script path="vis/genericOptionsPanel.js"/>
-        <script path="vis/mainTitleOptionsPanel.js"/>
         <script path="vis/developerOptionsPanel.js"/>
         <script path="vis/saveOptionsPanel.js"/>
-        <script path="vis/baseExportScriptPanel.js"/>
 
         <script path="vis/genericChart/genericChartHelper.js"/>
         <script path="vis/genericChart/genericChartOptionsPanel.js"/>
         <script path="vis/genericChart/genericChartAxisPanel.js"/>
-        <script path="vis/genericChart/genericChartGroupingPanel.js"/>
         <script path="vis/genericChart/genericChartScriptPanel.js"/>
         <script path="vis/genericChart/genericChartPanel.js"/>
     </library>

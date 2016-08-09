@@ -2969,7 +2969,6 @@ visualization/resources/web/vis/chartWizardPanel.css -text
 visualization/resources/web/vis/chartWizardWindow.js -text
 visualization/resources/web/vis/developerOptionsPanel.js -text
 visualization/resources/web/vis/genericChart/genericChartAxisPanel.js -text
-visualization/resources/web/vis/genericChart/genericChartGroupingPanel.js -text
 visualization/resources/web/vis/genericChart/genericChartHelper.js -text
 visualization/resources/web/vis/genericChart/genericChartOptionsPanel.js -text
 visualization/resources/web/vis/genericChart/genericChartPanel.js -text

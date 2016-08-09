@@ -1,7 +1,7 @@
 
 Ext4.define('LABKEY.vis.ChartWizardWindow', {
     extend: 'Ext.window.Window',
-    cls: 'data-window chart-wizard-dialog',
+    cls: 'chart-wizard-dialog',
     header: false,
     resizable: false,
     closeAction: 'hide',
