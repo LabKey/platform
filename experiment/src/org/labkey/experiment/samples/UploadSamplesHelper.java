@@ -27,6 +27,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
@@ -54,6 +55,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.SampleSetAuditProvider;
+import org.labkey.experiment.api.ExpDataClassDataTableImpl;
 import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpSampleSetImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
@@ -188,7 +190,7 @@ public class UploadSamplesHelper
                     {
                         inputOutputColumns.add(cd.name);
                     }
-                    else
+                    else if (!isAliasHeader(cd.name))
                     {
                         cd.load = false;
                     }
@@ -469,6 +471,11 @@ public class UploadSamplesHelper
         return name.equalsIgnoreCase(ExpMaterialTable.Column.Flag.name()) || name.equalsIgnoreCase("Comment");
     }
 
+    private boolean isAliasHeader(String name)
+    {
+        return name.equalsIgnoreCase(ExpMaterialTable.Column.Alias.name());
+    }
+
     public static boolean isInputOutputHeader(String name)
     {
         return name.startsWith(DATA_INPUT_PARENT) || name.startsWith(MATERIAL_INPUT_PARENT) ||
@@ -477,7 +484,7 @@ public class UploadSamplesHelper
 
     private boolean isReservedHeader(String name)
     {
-        if (isNameHeader(name) || isCommentHeader(name) || "CpasType".equalsIgnoreCase(name))
+        if (isNameHeader(name) || isCommentHeader(name) || "CpasType".equalsIgnoreCase(name) || isAliasHeader(name))
             return true;
         if (isInputOutputHeader(name))
             return true;
@@ -570,6 +577,25 @@ public class UploadSamplesHelper
         MaterialImportHelper helper = new MaterialImportHelper(c, source, _form.getUser(), reusedMaterialLSIDs);
 
         OntologyManager.insertTabDelimited(c, _form.getUser(), ownerObjectId, helper, descriptors, rows, true);
+
+        // process any alias values
+        Map<String, ExpMaterial> materialMap = new HashMap<>();
+        List<String> idColumns = new ArrayList<>();
+        getIdColPropertyURIs(source, idColumns);
+        for (ExpMaterial material : helper._materials)
+        {
+            materialMap.put(material.getName(), material);
+        }
+
+        TableInfo aliasMap = ExperimentService.get().getTinfoMaterialAliasMap();
+        rows.stream().filter(row -> row.containsKey("Alias")).forEach(row -> {
+            String name = decideName(row, idColumns);
+            ExpMaterial material = materialMap.get(name);
+            if (material != null)
+            {
+                ExpDataClassDataTableImpl.AliasInsertHelper.handleInsertUpdate(c, _form.getUser(), material.getLSID(), aliasMap, row);
+            }
+        });
 
         if (source.getParentCol() != null || !inputOutputColumns.isEmpty())
         {

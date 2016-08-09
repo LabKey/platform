@@ -211,35 +211,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                 aliasCol.setCalculated(false);
                 aliasCol.setNullable(true);
                 aliasCol.setRequired(false);
-                aliasCol.setDisplayColumnFactory(colInfo -> {
-                    DataColumn dataColumn = new DataColumn(colInfo);
-                    dataColumn.setInputType("text");
-                    return new MultiValuedDisplayColumn(dataColumn, true)
-                    {
-                        @Override
-                        public Object getInputValue(RenderContext ctx)
-                        {
-                            Object value =  super.getInputValue(ctx);
-                            StringBuilder sb = new StringBuilder();
-                            if (value instanceof List)
-                            {
-                                String delim = "";
-                                for (Object item : (List)value)
-                                {
-                                    if (item != null)
-                                    {
-                                        String name = new TableSelector(ExperimentService.get().getTinfoAlias(), Collections.singleton("Name")).getObject(item, String.class);
-
-                                        sb.append(delim);
-                                        sb.append(name);
-                                        delim = ",";
-                                    }
-                                }
-                            }
-                            return sb.toString();
-                        }
-                    };
-                });
+                aliasCol.setDisplayColumnFactory(new AliasDisplayColumnFactory());
                 return aliasCol;
 
             case Inputs:
@@ -831,8 +803,8 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                                         aliasNames.add(itemEntry);
                                 }
                             });
-                            params.addAll(getAliasIds(_user, aliasNames));
-                            insertAliases(_user, params, entry.getKey());
+                            params.addAll(AliasInsertHelper.getAliasIds(_user, aliasNames));
+                            AliasInsertHelper.insertAliases(getContainer(), _user, svc.getTinfoDataAliasMap(), params, entry.getKey());
                         }
                         transaction.commit();
                     }
@@ -1283,32 +1255,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
             // update aliases
             if (row.containsKey("Alias"))
-            {
-                List<String> aliasNames = new ArrayList();
-                List<Integer> params = new ArrayList();
-                String aliases = "";
-                // QueryController action update passes here an array of Strings where each string is the rowId of an alias in the exp.Alias table
-                if (row.get("Alias") instanceof String[])
-                {
-                    String[] aa = (String[]) row.get("Alias");
-                    for (String alias : aa)
-                    {
-                        if (NumberUtils.isDigits(alias))
-                            params.add(NumberUtils.toInt(alias));
-                        else
-                            parseAliasString(aliasNames, alias);
-                    }
-                }
-                // LABKEY.Query.updateRows passes here a JSON String of an array of strings where each string is an alias
-                else
-                {
-                    aliases = (String) row.get("Alias");
-                    parseAliasString(aliasNames, aliases);
-                }
-                params.addAll(getAliasIds(user, aliasNames));
-                deleteAliases(filter);
-                insertAliases(user, params, lsid);
-            }
+                AliasInsertHelper.handleInsertUpdate(getContainer(), user, lsid, ExperimentService.get().getTinfoDataAliasMap(), row);
 
             // handle attachments
             removePreviousAttachments(user, c, row, oldRow);
@@ -1325,28 +1272,6 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             }
 
             return ret;
-        }
-
-        private void parseAliasString(List<String> aliasNames, String aliases)
-        {
-            if (aliases != null)
-            {
-                if (aliases.startsWith("[") && aliases.endsWith("]"))
-                {
-                    aliases = aliases.substring(1, aliases.length() - 1);
-                }
-                if (null != aliases)
-                {
-                    aliases = aliases.replace("\"", "");
-                }
-                if (aliases.contains(","))
-                {
-                    String[] parts = aliases.split(",");
-                    aliasNames.addAll(Arrays.asList(parts));
-                }
-                else
-                    aliasNames.add(aliases);
-            }
         }
 
         @Override
@@ -1428,55 +1353,149 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
         }
     }
 
-    // make sure that an alias entry exist for each string value passed in, else create it
-    private List<Integer> getAliasIds (User user,  List<String> aliasNames)
+    static class AliasDisplayColumnFactory implements DisplayColumnFactory
     {
-        final ExperimentService.Interface svc = ExperimentService.get();
-        List<Integer> params = new ArrayList<>();
-
-        for (String aliasName : aliasNames)
+        @Override
+        public DisplayColumn createRenderer(ColumnInfo colInfo)
         {
-            aliasName = aliasName.trim();
-            TableSelector selector = new TableSelector(svc.getTinfoAlias(), Collections.singleton("rowid"), new SimpleFilter(FieldKey.fromParts("Name"), aliasName), null);
-            assert selector.getRowCount() <= 1;
-            if (selector.getRowCount() > 0)
+            DataColumn dataColumn = new DataColumn(colInfo);
+            dataColumn.setInputType("text");
+
+            return new MultiValuedDisplayColumn(dataColumn, true)
             {
-                selector.forEach(rs -> params.add(rs.getInt("rowid")));
+                @Override
+                public Object getInputValue(RenderContext ctx)
+                {
+                    Object value =  super.getInputValue(ctx);
+                    StringBuilder sb = new StringBuilder();
+                    if (value instanceof List)
+                    {
+                        String delim = "";
+                        for (Object item : (List)value)
+                        {
+                            if (item != null)
+                            {
+                                String name = new TableSelector(ExperimentService.get().getTinfoAlias(), Collections.singleton("Name")).getObject(item, String.class);
+
+                                sb.append(delim);
+                                sb.append(name);
+                                delim = ",";
+                            }
+                        }
+                    }
+                    return sb.toString();
+                }
+            };
+        }
+    }
+
+    public static class AliasInsertHelper
+    {
+        public static void handleInsertUpdate(Container container, User user, String lsid, TableInfo aliasMap, Map<String, Object> row)
+        {
+            List<String> aliasNames = new ArrayList();
+            List<Integer> params = new ArrayList();
+            String aliases;
+            // QueryController action update passes here an array of Strings where each string is the rowId of an alias in the exp.Alias table
+            if (row.get("Alias") instanceof String[])
+            {
+                String[] aa = (String[]) row.get("Alias");
+                for (String alias : aa)
+                {
+                    if (NumberUtils.isDigits(alias))
+                        params.add(NumberUtils.toInt(alias));
+                    else
+                        parseAliasString(aliasNames, alias);
+                }
             }
+            // LABKEY.Query.updateRows passes here a JSON String of an array of strings where each string is an alias
             else
             {
-                // create a new alias
-                DataAlias alias = new DataAlias();
-                alias.setName(aliasName);
-                alias = Table.insert(user, svc.getTinfoAlias(), alias);
-                assert alias.getRowId() != 0;
-                params.add(alias.getRowId());
+                aliases = (String) row.get("Alias");
+                parseAliasString(aliasNames, aliases);
             }
+            params.addAll(getAliasIds(user, aliasNames));
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("LSID"), lsid);
+            deleteAliases(filter, aliasMap);
+            insertAliases(container, user, aliasMap, params, lsid);
         }
 
-        return params;
-    }
-
-    private void insertAliases(User user, List<Integer> aliasIds, String lsid)
-    {
-        final ExperimentService.Interface svc = ExperimentService.get();
-
-        SimpleFilter filter = new SimpleFilter();
-        filter.addClause(new SimpleFilter.InClause(FieldKey.fromParts("rowid"), aliasIds));
-        if (new TableSelector(svc.getTinfoAlias(), filter, null).getRowCount() == aliasIds.size())
+        private static void parseAliasString(List<String> aliasNames, String aliases)
         {
-            // insert the new rows into the mapping table
-            for (Integer aliasId : aliasIds)
+            if (aliases != null)
             {
-                Table.insert(user, svc.getTinfoDataAliasMap(), new DataAliasMap(lsid, aliasId, getContainer()));
+                if (aliases.startsWith("[") && aliases.endsWith("]"))
+                {
+                    aliases = aliases.substring(1, aliases.length() - 1);
+                }
+                if (null != aliases)
+                {
+                    aliases = aliases.replace("\"", "");
+                }
+                if (aliases.contains(","))
+                {
+                    for (String part : aliases.split(","))
+                    {
+                        if (!StringUtils.isEmpty(part.trim()))
+                            aliasNames.add(part.trim());
+                    }
+                }
+                else
+                {
+                    if (!StringUtils.isEmpty(aliases.trim()))
+                        aliasNames.add(aliases.trim());
+                }
             }
         }
-    }
 
-    private void deleteAliases(SimpleFilter filter)
-    {
-        final ExperimentService.Interface svc = ExperimentService.get();
-        Table.delete(svc.getTinfoDataAliasMap(), filter);
-    }
+        static void insertAliases(Container container, User user, TableInfo aliasMap, List<Integer> aliasIds, String lsid)
+        {
+            final ExperimentService.Interface svc = ExperimentService.get();
 
+            SimpleFilter filter = new SimpleFilter();
+            filter.addClause(new SimpleFilter.InClause(FieldKey.fromParts("rowid"), aliasIds));
+            if (new TableSelector(svc.getTinfoAlias(), filter, null).getRowCount() == aliasIds.size())
+            {
+                // insert the new rows into the mapping table
+                for (Integer aliasId : aliasIds)
+                {
+                    Table.insert(user, aliasMap, new DataAliasMap(lsid, aliasId, container));
+                }
+            }
+        }
+
+        static void deleteAliases(SimpleFilter filter, TableInfo aliasMap)
+        {
+            Table.delete(aliasMap, filter);
+        }
+
+        // make sure that an alias entry exist for each string value passed in, else create it
+        public static List<Integer> getAliasIds (User user,  List<String> aliasNames)
+        {
+            final ExperimentService.Interface svc = ExperimentService.get();
+            List<Integer> params = new ArrayList<>();
+
+            for (String aliasName : aliasNames)
+            {
+                aliasName = aliasName.trim();
+                TableSelector selector = new TableSelector(svc.getTinfoAlias(), Collections.singleton("rowid"), new SimpleFilter(FieldKey.fromParts("Name"), aliasName), null);
+                assert selector.getRowCount() <= 1;
+                if (selector.getRowCount() > 0)
+                {
+                    selector.forEach(rs -> params.add(rs.getInt("rowid")));
+                }
+                else
+                {
+                    // create a new alias
+                    DataAlias alias = new DataAlias();
+                    alias.setName(aliasName);
+                    alias = Table.insert(user, svc.getTinfoAlias(), alias);
+                    assert alias.getRowId() != 0;
+                    params.add(alias.getRowId());
+                }
+            }
+
+            return params;
+        }
+    }
 }

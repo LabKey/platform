@@ -174,16 +174,27 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             case ModifiedBy:
                 return createUserColumn(alias, _rootTable.getColumn("ModifiedBy"));
             case Alias:
-                ColumnInfo aliasCol = wrapColumn("Alias", _rootTable.getColumn("LSID"));
-                aliasCol.setDescription("Contains the list of aliases for this sample");
-                aliasCol.setFk(new MultiValuedForeignKey(new LookupForeignKey("LSID")
-                {
+                ColumnInfo aliasCol = wrapColumn("Alias", getRealTable().getColumn("LSID"));
+                aliasCol.setDescription("Contains the list of aliases for this data object");
+                aliasCol.setFk(new MultiValuedForeignKey(new LookupForeignKey("LSID") {
                     @Override
                     public TableInfo getLookupTableInfo()
                     {
                         return ExperimentService.get().getTinfoMaterialAliasMap();
                     }
-                }, "Alias"));
+                    }, "Alias")
+                {
+                    @Override
+                    public boolean isMultiSelectInput()
+                    {
+                        return false;
+                    }
+                });
+                aliasCol.setCalculated(false);
+                aliasCol.setNullable(true);
+                aliasCol.setRequired(false);
+                aliasCol.setDisplayColumnFactory(new ExpDataClassDataTableImpl.AliasDisplayColumnFactory());
+
                 return aliasCol;
 
             case Inputs:
