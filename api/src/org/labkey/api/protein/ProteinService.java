@@ -64,6 +64,12 @@ public interface ProteinService
 
     String getProteinSequence(int seqId);
 
+    /** Get seqId for the sequence and organism */
+    Integer getProteinSeqId(String sequence, int organismId);
+
+    /** Get seqId for the sequence -- there may be more than one if organism matches */
+    List<Integer> getProteinSeqId(String sequence);
+
     interface QueryViewProvider<FormType>
     {
         String getDataRegionName();
