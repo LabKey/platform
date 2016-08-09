@@ -251,4 +251,10 @@ public class MultiValuedForeignKey implements ForeignKey
     {
         return _fk.getSuggestedColumns();
     }
+
+    // default is to render a multi-selection form input
+    public boolean isMultiSelectInput()
+    {
+        return true;
+    }
 }

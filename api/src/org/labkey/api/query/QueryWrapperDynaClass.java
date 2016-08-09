@@ -42,7 +42,7 @@ public class QueryWrapperDynaClass extends StringWrapperDynaClass
         Map<String, Class> propMap = new CaseInsensitiveHashMap<>();
         for (ColumnInfo column : table.getColumns())
         {
-            boolean multiValued = column.getFk() instanceof MultiValuedForeignKey;
+            boolean multiValued = column.getFk() instanceof MultiValuedForeignKey && ((MultiValuedForeignKey)column.getFk()).isMultiSelectInput();
             if (multiValued)
                 propMap.put(_form.getFormFieldName(column), arrayClass(column.getJavaClass()));
             else
