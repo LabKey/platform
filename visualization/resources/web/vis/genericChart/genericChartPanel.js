@@ -547,7 +547,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     apply: function(panel, values)
                     {
                         // note: this event will only fire if a change was made in the Chart Type panel
-                        this.options = values;
+                        this.ensureChartLayoutOptions();
                         this.renderChart();
                         this.getChartLayoutWindow().hide();
                     }
@@ -625,9 +625,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     ensureChartLayoutOptions : function()
     {
-        // make sure that we have the latest chart layout panel values, note: this will get the initial default values
-        // if the user has not yet opened the chart layout dialog
-        this.options = this.getChartLayoutPanel().getValues();
+        // Make sure that we have the latest chart layout panel values.
+        // This will get the initial default values if the user has not yet opened the chart layout dialog.
+        // This will also preserve the developer pointClickFn if the user is not a developer.
+        Ext4.apply(this.options, this.getChartLayoutPanel().getValues());
     },
 
     setRenderType : function(newRenderType)
@@ -877,17 +878,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
 
         if (this.options.developer)
-        {
             config.measures.pointClickFn = this.options.developer.pointClickFn;
-        }
 
-        if (this.curveFit) {
+        if (this.curveFit)
             config.curveFit = this.curveFit;
-        }
 
-        if (this.getCustomChartOptions) {
+        if (this.getCustomChartOptions)
             config.customOptions = this.getCustomChartOptions();
-        }
 
         return config;
     },
@@ -1418,6 +1415,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.addWarningText("The data limit for plotting has been reached. Consider filtering your data.");
         }
 
+        this.validateMeasures();
+
         if (!this.validateXAxis(chartType, chartConfig, aes, scales, this.chartData.rows)) {
             return;
         }
@@ -1589,6 +1588,32 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             this.measures.x = measure.data ? measure.data : measure;
             this.getChartLayoutPanel().onMeasuresChange(this.measures);
+        }
+    },
+
+    validateMeasures: function()
+    {
+        // Checks to make sure the grouping measures are still available, if not we show an error.
+        var store = this.getChartTypePanel().getStore();
+
+        if (this.measures.color && store.find('name', this.measures.color.name, null, null, null, true) === -1)
+        {
+            this.addWarningText(
+                '<p style="color: red; text-align: center;">The saved color measure, "' +
+                this.measures.color.label + '", is not available. It may have been deleted or renamed. </p>'
+            );
+
+            delete this.measures.color;
+        }
+
+        if (this.measures.shape && store.find('name', this.measures.shape.name, null, null, null, true) === -1)
+        {
+            this.addWarningText(
+                '<p style="color: red; text-align: center;">The saved shape measure, "' +
+                this.measures.shape.label + '", is not available. It may have been deleted or renamed. </p>'
+            );
+
+            delete this.measures.shape;
         }
     },
 

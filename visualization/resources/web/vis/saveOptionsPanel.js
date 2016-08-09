@@ -7,6 +7,7 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
 
     extend : 'LABKEY.vis.ChartWizardPanel',
 
+    cls: 'chart-wizard-panel save-chart-panel',
     mainTitle: 'Save',
     border: false,
     height: 475,
