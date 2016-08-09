@@ -136,6 +136,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         PropertyService.get().registerValidatorKind(new RangeValidator());
         PropertyService.get().registerValidatorKind(new LookupValidator());
         PropertyService.get().registerValidatorKind(new LengthValidator());
+
+        ExperimentService.get().registerExperimentDataHandler(new DefaultExperimentDataHandler());
     }
 
     public boolean hasScripts()
@@ -265,7 +267,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 return Collections.singleton(ExperimentRunType.ALL_RUNS_TYPE);
             }
         });
-        ExperimentService.get().registerExperimentDataHandler(new DefaultExperimentDataHandler());
         ExperimentService.get().registerDataType(new LogDataType());
 
         AuditLogService.registerAuditType(new DomainAuditProvider());
