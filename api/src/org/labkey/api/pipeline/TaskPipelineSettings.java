@@ -145,6 +145,7 @@ public class TaskPipelineSettings
     /**
      *
      * @return For pipelines which integrate with workflows, the workflow to use.
+     * Of the form "processKey" or "moduleName:processKey"
      */
     public String getWorkflowProcessKey()
     {

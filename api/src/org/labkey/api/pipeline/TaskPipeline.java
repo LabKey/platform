@@ -51,8 +51,13 @@ public interface TaskPipeline<SettingsType extends TaskPipelineSettings>
 
     /**
      * For pipelines integrated with workflows, the correct workflow process to use.
-     * @return
      */
     @Nullable
     String getWorkflowProcessKey();
+
+    /**
+     * For pipelines integrated with workflows, the module in which the workflow process is defined.
+     */
+    @Nullable
+    String getWorkflowProcessModule();
 }
