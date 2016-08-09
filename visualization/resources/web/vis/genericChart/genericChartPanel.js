@@ -6,7 +6,7 @@
 LABKEY.requiresCss("_images/icons.css");
 LABKEY.requiresCss("dataview/DataViewsPanel.css"); // TODO can these be removed once we convert to new chart wizard?
 
-LABKEY.vis.USE_NEW_CHART_WIZARD = false;
+LABKEY.vis.USE_NEW_CHART_WIZARD = true;
 
 Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
