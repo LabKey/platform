@@ -2844,7 +2844,7 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
 * @memberOf LABKEY.Query.FieldMetaData#
 * @field
 * @name    friendlyType
-* @description A friendlier, more verbose description of the type, like "Text (String)" or "Date and time"
+* @description A friendlier, more verbose description of the type, like "Text (String)" or "Date and Time"
 * @type    String
 */
 
