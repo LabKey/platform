@@ -1594,27 +1594,20 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     validateMeasures: function()
     {
         // Checks to make sure the grouping measures are still available, if not we show an error.
-        var store = this.getChartTypePanel().getStore();
-
-        if (this.measures.color && store.find('name', this.measures.color.name, null, null, null, true) === -1)
+        var propsToCheck = ['color', 'shape'],
+            store = this.getChartTypePanel().getStore();
+        Ext4.each(propsToCheck, function(propName)
         {
-            this.addWarningText(
-                '<p style="color: red; text-align: center;">The saved color measure, "' +
-                this.measures.color.label + '", is not available. It may have been deleted or renamed. </p>'
-            );
+            if (this.measures[propName] && store.find('name', this.measures[propName].name, null, null, null, true) === -1)
+            {
+                this.addWarningText(
+                    '<div class="labkey-error" style="text-align: center;">The saved ' + propName + ' measure, "' +
+                    this.measures[propName].label + '", is not available. It may have been deleted or renamed. </div>'
+                );
 
-            delete this.measures.color;
-        }
-
-        if (this.measures.shape && store.find('name', this.measures.shape.name, null, null, null, true) === -1)
-        {
-            this.addWarningText(
-                '<p style="color: red; text-align: center;">The saved shape measure, "' +
-                this.measures.shape.label + '", is not available. It may have been deleted or renamed. </p>'
-            );
-
-            delete this.measures.shape;
-        }
+                delete this.measures[propName];
+            }
+        }, this);
     },
 
     validateYAxis : function(chartType, chartConfig, aes, scales, data)
