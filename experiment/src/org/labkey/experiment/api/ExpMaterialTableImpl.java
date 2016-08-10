@@ -312,7 +312,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             nameCol.setReadOnly(true);
             nameCol.setShownInInsertView(false);
         }
-        addColumn(Column.Alias).setHidden(true);
+        //addColumn(Column.Alias).setHidden(true);
 
         ColumnInfo typeColumnInfo = addColumn(Column.SampleSet);
         typeColumnInfo.setFk(new LookupForeignKey("lsid")

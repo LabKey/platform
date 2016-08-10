@@ -1454,13 +1454,14 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     @Override
     public Pair<Set<ExpData>, Set<ExpMaterial>> getParents(ExpProtocolOutput start)
     {
-        Pair<Set<ExpData>, Set<ExpMaterial>> newHotness   = getParentsNewHotness(start);
-
-        Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted = null;
-        assert null != (oldAndBusted = getParentsOldAndBusted(start));
-        assert assertLineage(start, newHotness, oldAndBusted);
-
-        return newHotness;
+//        Pair<Set<ExpData>, Set<ExpMaterial>> newHotness   = getParentsNewHotness(start);
+//
+//        Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted = null;
+//        assert null != (oldAndBusted = getParentsOldAndBusted(start));
+//        assert assertLineage(start, newHotness, oldAndBusted);
+//
+//        return newHotness;
+        return getParentsOldAndBusted(start);
     }
 
     // Make boolean so it can hide behind 'assert' and no-op in production mode
@@ -1558,13 +1559,14 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     @Override
     public Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(ExpProtocolOutput start)
     {
-        Pair<Set<ExpData>, Set<ExpMaterial>> newHotness   = getChildrenNewHotness(start);
-
-        Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted = null;
-        assert null != (oldAndBusted = getChildrenOldAndBusted(start));
-        assert assertLineage(start, newHotness, oldAndBusted);
-
-        return newHotness;
+//        Pair<Set<ExpData>, Set<ExpMaterial>> newHotness   = getChildrenNewHotness(start);
+//
+//        Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted = null;
+//        assert null != (oldAndBusted = getChildrenOldAndBusted(start));
+//        assert assertLineage(start, newHotness, oldAndBusted);
+//
+//        return newHotness;
+        return getChildrenOldAndBusted(start);
     }
 
 
