@@ -450,7 +450,7 @@ LABKEY.Utils = new function()
          */
         requiresScript : function(file, callback, scope, inOrder)
         {
-            LABKEY.requiresScript.call(this, arguments);
+            LABKEY.requiresScript.apply(this, arguments);
         },
 
         /**

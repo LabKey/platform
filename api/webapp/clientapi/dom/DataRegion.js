@@ -104,6 +104,13 @@ if (!LABKEY.DataRegions) {
             'render',
         /**
          * @memberOf LABKEY.DataRegion.prototype
+         * @name selectchange
+         * @event
+         * @description Fires when data region selection changes.
+         */
+            'selectchange',
+        /**
+         * @memberOf LABKEY.DataRegion.prototype
          * @name success
          * @event
          * @description Fires when data region loads successfully.
@@ -458,10 +465,23 @@ if (!LABKEY.DataRegions) {
             var me = this;
             if (config.listeners) {
                 var scope = config.listeners.scope || me;
-                $.each(config.listeners, function(event, func) {
+                $.each(config.listeners, function(event, handler) {
                     if ($.inArray(event, VALID_LISTENERS) > -1) {
-                        $(me).bind(event, function () {
-                            func.apply(scope, $(arguments).slice(1));
+
+                        // support either "event: function" or "event: { fn: function }"
+                        var callback;
+                        if ($.isFunction(handler)) {
+                            callback = handler;
+                        }
+                        else if ($.isFunction(handler.fn)) {
+                            callback = handler.fn;
+                        }
+                        else {
+                            throw 'Unsupported listener configuration: ' + event;
+                        }
+
+                        $(me).bind(event, function() {
+                            callback.apply(scope, $(arguments).slice(1));
                         });
                     }
                     else if (event != 'scope') {
