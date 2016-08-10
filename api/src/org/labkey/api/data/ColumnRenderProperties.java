@@ -584,9 +584,11 @@ public abstract class ColumnRenderProperties implements ImportAliasable
                 else
                     return Long.TYPE;
             case Types.TIMESTAMP:
+                return java.sql.Timestamp.class;
             case Types.TIME:
+                return java.sql.Time.class;
             case Types.DATE:
-                return java.util.Date.class;
+                return java.sql.Date.class;
             case Types.VARCHAR:
             case Types.CHAR:
             case Types.LONGVARCHAR:
@@ -617,6 +619,8 @@ public abstract class ColumnRenderProperties implements ImportAliasable
             return "Long Integer";
         else if (javaClass.equals(File.class))
             return "File";
+        else if (java.sql.Date.class.isAssignableFrom(javaClass))
+            return "Date";
         else if (Date.class.isAssignableFrom(javaClass))
             return "Date and Time";
         else

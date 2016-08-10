@@ -16,6 +16,7 @@
 package org.labkey.api.exp.property;
 
 import java.io.File;
+import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
@@ -34,7 +35,7 @@ public enum Type
     LongType("Long", "xsd:long", "bigint", Long.class, long.class),
     DoubleType("Number (Double)", "xsd:double", "double", Double.class, Double.TYPE), // Double.TYPE is here because manually created datasets with required doubles return Double.TYPE as Class
     FloatType("Number (Float)", "xsd:float", "float", Float.class, Float.TYPE),
-    DateTimeType("DateTime", "xsd:dateTime", "timestamp", Date.class),
+    DateTimeType("DateTime", "xsd:dateTime", "timestamp", Date.class, Timestamp.class, java.sql.Time.class, java.sql.Date.class),
     BooleanType("Boolean", "xsd:boolean", "boolean", Boolean.class, Boolean.TYPE),
     AttachmentType("Attachment", "xsd:attachment", "varchar", String.class, File.class);
 
@@ -84,16 +85,6 @@ public enum Type
         return this == IntType || this == DoubleType;
     }
 
-    public static Type getTypeByLabel(String label)
-    {
-        for (Type type : values())
-        {
-            if (type.getLabel().equals(label))
-                return type;
-        }
-        return null;
-    }
-
     public static Type getTypeByXsdType(String xsd)
     {
         for (Type type : values())
@@ -109,16 +100,6 @@ public enum Type
         for (Type type : values())
         {
             if (type.matches(clazz))
-                return type;
-        }
-        return null;
-    }
-
-    public static Type getTypeBySqlTypeName(String sqlTypeName)
-    {
-        for (Type type : values())
-        {
-            if (type.getSqlTypeName().equals(sqlTypeName))
                 return type;
         }
         return null;

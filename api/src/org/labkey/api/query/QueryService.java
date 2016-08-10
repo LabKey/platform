@@ -121,7 +121,7 @@ abstract public class QueryService
                                                   String metadata, String tables, String template);
     abstract public void deleteLinkedSchema(User user, Container container, String name);
 
-    abstract public void writeTables(Container c, User user, VirtualFile dir, Map<String, List<Map<String, Object>>> schemas, ColumnHeaderType header) throws Exception;
+    abstract public void writeTables(Container c, User user, VirtualFile dir, Map<String, List<Map<String, Object>>> schemas, ColumnHeaderType header) throws IOException;
 
     /**
      * Get the list of custom views.

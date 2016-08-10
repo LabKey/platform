@@ -25,15 +25,16 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
-import org.springframework.validation.FieldError;
 
 import javax.servlet.ServletException;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.Date;
 
 public class TableViewFormTestCase extends Assert
@@ -50,7 +51,7 @@ public class TableViewFormTestCase extends Assert
         //Test date handling
         tf.set("datetimeNotNull", "2004-06-20");
         Date dt = (Date) tf.getTypedValue("datetimeNotNull");
-        Assert.assertTrue("Date get", dt.equals(new Date("6/20/2004")));
+        Assert.assertTrue("Date get", dt.equals(new Timestamp(DateUtil.parseISODateTime("2004-06-20"))));
 
         //Should turn empty strings into nulls
         tf.set("text", "");
