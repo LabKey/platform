@@ -213,6 +213,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             editMode: this.manageView,
             searchVal: '',
             _height: null,
+            _useDynamicHeight: true,
             editInfo: {},
             store: null,
             centerPanel: null,
@@ -331,6 +332,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         if (json.webpart) {
             this._height = parseInt(json.webpart.height);
             this.setHeight(this._height);
+            this._useDynamicHeight = (json.webpart.useDynamicHeight === 'true');
         }
         this.dateFormat = LABKEY.extDefaultDateFormat;
         this.dateRenderer = Ext4.util.Format.dateRenderer(this.dateFormat);
@@ -807,7 +809,41 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         };
     },
 
+    getCalculatedPanelHeight: function () {
+
+        var count = 0;
+        var heightSize;
+        var dataViewPanelHeaderSize = 125;
+        var heightPerRecord = 25;
+        var recs = this.store.tree.treeStore.getRootNode().childNodes;
+
+        // will calculate height to include both hidden and non hidden views. This will make the height be
+        // a bit big if their are many hidden views.
+        Ext4.each(recs, function (rec)
+                {
+                    count++;
+                    count += rec.childNodes.length;
+                }
+        );
+        heightSize = count * heightPerRecord + dataViewPanelHeaderSize;
+        if (heightSize > 3000) {
+            heightSize = 3000;
+        }
+        if (heightSize < 200) {
+            heightSize = 200;
+        }
+        return heightSize;
+    }, 
+    
     onViewLoad : function() {
+
+        if(this._useDynamicHeight) {
+            // use daynamic height calcuated from number of rows in results set
+            this.setHeight(this.getCalculatedPanelHeight());
+        } else {
+            // use fixdd height the user specified
+            this.setHeight(this._height);
+        }
         this.getCenter().getEl().unmask();
         this.hiddenFilter(10);
     },
@@ -894,6 +930,10 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             this._displayCustomMode(json);
         };
 
+        if (this.getHeight() < 260) {
+            // temporarily make the height bigger so the admin panel will completely show
+            this.setHeight(260)
+        }
         this.customMode = true;
         var north = this.getNorth();
         north.show(null, function() {
@@ -903,12 +943,18 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
     },
 
     onDisableCustomMode : function() {
+
         if (this.customPanel && this.customPanel.isVisible()) {
             this.getNorth().hide();
         }
-
+        if(this._useDynamicHeight) {
+            // use daynamic height calcuated from number of rows in results set
+            this.setHeight(this.getCalculatedPanelHeight());
+        } else {
+            // use fixdd height the user specified
+            this.setHeight(this._height);
+        }
         this.customMode = false;
-
         this.hiddenFilter();
     },
 
@@ -1018,12 +1064,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             cbColumns = [],
             sizeItems = [];
 
-        var heights = {
-            450 : 'small',
-            700 : 'medium',
-            1000 : 'large'
-        };
-
         if (Ext4.isArray(data.types)) {
             for (var i=0; i < data.types.length; i++) {
                 cbItems.push({boxLabel : data.types[i].name, name : data.types[i].name, checked : data.types[i].visible, width: 150, uncheckedValue : '0'});
@@ -1037,27 +1077,43 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             }
         }
 
-        var customSize = true;
-        for (var h in heights) {
-            if (heights.hasOwnProperty(h)) {
-                sizeItems.push({boxLabel : heights[h], name : 'height', inputValue : h, minWidth: 75, checked : false, handler : function(grp){
-                    // this is called for each 'change' -- only bother with true case
-                    if (grp.getValue()) {
-                        this.updateConfig = true;
-                        this._height = parseInt(grp.inputValue); // WATCH OUT : this MUST be an integer.
-                    }
-                }, scope : this});
-                if (this._height == h) {
-                    customSize = false;
-                    sizeItems[sizeItems.length-1].checked = true;
-                }
-            }
-        }
-        // custom height
-        sizeItems.push({boxLabel : 'custom', name : 'height', inputValue : 0, minWidth: 75, checked : customSize, handler : function(grp, chk){
+        // default height is dynamically sized to number of rows
+        sizeItems.push({boxLabel : 'default (dynamic)', name : 'height', inputValue : true, minWidth: 75, checked : this._useDynamicHeight, handler : function(grp, chk){
             var fields = this.query('numberfield');
+
+            if (grp.getValue()) {
+                if (grp.inputValue === true) {
+                    this._useDynamicHeight = true;
+                } else {
+                    this._useDynamicHeight = false;
+                }
+                this.updateConfig = true;
+            }
+            // always show the custom height size selector even when dynamic is selected, but make it disabled
             if (fields && fields.length == 1) {
-                fields[0].setVisible(chk);
+                fields[0].setVisible(true);
+                fields[0].setDisabled(chk);
+            }
+        }, scope : this});
+
+        // custom height
+        sizeItems.push({boxLabel : 'custom', name : 'height', inputValue : 0, minWidth: 75, checked : !this._useDynamicHeight, handler : function(grp, chk){
+            var fields = this.query('numberfield');
+
+            if (grp.getValue())
+            {
+                if (grp.inputValue === 0) {
+                    this._useDynamicHeight = false;
+                }
+                else {
+                    this._useDynamicHeight = true;
+                }
+                this.updateConfig = true;
+            }
+            // always show the custom height size selector, and make it enabled
+            if (fields && fields.length == 1) {
+                fields[0].setVisible(true);
+                fields[0].setDisabled(!chk);
             }
         }, scope : this});
 
@@ -1077,17 +1133,18 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 value      : data.webpart.title ? data.webpart.title : data.webpart.name
             },{
                 xtype      : 'radiogroup',
-                fieldLabel : 'Display',
-                columns    : 3,
-                height     : 61,
+                fieldLabel : 'Display Height',
+                columns    : 2,
+                height     : 40,
+                width      : 300,
                 items      : sizeItems
             },{
                 xtype           : 'numberfield',
-                minValue        : 225,
+                minValue        : 200,
                 maxValue        : 3000,
                 value           : this._height,
-                emptyText       : '225',
-                hidden          : !customSize,
+                emptyText       : '200',
+                disabled        : this._useDynamicHeight,
                 name            : 'height',
                 listeners       : {change: {fn: function (cmp, newValue){
                     this.updateConfig = true;
@@ -1175,6 +1232,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     {
                         var params = form.getValues();
                         params['webpart.height'] = this._height;
+                        params['webpart.useDynamicHeight'] = this._useDynamicHeight;
                         this.getNorth().getEl().mask('Saving...');
                         Ext4.Ajax.request({
                             url    : LABKEY.ActionURL.buildURL('project', 'customizeWebPartAsync.api', null, params),
