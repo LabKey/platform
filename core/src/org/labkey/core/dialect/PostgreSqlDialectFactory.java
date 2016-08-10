@@ -105,7 +105,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
                 if (logWarnings)
                     _log.warn("LabKey Server has not been tested against " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
 
-                return new PostgreSql95Dialect();
+                return new PostgreSql96Dialect();
             }
         }
 
