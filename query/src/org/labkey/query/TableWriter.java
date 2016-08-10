@@ -53,6 +53,7 @@ import org.labkey.query.controllers.QueryController.ExportTablesForm;
 import org.springframework.beans.MutablePropertyValues;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -72,12 +73,12 @@ public class TableWriter
 {
     static final String SCHEMA_FILENAME = "metadata.xml";
 
-    public boolean write(Container c, User user, VirtualFile dir) throws Exception
+    public boolean write(Container c, User user, VirtualFile dir) throws IOException
     {
         return write(c, user, dir, null, null);
     }
 
-    public boolean write(Container c, User user, VirtualFile dir, Map<String, List<Map<String, Object>>> schemas, ColumnHeaderType header) throws Exception
+    public boolean write(Container c, User user, VirtualFile dir, Map<String, List<Map<String, Object>>> schemas, ColumnHeaderType header) throws IOException
     {
         QueryService queryService = QueryService.get();
         List<QueryView> views = new ArrayList<>();
@@ -289,9 +290,8 @@ public class TableWriter
 
     public static class TestCase extends Assert
     {
-
         @Test
-        public void test()
+        public void test() throws IOException
         {
             TestContext testContext = TestContext.get();
             ExportTablesForm form = new ExportTablesForm();
@@ -311,20 +311,13 @@ public class TableWriter
             schemas.put("core", queries);
             form.setSchemas(schemas);
 
-            try
-            {
-                Container container = ContainerManager.getContainerService().getForPath("/");
-                File file = FileUtil.getTempDirectory();
+            Container container = ContainerManager.getContainerService().getForPath("/");
+            File file = FileUtil.getTempDirectory();
 
-                try (ZipFile zip = new ZipFile(file, FileUtil.makeFileNameWithTimestamp("JunitTest", "tables.zip")))
-                {
-                    TableWriter tableWriter = new TableWriter();
-                    tableWriter.write(container, testContext.getUser(), zip, form.getSchemas(), form.getHeaderType());
-                }
-            }
-            catch (Exception e)
+            try (ZipFile zip = new ZipFile(file, FileUtil.makeFileNameWithTimestamp("JunitTest", "tables.zip")))
             {
-                assertTrue(false);
+                TableWriter tableWriter = new TableWriter();
+                tableWriter.write(container, testContext.getUser(), zip, form.getSchemas(), form.getHeaderType());
             }
         }
     }

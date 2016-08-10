@@ -740,7 +740,7 @@ public class QueryServiceImpl extends QueryService
         return ret;
     }
 
-    public void writeTables(Container c, User user, VirtualFile dir, Map<String, List<Map<String, Object>>> schemas, ColumnHeaderType header) throws Exception
+    public void writeTables(Container c, User user, VirtualFile dir, Map<String, List<Map<String, Object>>> schemas, ColumnHeaderType header) throws IOException
     {
         TableWriter writer = new TableWriter();
         writer.write(c, user, dir, schemas, header);
