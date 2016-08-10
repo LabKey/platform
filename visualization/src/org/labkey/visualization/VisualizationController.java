@@ -244,7 +244,7 @@ public class VisualizationController extends SpringActionController
         }
 
         @Override
-        public ActionURL getGenericChartDesignerURL(Container container, User user, @Nullable QuerySettings settings, GenericChartReport.RenderType type)
+        public ActionURL getGenericChartDesignerURL(Container container, User user, @Nullable QuerySettings settings, @Nullable GenericChartReport.RenderType type)
         {
             ActionURL url = getBaseGenericChartURL(container, true);
 
@@ -252,7 +252,11 @@ public class VisualizationController extends SpringActionController
             {
                 addQueryParams(url, container, user, settings);
             }
-            url.addParameter(GenericChartReportDescriptor.Prop.renderType, type.getId());
+
+            if (type != null)
+            {
+                url.addParameter(GenericChartReportDescriptor.Prop.renderType, type.getId());
+            }
 
             return url;
         }
@@ -1237,32 +1241,24 @@ public class VisualizationController extends SpringActionController
     @Action(ActionType.SelectData.class)
     public class GenericChartWizardAction extends SimpleViewAction<GenericReportForm>
     {
-        private GenericChartReport.RenderType _renderType;
-
         @Override
         public ModelAndView getView(GenericReportForm form, BindException errors) throws Exception
         {
             form.setAllowToggleMode(true);
-            _renderType = GenericChartReport.getRenderType(form.getRenderType());
+            form.setComponentId("generic-report-panel-" + UniqueID.getRequestScopedUID(getViewContext().getRequest()));
 
-            if (_renderType != null)
+            JspView view = new JspView<>("/org/labkey/visualization/views/genericChartWizard.jsp", form);
+            view.setTitle("Create Chart");
+            view.setFrame(WebPartView.FrameType.PORTAL);
+
+            if (getViewContext().hasPermission(InsertPermission.class))
             {
-                form.setComponentId("generic-report-panel-" + UniqueID.getRequestScopedUID(getViewContext().getRequest()));
-                JspView view = new JspView<>("/org/labkey/visualization/views/genericChartWizard.jsp", form);
-
-                view.setTitle(_renderType.getName());
-                view.setFrame(WebPartView.FrameType.PORTAL);
-
-                if (getViewContext().hasPermission(InsertPermission.class))
-                {
-                    NavTree menu = new NavTree();
-                    menu.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
-                    view.setNavMenu(menu);
-                }
-                return view;
+                NavTree menu = new NavTree();
+                menu.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
+                view.setNavMenu(menu);
             }
-            else
-                return new HtmlView("No renderer for specified type: " + PageFlowUtil.filter(form.getRenderType()));
+
+            return view;
         }
 
         @Override

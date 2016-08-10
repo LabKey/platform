@@ -201,7 +201,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 },
                 activeItem: 0,
                 items: [this.getViewPanel(), this.getDataPanel()],
-                tbar: this.initTbarItems()
+                dockedItems: [this.getTopButtonBar()]
             });
         }
 
@@ -400,6 +400,19 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
 
         return this.editBtn;
+    },
+
+    getTopButtonBar : function()
+    {
+        if (!this.topButtonBar)
+        {
+            this.topButtonBar = Ext4.create('Ext.toolbar.Toolbar', {
+                dock: 'top',
+                items: this.initTbarItems()
+            });
+        }
+
+        return this.topButtonBar;
     },
 
     initTbarItems : function()
@@ -750,6 +763,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 });
 
                 // Issue 18157
+                this.getExportBtn().disable();
                 this.getChartTypeBtn().disable();
                 this.getChartLayoutBtn().disable();
                 this.getToggleViewBtn().disable();
@@ -1356,8 +1370,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     renderPlot : function(forExport)
     {
-        if (this.viewPanel.isHidden()) {
-            // Don't attempt to render if the view panel isn't visible.
+        // Don't attempt to render if the view panel isn't visible or the chart type window is visible.
+        if (this.viewPanel.isHidden() || this.getChartTypeWindow().isVisible()) {
             return;
         }
 
@@ -1416,14 +1430,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
 
         this.validateMeasures();
-
-        if (!this.validateXAxis(chartType, chartConfig, aes, scales, this.chartData.rows)) {
+        if (!this.validateAxisMeasure(chartType, chartConfig, 'x', aes, scales, this.chartData.rows))
             return;
-        }
-
-        if (!this.validateYAxis(chartType, chartConfig, aes, scales, this.chartData.rows)) {
+        if (!this.validateAxisMeasure(chartType, chartConfig, 'y', aes, scales, this.chartData.rows))
             return;
-        }
 
         if (this.warningText !== null) {
             height = height - 15;
@@ -1491,6 +1501,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         if (!forExport)
         {
+            this.getTopButtonBar().enable();
+
             this.getChartTypeBtn().enable();
             this.getChartLayoutBtn().enable();
             this.getSaveBtn().enable();
@@ -1610,9 +1622,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }, this);
     },
 
-    validateYAxis : function(chartType, chartConfig, aes, scales, data)
+    validateAxisMeasure : function(chartType, chartConfig, measureName, aes, scales, data)
     {
-        var validation = LABKEY.vis.GenericChartHelper.validateYAxis(chartType, chartConfig, aes, scales, data);
+        var validation = LABKEY.vis.GenericChartHelper.validateAxisMeasure(chartType, chartConfig, measureName, aes, scales, data);
 
         if (validation.success === true)
         {
@@ -1628,42 +1640,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
             if (this.editMode)
             {
-                Ext4.Msg.alert('Error', validation.message, this.showChartTypeWindow, this);
-            }
-            else
-            {
-                this.clearChartPanel();
-                var errorDiv = Ext4.create('Ext.container.Container', {
-                    border: 1,
-                    autoEl: {tag: 'div'},
-                    html: '<h3 style="color:red;">Error rendering chart:</h2>' + validation.message,
-                    autoScroll: true
-                });
-                this.viewPanel.add(errorDiv);
-            }
-
-            return false;
-        }
-    },
-
-    validateXAxis : function(chartType, chartConfig, aes, scales, data)
-    {
-        var validation = LABKEY.vis.GenericChartHelper.validateXAxis(chartType, chartConfig, aes, scales, data);
-
-        if (validation.success === true)
-        {
-            if (validation.message != null)
-                this.addWarningText(validation.message);
-
-            return true;
-        }
-        else
-        {
-            this.getEl().unmask();
-            this.setRenderRequested(false);
-
-            if (this.editMode)
-            {
+                delete this.measures[measureName];
+                this.getChartTypePanel().setToForceApplyChanges();
                 Ext4.Msg.alert('Error', validation.message, this.showChartTypeWindow, this);
             }
             else

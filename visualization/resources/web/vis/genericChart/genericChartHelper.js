@@ -459,9 +459,9 @@ LABKEY.vis.GenericChartHelper = new function(){
     };
 
     /**
-     * Verifies that the x axis is actually present and has data. Also checks to make sure that data can be used in a log
+     * Verifies that the axis measure is actually present and has data. Also checks to make sure that data can be used in a log
      * scale (if applicable). Returns an object with a success parameter (boolean) and a message parameter (string). If the
-     * success pararameter is false there is a critical error and the chart cannot be rendered. If success is true the chart
+     * success parameter is false there is a critical error and the chart cannot be rendered. If success is true the chart
      * can be rendered. Message will contain an error or warning message if applicable. If message is not null and success
      * is true, there is a warning.
      * @param {String} chartType The chartType from getChartType.
@@ -471,113 +471,54 @@ LABKEY.vis.GenericChartHelper = new function(){
      * @param {Array} data The data from selectRows.
      * @returns {Object}
      */
-    var validateXAxis = function(chartType, chartConfig, aes, scales, data){
+    var validateAxisMeasure = function(chartType, chartConfig, measureName, aes, scales, data){
 
         var dataIsNull = true, measureUndefined = true, invalidLogValues = false, hasZeroes = false, message = null;
 
-        for (var i = 0; i < data.length; i ++) {
-            var value = aes.x(data[i]);
+        for (var i = 0; i < data.length; i ++)
+        {
+            var value = aes[measureName](data[i]);
 
-            if (value !== undefined) {
+            if (value !== undefined)
                 measureUndefined = false;
-            }
 
-            if (value !== null) {
+            if (value !== null)
                 dataIsNull = false;
-            }
 
-            if (value && value < 0) {
+            if (value && value < 0)
                 invalidLogValues = true;
-            }
 
-            if (value === 0 ) {
+            if (value === 0 )
                 hasZeroes = true;
-            }
         }
 
-        if (measureUndefined) {
-            message = 'The measure ' + Ext4.util.Format.htmlEncode(chartConfig.measures.x.label) + ' was not found. It may have been renamed or removed.';
+        if (measureUndefined)
+        {
+            message = 'The measure ' + Ext4.util.Format.htmlEncode(chartConfig.measures[measureName].label) + ' was not found. It may have been renamed or removed.';
             return {success: false, message: message};
         }
 
-        if (chartType == "scatter_plot") {
-            if (dataIsNull) {
-                message = 'All data values for ' + Ext4.util.Format.htmlEncode(chartConfig.measures.x.label) + ' are null. Please choose a different measure';
-                return {success: false, message: message};
-            }
-
-            if (scales.x.trans == "log") {
-                if (invalidLogValues) {
-                    message = "Unable to use a log scale on the x-axis. All x-axis values must be >= 0. Reverting to linear scale on x-axis.";
-                    scales.x.trans = 'linear';
-                } else if (hasZeroes) {
-                    message = "Some x-axis values are 0. Plotting all x-axis values as x+1";
-                    var xAcc = aes.x;
-                    aes.x = function(row){return xAcc(row) + 1};
-                }
-            }
-        }
-
-        return {success: true, message: message};
-    };
-
-    /**
-     * Verifies that the y axis is actually present and has data. Also checks to make sure that data can be used in a log
-     * scale (if applicable). Returns an object with a success parameter (boolean) and a message parameter (string). If the
-     * success pararameter is false there is a critical error and the chart cannot be rendered. If success is true the chart
-     * can be rendered. Message will contain an error or warning message if applicable. If message is not null and success
-     * is true, there is a warning.
-     * @param {String} chartType The chartType from getChartType.
-     * @param {Object} chartConfig The saved chartConfig object.
-     * @param {Object} aes The aes object from generateAes.
-     * @param {Object} scales The scales object from generateScales.
-     * @param {Array} data The data from selectRows.
-     * @returns {Object}
-     */
-    var validateYAxis = function(chartType, chartConfig, aes, scales, data){
-
-        var dataIsNull = true, measureUndefined = true, invalidLogValues = false, hasZeroes = false, message = null;
-
-        for (var i = 0; i < data.length; i ++) {
-            var value = aes.y(data[i]);
-
-            if (value !== undefined) {
-                measureUndefined = false;
-            }
-
-            if (value !== null) {
-                dataIsNull = false;
-            }
-
-            if (value && value < 0) {
-                invalidLogValues = true;
-            }
-
-            if (value === 0 ) {
-                hasZeroes = true;
-            }
-        }
-
-        if (dataIsNull) {
-            message = 'All data values for ' + Ext4.util.Format.htmlEncode(chartConfig.measures.y.label) + ' are null. Please choose a different measure';
+        if ((chartType == 'scatter_plot' || measureName == 'y') && dataIsNull)
+        {
+            message = 'All data values for ' + Ext4.util.Format.htmlEncode(chartConfig.measures[measureName].label) + ' are null. Please choose a different measure';
             return {success: false, message: message};
         }
 
-        if (measureUndefined) {
-            message = 'The measure ' + Ext4.util.Format.htmlEncode(chartConfig.measures.y.label) + ' was not found. It may have been renamed or removed.';
-            return {success: false, message: message};
-        }
-
-        if (scales.y.trans == "log") {
-            if (invalidLogValues) {
+        if (scales[measureName] && scales[measureName].trans == "log")
+        {
+            if (invalidLogValues)
+            {
                 message = "Unable to use a log scale on the y-axis. All y-axis values must be >= 0. Reverting to linear scale on y-axis.";
-                scales.y.trans = 'linear';
-            } else if (hasZeroes) {
-                message = "Some y-axis values are 0. Plotting all y-axis values as y+1";
-                var yAcc = aes.y;
-                aes.y = function(row){return yAcc(row) + 1};
+                scales[measureName].trans = 'linear';
+            }
+            else if (hasZeroes)
+            {
+                message = "Some " + measureName + "-axis values are 0. Plotting all " + measureName + "-axis values as value+1";
+                var accFn = aes[measureName];
+                aes[measureName] = function(row){return accFn(row) + 1};
             }
         }
+
         return {success: true, message: message};
     };
 
@@ -600,8 +541,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         generateGeom: generateGeom,
         generateBoxplotGeom: generateBoxplotGeom,
         generatePointGeom: generatePointGeom,
-        validateXAxis: validateXAxis,
-        validateYAxis: validateYAxis,
+        validateAxisMeasure: validateAxisMeasure,
         /**
          * Loads all of the required dependencies for a Generic Chart.
          * @param {Function} callback The callback to be executed when all of the visualization dependencies have been loaded.

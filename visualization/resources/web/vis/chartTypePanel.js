@@ -9,6 +9,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
     requiredFieldNames: null,
     restrictColumnsEnabled: false,
     customRenderTypes: null,
+    forceApplyChanges: false,
 
     initComponent : function()
     {
@@ -392,9 +393,19 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
         return this.applyButton;
     },
 
+    setToForceApplyChanges : function()
+    {
+        this.forceApplyChanges = true;
+    },
+
     hasSelectionsChanged : function(newValues)
     {
-        if (Ext4.isObject(this.initValues) && Ext4.isObject(newValues))
+        if (this.forceApplyChanges)
+        {
+            this.forceApplyChanges = false;
+            return true;
+        }
+        else if (Ext4.isObject(this.initValues) && Ext4.isObject(newValues))
         {
             if (this.initValues.type != newValues.type)
                 return true;

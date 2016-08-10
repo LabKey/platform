@@ -52,7 +52,7 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "        var scales = gch.generateScales(chartType, chartConfig.measures, chartConfig.scales, aes, responseData);\n" +
             "        var labels = gch.generateLabels(chartConfig.labels);\n" +
             "        var messages = [];\n" +
-            "        var validation = gch.validateXAxis(chartType, chartConfig, aes, scales, responseData.rows);\n" +
+            "        var validation = gch.validateAxisMeasure(chartType, chartConfig, 'x', aes, scales, responseData.rows);\n" +
             "        \n" +
             "        if (validation.message != null) {\n" +
             "            messages.push(validation.message);\n" +
@@ -63,7 +63,7 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "            return;\n" +
             "        }\n" +
             "\n" +
-            "        validation = gch.validateYAxis(chartType, chartConfig, aes, scales, responseData.rows);\n" +
+            "        validation = gch.validateAxisMeasure(chartType, chartConfig, 'y', aes, scales, responseData.rows);\n" +
             "\n" +
             "        if (validation.message != null) {\n" +
             "            messages.push(validation.message);\n" +
