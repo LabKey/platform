@@ -36,6 +36,7 @@ import java.util.Set;
 public interface ProteinService
 {
     int ensureProtein(String sequence, String organism, String name, String description);
+    int ensureProtein(String sequence, int orgId, String name, String description);
 
     /**
      *
