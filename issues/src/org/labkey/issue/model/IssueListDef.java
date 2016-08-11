@@ -20,6 +20,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.issues.AbstractIssuesListDefDomainKind;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
@@ -131,9 +132,9 @@ public class IssueListDef extends Entity
         return PropertyService.get().getDomain(getDomainContainer(user), uri);
     }
 
-    private static String generateDomainURI(Container c, User user, String name, String kind)
+    private static String generateDomainURI(Container c, User user, String name, String kindName)
     {
-        DomainKind domainKind = PropertyService.get().getDomainKindByName(IssueDefDomainKind.NAME);
+        DomainKind domainKind = PropertyService.get().getDomainKindByName(kindName);
         return domainKind.generateDomainURI(IssuesSchema.getInstance().getSchemaName(), name, c, user);
     }
 
@@ -158,7 +159,7 @@ public class IssueListDef extends Entity
             {
                 try
                 {
-                    IssueDefDomainKind domainKind = (IssueDefDomainKind)PropertyService.get().getDomainKindByName(getDomainKindName(getKind()));
+                    AbstractIssuesListDefDomainKind domainKind = (AbstractIssuesListDefDomainKind)PropertyService.get().getDomainKindByName(getDomainKindName(getKind()));
                     domainKind.createLookupDomains(domainContainer, user, getName());
                     domain = PropertyService.get().createDomain(getDomainContainer(user), uri, getName());
 
@@ -224,7 +225,7 @@ public class IssueListDef extends Entity
         return null;
     }
 
-    private void ensureDomainProperties(Domain domain, IssueDefDomainKind domainKind, Collection<PropertyStorageSpec> requiredProps,
+    private void ensureDomainProperties(Domain domain, AbstractIssuesListDefDomainKind domainKind, Collection<PropertyStorageSpec> requiredProps,
                                         Set<PropertyStorageSpec.ForeignKey> foreignKeys) throws ExperimentException
     {
         String typeUri = domain.getTypeURI();

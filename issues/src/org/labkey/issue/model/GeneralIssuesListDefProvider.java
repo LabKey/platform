@@ -1,7 +1,7 @@
 package org.labkey.issue.model;
 
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.issues.AbstractIssuesListDefDomainKind;
 import org.labkey.api.issues.IssuesListDefProvider;
 import org.labkey.issue.query.IssueDefDomainKind;
 
@@ -22,8 +22,8 @@ public class GeneralIssuesListDefProvider implements IssuesListDefProvider
     {
         return "General purpose issue tracker";
     }
-    public AbstractIssuesListDefDomainKind getDomainKind()
+    public DomainKind getDomainKind()
     {
-        return (IssueDefDomainKind)PropertyService.get().getDomainKindByName(IssueDefDomainKind.NAME);
+        return PropertyService.get().getDomainKindByName(IssueDefDomainKind.NAME);
     }
 }
