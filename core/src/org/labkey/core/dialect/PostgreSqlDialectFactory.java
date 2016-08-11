@@ -145,7 +145,8 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
             good("PostgreSQL", 9.2, 9.3, "", PostgreSql92Dialect.class);
             good("PostgreSQL", 9.3, 9.4, "", PostgreSql93Dialect.class);
             good("PostgreSQL", 9.4, 9.5, "", PostgreSql94Dialect.class);
-            good("PostgreSQL", 9.5, 11.0, "", PostgreSql95Dialect.class);
+            good("PostgreSQL", 9.5, 9.6, "", PostgreSql95Dialect.class);
+            good("PostgreSQL", 9.6, 11.0, "", PostgreSql96Dialect.class);
         }
     }
 
