@@ -256,7 +256,7 @@ public abstract class StudyManualTest extends StudyTest
         clickButton("Save");
         waitForElement(Locator.lkButton("View Data"), WAIT_FOR_JAVASCRIPT);
         clickButton("View Data");
-        DataRegionTable.findDataRegion(this).clickHeaderButton("Insert", "Import Data");
+        DataRegionTable.findDataRegion(this).clickHeaderMenu("Insert", "Import Data");
 
         String errorRow = "\tbadvisitd\t1/1/2006\t\ttext\t";
         setFormElement(Locator.name("text"), _tsv + "\n" + errorRow);

@@ -64,7 +64,7 @@ public class ShowExceptionsPage extends BaseMothershipPage
 
         public void assignSelectedTo(String assignTo)
         {
-            clickHeaderButton("Assign To", true, assignTo);
+            clickHeaderMenu("Assign To", true, assignTo);
         }
     }
 }

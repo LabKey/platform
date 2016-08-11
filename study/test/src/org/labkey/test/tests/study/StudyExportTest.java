@@ -16,7 +16,6 @@
 
 package org.labkey.test.tests.study;
 
-import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.Timeout;
 import org.labkey.test.Locator;
@@ -444,7 +443,7 @@ public class StudyExportTest extends StudyManualTest
         assertTextPresent("2001-11-11");
 
         log("Test adding a row to a dataset");
-        DataRegionTable.findDataRegion(this).clickHeaderButton("Insert", "Insert New");
+        DataRegionTable.findDataRegion(this).clickHeaderMenu("Insert", "Insert New");
         clickButton("Submit");
         assertTextPresent("This field is required");
         setFormElement(Locator.name("quf_MouseId"), TEST_ADD_ENTRY);

@@ -465,13 +465,13 @@ public class CohortTest extends BaseWebDriverTest
         _customizeViewsHelper.clipFilter(AdvancedCohortType.CURRENT.fieldKey());
         _customizeViewsHelper.saveCustomView("CurrentNegative", true);
 
-        DataRegionTable.findDataRegion(this).clickHeaderButton("Grid Views", "default");
+        DataRegionTable.findDataRegion(this).clickHeaderMenu("Grid Views", "default");
         setCohortFilter("Negative", AdvancedCohortType.INITIAL); // 16 rows
         _customizeViewsHelper.openCustomizeViewPanel();
         _customizeViewsHelper.clipFilter(AdvancedCohortType.INITIAL.fieldKey());
         _customizeViewsHelper.saveCustomView("InitialPositive", true);
 
-        DataRegionTable.findDataRegion(this).clickHeaderButton("Grid Views", "default");
+        DataRegionTable.findDataRegion(this).clickHeaderMenu("Grid Views", "default");
         setCohortFilter("Positive", AdvancedCohortType.DATA_COLLECTION); // 6 rows
         _customizeViewsHelper.openCustomizeViewPanel();
         _customizeViewsHelper.clipFilter(AdvancedCohortType.DATA_COLLECTION.fieldKey());
@@ -479,14 +479,14 @@ public class CohortTest extends BaseWebDriverTest
 
 
         log("Verify saved cohort filtered views");
-        DataRegionTable.findDataRegion(this).clickHeaderButton("Grid Views", "CurrentNegative");
+        DataRegionTable.findDataRegion(this).clickHeaderMenu("Grid Views", "CurrentNegative");
         DataRegionTable dataset = new DataRegionTable("Dataset", getDriver());
         assertEquals("Unexpected row count", 4, dataset.getDataRowCount());
 
-        DataRegionTable.findDataRegion(this).clickHeaderButton("Grid Views", "InitialPositive");
+        DataRegionTable.findDataRegion(this).clickHeaderMenu("Grid Views", "InitialPositive");
         assertEquals("Unexpected row count", 16, dataset.getDataRowCount());
 
-        DataRegionTable.findDataRegion(this).clickHeaderButton("Grid Views", "DataCollectionPositive");
+        DataRegionTable.findDataRegion(this).clickHeaderMenu("Grid Views", "DataCollectionPositive");
         assertEquals("Unexpected row count", 6, dataset.getDataRowCount());
     }
 
@@ -532,7 +532,7 @@ public class CohortTest extends BaseWebDriverTest
 
         if (enrolledMenu)
         {
-            DataRegionTable.findDataRegion(this).clickHeaderButton("Groups", "Enrolled");
+            DataRegionTable.findDataRegion(this).clickHeaderMenu("Groups", "Enrolled");
             assertTextPresent("Current cohort is enrolled or unassigned");
             assertEquals(enrolledRowCount, table.getDataRowCount());
         }
@@ -546,15 +546,15 @@ public class CohortTest extends BaseWebDriverTest
     {
         DataRegionTable table = verifyUnfilteredDataset(datasetName, allRowCount);
 
-        DataRegionTable.findDataRegion(this).clickHeaderButton("Groups", "Enrolled", AdvancedCohortType.INITIAL.toString());
+        DataRegionTable.findDataRegion(this).clickHeaderMenu("Groups", "Enrolled", AdvancedCohortType.INITIAL.toString());
         assertTextPresent("Initial cohort is enrolled or unassigned");
         assertEquals(initialRowCount, table.getDataRowCount());
 
-        DataRegionTable.findDataRegion(this).clickHeaderButton("Groups", "Enrolled", AdvancedCohortType.CURRENT.toString());
+        DataRegionTable.findDataRegion(this).clickHeaderMenu("Groups", "Enrolled", AdvancedCohortType.CURRENT.toString());
         assertTextPresent("Current cohort is enrolled or unassigned");
         assertEquals(currentRowCount, table.getDataRowCount());
 
-        DataRegionTable.findDataRegion(this).clickHeaderButton("Groups", "Enrolled", AdvancedCohortType.DATA_COLLECTION.toString());
+        DataRegionTable.findDataRegion(this).clickHeaderMenu("Groups", "Enrolled", AdvancedCohortType.DATA_COLLECTION.toString());
         assertTextPresent("Cohort as of data collection is enrolled or unassigned");
         assertEquals(dataCollectionRowCount, table.getDataRowCount());
     }
@@ -580,7 +580,7 @@ public class CohortTest extends BaseWebDriverTest
         if (enrolledMenu)
         {
             DataRegionTable specimenTable = new DataRegionTable("SpecimenDetail", getDriver());
-            DataRegionTable.findDataRegion(this).clickHeaderButton("Groups", "Enrolled");
+            DataRegionTable.findDataRegion(this).clickHeaderMenu("Groups", "Enrolled");
             verifyVialCount(specimenTable, enrolledRowCount);
         }
         else
@@ -594,13 +594,13 @@ public class CohortTest extends BaseWebDriverTest
         verifyUnfilteredSpecimens(specimenLink, allRowCount);
         DataRegionTable specimenTable = new DataRegionTable("SpecimenDetail", getDriver());
 
-        DataRegionTable.findDataRegion(this).clickHeaderButton("Groups", "Enrolled", AdvancedCohortType.INITIAL.toString());
+        DataRegionTable.findDataRegion(this).clickHeaderMenu("Groups", "Enrolled", AdvancedCohortType.INITIAL.toString());
         verifyVialCount(specimenTable, initialRowCount);
 
-        DataRegionTable.findDataRegion(this).clickHeaderButton("Groups", "Enrolled", AdvancedCohortType.CURRENT.toString());
+        DataRegionTable.findDataRegion(this).clickHeaderMenu("Groups", "Enrolled", AdvancedCohortType.CURRENT.toString());
         verifyVialCount(specimenTable, currentRowCount);
 
-        DataRegionTable.findDataRegion(this).clickHeaderButton("Groups", "Enrolled", AdvancedCohortType.DATA_COLLECTION.toString());
+        DataRegionTable.findDataRegion(this).clickHeaderMenu("Groups", "Enrolled", AdvancedCohortType.DATA_COLLECTION.toString());
         verifyVialCount(specimenTable, dataCollectionRowCount);
     }
 
@@ -713,6 +713,6 @@ public class CohortTest extends BaseWebDriverTest
 
     private void setCohortFilter(String cohort, AdvancedCohortType type)
     {
-        DataRegionTable.findDataRegion(this).clickHeaderButton("Groups", "Cohorts", cohort, type.toString());
+        DataRegionTable.findDataRegion(this).clickHeaderMenu("Groups", "Cohorts", cohort, type.toString());
     }
 }

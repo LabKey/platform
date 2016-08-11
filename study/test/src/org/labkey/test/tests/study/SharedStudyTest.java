@@ -383,7 +383,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         clickAndWait(Locator.linkWithText(SHARED_DEMOGRAPHICS));
 
         DataRegionTable dataset = new DataRegionTable("Dataset", this);
-        dataset.clickHeaderButton(PARTICIPANT_NOUN_SINGULAR + " Groups", mixed_group);
+        dataset.clickHeaderMenu(PARTICIPANT_NOUN_SINGULAR + " Groups", mixed_group);
         Set<String> expectedPtids = new HashSet<>(Arrays.asList(ptids));
         Set<String> actualPtids = new HashSet<>(dataset.getColumnDataAsText("PandaId"));
 

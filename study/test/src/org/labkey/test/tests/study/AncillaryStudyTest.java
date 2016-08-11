@@ -208,7 +208,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         log("Insert rows into source dataset");
         clickFolder(getFolderName());
         clickAndWait(Locator.linkWithText(DATASETS[0]));
-        DataRegionTable.findDataRegion(this).clickHeaderButton("Insert", "Import Data");
+        DataRegionTable.findDataRegion(this).clickHeaderMenu("Insert", "Import Data");
         setFormElement(Locator.name("text"), EXTRA_DATASET_ROWS);
         clickButton("Submit");
 

@@ -856,7 +856,7 @@ public class AssayTest extends AbstractAssayTest
 
         // Set the container filter to include subfolders
         DataRegionTable assayRuns = DataRegionTable.findDataRegionWithinWebpart(this, TEST_ASSAY + " Runs");
-        assayRuns.clickHeaderButton("Grid Views", "Folder Filter", "Current folder and subfolders");
+        assayRuns.clickHeaderMenu("Grid Views", "Folder Filter", "Current folder and subfolders");
 
         assertTextPresent("FirstRun", "SecondRun");
 

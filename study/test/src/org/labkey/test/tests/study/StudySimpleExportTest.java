@@ -138,7 +138,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         _listHelper.addField("Dataset Fields", "TestDateTime", "TestDateTime", ListHelper.ListColumnType.DateTime);
         clickButton("Save");
         clickButton("View Data");
-        DataRegionTable.findDataRegion(this).clickHeaderButton("Insert", "Import Data");
+        DataRegionTable.findDataRegion(this).clickHeaderMenu("Insert", "Import Data");
         waitForElement(Locator.name("text"));
         setFormElement(Locator.name("text"), "ParticipantId\tSequenceNum\tTestInt\tTestDate\nPTID123\t1.0\t999\t2013-10-29\t2013-10-28 01:23");
         clickButton("Submit");
@@ -350,7 +350,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         log("Visit Properties: add dataset record using new visit");
         clickTab("Clinical and Assay Data");
         waitAndClickAndWait(Locator.linkWithText(TEST_DATASET_NAME));
-        DataRegionTable.findDataRegion(this).clickHeaderButton("Insert", "Import Data");
+        DataRegionTable.findDataRegion(this).clickHeaderMenu("Insert", "Import Data");
         waitForElement(Locator.name("text"));
         setFormElement(Locator.name("text"), "ParticipantId\tSequenceNum\nPTID123\t" + visitSeqNumMin);
         clickButton("Submit");
@@ -758,7 +758,7 @@ public class StudySimpleExportTest extends StudyBaseTest
                     continue;
                 
                 waitForText("Insert");
-                DataRegionTable.findDataRegion(this).clickHeaderButton("Insert", "Insert New");
+                DataRegionTable.findDataRegion(this).clickHeaderMenu("Insert", "Insert New");
 
                 populateFormData(row, "quf_");
                 clickButton("Submit");

@@ -343,7 +343,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         waitForElement(Locator.linkWithText(PTIDS[5]));
         assertEquals("Wrong number of rows after filter", 24, dataregion.getDataRowCount());
 
-        dataregion.clickHeaderButton("Groups", false, "Create Mouse Group", "From All Mice");
+        dataregion.clickHeaderMenu("Groups", false, "Create Mouse Group", "From All Mice");
         Window window = Window().withTitle("Define Mouse Group").waitFor(getDriver());
         final WebElement groupLabelInput = Locator.id("groupLabel-inputEl").notHidden().waitForElement(window, 10000);
         setFormElement(groupLabelInput, EXTRA_GROUP);
@@ -357,8 +357,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         // Verify synchronization between URL filters and facet panel
 
         facetPanel = dataregion.openSideFilterPanel();
-        dataregion.doAndWaitForUpdate(() ->
-                dataregion.clickHeaderButton("Groups", false, CATEGORY2, GROUP2A)); // (Category2 = GROUP2A)
+        dataregion.doAndWaitForUpdate(() -> dataregion.clickHeaderMenu("Groups", false, CATEGORY2, GROUP2A)); // (Category2 = GROUP2A)
         assertEquals("Wrong number of rows after URL filter", 2, dataregion.getDataRowCount());
         assertTrue("New group should be selected by default", facetPanel.getCategoryCheckbox(EXTRA_GROUP).isChecked());
 
@@ -369,7 +368,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         waitForElement(Locator.linkWithText(PTIDS[2]));
         assertEquals("Wrong number of rows after filter", 4, dataregion.getDataRowCount());
 
-        dataregion.clickHeaderButton("Groups", false, CATEGORY2, GROUP2B); // (Category2 = GROUP2B)
+        dataregion.clickHeaderMenu("Groups", false, CATEGORY2, GROUP2B);
         waitForElementToDisappear(Locator.linkWithText(PTIDS[1]));
         assertEquals("Wrong number of rows after filter", 2, dataregion.getDataRowCount());
 
