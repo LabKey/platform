@@ -1,5 +1,6 @@
 package org.labkey.api.issues;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.property.Domain;
@@ -11,14 +12,13 @@ import org.labkey.api.exp.property.PropertyService;
  */
 public interface IssuesListDefProvider
 {
-    String SCHEMA_NAME = "issues";
     String getName();
     String getLabel();
     String getDescription();
     default Domain getDomain()
     {
         DomainKind domainKind = getDomainKind();
-        String domainURI = domainKind.generateDomainURI(SCHEMA_NAME, getName(), getDomainContainer(), null);
+        String domainURI = domainKind.generateDomainURI(IssuesSchema.SCHEMA_NAME, getName(), getDomainContainer(), null);
         return PropertyService.get().getDomain(getDomainContainer(), domainURI);
     }
 
@@ -27,6 +27,6 @@ public interface IssuesListDefProvider
         return ContainerManager.getSharedContainer();
     }
 
-    AbstractIssuesListDefDomainKind getDomainKind();
-
+    @Nullable
+    DomainKind getDomainKind();
 }
