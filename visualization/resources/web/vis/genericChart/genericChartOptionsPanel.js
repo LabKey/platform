@@ -323,38 +323,48 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
         if (Ext4.isDefined(chartConfig.position))
             this.setPosition(chartConfig.position);
-        else if (chartConfig.geomOptions.position)
-            this.setPosition(chartConfig.geomOptions.position);
 
         if (Ext4.isDefined(chartConfig.opacity))
             this.setOpacity(chartConfig.opacity);
-        else if (chartConfig.geomOptions.opacity)
-            this.setOpacity(chartConfig.geomOptions.opacity);
 
         if (Ext4.isDefined(chartConfig.pointSize))
             this.setPointSize(chartConfig.pointSize);
-        else if (chartConfig.geomOptions.pointSize)
-            this.setPointSize(chartConfig.geomOptions.pointSize);
 
         if (Ext4.isDefined(chartConfig.pointFillColor))
             this.setPointColor(chartConfig.pointFillColor);
-        else if (chartConfig.geomOptions.pointFillColor)
-            this.setPointColor(chartConfig.geomOptions.pointFillColor);
 
         if (Ext4.isDefined(chartConfig.lineWidth))
             this.setLineWidth(chartConfig.lineWidth);
-        else if (chartConfig.geomOptions.lineWidth)
-            this.setLineWidth(chartConfig.geomOptions.lineWidth);
 
         if (Ext4.isDefined(chartConfig.lineColor))
             this.setLineColor(chartConfig.lineColor);
-        else if (chartConfig.geomOptions.lineColor)
-            this.setLineColor(chartConfig.geomOptions.lineColor);
 
         if (Ext4.isDefined(chartConfig.boxFillColor))
             this.setFillColor(chartConfig.boxFillColor);
-        else if (chartConfig.geomOptions.boxFillColor)
-            this.setFillColor(chartConfig.geomOptions.boxFillColor);
+
+        if (Ext4.isDefined(chartConfig.geomOptions))
+        {
+            if (chartConfig.geomOptions.position)
+                this.setPosition(chartConfig.geomOptions.position);
+
+            if (chartConfig.geomOptions.opacity)
+                this.setOpacity(chartConfig.geomOptions.opacity);
+
+            if (chartConfig.geomOptions.pointSize)
+                this.setPointSize(chartConfig.geomOptions.pointSize);
+
+            if (chartConfig.geomOptions.pointFillColor)
+                this.setPointColor(chartConfig.geomOptions.pointFillColor);
+
+            if (chartConfig.geomOptions.lineWidth)
+                this.setLineWidth(chartConfig.geomOptions.lineWidth);
+
+            if (chartConfig.geomOptions.lineColor)
+                this.setLineColor(chartConfig.geomOptions.lineColor);
+
+            if (chartConfig.geomOptions.boxFillColor)
+                this.setFillColor(chartConfig.geomOptions.boxFillColor);
+        }
 
         this.suppressEvents = false;
     },
@@ -396,7 +406,8 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
     },
 
     setPointColor: function(value){
-        this.pointColorPicker.select(value);
+        if (value != null && value != 'none')
+            this.pointColorPicker.select(value);
     },
 
     getLineWidth: function(){
@@ -412,7 +423,8 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
     },
 
     setLineColor: function(value){
-        this.lineColorPicker.select(value);
+        if (value != null && value != 'none')
+            this.lineColorPicker.select(value);
     },
 
     getFillColor: function(){
@@ -424,9 +436,8 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
     },
 
     setFillColor: function(value){
-        if(value != 'none') {
+        if (value != null && value != 'none')
             this.fillColorPicker.select(value);
-        }
     },
 
     getWidth: function(){

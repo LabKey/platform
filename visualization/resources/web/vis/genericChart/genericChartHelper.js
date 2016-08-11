@@ -522,6 +522,19 @@ LABKEY.vis.GenericChartHelper = new function(){
         return {success: true, message: message};
     };
 
+    /**
+     * Deprecated - use validateAxisMeasure
+     */
+    var validateXAxis = function(chartType, chartConfig, aes, scales, data){
+        return this.validateAxisMeasure(chartType, chartConfig, 'x', aes, scales, data);
+    };
+    /**
+     * Deprecated - use validateAxisMeasure
+     */
+    var validateYAxis = function(chartType, chartConfig, aes, scales, data){
+        return this.validateAxisMeasure(chartType, chartConfig, 'y', aes, scales, data);
+    };
+
     return {
         // NOTE: the @function below is needed or JSDoc will not include the documentation for loadVisDependencies. Don't
         // ask me why, I do not know.
@@ -542,6 +555,8 @@ LABKEY.vis.GenericChartHelper = new function(){
         generateBoxplotGeom: generateBoxplotGeom,
         generatePointGeom: generatePointGeom,
         validateAxisMeasure: validateAxisMeasure,
+        validateXAxis: validateXAxis,
+        validateYAxis: validateYAxis,
         /**
          * Loads all of the required dependencies for a Generic Chart.
          * @param {Function} callback The callback to be executed when all of the visualization dependencies have been loaded.
