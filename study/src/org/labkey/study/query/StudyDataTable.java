@@ -116,8 +116,12 @@ public class StudyDataTable extends BaseStudyTable
             Set<PropertyDescriptor> pds = study.getSharedProperties();
             for (PropertyDescriptor pd : pds)
             {
-                addWrapColumn(_rootTable.getColumn(pd.getName()));
-                defaultColumns.add(FieldKey.fromParts(pd.getName()));
+                // Avoid double-adding columns with the same name but different property descriptors
+                if (getColumn(pd.getName()) == null)
+                {
+                    addWrapColumn(_rootTable.getColumn(pd.getName()));
+                    defaultColumns.add(FieldKey.fromParts(pd.getName()));
+                }
             }
         }
 
