@@ -573,7 +573,7 @@ public class FileType implements Serializable
         if (_dir != null ? !_dir.equals(fileType._dir) : fileType._dir != null) return false;
         if (_defaultSuffix != null ? !_defaultSuffix.equals(fileType._defaultSuffix) : fileType._defaultSuffix != null)
             return false;
-        if (!(_antiTypes != null ? !_antiTypes.equals(fileType._antiTypes) : fileType._antiTypes != null)) return false;
+        if (_antiTypes != null ? !_antiTypes.equals(fileType._antiTypes) : fileType._antiTypes != null) return false;
         return !(_suffixes != null ? !_suffixes.equals(fileType._suffixes) : fileType._suffixes != null);
     }
 
