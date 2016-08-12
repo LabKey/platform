@@ -347,7 +347,7 @@ public class MailHelper
             for (int i = 0; i < multipart.getCount(); i++)
             {
                 BodyPart part = multipart.getBodyPart(i);
-                multipartHandler.handle(StringUtils.substringBefore(part.getContentType(), ";"), part);
+                multipartHandler.handle(StringUtils.substringBefore(part.getDataHandler().getContentType(), ";"), part);
             }
         }
         else

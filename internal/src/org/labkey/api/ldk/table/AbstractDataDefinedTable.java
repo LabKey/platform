@@ -29,7 +29,6 @@ import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.etl.LoggingDataIterator;
 import org.labkey.api.etl.SimpleTranslator;
-import org.labkey.api.ldk.LDKService;
 import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
@@ -98,7 +97,6 @@ abstract public class AbstractDataDefinedTable extends SimpleUserSchema.SimpleTa
 
         removeColumn(filterCol);
 
-        LDKService.get().getDefaultTableCustomizer().customize(this);
         return this;
     }
 
