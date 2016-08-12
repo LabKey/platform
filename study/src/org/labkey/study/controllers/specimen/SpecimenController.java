@@ -670,6 +670,57 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
+    static class SampleEventForm
+    {
+        private String _id;
+        private Container _targetStudy;
+
+        public String getId()
+        {
+            return _id;
+        }
+
+        public void setId(String id)
+        {
+            _id = id;
+        }
+
+        public Container getTargetStudy()
+        {
+            return _targetStudy;
+        }
+
+        public void setTargetStudy(Container targetStudy)
+        {
+            _targetStudy = targetStudy;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class SampleEventsRedirectAction extends SimpleViewAction<SampleEventForm>
+    {
+        @Override
+        public ModelAndView getView(SampleEventForm form, BindException errors) throws Exception
+        {
+            if (form.getId() != null && form.getTargetStudy() != null)
+            {
+                Vial vial = SpecimenManager.getInstance().getVial(form.getTargetStudy(), getUser(), form.getId());
+                if (vial != null)
+                {
+                    ActionURL url = new ActionURL(SampleEventsAction.class, form.getTargetStudy()).addParameter("id", vial.getRowId());
+                    throw new RedirectException(url);
+                }
+            }
+            return new HtmlView("<span class='labkey-error'>Unable to resolve the Sample ID and target Study</span>");
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
     @RequiresPermission(ReadPermission.class)
     public class SampleEventsAction extends SimpleViewAction<ViewEventForm>
     {
