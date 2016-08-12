@@ -516,36 +516,36 @@ public enum JdbcType
         @Test
         public void testConvert()
         {
-            assert BOOLEAN.convert(true) instanceof Boolean;
-            assert BOOLEAN.convert(false) instanceof Boolean;
-            assert BOOLEAN.convert("true") instanceof Boolean;
-            assert BOOLEAN.convert("false") instanceof Boolean;
-            assert BOOLEAN.convert(0) instanceof Boolean;
-            assert BOOLEAN.convert(1) instanceof Boolean;
+            assertEquals("JdbcType.convert produced wrong type.", Boolean.class, BOOLEAN.convert(true).getClass());
+            assertEquals("JdbcType.convert produced wrong type.", Boolean.class, BOOLEAN.convert(false).getClass());
+            assertEquals("JdbcType.convert produced wrong type.", Boolean.class, BOOLEAN.convert("true").getClass());
+            assertEquals("JdbcType.convert produced wrong type.", Boolean.class, BOOLEAN.convert("false").getClass());
+            assertEquals("JdbcType.convert produced wrong type.", Boolean.class, BOOLEAN.convert(0).getClass());
+            assertEquals("JdbcType.convert produced wrong type.", Boolean.class, BOOLEAN.convert(1).getClass());
 
-            assert BIGINT.convert(1) instanceof Long;
-            assert INTEGER.convert(1) instanceof Integer;
-            assert SMALLINT.convert(1) instanceof Short;
-            assert TINYINT.convert(1) instanceof Short;
-            assert REAL.convert(1) instanceof Float;
-            assert DOUBLE.convert(1) instanceof Double;
-            assert DECIMAL.convert(1) instanceof BigDecimal;
-            assert DECIMAL.convert(1.23) instanceof BigDecimal;
-            assert BIGINT.convert("1") instanceof Long;
-            assert INTEGER.convert("1") instanceof Integer;
-            assert SMALLINT.convert("1") instanceof Short;
-            assert TINYINT.convert("1") instanceof Short;
-            assert REAL.convert("1") instanceof Float;
-            assert DOUBLE.convert("1") instanceof Double;
-            assert DECIMAL.convert("1") instanceof BigDecimal;
+            assertEquals("JdbcType.convert produced wrong type.", Long.class, BIGINT.convert(1).getClass());
+            assertEquals("JdbcType.convert produced wrong type.", Integer.class, INTEGER.convert(1).getClass());
+            assertEquals("JdbcType.convert produced wrong type.", Short.class, SMALLINT.convert(1).getClass());
+            assertEquals("JdbcType.convert produced wrong type.", Short.class, TINYINT.convert(1).getClass());
+            assertEquals("JdbcType.convert produced wrong type.", Float.class, REAL.convert(1).getClass());
+            assertEquals("JdbcType.convert produced wrong type.", Double.class, DOUBLE.convert(1).getClass());
+            assertEquals("JdbcType.convert produced wrong type.", BigDecimal.class, DECIMAL.convert(1).getClass());
+            assertEquals("JdbcType.convert produced wrong type.", BigDecimal.class, DECIMAL.convert(1.23).getClass());
+            assertEquals("JdbcType.convert produced wrong type.", Long.class, BIGINT.convert("1").getClass());
+            assertEquals("JdbcType.convert produced wrong type.", Integer.class, INTEGER.convert("1").getClass());
+            assertEquals("JdbcType.convert produced wrong type.", Short.class, SMALLINT.convert("1").getClass());
+            assertEquals("JdbcType.convert produced wrong type.", Short.class, TINYINT.convert("1").getClass());
+            assertEquals("JdbcType.convert produced wrong type.", Float.class, REAL.convert("1").getClass());
+            assertEquals("JdbcType.convert produced wrong type.", Double.class, DOUBLE.convert("1").getClass());
+            assertEquals("JdbcType.convert produced wrong type.", BigDecimal.class, DECIMAL.convert("1").getClass());
 
-            assert VARCHAR.convert("wilma") instanceof String;
-            assert VARCHAR.convert(5) instanceof String;            // should this be an error?
-            assert CHAR.convert(5) instanceof String;               // should this be an error?
-            assert LONGVARCHAR.convert(5) instanceof String;        // should this be an error?
+            assertEquals("JdbcType.convert produced wrong type.", String.class, VARCHAR.convert("wilma").getClass());
+            assertEquals("JdbcType.convert produced wrong type.", String.class, VARCHAR.convert(5).getClass());            // should this be an error?
+            assertEquals("JdbcType.convert produced wrong type.", String.class, CHAR.convert(5).getClass());               // should this be an error?
+            assertEquals("JdbcType.convert produced wrong type.", String.class, LONGVARCHAR.convert(5).getClass());        // should this be an error?
 
-            assert TIMESTAMP.convert("2001-02-03") instanceof Timestamp;
-            assert DATE.convert("2001-02-03") instanceof Date;
+            assertEquals("JdbcType.convert produced wrong type.", Timestamp.class, TIMESTAMP.convert("2001-02-03").getClass());
+            assertEquals("JdbcType.convert produced wrong type.", java.sql.Date.class, DATE.convert("2001-02-03").getClass());
 
             try {BOOLEAN.convert(2.3); fail();} catch (ConversionException x){}
             try {BOOLEAN.convert(2.3); fail();} catch (ConversionException x){}
