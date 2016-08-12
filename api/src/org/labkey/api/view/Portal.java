@@ -381,24 +381,28 @@ public class Portal
         }
     }
 
+    @NotNull
     public static List<WebPart> getParts(Container c)
     {
         return getParts(c, DEFAULT_PORTAL_PAGE_ID);
     }
 
 
+    @NotNull
     public static Map<String,PortalPage> getPages(Container c)
     {
         return getPages(c, false);
     }
 
 
+    @NotNull
     public static Map<String,PortalPage> getPages(Container c, boolean showHidden)
     {
         Map<String, PortalPage> pages = WebPartCache.getPages(c, showHidden);
         return Collections.unmodifiableMap(pages);
     }
 
+    @NotNull
     public static List<PortalPage> getSortedPages(Container c, boolean showHidden)
     {
         // Note: This does not ignore stealth pages. Use getTabPages for that.
@@ -416,11 +420,13 @@ public class Portal
         return Collections.unmodifiableList(sortedPages);
     }
 
+    @NotNull
     public static List<PortalPage> getTabPages(Container c)
     {
         return getTabPages(c, false);
     }
 
+    @NotNull
     public static List<PortalPage> getTabPages(Container c, boolean showHidden)
     {
         // Returns the list of tab pages in order. Ignores "stealth" pages.
@@ -443,6 +449,7 @@ public class Portal
         return false;
     }
 
+    @NotNull
     public static List<WebPart> getParts(Container c, String pageId)
     {
         Collection<WebPart> parts = WebPartCache.getWebParts(c, pageId);
@@ -451,12 +458,14 @@ public class Portal
         return Collections.unmodifiableList(new ArrayList<>(parts));
     }
 
+    @NotNull
     public static List<WebPart> getParts(Container c, ViewContext context)
     {
         return getParts(c, DEFAULT_PORTAL_PAGE_ID, context);
     }
 
 
+    @NotNull
     public static List<WebPart> getParts(Container c, String pageId, ViewContext context)
     {
         Collection<WebPart> parts = WebPartCache.getWebParts(c, pageId);

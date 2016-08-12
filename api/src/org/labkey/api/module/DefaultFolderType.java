@@ -20,12 +20,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.list.ListService;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.security.User;
-import org.labkey.api.study.StudyUrls;
-import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -134,7 +130,7 @@ public class DefaultFolderType implements FolderType
         ArrayList<Portal.WebPart> all = new ArrayList<>();
         List<Portal.WebPart> existingParts = Portal.getParts(c);
 
-        if (null == existingParts || existingParts.isEmpty())
+        if (existingParts.isEmpty())
         {
             if (null != required)
                 all.addAll(required);
@@ -234,22 +230,20 @@ public class DefaultFolderType implements FolderType
             {
                 // Mark any actual permanent parts not permanent, since we're switching to another folder type
                 List<WebPart> parts = Portal.getParts(c, portalPage.getPageId());
-                if (null != parts)
+                boolean saveRequired = false;
+
+                for (WebPart part : parts)
                 {
-                    boolean saveRequired = false;
-
-                    for (WebPart part : parts)
+                    if (part.isPermanent())
                     {
-                        if (part.isPermanent())
-                        {
-                            part.setPermanent(false);
-                            saveRequired = true;
-                        }
+                        part.setPermanent(false);
+                        saveRequired = true;
                     }
-
-                    if (saveRequired)
-                        Portal.saveParts(c, portalPage.getPageId(), parts);
                 }
+
+                if (saveRequired)
+                    Portal.saveParts(c, portalPage.getPageId(), parts);
+
                 Portal.hidePage(c, portalPage.getPageId());
             }
         }

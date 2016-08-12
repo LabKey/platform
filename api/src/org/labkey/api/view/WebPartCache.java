@@ -56,6 +56,7 @@ public class WebPartCache
     }
 
 
+    @NotNull
     static Map<String, Portal.PortalPage> getPages(Container c, boolean showHidden)
     {
         Map<String, Portal.PortalPage> pages = get(c);

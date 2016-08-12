@@ -344,12 +344,14 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     }
 
 
+    @Nullable
     public static HttpServletRequest currentRequest()
     {
         Stack<ViewStackEntry> s = _viewContexts.get();
         return s.size() == 0 ? null : s.peek().request;
     }
 
+    @Nullable
     public static HttpServletResponse currentResponse()
     {
         Stack<ViewStackEntry> s = _viewContexts.get();
