@@ -273,10 +273,19 @@ public class SpecimenForeignKey extends LookupForeignKey
 
     public StringExpression getURL(ColumnInfo parent)
     {
-        FieldKey rowIdFieldKey = new FieldKey(parent.getFieldKey(), "RowId");
-        FieldKey containerFieldKey = new FieldKey(parent.getFieldKey(), "Container");
-        DetailsURL detailsURL = DetailsURL.fromString("study-samples/sampleEvents.view?id=${" + rowIdFieldKey + "}", new ContainerContext.FieldKeyContext(containerFieldKey));
-        detailsURL.setStrictContainerContextEval(true);
+        FieldKey targetStudyFK = _tableMetadata.getTargetStudyFieldKey();
+        Container targetStudy;
+
+        if (_targetStudyOverride != null)
+            targetStudy = _targetStudyOverride;
+        else
+            targetStudy = _schema.getTargetStudy();
+
+        DetailsURL detailsURL;
+        if (targetStudy != null)
+            detailsURL = DetailsURL.fromString("study-samples/sampleEventsRedirect.view?id=${" + parent.getFieldKey() + "}&targetStudy=" + targetStudy.getId() );
+        else
+            detailsURL = DetailsURL.fromString("study-samples/sampleEventsRedirect.view?id=${" + parent.getFieldKey() + "}&targetStudy=${" + targetStudyFK + "}");
         return detailsURL;
     }
 

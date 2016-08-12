@@ -203,7 +203,10 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
             });
 
             if (foundTargetStudyCol)
+            {
                 specimenIdCol.setFk(new SpecimenForeignKey(_userSchema, _provider, _protocol));
+                specimenIdCol.setDisplayColumnFactory(ColumnInfo.NOLOOKUP_FACTORY);
+            }
         }
 
         ColumnInfo dataColumn = getColumn("DataId");
