@@ -21,6 +21,7 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
@@ -50,6 +51,7 @@ import static org.junit.Assert.*;
  * Each @Test then sets a property in that study, exports the study, and reimports it into a subfolder
  */
 @Category({DailyB.class, FileBrowser.class})
+@BaseWebDriverTest.ClassTimeout(minutes = 60)
 public class StudySimpleExportTest extends StudyBaseTest
 {
     private static final String TEST_DATASET_NAME = "TestDataset";
