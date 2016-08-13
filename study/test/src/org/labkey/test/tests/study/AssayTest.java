@@ -671,15 +671,15 @@ public class AssayTest extends AbstractAssayTest
         clickButton("Re-Validate");
 
         //validate timepoints:
-        assertElementPresent(Locator.xpath("//td[text()='Day 32 - 39' and following-sibling::td[text()='AAA07XMC-02'] and following-sibling::td[text()='301.0']]"));
-        assertElementPresent(Locator.xpath("//td[text()='Preexisting Timepoint' and following-sibling::td[text()='AAA07XMC-04'] and following-sibling::td[not(text())]]"));
-        assertElementPresent(Locator.xpath("//td[text()='Day 90 - 95' and following-sibling::td[text()='AAA07XSF-02'] and following-sibling::td[not(text())]]"));
+        assertElementPresent(Locator.xpath("//td[text()='Day 32 - 39' and following-sibling::td/a[text()='AAA07XMC-02'] and following-sibling::td[text()='301.0']]"));
+        assertElementPresent(Locator.xpath("//td[text()='Preexisting Timepoint' and following-sibling::td/a[text()='AAA07XMC-04'] and following-sibling::td[not(text())]]"));
+        assertElementPresent(Locator.xpath("//td[text()='Day 90 - 95' and following-sibling::td/a[text()='AAA07XSF-02'] and following-sibling::td[not(text())]]"));
 
-        assertElementPresent(Locator.xpath("//td[text()='Day 120 - 127' and following-sibling::td[text()='AssayTestControl1'] and following-sibling::td[text()='5.0']]"));
-        assertElementPresent(Locator.xpath("//td[text()='Day 152 - 159' and following-sibling::td[text()='AssayTestControl2'] and following-sibling::td[text()='6.0']]"));
-        assertElementPresent(Locator.xpath("//td[text()='Day 0 - 7' and following-sibling::td[text()='BAQ00051-09'] and following-sibling::td[text()='7.0']]"));
-        assertElementPresent(Locator.xpath("//td[text()='Day 32 - 39' and following-sibling::td[text()='BAQ00051-08'] and following-sibling::td[text()='8.0']]"));
-        assertElementPresent(Locator.xpath("//td[text()='Preexisting Timepoint' and following-sibling::td[text()='BAQ00051-11'] and following-sibling::td[text()='9.0']]"));
+        assertElementPresent(Locator.xpath("//td[text()='Day 120 - 127' and following-sibling::td/a[text()='AssayTestControl1'] and following-sibling::td[text()='5.0']]"));
+        assertElementPresent(Locator.xpath("//td[text()='Day 152 - 159' and following-sibling::td/a[text()='AssayTestControl2'] and following-sibling::td[text()='6.0']]"));
+        assertElementPresent(Locator.xpath("//td[text()='Day 0 - 7' and following-sibling::td/a[text()='BAQ00051-09'] and following-sibling::td[text()='7.0']]"));
+        assertElementPresent(Locator.xpath("//td[text()='Day 32 - 39' and following-sibling::td/a[text()='BAQ00051-08'] and following-sibling::td[text()='8.0']]"));
+        assertElementPresent(Locator.xpath("//td[text()='Preexisting Timepoint' and following-sibling::td/a[text()='BAQ00051-11'] and following-sibling::td[text()='9.0']]"));
         clickButton("Copy to Study");
 
         log("Verifying that the data was published");
@@ -776,8 +776,8 @@ public class AssayTest extends AbstractAssayTest
         assertElementPresent(Locator.xpath("//td[text()='33' and following-sibling::td/a[text()='AAA07XMC-04']]"));
         assertElementPresent(Locator.xpath("//td[text()='4' and following-sibling::td/a[text()='AAA07XSF-02']]"));
 
-        assertElementPresent(Locator.xpath("//td[text()='Test Visit2' and following-sibling::td[text()='AssayTestControl1']]"));
-        assertElementPresent(Locator.xpath("//td[text()='Test Visit1' and following-sibling::td[text()='AssayTestControl2']]"));
+        assertElementPresent(Locator.xpath("//td[text()='Test Visit2' and following-sibling::td/a[text()='AssayTestControl1']]"));
+        assertElementPresent(Locator.xpath("//td[text()='Test Visit1' and following-sibling::td/a[text()='AssayTestControl2']]"));
         assertElementPresent(Locator.xpath("//td[text()='Test Visit1' and following-sibling::td/a[text()='BAQ00051-09']]"));
         assertElementPresent(Locator.xpath("//td[text()='Test Visit1' and following-sibling::td/a[text()='BAQ00051-08']]"));
         assertElementPresent(Locator.xpath("//td[text()='Test Visit1' and following-sibling::td/a[text()='BAQ00051-11']]"));
@@ -962,9 +962,10 @@ public class AssayTest extends AbstractAssayTest
 
     private void verifySpecimensPresent(int aaa07Count, int controlCount, int baq00051Count)
     {
-        assertTextPresent("AAA07", aaa07Count);
-        assertTextPresent("AssayTestControl", controlCount);
-        assertTextPresent("BAQ00051", baq00051Count);
+        // need to double the count, once for the label and once for the param in the link url
+        assertTextPresent("AAA07", aaa07Count * 2);
+        assertTextPresent("AssayTestControl", controlCount * 2);
+        assertTextPresent("BAQ00051", baq00051Count * 2);
     }
 
     @Override
