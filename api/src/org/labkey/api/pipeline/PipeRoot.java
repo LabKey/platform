@@ -30,7 +30,8 @@ import java.net.URI;
 import java.util.List;
 
 /**
- * Represents a pipeline root directory, from which the server will look for files for import and analysis.
+ * Represents a pipeline root directory, from which the server will look for files for import and analysis. May
+ * span multiple root directories on the actual file systems.
  *
  * User: Nick
  * Date: Jul 7, 2007

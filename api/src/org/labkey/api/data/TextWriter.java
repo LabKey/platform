@@ -27,11 +27,11 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 
-/*
-* User: adam
-* Date: Dec 30, 2010
-* Time: 9:20:44 AM
-*/
+/**
+ * Base class for exports that generate text-based representations of their content, such as TSV, CSV, or FASTA.
+ * User: adam
+ * Date: Dec 30, 2010
+ */
 public abstract class TextWriter implements AutoCloseable
 {
     private static final Logger LOG = Logger.getLogger(TextWriter.class);

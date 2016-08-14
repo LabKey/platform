@@ -27,11 +27,12 @@ import java.sql.SQLException;
 import java.util.Set;
 
 /**
+ * Extensions to {@link TableInfo} to make it support inserts/updates/deletes via the ETL engine and other
+ * data modification approaches.
  * User: matthewb
  * Date: Nov 15, 2010
- * Time: 6:02:12 PM
  */
-public interface UpdateableTableInfo
+public interface UpdateableTableInfo extends TableInfo
 {
     enum ObjectUriType
     {

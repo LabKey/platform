@@ -31,7 +31,6 @@ import java.util.Map;
 /**
 * User: adam
 * Date: 10/2/12
-* Time: 9:36 PM
 */
 public class ResultSetImpl extends LoggingResultSetWrapper implements TableResultSet
 {

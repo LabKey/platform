@@ -18,6 +18,8 @@ package org.labkey.api.data;
 import org.labkey.api.query.ExprColumn;
 
 /**
+ * A column that wraps other column that's already part of the same {@link TableInfo}. Typically reuses the same
+ * underlying value, but formats it differently, or makes it a lookup to a different target query.
  * User: jeckels
  * Date: Nov 11, 2008
  */

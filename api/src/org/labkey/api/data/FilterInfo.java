@@ -21,10 +21,10 @@ import org.labkey.api.util.URLHelper;
 
 import java.io.Serializable;
 
-/*
+/**
+ * Bean to capture a single filter on a single column.
  * User: adam
  * Date: Jun 2, 2009
- * Time: 11:16:38 AM
  */
 public class FilterInfo implements Serializable
 {

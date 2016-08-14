@@ -26,7 +26,7 @@ import java.util.Set;
 
 /**
  * Column type that renders an indicator if there is an associated missing value indicator to accompany the normal
- * value. There is a discrete, configured list of allowable indicators.
+ * value. There is a discrete, configured list of allowable indicators, on a per-container basis. See {@link MvUtil}.
  *
  * User: jgarms
  * Date: Jan 08, 2009

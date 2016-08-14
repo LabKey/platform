@@ -23,12 +23,13 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 
 /**
+ * Convenience class for configuring a lookup to the user schema/query core.containers.
  * User: Karl Lum
  * Date: Nov 2, 2007
  */
 public class ContainerForeignKey extends QueryForeignKey
 {
-    final User _user;
+    private final User _user;
 
     static public ColumnInfo initColumn(ColumnInfo column, UserSchema schema)
     {

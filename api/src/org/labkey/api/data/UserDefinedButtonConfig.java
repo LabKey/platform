@@ -29,13 +29,9 @@ import java.util.Collections;
 import java.util.List;
 
 /**
+ * Represents configuration information for a specific button in a button bar configuration.
  * User: dave
  * Date: Apr 8, 2010
- * Time: 11:06:49 AM
- */
-
-/**
- * Represents configuration information for a specific button in a button bar configuration.
  */
 public class UserDefinedButtonConfig implements ButtonConfig
 {

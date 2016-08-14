@@ -72,7 +72,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-
+/**
+ * A thin wrapper over a table in the real underlying database.
+ */
 public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 {
     // Table properties

@@ -27,14 +27,10 @@ import java.sql.SQLException;
 import java.util.List;
 
 /**
- * Writes a ResultSet as an HTML table.
- *
- * Note because this uses a SimpleDateFormat member variable, it is not thread-safe.
- * Do not share instances of this class between threads.
+ * Writes a ResultSet as a minimally-styled and formatted HTML table.
  *
  * User: Dave
  * Date: Mar 7, 2008
- * Time: 4:09:58 PM
  */
 public class HtmlWriter implements ExportWriter
 {

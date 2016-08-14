@@ -75,9 +75,12 @@ import java.util.Set;
 
 
 /**
- * see ContainerManager for more info
+ * Basic hierarchical structure for holding data within LabKey Server. Security is configured at the container level.
+ * Projects, folders, and workbooks are all different types of containers.
  *
- * CONSIDER: extend org.labkey.api.data.Entity
+ * {@link ContainerManager} for more info
+ *
+ * CONSIDER: extend {@link org.labkey.api.data.Entity}
  */
 public class Container implements Serializable, Comparable<Container>, SecurableResource, ContainerContext, HasPermission, Parameter.JdbcParameterValue
 {

@@ -26,6 +26,10 @@ import java.sql.ResultSet;
 import java.util.List;
 
 /**
+ * A variant of {@link DataRegion} that separates columns into those that belong to a parent grid, and those that
+ * belong to a child grid that is rendered as part of the parent row. Useful for presenting many-to-one types of data
+ * in a way that allows for it to be selected as a single flat database query, but shown in a way that retains the
+ * hierarchy.
  * User: jeckels
  */
 public class NestableDataRegion extends AbstractNestableDataRegion

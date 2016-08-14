@@ -18,12 +18,15 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Indicates that a table can be configured to include data from multiple containers when it is queried. Tables
+ * typically default to only showing data from the current container.
  * User: jgarms
  * Date: Dec 3, 2008
  */
 public interface ContainerFilterable extends TableInfo
 {
-    public void setContainerFilter(@NotNull ContainerFilter containerFilter);
+    void setContainerFilter(@NotNull ContainerFilter containerFilter);
 
-    public boolean hasDefaultContainerFilter();
+    /** @return whether the default for this table has been overridden */
+    boolean hasDefaultContainerFilter();
 }

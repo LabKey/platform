@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Factory for {@link MVDisplayColumn}s.
  * User: jgarms
  * Date: Jan 8, 2009
  */

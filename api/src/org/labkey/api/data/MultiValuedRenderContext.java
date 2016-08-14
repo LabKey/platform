@@ -28,6 +28,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Wrapper for another {@link RenderContext} that allows multiple values to be rendered for a single row's column.
+ * Used in conjunction with {@link MultiValuedDisplayColumn}.
  * User: adam
  * Date: Sep 7, 2010
  * Time: 10:02:25 AM

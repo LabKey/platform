@@ -34,13 +34,15 @@ import org.labkey.api.view.ActionURL;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
 /**
+ * Wrapper class around the underlying database's core.containers table that adds virtual columns and sets up
+ * custom rendering.
  * User: jeckels
  * Date: Feb 22, 2007
  */
@@ -98,13 +100,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
         this.addColumn(col);
 
         ColumnInfo name = getColumn("Name");
-        name.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new ContainerDisplayColumn(colInfo, false);
-            }
-        });
+        name.setDisplayColumnFactory(colInfo -> new ContainerDisplayColumn(colInfo, false));
         name.setURL(detailsURL);
         name.setReadOnly(true); // CONSIDER: allow renames via QueryUpdateService api
 
@@ -132,14 +128,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
 
         final ColumnInfo folderPathCol = this.wrapColumn("Path", getRealTable().getColumn("Name"));
         folderPathCol.setReadOnly(true);
-        folderPathCol.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            @Override
-            public DisplayColumn createRenderer(final ColumnInfo colInfo)
-            {
-                return new ContainerDisplayColumn(colInfo, true);
-            }
-        });
+        folderPathCol.setDisplayColumnFactory(colInfo -> new ContainerDisplayColumn(colInfo, true));
         addColumn(folderPathCol);
         folderPathCol.setURL(detailsURL);
 
@@ -180,14 +169,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
         title.setURL(detailsURL);
 
         ColumnInfo activeModules = new AliasedColumn("ActiveModules", getColumn("RowId"));
-        activeModules.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            @Override
-            public DisplayColumn createRenderer(ColumnInfo rowIdCol)
-            {
-                return new ActiveModulesDisplayColumn(rowIdCol);
-            }
-        });
+        activeModules.setDisplayColumnFactory(rowIdCol -> new ActiveModulesDisplayColumn(rowIdCol));
         activeModules.setReadOnly(true);
         activeModules.setHidden(true);
         addColumn(activeModules);
@@ -237,7 +219,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
             int rowId = (Integer)super.getValue(ctx);
             Container c = ContainerManager.getForRowId(rowId);
             if (c == null)
-                return null;
+                return "";
 
             Set<Module> modules = c.getActiveModules();
             StringBuilder sb = new StringBuilder();
@@ -256,7 +238,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
         final NamedObjectList ret = new NamedObjectList();
 
         Map<String, String> pathToEntityMap = new TreeMap<>();
-        List<ColumnInfo> cols = Arrays.asList(getColumn("EntityId"));
+        List<ColumnInfo> cols = Collections.singletonList(getColumn("EntityId"));
 
         new TableSelector(this, cols, null, null).forEach(new Selector.ForEachBlock<ResultSet>()
         {

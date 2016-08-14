@@ -28,13 +28,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Factory methods that create CachedResultSets, plus a couple helpers
  * User: adam
  * Date: 11/22/13
- * Time: 11:12 PM
- */
-
-/*
-    Factory methods that create CachedResultSets, plus a couple helpers
  */
 public class CachedResultSets
 {

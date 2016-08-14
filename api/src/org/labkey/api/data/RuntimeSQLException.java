@@ -26,9 +26,10 @@ import java.io.Serializable;
 import java.sql.SQLException;
 
 /**
+ * Wrapper to convert the checked {@link SQLException} to a {@link RuntimeException}, retaining much of the special
+ * SQLException behavior, such as chaining causes.
  * User: mbellew
  * Date: Mar 23, 2005
- * Time: 9:58:08 AM
  */
 public class RuntimeSQLException extends RuntimeException implements Serializable, IsSerializable
 {

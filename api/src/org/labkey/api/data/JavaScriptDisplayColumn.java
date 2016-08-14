@@ -28,9 +28,10 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
+ * {@link DisplayColumn} subclass that supports injecting JavaScript when rendering to HTML, allowing custom click
+ * handlers and other magic behavior to be wired in. Can also add external .js files to the page via client dependencies.
  * User: adam
  * Date: 6/13/13
- * Time: 2:18 PM
  */
 public class JavaScriptDisplayColumn extends DataColumn
 {

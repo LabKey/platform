@@ -25,9 +25,10 @@ import java.util.Map;
 import java.util.List;
 
 /**
+ * Knows how to generate a WHERE clause to filter a query based on some set of criteria. Used extensively, often
+ * via {@link SimpleFilter} when selecting from database tables.
  * User: arauch
  * Date: Jan 11, 2005
- * Time: 8:01:17 AM
  */
 public interface Filter
 {
@@ -44,7 +45,6 @@ public interface Filter
 
     /**
      * toString() on a Filter doesn't do the correct thing.  Should use "substituteParameters" instead.
-     * @return
      */
     @Deprecated
     public String toString();

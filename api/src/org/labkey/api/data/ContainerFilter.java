@@ -39,6 +39,9 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Represents which set of containers should be included when querying for data. In general, the code will
+ * default to showing data from just the current container, but alternative ContainerFilters can resolve items
+ * in the /Shared project, in parent containers, or a variety of other scoping locations.
  * User: jeckels
  * Date: Nov 3, 2008
  */
@@ -88,7 +91,7 @@ public abstract class ContainerFilter
     /**
      * The standard ContainerFilter SQL includes data from workbooks if the parent is already in the list via a join.
      * Therefore, we can filter out any workbooks from the list so that we don't need to pass as many Ids in the SQL.
-     * This is important for servers that have lots and lots of workbooks, like the O'Conner server which has more than
+     * This is important for servers that have lots and lots of workbooks, like the O'Connor server which has more than
      * 10,000.
      */
     protected Collection<Container> removeWorkbooks(Collection<Container> containers)

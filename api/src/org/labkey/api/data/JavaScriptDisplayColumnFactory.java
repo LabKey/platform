@@ -22,9 +22,9 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 
 /**
+ * Factory for {@link JavaScriptDisplayColumn} to let them be wired up for a {@link ColumnInfo}.
  * User: adam
  * Date: 6/12/13
- * Time: 10:26 PM
  */
 public class JavaScriptDisplayColumnFactory implements DisplayColumnFactory
 {

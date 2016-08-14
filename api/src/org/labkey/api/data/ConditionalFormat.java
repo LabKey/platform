@@ -35,6 +35,8 @@ import java.util.Collections;
 import java.util.List;
 
 /**
+ * Conditional formats allow columns values to be styled based on their values. For example, values that fall below the
+ * normal range might be rendered in red text or bolded.
  * User: jeckels
  * Date: Aug 20, 2010
  */

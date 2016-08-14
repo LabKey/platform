@@ -34,12 +34,12 @@ import java.util.Map;
  * {@link org.labkey.api.query.FieldKey} that was part of the query to its value in the result set.
  * User: matthewb
  * Date: Nov 18, 2010
- * Time: 11:26:39 AM
  */
 public interface Results extends ResultSet, TableResultSet
 {
     ColumnInfo getColumn(int i);
 
+    /** @return the mapping from the originally requested FieldKeys to the ColumnInfos included in this set of results */
     @NotNull
     Map<FieldKey, ColumnInfo> getFieldMap();
 
@@ -114,6 +114,4 @@ public interface Results extends ResultSet, TableResultSet
 
     BigDecimal getBigDecimal(FieldKey f)
             throws SQLException;
-
-    /* DataIterator */
 }
