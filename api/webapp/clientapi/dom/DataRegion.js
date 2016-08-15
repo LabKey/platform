@@ -2989,7 +2989,7 @@ if (!LABKEY.DataRegions) {
 
     var _load = function(region, callback, scope, newParams) {
 
-        var params = _getAsyncParams(region, newParams ? newParams : _getParametersSearch(region));
+        var params = _getAsyncParams(region, newParams ? newParams : _getParametersSearch(region, region.requestURL));
         var jsonData = _getAsyncBody(region, params);
 
         // TODO: This should be done in _getAsyncParams, but is not since _getAsyncBody relies on it. Refactor it.
