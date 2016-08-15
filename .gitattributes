@@ -1011,6 +1011,7 @@ issues/resources/schemas/dbscripts/postgresql/issues-16.11-16.12.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-16.12-16.13.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-16.13-16.14.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-16.20-16.21.sql -text
+issues/resources/schemas/dbscripts/postgresql/issues-16.21-16.22.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-10.30.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-11.30.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-12.30-13.10.sql -text
@@ -1024,6 +1025,7 @@ issues/resources/schemas/dbscripts/sqlserver/issues-16.11-16.12.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-16.12-16.13.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-16.13-16.14.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-16.20-16.21.sql -text
+issues/resources/schemas/dbscripts/sqlserver/issues-16.21-16.22.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-0.00-10.30.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-0.00-11.30.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-12.30-13.10.sql -text

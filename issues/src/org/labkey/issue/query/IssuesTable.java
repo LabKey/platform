@@ -148,17 +148,6 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         ContainerForeignKey.initColumn(folder, _userSchema);
         addColumn(folder);
 
-        // issue 27105, 27106 use modified, modifiedBy, createdBy from issues.issues table until a more permanent
-        // solution to import these fields to the provisioned tables can be made in 16.3
-        addWrapColumn("Modified", _rootTable.getColumn("modified"));
-        ColumnInfo modifiedBy = new AliasedColumn(this, "ModifiedBy", _rootTable.getColumn("ModifiedBy"));
-        UserIdForeignKey.initColumn(modifiedBy);
-        addColumn(modifiedBy);
-
-        ColumnInfo createdBy = new AliasedColumn(this, "CreatedBy", _rootTable.getColumn("CreatedBy"));
-        UserIdForeignKey.initColumn(createdBy);
-        addColumn(createdBy);
-
         ColumnInfo related = addColumn(new AliasedColumn(this, "Related", issueIdColumn));
         related.setKeyField(false);
 
@@ -300,10 +289,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
 
     private boolean ignoreColumn(String colName)
     {
-        return colName.equalsIgnoreCase("container") ||
-                colName.equalsIgnoreCase("modified") ||
-                colName.equalsIgnoreCase("modifiedBy") ||
-                colName.equalsIgnoreCase("createdBy");
+        return colName.equalsIgnoreCase("container");
     }
 
     private boolean isUserId(String colName)

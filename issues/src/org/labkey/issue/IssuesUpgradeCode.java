@@ -247,6 +247,7 @@ public class IssuesUpgradeCode implements UpgradeCode
         IssueListDef def = new IssueListDef();
         def.setName(name);
         def.setLabel(name);
+        def.setKind(IssueDefDomainKind.NAME);
         def.beforeInsert(user, container.getId());
 
         return def.save(user);
@@ -759,6 +760,72 @@ public class IssuesUpgradeCode implements UpgradeCode
         public void setIssueDefName(String issueDefName)
         {
             _issueDefName = IssuesListDefTable.nameFromLabel(issueDefName);
+        }
+    }
+
+    /**
+     * Invoked by issues-16.21-16.22.sql
+     *
+     * Migrate createdBy, modifiedBy, and modified fields from the original issues.issues table to the
+     * provisioned tables. This addresses issues 27105 and 27106 properly and allows us to eventually drop
+     * columns in the original table.
+     */
+    @DeferredUpgrade
+    public void upgradeSpecialFields(final ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        _log.info("Analyzing site-wide configuration to generate the issue list migration plan");
+        MultiValuedMap<Container, IssueMigrationPlan> migrationPlans = generateMigrationPlan();
+        User upgradeUser = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.getRole(SiteAdminRole.class)), false);
+        try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
+        {
+            // create the issue list definitions and new domains
+            for (Map.Entry<Container, Collection<IssueMigrationPlan>> entry : migrationPlans.asMap().entrySet())
+            {
+                Container defContainer = entry.getKey();
+
+                for (IssueMigrationPlan plan : entry.getValue())
+                {
+                    IssueListDef existingDef = IssueManager.getIssueListDef(defContainer, plan.getIssueDefName());
+                    if (existingDef != null)
+                    {
+                        // migrate special fields specific to this folder
+                        _log.info("Copying special fields to provisioned table named : " + existingDef.getName());
+                        copySpecialFields(existingDef, upgradeUser);
+                    }
+                    else
+                        _log.warn("An expected issue definition of name : " + plan.getIssueDefName() + " was not found in folder : " + defContainer.getPath());
+                }
+            }
+            transaction.commit();
+        }
+        catch (Exception e)
+        {
+            _log.error(e.getMessage());
+        }
+    }
+
+    /**
+     * Copy createdBy, modifiedBy, and modified fields from the legacy issues.issues table
+     * to the new provisioned tables.
+     */
+    void copySpecialFields(IssueListDef issueListDef, User user) throws SQLException
+    {
+        if (issueListDef != null)
+        {
+            TableInfo table = issueListDef.createTable(user);
+            if (table != null)
+            {
+                SQLFragment sql = new SQLFragment("UPDATE ").append(table, "ILD").
+                        append(" SET CreatedBy = Issues.CreatedBy, ModifiedBy = Issues.ModifiedBy, Modified = Issues.Modified ").
+                        append("FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "Issues").
+                        append(" WHERE ILD.entityId = Issues.entityId AND ILD.container = Issues.container");
+
+                int result = new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(sql);
+                _log.info("Number of rows updated for table : " + table.getName() + " was : " + result);
+            }
         }
     }
 }
