@@ -83,7 +83,7 @@
     Ext4.onReady(function(){
 
         var panel = Ext4.create('LABKEY.ext4.GenericChartPanel', {
-            height          : 600,
+            height          : 600, // TODO set this as a min height and max to page height
             reportId        : <%=q(form.getReportId() != null ? form.getReportId().toString() : null) %>,
             schemaName      : <%=q(form.getSchemaName() != null ? form.getSchemaName() : null) %>,
             queryName       : <%=q(form.getQueryName() != null ? form.getQueryName() : null) %>,

@@ -53,17 +53,7 @@ public class GenericChartReportImpl extends GenericChartReport implements SvgThu
         form.setComponentId("generic-report-panel-" + UniqueID.getRequestScopedUID(context.getRequest()));
 
         JspView view = new JspView<>(getDescriptor().getViewClass(), form);
-
-        view.setTitle(getDescriptor().getReportName());
-        view.setFrame(WebPartView.FrameType.PORTAL);
-
-        if (canEdit(context.getUser(), context.getContainer()))
-        {
-            NavTree menu = new NavTree();
-            menu.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(context.getContainer()));
-            view.setNavMenu(menu);
-        }
-
+        view.setFrame(WebPartView.FrameType.NONE);
         return view;
     }
 

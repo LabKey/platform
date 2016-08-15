@@ -9,7 +9,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     cls : 'generic-chart-panel',
     layout : 'fit',
-    border : false,
     editable : false,
     minWidth : 800,
 
@@ -179,9 +178,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.dataPanel = Ext4.create('Ext.panel.Panel', {
                 flex        : 1,
                 layout      : 'fit',
-                padding     : '10',
                 border      : false,
-                frame       : false,
                 items       : dataGrid
             });
         }

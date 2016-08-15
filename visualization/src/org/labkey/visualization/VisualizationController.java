@@ -1248,16 +1248,7 @@ public class VisualizationController extends SpringActionController
             form.setComponentId("generic-report-panel-" + UniqueID.getRequestScopedUID(getViewContext().getRequest()));
 
             JspView view = new JspView<>("/org/labkey/visualization/views/genericChartWizard.jsp", form);
-            view.setTitle("Create Chart");
-            view.setFrame(WebPartView.FrameType.PORTAL);
-
-            if (getViewContext().hasPermission(InsertPermission.class))
-            {
-                NavTree menu = new NavTree();
-                menu.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
-                view.setNavMenu(menu);
-            }
-
+            view.setFrame(WebPartView.FrameType.NONE);
             return view;
         }
 
