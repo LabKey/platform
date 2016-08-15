@@ -354,7 +354,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         this.getChartLayoutBtn().show();
                         this.getExportBtn().show();
 
-                        if (this.customButtons)
+                        if (Ext4.isArray(this.customButtons))
                         {
                             for (var i = 0; i < this.customButtons.length; i++)
                                 this.customButtons[i].show();
@@ -369,7 +369,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         this.getChartLayoutBtn().hide();
                         this.getExportBtn().hide();
 
-                        if (this.customButtons)
+                        if (Ext4.isArray(this.customButtons))
                         {
                             for (var i = 0; i < this.customButtons.length; i++)
                                 this.customButtons[i].hide();
@@ -427,7 +427,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             tbarItems.push(this.getChartTypeBtn());
             tbarItems.push(this.getChartLayoutBtn());
 
-            if (this.customButtons)
+            if (Ext4.isArray(this.customButtons))
             {
                 tbarItems.push(''); // horizontal spacer
                 for (var i = 0; i < this.customButtons.length; i++)
@@ -791,7 +791,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             var newFilters = [];
 
-            for (var i=0; i < filters.length; i++) {
+            for (var i=0; i < filters.length; i++)
+            {
                 var f = filters[i];
                 newFilters.push({name : f.getColumnName(), value : f.getValue(), type : f.getFilterType().getURLSuffix()});
             } filters = newFilters;
@@ -822,7 +823,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             else
             {
                 // Check if we have cohorts available.
-                if (this.initialColumnList)
+                if (Ext4.isArray(this.initialColumnList))
                 {
                     for (var i = 0; i < this.initialColumnList.length; i++)
                     {
@@ -905,14 +906,24 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         if (!this.schemaName || !this.queryName)
         {
-            var formItems = [];
-            var queryStore = this.initializeQueryStore();
-            var queryId = Ext4.id();
-
             this.schemaName = 'study';
 
-            formItems.push({
-                xtype       : 'combo',
+            var dialog = Ext4.create('LABKEY.vis.ChartWizardWindow', {
+                panelToMask: this,
+                items : [this.getQuerySettingsPanel()]
+            });
+
+            dialog.show();
+        }
+    },
+
+    getQuerySettingsPanel : function()
+    {
+        if (!this.querySettingsPanel)
+        {
+            var schemaCombo, queryCombo;
+
+            schemaCombo = Ext4.create('Ext.form.field.ComboBox', {
                 fieldLabel  : 'Schema',
                 name        : 'schema',
                 store       : this.initializeSchemaStore(),
@@ -922,28 +933,30 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 displayField   : 'name',
                 valueField     : 'name',
                 emptyText      : 'None',
+                padding     : '10px 10px 0 10px',
                 listeners   : {
-                    change : {fn : function(cmp, newValue) {
+                    scope : this,
+                    change : function(cmp, newValue)
+                    {
                         this.schemaName = newValue;
-                        var proxy = queryStore.getProxy();
-                        if (proxy) {
+
+                        var proxy = queryCombo.getStore().getProxy();
+                        if (proxy)
+                        {
                             proxy.extraParams = {schemaName : newValue};
-                            queryStore.load();
+                            queryCombo.getStore().load();
                         }
 
-                        var queryCombo = Ext4.getCmp(queryId);
-                        if (queryCombo)
-                            queryCombo.clearValue();
-                    }, scope : this}
+                        queryCombo.clearValue();
+                        okBtn.disable();
+                    }
                 }
             });
 
-            formItems.push({
-                xtype       : 'combo',
-                id          : queryId,
+            queryCombo = Ext4.create('Ext.form.field.ComboBox', {
                 fieldLabel  : 'Query',
                 name        : 'query',
-                store       : queryStore,
+                store       : this.initializeQueryStore(),
                 editable    : false,
                 allowBlank  : false,
                 displayField   : 'queryLabel',
@@ -951,24 +964,31 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 typeAhead      : true,
                 valueField     : 'name',
                 emptyText      : 'None',
+                padding     : 10,
                 listeners   : {
-                    change : {fn : function(cmp, newValue) {
+                    scope : this,
+                    change : function(cmp, newValue)
+                    {
                         var selected = cmp.getStore().getAt(cmp.getStore().find('name', newValue));
                         this.queryLabel = selected ? selected.data.title : null;
                         this.queryName = selected ? selected.data.name : null;
-                    }, scope : this}
+                        okBtn.enable();
+                    }
                 }
             });
 
-            queryStore.addListener('beforeload', function(){
-                selectQuerySettingsBtn.disable();
+            queryCombo.getStore().addListener('beforeload', function(){
+                okBtn.disable();
             }, this);
 
-            var selectQuerySettingsBtn = Ext4.create('Ext.button.Button', {
-                text : 'Ok',
-                formBind: true,
+
+            var okBtn = Ext4.create('Ext.button.Button', {
+                text : 'OK',
+                disabled: true,
                 handler : function(btn) {
-                    var form = btn.up('form').getForm();
+                    var dialog = btn.up('window');
+                    var form = dialog.down('form').getForm();
+
                     if (form.isValid())
                     {
                         dialog.hide();
@@ -978,39 +998,46 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 scope   : this
             });
 
-            var formPanel = Ext4.create('Ext.form.Panel', {
-                border  : false,
-                frame   : false,
-                fieldDefaults  : {
-                    labelWidth : 75,
-                    width      : 375,
-                    style      : 'padding: 4px 0',
-                    labelSeparator : ''
-                },
-                items   : formItems,
-                buttonAlign : 'right',
-                buttons     : [ selectQuerySettingsBtn, {
-                    text : 'Cancel',
-                    handler : function(btn) {window.history.back()}
-                }]
+            var cancelBtn = Ext4.create('Ext.button.Button', {
+                text : 'Cancel',
+                handler : function(btn) {
+                    window.history.back()
+                }
             });
 
-            var dialog = Ext4.create('Ext.window.Window', {
-                layout : 'fit',
-                border : false,
-                frame  : false,
-                closable : false,
-                draggable : false,
-                modal  : true,
-                //cls: 'chart-wizard-dialog',
-                title  : 'Select Query',
-                bodyPadding : 20,
-                items : formPanel,
-                scope : this
+            this.querySettingsPanel = Ext4.create('LABKEY.vis.ChartWizardPanel', {
+                cls: 'chart-wizard-panel chart-query-panel',
+                height: 210,
+                width: 440,
+                items: [
+                    Ext4.create('Ext.panel.Panel', {
+                        region: 'north',
+                        cls: 'region-panel title-panel',
+                        border: false,
+                        html: 'Select a query'
+                    }),
+                    Ext4.create('Ext.form.Panel', {
+                        region: 'center',
+                        cls: 'region-panel',
+                        fieldDefaults: {
+                            labelWidth: 75,
+                            width: 375
+                        },
+                        items : [schemaCombo, queryCombo]
+                    }),
+                    Ext4.create('Ext.toolbar.Toolbar', {
+                        region: 'south',
+                        cls: 'region-panel button-bar',
+                        border: false,
+                        ui: 'footer',
+                        defaults: {width: 65},
+                        items: ['->', cancelBtn, okBtn]
+                    })
+                ]
             });
-
-            dialog.show();
         }
+
+        return this.querySettingsPanel;
     },
 
     /**
@@ -1261,7 +1288,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     {
         if (Ext4.isObject(queryConfig))
         {
-            if (queryConfig.filterArray)
+            if (Ext4.isArray(queryConfig.filterArray))
             {
                 this.userFilters = [];
                 for (var i=0; i < queryConfig.filterArray.length; i++)
@@ -1363,6 +1390,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         this.clearChartPanel();
         this.viewPanel.add(errorDiv);
+        this.getEl().unmask();
     },
 
     renderPlot : function(forExport)
