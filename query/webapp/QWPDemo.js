@@ -13,7 +13,8 @@
             testPagingConfig: testPagingConfig,
             testSetPaging: testSetPaging,
             test25337: test25337,
-            testPageOffset: testPageOffset
+            testPageOffset: testPageOffset,
+            testRemovableFilters: testRemovableFilters
         };
 
         var PAGE_OFFSET = 4;
@@ -296,7 +297,7 @@
                                 LABKEY.Filter.create('tag', 'blue', LABKEY.Filter.Types.CONTAINS),
                                 LABKEY.Filter.create('tag', 'black', LABKEY.Filter.Types.CONTAINS)
                             ];
-                            qwp.replaceFilters(twoSameFilters, {fieldKey: 'tag'});
+                            qwp.replaceFilters(twoSameFilters);
                         }
                     }
                 }
@@ -335,6 +336,39 @@
                             }
                             else {
                                 alert('Failed to set Offset to 0 with API');
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function testRemovableFilters() {
+            var initialLoad = true;
+            new LABKEY.QueryWebPart({
+                title: 'Keep Removable Filters',
+                schemaName: 'Samples',
+                queryName: 'sampleDataTest1',
+                renderTo: RENDERTO,
+                removeableFilters: [
+                    LABKEY.Filter.create('tag', 'yellow')
+                ],
+                failure: function() {
+                    alert('Failed test: Keep Removable Filters.');
+                },
+                listeners: {
+                    render: function(qwp) {
+                        if (initialLoad) {
+                            initialLoad = false;
+                            qwp.refresh();
+                        }
+                        else {
+                            var filters = qwp.getUserFilterArray();
+                            if (filters.length !== 1) {
+                                alert('Failed test: Keep Removable Filters. Expected removeableFilters to be maintained.');
+                            }
+                            else {
+                                LABKEY.Utils.signalWebDriverTest("testRemovableFilters");
                             }
                         }
                     }
