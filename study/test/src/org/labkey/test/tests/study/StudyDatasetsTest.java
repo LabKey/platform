@@ -25,9 +25,11 @@ import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyA;
+import org.labkey.test.components.ChartLayoutDialog;
 import org.labkey.test.components.ext4.Window;
 import org.labkey.test.components.study.DatasetFacetPanel;
 import org.labkey.test.util.DataRegionTable;
+import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
 import org.labkey.test.util.PortalHelper;
@@ -163,10 +165,12 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         waitForElement(Locator.xpath("//input[@id='name0-input']"));
         assertTextNotPresent("XTest");
         setFormElement(Locator.xpath("//input[@id='name0-input']"), "XTest");
+        mouseOver(Locator.xpath("//input[@id='name0-input']")); // Moving the mouse because leaving it where it was puts it over the 'move down' icon, which causes a pop-up, which can interfere with following click.
         clickButtonContainingText("Add Field", 0);
         waitForElement(Locator.xpath("//input[@id='name1-input']"));
         assertTextNotPresent("YTest");
         setFormElement(Locator.xpath("//input[@id='name1-input']"), "YTest");
+        mouseOver(Locator.xpath("//input[@id='name1-input']")); // Moving the mouse because leaving it where it was puts it over the 'move down' icon, which causes a pop-up, which can interfere with following click.
         clickButtonContainingText("Add Field", 0);
         waitForElement(Locator.xpath("//input[@id='name2-input']"));
         assertTextNotPresent("ZTest");
@@ -404,7 +408,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         //verifyExpectedReportsAndViewsExist();
         verifyCustomViewWithDatasetJoins("CPS-1: Screening Chemistry Panel", CUSTOM_VIEW_WITH_DATASET_JOINS, true, true, "DataSets/DEM-1/DEMbdt", "DataSets/DEM-1/DEMsex");
         verifyTimeChart("APX-1", "APX-1: Abbreviated Physical Exam");
-        verifyScatterPlot("APX-1: Abbreviated Physical Exam");
+        verifyScatterPlot();
         verifyParticipantReport("DEM-1: 1.Date of Birth", "DEM-1: 2.What is your sex?", "APX-1: 1. Weight", "APX-1: 2. Body Temp", "ECI-1: 1.Meet eligible criteria?");
 
         // create a private custom view with dataset joins
@@ -422,7 +426,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         verifyCustomViewWithDatasetJoins("Screening Chemistry Panel", CUSTOM_VIEW_WITH_DATASET_JOINS, true, true, "DataSets/eligcrit/ECIelig", "DataSets/demo/DEMbdt", "DataSets/demo/DEMsex");
         verifyCustomViewWithDatasetJoins("Screening Chemistry Panel", CUSTOM_VIEW_PRIVATE, false, false, "DataSets/eligcrit/ECIelig", "DataSets/demo/DEMbdt", "DataSets/demo/DEMsex");
         verifyTimeChart("abbrphy", "Abbreviated Physical Exam");
-        verifyScatterPlot("Abbreviated Physical Exam");
+        verifyScatterPlot();
         verifyParticipantReport("demo: 1.Date of Birth", "demo: 2.What is your sex?", "abbrphy: 1. Weight", "abbrphy: 2. Body Temp", "eligcrit: 1.Meet eligible criteria?");
     }
 
@@ -532,7 +536,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     }
 
     @LogMethod
-    private void verifyScatterPlot(String datasetLabel)
+    private void verifyScatterPlot()
     {
         log("Verify dataset label to name fixup for Scatter Plot");
         goToManageViews();
@@ -541,12 +545,12 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         _ext4Helper.waitForMaskToDisappear();
         assertTextNotPresent("An unexpected error occurred while retrieving data", "doesn't exist", "may have been deleted");
         // verify that the main title reset goes back to the dataset label - measue name
-        goToSvgAxisTab("APX Main Title");
-        setFormElement(Locator.name("chart-title-textfield"), "test");
-        waitForElementToDisappear(Locator.xpath("//a[contains(@class, 'x4-btn-disabled')]//span[contains(@class, 'iconReload')]"));
-        click(Locator.xpath("//span[contains(@class, 'iconReload')]"));
-        assertEquals(datasetLabel + " - 3. BP systolic xxx/", getFormElement(Locator.name("chart-title-textfield")));
-        clickButton("Cancel", 0);
+        waitForElement(Ext4Helper.Locators.ext4Button("Chart Layout").enabled());
+        clickButton("Chart Layout", 0);
+        ChartLayoutDialog layoutDialog = new ChartLayoutDialog(this);
+        layoutDialog.setPlotTitle("test");
+        layoutDialog.clickCancel();
+        assertTextPresent("APX Main Title", 2); // The count is 2 because the text is present on the plot, and in the dialog (which is now hidden).
     }
 
     @LogMethod
