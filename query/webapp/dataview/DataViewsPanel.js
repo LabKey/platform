@@ -826,8 +826,10 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 }
         );
         heightSize = count * heightPerRecord + dataViewPanelHeaderSize;
-        if (heightSize > 3000) {
-            heightSize = 3000;
+        // make the maximum height that can be dynamically computed be 700,
+        // if user wants it bigger it can be customized up to 3000
+        if (heightSize > 700) {
+            heightSize = 700;
         }
         if (heightSize < 200) {
             heightSize = 200;
@@ -838,10 +840,10 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
     onViewLoad : function() {
 
         if(this._useDynamicHeight) {
-            // use daynamic height calcuated from number of rows in results set
+            // use dynamic height calculated from number of rows in results set
             this.setHeight(this.getCalculatedPanelHeight());
         } else {
-            // use fixdd height the user specified
+            // use custom height the user specified
             this.setHeight(this._height);
         }
         this.getCenter().getEl().unmask();
@@ -948,10 +950,10 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             this.getNorth().hide();
         }
         if(this._useDynamicHeight) {
-            // use daynamic height calcuated from number of rows in results set
+            // use dynamic height calculated from number of rows in results set
             this.setHeight(this.getCalculatedPanelHeight());
         } else {
-            // use fixdd height the user specified
+            // use custom height the user specified
             this.setHeight(this._height);
         }
         this.customMode = false;
@@ -1078,7 +1080,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         }
 
         // default height is dynamically sized to number of rows
-        sizeItems.push({boxLabel : 'default (dynamic)', name : 'height', inputValue : true, minWidth: 75, checked : this._useDynamicHeight, handler : function(grp, chk){
+        sizeItems.push({boxLabel : 'Default (dynamic)', name : 'height', inputValue : true, minWidth: 75, checked : this._useDynamicHeight, handler : function(grp, chk){
             var fields = this.query('numberfield');
 
             if (grp.getValue()) {
@@ -1097,7 +1099,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         }, scope : this});
 
         // custom height
-        sizeItems.push({boxLabel : 'custom', name : 'height', inputValue : 0, minWidth: 75, checked : !this._useDynamicHeight, handler : function(grp, chk){
+        sizeItems.push({boxLabel : 'Custom', name : 'height', inputValue : 0, minWidth: 75, checked : !this._useDynamicHeight, handler : function(grp, chk){
             var fields = this.query('numberfield');
 
             if (grp.getValue())

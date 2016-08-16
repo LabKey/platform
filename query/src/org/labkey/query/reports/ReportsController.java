@@ -2816,10 +2816,11 @@ public class ReportsController extends SpringActionController
                 {
                     webPartProps.put("useDynamicHeight", "false");
                 }
-                else {
-                    // only default to true if an existing height does not exist
+                else
+                {
+                    // only default to true if height does not already exist
                     // this allows older installs to keep their already specific Data View panel heights
-                    // while allowing new installs to default to using dynaimc heights based on number of rows
+                    // while allowing new installs to default to using dynamic heights based on number of rows
                     webPartProps.put("useDynamicHeight", "true");
                 }
                 response.put("webpart", new JSONObject(webPartProps));
