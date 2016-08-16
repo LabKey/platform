@@ -105,6 +105,9 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
             IMultiValuedDisplayColumn mdc = (IMultiValuedDisplayColumn)dc;
 
             List<Object> values = mdc.getJsonValues(getRenderContext());
+            if (values == null)
+                return null;
+
             List<String> urls = mdc.renderURLs(getRenderContext());
             List<Object> display = mdc.getDisplayValues(getRenderContext());
 
