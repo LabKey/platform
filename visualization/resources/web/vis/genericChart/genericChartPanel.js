@@ -225,6 +225,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             this.chartLayoutBtn = Ext4.create('Ext.button.Button', {
                 text: 'Chart Layout',
+                disabled: true,
                 handler: this.showChartLayoutWindow,
                 scope: this
             });
@@ -308,6 +309,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.saveBtn =  Ext4.create('Ext.button.Button', {
                 text: "Save",
                 hidden: this.hideSave,
+                disabled: true,
                 handler: function(){
                     this.onSaveBtnClicked(false)
                 },
@@ -325,6 +327,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.saveAsBtn = Ext4.create('Ext.button.Button', {
                 text: "Save As",
                 hidden  : this.isNew() || this.hideSave,
+                disabled: true,
                 handler: function(){
                     this.onSaveBtnClicked(true);
                 },
@@ -1484,7 +1487,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             layers.push(new LABKEY.vis.Layer({data: this.chartData.rows, geom: geom}));
 
             // client has specified a line type (only applicable for scatter plot)
-            if (this.curveFit && this.isScatterPlot(this.renderType, this.measures.x.normalizedType)) {
+            if (this.curveFit && this.measures.x && this.isScatterPlot(this.renderType, this.measures.x.normalizedType))
+            {
                 var factory = this.lineRenderers[this.curveFit.type];
                 if (factory) {
                     layers.push(
@@ -1562,7 +1566,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         // Initialize the x and y measures on first chart load. Returns false if we're missing the x or y measure.
         var measure, fk, measureStore = this.getChartTypePanel().getStore();
 
-        if (!this.measures.y && !forExport) {
+        if (!this.measures.y && !forExport)
+        {
             if (this.autoColumnYName)
             {
                 // In some cases the column name is escaped, so we need to unescape it when searching.
@@ -1604,6 +1609,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 measure = measureStore.findRecord('label', 'Study: Cohort', 0, false, true, true);
                 if (measure)
                     this.setXAxisMeasure(measure, true);
+
+                this.autoColumnYName = null;
             }
         }
 

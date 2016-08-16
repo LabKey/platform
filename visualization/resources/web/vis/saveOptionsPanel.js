@@ -70,7 +70,7 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
                         labelWidth: 125,
                         hidden: this.isSavedReport() || !this.canSaveChanges(),
                         value: (this.isSavedReport() ? this.reportInfo.name : null),
-                        allowBlank: true,
+                        allowBlank: false,
                         anchor: '100%',
                         maxLength: 200
                     }),
@@ -90,7 +90,6 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
                         labelWidth: 125,
                         hidden: !this.canSaveChanges(),
                         value: (this.isSavedReport() ? this.reportInfo.description : null),
-                        allowBlank: true,
                         anchor: '100%',
                         height: 35
                     }),
@@ -189,18 +188,11 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
                 text: "Save",
                 hidden: !this.canSaveChanges(),
                 handler: function() {
-                    var formVals = this.getSaveForm().getForm().getValues();
-
                     // report name is required for saving
-                    if(!formVals.reportName){
-                        Ext4.Msg.show({
-                            title: "Error",
-                            msg: "Report name must be specified when saving a chart.",
-                            buttons: Ext4.MessageBox.OK,
-                            icon: Ext4.MessageBox.ERROR
-                        });
+                    if (!this.getSaveForm().isValid())
                         return;
-                    }
+
+                    var formVals = this.getSaveForm().getForm().getValues();
 
                     // the save button will not allow for replace if this is a new chart,
                     // but will force replace if this is a change to a saved chart
@@ -249,6 +241,7 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
     },
 
     cancelChangesButtonClicked: function(){
+        this.down('#reportName').clearInvalid();
         this.fireEvent('closeOptionsWindow', true);
     },
 
@@ -276,6 +269,7 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
         {
             this.down('#reportName').show();
             this.down('#reportName').setValue("");
+            this.down('#reportName').clearInvalid();
             this.down('#reportNameDisplay').hide();
 
             this.down('#reportDescription').show();
@@ -296,6 +290,7 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
         {
             this.down('#reportName').setVisible(!this.isSavedReport());
             this.down('#reportName').setValue(this.isSavedReport() ? this.reportInfo.name : null);
+            this.down('#reportName').clearInvalid();
             this.down('#reportNameDisplay').setVisible(this.isSavedReport());
             this.down('#reportNameDisplay').setValue(Ext4.util.Format.htmlEncode(this.isSavedReport() ? this.reportInfo.name : null));
 
@@ -368,6 +363,7 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
         this.reportInfo = Ext4.apply({}, config);
 
         this.down('#reportName').setValue(config.name);
+        this.down('#reportName').clearInvalid();
         this.down('#reportNameDisplay').setValue(config.name);
         this.down('#reportDescription').setValue(config.description);
         this.down('#reportDescriptionDisplay').setValue(config.description);
