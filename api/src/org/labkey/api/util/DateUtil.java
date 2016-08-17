@@ -1341,13 +1341,36 @@ Parse:
     @Nullable
     public static Date getDateOnly(@Nullable Date fullDate)
     {
-        return splitDate(fullDate).first;
+        if (null == fullDate)
+            return null;
+
+        int year = fullDate.getYear();
+        int month = fullDate.getMonth();
+        int date = fullDate.getDate();
+
+        return new Date(year, month, date);
     }
+
+    private final static Date ZERO_TIME = new Date(70, 0, 1, 0, 0, 0);
 
     @Nullable
     public static Date getTimeOnly(@Nullable Date fullDate)
     {
-        return splitDate(fullDate).second;
+        if (null == fullDate)
+            return null;
+
+        try
+        {
+            int hour = fullDate.getHours();
+            int mins = fullDate.getMinutes();
+            int secs = fullDate.getSeconds();
+
+            return new Date(70, 0, 1, hour, mins, secs);
+        }
+        catch (IllegalArgumentException ignore)
+        {
+            return ZERO_TIME;
+        }
     }
 
     public static class TestCase extends Assert
@@ -1879,12 +1902,20 @@ Parse:
             Date expectedDate = java.sql.Timestamp.valueOf("2001-02-03 00:00:00");
             Date expectedTime = java.sql.Timestamp.valueOf("1970-01-01 04:05:06");
 
-            Pair<Date, Date> dateTimePair = splitDate(fullDate);
-            Date onlyDate = dateTimePair.first;
-            Date onlyTime = dateTimePair.second;
+            Date onlyDate = getDateOnly(fullDate);
+            Date onlyTime = getTimeOnly(fullDate);
             assertEquals(onlyDate.getTime(), expectedDate.getTime());
             assertEquals(fullDate.getTime(), combineDateTime(onlyDate, onlyTime).getTime());
             assertEquals(onlyTime.getTime(), expectedTime.getTime());
+
+            // Test that splitting methods work for java.sql.Date as well
+            Date sqlDate = java.sql.Date.valueOf("2001-02-03");
+
+            onlyDate = getDateOnly(sqlDate);
+            onlyTime = getTimeOnly(sqlDate);
+            assertEquals(onlyDate.getTime(), expectedDate.getTime());
+            assertEquals(sqlDate.getTime(), combineDateTime(onlyDate, onlyTime).getTime());
+            assertEquals(onlyTime.getTime(), new Date(70, 0, 1, 0, 0, 0).getTime());
         }
     }
 }
