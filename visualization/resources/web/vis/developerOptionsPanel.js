@@ -41,7 +41,7 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
 
         this.pointClickTextAreaId = 'textarea-' + Ext4.id();
         this.pointClickTextAreaHtml = Ext4.create('Ext.Panel', {
-            height: 285,
+            height: 280,
             border: false,
             disabled: this.pointClickFn == null,                    // name is for selenium testing
             html: '<textarea id="' + this.pointClickTextAreaId + '" name="point-click-fn-textarea" '
@@ -79,7 +79,7 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
                 }),
                 Ext4.create('Ext.Panel', {
                     title: 'Help',
-                    height: 285,
+                    height: 280,
                     autoScroll: true,
                     items: [{
                         xtype: 'panel',
