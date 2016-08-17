@@ -601,8 +601,7 @@ public class SecurityManager
 
     public static void setVerification(ValidEmail email, @Nullable String verification) throws UserManagementException
     {
-
-        int rows = new SqlExecutor(core.getSchema()).execute("UPDATE " + core.getTableInfoLogins() + " SET Verification=? WHERE email=?", verification, email.getEmailAddress());
+        int rows = new SqlExecutor(core.getSchema()).execute("UPDATE " + core.getTableInfoLogins() + " SET Verification=? WHERE LOWER(email)=LOWER(?)", verification, email.getEmailAddress());
         if (1 != rows)
             throw new UserManagementException(email, "Unexpected number of rows returned when setting verification: " + rows);
     }

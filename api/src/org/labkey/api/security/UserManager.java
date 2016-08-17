@@ -494,6 +494,11 @@ public class UserManager
     public static void changeEmail(boolean isAdmin, int userId, String oldEmail, String newEmail, String verificationToken, User currentUser)
             throws SecurityManager.UserManagementException, ValidEmail.InvalidEmailException
     {
+        // make sure these emails are valid, and also have been processed (like changing to lowercase)
+
+        oldEmail = new ValidEmail(oldEmail).getEmailAddress();
+        newEmail = new ValidEmail(newEmail).getEmailAddress();
+
         DbScope scope = CORE.getSchema().getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
