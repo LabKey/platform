@@ -45,7 +45,6 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.ExprColumn;
@@ -54,6 +53,7 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -124,6 +124,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
                 if (AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME.equalsIgnoreCase(col.getName()))
                 {
                     col.setKeyField(true);
+                    col.setFk(new RowIdForeignKey(col));
                 }
 
                 DomainProperty domainProperty = _resultsDomain.getPropertyByName(baseColumn.getName());
