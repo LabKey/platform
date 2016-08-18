@@ -40,24 +40,30 @@
     String borderTitle = theme.getBorderTitleColor();
     String webpart     = theme.getWebPartColor();
     String fontSize    = ThemeFont.getThemeFont(c).getNormalSize();
+    String textInputFontSize    = ThemeFont.getThemeFont(c).getTextInputSize();
 
     // TODO: Generate a different stylesheet for font changes
-    String liWidth = "11em";    // MEDIUM
-    String menuPadding = "6px";
-    if (fontSize.equalsIgnoreCase("14px"))
+    String liWidth = "10em";    // MEDIUM
+    String menuPaddingTop = "6px";
+    String menuPaddingBottom = "6px";
+    String mainMenuHeight = "26px";
+    if (fontSize.equalsIgnoreCase("16px"))
     {
-        liWidth = "10em";       // LARGE
-        menuPadding = "5px";
+        liWidth = "9em";       // LARGE
+        menuPaddingTop = menuPaddingBottom = "5px";
+        mainMenuHeight = "28px";
     }
     else if (fontSize.equalsIgnoreCase("12px"))
     {
         liWidth = "10em";       // SMALL
-        menuPadding = "7px";
+        menuPaddingTop = "5px";
+        menuPaddingBottom = "7px";
     }
     else if (fontSize.equalsIgnoreCase("11px"))
     {
         liWidth = "10em";       // SMALLEST
-        menuPadding = "7px";
+        menuPaddingTop = "5px";
+        menuPaddingBottom = "8px";
     }
 
     Color toolIconBackgroundColor = WebTheme.parseColor(link);
@@ -77,13 +83,23 @@ body
     background-color: #<%= primary %>;
 }
 
+input
+{
+    font-size: <%= textInputFontSize %>;
+}
+
 body, div, td, th, table, img, form,
 .x-form-item, .x-panel-header, .x-btn button
 {
     font-size: <%= fontSize %>;
 }
 
-.x4-tree-node-text
+.x-form-field
+{
+font-size: <%= textInputFontSize %>;
+}
+
+.x4-tree-node-text, .x4-form-display-field, .x4-header-text
 {
     font-size: <%= fontSize %>;
 }
@@ -459,6 +475,16 @@ td.labkey-ms1-filter
     background-color: #<%= second %>;
 }
 
+.gwt-Label, .gwt-CheckBox
+{
+    font-size: <%= fontSize %>;
+}
+
+.gwt-TextArea, .gwt-TextBox
+{
+    font-size: <%= textInputFontSize %>;
+}
+
 /* ExtJS */
 .x-panel-header
 {
@@ -580,6 +606,7 @@ ul.x-tab-strip-top li
 .x-tab-strip span.x-tab-strip-text
 {
 	color: #<%= link %>;
+    font-size: <%= fontSize %>;
 }
 
 li.labkey-tab-inactive a
@@ -682,6 +709,7 @@ li.tab-nav-inactive a {
 
 .labkey-main-menu
 {
+    height: <%=mainMenuHeight%>;
     background-color: #<%= link %>;
 }
 
@@ -702,11 +730,11 @@ div.headermenu {
 }
 
 .labkey-main-menu li {
-    padding: <%=menuPadding%> 9px;
+    padding: <%=menuPaddingTop%> 9px <%=menuPaddingBottom%> 9px;
 }
 
 .labkey-main-menu li.menu-projects {
-    padding: <%=menuPadding%> 18px <%=menuPadding%> 23px;
+    padding: <%=menuPaddingTop%> 18px <%=menuPaddingBottom%> 23px;
 }
 
 .project-nav ul li {
