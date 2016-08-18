@@ -48,6 +48,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.study.assay.AssayHeaderLinkProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
@@ -103,6 +104,8 @@ public class AssayManager implements AssayService.Interface
     private static Cache<GUID, List<ExpProtocol>> PROTOCOL_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "AssayProtocols");
 
     private List<AssayProvider> _providers = new ArrayList<>();
+    private List<AssayHeaderLinkProvider> _headerLinkProviders = new ArrayList<>();
+
     /** Synchronization lock object for ensuring that batch names are unique */
     private static final Object BATCH_NAME_LOCK = new Object();
 
@@ -176,6 +179,18 @@ public class AssayManager implements AssayService.Interface
     public List<AssayProvider> getAssayProviders()
     {
         return Collections.unmodifiableList(_providers);
+    }
+
+    @Override
+    public void registerAssayHeaderLinkProvider(AssayHeaderLinkProvider provider)
+    {
+        _headerLinkProviders.add(provider);
+    }
+
+    @Override
+    public List<AssayHeaderLinkProvider> getAssayHeaderLinkProviders()
+    {
+        return Collections.unmodifiableList(_headerLinkProviders);
     }
 
     public ExpRunTable createRunTable(ExpProtocol protocol, AssayProvider provider, User user, Container container)

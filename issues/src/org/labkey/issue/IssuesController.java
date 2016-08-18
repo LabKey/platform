@@ -177,6 +177,14 @@ public class IssuesController extends SpringActionController
         {
             return new ActionURL(DetailsAction.class, c);
         }
+
+        @Override
+        public ActionURL getInsertURL(Container c, String issueDefName)
+        {
+            ActionURL url = new ActionURL(InsertAction.class, c);
+            url.addParameter("issueDefName", issueDefName);
+            return url;
+        }
     }
 
 

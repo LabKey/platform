@@ -27,5 +27,6 @@ import org.labkey.api.view.ActionURL;
 */
 public interface IssuesUrls extends UrlProvider
 {
-    public ActionURL getDetailsURL(Container c);
+    ActionURL getDetailsURL(Container c);
+    ActionURL getInsertURL(Container c, String issueDefName);
 }
