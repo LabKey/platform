@@ -16,6 +16,7 @@
 package org.labkey.api.script;
 
 import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -37,7 +38,6 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.resource.ResourceRef;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.HeartBeat;
@@ -101,6 +101,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import static org.labkey.api.script.RhinoService.LOG;
+
 public final class RhinoService
 {
     public static final Logger LOG = Logger.getLogger(ScriptService.Console.class);
@@ -113,7 +115,7 @@ public final class RhinoService
 
     public static void clearCaches()
     {
-        // Clear Rhino's internal module script cache and shared topLevel.  LabKey caches will be cleared seprately.
+        // Clear Rhino's internal module script cache and shared topLevel. LabKey caches will be cleared separately.
         LOG.info("Purging RhinoService caches");
         RhinoEngine.clearTopLevel();
     }
@@ -330,7 +332,7 @@ class ScriptReferenceImpl implements ScriptReference
     // This is factored out of the CacheLoader to provide access in the uncached case
     private static CompiledScript compile(Resource r, RhinoEngine engine)
     {
-        RhinoService.LOG.info("Compiling script '" + r.getPath().toString() + "'");
+        LOG.info("Compiling script '" + r.getPath().toString() + "'");
 
         try (Reader reader = Readers.getReader(r.getInputStream()))
         {
@@ -410,7 +412,7 @@ class ScriptReferenceImpl implements ScriptReference
             }
             ctxt.getBindings(ScriptContext.ENGINE_SCOPE).put(ScriptEngine.FILENAME, r.getPath().toString());
 
-            RhinoService.LOG.debug("Evaluating script '" + r.getPath().toString() + "'");
+            LOG.debug("Evaluating script '" + r.getPath().toString() + "'");
             Object result = script.eval(ctxt);
             evaluated = true;
             return result;
@@ -450,7 +452,7 @@ class ScriptReferenceImpl implements ScriptReference
         Context ctx = Context.enter();
         try
         {
-            RhinoService.LOG.debug("Invoking method '" + name + "' in script '" + r.getPath().toString() + "'");
+            LOG.debug("Invoking method '" + name + "' in script '" + r.getPath().toString() + "'");
             Object result = engine.invokeMethod(thiz, name, args);
             if (result == null)
                 return null;
@@ -476,7 +478,7 @@ class ScriptReferenceImpl implements ScriptReference
         Context ctx = Context.enter();
         try
         {
-            RhinoService.LOG.debug("Invoking method '" + name + "' in script '" + r.getPath().toString() + "'");
+            LOG.debug("Invoking method '" + name + "' in script '" + r.getPath().toString() + "'");
             ScriptContext ctxt = getContext();
             Scriptable scope = engine.getRuntimeScope(ctxt);
             Object result = engine.invokeMethod(scope, name, args);
@@ -498,10 +500,72 @@ class ScriptReferenceImpl implements ScriptReference
 
 class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
 {
+    /**
+     * Caches the last modified date of all top-level Rhino scripts (e.g., scripts included in another script using require()).
+     * Rhino manages the compilation and caching of these scripts itself, but asks our code if they're stale (e.g., changed or
+     * deleted during the development process). This cache provides an efficient (typically no I/O) way to check both existence
+     * and last modified timestamp for these resources.
+     *
+     * This cache is a bit redundant with the module resource cache (see ModuleResourceResolver), which caches and invalidates
+     * the resources themselves, however, it can't currently be used for this staleness check because it doesn't invalidate
+     * on modify plus the exists() and lastModified() methods of FileResource access the file system directly.
+     */
+    private static final PathBasedModuleResourceCache<Long> TOP_LEVEL_SCRIPT_CACHE = ModuleResourceCaches.create("Top-level Rhino script cache", new ModuleResourceCacheHandler<Path, Long>()
+    {
+        private final CacheLoader<String, Long> RESOURCE_LOADER = (key, argument) ->
+        {
+            ModuleResourceCache.CacheId cid = ModuleResourceCache.parseCacheKey(key);
+            Path path = Path.parse(cid.getName());
+            Resource r1 = cid.getModule().getModuleResource(path);
+
+            return r1.getLastModified();
+        };
+
+        @Override
+        public boolean isResourceFile(String filename)
+        {
+            return StringUtils.endsWithIgnoreCase(filename, ".js");
+        }
+
+        @Override
+        public String getResourceName(Module module, String filename)
+        {
+            return filename;
+        }
+
+        @Override
+        public String createCacheKey(Module module, Path path)
+        {
+            return ModuleResourceCache.createCacheKey(module, path.toString());
+        }
+
+        @Override
+        public CacheLoader<String, Long> getResourceLoader()
+        {
+            return RESOURCE_LOADER;
+        }
+
+        @Nullable
+        @Override
+        public FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+        {
+            return null;
+        }
+    });
+
     @Override
     protected boolean entityNeedsRevalidation(Object validator)
     {
-        return !(validator instanceof ResourceRef) || ((ResourceRef)validator).isStale();
+        boolean isStale = true;
+
+        if (validator instanceof RhinoScriptRef)
+        {
+            RhinoScriptRef ref = (RhinoScriptRef)validator;
+            Long currentLastModified = TOP_LEVEL_SCRIPT_CACHE.getResource(ref.getModule(), ref.getPath());
+            isStale = (null == currentLastModified || currentLastModified.longValue() != ref.getLastModified());
+        }
+
+        return isStale;
     }
 
     @Override
@@ -518,10 +582,6 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
 
     protected ModuleSource load(String moduleScript, Object validator)
     {
-        // NOTE: Don't recheck for stale-ness: calling .isStale() resets the staleness of the ResourceRef.
-        //if (validator instanceof ResourceRef && !((ResourceRef)validator).isStale())
-        //    return NOT_MODIFIED;
-
         // load non-relative modules from the root "/scripts" directory
         if ((!moduleScript.startsWith("./") || !moduleScript.startsWith("../")) && !moduleScript.startsWith("scripts/"))
             moduleScript = "/scripts/" + moduleScript;
@@ -534,9 +594,9 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
             return null;
         }
 
-        RhinoService.LOG.debug("Loading require()'ed resource '" + path.toString() + "'");
+        LOG.debug("Loading require()'ed resource '" + path.toString() + "'");
 
-        ResourceRef ref = new ResourceRef(res);
+        RhinoScriptRef ref = new RhinoScriptRef(res);
         try
         {
             return new LabKeyModuleSource(ref);
@@ -552,14 +612,14 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
      */
     private static class LabKeyModuleSource extends ModuleSource
     {
-        private ResourceRef _ref;
+        private final RhinoScriptRef _ref;
 
         /**
          * Creates a new module source.
          */
-        public LabKeyModuleSource(ResourceRef ref) throws URISyntaxException
+        public LabKeyModuleSource(RhinoScriptRef ref) throws URISyntaxException
         {
-            super(null, null, new URI(ref.getResource().getPath().toString()), new URI("module://scripts/"), ref);
+            super(null, null, new URI(ref.getPath().toString()), new URI("module://scripts/"), ref);
             _ref = ref;
         }
 
@@ -572,7 +632,7 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
             }
             catch (IOException e)
             {
-                RhinoService.LOG.info(e.getMessage());
+                LOG.info(e.getMessage());
                 // XXX: log to mothership
                 return null;
             }
@@ -629,7 +689,7 @@ class RhinoEngine extends RhinoScriptEngine
 
             if (topLevel == null)
             {
-                RhinoService.LOG.info("RhinoEngine.createTopLevel: initialize cache");
+                LOG.info("RhinoEngine.createTopLevel: initialize cache");
                 // Create the shared module script cache.
                 // This cache is managed by Rhino's module provider implementation.
                 ModuleSourceProvider moduleSourceProvider = new LabKeyModuleSourceProvider();
@@ -1008,8 +1068,7 @@ class SandboxContextFactory extends ContextFactory
         }
 
         @Override
-        public Scriptable wrapAsJavaObject(Context cx, Scriptable scope,
-                                           Object javaObject, Class staticType)
+        public Scriptable wrapAsJavaObject(Context cx, Scriptable scope, Object javaObject, Class staticType)
         {
             return new SandboxNativeJavaObject(scope, javaObject, staticType);
         }

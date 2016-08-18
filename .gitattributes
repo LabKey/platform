@@ -1126,7 +1126,6 @@ api/src/org/labkey/api/resource/FileResource.java -text
 api/src/org/labkey/api/resource/MergedDirectoryResource.java -text
 api/src/org/labkey/api/resource/Resolver.java -text
 api/src/org/labkey/api/resource/Resource.java -text
-api/src/org/labkey/api/resource/ResourceRef.java -text
 api/src/org/labkey/api/script/ScriptReference.java -text
 api/src/org/labkey/api/script/ScriptService.java -text
 api/src/org/labkey/api/search/AbstractDocumentParser.java -text
@@ -6692,6 +6691,7 @@ internal/src/org/labkey/api/rss/RSSServiceImpl.java -text
 internal/src/org/labkey/api/script/ExternalScriptable.java -text
 internal/src/org/labkey/api/script/RhinoCompiledScript.java -text
 internal/src/org/labkey/api/script/RhinoScriptEngine.java -text
+internal/src/org/labkey/api/script/RhinoScriptRef.java -text
 internal/src/org/labkey/api/script/RhinoService.java -text
 internal/src/org/labkey/api/script/ScriptUtils.java -text
 internal/src/org/labkey/api/script/ScriptableErrors.java -text

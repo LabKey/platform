@@ -63,41 +63,36 @@ public final class PathBasedModuleResourceCache<T>
 
         // Wrap the provided cache loader with a cache loader that registers listeners on new directories. This approach
         // ensures we skip this bookkeeping when objects are simply retrieved from the cache.
-        CacheLoader<String, T> wrapper = new CacheLoader<String, T>()
+        CacheLoader<String, T> wrapper = (key, argument) ->
         {
-            @Override
-            public T load(String key, @Nullable Object argument)
+            // Register a listener, if this directory has never been visited before
+
+            ModuleResourceCache.CacheId cid = ModuleResourceCache.parseCacheKey(key);
+            Module module = cid.getModule();
+            Path path = Path.parse(cid.getName());
+            Path parentPath = path.getParent();
+
+            // Use cache key as the canonical name for paths that have listeners
+            String canonicalName = ModuleResourceCache.createCacheKey(module, parentPath.toString());
+
+            if (_pathsWithListeners.add(canonicalName))
             {
-                // Register a listener, if this directory has never been visited before
+                Resource parent = module.getModuleResource(parentPath);
 
-                ModuleResourceCache.CacheId cid = ModuleResourceCache.parseCacheKey(key);
-                Module module = cid.getModule();
-                Path path = Path.parse(cid.getName());
-                Path parentPath = path.getParent();
-
-                // Use cache key as the canonical name for paths that have listeners
-                String canonicalName = ModuleResourceCache.createCacheKey(module, parentPath.toString());
-
-                if (_pathsWithListeners.add(canonicalName))
+                if (null != parent)
                 {
-                    Resource parent = module.getModuleResource(parentPath);
-
-                    if (null != parent)
-                    {
-                        LOG.debug("registering a listener on: " + parent);
-                        ((MergedDirectoryResource) parent).registerListener(_watcher, getListener(module, parent.getPath()), ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
-                    }
+                    LOG.debug("registering a listener on: " + parent);
+                    ((MergedDirectoryResource) parent).registerListener(_watcher, getListener(module, parent.getPath()), ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
                 }
-
-                // Now call the handler's load method
-                return loader.load(key, argument);
             }
+
+            // Now call the handler's load method
+            return loader.load(key, argument);
         };
 
         _handler = handler;
         _cache = CacheManager.getBlockingStringKeyCache(100_000, CacheManager.DAY, description, wrapper);
     }
-
 
     @Nullable
     public T getResource(Module module, Path path, @Nullable Object argument)
