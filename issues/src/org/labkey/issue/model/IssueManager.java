@@ -21,10 +21,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.attachments.AttachmentParent;
@@ -37,6 +35,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.issues.IssuesListDefService;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -112,9 +111,10 @@ import static org.labkey.api.search.SearchService.PROPERTY.categories;
  * Date: Mar 11, 2005
  * Time: 11:07:27 AM
  */
-public class IssueManager
+public class IssueManager implements IssuesListDefService.Interface
 {
     private static final Logger _log = Logger.getLogger(IssueManager.class);
+    public static final IssueManager INSTANCE = new IssueManager();
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("issue", "Issues");
     // UNDONE: Keywords, Summary, etc.
 
@@ -157,6 +157,18 @@ public class IssueManager
 
     private IssueManager()
     {
+    }
+
+    @Override
+    public Domain getDomainFromIssueDefName(String issueDefName, Container container, User user)
+    {
+        IssueListDef issueListDef = getIssueListDef(container, issueDefName);
+        if (issueListDef != null)
+        {
+            return issueListDef.getDomain(user);
+        }
+
+        return null;
     }
 
     /**

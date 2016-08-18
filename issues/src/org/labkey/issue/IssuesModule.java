@@ -88,7 +88,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
         EmailTemplateService.get().registerTemplate(IssueUpdateEmailTemplate.class);
         PropertyService.get().registerDomainKind(new IssueDefDomainKind());
         IssuesListDefService.get().registerIssuesListDefProvider(new GeneralIssuesListDefProvider());
-
+        IssuesListDefService.setInstance(IssueManager.INSTANCE);
         NotificationService.get().registerNotificationType(Issue.class.getName(), "Issues", "fa-bug");
     }
 
