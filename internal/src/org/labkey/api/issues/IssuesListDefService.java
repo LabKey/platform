@@ -2,6 +2,9 @@ package org.labkey.api.issues;
 
 
 import org.apache.log4j.Logger;
+import org.labkey.api.data.Container;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.security.User;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -54,5 +57,21 @@ public class IssuesListDefService
         return _issuesListDefProviders.get(providerName.toLowerCase());
     }
 
+    private static Interface INTERFACE_INSTANCE;
+
+    public static Interface getInstance()
+    {
+        return INTERFACE_INSTANCE;
+    }
+
+    public static void setInstance(Interface impl)
+    {
+        INTERFACE_INSTANCE = impl;
+    }
+
+    public interface Interface
+    {
+        Domain getDomainFromIssueDefName(String issueDefName, Container container, User user);
+    }
 }
 
