@@ -174,16 +174,38 @@ public class SqlScriptController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
-    public class ScriptsAction extends SimpleViewAction
+    public static class ScriptsForm
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        private boolean _managedOnly = false;
+
+        public boolean isManagedOnly()
+        {
+            return _managedOnly;
+        }
+
+        @SuppressWarnings("unused")
+        public void setManagedOnly(boolean managedOnly)
+        {
+            _managedOnly = managedOnly;
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class ScriptsAction extends SimpleViewAction<ScriptsForm>
+    {
+        public ModelAndView getView(ScriptsForm form, BindException errors) throws Exception
         {
             StringBuilder html = new StringBuilder("<table>");
 
             if (AppProps.getInstance().isDevMode())
             {
                 html.append("<tr><td colspan=4>");
+
+                if (form.isManagedOnly())
+                    html.append(PageFlowUtil.textLink("show all modules", new ActionURL(ScriptsAction.class, ContainerManager.getRoot())));
+                else
+                    html.append(PageFlowUtil.textLink("ignore unmanaged modules", new ActionURL(ScriptsAction.class, ContainerManager.getRoot()).addParameter("managedOnly", true)));
+
                 html.append(PageFlowUtil.textLink("consolidate scripts", new ActionURL(ConsolidateScriptsAction.class, ContainerManager.getRoot())));
                 html.append(PageFlowUtil.textLink("orphaned scripts", new ActionURL(OrphanedScriptsAction.class, ContainerManager.getRoot())));
                 html.append(PageFlowUtil.textLink("scripts with errors", new ActionURL(ScriptsWithErrorsAction.class, ContainerManager.getRoot())));
@@ -196,9 +218,18 @@ public class SqlScriptController extends SpringActionController
             html.append("<tr><td>All</td><td>Incremental</td><td>All</td><td>Incremental</td></tr>");
             html.append("<tr valign=top>");
 
+            List<Module> modules = ModuleLoader.getInstance().getModules();
+
+            if (form.isManagedOnly())
+            {
+                modules = modules.stream()
+                    .filter(Module::shouldManageVersion)
+                    .collect(Collectors.toList());
+            }
+
             ArrayList<SqlScript> allRun = new ArrayList<>();
 
-            for (Module module : ModuleLoader.getInstance().getModules())
+            for (Module module : modules)
             {
                 FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
 
@@ -216,7 +247,6 @@ public class SqlScriptController extends SpringActionController
 
             ArrayList<SqlScript> allNotRun = new ArrayList<>();
             ArrayList<SqlScript> incrementalNotRun = new ArrayList<>();
-            List<Module> modules = ModuleLoader.getInstance().getModules();
 
             for (Module module : modules)
             {
