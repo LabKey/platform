@@ -44,7 +44,7 @@ public class DescriptionItem<DomainType extends GWTDomain<FieldType>, FieldType 
 
         flexTable.setWidget(row, LABEL_COLUMN, new Label("Description"));
         DOM.setElementProperty(_descriptionTextArea.getElement(), "id", "propertyDescription");
-        _descriptionTextArea.setSize("240px", "50px");
+        _descriptionTextArea.setSize("260px", "50px");
         flexTable.setWidget(row, INPUT_COLUMN, _descriptionTextArea);
 
         return ++row;

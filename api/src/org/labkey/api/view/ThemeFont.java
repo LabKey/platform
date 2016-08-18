@@ -26,8 +26,8 @@ public class ThemeFont
 {
     protected final static ThemeFont XSMALL  = new ThemeFont("Smallest", "11px", "11px", "16px", "20px", "22px", "13px", "11", "12");
     protected final static ThemeFont SMALL   = new ThemeFont("Small",    "12px", "12px", "18px", "22px", "24px", "14px", "12", "13");
-    protected final static ThemeFont MEDIUM  = new ThemeFont("Medium",   "14px", "14px", "20px", "24px", "27px", "16px", "14", "15");
-    protected final static ThemeFont LARGE   = new ThemeFont("Large",    "16px", "16px", "22px", "26px", "30px", "18px", "16", "17");
+    protected final static ThemeFont MEDIUM  = new ThemeFont("Medium",   "14px", "12px", "20px", "24px", "27px", "16px", "14", "15");
+    protected final static ThemeFont LARGE   = new ThemeFont("Large",    "16px", "14px", "22px", "26px", "30px", "18px", "16", "17");
 
     public final static ThemeFont DEFAULT_THEME_FONT = MEDIUM;
 

@@ -337,7 +337,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                 _extraPropertiesTabPanel.getLayoutTarget().setStyleAttribute("backgroundColor","#eeeeee");
             }
         });
-        _extraPropertiesTabPanel.setPixelSize(385, getExtraPropertiesHeight());
+        _extraPropertiesTabPanel.setPixelSize(460, getExtraPropertiesHeight());
         _extraPropertiesTabPanel.setSelection(_extraPropertiesTabPanel.getItem(0));
         _extraPropertiesTabPanel.addListener(Events.Select, new Listener<TabPanelEvent>()
         {
