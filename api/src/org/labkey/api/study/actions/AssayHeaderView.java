@@ -16,30 +16,22 @@
 
 package org.labkey.api.study.actions;
 
-import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.defaults.SetDefaultValuesAssayAction;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExperimentUrls;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.assay.AbstractAssayProvider;
-import org.labkey.api.study.assay.AssayProtocolSchema;
+import org.labkey.api.study.assay.AssayHeaderLinkProvider;
 import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.*;
 
 import java.util.List;
-import java.util.Map;
 import java.util.ArrayList;
 
 /**
@@ -87,6 +79,13 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
             if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), InsertPermission.class) && PipelineService.get().hasValidPipelineRoot(getViewContext().getContainer()))
                 links.add(new NavTree(AbstractAssayProvider.IMPORT_DATA_LINK_NAME, _provider.getImportURL(getViewContext().getContainer(), _protocol)));
         }
+
+        // give the registered AssayHeaderLinkProviders a chance to include links
+        for (AssayHeaderLinkProvider headerLinkProvider : AssayService.get().getAssayHeaderLinkProviders())
+        {
+            links.addAll(headerLinkProvider.getLinks(_protocol, getViewContext().getContainer()));
+        }
+
         return links;
     }
 

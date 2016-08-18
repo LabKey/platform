@@ -84,7 +84,7 @@ public class DomainTemplate
     private final String _domainKind;
     private final GWTDomain _domain;
     private final Map<String, Object> _options;
-    private final InitialDataSettings _initialData;
+    private InitialDataSettings _initialData;
 
     /**
      * Find the DomainTemplate used to create this Domain, if it is available.
@@ -339,6 +339,12 @@ public class DomainTemplate
         return new InitialDataSettings(file, hasColumnHeaders, data.getImportIdentity(), data.getImportLookupByAlternateKey());
     }
 
+    public void setImportDataSettings(@NotNull String moduleName, @NotNull String file, boolean hasColumnHeaders)
+    {
+        _initialData = new InitialDataSettings(file, hasColumnHeaders, false, false);
+        _initialData.setModuleName(moduleName);
+    }
+
     private DomainTemplate(@NotNull String name, @NotNull String groupName, @NotNull String moduleName,
                            @NotNull String domainKind, @NotNull GWTDomain domain,
                            @NotNull Map<String, Object> options, @Nullable InitialDataSettings initialData)
@@ -448,7 +454,8 @@ public class DomainTemplate
         DataLoader dl;
         try
         {
-            dl = createDataLoader(_moduleName, _initialData.file, _initialData.hasColumnHeaders);
+            String moduleName = _initialData.moduleName != null ? _initialData.moduleName : _moduleName;
+            dl = createDataLoader(moduleName, _initialData.file, _initialData.hasColumnHeaders);
         }
         catch (IOException e)
         {
@@ -550,6 +557,7 @@ public class DomainTemplate
     private static class InitialDataSettings
     {
         String file;
+        String moduleName;
         boolean hasColumnHeaders;
         boolean importIdentity;
         boolean importLookupByAlternateKey;
@@ -560,6 +568,11 @@ public class DomainTemplate
             this.hasColumnHeaders = hasColumnHeaders;
             this.importIdentity = importIdentity;
             this.importLookupByAlternateKey = importLookupByAlternateKey;
+        }
+
+        public void setModuleName(String moduleName)
+        {
+            this.moduleName = moduleName;
         }
     }
 

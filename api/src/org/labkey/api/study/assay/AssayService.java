@@ -141,5 +141,17 @@ public class AssayService
                 throws IOException, ExperimentException;
 
         public void clearProtocolCache();
+
+        /**
+         * Register a provider that will add text links to the assay header link display.
+         * @param provider the provider that will determine which links to add based on a given ExpProtocol
+         */
+        void registerAssayHeaderLinkProvider(AssayHeaderLinkProvider provider);
+
+        /**
+         * Returns the list of registered providers which can add links to the assay header link listing.
+         * @return the list of registered providers
+         */
+        List<AssayHeaderLinkProvider> getAssayHeaderLinkProviders();
     }
 }

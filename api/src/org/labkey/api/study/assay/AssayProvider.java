@@ -55,7 +55,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * An AssayProvider is the main implementation point for participanting in the overall assay framework. It provides
+ * An AssayProvider is the main implementation point for participating in the overall assay framework. It provides
  * UI, data parsing, configuration, etc for distinct types of assay data. A full, custom AssayProvider implementation
  * will rely on a variety of other implementation classes, but the AssayProvider is the coordinating point that
  * knows what those other classes are. A typical implementation approach is mix and match with custom and standard
