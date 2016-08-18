@@ -115,7 +115,6 @@ import org.labkey.api.pipeline.PipelineRootContainerTree;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
-import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.DuplicateKeyException;
@@ -5369,15 +5368,23 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(InsertPermission.class)
-    public class ImportXarFileAction extends SimpleViewAction<PipelinePathForm>
+    public class ImportXarFileAction extends SimpleViewAction<ImportXarForm>
     {
-        public ModelAndView getView(PipelinePathForm form, BindException errors) throws Exception
+        public ModelAndView getView(ImportXarForm form, BindException errors) throws Exception
         {
             for (File f : form.getValidatedFiles(getContainer()))
             {
                 if (f.isFile())
                 {
                     ExperimentPipelineJob job = new ExperimentPipelineJob(getViewBackgroundInfo(), f, "Experiment Import", false, form.getPipeRoot(getContainer()));
+
+                    // TODO: Configure module resources with the appropriate log location per container
+                    if (form.getModule() != null)
+                    {
+                        File logFile = new File(form.getPipeRoot(getContainer()).getRootPath(), "module-resource-xar.log");
+                        job.setLogFile(logFile);
+                    }
+
                     PipelineService.get().queueJob(job);
                 }
                 else
@@ -5394,6 +5401,45 @@ public class ExperimentController extends SpringActionController
             throw new UnsupportedOperationException();
         }
     }
+
+
+    @RequiresPermission(InsertPermission.class)
+    public class ImportXarAction extends ApiAction<ImportXarForm>
+    {
+        @Override
+        public Object execute(ImportXarForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            List<Map<String, String>> archives = new ArrayList<>();
+            for (File f : form.getValidatedFiles(getContainer()))
+            {
+                Map<String, String> archive = new HashMap<>();
+                ExperimentPipelineJob job = new ExperimentPipelineJob(getViewBackgroundInfo(), f, "Experiment Import", false, form.getPipeRoot(getContainer()));
+
+                // TODO: Configure module resources with the appropriate log location per container
+                if (form.getModule() != null)
+                {
+                    File logFile = new File(form.getPipeRoot(getContainer()).getRootPath(), "module-resource-xar.log");
+                    job.setLogFile(logFile);
+                }
+
+                PipelineService.get().queueJob(job);
+
+                archive.put("file", f.getName());
+                archive.put("job", job.getJobGUID());
+                archive.put("path", form.getPath()); // echo back the public path
+
+                archives.add(archive);
+            }
+
+            response.put("success", true);
+            response.put("archives", archives);
+
+            return response;
+        }
+    }
+
 
     /**
      * User: jeckels
