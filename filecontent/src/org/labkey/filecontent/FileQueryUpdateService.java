@@ -18,6 +18,7 @@ package org.labkey.filecontent;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
@@ -411,6 +412,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
         return oldRow;
     }
 
+    @Nullable
     private WebdavResource davResourceFromKeys(Map<String, Object> keys)
     {
         if (keys.containsKey(KEY_COL_DAV))
@@ -424,6 +426,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
         return null;
     }
 
+    @Nullable
     private WebdavResource getResource(String uri)
     {
         Path path = Path.decode(uri);

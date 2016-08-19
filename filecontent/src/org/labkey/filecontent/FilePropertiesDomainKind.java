@@ -24,6 +24,9 @@ import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -33,8 +36,7 @@ import java.util.Set;
  */
 public class FilePropertiesDomainKind extends AbstractDomainKind
 {
-    private static final String[] RESERVED_FIELDS = new String[]
-    {
+    private static final List<String> RESERVED_FIELDS = Collections.unmodifiableList(Arrays.asList(
             "name",
             "iconHref",
             "modified",
@@ -42,15 +44,17 @@ public class FilePropertiesDomainKind extends AbstractDomainKind
             "createdBy",
             "description",
             "actionHref",
-            "fileExt"
-    };
-    private static final CaseInsensitiveHashSet _reservedFieldSet;
+            "fileExt",
+            FileQueryUpdateService.KEY_COL_ID
+    ));
+    private static final Set<String> _reservedFieldSet;
 
     static {
-        _reservedFieldSet = new CaseInsensitiveHashSet(RESERVED_FIELDS);
+        Set<String> s = new CaseInsensitiveHashSet(RESERVED_FIELDS);
 
         for (ExpDataTable.Column col : ExpDataTable.Column.values())
-            _reservedFieldSet.add(col.name());
+            s.add(col.name());
+        _reservedFieldSet = Collections.unmodifiableSet(s);
     }
 
     @Override
