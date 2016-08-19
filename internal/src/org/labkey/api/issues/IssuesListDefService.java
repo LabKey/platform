@@ -72,6 +72,18 @@ public class IssuesListDefService
     public interface Interface
     {
         Domain getDomainFromIssueDefName(String issueDefName, Container container, User user);
+
+        /**
+         * Register a provider that will add text links to the issue details header link display.
+         * @param provider the provider that will determine which links to add based on a given IssueListDef
+         */
+        void registerIssueDetailHeaderLinkProvider(IssueDetailHeaderLinkProvider provider);
+
+        /**
+         * Returns the list of registered providers which can add links to the issue detail header link listing.
+         * @return the list of registered providers
+         */
+        List<IssueDetailHeaderLinkProvider> getIssueDetailHeaderLinkProviders();
     }
 }
 

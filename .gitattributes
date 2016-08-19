@@ -6664,6 +6664,7 @@ internal/src/org/labkey/api/exp/property/PlateBasedAssaySampleSetDomainKind.java
 internal/src/org/labkey/api/exp/property/SystemProperty.java -text
 internal/src/org/labkey/api/gwt/server/BaseRemoteService.java -text
 internal/src/org/labkey/api/issues/AbstractIssuesListDefDomainKind.java -text
+internal/src/org/labkey/api/issues/IssueDetailHeaderLinkProvider.java -text
 internal/src/org/labkey/api/issues/IssuesListDefProvider.java -text
 internal/src/org/labkey/api/issues/IssuesListDefService.java -text
 internal/src/org/labkey/api/issues/IssuesSchema.java -text
