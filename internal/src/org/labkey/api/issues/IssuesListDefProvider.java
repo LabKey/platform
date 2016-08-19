@@ -18,8 +18,9 @@ public interface IssuesListDefProvider
     default Domain getDomain()
     {
         DomainKind domainKind = getDomainKind();
-        String domainURI = domainKind.generateDomainURI(IssuesSchema.SCHEMA_NAME, getName(), getDomainContainer(), null);
-        return PropertyService.get().getDomain(getDomainContainer(), domainURI);
+        if (null != domainKind)
+            return PropertyService.get().getDomain(getDomainContainer(), domainKind.generateDomainURI(IssuesSchema.SCHEMA_NAME, getName(), getDomainContainer(), null));
+        return null;
     }
 
     static Container getDomainContainer()
@@ -29,4 +30,9 @@ public interface IssuesListDefProvider
 
     @Nullable
     DomainKind getDomainKind();
+
+    default boolean isEnabled(Container container)
+    {
+        return true;
+    }
 }

@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Created by davebradlee on 8/3/16.
@@ -44,10 +45,21 @@ public class IssuesListDefService
 
     public List<IssuesListDefProvider> getIssuesListDefProviders()
     {
-        List<IssuesListDefProvider> providers = new ArrayList<>(_issuesListDefProviders.values());
+        return Collections.unmodifiableList(
+            _issuesListDefProviders.values()
+                                   .stream()
+                                   .sorted((o1, o2) -> (o1.getLabel().compareToIgnoreCase(o2.getLabel())))
+                                   .collect(Collectors.toList()));
+    }
 
-        Collections.sort(providers, (o1, o2) -> (o1.getLabel().compareToIgnoreCase(o2.getLabel())));
-        return Collections.unmodifiableList(providers);
+    public List<IssuesListDefProvider> getEnabledIssuesListDefProviders(Container container)
+    {
+        return Collections.unmodifiableList(
+            _issuesListDefProviders.values()
+                                   .stream()
+                                   .filter(provider -> provider.isEnabled(container))
+                                   .sorted((o1, o2) -> (o1.getLabel().compareToIgnoreCase(o2.getLabel())))
+                                   .collect(Collectors.toList()));
     }
 
     public IssuesListDefProvider getIssuesListDefProvider(String providerName)
