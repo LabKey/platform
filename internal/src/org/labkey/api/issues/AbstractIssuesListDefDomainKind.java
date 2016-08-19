@@ -9,6 +9,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.ExperimentException;
@@ -205,4 +206,9 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
         DomainProperty prop = domain.getPropertyByName("Priority");
         DefaultValueService.get().setDefaultValues(domainContainer, defaultValues);
     }
+
+    public void addAdditionalQueryColumns(TableInfo table)
+    {
+    }
+
 }
