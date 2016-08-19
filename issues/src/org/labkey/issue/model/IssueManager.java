@@ -35,6 +35,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.issues.IssueDetailHeaderLinkProvider;
 import org.labkey.api.issues.IssuesListDefService;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.module.Module;
@@ -155,6 +156,8 @@ public class IssueManager implements IssuesListDefService.Interface
     private static final String CAT_COMMENT_SORT = "issueCommentSort";
     public static final String PICK_LIST_NAME = "pickListColumns";
 
+    private List<IssueDetailHeaderLinkProvider> _headerLinkProviders = new ArrayList<>();
+
     private IssueManager()
     {
     }
@@ -169,6 +172,18 @@ public class IssueManager implements IssuesListDefService.Interface
         }
 
         return null;
+    }
+
+    @Override
+    public void registerIssueDetailHeaderLinkProvider(IssueDetailHeaderLinkProvider provider)
+    {
+        _headerLinkProviders.add(provider);
+    }
+
+    @Override
+    public List<IssueDetailHeaderLinkProvider> getIssueDetailHeaderLinkProviders()
+    {
+        return Collections.unmodifiableList(_headerLinkProviders);
     }
 
     /**

@@ -18,12 +18,13 @@
 
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.exp.property.DomainProperty"%>
+<%@ page import="org.labkey.api.issues.IssueDetailHeaderLinkProvider" %>
+<%@ page import="org.labkey.api.issues.IssuesListDefService" %>
 <%@ page import="org.labkey.api.security.User"%>
-<%@ page import="org.labkey.api.security.permissions.InsertPermission"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.issue.ColumnTypeEnum" %>
@@ -109,6 +110,17 @@
     relatedIssues.append(", priority :").append(issue.getPriority() == null ? null : issue.getPriority());
     relatedIssues.append(", related :").append(issue.getIssueId());
     relatedIssues.append("})");
+
+    List<NavTree> additionalHeaderLinks = new ArrayList<>();
+    for (IssueDetailHeaderLinkProvider provider : IssuesListDefService.getInstance().getIssueDetailHeaderLinkProviders())
+    {
+        IssueListDef issueListDef = IssueManager.getIssueListDef(issue.getIssueDefId());
+        if (issueListDef != null)
+        {
+            boolean issueIsOpen = Issue.statusOPEN.equals(issue.getStatus());
+            additionalHeaderLinks.addAll(provider.getLinks(issueListDef.getDomain(getUser()), issueIsOpen, issue.getExtraProperties(), getContainer(), getUser()));
+        }
+    }
 %>
 <% if (!bean.isPrint())
 {
@@ -189,7 +201,13 @@
             if ( IssueManager.hasRelatedIssues(issue, user))
             {%>
         <td><%= PageFlowUtil.textLink("show related comments", "javascript:toggleComments()", "", "showRelatedComments") %></td><%
-            }%>
+            }
+
+            for (NavTree headerLink : additionalHeaderLinks)
+            {%>
+                <td><%= textLink(headerLink.getText(), headerLink.getHref()) %></td>
+            <%}
+        %>
         <td>&nbsp;&nbsp;&nbsp;Jump to <%=h(names.singularName)%>: <input type="text" size="5" name="issueId"/></td>
     </tr></table>
 </labkey:form><%
