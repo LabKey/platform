@@ -471,8 +471,10 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
         {
             foreground = "#" + foreground;
         }
-        return "<span style=\"position: absolute; border: 1px black solid; width: 8px; z-index: 12; height: 8px; background-color: " + foreground + "\"></span>\n" +
-               "<span style=\"position: absolute; border: 1px black solid; width: 8px; margin: 4px; z-index: 10; height: 8px; background-color: " + background + "\"></span>";
+        return "<div style=\"position: relative;\">" +
+                "<span style=\"position: absolute; border: 1px black solid; width: 8px; z-index: 12; height: 8px; background-color: " + foreground + "\"></span>\n" +
+                "<span style=\"position: absolute; border: 1px black solid; width: 8px; margin: 4px; z-index: 10; height: 8px; background-color: " + background + "\"></span>" +
+                "</div>";
     }
 
     private void configureColorPicker(final ColorComponents components, String initialColor)
