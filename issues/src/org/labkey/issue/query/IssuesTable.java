@@ -109,6 +109,12 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         setDefaultColumns();
     }
 
+    @Override
+    public String getPublicName()
+    {
+        return _issueDef.getName();
+    }
+
     private void addAllColumns()
     {
         UserSchema schema = getUserSchema();
