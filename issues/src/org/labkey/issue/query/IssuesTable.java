@@ -24,7 +24,25 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NamedObjectList;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.LookupColumn;
+import org.labkey.api.data.MultiValuedDisplayColumn;
+import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.MultiValuedLookupColumn;
+import org.labkey.api.data.Parameter;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableExtension;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
@@ -39,6 +57,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.issues.AbstractIssuesListDefDomainKind;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.BatchValidationException;
@@ -98,6 +117,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
     public IssuesTable(IssuesQuerySchema schema, IssueListDef issueDef)
     {
         super(IssuesSchema.getInstance().getTableInfoIssues(), schema);
+        setName(issueDef.getName());
 
         _issueDef = issueDef;
 
@@ -109,11 +129,6 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         setDefaultColumns();
     }
 
-    @Override
-    public String getPublicName()
-    {
-        return _issueDef.getName();
-    }
 
     private void addAllColumns()
     {
@@ -291,6 +306,8 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
                 }
             }
         }
+
+        getDomainKind().addAdditionalQueryColumns(this);
     }
 
     private boolean ignoreColumn(String colName)
@@ -328,6 +345,13 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
     public Domain getDomain()
     {
         return _issueDef.getDomain(getUserSchema().getUser());
+    }
+
+    @Nullable
+    @Override
+    public AbstractIssuesListDefDomainKind getDomainKind()
+    {
+        return (AbstractIssuesListDefDomainKind)super.getDomainKind();
     }
 
     @org.jetbrains.annotations.Nullable
