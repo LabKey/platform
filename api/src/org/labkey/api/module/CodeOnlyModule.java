@@ -1,7 +1,13 @@
 package org.labkey.api.module;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.UpgradeCode;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Set;
 
 /**
  * Bit of a misnomer, but I couldn't think of a better name. These modules provide code and resources, but don't manage
@@ -29,6 +35,27 @@ public abstract class CodeOnlyModule extends DefaultModule
     public final boolean hasScripts()
     {
         return false;
+    }
+
+    @NotNull
+    @Override
+    public final Collection<String> getSchemaNames()
+    {
+        return Collections.emptySet();
+    }
+
+    @NotNull
+    @Override
+    public final Collection<String> getProvisionedSchemaNames()
+    {
+        return Collections.emptySet();
+    }
+
+    @Override
+    @NotNull
+    public final Set<DbSchema> getSchemasToTest()
+    {
+        return Collections.emptySet();
     }
 
     @Override
