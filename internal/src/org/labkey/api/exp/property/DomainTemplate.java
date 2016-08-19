@@ -84,7 +84,7 @@ public class DomainTemplate
     private final String _domainKind;
     private final GWTDomain _domain;
     private final Map<String, Object> _options;
-    private InitialDataSettings _initialData;
+    private final InitialDataSettings _initialData;
 
     /**
      * Find the DomainTemplate used to create this Domain, if it is available.
@@ -339,12 +339,6 @@ public class DomainTemplate
         return new InitialDataSettings(file, hasColumnHeaders, data.getImportIdentity(), data.getImportLookupByAlternateKey());
     }
 
-    public void setImportDataSettings(@NotNull String moduleName, @NotNull String file, boolean hasColumnHeaders)
-    {
-        _initialData = new InitialDataSettings(file, hasColumnHeaders, false, false);
-        _initialData.setModuleName(moduleName);
-    }
-
     private DomainTemplate(@NotNull String name, @NotNull String groupName, @NotNull String moduleName,
                            @NotNull String domainKind, @NotNull GWTDomain domain,
                            @NotNull Map<String, Object> options, @Nullable InitialDataSettings initialData)
@@ -416,25 +410,36 @@ public class DomainTemplate
 
     public int importData(@Nullable String domainName, Container c, User u) throws BatchValidationException
     {
+        return importData(domainName, _initialData, c, u);
+    }
+
+    public int importData(String domainName, String moduleName, String fileName, Container c, User u) throws BatchValidationException
+    {
+        InitialDataSettings initialData = new InitialDataSettings(moduleName, fileName);
+        return importData(domainName, initialData, c, u);
+    }
+
+    public int importData(@Nullable String domainName, InitialDataSettings initialData, Container c, User u) throws BatchValidationException
+    {
         throwErrors();
 
         if (domainName == null)
             domainName = getDomain().getName();
 
         BatchValidationException errors = new BatchValidationException();
-        int count = importData(domainName, c, u, errors);
+        int count = importData(domainName, initialData, c, u, errors);
         if (errors.hasErrors())
             throw errors;
 
         return count;
     }
 
-    private int importData(String domainName, Container c, User u, BatchValidationException errors)
+    private int importData(String domainName, InitialDataSettings initialData, Container c, User u, BatchValidationException errors)
     {
-        if (_initialData == null)
+        if (initialData == null)
             return 0;
 
-        if (_initialData.file == null)
+        if (initialData.file == null)
             throw new IllegalStateException();
 
         DomainKind kind = PropertyService.get().getDomainKindByName(getDomainKind());
@@ -454,8 +459,8 @@ public class DomainTemplate
         DataLoader dl;
         try
         {
-            String moduleName = _initialData.moduleName != null ? _initialData.moduleName : _moduleName;
-            dl = createDataLoader(moduleName, _initialData.file, _initialData.hasColumnHeaders);
+            String moduleName = initialData.moduleName != null ? initialData.moduleName : _moduleName;
+            dl = createDataLoader(moduleName, initialData.file, initialData.hasColumnHeaders);
         }
         catch (IOException e)
         {
@@ -466,8 +471,8 @@ public class DomainTemplate
 
         DataIteratorContext context = new DataIteratorContext(errors);
         context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
-        context.setAllowImportLookupByAlternateKey(_initialData.importLookupByAlternateKey);
-        if (_initialData.importIdentity)
+        context.setAllowImportLookupByAlternateKey(initialData.importLookupByAlternateKey);
+        if (initialData.importIdentity)
         {
             context.setInsertOption(QueryUpdateService.InsertOption.IMPORT_IDENTITY);
             context.setSupportAutoIncrementKey(true);
@@ -570,8 +575,9 @@ public class DomainTemplate
             this.importLookupByAlternateKey = importLookupByAlternateKey;
         }
 
-        public void setModuleName(String moduleName)
+        public InitialDataSettings(String moduleName, String file)
         {
+            this(file, true, false, false);
             this.moduleName = moduleName;
         }
     }
