@@ -176,11 +176,11 @@ Ext4.define('LABKEY.ext.IconPanel', {
                 var multiplier = 1.66;
                 item.imageSize = this.imageSizeMap[this.renderData.iconSize];
                 item.thumbWidth = item.labelPosition=='bottom' ? item.imageSize * multiplier + 'px':  '100%';
-                item.columns = item.labelPosition=='bottom' ? this.calculateColumnNumber(item.imageSize*multiplier) : 1;
+                item.columns = item.labelPosition=='bottom' ? this.calculateColumnNumber(Math.ceil(item.imageSize*multiplier)) : 1;
                 return item;
             },
             calculateColumnNumber: function(thumbWidth){
-                var totalWidth = this.ownerCt.container.getWidth();
+                var totalWidth = this.ownerCt.container.getWidth() - 10; // padding
                 return parseInt(totalWidth / (thumbWidth + 10)); //padding
             },
             renderData: {
