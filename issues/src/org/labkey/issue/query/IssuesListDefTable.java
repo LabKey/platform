@@ -99,7 +99,7 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
         ContainerForeignKey.initColumn(containerCol, getUserSchema());
 
         List<Pair<String, String>> inputValues = new ArrayList<>();
-        for (IssuesListDefProvider provider : IssuesListDefService.get().getIssuesListDefProviders())
+        for (IssuesListDefProvider provider : IssuesListDefService.get().getEnabledIssuesListDefProviders(getContainer()))
         {
             inputValues.add(new Pair<>(provider.getName(), provider.getLabel()));
         }
