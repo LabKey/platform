@@ -32,6 +32,7 @@ import java.util.Date;
 import java.util.Map;
 
 /**
+ * Response writer that renders in XML.
  * User: jeckels
  * Date: 4/22/13
  */

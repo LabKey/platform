@@ -43,7 +43,6 @@ import java.util.Stack;
  *
  * User: Dave
  * Date: Feb 8, 2008
- * Time: 1:43:38 PM
  */
 public abstract class ApiResponseWriter implements AutoCloseable
 {

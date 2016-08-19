@@ -17,13 +17,14 @@
 package org.labkey.api.action;
 
 import org.labkey.api.view.template.PageConfig;
+import org.springframework.web.servlet.mvc.Controller;
 
 /**
+ * Indicates that a {@link org.springframework.web.servlet.mvc.Controller} wants to know about {@link PageConfig} contexts.
  * User: matthewb
  * Date: May 31, 2007
- * Time: 4:20:23 PM
  */
-public interface HasPageConfig
+public interface HasPageConfig extends Controller
 {
     void setPageConfig(PageConfig page);
     PageConfig getPageConfig();

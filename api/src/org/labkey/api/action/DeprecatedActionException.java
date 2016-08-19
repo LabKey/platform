@@ -18,11 +18,12 @@ package org.labkey.api.action;
 
 import org.springframework.web.servlet.mvc.Controller;
 
-/*
-* User: adam
-* Date: Feb 24, 2011
-* Time: 7:11:17 PM
-*/
+/**
+ * Thrown to indicate that an action is no longer supported (or available) within the server. Useful for tracking
+ * if someone hits the action after it's been removed. {@link DeprecatedAction}.
+ * User: adam
+ * Date: Feb 24, 2011
+ */
 public class DeprecatedActionException extends RuntimeException
 {
     public DeprecatedActionException(Class<? extends Controller> clazz)

@@ -16,9 +16,10 @@
 package org.labkey.api.action;
 
 /**
+ * Marker interface allowing actions to annotate their type, which other code can act on. Defines a handful of standard
+ * types, though modules can also define their own.
  * User: adam
  * Date: 2/12/14
- * Time: 5:47 PM
  */
 public interface ActionType
 {

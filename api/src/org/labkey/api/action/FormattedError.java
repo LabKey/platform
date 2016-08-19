@@ -22,7 +22,6 @@ import org.labkey.api.view.ViewContext;
 
  * User: Matthew
  * Date: Feb 5, 2009
- * Time: 7:44:01 PM
  */
 public class FormattedError extends LabkeyError
 {

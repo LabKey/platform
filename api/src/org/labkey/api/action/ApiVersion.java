@@ -20,15 +20,11 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.lang.annotation.ElementType;
 
-/*
-* User: Dave
-* Date: Aug 29, 2008
-* Time: 3:47:17 PM
-*/
-
 /**
  * Annotation to declare the version of an API action. This is used
  * in conjunction with a required version passed by the client.
+ * User: Dave
+ * Date: Aug 29, 2008
  */
 @Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)

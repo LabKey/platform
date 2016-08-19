@@ -17,19 +17,13 @@ package org.labkey.api.action;
 
 import java.util.Map;
 
-/*
-* User: Dave
-* Date: May 11, 2009
-* Time: 3:23:56 PM
-*/
-
 /**
  * Implement this interface on your form when you need
  * to do custom binding of the raw maps sent to an API action.
- * Note that this replaces ApiJsonForm with something that is
- * more format agnostic (allowing us to move to other formats as necessary)
+ * User: Dave
+ * Date: May 11, 2009
  */
 public interface CustomApiForm
 {
-    public void bindProperties(Map<String,Object> props);
+    void bindProperties(Map<String,Object> props);
 }
