@@ -173,18 +173,25 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
             case ModifiedBy:
                 return createUserColumn(alias, _rootTable.getColumn("ModifiedBy"));
             case DataFileUrl:
-                return wrapColumn(alias, _rootTable.getColumn("DataFileUrl"));
+                ColumnInfo dataFileUrl = wrapColumn(alias, _rootTable.getColumn("DataFileUrl"));
+                dataFileUrl.setUserEditable(false);
+                return dataFileUrl;
             case LSID:
-                return wrapColumn(alias, _rootTable.getColumn("LSID"));
+                ColumnInfo lsid = wrapColumn(alias, _rootTable.getColumn("LSID"));
+                lsid.setUserEditable(false);
+                return lsid;
             case Name:
                 return wrapColumn(alias, _rootTable.getColumn("Name"));
             case Description:
                 return wrapColumn(alias, _rootTable.getColumn("Description"));
             case LastIndexed:
-                return wrapColumn(alias, _rootTable.getColumn("LastIndexed"));
+                ColumnInfo lastIndexed = wrapColumn(alias, _rootTable.getColumn("LastIndexed"));
+                lastIndexed.setUserEditable(false);
+                return lastIndexed;
             case DataClass:
             {
                 ColumnInfo c = wrapColumn(alias, _rootTable.getColumn("classId"));
+                c.setUserEditable(false);
                 c.setFk(new QueryForeignKey(ExpSchema.SCHEMA_NAME, getContainer(), getContainer(), getUserSchema().getUser(), ExpSchema.TableType.DataClasses.name(), "RowId", "Name"));
                 return c;
             }
@@ -199,6 +206,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
             {
                 ColumnInfo columnInfo = wrapColumn(alias, _rootTable.getColumn("SourceApplicationId"));
                 columnInfo.setFk(getExpSchema().getProtocolApplicationForeignKey());
+                columnInfo.setUserEditable(false);
                 return columnInfo;
             }
             case RowId:
@@ -209,7 +217,9 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
                 return ret;
             }
             case Run:
-                return wrapColumn(alias, _rootTable.getColumn("RunId"));
+                ColumnInfo runId = wrapColumn(alias, _rootTable.getColumn("RunId"));
+                runId.setUserEditable(false);
+                return runId;
             case Flag:
                 return   createFlagColumn(alias);
             case DownloadLink:
