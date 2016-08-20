@@ -43,7 +43,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -427,12 +426,12 @@ public class MockModule implements Module
     }
 
     @Override
-    public void addDeferredUpgradeTask(Method task)
+    public void addDeferredUpgradeRunnable(String description, Runnable runnable)
     {
     }
 
     @Override
-    public void runDeferredUpgradeTasks(ModuleContext context)
+    public void runDeferredUpgradeRunnables()
     {
     }
 

@@ -345,10 +345,10 @@ public interface Module extends Comparable<Module>
 
     /**
      * Methods used by the module loader to add and execute upgrade tasks that need to be invoked after
-     * a module is initialized. 
+     * a module is initialized.
      */
-    void addDeferredUpgradeTask(Method task);
-    void runDeferredUpgradeTasks(ModuleContext context);
+    void addDeferredUpgradeRunnable(String description, Runnable runnable);
+    void runDeferredUpgradeRunnables();
 
     Map<String, ModuleProperty> getModuleProperties();
 

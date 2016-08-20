@@ -24,7 +24,6 @@ import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
 
-import java.lang.reflect.Method;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Collections;
@@ -224,11 +223,11 @@ public class ModuleContext implements Cloneable
         return result;
     }
 
-    public void addDeferredUpgradeTask(Method task)
+    public void addDeferredUpgradeRunnable(String description, Runnable runnable)
     {
         Module module = ModuleLoader.getInstance().getModule(_name);
         if (module != null)
-            module.addDeferredUpgradeTask(task);
+            module.addDeferredUpgradeRunnable(description, runnable);
         else
             ExceptionUtil.logExceptionToMothership(null, new IllegalStateException("Module " + _name + " failed to initialize"));
     }

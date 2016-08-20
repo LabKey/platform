@@ -1364,7 +1364,7 @@ public class ModuleLoader implements Filter
             try
             {
                 ModuleContext ctx = getModuleContext(m);
-                m.runDeferredUpgradeTasks(ctx);
+                m.runDeferredUpgradeRunnables();
                 ctx.setModuleState(ModuleState.Started);
             }
             catch (Throwable x)

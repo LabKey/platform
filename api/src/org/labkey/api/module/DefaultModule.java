@@ -57,7 +57,6 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
@@ -85,7 +84,6 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Method;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -117,7 +115,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private static final String XML_FILENAME = "module.xml";
     private static final Cache<Path, ReportDescriptor> REPORT_DESCRIPTOR_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.DAY, "Report descriptor cache");
 
-    private final Queue<Method> _deferredUpgradeTasks = new LinkedList<>();
+    private final Queue<Pair<String, Runnable>> _deferredUpgradeRunnables = new LinkedList<>();
     private final Map<String, Class<? extends Controller>> _controllerNameToClass = new LinkedHashMap<>();
     private final Map<Class<? extends Controller>, String> _controllerClassToName = new HashMap<>();
     private final Set<String> _moduleDependencies = new CaseInsensitiveHashSet();
@@ -1512,25 +1510,21 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @Override
-    public void addDeferredUpgradeTask(Method task)
+    public void addDeferredUpgradeRunnable(String description, Runnable runnable)
     {
-        _deferredUpgradeTasks.add(task);
+        _deferredUpgradeRunnables.add(new Pair<>(description, runnable));
     }
 
     @Override
-    public void runDeferredUpgradeTasks(ModuleContext context)
+    public void runDeferredUpgradeRunnables()
     {
-        while (!_deferredUpgradeTasks.isEmpty())
+        while (!_deferredUpgradeRunnables.isEmpty())
         {
-            Method task = _deferredUpgradeTasks.remove();
+            Pair<String, Runnable> pair = _deferredUpgradeRunnables.remove();
             try
             {
-                ModuleLoader.getInstance().setStartingUpMessage("Running deferred upgrade for module '" + context.getName() + "': " + task.getName());
-                task.invoke(getUpgradeCode(), context);
-            }
-            catch (ReflectiveOperationException e)
-            {
-                throw new UnexpectedException(e);
+                ModuleLoader.getInstance().setStartingUpMessage("Running deferred upgrade for module '" + getName() + "': " + pair.first);
+                pair.second.run();
             }
             finally
             {
