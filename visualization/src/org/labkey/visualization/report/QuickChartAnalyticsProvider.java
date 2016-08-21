@@ -48,7 +48,7 @@ public class QuickChartAnalyticsProvider extends ColumnAnalyticsProvider
         VisualizationUrls urlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
         if (urlProvider != null && settings != null && settings.getSchemaName() != null && settings.getQueryName() != null)
         {
-            ActionURL url = urlProvider.getGenericChartDesignerURL(ctx.getContainer(), ctx.getViewContext().getUser(), settings, RenderType.AUTO_PLOT);
+            ActionURL url = urlProvider.getGenericChartDesignerURL(ctx.getContainer(), ctx.getViewContext().getUser(), settings, RenderType.BOX_PLOT);
             url.addParameter("autoColumnYName", col.getName());
             return url;
         }

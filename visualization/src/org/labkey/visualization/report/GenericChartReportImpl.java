@@ -83,7 +83,7 @@ public class GenericChartReportImpl extends GenericChartReport implements SvgThu
     public String getStaticThumbnailPath()
     {
         RenderType type = getRenderType();
-        String name = null != type ? type.getThumbnailName() : RenderType.AUTO_PLOT.getThumbnailName();
+        String name = null != type ? type.getThumbnailName() : RenderType.BOX_PLOT.getThumbnailName();
 
         return "/visualization/images/" + name;
     }

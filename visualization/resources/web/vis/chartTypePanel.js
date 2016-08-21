@@ -20,8 +20,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
                 active: false,
                 imgUrl: LABKEY.contextPath + '/visualization/images/barchart.png',
                 fields: [
-                    {name: 'x', label: 'X Axis Grouping', required: true, nonNumericOnly: true},
-                    {name: 'y', label: 'Y Axis', required: true, numericOnly: true}
+                    {name: 'x', label: 'X Axis Grouping', required: true, nonNumericOnly: true}
                 ]
             },
             {
@@ -484,6 +483,16 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
         });
 
         return values;
+    },
+
+    getImgUrl : function()
+    {
+        if (this.selectedType != null)
+        {
+            return this.selectedType.get('imgUrl');
+        }
+
+        return this.typesStore.getAt(0).get('imgUrl');
     }
 });
 

@@ -51,17 +51,15 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
                     "/visualization/report/timechart.gif", ReportService.DesignerType.VISUALIZATION, "fa fa-line-chart"));
         }
 
-        GenericChartReport.RenderType boxType = GenericChartReport.RenderType.BOX_PLOT;
-
-        ActionURL boxPlotURL = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), settings, boxType);
-        info.add(new DesignerInfoImpl(GenericChartReport.TYPE, boxType.getName(), null, boxPlotURL,
-                boxType.getIconPath(), ReportService.DesignerType.VISUALIZATION, boxType.getIconCls()));
-
-        GenericChartReport.RenderType scatterType = GenericChartReport.RenderType.SCATTER_PLOT;
-
-        ActionURL scatterPlotURL = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), settings, scatterType);
-        info.add(new DesignerInfoImpl(GenericChartReport.TYPE, scatterType.getName(), null, scatterPlotURL,
-                scatterType.getIconPath(), ReportService.DesignerType.VISUALIZATION, scatterType.getIconCls()));
+        for (GenericChartReport.RenderType renderType : GenericChartReport.RenderType.values())
+        {
+            if (renderType != GenericChartReport.RenderType.AUTO_PLOT)
+            {
+                ActionURL url = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), settings, renderType);
+                info.add(new DesignerInfoImpl(GenericChartReport.TYPE, renderType.getName(), null, url,
+                        renderType.getIconPath(), ReportService.DesignerType.VISUALIZATION, renderType.getIconCls()));
+            }
+        }
 
         return info;
     }
@@ -86,17 +84,15 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
             designers.add(info);
         }
 
-        GenericChartReport.RenderType boxType = GenericChartReport.RenderType.BOX_PLOT;
-
-        ActionURL boxPlotURL = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), null, boxType);
-        designers.add(new DesignerInfoImpl(GenericChartReport.TYPE, boxType.getName(), null, boxPlotURL,
-                boxType.getIconPath(), ReportService.DesignerType.VISUALIZATION, boxType.getIconCls()));
-
-        GenericChartReport.RenderType scatterType = GenericChartReport.RenderType.SCATTER_PLOT;
-
-        ActionURL scatterPlotURL = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), null, scatterType);
-        designers.add(new DesignerInfoImpl(GenericChartReport.TYPE, scatterType.getName(), null, scatterPlotURL,
-                scatterType.getIconPath(), ReportService.DesignerType.VISUALIZATION, scatterType.getIconCls()));
+        for (GenericChartReport.RenderType renderType : GenericChartReport.RenderType.values())
+        {
+            if (renderType != GenericChartReport.RenderType.AUTO_PLOT)
+            {
+                ActionURL url = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), null, renderType);
+                designers.add(new DesignerInfoImpl(GenericChartReport.TYPE, renderType.getName(), null, url,
+                        renderType.getIconPath(), ReportService.DesignerType.VISUALIZATION, renderType.getIconCls()));
+            }
+        }
 
         return designers;
     }

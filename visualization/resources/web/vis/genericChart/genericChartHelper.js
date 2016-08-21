@@ -14,13 +14,14 @@ if(!LABKEY.vis) {
 LABKEY.vis.GenericChartHelper = new function(){
     /**
      * Gets the chart type (i.e. box or scatter).
-     * @param {String} renderType The selected renderType, this can be SCATTER_PLOT, BOX_PLOT, or AUTO_PLOT. Determined
+     * @param {String} renderType The selected renderType, this can be SCATTER_PLOT, BOX_PLOT, or BAR_CHART. Determined
      * at chart creation time in the Generic Chart Wizard.
      * @param {String} xAxisType The datatype of the x-axis, i.e. String, Boolean, Number.
      * @returns {String}
      */
     var getChartType = function(renderType, xAxisType) {
-        if (renderType === "box_plot" || renderType === "scatter_plot") {
+        if (renderType === "bar_chart" || renderType === "pie_chart"
+            || renderType === "box_plot" || renderType === "scatter_plot") {
             return renderType;
         }
 
@@ -154,7 +155,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                     }
                 }
 
-                if (fields[i].name == measures.y.name) {
+                if (measures.y && fields[i].name == measures.y.name) {
                     if (fields[i].extFormatFn) {
                         scales.y.tickFormat = eval(fields[i].extFormatFn);
                     } else if (defaultFormatFn) {
@@ -189,10 +190,12 @@ LABKEY.vis.GenericChartHelper = new function(){
             aes.x = generateDiscreteAcc(measures.x.name, measures.x.label);
         }
 
-        if (measures.y.normalizedType == "float" || measures.y.normalizedType == "int") {
-            aes.y = generateContinuousAcc(measures.y.name);
-        } else {
-            aes.y = generateDiscreteAcc(measures.y.name, measures.y.label);
+        if (measures.y)
+        {
+            if (measures.y.normalizedType == "float" || measures.y.normalizedType == "int")
+                aes.y = generateContinuousAcc(measures.y.name);
+            else
+                aes.y = generateDiscreteAcc(measures.y.name, measures.y.label);
         }
 
         if (chartType === "scatter_plot") {
@@ -445,17 +448,31 @@ LABKEY.vis.GenericChartHelper = new function(){
     };
 
     /**
+     * Generates the Barplot Geom used for bar charts.
+     * @param {Object} chartOptions The saved chartOptions object from the chart config.
+     * @returns {LABKEY.vis.Geom.BarPlot}
+     */
+    var generateBarGeom = function(chartOptions){
+        return new LABKEY.vis.Geom.BarPlot({
+            color: '#' + chartOptions.lineColor,
+            fill: '#' + chartOptions.boxFillColor,
+            lineWidth: chartOptions.lineWidth
+        });
+    };
+
+    /**
      * Generates a Geom based on the chartType.
      * @param {String} chartType The chart type from getChartType.
      * @param {Object} chartOptions The chartOptions object from the saved chart config.
      * @returns {LABKEY.vis.Geom}
      */
     var generateGeom = function(chartType, chartOptions) {
-        if (chartType == "box_plot") {
+        if (chartType == "box_plot")
             return generateBoxplotGeom(chartOptions);
-        } else if (chartType == "scatter_plot") {
+        else if (chartType == "scatter_plot")
             return generatePointGeom(chartOptions);
-        }
+        else if (chartType == "bar_chart")
+            return generateBarGeom(chartOptions);
     };
 
     /**

@@ -65,12 +65,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         this.reportLoaded = true;
 
-        this.typeToLabel = {
-            auto_plot : 'Auto Plot',
-            scatter_plot : 'Scatter Plot',
-            box_plot : 'Box Plot'
-        };
-
         // only linear for now but could expand in the future
         this.lineRenderers = {
             linear : {
@@ -647,12 +641,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     setRenderType : function(newRenderType)
     {
         if (this.renderType != newRenderType)
-        {
             this.renderType = newRenderType;
-
-            if (!this.reportId)
-                this.updateWebpartTitle(this.typeToLabel[this.renderType]);
-        }
     },
 
     renderDataGrid : function(renderTo)
@@ -1192,7 +1181,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     }
                 });
 
-                this.updateWebpartTitle(reportConfig.name);
+                this.updateNavTrailTitle(reportConfig.name);
 
                 var o = Ext4.decode(resp.responseText);
                 this.reportId = o.reportId;
@@ -1205,23 +1194,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         });
     },
 
-    updateWebpartTitle : function(title)
+    updateNavTrailTitle : function(title)
     {
-
-        // Modify Title (hack: hardcode the webpart id since this is really not a webpart, just
-        // using a webpart frame, will need to start passing in the real id if this ever
-        // becomes a true webpart
-        var titleEl = Ext4.query('span[class=labkey-wp-title-text]:first', 'webpart_-1');
-        if (titleEl && (titleEl.length >= 1))
-        {
-            titleEl[0].innerHTML = LABKEY.Utils.encodeHtml(title);
-        }
-
-        var navTitle = Ext4.query('table[class=labkey-nav-trail] span[class=labkey-nav-page-header]');
+        var navTitle = Ext4.query('*[class=labkey-nav-trail] *[class=labkey-nav-page-header]');
         if (navTitle && (navTitle.length >= 1))
-        {
             navTitle[0].innerHTML = LABKEY.Utils.encodeHtml(title);
-        }
     },
 
     onFailure : function(resp)
@@ -1427,7 +1404,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         var GCH = LABKEY.vis.GenericChartHelper,
             customRenderType, chartType, geom, aes,
-            scales, labels, plotConfig, width, height;
+            scales, labels, plotConfig, width, height, data;
 
         var chartConfig = this.getChartConfig();
 
@@ -1457,10 +1434,19 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.addWarningText("The data limit for plotting has been reached. Consider filtering your data.");
         }
 
-        this.validateMeasures();
-        if (!this.validateAxisMeasure(chartType, chartConfig, 'x', aes, scales, this.chartData.rows))
+        var selectedMeasureNames = Object.keys(this.measures),
+            hasXMeasure = selectedMeasureNames.indexOf('x') > 0,
+            hasYMeasure = selectedMeasureNames.indexOf('y') > 0,
+            requiredMeasureNames = this.getChartTypePanel().getRequiredFieldNames();
+
+        // validate that all selected measures still exist by name in the query/dataset
+        if (!this.validateMeasuresExist(selectedMeasureNames, requiredMeasureNames))
             return;
-        if (!this.validateAxisMeasure(chartType, chartConfig, 'y', aes, scales, this.chartData.rows))
+
+        // validate that the axis measure exists and data is valid
+        if (hasXMeasure && !this.validateAxisMeasure(chartType, chartConfig, 'x', aes, scales, this.chartData.rows))
+            return;
+        if (hasYMeasure && !this.validateAxisMeasure(chartType, chartConfig, 'y', aes, scales, this.chartData.rows))
             return;
 
         if (this.warningText !== null) {
@@ -1484,7 +1470,15 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 }));
             }
 
-            layers.push(new LABKEY.vis.Layer({data: this.chartData.rows, geom: geom}));
+            data = this.chartData.rows;
+            //if (this.renderType == 'bar_chart')
+            //{
+            //    data = LABKEY.vis.groupCountData(this.chartData.rows, aes.x);
+            //    aes = { x: 'name', y: 'count' };
+            //    scales.y = {domain: [0, null]};
+            //}
+
+            layers.push(new LABKEY.vis.Layer({data: data, geom: geom}));
 
             // client has specified a line type (only applicable for scatter plot)
             if (this.curveFit && this.measures.x && this.isScatterPlot(this.renderType, this.measures.x.normalizedType))
@@ -1509,7 +1503,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 aes: aes,
                 scales: scales,
                 layers: layers,
-                data: this.chartData.rows
+                data: data
             };
         }
 
@@ -1577,6 +1571,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     this.setYAxisMeasure(measure, true);
             }
 
+            // TODO check if the render type even requires this measure
             if (!this.measures.y)
             {
                 this.getEl().unmask();
@@ -1635,35 +1630,52 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
     },
 
-    validateMeasures: function()
+    validateMeasuresExist: function(measureNames, requiredMeasureNames)
     {
-        // Checks to make sure the grouping measures are still available, if not we show an error.
-        var propsToCheck = ['color', 'shape'],
-            store = this.getChartTypePanel().getStore();
-        Ext4.each(propsToCheck, function(propName)
+        var store = this.getChartTypePanel().getStore(),
+            valid = true,
+            message = null,
+                sep = '';
+
+        // Checks to make sure the measures are still available, if not we show an error.
+        Ext4.each(measureNames, function(propName)
         {
             if (this.measures[propName] && store.find('name', this.measures[propName].name, null, null, null, true) === -1)
             {
-                this.addWarningText(
-                    '<div class="labkey-error" style="text-align: center;">The saved ' + propName + ' measure, "' +
-                    this.measures[propName].label + '", is not available. It may have been deleted or renamed. </div>'
-                );
+                if (message == null)
+                    message = '';
+                message += sep + 'The saved ' + propName + ' measure, "' + this.measures[propName].label + '", is not available. It may have been renamed or removed.';
+                sep = '<br/>';
 
                 delete this.measures[propName];
+                this.getChartTypePanel().setToForceApplyChanges();
+
+                if (requiredMeasureNames.indexOf(propName) > -1)
+                    valid = false;
             }
         }, this);
+
+        this.handleValidation({success: valid, message: message});
+
+        return valid;
     },
 
     validateAxisMeasure : function(chartType, chartConfig, measureName, aes, scales, data)
     {
         var validation = LABKEY.vis.GenericChartHelper.validateAxisMeasure(chartType, chartConfig, measureName, aes, scales, data);
+        if (!validation.success || validation.message != null)
+            delete this.measures[measureName];
 
+        this.handleValidation(validation);
+        return validation.success;
+    },
+
+    handleValidation : function(validation)
+    {
         if (validation.success === true)
         {
             if (validation.message != null)
                 this.addWarningText(validation.message);
-
-            return true;
         }
         else
         {
@@ -1672,9 +1684,16 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
             if (this.editMode)
             {
-                delete this.measures[measureName];
                 this.getChartTypePanel().setToForceApplyChanges();
-                Ext4.Msg.alert('Error', validation.message, this.showChartTypeWindow, this);
+
+                Ext4.Msg.show({
+                    title: 'Error',
+                    msg: validation.message,
+                    buttons: Ext4.MessageBox.OK,
+                    icon: Ext4.MessageBox.ERROR,
+                    fn: this.showChartTypeWindow,
+                    scope: this
+                });
             }
             else
             {
@@ -1687,8 +1706,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 });
                 this.viewPanel.add(errorDiv);
             }
-
-            return false;
         }
     },
 
@@ -1835,16 +1852,15 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         // Only push the required columns.
         queryConfig.columns = [];
-        queryConfig.columns.push(chartConfig.measures.x.name);
-        queryConfig.columns.push(chartConfig.measures.y.name);
 
-        if (chartConfig.measures.color) {
+        if (chartConfig.measures.x)
+            queryConfig.columns.push(chartConfig.measures.x.name);
+        if (chartConfig.measures.y)
+            queryConfig.columns.push(chartConfig.measures.y.name);
+        if (chartConfig.measures.color)
             queryConfig.columns.push(chartConfig.measures.color.name);
-        }
-
-        if (chartConfig.measures.shape) {
+        if (chartConfig.measures.shape)
             queryConfig.columns.push(chartConfig.measures.shape.name);
-        }
 
         var templateConfig = {
             chartConfig: chartConfig,
@@ -2027,20 +2043,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     onSaveBtnClicked : function(isSaveAs)
     {
-        this.getSavePanel().setNoneThumbnail(this.getNoneThumbnailURL());
+        this.getSavePanel().setNoneThumbnail(this.getChartTypePanel().getImgUrl());
         this.getSavePanel().setSaveAs(isSaveAs);
         this.getSavePanel().setMainTitle(isSaveAs ? "Save as" : "Save");
         this.getSaveWindow().show();
-    },
-
-    getNoneThumbnailURL : function()
-    {
-        //if (!this.measures.x || this.isBoxPlot(this.renderType, this.measures.x.normalizedType))
-        //    return LABKEY.contextPath + '/visualization/images/boxplot.png';
-
-        if (this.measures.x && this.isScatterPlot(this.renderType, this.measures.x.normalizedType))
-            return LABKEY.contextPath + '/visualization/images/scatterplot.png';
-
-        return LABKEY.contextPath + '/visualization/images/boxplot.png';
     }
 });
