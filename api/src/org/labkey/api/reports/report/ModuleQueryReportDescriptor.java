@@ -119,7 +119,7 @@ public class ModuleQueryReportDescriptor extends QueryReportDescriptor implement
     public String getResourceId()
     {
         // default the module reports to container security, the report service guarantees that
-        // all module reports added will have it's container set.
+        // all module reports added will have its container set.
         return getContainerId();
     }
 

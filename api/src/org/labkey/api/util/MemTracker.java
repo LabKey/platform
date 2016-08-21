@@ -214,7 +214,7 @@ public class MemTracker
     }
 
     /**
-     * Finish the current profiling session and merge it's results into the <code>to</code> RequestInfo.
+     * Finish the current profiling session and merge its results into the <code>to</code> RequestInfo.
      * Unlike <code>requestComplete</code>, the current timing will not be added to the list of recent requests.
      */
     public void merge(@NotNull RequestInfo to)

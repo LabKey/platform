@@ -47,7 +47,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
@@ -73,7 +72,7 @@ public class SqlScriptExecutor
     /**
      * Splits a SQL string into blocks and executes each block, one at a time. Blocks are determined in a dialect-specific
      * way, using splitPattern and procPattern.
-     *  @param sql The SQL string to split and execute
+     * @param sql The SQL string to split and execute
      * @param splitPattern Dialect-specific regex pattern for splitting normal SQL statements into blocks. Null means no need to split.
      * @param procPattern Dialect-specific regex pattern for finding executeJavaCode and bulkImport procedure calls in the SQL. See SqlDialect.getSqlScriptProcPattern() for details.
      * @param schema Current schema. Null is allowed for testing purposes.
@@ -287,7 +286,6 @@ public class SqlScriptExecutor
             _tableName = tableName;
             _filename = filename;
             _preserveEmptyString = _literalTrue.equals(preserveEmptyString);
-
         }
 
         @Override
@@ -303,7 +301,7 @@ public class SqlScriptExecutor
                 path = Path.parse(_filename).normalize();
             else
                 path = Path.parse("schemas/dbscripts/datafiles/" + _filename).normalize();
-            final String fullTableName =  _schemaName + "." + _tableName;
+            final String fullTableName = _schemaName + "." + _tableName;
             try
             {
                 BatchValidationException errors = new BatchValidationException();
@@ -338,7 +336,7 @@ public class SqlScriptExecutor
                 String contentType = new MimeMap().getContentTypeFor(r.getName());
                 DataLoader loader;
 
-                // I'm not sure ExcelLoader closes it's input stream, so let's just make sure
+                // I'm not sure ExcelLoader closes its input stream, so let's just make sure
                 try (InputStream is = r.getInputStream())
                 {
                     if (null == is)

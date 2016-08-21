@@ -63,7 +63,7 @@ public interface ParamReplacement
     void setRemote(boolean isRemote);
 
     /**
-     * Convert the substitution to it's eventual generated file.
+     * Convert the substitution to its eventual generated file.
      * @param directory - the parent directory to create the generated file (if any, can be null)
      */
     @Nullable

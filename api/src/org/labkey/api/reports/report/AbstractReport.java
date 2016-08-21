@@ -451,7 +451,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
     {
         if (getDescriptor().isInherited(container))
         {
-            errors.add(new SimpleValidationError("An inherited report can only be deleted from it's source folder."));
+            errors.add(new SimpleValidationError("An inherited report can only be deleted from its source folder."));
             return false;
         }
 
@@ -597,7 +597,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
     @Override
     public final boolean hasPermission(@NotNull UserPrincipal user, @NotNull Container c, @NotNull Class<? extends Permission> perm)
     {
-        // only inherited reports can be viewed outside of it's original folder
+        // only inherited reports can be viewed outside of its original folder
         if (!c.getId().equals(getDescriptor().getContainerId()))
         {
             if (!ReportUtil.isReportInherited(c, this))

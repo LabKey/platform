@@ -38,7 +38,7 @@ import java.util.Set;
  * Time: 8:49:19 PM
  *
  * Interface to define look & feel of a folder. Folders with a folder type other than FolderType.NONE will have a single
- * "tab" owned by the FolderType. This "dashboard" drill down to arbitrary URLs without changing it's look & feel.
+ * "tab" owned by the FolderType. This "dashboard" drill down to arbitrary URLs without changing its look & feel.
  */
 public interface FolderType
 {

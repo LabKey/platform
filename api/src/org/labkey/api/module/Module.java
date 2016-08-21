@@ -43,7 +43,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -279,7 +278,7 @@ public interface Module extends Comparable<Module>
     File getExplodedPath();
 
     /**
-     * This is called by the module loader to let the module know where it's exploded path is
+     * This is called by the module loader to let the module know where its exploded path is
      * so that the module can later load resources.
      * @param path The path to the module's exploded directory
      */

@@ -206,7 +206,7 @@ Ext4.define('LABKEY.ext4.data.Store', {
         if (config.pageSize && config.maxRows !== 0 && this.maxRows !== 0)
             baseParams['limit'] = config.pageSize;
 
-        //NOTE: sort() is a method in the store.  it's awkward to support a param, but we do it since selectRows() uses it
+        //NOTE: sort() is a method in the store. it's awkward to support a param, but we do it since selectRows() uses it
         if (this.initialConfig && this.initialConfig.sort)
             baseParams['query.sort'] = this.initialConfig.sort;
         delete config.sort; //important...otherwise the native sort() method is overridden

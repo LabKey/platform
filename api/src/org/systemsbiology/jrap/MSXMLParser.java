@@ -402,7 +402,7 @@ public final class MSXMLParser
 
     /**
      * Read a particular scan from a MSXML file and return a generic Scan object
-     * with it's data. Note: scanNumbers are 1-based, so scanNumber must be at
+     * with its data. Note: scanNumbers are 1-based, so scanNumber must be at
      * least 1
      */
     public Scan rap(int scanNumber)

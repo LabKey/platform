@@ -111,7 +111,7 @@ abstract public class DomainKind implements Handler<String>
     abstract public List<String> updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user);
 
     /**
-     * Delete a Domain and it's associated data.
+     * Delete a Domain and its associated data.
      * @param domain
      * @param user
      * @param domain The domain to delete

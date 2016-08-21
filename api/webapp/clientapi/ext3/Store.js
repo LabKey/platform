@@ -372,7 +372,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
      * so it will return before the changes are fully made on the server. Records that are being saved
      * will have a property called 'saveOperationInProgress' set to true, and you can test if a Record
      * is currently being saved using the isUpdateInProgress method. Once the record has been updated
-     * on the server, it's properties may change to reflect server-modified values such as Modified and ModifiedBy.
+     * on the server, its properties may change to reflect server-modified values such as Modified and ModifiedBy.
      * <p>
      * Before records are sent to the server, the "beforecommit" event will fire. Return false from your event
      * handler to prohibit the commit. The beforecommit event handler will be passed the following parameters:

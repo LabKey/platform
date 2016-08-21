@@ -622,7 +622,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
     }
 
     /**
-     * Returns the default sort string a view should use as it's base sort. The default
+     * Returns the default sort string a view should use as its base sort. The default
      * sort is on instance count descending, sort pattern descending. Views will typically
      * wish to add at least one of their row dimensions to the end of this string.
      *

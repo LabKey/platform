@@ -527,7 +527,7 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
         }
 
         /**
-         * Breaks apart an import alias string into it's individual aliases.
+         * Breaks apart an import alias string into its individual aliases.
          */
         public native String convertAliasStringToArray(String s) /*-{
 

@@ -30,7 +30,6 @@ import org.labkey.api.util.DateUtil;
 import java.io.File;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
-import java.sql.JDBCType;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;

@@ -501,7 +501,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         List<Map<String, Object>> result = new ArrayList<>(rows.size());
         List<Map<String, Object>> oldRows = new ArrayList<>(rows.size());
-        // TODO: Support update/delete without selecting the existing row -- unfortunately, we currently get the existing row to check it's container matches the incoming container
+        // TODO: Support update/delete without selecting the existing row -- unfortunately, we currently get the existing row to check its container matches the incoming container
         boolean streaming = false; //_queryTable.canStreamTriggers(container) && _queryTable.getAuditBehavior() != AuditBehaviorType.NONE;
 
         for (int i = 0; i < rows.size(); i++)
@@ -570,7 +570,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         errors.setExtraContext(extraScriptContext);
         getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.DELETE, true, errors, extraScriptContext);
 
-        // TODO: Support update/delete without selecting the existing row -- unfortunately, we currently get the existing row to check it's container matches the incoming container
+        // TODO: Support update/delete without selecting the existing row -- unfortunately, we currently get the existing row to check its container matches the incoming container
         boolean streaming = false; //_queryTable.canStreamTriggers(container) && _queryTable.getAuditBehavior() != AuditBehaviorType.NONE;
 
         List<Map<String, Object>> result = new ArrayList<>(keys.size());

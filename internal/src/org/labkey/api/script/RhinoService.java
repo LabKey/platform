@@ -790,7 +790,7 @@ class RhinoEngine extends RhinoScriptEngine
     {
         // https://developer.mozilla.org/en/Rhino/Scopes_and_Contexts#sharingscopes
         // Create a new scope with shared topLevel as prototype and with no parent scope.
-        // The ExternalScriptable puts values into it's ScriptContext map so this might
+        // The ExternalScriptable puts values into its ScriptContext map so this might
         // not be necessary since the values shouldn't end up in the parent scope.
         Scriptable scriptable = super.getRuntimeScope(ctxt);
         scriptable.setParentScope(null);

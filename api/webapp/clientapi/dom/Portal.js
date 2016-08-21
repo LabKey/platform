@@ -76,8 +76,8 @@
             for (var tableIndex = 0; tableIndex < tables.length; tableIndex++)
             {
                 var table = tables[tableIndex];
-                // a table is possibly affected by a delete action if it's if type 'webpart' (whether it's in the current set
-                // of active webparts or not).  It's possibly affected by a move action only if it's in the active set of webparts.
+                // a table is possibly affected by a delete action if it's of type 'webpart' (whether it's in the current set
+                // of active webparts or not). It's possibly affected by a move action only if it's in the active set of webparts.
                 var possiblyAffected = ((action == REMOVE_ACTION && table.getAttribute('name') == 'webpart') || validWebpartTableIds[table.id]);
                 if (possiblyAffected)
                 {

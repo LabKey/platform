@@ -241,7 +241,7 @@ Ext.define('LABKEY.app.controller.State', {
 
     /**
      * Managed sync that attempts to recover in case the storage fails.
-     * Ideally, this should be pushed down into the extended store instance in it's own
+     * Ideally, this should be pushed down into the extended store instance in its own
      * sync method.
      * @param records
      * @private
