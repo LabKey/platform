@@ -825,7 +825,7 @@ Ext4.define('File.panel.Browser', {
 
                     //
                     // Store an id lookup for the component id of this button
-                    // based on it's provider id
+                    // based on its provider id
                     //
                     id = Ext4.id();
                     this.linkIdMap[link.id] = id;

@@ -188,7 +188,7 @@ public class IssueManager implements IssuesListDefService.Interface
 
     /**
      * Identifies whether the (Issue List) admin settings of container c were inherited by other containers.
-     * Example: Folder_B has inherited it's admin settings from Folder_A. If param c is Folder_A, then this
+     * Example: Folder_B has inherited its admin settings from Folder_A. If param c is Folder_A, then this
      * method will return true, since Folder_B has inherited admin settings from Folder_A.
      * @param c
      * @return  true if (one) container with inherited settings from c was found, false otherwise.
@@ -517,8 +517,7 @@ public class IssueManager implements IssuesListDefService.Interface
         // Values are being loaded from the database
         public CustomColumnConfigurationImpl(@NotNull Map<String, CustomColumn> map, Container c)
         {
-            Container inheritFrom = getInheritFromContainer(c); //get the container from which c inherited it's admin settings from
-
+            Container inheritFrom = getInheritFromContainer(c); //get the container from which c inherited its admin settings
 
             //Merge non-conflicting Custom Column values for Integer1, Integer2, String 1 to String 5 if inheriting.
             //Non-conflicting custom column values are values such that container c and inheritFrom are
@@ -534,7 +533,7 @@ public class IssueManager implements IssuesListDefService.Interface
                     Map.Entry<String, CustomColumn> col = iter.next();
                     String colName = col.getKey();
 
-                    //Remove any pre-exisiting values for these six custom columns of the current container
+                    //Remove any pre-existing values for these six custom columns of the current container
                     //to be able to inherit these from inheritFrom container, even if empty.
                     //Rationale: Enabling to modify these custom col fields if not inherited, would also
                     //modify the name in the 'Keyword' section/Options section (last/bottom section of the Admin page).
@@ -600,7 +599,7 @@ public class IssueManager implements IssuesListDefService.Interface
                 //if custom string is not empty
                 if(StringUtils.isNotEmpty(stringCustColVal))
                 {
-                    //get custom string column's permission, which should be listed in a list starting from index 0. For example: first non-inherited custom string (say, string3) will have it's permission value in index 0.
+                    //get custom string column's permission, which should be listed in a list starting from index 0. For example: first non-inherited custom string (say, string3) will have its permission value in index 0.
                     String simplePerm = perms.get(index);
 
                     Class<? extends Permission> perm = "admin".equals(simplePerm) ? AdminPermission.class : "insert".equals(simplePerm) ? InsertPermission.class : ReadPermission.class;

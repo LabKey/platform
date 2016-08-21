@@ -15,12 +15,10 @@
  */
 package org.labkey.issue.model;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Filter;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.issues.IssuesSchema;
@@ -28,7 +26,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.model.IssueManager.CustomColumnConfigurationImpl;
 
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,24 +36,14 @@ import java.util.Map;
  */
 public class ColumnConfigurationCache
 {
-    private static final BlockingCache<Container, CustomColumnConfiguration> CACHE = CacheManager.getBlockingCache(1000, CacheManager.DAY, "Issues Column Configurations", new org.labkey.api.cache.CacheLoader<Container, CustomColumnConfiguration>()
+    private static final BlockingCache<Container, CustomColumnConfiguration> CACHE = CacheManager.getBlockingCache(1000, CacheManager.DAY, "Issues Column Configurations", (c, argument) ->
     {
-        @Override
-        public CustomColumnConfiguration load(Container c, @Nullable Object argument)
-        {
-            final Map<String, CustomColumn> map = new HashMap<>();
-            Filter filter = new SimpleFilter(new FieldKey(null, "Container"), c);
-            new TableSelector(IssuesSchema.getInstance().getTableInfoCustomColumns(), filter, null).forEach(
-                new Selector.ForEachBlock<CustomColumn>() {
-                    @Override
-                    public void exec(CustomColumn cc) throws SQLException
-                    {
-                        map.put(cc.getName(), cc);
-                    }
-                }, CustomColumn.class);
+        final Map<String, CustomColumn> map = new HashMap<>();
+        Filter filter = new SimpleFilter(new FieldKey(null, "Container"), c);
+        new TableSelector(IssuesSchema.getInstance().getTableInfoCustomColumns(), filter, null)
+            .forEach(cc -> map.put(cc.getName(), cc), CustomColumn.class);
 
-            return new CustomColumnConfigurationImpl(map, c);
-        }
+        return new CustomColumnConfigurationImpl(map, c);
     });
 
     static CustomColumnConfiguration get(Container c)

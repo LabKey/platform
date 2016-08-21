@@ -24,7 +24,7 @@ import org.labkey.api.query.snapshot.AbstractTableMethodInfo;
  * Where:
  * - (optional) type is either one of 'ExperimentRun', 'Data', or 'Material' or is the cpastype lsid of the SampleSet or DataClass.
  *   TODO: also support DataClass and SampleSet names
- *   CONSIDER: we could use use run.protocollsid as it's cpastype.
+ *   CONSIDER: we could use use run.protocollsid as its cpastype.
  * - (optional) depth is an integer >= 0.
  */
 /*package*/ class LineageMethod extends AbstractTableMethodInfo

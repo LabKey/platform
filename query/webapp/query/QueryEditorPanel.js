@@ -306,7 +306,7 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
     },
 
     /**
-     * Returns false if the query has been executed in it's current state. Otherwise, true.
+     * Returns false if the query has been executed in its current state. Otherwise, true.
      */
     isQueryDirty : function(update)
     {

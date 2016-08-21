@@ -1078,8 +1078,8 @@
 
         /**
          * @private
-         * When using perspectives, each filter is wrapped with the associated persepective query. A default perspective
-         * can be provided by the cube configuration and will be used if a filter does not specify it's perspective.
+         * When using perspectives, each filter is wrapped with the associated perspective query. A default perspective
+         * can be provided by the cube configuration and will be used if a filter does not specify its perspective.
          */
         _wrapFilterPerspectives : function(filters, copy)
         {

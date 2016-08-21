@@ -835,7 +835,7 @@ public class StudyManager
     }
 
     /**
-     * Shared datasets may save some of it's properties in the current container rather than the dataset definition container.
+     * Shared dataset may save some of its properties in the current container rather than the dataset definition container.
      * Currently allowed overrides:
      * <ul>
      *     <li>isShownByDefault</li>
@@ -3958,7 +3958,7 @@ public class StudyManager
             else
             {
                 // don't add property descriptors for columns with 'global' propertyuri
-                // TODO: move to conceptURI, and use 'local' propertyURI so each domain can have it's own
+                // TODO: move to conceptURI, and use 'local' propertyURI so each domain can have its own
                 // propertydescriptor instance
                 if (ipd.pd.getPropertyURI().startsWith("http://cpas.labkey.com/Study#"))
                     continue;

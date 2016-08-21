@@ -114,7 +114,7 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
     @Override
     public void preDeleteStatusFile(PipelineStatusFile sf)
     {
-        // Delete the protocol analysis directory and it's contents if it is no longer used
+        // Delete the protocol analysis directory and its contents if it is no longer used
         File statusFile = new File(sf.getFilePath());
         File analysisDir = statusFile.getParentFile();
         PipeRoot root = PipelineService.get().findPipelineRoot(sf.lookupContainer());

@@ -71,7 +71,7 @@ import java.util.concurrent.TimeUnit;
  *  When a new directory or file is found it is queued up for indexing, this is where throttling 
  *  will occur (when implemented)
  *
- * The SearchService also has it's own thread pool we use when we find files to index, but the
+ * The SearchService also has its own thread pool we use when we find files to index, but the
  * background crawling is pretty different and needs its own scheduling behavior.
  */
 public class DavCrawler implements ShutdownListener
