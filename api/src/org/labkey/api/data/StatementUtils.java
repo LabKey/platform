@@ -547,7 +547,7 @@ public class StatementUtils
             if (null != col)
             {
                 cols.add(new SQLFragment(col.getSelectName()));
-                values.add(new SQLFragment("{fn now()}"));
+                values.add(new SQLFragment("CURRENT_TIMESTAMP"));   // Instead of {fn now()} -- see #27534
                 done.add("Created");
             }
         }
@@ -566,7 +566,7 @@ public class StatementUtils
         if (_updateBuiltInColumns && null != colModified)
         {
             cols.add(new SQLFragment(colModified.getSelectName()));
-            values.add(new SQLFragment("{fn now()}"));
+            values.add(new SQLFragment("CURRENT_TIMESTAMP"));   // Instead of {fn now()} -- see #27534
             done.add("Modified");
         }
         ColumnInfo colVersion = table.getVersionColumn();

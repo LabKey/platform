@@ -797,7 +797,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         if (JdbcType.TIMESTAMP == getJdbcType())
         {
-            return new SQLFragment("{fn now()}");
+            return new SQLFragment("CURRENT_TIMESTAMP");   // Instead of {fn now()} -- see #27534
         }
         else if ("_ts".equalsIgnoreCase(getName()) && !getSqlDialect().isSqlServer() && JdbcType.BIGINT == getJdbcType())
         {
