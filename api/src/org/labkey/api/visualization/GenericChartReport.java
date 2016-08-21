@@ -36,8 +36,41 @@ public abstract class GenericChartReport extends AbstractReport
 {
     public static final String TYPE = "ReportService.GenericChartReport";
 
-    public static enum RenderType
+    public enum RenderType
     {
+        //BAR_PLOT()
+        //{
+        //    @Override
+        //    public String getId()
+        //    {
+        //        return "bar_chart";
+        //    }
+        //    @Override
+        //    public String getName()
+        //    {
+        //        return "Bar Plot";
+        //    }
+        //    @Override
+        //    public String getDescription()
+        //    {
+        //        return "Bar Plot";
+        //    }
+        //    @Override
+        //    public String getIconPath()
+        //    {
+        //        return "/visualization/report/box_plot.gif";
+        //    }
+        //    @Override
+        //    public String getThumbnailName()
+        //    {
+        //        return "barchart.png";
+        //    }
+        //    @Override
+        //    public String getIconCls()
+        //    {
+        //        return "fa fa-bar-chart";
+        //    }
+        //},
         BOX_PLOT()
         {
             @Override
@@ -105,7 +138,7 @@ public abstract class GenericChartReport extends AbstractReport
                 return "fa fa-area-chart";
             }
         },
-        AUTO_PLOT()
+        AUTO_PLOT() // deprecated - but need to keep for any saved reports that have this type in their saved config
         {
             @Override
             public String getId()

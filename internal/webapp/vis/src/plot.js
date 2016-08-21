@@ -1418,7 +1418,7 @@ boxPlot.render();
 /**
  * @name LABKEY.vis.LeveyJenningsPlot
  * @class LeveyJenningsPlot Wrapper to create a plot which shows data points compared to expected ranges (+/- 3 standard deviations from a mean).
- * @description This helper will take the input data and generate a sequencal x-axis so that all data points are the same distance apart.
+ * @description This helper will take the input data and generate a sequencial x-axis so that all data points are the same distance apart.
  * @param {Object} config An object that contains the following properties
  * @param {String} [config.renderTo] The id of the div/span to insert the svg element into.
  * @param {Number} [config.width] The chart canvas width in pixels.
@@ -1902,7 +1902,7 @@ boxPlot.render();
     };
 
     var mouseOverFn = function(event, pointData, layerSel, subjectColumn) {
-        var points = d3.selectAll('.point path');
+        var points = layerSel.selectAll('.point path');
         var lines = d3.selectAll('path.line');
 
         var opacityAcc = function(d) {
@@ -1918,7 +1918,7 @@ boxPlot.render();
     };
 
     var mouseOutFn = function(event, pointData, layerSel) {
-        d3.selectAll('.point path').attr('fill-opacity', 1).attr('stroke-opacity', 1);
+        layerSel.selectAll('.point path').attr('fill-opacity', 1).attr('stroke-opacity', 1);
         d3.selectAll('path.line').attr('fill-opacity', 1).attr('stroke-opacity', 1);
     };
 })();
