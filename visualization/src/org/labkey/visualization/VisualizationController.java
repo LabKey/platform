@@ -1202,6 +1202,12 @@ public class VisualizationController extends SpringActionController
         @Override
         public ModelAndView getView(GetVisualizationForm form, BindException errors) throws Exception
         {
+            Report report = getReport(form);
+
+            // issue 27439: allow time chart report lookup by name if reportId not provided
+            if (form.getReportId() == null && report != null && report.getDescriptor() != null)
+                form.setReportId(report.getDescriptor().getReportId());
+
             form.setAllowToggleMode(true);
             JspView timeChartWizard = new JspView<>("/org/labkey/visualization/views/timeChartWizard.jsp", form);
 
@@ -1209,8 +1215,6 @@ public class VisualizationController extends SpringActionController
             timeChartWizard.setFrame(WebPartView.FrameType.NONE);
 
             VBox boxView = new VBox(timeChartWizard);
-
-            Report report = getReport(form);
 
             if (report != null)
             {
