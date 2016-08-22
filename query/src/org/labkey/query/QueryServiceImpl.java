@@ -95,6 +95,7 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
@@ -2443,6 +2444,7 @@ public class QueryServiceImpl extends QueryService
         url.deleteParameter(ActionURL.Param.cancelUrl);
         url.deleteParameter(ActionURL.Param.redirectUrl);
         url.deleteParameter(ActionURL.Param.returnUrl);
+        url.deleteParameter(CSRFUtil.csrfName);
         DetailsURL detailsURL = new DetailsURL(url);
         event.setDetailsUrl(detailsURL.toString());
 

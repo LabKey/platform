@@ -218,7 +218,7 @@ public class QueryAuditProvider extends AbstractAuditTypeProvider implements Aud
             Set<PropertyDescriptor> fields = new LinkedHashSet<>();
             fields.add(createPropertyDescriptor(COLUMN_NAME_SCHEMA_NAME, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_QUERY_NAME, PropertyType.STRING));
-            fields.add(createPropertyDescriptor(COLUMN_NAME_DETAILS_URL, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_DETAILS_URL, PropertyType.STRING, -1)); // max size
             fields.add(createPropertyDescriptor(COLUMN_NAME_DATA_ROW_COUNT, PropertyType.INTEGER));
             _fields = Collections.unmodifiableSet(fields);
         }
