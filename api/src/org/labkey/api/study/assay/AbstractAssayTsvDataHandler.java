@@ -125,7 +125,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         AssayProvider provider = AssayService.get().getProvider(protocol);
 
         DataLoaderSettings settings = new DataLoaderSettings();
-        settings.setAllowLookupByAlternateKey(false);
+
+        // 26763 -- Biologics workaround until this issue is fixed
+        settings.setAllowLookupByAlternateKey(info.getContainer().getFolderType().getName().equalsIgnoreCase("biologics"));
 
         Map<DataType, List<Map<String, Object>>> rawData = getValidationDataMap(data, dataFile, info, log, context, settings);
         assert(rawData.size() <= 1);
@@ -767,7 +769,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     Object remapped = null;
                     try
                     {
-                        remap.mappedValue(o);
+                        remapped = remap.mappedValue(o);
                     }
                     catch (ConversionException ex)
                     {
