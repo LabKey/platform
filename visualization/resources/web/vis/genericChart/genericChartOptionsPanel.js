@@ -11,181 +11,13 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
     pointType: 'outliers',
     defaultChartLabel: null,
 
-    constructor : function(config)
-    {
-        this.callParent([config]);
-        this.addEvents('chartDefinitionChanged');
-    },
-
     initComponent : function() {
 
         var labelWidth = 95;
 
-        this.jitterCheckbox = Ext4.create('Ext.form.field.Checkbox', {
-            name: 'jitter',
-            fieldLabel: 'Jitter Points',
-            labelWidth: labelWidth,
-            padding: '0 0 10px 0',
-            value: this.position == 'jitter',
-            listeners: {
-                change: function(cb, newVal, oldVal){
-                    if(!this.suppressEvents){
-                        this.hasChanges = true;
-                    }
-                },
-                scope: this
-            }
-        });
-
-        this.opacitySlider = Ext4.create('Ext.slider.Single', {
-            labelWidth: labelWidth,
-            fieldLabel: 'Point Opacity',
-            width: 270,
-            padding: '0 0 10px 0',
-            value: 50,
-            increment: 10,
-            minValue: 10,
-            maxValue: 100,
-            listeners: {
-                change: function(combo){
-                    if(!this.suppressEvents){
-                        this.hasChanges = true;
-                    }
-                },
-                scope: this
-            }
-        });
-
-        this.pointSizeSlider = Ext4.create('Ext.slider.Single', {
-            labelWidth: labelWidth,
-            fieldLabel: 'Point Size',
-            width: 270,
-            padding: '0 0 10px 0',
-            value: 5,
-            increment: 1,
-            minValue: 1,
-            maxValue: 10,
-            listeners: {
-                change: function(combo){
-                    if(!this.suppressEvents){
-                        this.hasChanges = true;
-                    }
-                },
-                scope: this
-            }
-        });
-
-        this.colorLabel = Ext4.create('Ext.form.Label', {
-            width: labelWidth,
-            text: 'Point Color:'
-        });
-
-        this.pointColorPicker = Ext4.create('Ext.picker.Color', {
-            value: '3366FF',  // initial selected color
-            width: 280,
-            padding: '0 0 0 100px',
-            listeners: {
-                select: function(picker, selColor) {
-                    if(!this.suppressEvents){
-                        this.hasChanges = true;
-                    }
-                },
-                scope: this
-            }
-        });
-
-        this.lineColorLabel = Ext4.create('Ext.form.Label', {
-            width: labelWidth,
-            text: 'Line Color:'
-        });
-
-        this.lineColorPicker = Ext4.create('Ext.picker.Color', {
-            value: '000000',  // initial selected color
-            width: 280,
-            padding: '0 0 0 100px',
-            listeners: {
-                select: function(picker, selColor) {
-                    if(!this.suppressEvents){
-                        this.hasChanges = true;
-                    }
-                },
-                scope: this
-            }
-        });
-
-        this.fillColorLabel = Ext4.create('Ext.form.Label', {
-            width: labelWidth,
-            text: 'Fill Color:'
-        });
-
-        this.fillColorPicker = Ext4.create('Ext.picker.Color', {
-            value: '3366FF',  // initial selected color
-            width: 280,
-            padding: '0 0 0 100px',
-            listeners: {
-                select: function(picker, selColor) {
-                    if(!this.suppressEvents){
-                        this.hasChanges = true;
-                    }
-                },
-                scope: this
-            }
-        });
-
-        this.lineWidthSlider = Ext4.create('Ext.slider.Single', {
-            labelWidth: labelWidth,
-            fieldLabel: 'Line Width',
-            width: 270,
-            padding: '0 0 10px 0',
-            value: 1,
-            increment: 1,
-            minValue: 1,
-            maxValue: 10,
-            listeners: {
-                change: function(combo){
-                    if(!this.suppressEvents){
-                        this.hasChanges = true;
-                    }
-                },
-                scope: this
-            }
-        });
-
-        this.widthBox = Ext4.create('Ext.form.field.Number', {
-            fieldLabel: 'Width',
-            labelWidth: labelWidth,
-            width: 275,
-            padding: '0 0 10px 0',
-            allowDecimals: false,
-            hideTrigger: true,
-            listeners: {
-                scope: this,
-                change: function(){
-                    if(!this.suppressEvents){
-                        this.hasChanges = true;
-                    }
-                }
-            }
-        });
-
-        this.heightBox = Ext4.create('Ext.form.field.Number', {
-            fieldLabel: 'Height',
-            labelWidth: labelWidth,
-            width: 275,
-            padding: '0 0 10px 0',
-            allowDecimals: false,
-            hideTrigger: true,
-            listeners: {
-                scope: this,
-                change: function(){
-                    if(!this.suppressEvents){
-                        this.hasChanges = true;
-                    }
-                }
-            }
-        });
-
         this.labelBox = Ext4.create('Ext.form.field.Text', {
+            name: 'label',
+            getInputValue: this.getLabel,
             fieldLabel: 'Title',
             labelWidth: labelWidth,
             width: 275,
@@ -193,7 +25,128 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             value: this.defaultChartLabel
         });
 
+        this.widthBox = Ext4.create('Ext.form.field.Number', {
+            name: 'width',
+            getInputValue: this.getWidth,
+            fieldLabel: 'Width',
+            labelWidth: labelWidth,
+            width: 275,
+            padding: '0 0 10px 0',
+            allowDecimals: false,
+            hideTrigger: true
+        });
+
+        this.heightBox = Ext4.create('Ext.form.field.Number', {
+            name: 'height',
+            getInputValue: this.getHeight,
+            fieldLabel: 'Height',
+            labelWidth: labelWidth,
+            width: 275,
+            padding: '0 0 10px 0',
+            allowDecimals: false,
+            hideTrigger: true
+        });
+
+        this.jitterCheckbox = Ext4.create('Ext.form.field.Checkbox', {
+            name: 'position',
+            getInputValue: this.getPosition,
+            fieldLabel: 'Jitter Points',
+            labelWidth: labelWidth,
+            padding: '0 0 10px 0',
+            layoutOptions: 'box',
+            value: this.position == 'jitter'
+        });
+
+        this.opacitySlider = Ext4.create('Ext.slider.Single', {
+            name: 'opacity',
+            getInputValue: this.getOpacity,
+            labelWidth: labelWidth,
+            fieldLabel: 'Point Opacity',
+            width: 270,
+            padding: '0 0 10px 0',
+            layoutOptions: 'point',
+            value: 50,
+            increment: 10,
+            minValue: 10,
+            maxValue: 100
+        });
+
+        this.pointSizeSlider = Ext4.create('Ext.slider.Single', {
+            name: 'pointSize',
+            getInputValue: this.getPointSize,
+            labelWidth: labelWidth,
+            fieldLabel: 'Point Size',
+            width: 270,
+            padding: '0 0 10px 0',
+            layoutOptions: 'point',
+            value: 5,
+            increment: 1,
+            minValue: 1,
+            maxValue: 10
+        });
+
+        this.colorLabel = Ext4.create('Ext.form.Label', {
+            width: labelWidth,
+            text: 'Point Color:',
+            layoutOptions: 'point'
+        });
+
+        this.pointColorPicker = Ext4.create('Ext.picker.Color', {
+            name: 'pointFillColor',
+            getInputValue: this.getPointColor,
+            value: '3366FF',  // initial selected color
+            width: 280,
+            padding: '0 0 0 100px',
+            layoutOptions: 'point'
+        });
+
+        this.lineColorLabel = Ext4.create('Ext.form.Label', {
+            width: labelWidth,
+            text: 'Line Color:',
+            layoutOptions: 'line'
+        });
+
+        this.lineColorPicker = Ext4.create('Ext.picker.Color', {
+            name: 'lineColor',
+            getInputValue: this.getLineColor,
+            value: '000000',  // initial selected color
+            width: 280,
+            padding: '0 0 0 100px',
+            layoutOptions: 'line'
+        });
+
+        this.fillColorLabel = Ext4.create('Ext.form.Label', {
+            width: labelWidth,
+            text: 'Fill Color:',
+            layoutOptions: 'line'
+        });
+
+        this.fillColorPicker = Ext4.create('Ext.picker.Color', {
+            name: 'boxFillColor',
+            getInputValue: this.getFillColor,
+            value: '3366FF',  // initial selected color
+            width: 280,
+            padding: '0 0 0 100px',
+            layoutOptions: 'line'
+        });
+
+        this.lineWidthSlider = Ext4.create('Ext.slider.Single', {
+            name: 'lineWidth',
+            getInputValue: this.getLineWidth,
+            labelWidth: labelWidth,
+            fieldLabel: 'Line Width',
+            width: 270,
+            padding: '0 0 10px 0',
+            layoutOptions: 'line',
+            value: 1,
+            increment: 1,
+            minValue: 1,
+            maxValue: 10
+        });
+
         this.pointTypeCombo = Ext4.create('Ext.form.ComboBox', {
+            name: 'pointType',
+            getInputValue: this.getPointType,
             fieldLabel: 'Show Points',
             store: Ext4.create('Ext.data.Store', {
                 fields: ['pointType', 'label'],
@@ -206,109 +159,71 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             labelWidth: labelWidth,
             width: 275,
             padding: '0 0 10px 0',
+            layoutOptions: 'box',
             queryMode: 'local',
             editable: false,
             forceSelection: true,
             displayField: 'label',
             valueField: 'pointType',
-            value: this.pointType,
-            listeners: {
-                change: function(combo){
-                    if(!this.suppressEvents){
-                        this.hasChanges = true;
-                    }
-                },
-                scope: this
-            }
+            value: this.pointType
         });
 
         this.items = [{
             columnWidth: 0.5,
             border: false,
             padding: '0 20px 0 0',
-            items: [
-                this.labelBox,
-                this.widthBox,
-                this.heightBox,
-                this.opacitySlider,
-                this.pointSizeSlider,
-                this.colorLabel, this.pointColorPicker
-            ]
+            items: this.getColumnOneFields()
         },{
             columnWidth: 0.5,
             border: false,
-            items: [
-                this.pointTypeCombo,
-                this.jitterCheckbox,
-                this.lineWidthSlider,
-                this.lineColorLabel, this.lineColorPicker,
-                this.fillColorLabel, this.fillColorPicker
-            ]
+            items: this.getColumnTwoFields()
         }];
 
         this.callParent();
     },
 
-    applyChangesButtonClicked: function() {
-        this.fireEvent('closeOptionsWindow', false);
-        this.checkForChangesAndFireEvents();
+    getColumnOneFields: function()
+    {
+        return [
+            this.labelBox,
+            this.widthBox,
+            this.heightBox,
+            this.opacitySlider,
+            this.pointSizeSlider,
+            this.colorLabel, this.pointColorPicker
+        ];
     },
 
-    cancelChangesButtonClicked: function(){
-        this.fireEvent('closeOptionsWindow', true);
+    getColumnTwoFields: function()
+    {
+        return [
+            this.pointTypeCombo,
+            this.jitterCheckbox,
+            this.lineWidthSlider,
+            this.lineColorLabel, this.lineColorPicker,
+            this.fillColorLabel, this.fillColorPicker
+        ];
     },
 
-    checkForChangesAndFireEvents: function(){
-        if(this.hasChanges){
-            this.fireEvent('chartDefinitionChanged')
-        }
-        this.hasChanges = false;
+    getInputFields: function()
+    {
+        return this.getColumnOneFields().concat(this.getColumnTwoFields());
     },
 
     getPanelOptionValues: function() {
-        return {
-            pointType: this.getPointType(),
-            position: this.getPosition(),
-            opacity: this.getOpacity(),
-            pointSize: this.getPointSize(),
-            pointFillColor: this.getPointColor(),
-            lineWidth: this.getLineWidth(),
-            lineColor: this.getLineColor(),
-            boxFillColor: this.getFillColor(),
-            width: this.getWidth(),
-            height: this.getHeight(),
-            label: this.getLabel()
-        };
+        var values = {};
+
+        Ext4.each(this.getInputFields(), function(field)
+        {
+            if (field.name && field.getInputValue && !field.isDisabled())
+                values[field.name] = field.getInputValue.call(this);
+        }, this);
+
+        return values;
     },
 
-    restoreValues: function(initValues) {
-        if (initValues.hasOwnProperty("lineWidth"))
-            this.setLineWidth(initValues.lineWidth);
-        if (initValues.hasOwnProperty("opacity"))
-            this.setOpacity(initValues.opacity);
-        if (initValues.hasOwnProperty("pointSize"))
-            this.setPointSize(initValues.pointSize);
-        if (initValues.hasOwnProperty("pointFillColor"))
-            this.setPointColor(initValues.pointFillColor);
-        if (initValues.hasOwnProperty("lineColor"))
-            this.setLineColor(initValues.lineColor);
-        if (initValues.hasOwnProperty("boxFillColor"))
-            this.setFillColor(initValues.boxFillColor);
-        if (initValues.hasOwnProperty("width"))
-            this.setWidth(initValues.width);
-        if (initValues.hasOwnProperty("height"))
-            this.setHeight(initValues.height);
-        if (initValues.hasOwnProperty("position"))
-            this.setPosition(initValues.position);
-        if (initValues.hasOwnProperty("pointType"))
-            this.setPointType(initValues.pointType);
-
-        this.hasChanges = false;
-    },
-
-    setPanelOptionValues: function(chartConfig){
-        this.suppressEvents = true;
-
+    setPanelOptionValues: function(chartConfig)
+    {
         if (Ext4.isDefined(chartConfig.label))
             this.setLabel(chartConfig.label);
 
@@ -365,8 +280,6 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             if (chartConfig.geomOptions.boxFillColor)
                 this.setFillColor(chartConfig.geomOptions.boxFillColor);
         }
-
-        this.suppressEvents = false;
     },
 
     getPointType: function(){
@@ -428,7 +341,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
     },
 
     getFillColor: function(){
-        if (this.getPointType() == 'all') {
+        if (!this.pointTypeCombo.isDisabled() && this.getPointType() == 'all') {
             return 'none';
         }
 

@@ -53,7 +53,7 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
 
         for (GenericChartReport.RenderType renderType : GenericChartReport.RenderType.values())
         {
-            if (renderType != GenericChartReport.RenderType.AUTO_PLOT)
+            if (renderType.isActive())
             {
                 ActionURL url = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), settings, renderType);
                 info.add(new DesignerInfoImpl(GenericChartReport.TYPE, renderType.getName(), null, url,
@@ -86,7 +86,7 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
 
         for (GenericChartReport.RenderType renderType : GenericChartReport.RenderType.values())
         {
-            if (renderType != GenericChartReport.RenderType.AUTO_PLOT)
+            if (renderType.isActive())
             {
                 ActionURL url = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), null, renderType);
                 designers.add(new DesignerInfoImpl(GenericChartReport.TYPE, renderType.getName(), null, url,

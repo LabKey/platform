@@ -14,38 +14,19 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
         config.userEditedLabel = (config.label ? true : false);
 
         this.callParent([config]);
-
-        this.addEvents(
-                'chartDefinitionChanged',
-                'okClicked',
-                'cancelClicked'
-        );
     },
 
     initComponent : function() {
-
-        this.hasChanges = false;
 
         this.axisLabelField =  Ext4.create('Ext.form.field.Text', {
             name: 'label',
             fieldLabel: 'Label',
             enableKeyEvents: true,
-            width: 360,
-            listeners: {
-                scope: this,
-                'change': function(cmp, newVal, oldVal) {
-                    if(!this.suppressEvents){
-                        this.hasChanges = true;
-                    }
-                }
-            }
+            width: 360
         });
 
         this.axisLabelField.addListener('keyup', function(){
-            if(!this.suppressEvents){
-                this.userEditedLabel = true;
-                this.hasChanges = true;
-            }
+            this.userEditedLabel = true;
         }, this, {buffer: 500});
 
         this.scaleTypeRadioGroup = Ext4.create('Ext.form.RadioGroup', {
@@ -64,64 +45,20 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
                     inputValue: 'log',
                     name: 'scaleType'
                 })
-            ],
-            listeners: {
-                change: function(){
-                    if(!this.suppressEvents){
-                        this.hasChanges = true;
-                    }
-                },
-                scope: this
-            }
+            ]
         });
 
-        var items = [
-            this.axisLabelField,
-            this.scaleTypeRadioGroup
-        ];
-        if (this.measureGrid)
-            items.push(this.measureGrid);
-
-        this.items = items;
+        this.items = this.getInputFields();
         
         this.callParent();
     },
 
-    checkForChangesAndFireEvents: function(){
-        if(this.hasChanges){
-            this.fireEvent('chartDefinitionChanged')
-        }
-        this.hasChanges = false;
-    },
-
-    disableScaleAndRange: function()
+    getInputFields : function()
     {
-        if (this.measureGrid)
-        {
-            var measure = this.measureGrid.getSelectionModel().getSelection();
-            var disable = true;
-            if (measure.length > 0)
-            {
-                measure = measure[0];
-                if (measure.data.normalizedType == 'int' || measure.data.normalizedType == 'float' || measure.data.normalizedType == 'double')
-                    disable = false;
-            }
-
-            this.scaleTypeRadioGroup.setDisabled(disable);
-        }
-    },
-
-    selectionChange: function(suppressEvents){
-        this.disableScaleAndRange();
-        if(suppressEvents){
-            this.suppressEvents = true;
-        } else {
-            this.hasChanges = true;
-        }
-        if(!this.userEditedLabel){
-            this.axisLabelField.setValue(this.getDefaultLabel());
-        }
-        this.suppressEvents = false;
+        return [
+            this.axisLabelField,
+            this.scaleTypeRadioGroup
+        ];
     },
 
     getDefaultLabel: function(){
@@ -134,21 +71,16 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
         return label;
     },
 
-    getPanelOptionValues: function() {
+    getPanelOptionValues: function()
+    {
         return {
             label: this.getAxisLabel(),
             scaleTrans: this.getScaleType()
         };
     },
 
-    restoreValues: function(initValues){
-        this.setPanelOptionValues(initValues);
-        this.hasChanges = false;
-    },
-
-    setPanelOptionValues: function(config) {
-        this.suppressEvents = true;
-
+    setPanelOptionValues: function(config)
+    {
         if (config.label)
             this.setAxisLabel(config.label);
 
@@ -156,8 +88,6 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             this.setScaleTrans(config.trans);
         else if (config.scaleTrans)
             this.setScaleTrans(config.scaleTrans);
-
-        this.suppressEvents = false;
     },
 
     getAxisLabel: function(){
@@ -177,16 +107,6 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
         var radioComp = this.scaleTypeRadioGroup.down('radio[inputValue="' + value + '"]');
         if (radioComp)
             radioComp.setValue(true);
-    },
-
-    hideNonMeasureElements: function(){
-        this.axisLabelField.hide();
-        this.scaleTypeRadioGroup.hide();
-    },
-
-    showNonMeasureElements: function(){
-        this.axisLabelField.show();
-        this.scaleTypeRadioGroup.show();
     },
 
     onMeasureChange : function(properties)

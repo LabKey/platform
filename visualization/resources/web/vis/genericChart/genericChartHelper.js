@@ -12,6 +12,56 @@ if(!LABKEY.vis) {
  * Generic Chart Wizard and when exporting Generic Charts as Scripts.
  */
 LABKEY.vis.GenericChartHelper = new function(){
+
+    var getRenderTypes = function() {
+        return [
+            {
+                name: 'bar_chart',
+                title: 'Bar',
+                active: false,
+                imgUrl: LABKEY.contextPath + '/visualization/images/barchart.png',
+                fields: [
+                    {name: 'x', label: 'X Axis Grouping', required: true, nonNumericOnly: true}
+                ],
+                layoutOptions: {line: true}
+            },
+            {
+                name: 'box_plot',
+                title: 'Box',
+                imgUrl: LABKEY.contextPath + '/visualization/images/boxplot.png',
+                fields: [
+                    {name: 'x', label: 'X Axis Grouping'},
+                    {name: 'y', label: 'Y Axis', required: true, numericOnly: true},
+                    {name: 'color', label: 'Color', nonNumericOnly: true},
+                    {name: 'shape', label: 'Shape', nonNumericOnly: true}
+                ],
+                layoutOptions: {point: true, box: true, line: true}
+            },
+            {
+                name: 'pie_chart',
+                title: 'Pie',
+                active: false,
+                imgUrl: LABKEY.contextPath + '/visualization/images/piechart.png',
+                fields: [
+                    {name: 'x', label: 'Grouping', required: true, nonNumericOnly: true}
+                ],
+                layoutOptions: {}
+            },
+            {
+                name: 'scatter_plot',
+                title: 'Scatter',
+                imgUrl: LABKEY.contextPath + '/visualization/images/scatterplot.png',
+                fields: [
+                    {name: 'x', label: 'X Axis', required: true},
+                    {name: 'y', label: 'Y Axis', required: true, numericOnly: true},
+                    {name: 'color', label: 'Color', nonNumericOnly: true},
+                    {name: 'shape', label: 'Shape', nonNumericOnly: true}
+                ],
+                layoutOptions: {point: true, box: false, line: false}
+            }
+        ];
+    };
+
     /**
      * Gets the chart type (i.e. box or scatter).
      * @param {String} renderType The selected renderType, this can be SCATTER_PLOT, BOX_PLOT, or BAR_CHART. Determined
@@ -392,21 +442,17 @@ LABKEY.vis.GenericChartHelper = new function(){
     var generatePointClickFn = function(measures, schemaName, queryName, fnString){
         var measureInfo = {
             schemaName: schemaName,
-            queryName: queryName,
-            yAxis: measures.y.name
+            queryName: queryName
         };
 
-        if (measures.x) {
+        if (measures.y)
+            measureInfo.yAxis = measures.y.name;
+        if (measures.x)
             measureInfo.xAxis = measures.x.name;
-        }
-
-        if (measures.shape) {
+        if (measures.shape)
             measureInfo.shapeName = measures.shape.name;
-        }
-
-        if (measures.color) {
+        if (measures.color)
             measureInfo.pointName = measures.color.name;
-        }
 
         // using new Function is quicker than eval(), even in IE.
         var pointClickFn = new Function('return ' + fnString)();
@@ -558,6 +604,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         /**
          * @function
          */
+        getRenderTypes: getRenderTypes,
         getChartType: getChartType,
         generateLabels: generateLabels,
         generateScales: generateScales,

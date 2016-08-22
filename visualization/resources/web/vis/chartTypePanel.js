@@ -13,48 +13,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
 
     initComponent : function()
     {
-        var typesArr = [
-            {
-                name: 'bar_chart',
-                title: 'Bar',
-                active: false,
-                imgUrl: LABKEY.contextPath + '/visualization/images/barchart.png',
-                fields: [
-                    {name: 'x', label: 'X Axis Grouping', required: true, nonNumericOnly: true}
-                ]
-            },
-            {
-                name: 'box_plot',
-                title: 'Box',
-                imgUrl: LABKEY.contextPath + '/visualization/images/boxplot.png',
-                fields: [
-                    {name: 'x', label: 'X Axis Grouping'},
-                    {name: 'y', label: 'Y Axis', required: true, numericOnly: true},
-                    {name: 'color', label: 'Color', nonNumericOnly: true},
-                    {name: 'shape', label: 'Shape', nonNumericOnly: true}
-                ]
-            },
-            {
-                name: 'pie_chart',
-                title: 'Pie',
-                active: false,
-                imgUrl: LABKEY.contextPath + '/visualization/images/piechart.png',
-                fields: [
-                    {name: 'x', label: 'Grouping', required: true, nonNumericOnly: true}
-                ]
-            },
-            {
-                name: 'scatter_plot',
-                title: 'Scatter',
-                imgUrl: LABKEY.contextPath + '/visualization/images/scatterplot.png',
-                fields: [
-                    {name: 'x', label: 'X Axis', required: true},
-                    {name: 'y', label: 'Y Axis', required: true, numericOnly: true},
-                    {name: 'color', label: 'Color', nonNumericOnly: true},
-                    {name: 'shape', label: 'Shape', nonNumericOnly: true}
-                ]
-            }
-        ];
+        var typesArr = LABKEY.vis.GenericChartHelper.getRenderTypes();
 
         if (this.customRenderTypes)
         {
@@ -73,7 +32,7 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
             data: typesArr
         });
 
-        this.height = Math.max((85 * typesArr.length) + 185, 525);
+        this.height = Math.max((85 * this.typesStore.getCount()) + 185, 525);
 
         // lookup type by name, default to the first active chart type if none selected/found
         if (Ext4.isString(this.selectedType))
@@ -343,28 +302,28 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
             this.cancelButton = Ext4.create('Ext.button.Button', {
                 text: 'Cancel',
                 scope: this,
-                handler: function ()
-                {
-                    // TODO need to also reset the values on ESC key close
-
-                    // if we have changes, revert the panel back to initial values
-                    if (this.hasSelectionsChanged(this.getValues()))
-                    {
-                        this.selectedType = this.typesStore.findRecord('name', this.initValues.type, 0, false, true, true);
-                        this.getTypesPanel().getSelectionModel().select(this.selectedType);
-                        this.selectedFields = this.initValues.fields;
-                        this.getFieldSelectionsPanel().setSelection(this.selectedFields);
-                    }
-
-                    // deselect any grid columns
-                    this.getQueryColumnsGrid().getSelectionModel().deselectAll();
-
-                    this.fireEvent('cancel', this);
-                }
+                handler: this.cancelHandler
             });
         }
 
         return this.cancelButton;
+    },
+
+    cancelHandler : function ()
+    {
+        // if we have changes, revert the panel back to initial values
+        if (this.hasSelectionsChanged(this.getValues()))
+        {
+            this.selectedType = this.typesStore.findRecord('name', this.initValues.type, 0, false, true, true);
+            this.getTypesPanel().getSelectionModel().select(this.selectedType);
+            this.selectedFields = this.initValues.fields;
+            this.getFieldSelectionsPanel().setSelection(this.selectedFields);
+        }
+
+        // deselect any grid columns
+        this.getQueryColumnsGrid().getSelectionModel().deselectAll();
+
+        this.fireEvent('cancel', this);
     },
 
     getApplyButton : function()
@@ -374,22 +333,23 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
             this.applyButton = Ext4.create('Ext.button.Button', {
                 text: 'Apply',
                 scope: this,
-                handler: function()
-                {
-                    // check required fields and if they all exist and
-                    // nothing has changed, just treat this as a click on 'cancel'
-                    var values = this.getValues();
-                    if (!this.hasAllRequiredFields())
-                        this.getFieldSelectionsPanel().flagRequiredFields();
-                    else if (!this.hasSelectionsChanged(values))
-                        this.fireEvent('cancel', this);
-                    else
-                        this.fireEvent('apply', this, values);
-                }
+                handler: this.applyHandler
             });
         }
 
         return this.applyButton;
+    },
+
+    applyHandler : function()
+    {
+        // check required fields and if they all exist and nothing has changed, just treat this as a click on 'cancel'
+        var values = this.getValues();
+        if (!this.hasAllRequiredFields())
+            this.getFieldSelectionsPanel().flagRequiredFields();
+        else if (!this.hasSelectionsChanged(values))
+            this.fireEvent('cancel', this);
+        else
+            this.fireEvent('apply', this, values);
     },
 
     setToForceApplyChanges : function()
@@ -468,6 +428,11 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
     fieldSelectionsChanged : function()
     {
         this.selectedFields = this.getFieldSelectionsPanel().getSelection();
+    },
+
+    getSelectedType : function()
+    {
+        return this.selectedType;
     },
 
     getValues : function()
@@ -809,7 +774,9 @@ Ext4.define('LABKEY.vis.ChartTypeModel', {
         {name: 'active', type: 'boolean', defaultValue: true},
         // array of field selection object definitions of the type:
         // {name: 'x', label: 'X Axis Grouping', required: true, numericOnly: true, nonNumericOnly: true}
-        {name: 'fields', defaultValue: []}
+        {name: 'fields', defaultValue: []},
+        // object to control which chart layout options to show for the given chart type
+        {name: 'layoutOptions', defaultValue: {}}
     ]
 });
 

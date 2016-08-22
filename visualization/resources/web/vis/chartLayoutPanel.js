@@ -29,8 +29,9 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
 
         // on show, stash the initial values so we can use for comparison and cancel reset
         this.initValues = {};
-        this.on('show', function() {
+        this.on('show', function(panel, selectedChartType) {
             this.initValues = this.getValues();
+            this.updateVisibleLayoutOptions(selectedChartType);
         }, this);
     },
 
@@ -64,6 +65,7 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
                     name: 'developer',
                     label: 'Developer',
                     cardId: 'card-4',
+                    layoutOptions: 'point',
                     cardClass: 'LABKEY.vis.DeveloperOptionsPanel',
                     config: {
                         isDeveloper: this.isDeveloper,
@@ -94,8 +96,14 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
                 store: store,
                 tpl: new Ext4.XTemplate(
                     '<tpl for=".">',
-                        '<div class="item">{label:htmlEncode}</div>',
-                    '</tpl>'
+                        '<div class="item" style="{[this.getDisplayStyle(values)]}">{label:htmlEncode}</div>',
+                    '</tpl>',
+                    {
+                        getDisplayStyle : function(values)
+                        {
+                            return values.visible ? 'display: block;' : 'display: none;';
+                        }
+                    }
                 ),
                 listeners: {
                     scope: this,
@@ -125,6 +133,7 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
             var config = Ext4.apply({
                 itemId: record.get('cardId'),
                 panelName: record.get('name'),
+                layoutOptions: record.get('layoutOptions'),
                 autoScroll: true
             }, record.get('config'));
 
@@ -168,33 +177,42 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
             this.cancelButton = Ext4.create('Ext.button.Button', {
                 text: 'Cancel',
                 scope: this,
-                handler: function ()
-                {
-                    // TODO need to also reset the values on ESC key close
-
-                    // if we have changes, revert the panels back to initial values
-                    if (this.hasSelectionsChanged(this.getValues()))
-                    {
-                        Ext4.each(this.getCenterPanel().items.items, function(panel)
-                        {
-                            if (panel.setPanelOptionValues)
-                            {
-                                this.getCenterPanel().getLayout().setActiveItem(panel.itemId);
-                                panel.setPanelOptionValues(this.initValues[panel.panelName]);
-                            }
-                        }, this);
-                    }
-
-                    // change the selected panel back to the first item
-                    this.getNavigationPanel().getSelectionModel().select(0);
-                    this.getCenterPanel().getLayout().setActiveItem(0);
-
-                    this.fireEvent('cancel', this);
-                }
+                handler: this.cancelHandler
             });
         }
 
         return this.cancelButton;
+    },
+
+    cancelHandler : function()
+    {
+        // if we have changes, revert the panels back to initial values
+        if (this.hasSelectionsChanged(this.getValues()))
+        {
+            Ext4.each(this.getCenterPanel().items.items, function(panel)
+            {
+                if (panel.setPanelOptionValues)
+                {
+                    this.getCenterPanel().getLayout().setActiveItem(panel.itemId);
+                    panel.setPanelOptionValues(this.initValues[panel.panelName]);
+                }
+            }, this);
+        }
+
+        this.fireButtonEvent('cancel');
+    },
+
+    fireButtonEvent : function(eventName, params)
+    {
+        this.returnToFirstPanel();
+        this.fireEvent(eventName, this, params);
+    },
+
+    returnToFirstPanel : function()
+    {
+        // change the selected panel back to the first item
+        this.getNavigationPanel().getSelectionModel().select(0);
+        this.getCenterPanel().getLayout().setActiveItem(0);
     },
 
     getApplyButton : function()
@@ -204,43 +222,76 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
             this.applyButton = Ext4.create('Ext.button.Button', {
                 text: 'Apply',
                 scope: this,
-                handler: function()
-                {
-                    // if nothing has changed, just treat this as a click on 'cancel'
-                    var values = this.getValues();
-                    if (!this.hasSelectionsChanged(values))
-                    {
-                        this.fireEvent('cancel', this);
-                    }
-                    else
-                    {
-                        // give each panel a chance to validate before applying changes
-                        var valid = true;
-                        Ext4.each(this.getCenterPanel().items.items, function(panel)
-                        {
-                            if (panel.validateChanges)
-                            {
-                                if (!panel.validateChanges())
-                                {
-                                    // select the panel with invalid state
-                                    var navIndex = this.getNavigationPanel().getStore().findExact('cardId', panel.itemId);
-                                    this.getNavigationPanel().getSelectionModel().select(navIndex);
-                                    this.getCenterPanel().getLayout().setActiveItem(panel.itemId);
-
-                                    valid = false;
-                                    return false; // break;
-                                }
-                            }
-                        }, this);
-
-                        if (valid)
-                            this.fireEvent('apply', this, values);
-                    }
-                }
+                handler: this.applyHandler
             });
         }
 
         return this.applyButton;
+    },
+
+    applyHandler : function()
+    {
+        var values = this.getValues();
+
+        // if nothing has changed, just treat this as a click on 'cancel'
+        if (!this.hasSelectionsChanged(values))
+        {
+            this.fireButtonEvent('cancel');
+        }
+        else
+        {
+            // give each panel a chance to validate before applying changes
+            var valid = true;
+            Ext4.each(this.getCenterPanel().items.items, function(panel)
+            {
+                if (panel.validateChanges)
+                {
+                    if (!panel.validateChanges())
+                    {
+                        // select the panel with invalid state
+                        var navIndex = this.getNavigationPanel().getStore().findExact('cardId', panel.itemId);
+                        this.getNavigationPanel().getSelectionModel().select(navIndex);
+                        this.getCenterPanel().getLayout().setActiveItem(panel.itemId);
+
+                        valid = false;
+                        return false; // break;
+                    }
+                }
+            }, this);
+
+            if (valid)
+            {
+                this.fireButtonEvent('apply', values);
+            }
+        }
+    },
+
+    updateVisibleLayoutOptions : function(selectedChartType)
+    {
+        // allow the selected chart type to dictate which layout options are visible
+        var chartTypeLayoutOptions = selectedChartType != null && Ext4.isObject(selectedChartType.layoutOptions) ? selectedChartType.layoutOptions : null;
+        if (chartTypeLayoutOptions != null)
+        {
+            Ext4.each(this.getCenterPanel().items.items, function(panel)
+            {
+                // hide/show the whole center panel based on if it has a specific layoutOption type
+                var navRecord = this.getNavigationPanel().getStore().findRecord('cardId', panel.itemId),
+                    includeLayoutPanel = (panel.layoutOptions == null || chartTypeLayoutOptions[panel.layoutOptions]) || false;
+                panel.setDisabled(!includeLayoutPanel);
+                navRecord.set('visible', includeLayoutPanel);
+
+                // hide/show individual panel items based on their specific layoutOption type
+                if (panel.getInputFields)
+                {
+                    Ext4.each(panel.getInputFields(), function(inputField)
+                    {
+                        var includeLayoutField = !Ext4.isString(inputField.layoutOptions) || chartTypeLayoutOptions[inputField.layoutOptions];
+                        inputField.setDisabled(!includeLayoutField);
+                        inputField.setVisible(includeLayoutField);
+                    }, this);
+                }
+            }, this);
+        }
     },
 
     getValues : function()
@@ -249,7 +300,10 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
 
         Ext4.each(this.getCenterPanel().items.items, function(panel)
         {
-            if (panel.getPanelOptionValues)
+            // if the panel is disabled, don't return the values
+            if (panel.isDisabled())
+                values[panel.panelName] = undefined;
+            else if (panel.getPanelOptionValues)
                 values[panel.panelName] = panel.getPanelOptionValues();
         });
 
@@ -348,6 +402,8 @@ Ext4.define('LABKEY.vis.ChartLayoutCardModel', {
         {name: 'label', type: 'string'},
         {name: 'cardId', type: 'string'},
         {name: 'cardClass', type: 'string'},
+        {name: 'visible', type: 'boolean', defaultValue: true},
+        {name: 'layoutOptions', defaultValue: null},
         {name: 'config'}
     ]
 });

@@ -469,9 +469,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     {
         if (!this.chartTypeWindow)
         {
+            var panel = this.getChartTypePanel();
+
             this.chartTypeWindow = Ext4.create('LABKEY.vis.ChartWizardWindow', {
                 panelToMask: this,
-                items: [this.getChartTypePanel()]
+                onEsc: function() {
+                    panel.cancelHandler.call(panel);
+                },
+                items: [panel]
             });
 
             // propagate the show event to the panel so it can stash the initial values
@@ -506,6 +511,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         this.measures = values.fields;
 
                         this.getChartLayoutPanel().onMeasuresChange(this.measures);
+                        this.getChartLayoutPanel().updateVisibleLayoutOptions(this.getSelectedChartTypeData());
                         this.ensureChartLayoutOptions();
 
                         this.renderChart();
@@ -518,19 +524,30 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         return this.chartTypePanel;
     },
 
+    getSelectedChartTypeData : function()
+    {
+        var selectedChartType = this.getChartTypePanel().getSelectedType();
+        return selectedChartType ? selectedChartType.data : null;
+    },
+
     getChartLayoutWindow : function()
     {
         if (!this.chartLayoutWindow)
         {
+            var panel = this.getChartLayoutPanel();
+
             this.chartLayoutWindow = Ext4.create('LABKEY.vis.ChartWizardWindow', {
                 panelToMask: this,
-                items: [this.getChartLayoutPanel()]
+                onEsc: function() {
+                    panel.cancelHandler.call(panel);
+                },
+                items: [panel]
             });
 
             // propagate the show event to the panel so it can stash the initial values
             this.chartLayoutWindow.on('show', function(window)
             {
-                this.getChartLayoutPanel().fireEvent('show', this.getChartLayoutPanel());
+                this.getChartLayoutPanel().fireEvent('show', this.getChartLayoutPanel(), this.getSelectedChartTypeData());
             }, this);
         }
 
@@ -1571,8 +1588,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     this.setYAxisMeasure(measure, true);
             }
 
-            // TODO check if the render type even requires this measure
-            if (!this.measures.y)
+            if (this.getChartTypePanel().getRequiredFieldNames().indexOf('y') > -1 && !this.measures.y)
             {
                 this.getEl().unmask();
                 this.showChartTypeWindow();

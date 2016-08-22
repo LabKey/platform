@@ -36,6 +36,11 @@ Ext4.define('LABKEY.vis.GenericOptionsPanel', {
     cancelChangesButtonClicked: function()
     {},
 
+    getInputFields : function()
+    {
+        return [];
+    },
+
     getPanelOptionValues : function()
     {
         return {};
