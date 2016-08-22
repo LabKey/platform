@@ -100,6 +100,7 @@ import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
+import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.RequiresLogin;
@@ -637,6 +638,19 @@ public class AdminController extends SpringActionController
         }
     }
 
+    @RequiresSiteAdmin
+    @IgnoresTermsOfUse
+    public class GetPendingRequestCountAction extends ApiAction
+    {
+        @Override
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            JSONObject result = new JSONObject();
+            result.put("pendingRequestCount", ViewServlet.getPendingRequestCount() - 1 /* Exclude this request */);
+
+            return new ApiSimpleResponse(result);
+        }
+    }
 
     @RequiresPermission(ReadPermission.class)
     public class GetModulesAction extends ApiAction<GetModulesForm>
