@@ -444,7 +444,7 @@ public class StorageProvisioner
             if (!base.contains(prop.getName()))
                 resizePropChange.addColumn(prop.getPropertyDescriptor());
         }
-        resizePropChange.getColumns().clear();
+
         if (resizePropChange.getColumns().isEmpty())
         {
             // Nothing to do, so don't try to run an ALTER TABLE that doesn't actually do anything
