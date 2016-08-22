@@ -297,6 +297,10 @@ public class ViewServlet extends HttpServlet
             _controllerClassToName.putAll(module.getControllerClassToName());
     }
 
+    public static int getPendingRequestCount()
+    {
+        return _pendingRequestCount.get();
+    }
 
     public static void setShuttingDown(long msWaitForRequests)
     {
