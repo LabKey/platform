@@ -23,7 +23,7 @@ public class ValidateIssueDefNameAction extends ApiAction<ValidateIssueDefNameAc
         ApiSimpleResponse response = new ApiSimpleResponse();
         response.put("success", true);
 
-        if (!StringUtils.isBlank(form.getIssueDefName()))
+        if (!StringUtils.isBlank(form.getIssueDefName()) && !StringUtils.isBlank(form.getIssueDefKind()))
         {
             String message = "A new Issue Definition will be generated in this folder: " + getContainer().getPath();
             Domain domain = IssueListDef.findExistingDomain(getContainer(), getUser(),

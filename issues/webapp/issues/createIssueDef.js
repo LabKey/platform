@@ -11,43 +11,49 @@ IssueDefUtil = new function() {
         verifyIssueDefName : function(btnId){
 
             // get the form value
-            var input = document.getElementsByName("quf_Label")[0];
-            var name = input.value;
-            if (name){
+            var inputKind = document.getElementsByName("quf_Kind")[0];
+            if (inputKind.value) {
+                var input = document.getElementsByName("quf_Label")[0];
+                var name = input.value;
+                if (name) {
 
-                var inputKind = document.getElementsByName("quf_Kind")[0];
-                Ext4.Ajax.request({
-                    url     : LABKEY.ActionURL.buildURL("issues", "validateIssueDefName.api"),
-                    scope   : this,
-                    jsonData : {
-                        issueDefName : name,
-                        issueDefKind : inputKind ? inputKind.value : null
-                    },
-                    success: function(response) {
-                        var jsonResp = LABKEY.Utils.decode(response.responseText);
-                        if (jsonResp) {
-                            if (jsonResp.success) {
-                                Ext4.MessageBox.confirm('Create Issue List Definition?', jsonResp.message, function (btn) {
+                    Ext4.Ajax.request({
+                        url: LABKEY.ActionURL.buildURL("issues", "validateIssueDefName.api"),
+                        scope: this,
+                        jsonData: {
+                            issueDefName: name,
+                            issueDefKind: inputKind.value
+                        },
+                        success: function (response) {
+                            var jsonResp = LABKEY.Utils.decode(response.responseText);
+                            if (jsonResp) {
+                                if (jsonResp.success) {
+                                    Ext4.MessageBox.confirm('Create Issue List Definition?', jsonResp.message, function (btn) {
 
-                                    if (btn === 'yes') {
-                                        input.form.submit();
-                                    }
-                                });
-                            } else {
-                                var errorHTML = jsonResp.message;
+                                        if (btn === 'yes') {
+                                            input.form.submit();
+                                        }
+                                    });
+                                }
+                                else {
+                                    var errorHTML = jsonResp.message;
+                                    Ext4.Msg.alert('Error', errorHTML);
+                                }
+
+                            }
+                        },
+                        failure: function (response) {
+                            var jsonResp = LABKEY.Utils.decode(response.responseText);
+                            if (jsonResp && jsonResp.errors) {
+                                var errorHTML = jsonResp.errors[0].message;
                                 Ext4.Msg.alert('Error', errorHTML);
                             }
-
                         }
-                    },
-                    failure: function(response){
-                        var jsonResp = LABKEY.Utils.decode(response.responseText);
-                        if (jsonResp && jsonResp.errors) {
-                            var errorHTML = jsonResp.errors[0].message;
-                            Ext4.Msg.alert('Error', errorHTML);
-                        }
-                    }
-                });
+                    });
+                }
+            }
+            else {
+                Ext4.Msg.alert('Error', "No IssueList Kind found. You may need to enable the Issues module.");
             }
         }
     };

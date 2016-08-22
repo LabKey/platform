@@ -145,7 +145,7 @@ public class IssueDefDomainKind extends AbstractIssuesListDefDomainKind
             resolutionTemplate.createAndImport(domainContainer, user, getLookupTableName(domainName, RESOLUTION_LOOKUP), true, true);
         }
         else
-            throw new BatchValidationException(new ValidationException("Unable to load the issue-lookup domain template group. The issue module many not be enabled for this folder."));
+            throw new BatchValidationException(new ValidationException("Unable to load the issue-lookup domain template group. The issue module may not be enabled for this folder."));
     }
 }
 
