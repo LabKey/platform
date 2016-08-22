@@ -24,13 +24,16 @@ import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.AssayJSONConverter;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.resource.FileResource;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -40,10 +43,14 @@ import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.BindException;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.labkey.api.study.assay.AssayDataCollector.PRIMARY_FILE;
 
 /**
  * User: kevink
@@ -62,12 +69,21 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
         AssayRunUploadContext<ProviderType> uploadContext;
         Integer batchId;
 
+        // 'json' form field -- allows for multipart forms
         JSONObject json = form.getJson();
+        if (json == null)
+        {
+            // normal json
+            json = form.getJsonObject();
+        }
+
         if (json != null)
         {
             Pair<ExpProtocol, AssayProvider> pp = AbstractAssayAPIAction.getProtocolProvider(json, getContainer());
             protocol = pp.first;
             provider = pp.second;
+
+            AssayRunUploadContext.Factory factory = provider.createRunUploadFactory(protocol, getViewContext());
 
             batchId = json.optInt(AssayJSONConverter.BATCH_ID);
             String name = json.optString(ExperimentJSONConverter.NAME);
@@ -84,7 +100,30 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
             String targetStudy = json.optString("targetStudy");
             Integer reRunId = json.containsKey("reRunId") ? json.optInt("reRunId") : null;
 
-            AssayRunUploadContext.Factory factory = provider.createRunUploadFactory(protocol, getViewContext());
+            String moduleName = json.optString("module");
+            if (moduleName != null)
+            {
+                Module m = ModuleLoader.getInstance().getModuleForSchemaName(moduleName);
+                if (m == null)
+                {
+                    throw new NotFoundException("Could not find module " + moduleName);
+                }
+
+                String runFilePath = json.optString("runFilePath");
+                if (runFilePath == null)
+                {
+                    throw new NotFoundException("\"runFilePath\" is required when importing from a module.");
+                }
+
+                Resource r = m.getModuleResource(runFilePath);
+
+                if (r == null || !r.exists())
+                {
+                    throw new NotFoundException("Could not find runFilePath \"" + runFilePath + "\". Note, this path should be relative to the module's resource directory.");
+                }
+
+                factory.setUploadedData(Collections.singletonMap(PRIMARY_FILE, ((FileResource) r).getFile()));
+            }
 
             factory.setName(name)
                    .setComments(comments)
@@ -130,11 +169,6 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
 
             return resp;
         }
-//        catch (ValidationException ve)
-//        {
-//            for (ValidationError error : ve.getErrors())
-//                errors.addError(new LabkeyError(error.getMessage()));
-//        }
         catch (ExperimentException e)
         {
             errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
@@ -145,21 +179,25 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
 
     protected ActionURL getUploadWizardCompleteURL(ExpProtocol protocol, ExpRun run)
     {
-        Container c = getContainer();
         if (run == null)
         {
-            return PageFlowUtil.urlProvider(AssayUrls.class).getShowUploadJobsURL(c, protocol, null);
+            return PageFlowUtil.urlProvider(AssayUrls.class).getShowUploadJobsURL(getContainer(), protocol, null);
         }
-        else
-        {
-            return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(c, protocol, run.getRowId());
-            //return PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(form.getContainer(), protocol);
-        }
+
+        return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(getContainer(), protocol, run.getRowId());
     }
 
     protected static class ImportRunApiForm extends SimpleApiJsonForm
     {
+        private Integer _assayId;
+        private Integer _batchId;
+        private String _comment;
         private JSONObject _json;
+        private String _name;
+        private Integer _reRunId;
+        private String _targetStudy;
+        private Map<String, String> _properties = new HashMap<>();
+        private Map<String, String> _batchProperties = new HashMap<>();
 
         public JSONObject getJson()
         {
@@ -170,15 +208,6 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
         {
             _json = json;
         }
-
-        private Integer _assayId;
-        private Integer _batchId;
-        private String _name;
-        private String _comment;
-        private String _targetStudy;
-        private Integer _reRunId;
-        private Map<String, String> _properties = new HashMap<>();
-        private Map<String, String> _batchProperties = new HashMap<>();
 
         public Integer getAssayId()
         {
