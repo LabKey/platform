@@ -278,11 +278,11 @@ public class DateUtil
         list.addAll(Arrays.asList(Weekday.values()));
         list.addAll(Arrays.asList(TZ.values()));
         list.addAll(Arrays.asList(ISO.values()));
-        Collections.sort(list, new Comparator<Enum>() {public int compare(Enum e1, Enum e2){ return e1.name().compareTo(e2.name());}});
+        Collections.sort(list, (e1, e2) -> e1.name().compareTo(e2.name()));
         parts = list.toArray(new Enum[list.size()]);
     }
 
-    static Comparator compEnum = new Comparator<Object>() {public int compare(Object o1, Object o2){return ((Enum)o1).name().compareTo((String)o2);}};
+    static Comparator compEnum = (Comparator<Object>) (o1, o2) -> ((Enum)o1).name().compareTo((String)o2);
 
     static Enum resolveDatePartEnum(String s)
     {
@@ -742,7 +742,7 @@ validNum:       {
         }
         catch (ParseException ignored) {}
 
-        return parseJsonDateTime(s);
+        throw new ConversionException("Can't parse \"" + s + "\" into a date");
     }
 
     private static long parseXMLDate(String s)
@@ -1060,19 +1060,6 @@ validNum:       {
     public static String formatJsonDateTime(Date date)
     {
         return jsonDateFormat.format(date);
-    }
-
-
-    public static long parseJsonDateTime(String s)
-    {
-        try
-        {
-            return new SimpleDateFormat(getJsonDateTimeFormatString()).parse(s).getTime();
-        }
-        catch (ParseException x)
-        {
-            throw new ConversionException(x);
-        }
     }
 
 
@@ -1710,6 +1697,7 @@ Parse:
             assertIllegalDate("2/3/2001 12:00pm");
             assertIllegalDate("2/30/2001 12:00pm");
             assertIllegalDate("30/2/2001 12:00pm");
+            assertIllegalDate("9/30/2008 45:41:77");  // #19541
         }
 
 
@@ -1877,7 +1865,6 @@ Parse:
             Date datetimeExpected = java.sql.Timestamp.valueOf("2001-02-03 04:05:06");
             long msExpected = java.sql.Timestamp.valueOf("2001-02-03 04:05:06").getTime();
 
-            assertEquals(msExpected, parseJsonDateTime(formatJsonDateTime(datetimeExpected)));
             assertEquals(msExpected, parseDateTime(formatJsonDateTime(datetimeExpected)));
 
             for (Locale l : DateFormat.getAvailableLocales())
