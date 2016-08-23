@@ -554,6 +554,24 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     protected Map<String, Pair<IndexType, List<ColumnInfo>>> wrapTableIndices(TableInfo table)
     {
         Map<String, Pair<IndexType, List<ColumnInfo>>> indices = table.getIndices();
+        return getStringPairMap(indices);
+    }
+    @NotNull
+    @Override
+    public Map<String, Pair<IndexType, List<ColumnInfo>>> getAllIndices()
+    {
+        return Collections.unmodifiableMap(wrapTableAllIndices(getRealTable()));
+    }
+
+    protected Map<String, Pair<IndexType, List<ColumnInfo>>> wrapTableAllIndices(TableInfo table)
+    {
+        Map<String, Pair<IndexType, List<ColumnInfo>>> indices = table.getAllIndices();
+        return getStringPairMap(indices);
+    }
+
+    @NotNull
+    private Map<String, Pair<IndexType, List<ColumnInfo>>> getStringPairMap(Map<String, Pair<IndexType, List<ColumnInfo>>> indices)
+    {
         Map<String, Pair<IndexType, List<ColumnInfo>>> ret = new HashMap<>();
         for (Map.Entry<String, Pair<IndexType, List<ColumnInfo>>> entry : indices.entrySet())
         {

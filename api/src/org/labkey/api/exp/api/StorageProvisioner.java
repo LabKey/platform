@@ -470,11 +470,7 @@ public class StorageProvisioner
     @NotNull
     public static TableInfo createTableInfo(@NotNull Domain domain)
     {
-        if (null == domain)
-            throw new NullPointerException("domain is null");
-        DomainKind kind = domain.getDomainKind();
-        if (null == kind)
-            throw new IllegalArgumentException("Could not find information for domain (deleted?): " + domain.getTypeURI());
+        DomainKind kind = getDomainKind(domain);
 
         DbScope scope = kind.getScope();
         String schemaName = kind.getStorageSchemaName();
@@ -487,11 +483,8 @@ public class StorageProvisioner
         assert kind.getSchemaType() == DbSchemaType.Provisioned : "provisioned DomainKinds must declare a schema type of DbSchemaType.Provisioned, but type " + kind + " declared " + kind.getSchemaType();
 
         DbSchema schema = scope.getSchema(schemaName, kind.getSchemaType());
-        ProvisionedSchemaOptions options = new ProvisionedSchemaOptions(schema, tableName, domain);
 
-        SchemaTableInfo sti = schema.getTable(options);
-        if (null == sti)
-            throw new IllegalStateException("Table not found (deleted? race condition?): " + schemaName + "." + tableName);
+        SchemaTableInfo sti = getSchemaTableInfo(domain, schemaName, tableName, schema);
 
         // check for any columns where storagecolumnname != name
         boolean needsAliases = false;
@@ -556,6 +549,28 @@ public class StorageProvisioner
         return wrapper;
     }
 
+    @NotNull
+    private static SchemaTableInfo getSchemaTableInfo(@NotNull Domain domain, String schemaName, String tableName, DbSchema schema)
+    {
+        ProvisionedSchemaOptions options = new ProvisionedSchemaOptions(schema, tableName, domain);
+
+        SchemaTableInfo sti = schema.getTable(options);
+        if (null == sti)
+            throw new IllegalStateException("Table not found (deleted? race condition?): " + schemaName + "." + tableName);
+        return sti;
+    }
+
+    @NotNull
+    private static DomainKind getDomainKind(@NotNull Domain domain)
+    {
+        if (null == domain)
+            throw new NullPointerException("domain is null");
+        DomainKind kind = domain.getDomainKind();
+        if (null == kind)
+            throw new IllegalArgumentException("Could not find information for domain (deleted?): " + domain.getTypeURI());
+        return kind;
+    }
+
 
     public static class _VirtualTable extends VirtualTable implements UpdateableTableInfo
     {
@@ -588,6 +603,13 @@ public class StorageProvisioner
         public Map<String, Pair<IndexType, List<ColumnInfo>>> getIndices()
         {
             return _inner.getIndices();
+        }
+
+        @NotNull
+        @Override
+        public Map<String, Pair<IndexType, List<ColumnInfo>>> getAllIndices()
+        {
+            return _inner.getAllIndices();
         }
 
         @Override
@@ -726,6 +748,207 @@ public class StorageProvisioner
 
             return tableName;
         }
+    }
+
+    enum RequiredIndicesAction
+    {Drop,Add}
+
+    public static void dropNotRequiredIndices(Domain domain)
+    {
+        if(!domain.isProvisioned()){
+            return;
+        }
+        updateTableIndices(domain, RequiredIndicesAction.Drop);
+    }
+
+    public static void addMissingRequiredIndices(Domain domain)
+    {
+        updateTableIndices(domain, RequiredIndicesAction.Add);
+    }
+
+    private static void updateTableIndices(Domain domain,RequiredIndicesAction requiredIndicesAction)
+    {
+        SchemaTableInfo schemaTableInfo = getSchemaTableInfo(domain);
+
+        SqlDialect sqlDialect = getSqlDialect(domain);
+
+        Map<String, PropertyStorageSpec.Index> requiredIndicesMap = getRequiredIndicesMap(domain, sqlDialect);
+
+        if(requiredIndicesAction.equals(RequiredIndicesAction.Drop))
+        {
+            dropNotRequiredIndices(domain, schemaTableInfo, requiredIndicesMap);
+        }
+
+        if(requiredIndicesAction.equals(RequiredIndicesAction.Add))
+        {
+            addMissingRequiredIndices(domain, schemaTableInfo, requiredIndicesMap);
+        }
+
+    }
+
+    @NotNull
+    private static Map<String, PropertyStorageSpec.Index> getRequiredIndicesMap(Domain domain, SqlDialect sqlDialect)
+    {
+        Collection<PropertyStorageSpec.Index> requiredIndices = new ArrayList<>();
+        requiredIndices.addAll(domain.getDomainKind().getPropertyIndices());
+        requiredIndices.addAll(domain.getPropertyIndices());
+
+        Map<String,PropertyStorageSpec.Index> requiredIndicesMap = new HashMap<>();
+
+        String storageTableName = domain.getStorageTableName();
+
+        if(storageTableName == null){
+            storageTableName = makeTableName(getDomainKind(domain),domain);
+        }
+
+        for (PropertyStorageSpec.Index index : requiredIndices)
+        {
+            requiredIndicesMap.put(sqlDialect.nameIndex(storageTableName, index.columnNames).toLowerCase(),index);
+        }
+        return requiredIndicesMap;
+    }
+
+    private static void dropNotRequiredIndices(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap)
+    {
+        Set<String> indicesToDrop = new HashSet<>();
+
+        buildListOfIndicesToDrop(schemaTableInfo, requiredIndicesMap, indicesToDrop);
+
+        dropIndicesFromTable(domain, indicesToDrop);
+    }
+
+    private static void dropIndicesFromTable(Domain domain, Set<String> indicesToDrop)
+    {
+        if(indicesToDrop.size() > 0)
+        {
+            TableChange change = new TableChange(domain, ChangeType.DropIndicesByName);
+
+            change.setIndicesToBeDroppedByName(indicesToDrop);
+
+            try (Transaction transaction = getScope(domain).ensureTransaction())
+            {
+                change.execute();
+                transaction.commit();
+            }
+        }
+    }
+
+    private static void buildListOfIndicesToDrop(SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap, Set<String> indicesToDrop)
+    {
+        for (Map.Entry<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> index : schemaTableInfo.getAllIndices().entrySet())
+        {
+            boolean isPrimaryKey = index.getValue().getKey().equals(TableInfo.IndexType.Primary);
+            boolean tableIndexNameNotFoundInRequiredIndices = !requiredIndicesMap.keySet().contains(index.getKey().toLowerCase());
+
+            if(!isPrimaryKey && tableIndexNameNotFoundInRequiredIndices){
+                indicesToDrop.add(index.getKey());
+            }
+        }
+    }
+
+    private static void addMissingRequiredIndices(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap)
+    {
+        Set<PropertyStorageSpec.Index> indicesToAdd = new HashSet<>();
+
+        buildListOfIndicesToAdd(schemaTableInfo, requiredIndicesMap, indicesToAdd);
+
+        addIndicesToTable(domain, indicesToAdd);
+    }
+
+    @NotNull
+    private static List<String> buildTableIndexNameList(SchemaTableInfo schemaTableInfo)
+    {
+        List<String> tableIndexNames = new ArrayList<>();
+        for (String tableIndexName : schemaTableInfo.getAllIndices().keySet())
+        {
+            tableIndexNames.add(tableIndexName.toLowerCase());
+        }
+        return tableIndexNames;
+    }
+
+    private static void addIndicesToTable(Domain domain, Set<PropertyStorageSpec.Index> indicesToAdd)
+    {
+        if(indicesToAdd.size() >0)
+        {
+            TableChange change;
+            if (domain.getStorageTableName() == null)
+            {
+                change = new TableChange(domain, ChangeType.AddIndices, makeTableName(getDomainKind(domain),domain));
+            }
+            else
+            {
+                change = new TableChange(domain, ChangeType.AddIndices);
+            }
+
+            change.getIndexedColumns().addAll(indicesToAdd);
+
+            try (Transaction transaction = getScope(domain).ensureTransaction())
+            {
+                change.execute();
+                transaction.commit();
+            }
+        }
+    }
+
+    private static void buildListOfIndicesToAdd(SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap, Set<PropertyStorageSpec.Index> indicesToAdd)
+    {
+        List<String> tableIndexNames = buildTableIndexNameList(schemaTableInfo);
+        for (Map.Entry<String, PropertyStorageSpec.Index> requiredIndexEntry : requiredIndicesMap.entrySet())
+        {
+            boolean requiredIndexNotFoundInTable = !tableIndexNames.contains(requiredIndexEntry.getKey().toLowerCase());
+            if (requiredIndexNotFoundInTable)
+            {
+                ensureIndexToBeAddedHasNoPrimaryKeys(schemaTableInfo, requiredIndexEntry);
+                indicesToAdd.add(requiredIndexEntry.getValue());
+            }
+        }
+    }
+
+    private static void ensureIndexToBeAddedHasNoPrimaryKeys(SchemaTableInfo schemaTableInfo, Map.Entry<String, PropertyStorageSpec.Index> requiredIndexEntry)
+    {
+        for (String indexColumnName : requiredIndexEntry.getValue().columnNames)
+        {
+            for (String primaryKeyName : schemaTableInfo.getPkColumnNames())
+            {
+                if (indexColumnName.toLowerCase().equals(primaryKeyName.toLowerCase()))
+                {
+                    throw new UnsupportedOperationException(
+                            "Adding an index with primary key columns is not supported. Primary keys are " + String.join(",", schemaTableInfo.getPkColumnNames()));
+                }
+            }
+        }
+    }
+
+    private static DbScope getScope(Domain domain)
+    {
+        DomainKind kind = getDomainKind(domain);
+
+        return kind.getScope();
+    }
+
+    private static SqlDialect getSqlDialect(Domain domain){
+        return getDomainKind(domain).getScope().getSqlDialect();
+    }
+
+
+    private static SchemaTableInfo getSchemaTableInfo(Domain domain)
+    {
+        DomainKind kind = getDomainKind(domain);
+
+        DbScope scope = kind.getScope();
+
+        String schemaName = kind.getStorageSchemaName();
+
+        if (null == scope || null == schemaName)
+            throw new IllegalArgumentException();
+
+        String tableName = ensureStorageTable(domain, kind, scope);
+
+        assert kind.getSchemaType() == DbSchemaType.Provisioned : "provisioned DomainKinds must declare a schema type of DbSchemaType.Provisioned, but type " + kind + " declared " + kind.getSchemaType();
+
+        DbSchema schema = scope.getSchema(schemaName, kind.getSchemaType());
+
+        return getSchemaTableInfo(domain, schemaName, tableName, schema);
     }
 
     public static void addOrDropTableIndices(Domain domain, boolean doAdd)

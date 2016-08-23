@@ -54,6 +54,7 @@ public class SchemaColumnMetaData
     private String _titleColumn = null;
     private boolean _hasDefaultTitleColumn = true;
     private Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> _indices = Collections.emptyMap();
+    private Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> _allIndices = Collections.emptyMap();
     private static Logger _log = Logger.getLogger(SchemaColumnMetaData.class);
 
     protected SchemaColumnMetaData(SchemaTableInfo tinfo) throws SQLException
@@ -171,6 +172,7 @@ public class SchemaColumnMetaData
         loadColumnsFromMetaData(ti);
         loadPkColumns(ti);
         loadUniqueIndices(ti);
+        loadAllIndices(ti);
     }
 
     private void loadPkColumns(SchemaTableInfo ti) throws SQLException
@@ -273,6 +275,67 @@ public class SchemaColumnMetaData
                 }
 
                 _indices = Collections.unmodifiableMap(uniqueIndexMap);
+            }
+        }
+    }
+    private void loadAllIndices(SchemaTableInfo ti) throws SQLException
+    {
+        DbSchema schema = ti.getSchema();
+        DbScope scope = schema.getScope();
+        String schemaName = schema.getName();
+        if (!ti.getSqlDialect().canCheckIndices(ti))
+        {
+            _allIndices = Collections.emptyMap();
+        }
+        else
+        {
+            try (JdbcMetaDataLocator locator = scope.getSqlDialect().getJdbcMetaDataLocator(scope, schemaName, ti.getMetaDataName()))
+            {
+                JdbcMetaDataSelector uqSelector = new JdbcMetaDataSelector(locator,
+                        ((dbmd, l) -> {
+                            boolean uniqueIndicesOnly = false;
+                            return dbmd.getIndexInfo(l.getCatalogName(), l.getSchemaName(), l.getTableName(), uniqueIndicesOnly, true);
+                        }));
+
+                Set<String> ignoreIndex = new HashSet<>();
+                Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> indexMap = new HashMap<>();
+                uqSelector.forEach(rs -> {
+                    String colName = rs.getString("COLUMN_NAME");
+                    String indexName = rs.getString("INDEX_NAME");
+                    if (indexName == null)
+                        return;
+
+                    indexName = indexName.toLowerCase();
+
+                    Pair<TableInfo.IndexType, List<ColumnInfo>> pair = indexMap.get(indexName);
+                    if (pair == null)
+                    {
+                        TableInfo.IndexType indexType = rs.getBoolean("NON_UNIQUE")?TableInfo.IndexType.NonUnique:TableInfo.IndexType.Unique;
+                        indexMap.put(indexName, pair = Pair.of(indexType, new ArrayList<>(2)));
+                    }
+
+                    ColumnInfo colInfo = getColumn(colName);
+                    // Column will be null for indices over expressions, eg.: "lower(name)"
+                    if (colInfo == null)
+                        ignoreIndex.add(indexName);
+                    else
+                        pair.getValue().add(colInfo);
+                });
+
+                // Remove ignored indices
+                ignoreIndex.forEach(indexMap::remove);
+
+                // Search for the primary index and change the index type to Primary
+                for (Map.Entry<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> entry : indexMap.entrySet())
+                {
+                    List<ColumnInfo> cols = entry.getValue().getValue();
+                    if (getPkColumns().equals(cols))
+                    {
+                        entry.setValue(Pair.of(TableInfo.IndexType.Primary, cols));
+                        break;
+                    }
+                }
+                _allIndices = Collections.unmodifiableMap(indexMap);
             }
         }
     }
@@ -428,6 +491,12 @@ public class SchemaColumnMetaData
     {
         return _indices;
     }
+
+    public @NotNull Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> getAllIndices()
+    {
+        return _allIndices;
+    }
+
 
     void copyToXml(TableType xmlTable, boolean bFull)
     {

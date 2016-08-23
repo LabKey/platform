@@ -120,6 +120,10 @@ public abstract class SqlDialect
         return description;
     }
 
+    public String nameIndex(String tableName, String[] indexedColumns){
+        throw new UnsupportedOperationException("Update " + this.getClass().getSimpleName() + " to add this functionality");
+    }
+
     protected abstract @NotNull Set<String> getReservedWords();
 
     protected String getOtherDatabaseThreads()

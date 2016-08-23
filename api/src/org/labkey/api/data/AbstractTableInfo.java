@@ -150,6 +150,13 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
 
     @NotNull
     @Override
+    public Map<String, Pair<IndexType, List<ColumnInfo>>> getAllIndices()
+    {
+        return Collections.emptyMap();
+    }
+
+    @NotNull
+    @Override
     public List<ColumnInfo> getAlternateKeyColumns()
     {
         List<ColumnInfo> pkCols = getPkColumns();

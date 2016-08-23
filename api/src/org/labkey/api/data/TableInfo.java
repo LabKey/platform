@@ -112,9 +112,12 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
     @NotNull
     Map<String, Pair<IndexType, List<ColumnInfo>>> getIndices();
 
+    @NotNull
+    Map<String, Pair<IndexType, List<ColumnInfo>>> getAllIndices();
+
     enum IndexType
     {
-        Primary, Unique
+        Primary, Unique, NonUnique
     }
 
     /** Get a list of columns that specifies a unique key, may return the same result as getPKColumns()

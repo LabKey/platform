@@ -54,6 +54,7 @@ public class TableChange
     private Collection<Index> _indices = new LinkedHashSet<>();
     private Collection<PropertyStorageSpec.ForeignKey> _foreignKeys = Collections.emptySet();
     private Collection<Constraint> _constraints;
+    private Set<String> _indicesToBeDroppedByName;
 
     /** In most cases, domain knows the storage table name **/
     public TableChange(Domain domain, ChangeType changeType)
@@ -208,6 +209,15 @@ public class TableChange
         _indices = indices;
     }
 
+    public Set<String> getIndicesToBeDroppedByName(){
+        return _indicesToBeDroppedByName;
+    }
+
+    public void setIndicesToBeDroppedByName(Set<String> indicesToBeDroppedByName)
+    {
+        _indicesToBeDroppedByName = indicesToBeDroppedByName;
+    }
+
     public Collection<PropertyStorageSpec.ForeignKey> getForeignKeys()
     {
         return _foreignKeys;
@@ -232,7 +242,7 @@ public class TableChange
                 .map(s -> {
                     PropertyStorageSpec spec = specs.get(s);
                     if (spec == null)
-                        throw new IllegalArgumentException("Column '" + s + "' not found for use in index");
+                        throw new IllegalArgumentException("Column '" + s + "' not found for use in index on table '" + _domain.getName() + "'");
                     return spec;
                 })
                 .collect(Collectors.toList());
@@ -249,6 +259,7 @@ public class TableChange
         AddIndices,
         ResizeColumns,
         DropConstraints,
+        DropIndicesByName,
         AddConstraints
     }
 }
