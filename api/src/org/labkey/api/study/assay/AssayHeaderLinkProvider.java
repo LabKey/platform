@@ -10,6 +10,8 @@ import java.util.List;
 
 public interface AssayHeaderLinkProvider
 {
+    String PARAM_PREFIX = "assay";
+
     @NotNull
     List<NavTree> getLinks(ExpProtocol protocol, Container container, User user);
 }

@@ -26,12 +26,14 @@ import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -211,4 +213,8 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
     {
     }
 
+    public Map<String, List<Pair<String, ActionURL>>> getAdditionalDetailInfo(TableInfo tableInfo, int issueId)
+    {
+        return null;
+    }
 }

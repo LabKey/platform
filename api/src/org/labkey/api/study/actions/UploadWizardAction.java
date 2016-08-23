@@ -48,6 +48,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayDataCollector;
 import org.labkey.api.study.assay.AssayDataCollectorDisplayColumn;
+import org.labkey.api.study.assay.AssayHeaderLinkProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
@@ -224,6 +225,8 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             domain = domains.iterator().next();
         }
 
+        Map<String, Object> parameterValueMap = ViewServlet.adaptParameterMap(getViewContext().getRequest().getParameterMap());
+
         InsertView view = new UploadWizardInsertView(createDataRegionForInsert(baseTable, lsidCol, properties, null), getViewContext(), errors);
 
         Map<DomainProperty, Object> defaultValues = new HashMap<>();
@@ -232,6 +235,14 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             try
             {
                 defaultValues = form.getDefaultValues(domain);
+
+                // if we have a URL param for a given domain property, use it as the default value
+                for (DomainProperty property : domain.getProperties())
+                {
+                    String paramName = AssayHeaderLinkProvider.PARAM_PREFIX + "." + property.getName();
+                    if (!defaultValues.containsKey(property) && parameterValueMap.containsKey(paramName))
+                        defaultValues.put(property, parameterValueMap.get(paramName));
+                }
             }
             catch (ExperimentException e)
             {
@@ -240,7 +251,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
 
         if (errorReshow)
-            view.setInitialValues(ViewServlet.adaptParameterMap(getViewContext().getRequest().getParameterMap()));
+            view.setInitialValues(parameterValueMap);
         else
         {
             Map<String, Object> inputNameToValue = new HashMap<>();
@@ -359,6 +370,14 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     protected void addNextButton(ButtonBar bbar)
     {
         ActionURL targetURL = getViewContext().getActionURL().clone().deleteParameters();
+
+        // keep any params that start with the assay prefix so they can be used as default values on the next step
+        for (Pair<String, String> param : getViewContext().getActionURL().getParameters())
+        {
+            if (param.getKey().startsWith(AssayHeaderLinkProvider.PARAM_PREFIX + "."))
+                targetURL.addParameter(param.getKey(), param.getValue());
+        }
+
         ActionButton newRunButton = new ActionButton(targetURL, "Next", DataRegion.MODE_INSERT, ActionButton.Action.POST);
         newRunButton.setScript("this.className += \" labkey-disabled-button\";", true);
         bbar.add(newRunButton);

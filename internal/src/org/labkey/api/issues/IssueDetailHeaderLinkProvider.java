@@ -11,6 +11,8 @@ import java.util.Map;
 
 public interface IssueDetailHeaderLinkProvider
 {
+    String PARAM_PREFIX = "issue";
+
     @NotNull
-    List<NavTree> getLinks(Domain IssueListDefDomain, boolean issueIsOpen, Map<String, Object> extraProperties, Container container, User user);
+    List<NavTree> getLinks(Domain IssueListDefDomain, int issueId, boolean issueIsOpen, Map<String, Object> extraProperties, Container container, User user);
 }
