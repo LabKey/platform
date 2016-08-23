@@ -118,7 +118,7 @@
         if (issueListDef != null)
         {
             boolean issueIsOpen = Issue.statusOPEN.equals(issue.getStatus());
-            additionalHeaderLinks.addAll(provider.getLinks(issueListDef.getDomain(getUser()), issueIsOpen, issue.getExtraProperties(), getContainer(), getUser()));
+            additionalHeaderLinks.addAll(provider.getLinks(issueListDef.getDomain(getUser()), issue.getIssueId(), issueIsOpen, issue.getExtraProperties(), getContainer(), getUser()));
         }
     }
 %>
@@ -226,6 +226,8 @@
             <tr><td class="labkey-form-label"><%=text(bean.getLabel(type, false))%></td><td><%=h(type.getValue(issue))%></td></tr><%
                 }
             }%>
+
+            <%=text(bean.renderAdditionalDetailInfo())%>
         </table></td>
         <td valign="top"><table>
             <tr><td class="labkey-form-label"><%=text(bean.getLabel("Opened", false))%></td><td nowrap="true"><%=bean.writeDate(issue.getCreated())%> by <%=h(issue.getCreatedByName(user))%></td></tr>

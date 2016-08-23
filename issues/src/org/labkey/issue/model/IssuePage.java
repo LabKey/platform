@@ -49,6 +49,8 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.issue.ColumnType;
 import org.labkey.issue.CustomColumnConfiguration;
@@ -102,6 +104,12 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     private RenderContext _renderContext;
     private TableInfo _tableInfo;
     private int _mode = DataRegion.MODE_DETAILS;
+
+    /**
+     * A map of additional information to display on the issue's detail page. It will be displayed as a table row,
+     * so the map is from the label to display to the cell contents (which can be a list of links or strings).
+     */
+    private Map<String, List<Pair<String, ActionURL>>> _additionalDetailInfo;
 
     public IssuePage(Container c, User user)
     {
@@ -544,6 +552,16 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
             return label;
     }
 
+    public void setAdditionalDetailInfo(Map<String, List<Pair<String, ActionURL>>> additionalDetailInfo)
+    {
+        _additionalDetailInfo = additionalDetailInfo;
+    }
+
+    public Map<String, List<Pair<String, ActionURL>>> getAdditionalDetailInfo()
+    {
+        return _additionalDetailInfo;
+    }
+
     public String writeDate(Date d)
     {
         if (null == d) return "";
@@ -620,5 +638,38 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     {
         Collection<Integer> dups = Collections.singletonList(dup);
         return renderDuplicates(dups);
+    }
+
+    public String renderAdditionalDetailInfo()
+    {
+        if (getAdditionalDetailInfo() != null && !getAdditionalDetailInfo().isEmpty())
+        {
+            StringBuilder sb = new StringBuilder();
+
+            for (String label : getAdditionalDetailInfo().keySet())
+            {
+                StringBuilder cellContents = new StringBuilder();
+                String sep = "";
+                for (Pair<String, ActionURL> contentPair : getAdditionalDetailInfo().get(label))
+                {
+                    if (contentPair.second != null)
+                        cellContents.append(sep).append("<a href=\"").append(contentPair.second).append("\">").append(contentPair.first).append("</a>");
+                    else
+                        cellContents.append(sep).append(contentPair.first);
+
+                    sep = ", ";
+                }
+
+                sb.append("<tr><td class='labkey-form-label'>");
+                sb.append(label);
+                sb.append("</td><td>");
+                sb.append(cellContents.toString());
+                sb.append("</td><tr>");
+            }
+
+            return sb.toString();
+        }
+
+        return null;
     }
 }

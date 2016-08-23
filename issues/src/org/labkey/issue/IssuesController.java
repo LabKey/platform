@@ -61,6 +61,7 @@ import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.issues.IssueDetailHeaderLinkProvider;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.issues.IssuesUrls;
 import org.labkey.api.query.FieldKey;
@@ -428,6 +429,10 @@ public class IssuesController extends SpringActionController
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
             page.setIssueListDef(getIssueListDef());
 
+            IssuesQuerySchema schema = new IssuesQuerySchema(getUser(), getContainer());
+            TableInfo issueTable = schema.createTable(getIssueListDef().getName());
+            page.setAdditionalDetailInfo(getIssueListDef().getDomainKind().getAdditionalDetailInfo(issueTable, issueId));
+
             // remove any notifications related to this user/objectid/type
             NotificationService.get().removeNotifications(getContainer(), "issue:" + _issue.getIssueId(), Arrays.asList(Issue.class.getName()), getUser().getUserId());
 
@@ -583,6 +588,16 @@ public class IssuesController extends SpringActionController
             if (NumberUtils.isNumber(form.getPriority()))
                 _issue.setPriority(Integer.parseInt(form.getPriority()));
 
+            // add any of the default values from the URL for the custom/extra properties
+            CustomColumnConfiguration customColumnConfig = getColumnConfiguration();
+            for (DomainProperty property : customColumnConfig.getCustomProperties())
+            {
+                String paramName = IssueDetailHeaderLinkProvider.PARAM_PREFIX + "." + property.getName();
+                String paramVal = getViewContext().getRequest().getParameter(paramName);
+                if (paramVal != null)
+                    _issue.setExtraProperty(property.getName(), paramVal);
+            }
+
             beforeReshow(reshow, form, _issue, issueListDef);
             IssuePage page = new IssuePage(getContainer(), getUser());
             JspView v = new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
@@ -592,10 +607,10 @@ public class IssuesController extends SpringActionController
 
             page.setIssue(_issue);
             page.setPrevIssue(_issue);
-            page.setCustomColumnConfiguration(getColumnConfiguration());
+            page.setCustomColumnConfiguration(customColumnConfig);
             page.setBody(form.getComment() == null ? form.getBody() : form.getComment());
             page.setCallbackURL(form.getCallbackURL());
-            page.setEditable(getEditableFields(page.getAction(), getColumnConfiguration()));
+            page.setEditable(getEditableFields(page.getAction(), customColumnConfig));
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
             page.setErrors(errors);
             page.setIssueListDef(getIssueListDef());

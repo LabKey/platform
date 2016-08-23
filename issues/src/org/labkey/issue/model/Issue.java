@@ -694,6 +694,11 @@ public class Issue extends Entity implements Serializable, Cloneable
         _extraProperties = extraProperties;
     }
 
+    public void setExtraProperty(String name, Object value)
+    {
+        _extraProperties.put(name, value);
+    }
+
     @Override
     public boolean equals(Object o)
     {

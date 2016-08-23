@@ -132,6 +132,11 @@ public class IssueListDef extends Entity
         return PropertyService.get().getDomain(getDomainContainer(user), uri);
     }
 
+    public AbstractIssuesListDefDomainKind getDomainKind()
+    {
+        return (AbstractIssuesListDefDomainKind)PropertyService.get().getDomainKindByName(getDomainKindName(getKind()));
+    }
+
     private static String generateDomainURI(Container c, User user, String name, String kindName)
     {
         DomainKind domainKind = PropertyService.get().getDomainKindByName(kindName);
@@ -159,7 +164,7 @@ public class IssueListDef extends Entity
             {
                 try
                 {
-                    AbstractIssuesListDefDomainKind domainKind = (AbstractIssuesListDefDomainKind)PropertyService.get().getDomainKindByName(getDomainKindName(getKind()));
+                    AbstractIssuesListDefDomainKind domainKind = getDomainKind();
                     domainKind.createLookupDomains(domainContainer, user, getName());
                     domain = PropertyService.get().createDomain(getDomainContainer(user), uri, getName());
 
