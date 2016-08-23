@@ -43,6 +43,7 @@ import org.labkey.api.data.JsonWriter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.defaults.SetDefaultValuesAssayAction;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.DataType;
@@ -70,29 +71,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.study.actions.AssayBatchDetailsAction;
-import org.labkey.api.study.actions.AssayBatchesAction;
-import org.labkey.api.study.actions.AssayDetailRedirectAction;
-import org.labkey.api.study.actions.AssayHeaderView;
-import org.labkey.api.study.actions.AssayResultDetailsAction;
-import org.labkey.api.study.actions.AssayResultsAction;
-import org.labkey.api.study.actions.AssayRunDetailsAction;
-import org.labkey.api.study.actions.AssayRunUploadForm;
-import org.labkey.api.study.actions.AssayRunsAction;
-import org.labkey.api.study.actions.BaseAssayAction;
-import org.labkey.api.study.actions.DeleteAction;
-import org.labkey.api.study.actions.DesignerAction;
-import org.labkey.api.study.actions.ImportAction;
-import org.labkey.api.study.actions.PlateBasedUploadWizardAction;
-import org.labkey.api.study.actions.ProtocolIdForm;
-import org.labkey.api.study.actions.PublishConfirmAction;
-import org.labkey.api.study.actions.PublishStartAction;
-import org.labkey.api.study.actions.ReimportRedirectAction;
-import org.labkey.api.study.actions.ShowSelectedDataAction;
-import org.labkey.api.study.actions.ShowSelectedRunsAction;
-import org.labkey.api.study.actions.TemplateAction;
-import org.labkey.api.study.actions.TransformResultsAction;
-import org.labkey.api.study.actions.UploadWizardAction;
+import org.labkey.api.study.actions.*;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.study.assay.AssayProtocolSchema;
@@ -128,10 +107,10 @@ import org.labkey.study.assay.FileBasedModuleDataHandler;
 import org.labkey.study.assay.ModuleAssayProvider;
 import org.labkey.study.assay.TsvImportAction;
 import org.labkey.study.assay.query.AssayAuditProvider;
-import org.labkey.study.controllers.assay.actions.ProtocolAction;
 import org.labkey.study.controllers.assay.actions.GetAssayBatchAction;
 import org.labkey.study.controllers.assay.actions.GetAssayBatchesAction;
 import org.labkey.study.controllers.assay.actions.ImportRunApiAction;
+import org.labkey.study.controllers.assay.actions.ProtocolAction;
 import org.labkey.study.controllers.assay.actions.SaveAssayBatchAction;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -343,21 +322,35 @@ public class AssayController extends SpringActionController
 
     private static List<Map<String, Object>> serializeDomain(Domain domain, TableInfo tableInfo, User user)
     {
+        Map<DomainProperty, Object> domainDefaults = DefaultValueService.get().getDefaultValues(domain.getContainer(), domain, user);
+
         if (tableInfo != null)
         {
             // Serialize the Domain properties using TableInfo columns which may include metadata overrides.
             // Issue 14546: Don't include all TableInfo columns in the response -- just Domain properties.
             Collection<FieldKey> fields = new ArrayList<>();
+            Map<FieldKey, Object> defaults = new HashMap<>();
             for (DomainProperty property : domain.getProperties())
             {
-                fields.add(FieldKey.fromParts(property.getName()));
+                FieldKey field = FieldKey.fromParts(property.getName());
+                fields.add(field);
+
+                Object defaultValue = domainDefaults.get(property);
+                if(defaultValue != null)
+                    defaults.put(field, defaultValue);
             }
+
             Map<FieldKey, ColumnInfo> columnMap = QueryService.get().getColumns(tableInfo, fields);
             Collection<DisplayColumn> displayColumns = new ArrayList<>(columnMap.size());
             for (ColumnInfo column : columnMap.values())
             {
+                Object defaultValue = defaults.get(column.getFieldKey());
+                if (defaultValue != null)
+                    column.setDefaultValue(defaultValue.toString());
+
                 displayColumns.add(column.getDisplayColumnFactory().createRenderer(column));
             }
+
             return new ArrayList<>(JsonWriter.getNativeColProps(displayColumns, null, true).values());
         }
 
@@ -372,6 +365,7 @@ public class AssayController extends SpringActionController
             properties.put("description", property.getDescription());
             properties.put("formatString", property.getFormat());
             properties.put("required", property.isRequired());
+            properties.put("defaultValue", domainDefaults.get(property));
             if (property.getLookup() != null)
             {
                 Lookup l = property.getLookup();
