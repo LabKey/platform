@@ -1473,14 +1473,12 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         Set<Long> uniqueRowIds = new HashSet<>(vialsRowIds.length);
         for (int vialRowId : vialsRowIds)
             uniqueRowIds.add((long)vialRowId);
-        List<Long> rowIds = new ArrayList<>(uniqueRowIds);
-        return getVials(container, user, rowIds);
+        return getVials(container, user, uniqueRowIds);
     }
 
-    public List<Vial> getVials(Container container, User user, Collection<Long> vialRowIds)
+    public List<Vial> getVials(Container container, User user, Set<Long> vialRowIds)
     {
-        // Copy into a set to eliminate dupes - issue 26940
-        vialRowIds = new HashSet<>(vialRowIds);
+        // Take a set to eliminate dups - issue 26940
 
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addInClause(FieldKey.fromParts("RowId"), vialRowIds);
@@ -1550,7 +1548,9 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     {
         if (vialIds == null || vialIds.size() == 0)
             return;
-        List<Vial> vials = getVials(request.getContainer(), user, vialIds);
+
+        Set<Long> vialRowIds = new HashSet<>(vialIds);
+        List<Vial> vials = getVials(request.getContainer(), user, vialRowIds);
         List<String> globalUniqueIds = new ArrayList<>(vials.size());
         List<String> descriptions = new ArrayList<>();
         for (Vial vial : vials)

@@ -53,8 +53,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: davebradlee
@@ -96,7 +98,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         errors.setExtraContext(extraScriptContext);
         getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.DELETE, true, errors, extraScriptContext);
 
-        List<Long> rowIds = new ArrayList<>(keys.size());
+        Set<Long> rowIds = new HashSet<>(keys.size());
         for (Map<String, Object> key : keys)
         {
             Object rowId = key.get("rowid");
@@ -336,7 +338,8 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         errors.setExtraContext(extraScriptContext);
         getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.UPDATE, true, errors, extraScriptContext);
 
-        List<Long> rowIds = new ArrayList<>(rows.size());
+        Set<Long> rowIds = new HashSet<>(rows.size());
+        Map<Long, Map<String, Object>> uniqueRows = new HashMap<>(rows.size());
         for (int i = 0; i < rows.size(); i++)
         {
             Map<String, Object> row = rows.get(i);
@@ -344,13 +347,14 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             Map<String, Object> oldRow = oldKeys.get(i);
             long rowId = oldRow != null ? keyFromMap(oldRow) : keyFromMap(row);
             rowIds.add(rowId);
+            uniqueRows.put(rowId, row);
         }
         Map<Long, Vial> vials = new HashMap<>();
         for (Vial vial : SpecimenManager.getInstance().getVials(container, user, rowIds))
         {
             vials.put(vial.getRowId(), vial);
         }
-        if (vials.size() != rows.size())
+        if (vials.size() != uniqueRows.size())
             throw new IllegalStateException("Specimens should be same size as rows.");
 
         try
@@ -370,21 +374,17 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         }
 
         EditableSpecimenImporter importer = new EditableSpecimenImporter(container, user, false);
-        List<Map<String, Object>> newKeys = new ArrayList<>(rows.size());
-        List<Map<String, Object>> newRows = new ArrayList<>(rows.size());
+        List<Map<String, Object>> newKeys = new ArrayList<>(uniqueRows.size());
+        List<Map<String, Object>> newRows = new ArrayList<>(uniqueRows.size());
         long externalId = SpecimenManager.getInstance().getMaxExternalId(container) + 1;
-        for (int i = 0; i < rows.size(); i++)
+        for (Map.Entry<Long, Map<String, Object>> row : uniqueRows.entrySet())
         {
-            Map<String, Object> row = rows.get(i);
-            assert null != oldKeys;
-            Map<String, Object> oldRow = oldKeys.get(i);
-            long rowId = oldRow != null ? keyFromMap(oldRow) : keyFromMap(row);
-            Vial vial = vials.get(rowId);
-            Map<String, Object> rowMap = prepareRowMap(container, row, vial, importer, externalId++);
+            Vial vial = vials.get(row.getKey());
+            Map<String, Object> rowMap = prepareRowMap(container, row.getValue(), vial, importer, externalId++);
             newRows.add(rowMap);
 
             Map<String,Object> keys = new HashMap<>();
-            keys.put("rowId", rowId);
+            keys.put("rowId", row.getKey());
             newKeys.add(keys);
         }
 
