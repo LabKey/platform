@@ -58,11 +58,11 @@ public interface ParticipantVisitResolverType
 
     public void render(RenderContext ctx) throws Exception;
 
-    public void addHiddenFormFields(AssayRunUploadContext form, InsertView view);
+    public void addHiddenFormFields(AssayRunUploadContext<?> form, InsertView view);
 
-    public void configureRun(AssayRunUploadContext context, ExpRun run, Map<ExpData, String> inputDatas) throws ExperimentException;
+    public void configureRun(AssayRunUploadContext<?> context, ExpRun run, Map<ExpData, String> inputDatas) throws ExperimentException;
 
-    public boolean collectPropertyOnUpload(AssayRunUploadContext uploadContext, String propertyName);
+    public boolean collectPropertyOnUpload(AssayRunUploadContext<?> uploadContext, String propertyName);
 
     public static class Serializer
     {

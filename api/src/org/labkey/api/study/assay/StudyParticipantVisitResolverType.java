@@ -65,17 +65,17 @@ public class StudyParticipantVisitResolverType implements ParticipantVisitResolv
     {
     }
 
-    public void addHiddenFormFields(AssayRunUploadContext form, InsertView view)
+    public void addHiddenFormFields(AssayRunUploadContext<?> form, InsertView view)
     {
         // Don't need to add any form fields - the data's already all there
     }
 
-    public void configureRun(AssayRunUploadContext context, ExpRun run, Map<ExpData, String> inputDatas)
+    public void configureRun(AssayRunUploadContext<?> context, ExpRun run, Map<ExpData, String> inputDatas)
     {
         // Don't need to do anything - the data's already all there
     }
 
-    public boolean collectPropertyOnUpload(AssayRunUploadContext uploadContext, String propertyName)
+    public boolean collectPropertyOnUpload(AssayRunUploadContext<?> uploadContext, String propertyName)
     {
         return true;
     }

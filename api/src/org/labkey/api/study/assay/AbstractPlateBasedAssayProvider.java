@@ -259,7 +259,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
             view.render(ctx.getRequest(), ctx.getViewContext().getResponse());
         }
 
-        public boolean collectPropertyOnUpload(AssayRunUploadContext uploadContext, String propertyName)
+        public boolean collectPropertyOnUpload(AssayRunUploadContext<?> uploadContext, String propertyName)
         {
             if (propertyName.equals(AbstractAssayProvider.DATE_PROPERTY_NAME))
                 return false;
@@ -281,7 +281,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
             return true;
         }
 
-        public void addHiddenFormFields(AssayRunUploadContext form, InsertView view)
+        public void addHiddenFormFields(AssayRunUploadContext<?> form, InsertView view)
         {
             view.getDataRegion().addHiddenFormField(INCLUDE_PARTICIPANT_AND_VISIT,
                     form.getRequest().getParameter(INCLUDE_PARTICIPANT_AND_VISIT));
@@ -300,7 +300,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
             return "Participant id and visit id.";
         }
 
-        public boolean collectPropertyOnUpload(AssayRunUploadContext uploadContext, String propertyName)
+        public boolean collectPropertyOnUpload(AssayRunUploadContext<?> uploadContext, String propertyName)
         {
             return !(propertyName.equals(AbstractAssayProvider.SPECIMENID_PROPERTY_NAME) ||
                     propertyName.equals(AbstractAssayProvider.DATE_PROPERTY_NAME));
@@ -319,7 +319,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
             return "Participant id and date.";
         }
 
-        public boolean collectPropertyOnUpload(AssayRunUploadContext uploadContext, String propertyName)
+        public boolean collectPropertyOnUpload(AssayRunUploadContext<?> uploadContext, String propertyName)
         {
             return !(propertyName.equals(AbstractAssayProvider.SPECIMENID_PROPERTY_NAME) ||
                     propertyName.equals(AbstractAssayProvider.VISITID_PROPERTY_NAME));
@@ -338,7 +338,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
             return "Participant id, visit id, and date.";
         }
 
-        public boolean collectPropertyOnUpload(AssayRunUploadContext uploadContext, String propertyName)
+        public boolean collectPropertyOnUpload(AssayRunUploadContext<?> uploadContext, String propertyName)
         {
             return !(propertyName.equals(AbstractAssayProvider.SPECIMENID_PROPERTY_NAME));
         }

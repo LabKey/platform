@@ -17,6 +17,7 @@
 package org.labkey.api.study.assay;
 
 import org.apache.commons.lang3.StringUtils;
+import org.json.JSONObject;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
@@ -30,6 +31,7 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -230,7 +232,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
         ContainerManager.getAllChildren(ContainerManager.getRoot());
     }
 
-    public void addHiddenFormFields(AssayRunUploadContext form, InsertView view)
+    public void addHiddenFormFields(AssayRunUploadContext<?> form, InsertView view)
     {
         view.getDataRegion().addHiddenFormField(THAW_LIST_TYPE_INPUT_NAME, form.getRequest().getParameter(THAW_LIST_TYPE_INPUT_NAME));
         view.getDataRegion().addHiddenFormField(THAW_LIST_LIST_DEFINITION_INPUT_NAME, form.getRequest().getParameter(THAW_LIST_LIST_DEFINITION_INPUT_NAME));
@@ -240,10 +242,21 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
         view.getDataRegion().addHiddenFormField(THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME, form.getRequest().getParameter(THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME));
     }
 
-
-    public void configureRun(AssayRunUploadContext context, ExpRun run, Map<ExpData, String> inputDatas) throws ExperimentException
+    public void configureRun(AssayRunUploadContext<?> context, ExpRun run, Map<ExpData, String> inputDatas) throws ExperimentException
     {
         String type = context.getRequest() == null ? null : context.getRequest().getParameter(THAW_LIST_TYPE_INPUT_NAME);
+        JSONObject batchProperty = null;
+        if(type == null)
+        {
+            for (Map.Entry<DomainProperty, String> entry : context.getBatchProperties().entrySet())
+            {
+                if (entry.getKey().getName().equals(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME))
+                {
+                    batchProperty = new JSONObject(entry.getValue());
+                    type = batchProperty.getString(THAW_LIST_TYPE_INPUT_NAME);
+                }
+            }
+        }
 
         InputStream in = null;
 
@@ -283,9 +296,21 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
         }
         else if (LIST_NAMESPACE_SUFFIX.equals(type))
         {
-            String containerName = context.getRequest().getParameter(THAW_LIST_LIST_CONTAINER_INPUT_NAME);
-            String schemaName = context.getRequest().getParameter(THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME);
-            String queryName = context.getRequest().getParameter(THAW_LIST_LIST_QUERY_NAME_INPUT_NAME);
+            String containerName, schemaName, queryName;
+
+            if(batchProperty != null)
+            {
+                containerName = batchProperty.getString(THAW_LIST_LIST_CONTAINER_INPUT_NAME);
+                schemaName = batchProperty.getString(THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME);
+                queryName = batchProperty.getString(THAW_LIST_LIST_QUERY_NAME_INPUT_NAME);
+            }
+            else
+            {
+                containerName = context.getRequest().getParameter(THAW_LIST_LIST_CONTAINER_INPUT_NAME);
+                schemaName = context.getRequest().getParameter(THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME);
+                queryName = context.getRequest().getParameter(THAW_LIST_LIST_QUERY_NAME_INPUT_NAME);
+            }
+
             Container container;
             if (containerName == null || "".equals(containerName))
             {
@@ -296,7 +321,11 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
                 container = ContainerManager.getForPath(containerName);
             }
 
-            String validationErrMsg = validateThawList(context.getRequest(), container, context.getUser());
+            String validationErrMsg;
+            if(batchProperty != null)
+                validationErrMsg = validateThawList(containerName, schemaName, queryName, container, context.getUser());
+            else
+                validationErrMsg = validateThawList(context.getRequest(), container, context.getUser());
             if (StringUtils.isNotEmpty(validationErrMsg))
             {
                 throw new ExperimentException(validationErrMsg);
@@ -357,14 +386,20 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
         }
     }
 
-    /**
-     * Validate the existence, permissions, and columns of a thaw list.
-     */
     private static String validateThawList(HttpServletRequest request, Container c, User u)
     {
         String containerName = request.getParameter(THAW_LIST_LIST_CONTAINER_INPUT_NAME);
         String schemaName = request.getParameter(THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME);
         String queryName = request.getParameter(THAW_LIST_LIST_QUERY_NAME_INPUT_NAME);
+
+        return validateThawList(containerName, schemaName, queryName, c, u);
+    }
+
+    /**
+     * Validate the existence, permissions, and columns of a thaw list.
+     */
+    private static String validateThawList(String containerName, String schemaName, String queryName, Container c, User u)
+    {
         Container container;
 
         if (containerName == null || "".equals(containerName))
@@ -443,7 +478,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
         return schemaName + "." + queryName + " in " + container.getPath();
     }
 
-    public boolean collectPropertyOnUpload(AssayRunUploadContext uploadContext, String propertyName)
+    public boolean collectPropertyOnUpload(AssayRunUploadContext<?> uploadContext, String propertyName)
     {
         return !(propertyName.equals(AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME) ||
                 propertyName.equals(AbstractAssayProvider.VISITID_PROPERTY_NAME) ||
