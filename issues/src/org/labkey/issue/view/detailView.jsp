@@ -25,6 +25,8 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
+<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.issue.ColumnTypeEnum" %>
@@ -39,6 +41,9 @@
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="java.util.function.Function" %>
+<%@ page import="java.util.stream.Collectors" %>
+<%@ page import="java.util.stream.Stream" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -67,9 +72,16 @@
     // create collections for additional custom columns and distribute them evenly in the form
     List<DomainProperty> column1Props = new ArrayList<>();
     List<DomainProperty> column2Props = new ArrayList<>();
+    List<DomainProperty> extraColumns = new ArrayList<>();          // type, area, priority, milestone
     int i=0;
 
     Map<String, DomainProperty> propertyMap = bean.getCustomColumnConfiguration().getPropertyMap();
+    // todo: don't include if the lookup is empty (was previously IssuePage.hasKeywords)
+    extraColumns.addAll(Stream.of("type", "area", "priority", "milestone")
+            .filter(propertyMap::containsKey)
+            .map((Function<String, DomainProperty>) propertyMap::get)
+            .collect(Collectors.toList()));
+
     for (DomainProperty prop : bean.getCustomColumnConfiguration().getCustomProperties())
     {
         if ((i++ % 2) == 0)
@@ -118,7 +130,7 @@
         if (issueListDef != null)
         {
             boolean issueIsOpen = Issue.statusOPEN.equals(issue.getStatus());
-            additionalHeaderLinks.addAll(provider.getLinks(issueListDef.getDomain(getUser()), issue.getIssueId(), issueIsOpen, issue.getExtraProperties(), getContainer(), getUser()));
+            additionalHeaderLinks.addAll(provider.getLinks(issueListDef.getDomain(getUser()), issue.getIssueId(), issueIsOpen, issue.getProperties(), getContainer(), getUser()));
         }
     }
 %>
@@ -219,12 +231,9 @@
         <td valign="top"><table>
             <tr><td class="labkey-form-label">Status</td><td><%=h(issue.getStatus())%></td></tr>
             <tr><td class="labkey-form-label">Assigned&nbsp;To</td><td><%=h(issue.getAssignedToName(user))%></td></tr><%
-            for (ColumnTypeEnum type : Arrays.asList(ColumnTypeEnum.TYPE, ColumnTypeEnum.AREA, ColumnTypeEnum.PRIORITY, ColumnTypeEnum.MILESTONE))
-            {
-                if (bean.hasKeywords(type) || type.getValue(issue) != null)
-                {%>
-            <tr><td class="labkey-form-label"><%=text(bean.getLabel(type, false))%></td><td><%=h(type.getValue(issue))%></td></tr><%
-                }
+            for (DomainProperty prop : extraColumns)
+            {%>
+                <%=text(bean.renderColumn(prop, getViewContext()))%><%
             }%>
 
             <%=text(bean.renderAdditionalDetailInfo())%>

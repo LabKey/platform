@@ -18,7 +18,6 @@ package org.labkey.issue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.issue.model.Issue;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -30,101 +29,18 @@ import java.util.Map;
  * Date: 6/30/12
  * Time: 8:41 PM
  */
+
+
+@Deprecated // This class can be deleted in 19.1
 public enum ColumnTypeEnum implements ColumnType
 {
-    INT1(0, "int1", false)
-    {
-        @Override
-        public void setValue(Issue issue, String value)
-        {
-            throw new IllegalStateException("Shouldn't be setting value for column type INT1");
-        }
-
-        @Override
-        public String getValue(Issue issue)
-        {
-            if(issue.getInt1() != null)
-                return String.valueOf(issue.getInt1());
-            else
-                return null;
-        }
-    },
-    INT2(0, "int2", false)
-    {
-        @Override
-        public void setValue(Issue issue, String value)
-        {
-            throw new IllegalStateException("Shouldn't be setting value for column type INT2");
-        }
-
-        @Override
-        public String getValue(Issue issue)
-        {
-            if(issue.getInt2() != null)
-                return String.valueOf(issue.getInt2());
-            else
-                return null;
-        }
-    },
-    AREA(1, "area", true)
-    {
-        @Override
-        public String getValue(Issue issue)
-        {
-            return issue.getArea();
-        }
-
-        @Override
-        public void setValue(Issue issue, String value)
-        {
-            issue.setArea(value);
-        }
-    },
-    TYPE(2, "type", true)
-    {
-        @Override
-        public String getValue(Issue issue)
-        {
-            return issue.getType();
-        }
-
-        @Override
-        public void setValue(Issue issue, String value)
-        {
-            issue.setType(value);
-        }
-    },
-    MILESTONE(3, "milestone", true)
-    {
-        @Override
-        public String getValue(Issue issue)
-        {
-            return issue.getMilestone();
-        }
-
-        @Override
-        public void setValue(Issue issue, String value)
-        {
-            issue.setMilestone(value);
-        }
-    },
+    INT1(0, "int1", false),
+    INT2(0, "int2", false),
+    AREA(1, "area", true),
+    TYPE(2, "type", true),
+    MILESTONE(3, "milestone", true),
     PRIORITY(6, "priority", true)
     {
-        @Override
-        public String getValue(Issue issue)
-        {
-            if(issue.getPriority() != null)
-                return String.valueOf(issue.getPriority());
-            else
-                return null;
-        }
-
-        @Override
-        public void setValue(Issue issue, String value)
-        {
-            issue.setPriority(null != value ? Integer.parseInt(value) : 3);
-        }
-
         @NotNull
         @Override
         public String[] getInitialValues()
@@ -147,18 +63,6 @@ public enum ColumnTypeEnum implements ColumnType
     },
     RESOLUTION(7, "resolution", false)
     {
-        @Override
-        public String getValue(Issue issue)
-        {
-            return issue.getResolution();
-        }
-
-        @Override
-        public void setValue(Issue issue, String value)
-        {
-            issue.setResolution(value);
-        }
-
         @NotNull
         @Override
         public String[] getInitialValues()
@@ -179,90 +83,12 @@ public enum ColumnTypeEnum implements ColumnType
             return false;
         }
     },
-    STRING1(4, "string1", false)
-    {
-        @Override
-        public void setValue(Issue issue, String value)
-        {
-            issue.setString1(value);
-        }
-
-        @Override
-        public String getValue(Issue issue)
-        {
-            return issue.getString1();
-        }
-    },
-    STRING2(5, "string2", false)
-    {
-        @Override
-        public void setValue(Issue issue, String value)
-        {
-            issue.setString2(value);
-        }
-
-        @Override
-        public String getValue(Issue issue)
-        {
-            return issue.getString2();
-        }
-    },
-    STRING3(8, "string3", false)
-    {
-        @Override
-        public void setValue(Issue issue, String value)
-        {
-            issue.setString3(value);
-        }
-
-        @Override
-        public String getValue(Issue issue)
-        {
-            return issue.getString3();
-        }
-    },
-    STRING4(9, "string4", false)
-    {
-        @Override
-        public void setValue(Issue issue, String value)
-        {
-            issue.setString4(value);
-        }
-
-        @Override
-        public String getValue(Issue issue)
-        {
-            return issue.getString4();
-        }
-    },
-    STRING5(10, "string5", false)
-    {
-        @Override
-        public void setValue(Issue issue, String value)
-        {
-            issue.setString5(value);
-        }
-
-        @Override
-        public String getValue(Issue issue)
-        {
-            return issue.getString5();
-        }
-    },
-    RELATED(11, "related", false)
-    {
-        @Override
-        public void setValue(Issue issue, String value)
-        {
-            issue.setRelated(value);
-        }
-
-        @Override
-        public String getValue(Issue issue)
-        {
-            return issue.getRelated();
-        }
-    };
+    STRING1(4, "string1", false),
+    STRING2(5, "string2", false),
+    STRING3(8, "string3", false),
+    STRING4(9, "string4", false),
+    STRING5(10, "string5", false),
+    RELATED(11, "related", false);
 
     private final int _ordinal;            // Ordinal used for storing/retrieving associated keywords in database (same as old int fake enum)
     private final String _columnName;      // Standard database column name (same as old static final string)... these names never need HTML encoding
@@ -340,16 +166,6 @@ public enum ColumnTypeEnum implements ColumnType
     public @NotNull String getInitialDefaultValue()
     {
         throw new IllegalStateException("Initial default value must be specified iff getInitialValues() is implemented");
-    }
-
-    public abstract String getValue(Issue issue);
-
-    public abstract void setValue(Issue issue, String value);
-
-    // Convenience method for setting default
-    public void setDefaultValue(Issue issue, Map<ColumnTypeEnum, String> defaults)
-    {
-        setValue(issue, defaults.get(this));
     }
 
     public static @Nullable

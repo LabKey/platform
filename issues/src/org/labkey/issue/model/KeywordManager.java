@@ -40,6 +40,7 @@ import java.util.Collections;
  * Date: 6/25/12
  * Time: 7:49 PM
  */
+@Deprecated // This class can be deleted in 19.1
 public class KeywordManager
 {
     public static final Object KEYWORD_LOCK = new Object();

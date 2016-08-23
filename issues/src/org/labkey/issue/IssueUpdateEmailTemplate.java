@@ -332,7 +332,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         _allReplacements.addAll(_replacements);
 
         // inject any custom fields into the replacement parameters
-        for (Map.Entry<String, Object> prop : _newIssue.getExtraProperties().entrySet())
+        for (Map.Entry<String, Object> prop : _newIssue.getProperties().entrySet())
         {
             if (!existingParams.contains(prop.getKey()))
             {

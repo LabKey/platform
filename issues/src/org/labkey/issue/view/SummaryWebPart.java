@@ -52,7 +52,7 @@ public class SummaryWebPart extends JspView<IssuesController.SummaryBean>
         try
         {
             IssueListDef issueListDef = IssueManager.getIssueListDef(getViewContext().getContainer(), issueDefName);
-            bean.bugs = IssueManager.getSummary(c, issueListDef);
+            bean.bugs = IssueManager.getSummary(c, u, issueListDef);
         }
         catch (SQLException x)
         {

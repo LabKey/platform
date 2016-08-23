@@ -51,6 +51,7 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -61,6 +62,7 @@ import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.issues.AbstractIssuesListDefDomainKind;
 import org.labkey.api.issues.IssueDetailHeaderLinkProvider;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.issues.IssuesUrls;
@@ -595,7 +597,7 @@ public class IssuesController extends SpringActionController
                 String paramName = IssueDetailHeaderLinkProvider.PARAM_PREFIX + "." + property.getName();
                 String paramVal = getViewContext().getRequest().getParameter(paramName);
                 if (paramVal != null)
-                    _issue.setExtraProperty(property.getName(), paramVal);
+                    _issue.setProperty(property.getName(), paramVal);
             }
 
             beforeReshow(reshow, form, _issue, issueListDef);
@@ -686,7 +688,7 @@ public class IssuesController extends SpringActionController
             // bind the provisioned table to the form bean so we can get typed properties
             IssueListDef issueListDef = getIssueListDef();
             form.setTable(issueListDef.createTable(getUser()));
-            issue.setExtraProperties(form.getTypedColumns());
+            issue.setProperties(form.getTypedColumns());
 
             Issue prevIssue = (Issue)form.getOldValues();
             requiresUpdatePermission(user, issue);
@@ -920,6 +922,12 @@ public class IssuesController extends SpringActionController
 
             editable.add("related");
 
+/*
+            if (CloseAction.class == action)
+            {
+                editable.remove("assignedTo");
+            }
+*/
             return editable;
         }
 
@@ -1336,7 +1344,7 @@ public class IssuesController extends SpringActionController
             {
                 // bind the provisioned table to the form bean so we can get typed properties
                 form.setTable(issueListDef.createTable(getUser()));
-                issue.setExtraProperties(form.getTypedColumns());
+                issue.setProperties(form.getTypedColumns());
             }
         }
 
@@ -1353,7 +1361,18 @@ public class IssuesController extends SpringActionController
                 if (issueDef != null)
                 {
                     Domain domain = issueDef.getDomain(user);
-                    _baseNames.addAll(domain.getDomainKind().getMandatoryPropertyNames(domain));
+                    if (domain.getDomainKind() instanceof AbstractIssuesListDefDomainKind)
+                    {
+                        _baseNames.addAll(Arrays.asList("title", "type", "area", "notifylist", "priority", "milestone",
+                                "assignedto", "resolution"));
+
+/*
+                        _baseNames.addAll(((AbstractIssuesListDefDomainKind)domain.getDomainKind()).getRequiredProperties()
+                                .stream()
+                                .map(PropertyStorageSpec::getName)
+                                .collect(Collectors.toSet()));
+*/
+                    }
 
                     if (domain != null)
                     {

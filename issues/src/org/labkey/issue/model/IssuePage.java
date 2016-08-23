@@ -341,7 +341,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                     throw new RuntimeException(e);
                 }
             }
-            row.putAll(_issue.getExtraProperties());
+            row.putAll(_issue.getProperties());
 
             _renderContext = new RenderContext(context);
             _renderContext.setMode(_mode);

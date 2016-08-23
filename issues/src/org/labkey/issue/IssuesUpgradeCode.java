@@ -828,4 +828,37 @@ public class IssuesUpgradeCode implements UpgradeCode
             }
         }
     }
+
+    /**
+     * Invoked by issues-16.22-16.23.sql
+     *
+     * Drop legacy fields from the issues.issues table, this needs to be performed in a deferred java
+     * upgrade script because it must be ordered to run after previous deferred upgrade scripts:
+     *
+     * issues-16.13-16.14.sql
+     * issues-16.21-16.22.sql
+     */
+    @DeferredUpgrade
+    public void dropLegacyFields(final ModuleContext context)
+    {
+        _log.info("Deleting obsolete fields from the issues.issues table");
+
+        List<String> columns = Arrays.asList("Title", "Status", "AssignedTo", "Type", "Area",
+                "Priority", "Milestone", "BuildFound", "Modified", "ModifiedBy",
+                "Created", "CreatedBy", "Tag", "ResolvedBy", "Resolved", "Resolution",
+                "ClosedBy", "Closed", "Int1", "Int2", "String1", "String2", "String3", "String4",
+                "String5", "NotifyList");
+
+        try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
+        {
+            for (String column : columns)
+            {
+                SQLFragment sql = new SQLFragment("ALTER TABLE ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
+                        append(" DROP COLUMN ").append(column);
+
+                new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(sql);
+            }
+            transaction.commit();
+        }
+    }
 }

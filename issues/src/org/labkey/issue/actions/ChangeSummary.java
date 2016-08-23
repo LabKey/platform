@@ -120,8 +120,8 @@ public class ChangeSummary
             _appendChange(sbHTMLChanges, sbTextChanges, "Milestone", previous.getMilestone(), issue.getMilestone(), ccc, newIssue);
             _appendChange(sbHTMLChanges, sbTextChanges, "Related", StringUtils.join(previous.getRelatedIssues(), ", "), StringUtils.join(issue.getRelatedIssues(), ", "), ccc, newIssue);
 
-            Map<String, Object> oldProps = previous.getExtraProperties();
-            for (Map.Entry<String, Object> entry : issue.getExtraProperties().entrySet())
+            Map<String, Object> oldProps = previous.getProperties();
+            for (Map.Entry<String, Object> entry : issue.getProperties().entrySet())
             {
                 if (!_standardFields.contains(entry.getKey()))
                 {

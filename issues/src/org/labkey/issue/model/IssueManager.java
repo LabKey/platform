@@ -30,7 +30,6 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.property.Domain;
@@ -48,6 +47,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchService.IndexTask;
 import org.labkey.api.security.Group;
+import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.MemberType;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
@@ -59,12 +59,15 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
@@ -271,7 +274,7 @@ public class IssueManager implements IssuesListDefService.Interface
                                 rowMap.put(colName, value);
                         }
                     }
-                    issue.setExtraProperties(rowMap);
+                    issue.setProperties(rowMap);
                 }
                 catch (SQLException e)
                 {
@@ -349,8 +352,8 @@ public class IssueManager implements IssuesListDefService.Interface
 
     public static void saveIssue(User user, Container container, Issue issue) throws SQLException
     {
-        if (issue.assignedTo == null)
-            issue.assignedTo = 0;
+        if (issue.getAssignedTo() == null)
+            issue.setAssignedTo(0);
 
         IssueListDef issueDef = getIssueListDef(issue);
         if (issueDef != null)
@@ -370,7 +373,7 @@ public class IssueManager implements IssuesListDefService.Interface
 
                 ObjectFactory factory = ObjectFactory.Registry.getFactory(Issue.class);
                 factory.toMap(issue, row);
-                row.putAll(issue.getExtraProperties());
+                row.putAll(issue.getProperties());
 
                 BatchValidationException batchErrors = new BatchValidationException();
                 List<Map<String, Object>> results;
@@ -392,7 +395,7 @@ public class IssueManager implements IssuesListDefService.Interface
                 saveComments(user, issue);
                 saveRelatedIssues(user, issue);
 
-                indexIssue(null, issue);
+                indexIssue(container, user, null, issue);
 
                 transaction.commit();
             }
@@ -540,9 +543,9 @@ public class IssueManager implements IssuesListDefService.Interface
                     //For example: user inherits 'Type Options' in the Keyword section, and 'Type' under
                     // 'Custom Column' is enabled, allowing to add a custom field value for 'Type' will
                     // modify 'Type Options' to '<User defined Type name> Options' (in the Keyword section).
-                    if(colName != null && (colName.equals(ColumnTypeEnum.TYPE) || colName.equals(ColumnTypeEnum.AREA)
-                            || colName.equals(ColumnTypeEnum.PRIORITY) || colName.equals(ColumnTypeEnum.MILESTONE)
-                            || colName.equals(ColumnTypeEnum.RESOLUTION) || colName.equals(ColumnTypeEnum.RELATED)))
+                    if(colName != null && (colName.equals(ColumnTypeEnum.TYPE.name()) || colName.equals(ColumnTypeEnum.AREA.name())
+                            || colName.equals(ColumnTypeEnum.PRIORITY.name()) || colName.equals(ColumnTypeEnum.MILESTONE.name())
+                            || colName.equals(ColumnTypeEnum.RESOLUTION.name()) || colName.equals(ColumnTypeEnum.RELATED.name())))
                     {
                         iter.remove();
                     }
@@ -728,27 +731,26 @@ public class IssueManager implements IssuesListDefService.Interface
     }
 
 
-    public static Map[] getSummary(Container c, @Nullable IssueListDef issueListDef) throws SQLException
+    public static Map[] getSummary(Container c, User user, @Nullable IssueListDef issueListDef) throws SQLException
     {
-        Collection<Object> params = new ArrayList<>();
-
-        SQLFragment sql = new SQLFragment("SELECT DisplayName, SUM(CASE WHEN Status='open' THEN 1 ELSE 0 END) AS " +
-            _issuesSchema.getSqlDialect().makeLegalIdentifier("Open") + ", SUM(CASE WHEN Status='resolved' THEN 1 ELSE 0 END) AS " +
-            _issuesSchema.getSqlDialect().makeLegalIdentifier("Resolved") + "\n" +
-            "FROM " + _issuesSchema.getTableInfoIssues() + " LEFT OUTER JOIN " + CoreSchema.getInstance().getTableInfoUsers() +
-            " ON AssignedTo = UserId\n" +
-                "WHERE Status in ('open', 'resolved') AND Container = ? ");
-
-        params.add(c);
         if (issueListDef != null)
         {
-            sql.append("AND IssueDefId = ? ");
-            params.add(issueListDef.getRowId());
-        }
-        sql.append("GROUP BY DisplayName");
-        sql.addAll(params);
+            TableInfo tableInfo = issueListDef.createTable(user);
+            Collection<Object> params = new ArrayList<>();
+            SQLFragment sql = new SQLFragment("SELECT DisplayName, SUM(CASE WHEN Status='open' THEN 1 ELSE 0 END) AS " +
+                    _issuesSchema.getSqlDialect().makeLegalIdentifier("Open") + ", SUM(CASE WHEN Status='resolved' THEN 1 ELSE 0 END) AS " +
+                    _issuesSchema.getSqlDialect().makeLegalIdentifier("Resolved") + "\n" +
+                    "FROM " + tableInfo + " LEFT OUTER JOIN " + CoreSchema.getInstance().getTableInfoUsers() +
+                    " ON AssignedTo = UserId\n" +
+                    "WHERE Status in ('open', 'resolved') AND Container = ? ");
+            params.add(c);
+            sql.append("GROUP BY DisplayName");
+            sql.addAll(params);
 
-        return new SqlSelector(_issuesSchema.getSchema(), sql).getMapArray();
+            return new SqlSelector(_issuesSchema.getSchema(), sql).getMapArray();
+        }
+        else
+            return new Map[0];
     }
 
 
@@ -1400,72 +1402,34 @@ public class IssueManager implements IssuesListDefService.Interface
 
         public void run()
         {
-            indexIssues(_task, _ids);
+            User user = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
+            indexIssues(null, user, _task, _ids);
         }
     }
 
 
     /* CONSIDER: some sort of generator interface instead */
-    public static void indexIssues(IndexTask task, Collection<Integer> ids)
+    public static void indexIssues(@Nullable Container container, User user, IndexTask task, Collection<Integer> ids)
     {
         if (ids.isEmpty())
             return;
 
         SQLFragment f = new SQLFragment();
-        f.append("SELECT I.issueId, I.container, I.entityid, I.title, I.status, AssignedTo$.searchTerms as assignedto, I.type, I.area, ")
-            .append("I.priority, I.milestone, I.buildfound, ModifiedBy$.searchTerms as modifiedby, ")
-            .append("I.modified, CreatedBy$.searchTerms as createdby, I.created, I.tag, ResolvedBy$.searchTerms as resolvedby, ")
-            .append("I.resolved, I.resolution, I.duplicate, ClosedBy$.searchTerms as closedby, I.closed, ")
-            .append("I.int1, I.int2, I.string1, I.string2, ")
-            .append("C.comment\n");
+        f.append("SELECT I.issueId, I.container, I.entityid, I.duplicate, ")
+                .append("C.comment\n");
         f.append("FROM issues.issues I \n")
-            .append("LEFT OUTER JOIN issues.comments C ON I.issueid = C.issueid\n")
-            .append("LEFT OUTER JOIN core.usersearchterms AS AssignedTo$ ON I.assignedto = AssignedTo$.userid\n")
-            .append("LEFT OUTER JOIN core.usersearchterms AS ClosedBy$  ON I.createdby = ClosedBy$.userid\n")
-            .append("LEFT OUTER JOIN core.usersearchterms AS CreatedBy$  ON I.createdby = CreatedBy$.userid\n")
-            .append("LEFT OUTER JOIN core.usersearchterms AS ModifiedBy$ ON I.modifiedby = ModifiedBy$.userid\n")
-            .append("LEFT OUTER JOIN core.usersearchterms AS ResolvedBy$ ON I.modifiedby = ResolvedBy$.userid\n");
-        f.append("WHERE I.issueid IN ");
+                .append("LEFT OUTER JOIN issues.comments C ON I.issueid = C.issueid\n");
 
-        String comma = "(";
         for (Integer id : ids)
         {
-            f.append(comma).append(id);
-            comma = ",";
-        }
-        f.append(")\n");
-        f.append("ORDER BY I.issueid, C.created");
-
-        try (ResultSet rs = new SqlSelector(_issuesSchema.getSchema(), f).getResultSet(false))
-        {
-            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
-            int currentIssueId = -1;
-
-            Map<String, Object> m = null;
-            ArrayList<Issue.Comment> comments = new ArrayList<>();
-
-            while (rs.next())
-            {
-                int id = rs.getInt(1);
-                if (id != currentIssueId)
-                {
-                    queueIssue(task, currentIssueId, m, comments);
-                    comments = new ArrayList<>();
-                    m = factory.getRowMap(rs);
-                    currentIssueId = id;
-                }
-                comments.add(new Issue.Comment(rs.getString("comment")));
-            }
-            queueIssue(task, currentIssueId, m, comments);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
+            Issue issue = IssueManager.getIssue(container, user, id);
+            if (issue != null)
+                queueIssue(task, id, issue.getProperties(), issue.getComments());
         }
     }
 
 
-    static void indexIssue(@Nullable IndexTask task, Issue issue)
+    static void indexIssue(Container container, User user, @Nullable IndexTask task, Issue issue)
     {
         if (task == null)
         {
@@ -1479,11 +1443,11 @@ public class IssueManager implements IssuesListDefService.Interface
         // task.addResource(new IssueResource(issue), SearchService.PRIORITY.item);
 
         // try requery instead
-        indexIssues(task, Collections.singleton(issue.getIssueId()));
+        indexIssues(container, user, task, Collections.singleton(issue.getIssueId()));
     }
 
 
-    static void queueIssue(IndexTask task, int id, Map<String,Object> m, ArrayList<Issue.Comment> comments)
+    static void queueIssue(IndexTask task, int id, Map<String,Object> m, Collection<Issue.Comment> comments)
     {
         if (null == task || null == m)
             return;
@@ -1726,11 +1690,11 @@ public class IssueManager implements IssuesListDefService.Interface
         }
 
 
-        IssueResource(int issueId, Map<String,Object> m, List<Issue.Comment> comments)
+        IssueResource(int issueId, Map<String,Object> m, Collection<Issue.Comment> comments)
         {
             super(new Path("issue:"+String.valueOf(issueId)));
             _issueId = issueId;
-            _containerId = (String)m.get("container");
+            _containerId = (String)m.get("folder");
             _properties = m;
             _comments = comments;
             _properties.put(categories.toString(), searchCategory.getName());
@@ -1775,7 +1739,7 @@ public class IssueManager implements IssuesListDefService.Interface
 
             try (ByteArrayOutputStream bos = new ByteArrayOutputStream())
             {
-                try (Writer out = new OutputStreamWriter(bos))
+                try (Writer out = new OutputStreamWriter(bos, StringUtilsLabKey.DEFAULT_CHARSET))
                 {
 
                     out.write("<html><head><title>");
@@ -1860,12 +1824,11 @@ public class IssueManager implements IssuesListDefService.Interface
                 issue.open(c, user);
                 issue.setAssignedTo(user.getUserId());
                 issue.setTitle("This is a junit test bug");
-                issue.setTag("junit");
                 issue.addComment(user, "new issue");
                 issue.setPriority(3);
                 issue.setIssueDefName(IssueListDef.DEFAULT_ISSUE_LIST_NAME);
 
-                factory.toMap(issue, issue.getExtraProperties());
+                factory.toMap(issue, issue.getProperties());
                 IssueManager.saveIssue(user, c, issue);
                 issueId = issue.getIssueId();
             }
@@ -1890,7 +1853,7 @@ public class IssueManager implements IssuesListDefService.Interface
             {
                 Issue issue = IssueManager.getIssue(c, user, issueId);
                 issue.addComment(user, "what was I thinking");
-                factory.toMap(issue, issue.getExtraProperties());
+                factory.toMap(issue, issue.getProperties());
                 IssueManager.saveIssue(user, c, issue);
             }
 
@@ -1929,7 +1892,7 @@ public class IssueManager implements IssuesListDefService.Interface
                 issue.resolve(user);
                 issue.setResolution("fixed");
                 issue.addComment(user, "fixed it");
-                factory.toMap(issue, issue.getExtraProperties());
+                factory.toMap(issue, issue.getProperties());
                 IssueManager.saveIssue(user, c, issue);
             }
 
@@ -1948,7 +1911,7 @@ public class IssueManager implements IssuesListDefService.Interface
                 assertNotNull("issue not found", issue);
                 issue.close(user);
                 issue.addComment(user, "closed");
-                factory.toMap(issue, issue.getExtraProperties());
+                factory.toMap(issue, issue.getProperties());
                 IssueManager.saveIssue(user, c, issue);
             }
 

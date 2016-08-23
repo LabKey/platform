@@ -40,6 +40,9 @@
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="java.util.function.Function" %>
+<%@ page import="java.util.stream.Stream" %>
+<%@ page import="java.util.stream.Collectors" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -76,20 +79,19 @@
     Map<String, DomainProperty> propertyMap = bean.getCustomColumnConfiguration().getPropertyMap();
     List<DomainProperty> column1Props = new ArrayList<>();
     List<DomainProperty> column2Props = new ArrayList<>();
+    List<DomainProperty> extraColumns = new ArrayList<>();
+
     IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issue.getIssueDefName());
     if (issueListDef == null)
         issueListDef = IssueManager.getIssueListDef(issue);
     final String popup = getNotifyHelpPopup(emailPrefs, issue.getIssueId(), IssueManager.getEntryTypeNames(c, issueListDef.getName()));
 
-    List<DomainProperty> extraColumns = new ArrayList<>();
-    for (String name : Arrays.asList("type", "area", "priority", "milestone"))
-    {
-        // todo: don't include if the lookup is empty (was previously IssuePage.hasKeywords)
-        if (propertyMap.containsKey(name))
-        {
-            extraColumns.add(propertyMap.get(name));
-        }
-    }
+    // todo: don't include if the lookup is empty (was previously IssuePage.hasKeywords)
+    extraColumns.addAll(Stream.of("type", "area", "priority", "milestone")
+            .filter(propertyMap::containsKey)
+            .map((Function<String, DomainProperty>) propertyMap::get)
+            .collect(Collectors.toList()));
+
     //this is the rowspan used for the 2nd and 3rd columns
     int rowSpan = 2 + extraColumns.size();
 
