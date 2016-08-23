@@ -15,12 +15,15 @@
  */
 package org.labkey.study.importer;
 
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.study.Dataset;
 import org.labkey.data.xml.reportProps.PropertyList;
 import org.labkey.study.model.DatasetDefinition;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: adam
@@ -59,5 +62,6 @@ public interface SchemaReader
         public String type = Dataset.TYPE_STANDARD;
         public PropertyList tags;
         public String tag;
+        public Set<PropertyStorageSpec.Index> indices = new HashSet<>();
     }
 }

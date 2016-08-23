@@ -15,15 +15,20 @@
  */
 package org.labkey.study.importer;
 
+import com.google.common.collect.Lists;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.ImportTypesHelper;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.IndexType;
+import org.labkey.data.xml.IndicesType;
 import org.labkey.data.xml.SharedConfigType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
@@ -98,10 +103,14 @@ public class SchemaXmlReader implements SchemaReader
             info.tag = tableProps.getTag();
 
             if (tableProps.getType() != null)
+            {
                 info.type = tableProps.getType();
+            }
 
             // TODO: fill this in
             info.startDatePropertyName = null;
+
+            addIndicesToDatasetImportInfo(tableXml, info, tablesDoc);
 
             _datasetInfoMap.put(tableProps.getId(), info);
 
@@ -153,17 +162,98 @@ public class SchemaXmlReader implements SchemaReader
         }
     }
 
+    private void addIndicesToDatasetImportInfo(TableType tableXml, DatasetImportInfo info, TablesDocument tablesDocument)
+    {
+        IndicesType tableXmlIndices = tableXml.getIndices();
+        List<List<String>> indicesColumnsAsSortedLists = Lists.newArrayList();
+        if(tableXmlIndices != null && tableXmlIndices.getIndexArray().length > 0)
+        {
+            for (IndexType indexType : tableXmlIndices.getIndexArray())
+            {
+                List<String> columns = Arrays.asList(indexType.getColumnArray());
+                columns.sort(String::compareTo);
+
+                indicesColumnsAsSortedLists.add(columns);
+                PropertyStorageSpec.Index index = getIndexFromIndexType(indexType);
+                info.indices.add(index);
+            }
+        }
+
+        applySharedIndices(info, tablesDocument, indicesColumnsAsSortedLists);
+    }
+
+    private void applySharedIndices(DatasetImportInfo info, TablesDocument tablesDocument, List<List<String>> indicesColumnsAsSortedLists)
+    {
+        Map<List<String>, PropertyStorageSpec.Index> sharedIndicesMap = getSharedConfigIndicesAsMap(tablesDocument);
+        for (Map.Entry<List<String>, PropertyStorageSpec.Index> listIndexEntry : sharedIndicesMap.entrySet())
+        {
+            if(!indicesColumnsAsSortedLists.contains(listIndexEntry.getKey())){
+                info.indices.add(listIndexEntry.getValue());
+            }
+        }
+    }
+
+    @NotNull
+    private PropertyStorageSpec.Index getIndexFromIndexType(IndexType indexType)
+    {
+        return new PropertyStorageSpec.Index(
+                (IndexType.Type.UNIQUE.equals(indexType.getType())),
+                indexType.getColumnArray());
+    }
+
+    private Map<List<String>, PropertyStorageSpec.Index> getSharedConfigIndicesAsMap(TablesDocument tablesDocument){
+        Map<List<String>, PropertyStorageSpec.Index> indexMap = new HashMap<>();
+        for (PropertyStorageSpec.Index index : getSharedConfigIndices(tablesDocument))
+        {
+            List<String> columnNameList = Arrays.asList(index.columnNames);
+            columnNameList.sort(String::compareTo);
+            indexMap.put(columnNameList, index);
+        }
+        return indexMap;
+    }
+
+    private List<PropertyStorageSpec.Index> getSharedConfigIndices(TablesDocument tablesDocument)
+    {
+        List<PropertyStorageSpec.Index> indices = Lists.newArrayList();
+
+        SharedConfigType[] sharedConfigArray = tablesDocument.getTables().getSharedConfigArray();
+
+        for (int i = 0; i < sharedConfigArray.length; i++)
+        {
+            SharedConfigType sharedConfigType = sharedConfigArray[i];
+
+            IndicesType tableXmlIndices = sharedConfigType.getIndices();
+            if(tableXmlIndices != null && tableXmlIndices.getIndexArray().length > 0)
+            {
+                for (IndexType indexType : tableXmlIndices.getIndexArray())
+                {
+                    PropertyStorageSpec.Index index = getIndexFromIndexType(indexType);
+                    indices.add(index);
+                }
+            }
+        }
+
+        return indices;
+    }
+
     private void applySharedColumns(TableType tableXml, TablesDocument tablesDoc)
     {
-        SharedConfigType[] scArray = tablesDoc.getTables().getSharedConfigArray();
+        SharedConfigType[] sharedConfigArray = tablesDoc.getTables().getSharedConfigArray();
 
-        if (scArray == null || scArray.length == 0)
+        if (sharedConfigArray == null || sharedConfigArray.length == 0)
         {
             return;
         }
 
-        SharedConfigType sc = scArray[0];
-        ColumnType[] sharedColumns = sc.getColumns().getColumnArray();
+        SharedConfigType sharedConfigType = sharedConfigArray[0];
+        SharedConfigType.Columns columns = sharedConfigType.getColumns();
+
+        if(columns == null || columns.sizeOfColumnArray()==0)
+        {
+            return;
+        }
+
+        ColumnType[] sharedColumns = columns.getColumnArray();
 
         if (sharedColumns.length > 0)
         {
@@ -173,13 +263,13 @@ public class SchemaXmlReader implements SchemaReader
 
             for (ColumnType aColumnArray : columnArray)
             {
-                columnNames.add(aColumnArray.getColumnName());
+                columnNames.add(aColumnArray.getColumnName().toLowerCase());
             }
 
             List<ColumnType> columnTypeArrayList = null;
             for (ColumnType sharedColumn : sharedColumns)
             {
-                if (!columnNames.contains(sharedColumn.getColumnName()))
+                if (!columnNames.contains(sharedColumn.getColumnName().toLowerCase()))
                 {
                     if (columnTypeArrayList == null)
                     {

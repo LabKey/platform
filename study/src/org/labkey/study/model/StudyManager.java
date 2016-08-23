@@ -3926,6 +3926,50 @@ public class StudyManager
         // now that we actually have datasets, create/update the domains
         Map<String, Domain> domainsMap = new CaseInsensitiveHashMap<>();
         Map<String, List<? extends DomainProperty>> domainsPropertiesMap = new CaseInsensitiveHashMap<>();
+
+        buildPropertySaveAndDeleteLists(datasetDefEntryMap, list, domainsMap, domainsPropertiesMap);
+
+        dropNotRequiredIndices(reader, datasetDefEntryMap, domainsMap);
+
+
+        if (!deleteAndSaveProperties(user, errors, domainsMap, domainsPropertiesMap)) return false;
+
+        addMissingRequiredIndices(reader, datasetDefEntryMap, domainsMap);
+
+        for (Map.Entry<String, List<ConditionalFormat>> entry : list.formats.entrySet())
+        {
+            PropertyService.get().saveConditionalFormats(user, OntologyManager.getPropertyDescriptor(entry.getKey(), study.getContainer()), entry.getValue());
+        }
+
+        return true;
+    }
+
+    private boolean deleteAndSaveProperties(User user, BindException errors, Map<String, Domain> domainsMap, Map<String, List<? extends DomainProperty>> domainsPropertiesMap)
+    {
+        // see if we need to delete any columns from an existing domain
+        for (Domain d : domainsMap.values())
+        {
+            List<? extends DomainProperty> propertiesToDel = domainsPropertiesMap.get(d.getTypeURI());
+            for (DomainProperty p : propertiesToDel)
+            {
+                p.delete();
+            }
+
+            try
+            {
+                d.save(user);
+            }
+            catch (ChangePropertyDescriptorException ex)
+            {
+                errors.reject("importDatasetSchemas", ex.getMessage() == null ? ex.toString() : ex.getMessage());
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void buildPropertySaveAndDeleteLists(Map<String, DatasetDefinitionEntry> datasetDefEntryMap, OntologyManager.ListImportPropertyDescriptors list, Map<String, Domain> domainsMap, Map<String, List<? extends DomainProperty>> domainsPropertiesMap)
+    {
         for (OntologyManager.ImportPropertyDescriptor ipd : list.properties)
         {
             Domain d = domainsMap.get(ipd.domainURI);
@@ -3969,33 +4013,28 @@ public class StudyManager
                 p.setDescription(ipd.pd.getDescription());
             }
         }
+    }
 
-        // see if we need to delete any columns from an existing domain
-        for (Domain d : domainsMap.values())
+    private void addMissingRequiredIndices(SchemaReader reader, Map<String, DatasetDefinitionEntry> datasetDefEntryMap, Map<String, Domain> domainsMap)
+    {
+        for (SchemaReader.DatasetImportInfo datasetImportInfo : reader.getDatasetInfo().values())
         {
-            List<? extends DomainProperty> propertiesToDel = domainsPropertiesMap.get(d.getTypeURI());
-            for (DomainProperty p : propertiesToDel)
-            {
-                p.delete();
-            }
-
-            try
-            {
-                d.save(user);
-            }
-            catch (ChangePropertyDescriptorException ex)
-            {
-                errors.reject("importDatasetSchemas", ex.getMessage() == null ? ex.toString() : ex.getMessage());
-                return false;
-            }
+            DatasetDefinitionEntry entry = datasetDefEntryMap.get(datasetImportInfo.name);
+            Domain domain = domainsMap.get(entry.datasetDefinition.getTypeURI());
+            domain.setPropertyIndices(datasetImportInfo.indices);
+            StorageProvisioner.addMissingRequiredIndices(domain);
         }
+    }
 
-        for (Map.Entry<String, List<ConditionalFormat>> entry : list.formats.entrySet())
+    private void dropNotRequiredIndices(SchemaReader reader, Map<String, DatasetDefinitionEntry> datasetDefEntryMap, Map<String, Domain> domainsMap)
+    {
+        for (SchemaReader.DatasetImportInfo datasetImportInfo : reader.getDatasetInfo().values())
         {
-            PropertyService.get().saveConditionalFormats(user, OntologyManager.getPropertyDescriptor(entry.getKey(), study.getContainer()), entry.getValue());
+            DatasetDefinitionEntry entry = datasetDefEntryMap.get(datasetImportInfo.name);
+            Domain domain = domainsMap.get(entry.datasetDefinition.getTypeURI());
+            domain.setPropertyIndices(datasetImportInfo.indices);
+            StorageProvisioner.dropNotRequiredIndices(domain);
         }
-
-        return true;
     }
 
 

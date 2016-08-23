@@ -1058,6 +1058,9 @@ class PostgreSql91Dialect extends SqlDialect
             case RenameColumns:
                 sql.addAll(getRenameColumnsStatement(change));
                 break;
+            case DropIndicesByName:
+                sql.addAll(getDropIndexByNameStatements(change));
+                break;
             case DropIndices:
                 sql.addAll(getDropIndexStatements(change));
                 break;
@@ -1076,6 +1079,31 @@ class PostgreSql91Dialect extends SqlDialect
         }
 
         return sql;
+    }
+
+    private Collection<? extends String> getDropIndexByNameStatements(TableChange change)
+    {
+        List<String> statements = new ArrayList<>();
+        addDropIndexByNameStatements(statements, change);
+        return statements;
+    }
+
+    private void addDropIndexByNameStatements(List<String> statements, TableChange change)
+    {
+        for (String indexName : change.getIndicesToBeDroppedByName())
+        {
+            statements.add(getDropIndexCommand(indexName, change));
+        }
+    }
+
+    private String getDropIndexCommand(String indexName, TableChange change)
+    {
+        return getDropIndexCommand(change,indexName);
+    }
+
+    private String getDropIndexCommand(TableChange change, String indexName)
+    {
+        return "DROP INDEX " + change.getSchemaName() + "." + indexName;
     }
 
     /**
@@ -1282,7 +1310,7 @@ class PostgreSql91Dialect extends SqlDialect
         }
     }
 
-    private String nameIndex(String tableName, String[] indexedColumns)
+    public String nameIndex(String tableName, String[] indexedColumns)
     {
         return AliasManager.makeLegalName(tableName + '_' + StringUtils.join(indexedColumns, "_"), this);
     }

@@ -369,6 +369,15 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
         return Collections.unmodifiableMap(indices);
     }
 
+    @NotNull
+    @Override
+    public Map<String, Pair<IndexType, List<ColumnInfo>>> getAllIndices()
+    {
+        Map<String, Pair<IndexType, List<ColumnInfo>>> indices = new HashMap<>(super.getAllIndices());
+        indices.putAll(wrapTableIndices(_dataClass.getTinfo()));
+        return Collections.unmodifiableMap(indices);
+    }
+
     @Override
     public boolean hasDbTriggers()
     {

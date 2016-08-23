@@ -1022,6 +1022,9 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             case RenameColumns:
                 sql.addAll(getRenameColumnsStatements(change));
                 break;
+            case DropIndicesByName:
+                sql.addAll(getDropIndexByNameStatements(change));
+                break;
             case DropIndices:
                 sql.addAll(getDropIndexStatements(change));
                 break;
@@ -1301,6 +1304,26 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         }
     }
 
+    private Collection<? extends String> getDropIndexByNameStatements(TableChange change)
+    {
+        List<String> statements = new ArrayList<>();
+        addDropIndexByNameStatements(statements, change);
+        return statements;
+    }
+
+    private void addDropIndexByNameStatements(List<String> statements, TableChange change)
+    {
+        for (String indexName : change.getIndicesToBeDroppedByName())
+        {
+            statements.add(getDropIndexCommand(indexName, change));
+        }
+    }
+
+    private String getDropIndexCommand(String indexName, TableChange change)
+    {
+        return getDropIndexCommand(makeTableIdentifier(change),indexName);
+    }
+
     private List<String> getDropIndexStatements(TableChange change)
     {
         List<String> statements = new ArrayList<>();
@@ -1363,7 +1386,12 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         return change.getSchemaName() + "." + change.getTableName();
     }
 
-    private String nameIndex(String tableName, String[] indexedColumns, boolean useLegacyMaxLength)
+    public String nameIndex(String tableName, String[] indexedColumns)
+    {
+        return nameIndex(tableName, indexedColumns, false);
+    }
+
+    public String nameIndex(String tableName, String[] indexedColumns, boolean useLegacyMaxLength)
     {
         return AliasManager.makeLegalName(tableName + '_' + StringUtils.join(indexedColumns, "_"), this, useLegacyMaxLength);
     }
