@@ -73,8 +73,7 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
             new PropertyStorageSpec("ResolvedBy", JdbcType.INTEGER),
             new PropertyStorageSpec("Closed", JdbcType.TIMESTAMP),
             new PropertyStorageSpec("ClosedBy", JdbcType.INTEGER),
-            new PropertyStorageSpec("Duplicate", JdbcType.INTEGER),
-            new PropertyStorageSpec("LastIndexed", JdbcType.TIMESTAMP)
+            new PropertyStorageSpec("Duplicate", JdbcType.INTEGER)
         )));
 
         INDEXES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
