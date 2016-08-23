@@ -130,7 +130,13 @@ public class QueryView extends WebPartView<Object>
 
     public static void register(ExportScriptFactory factory)
     {
-        assert null == _exportScriptFactories.get(factory.getScriptType());
+        register(factory, false);
+    }
+
+    public static void register(ExportScriptFactory factory, boolean overrideBaseFactory)
+    {
+        if (!overrideBaseFactory)
+            assert null == _exportScriptFactories.get(factory.getScriptType());
 
         _exportScriptFactories.put(factory.getScriptType(), factory);
     }
