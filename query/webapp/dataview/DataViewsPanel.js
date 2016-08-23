@@ -533,6 +533,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                         }
                     }
                 },
+                itemExpand: function() {
+                    this.hiddenFilter(1);
+                },
                 scope : this
             },
 
