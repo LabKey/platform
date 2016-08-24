@@ -107,7 +107,12 @@
             <ns:column columnName="LastIndexed">
                 <ns:isReadOnly>true</ns:isReadOnly>
             </ns:column>
-			<ns:column columnName="IssueDefId"/>
+			<ns:column columnName="IssueDefId">
+				<ns:fk>
+					<ns:fkColumnName>RowId</ns:fkColumnName>
+					<ns:fkTable>IssueListDef</ns:fkTable>
+				</ns:fk>
+			</ns:column>
         </ns:columns>
 		<ns:tableTitle>Issues</ns:tableTitle>
 		<ns:pkColumnName>IssueId</ns:pkColumnName>

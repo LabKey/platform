@@ -2718,8 +2718,8 @@ public class QueryServiceImpl extends QueryService
             {
 				List<ColumnInfo> l = Arrays.asList(
 					issues.getColumn("issueid"),
-					issues.getColumn("title"),
-					issues.getColumn("status"));
+					issues.getColumn("duplicate"),
+					issues.getColumn("issuedefid"));
 				rs = qs.select(issues, l, null, null);
 				assertEquals(rs.getMetaData().getColumnCount(),3);
 				_close();
@@ -2729,9 +2729,9 @@ public class QueryServiceImpl extends QueryService
 	        {
 				List<ColumnInfo> l = Arrays.asList(
 					issues.getColumn("issueid"),
-					issues.getColumn("title"),
-					issues.getColumn("status"));
-		        Sort sort = new Sort("+milestone");
+					issues.getColumn("duplicate"),
+					issues.getColumn("issuedefid"));
+		        Sort sort = new Sort("+lastindexed");
 				rs = qs.select(issues, l, null, sort);
 				assertEquals(rs.getMetaData().getColumnCount(),3);
 		        _close();
@@ -2740,9 +2740,9 @@ public class QueryServiceImpl extends QueryService
 	        {
 				List<ColumnInfo> l = Arrays.asList(
 					issues.getColumn("issueid"),
-					issues.getColumn("title"),
-					issues.getColumn("status"));
-                Filter f = new SimpleFilter(FieldKey.fromParts("assignedto"), 1001);
+					issues.getColumn("duplicate"),
+					issues.getColumn("issuedefid"));
+                Filter f = new SimpleFilter(FieldKey.fromParts("issuedefid"), 1);
 				rs = qs.select(issues, l, f, null);
 				assertEquals(rs.getMetaData().getColumnCount(),3);
 		        _close();
@@ -2751,11 +2751,11 @@ public class QueryServiceImpl extends QueryService
 	        {
 		        Map<FieldKey,ColumnInfo> map = qs.getColumns(issues, Arrays.asList(
 				        new FieldKey(null, "issueid"),
-				        new FieldKey(null, "title"),
-				        new FieldKey(null, "status"),
-				        new FieldKey(new FieldKey(null, "createdby"), "email")));
-		        Sort sort = new Sort("+milestone");
-                Filter f = new SimpleFilter(FieldKey.fromParts("assignedto"), 1001);
+				        new FieldKey(null, "duplicate"),
+				        new FieldKey(null, "issuedefid"),
+				        new FieldKey(new FieldKey(null, "issuedefid"), "name")));
+		        Sort sort = new Sort("+lastindexed");
+                Filter f = new SimpleFilter(FieldKey.fromParts("issuedefid"), 1);
 				rs = qs.select(issues, map.values(), f, sort);
 				assertEquals(rs.getMetaData().getColumnCount(),4);
 		        _close();
