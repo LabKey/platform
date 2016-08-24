@@ -36,6 +36,7 @@ public interface ForeignKey
      * The ColumnInfo parent is a column which has the value of the foreign key.
      * The parentTable of the returned ColumnInfo must be the same as the parentTable of the passed in column.
      */
+    @Nullable
     ColumnInfo createLookupColumn(ColumnInfo parent, String displayField);
 
     /**

@@ -125,9 +125,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         AssayProvider provider = AssayService.get().getProvider(protocol);
 
         DataLoaderSettings settings = new DataLoaderSettings();
-
-        // 26763 -- Biologics workaround until this issue is fixed
-        settings.setAllowLookupByAlternateKey(info.getContainer().getFolderType().getName().equalsIgnoreCase("biologics"));
+        settings.setAllowLookupByAlternateKey(true);
 
         Map<DataType, List<Map<String, Object>>> rawData = getValidationDataMap(data, dataFile, info, log, context, settings);
         assert(rawData.size() <= 1);
@@ -620,7 +618,24 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 ForeignKey fk = column != null ? column.getFk() : null;
                 if (fk != null && fk.allowImportByAlternateKey())
                 {
-                    remapMap.put(pd, new RemapPostConvert(column, true));
+                    // Only use our alternative key approach if we're targeting the PK, since if we're targeting an
+                    // alternative unique column directly, we don't need to resolve the PK value.
+                    TableInfo lookupTable = fk.getLookupTableInfo();
+                    if (lookupTable != null)
+                    {
+                        if (fk.getLookupColumnName() != null)
+                        {
+                            ColumnInfo lookupColumn = lookupTable.getColumn(fk.getLookupColumnName());
+                            if (lookupColumn != null && lookupColumn.isKeyField())
+                            {
+                                remapMap.put(pd, new RemapPostConvert(column, true));
+                            }
+                        }
+                        else
+                        {
+                            remapMap.put(pd, new RemapPostConvert(column, true));
+                        }
+                    }
                 }
             }
         }
