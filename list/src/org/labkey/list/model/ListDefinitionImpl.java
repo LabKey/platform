@@ -656,7 +656,7 @@ public class ListDefinitionImpl implements ListDefinition
         return urlFor(ListController.GridAction.class, c);
     }
 
-    public ActionURL urlUpdate(User user, Container container, @Nullable Object pk, @Nullable URLHelper cancelUrl)
+    public ActionURL urlUpdate(User user, Container container, @Nullable Object pk, @Nullable URLHelper returnAndCancelUrl)
     {
         ActionURL url = QueryService.get().urlFor(user, container, QueryAction.updateQueryRow, ListQuerySchema.NAME, getName());
 
@@ -664,8 +664,11 @@ public class ListDefinitionImpl implements ListDefinition
         if (null != pk)
             url.addParameter("pk", pk.toString());
 
-        if (cancelUrl != null)
-            url.addParameter(ActionURL.Param.cancelUrl, cancelUrl.getLocalURIString());
+        if (returnAndCancelUrl != null)
+        {
+            url.addParameter(ActionURL.Param.cancelUrl, returnAndCancelUrl.getLocalURIString());
+            url.addParameter(ActionURL.Param.returnUrl, returnAndCancelUrl.getLocalURIString());
+        }
 
         return url;
     }

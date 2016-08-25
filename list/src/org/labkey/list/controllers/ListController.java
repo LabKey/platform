@@ -608,26 +608,16 @@ public class ListController extends SpringActionController
             ButtonBar bb = new ButtonBar();
             bb.setStyle(ButtonBar.Style.separateButtons);
 
+            ActionButton gridButton;
+            ActionURL gridUrl = _list.urlShowData(getViewContext().getContainer());
+            gridButton = new ActionButton("Show Grid", gridUrl);
+
             if (table.hasPermission(getUser(), UpdatePermission.class))
             {
-                ActionURL updateUrl = _list.urlUpdate(getUser(), getContainer(), tableForm.getPkVal(), getViewContext().getActionURL());
+                ActionURL updateUrl = _list.urlUpdate(getUser(), getContainer(), tableForm.getPkVal(), gridUrl);
                 ActionButton editButton = new ActionButton("Edit", updateUrl);
                 bb.add(editButton);
             }
-
-            ActionButton gridButton;
-            ActionURL gridUrl = _list.urlShowData(getViewContext().getContainer());
-            if (form.getReturnUrl() != null)
-            {
-                URLHelper url = form.getReturnURLHelper();
-                String text = "Return";
-                if(url != null && gridUrl.getPath().equalsIgnoreCase(url.getPath()))
-                    text = "Show Grid";
-
-                gridButton = new ActionButton(text, url);
-            }
-            else
-                gridButton = new ActionButton("Show Grid", gridUrl);
 
             bb.add(gridButton);
             details.getDataRegion().setButtonBar(bb);
@@ -881,6 +871,8 @@ public class ListController extends SpringActionController
                     srcUrl = getViewContext().getActionURL().getParameter(ActionURL.Param.returnUrl);
                 if (srcUrl == null)
                     srcUrl = getViewContext().getActionURL().getParameter(QueryParam.srcURL);
+                if (srcUrl == null)
+                    srcUrl = _list.urlFor(ListController.HistoryAction.class, getContainer()).getLocalURIString();
                 AuditChangesView view = new AuditChangesView(comment, oldData, newData);
                 view.setReturnUrl(srcUrl);
 
