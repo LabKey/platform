@@ -21,13 +21,10 @@ import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.announcements.model.AnnouncementModel;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
-import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AbstractBeanQueryUpdateService;
@@ -97,14 +94,7 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
         bodyColumn.setShownInDetailsView(false);
 
         ColumnInfo formattedBodyColumn = wrapColumn("FormattedBody", getRealTable().getColumn("Body"));
-        formattedBodyColumn.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            @Override
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new WikiRendererDisplayColumn(colInfo, renderTypeColumn.getName(), WikiRendererType.TEXT_WITH_LINKS);
-            }
-        });
+        formattedBodyColumn.setDisplayColumnFactory(colInfo -> new WikiRendererDisplayColumn(colInfo, renderTypeColumn.getName(), WikiRendererType.TEXT_WITH_LINKS));
         addColumn(formattedBodyColumn);
         formattedBodyColumn.setReadOnly(true);
         formattedBodyColumn.setUserEditable(false);
@@ -188,11 +178,7 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
             {
                 return AnnouncementManager.insertAnnouncement(container, user, bean, Collections.emptyList());
             }
-            catch (IOException e)
-            {
-                throw new QueryUpdateServiceException(e);
-            }
-            catch (MessagingException e)
+            catch (IOException | MessagingException e)
             {
                 throw new QueryUpdateServiceException(e);
             }
