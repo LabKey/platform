@@ -21,7 +21,8 @@ LABKEY.vis.GenericChartHelper = new function(){
                 active: false,
                 imgUrl: LABKEY.contextPath + '/visualization/images/barchart.png',
                 fields: [
-                    {name: 'x', label: 'X Axis Grouping', required: true, nonNumericOnly: true}
+                    {name: 'x', label: 'X Categories', required: true, nonNumericOnly: true},
+                    {name: 'y', label: 'Y Axis'}
                 ],
                 layoutOptions: {line: true}
             },
@@ -43,7 +44,8 @@ LABKEY.vis.GenericChartHelper = new function(){
                 active: false,
                 imgUrl: LABKEY.contextPath + '/visualization/images/piechart.png',
                 fields: [
-                    {name: 'x', label: 'Grouping', required: true, nonNumericOnly: true}
+                    {name: 'x', label: 'Categories', required: true, nonNumericOnly: true},
+                    {name: 'y', label: 'Measure'}
                 ],
                 layoutOptions: {}
             },
@@ -529,6 +531,7 @@ LABKEY.vis.GenericChartHelper = new function(){
      * is true, there is a warning.
      * @param {String} chartType The chartType from getChartType.
      * @param {Object} chartConfig The saved chartConfig object.
+     * @param {String} measureName The name of the axis measure property.
      * @param {Object} aes The aes object from generateAes.
      * @param {Object} scales The scales object from generateScales.
      * @param {Array} data The data from selectRows.

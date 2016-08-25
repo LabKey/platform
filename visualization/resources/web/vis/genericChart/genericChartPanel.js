@@ -688,7 +688,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             removeableFilters     : userFilters,
             removeableSort        : userSort,
             showSurroundingBorder : false,
-            showPagination        : false,
+            showPagination        : false, // TODO why don't we show pagination on this QWP?
             maxRows               : this.dataLimit,
             allowHeaderLock       : false,
             buttonBar   : {
@@ -1452,8 +1452,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
 
         var selectedMeasureNames = Object.keys(this.measures),
-            hasXMeasure = selectedMeasureNames.indexOf('x') > 0,
-            hasYMeasure = selectedMeasureNames.indexOf('y') > 0,
+            hasXMeasure = selectedMeasureNames.indexOf('x') > 0 && Ext4.isDefined(aes.x),
+            hasYMeasure = selectedMeasureNames.indexOf('y') > 0 && Ext4.isDefined(aes.y),
             requiredMeasureNames = this.getChartTypePanel().getRequiredFieldNames();
 
         // validate that all selected measures still exist by name in the query/dataset
@@ -1488,12 +1488,18 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
 
             data = this.chartData.rows;
-            //if (this.renderType == 'bar_chart')
-            //{
-            //    data = LABKEY.vis.groupCountData(this.chartData.rows, aes.x);
-            //    aes = { x: 'name', y: 'count' };
-            //    scales.y = {domain: [0, null]};
-            //}
+
+            // TODO need to move the config generation, or at least the chart type specific parts, to the helper/util file
+            if (this.renderType == 'bar_chart')
+            {
+                data = LABKEY.vis.groupCountData(this.chartData.rows, aes.x);
+                aes = { x: 'name', y: 'count' };
+                scales.y = {domain: [0, null]};
+            }
+            else if (this.renderType == 'pie_chart')
+            {
+                data = LABKEY.vis.groupCountData(this.chartData.rows, aes.x, {name: 'label', count: 'value'});
+            }
 
             layers.push(new LABKEY.vis.Layer({data: data, geom: geom}));
 
@@ -1527,8 +1533,32 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (this.supportedBrowser && !this.useRaphael)
             plotConfig.rendererType = 'd3';
 
-        var plot = new LABKEY.vis.Plot(plotConfig);
-        plot.render();
+        var plot;
+        if (this.renderType == 'pie_chart')
+        {
+            plot = new LABKEY.vis.PieChart({
+                renderTo: newChartDiv.id,
+                rendererType: 'd3',
+                data: data,
+                width: width,
+                height: height,
+                header: {
+                    title: {
+                        text: labels.main.value
+                    },
+                    subtitle: {
+                        text: labels.x.value,
+                        color: 'gray'
+                    },
+                    titleSubtitlePadding: 1
+                }
+            });
+        }
+        else
+        {
+            plot = new LABKEY.vis.Plot(plotConfig);
+            plot.render();
+        }
 
         if (this.warningText !== null)
         {
