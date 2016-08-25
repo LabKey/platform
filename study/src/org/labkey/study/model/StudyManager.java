@@ -3929,7 +3929,7 @@ public class StudyManager
 
         buildPropertySaveAndDeleteLists(datasetDefEntryMap, list, domainsMap, domainsPropertiesMap);
 
-        dropNotRequiredIndices(reader, datasetDefEntryMap, domainsMap);
+        dropNotRequiredIndices(reader, datasetDefEntryMap, domainsMap, study.getContainer());
 
 
         if (!deleteAndSaveProperties(user, errors, domainsMap, domainsPropertiesMap)) return false;
@@ -4019,19 +4019,27 @@ public class StudyManager
     {
         for (SchemaReader.DatasetImportInfo datasetImportInfo : reader.getDatasetInfo().values())
         {
-            DatasetDefinitionEntry entry = datasetDefEntryMap.get(datasetImportInfo.name);
-            Domain domain = domainsMap.get(entry.datasetDefinition.getTypeURI());
+            DatasetDefinitionEntry datasetDefinitionEntry = datasetDefEntryMap.get(datasetImportInfo.name);
+            if(datasetDefinitionEntry.datasetDefinition.isShared())
+            {
+                continue;
+            }
+            Domain domain = domainsMap.get(datasetDefinitionEntry.datasetDefinition.getTypeURI());
             domain.setPropertyIndices(datasetImportInfo.indices);
             StorageProvisioner.addMissingRequiredIndices(domain);
         }
     }
 
-    private void dropNotRequiredIndices(SchemaReader reader, Map<String, DatasetDefinitionEntry> datasetDefEntryMap, Map<String, Domain> domainsMap)
+    private void dropNotRequiredIndices(SchemaReader reader, Map<String, DatasetDefinitionEntry> datasetDefEntryMap, Map<String, Domain> domainsMap, Container container)
     {
         for (SchemaReader.DatasetImportInfo datasetImportInfo : reader.getDatasetInfo().values())
         {
-            DatasetDefinitionEntry entry = datasetDefEntryMap.get(datasetImportInfo.name);
-            Domain domain = domainsMap.get(entry.datasetDefinition.getTypeURI());
+            DatasetDefinitionEntry datasetDefinitionEntry = datasetDefEntryMap.get(datasetImportInfo.name);
+            if(datasetDefinitionEntry.datasetDefinition.isShared())
+            {
+                continue;
+            }
+            Domain domain = domainsMap.get(datasetDefinitionEntry.datasetDefinition.getTypeURI());
             domain.setPropertyIndices(datasetImportInfo.indices);
             StorageProvisioner.dropNotRequiredIndices(domain);
         }
