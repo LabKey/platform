@@ -479,7 +479,6 @@ public class QueryView extends WebPartView<Object>
         {
             case detailsQueryRow:
             case updateQueryRow:
-                break;              // Issue 27530 (don't propagate returnURL)
             case insertQueryRow:
             case importData:
             case updateQueryRows:
@@ -541,9 +540,9 @@ public class QueryView extends WebPartView<Object>
         {
             case deleteQuery:
             case sourceQuery:
+                break;
             case detailsQueryRow:
             case updateQueryRow:
-                break;
             case insertQueryRow:
             case importData:
             case updateQueryRows:
