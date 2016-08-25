@@ -991,7 +991,7 @@ public class QueryView extends WebPartView<Object>
             ActionURL urlInsert = overrideInsertUrl == null ? urlFor(QueryAction.insertQueryRow) : overrideInsertUrl;
             if (urlInsert != null)
             {
-                NavTree insertNew = new NavTree("Insert New", urlInsert);
+                NavTree insertNew = new NavTree("Insert New Row", urlInsert);
                 insertNew.setId(getBaseMenuId() + ":Insert:InsertNew");
                 button.addMenuItem(insertNew);
                 hasInsertNewOption = true;
@@ -1003,7 +1003,7 @@ public class QueryView extends WebPartView<Object>
             ActionURL urlImport = overrideImportUrl == null ? urlFor(QueryAction.importData) : overrideImportUrl;
             if (urlImport != null && urlImport != AbstractTableInfo.LINK_DISABLER_ACTION_URL)
             {
-                NavTree importData = new NavTree("Import Data", urlImport);
+                NavTree importData = new NavTree("Import Bulk Data", urlImport);
                 importData.setId(getBaseMenuId() + ":Insert:Import");
                 button.addMenuItem(importData);
                 hasImportDataOption = true;
@@ -1018,7 +1018,7 @@ public class QueryView extends WebPartView<Object>
         ActionURL urlInsert = urlFor(QueryAction.insertQueryRow);
         if (urlInsert != null)
         {
-            ActionButton btnInsert = new ActionButton(urlInsert, "Insert New");
+            ActionButton btnInsert = new ActionButton(urlInsert, "Insert New Row");
             btnInsert.setActionType(ActionButton.Action.LINK);
             return btnInsert;
         }
@@ -1030,7 +1030,7 @@ public class QueryView extends WebPartView<Object>
         ActionURL urlImport = urlFor(QueryAction.importData);
         if (urlImport != null && urlImport != AbstractTableInfo.LINK_DISABLER_ACTION_URL)
         {
-            ActionButton btnInsert = new ActionButton(urlImport, "Import Data");
+            ActionButton btnInsert = new ActionButton(urlImport, "Import Bulk Data");
             btnInsert.setActionType(ActionButton.Action.LINK);
             return btnInsert;
         }
