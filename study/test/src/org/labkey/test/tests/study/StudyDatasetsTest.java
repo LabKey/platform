@@ -221,7 +221,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         waitForText("Dataset Properties");
         clickButtonContainingText("View Data");
         waitForText("All data");
-        _extHelper.clickMenuButton("Insert", "Import Data");
+        _extHelper.clickMenuButton("Insert", "Import Bulk Data");
         waitForText("Copy/paste text");
         setFormElement(Locator.xpath("//textarea"), header + tsv);
         clickButton("Submit", 0);

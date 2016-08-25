@@ -161,7 +161,7 @@ public class StudyVisitTagTest extends StudyBaseTest
         goToModule("Query");
         viewQueryData("study", "VisitTag");
 
-        DataRegionTable.findDataRegion(this).clickHeaderMenu("Insert", "Insert New");
+        DataRegionTable.findDataRegion(this).clickHeaderMenu("Insert", "Insert New Row");
         waitForElement(Locator.input("quf_Name"));
         setFormElement(Locator.input("quf_Name"), tag.name);
         setFormElement(Locator.input("quf_Caption"), tag.caption);
@@ -178,7 +178,7 @@ public class StudyVisitTagTest extends StudyBaseTest
         goToModule("Query");
         viewQueryData("study", "VisitTagMap");
 
-        DataRegionTable.findDataRegion(this).clickHeaderMenu("Insert", "Insert New");
+        DataRegionTable.findDataRegion(this).clickHeaderMenu("Insert", "Insert New Row");
         waitForElement(Locator.name("quf_VisitTag"));
         selectOptionByValue(Locator.name("quf_VisitTag"), map.visitTag);
         selectOptionByText(Locator.name("quf_Visit"), map.visit);

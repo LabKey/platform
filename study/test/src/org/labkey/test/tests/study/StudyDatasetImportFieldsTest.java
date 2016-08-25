@@ -84,7 +84,7 @@ public class StudyDatasetImportFieldsTest extends StudyBaseTest
         waitForElement(Locator.linkWithText("View Data"));
         click(Locator.linkWithText("View Data"));
         waitForText("Insert");
-        DataRegionTable.findDataRegion(this).clickHeaderMenu("Insert", "Insert New");
+        DataRegionTable.findDataRegion(this).clickHeaderMenu("Insert", "Insert New Row");
         waitForElement(Locator.name("quf_ParticipantId"));
         setFormElement(Locator.name("quf_ParticipantId"), "47");
         setFormElement(Locator.name("quf_SequenceNum"), "47");

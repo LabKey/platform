@@ -138,7 +138,7 @@ public class QuerySnapshotTest extends StudyBaseTest
         log("test automatic updates by altering the source dataset");
         clickFolder(getStudyLabel());
         clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
-        _extHelper.clickMenuButton("Insert", "Insert New");
+        _extHelper.clickMenuButton("Insert", "Insert New Row");
         setFormElement(Locator.name("quf_MouseId"), "999121212");
         setFormElement(Locator.name("quf_DEMraco"), "Armenian");
 
@@ -237,7 +237,7 @@ public class QuerySnapshotTest extends StudyBaseTest
         // verify refresh from both datasets
         clickFolder(FOLDER_1);
         clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
-        _extHelper.clickMenuButton("Insert", "Insert New");
+        _extHelper.clickMenuButton("Insert", "Insert New Row");
         setFormElement(Locator.name("quf_MouseId"), "999121212");
         setFormElement(Locator.name("quf_DEMsex"), "Unknown");
 
@@ -249,7 +249,7 @@ public class QuerySnapshotTest extends StudyBaseTest
         
         clickFolder(FOLDER_2);
         clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
-        _extHelper.clickMenuButton("Insert", "Insert New");
+        _extHelper.clickMenuButton("Insert", "Insert New Row");
         setFormElement(Locator.name("quf_MouseId"), "999151515");
         setFormElement(Locator.name("quf_DEMsexor"), "Undecided");
 

@@ -163,7 +163,7 @@ public class StudyMergeParticipantsTest extends StudyBaseTest
         selectOptionByValue(Locator.id("list_dataField"), SOURCE_COLUMN);
         clickButton("Save", "View Data");
         clickButton("View Data", "Import Data");
-        DataRegionTable.findDataRegion(this).clickHeaderMenu("Insert", "Import Data");
+        DataRegionTable.findDataRegion(this).clickHeaderMenu("Insert", "Import Bulk Data");
         setFormElement(Locator.name("text"), "participantId\tdate\t" + ALIAS_COLUMN + "\t" + SOURCE_COLUMN + "\n" + PTID_WITH_ALIAS + "\t1/3/2014\tabc123\t" + ALIAS_SOURCE_1);
         clickButton("Submit", "Dataset: " + ALIAS_DATASET + ", All Visits");
 
