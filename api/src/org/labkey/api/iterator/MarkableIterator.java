@@ -38,11 +38,11 @@ public class MarkableIterator<T> implements Iterator<T>
     // would be cleaner), but more bookkeeping minimizes memory usage: we reuse the same buffer for repeated mark/reset
     // combinations and (if not currently marked) we remove elements from the buffer as we iterate through it.
 
-    // A marked iterator stores elements into _buffer as they are read. On reset(), _bufferedIter is set to iterate over
-    // _buffer, and subsequent hasNext() and next() calls exhaust _bufferedIter and then defer back to _iter. On reset,
-    // _buffer is drained as elements are read; if the iterator is marked again while iterating _bufferedIter we'll stop
-    // draining and maintain the previously buffered elements, appending to _buffer if we start iterating unbuffered
-    // elements.
+    // A MarkableIterator that has been marked stores elements into _buffer as they are read. On reset(), _bufferIter is
+    // set to iterate over _buffer, and subsequent hasNext() and next() calls exhaust _bufferIter and then defer back to
+    // _iter. On reset, _buffer is drained as elements are read; if the iterator is marked again while iterating
+    // _bufferIter we'll stop draining and maintain the previously buffered elements, appending to _buffer if we start
+    // iterating unbuffered elements.
 
     private final Iterator<T> _iter;
     private final SimpleLinkedList _buffer = new SimpleLinkedList();
