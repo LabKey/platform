@@ -114,6 +114,44 @@ public abstract class GenericChartReport extends AbstractReport
                 return true;
             }
         },
+        PIE_CHART()
+        {
+            @Override
+            public String getId()
+            {
+                return "pie_chart";
+            }
+            @Override
+            public String getName()
+            {
+                return "Pie Chart";
+            }
+            @Override
+            public String getDescription()
+            {
+                return "Pie Chart";
+            }
+            @Override
+            public String getIconPath()
+            {
+                return "/visualization/report/box_plot.gif";
+            }
+            @Override
+            public String getThumbnailName()
+            {
+                return "piechart.png";
+            }
+            @Override
+            public String getIconCls()
+            {
+                return "fa fa-pie-chart";
+            }
+            @Override
+            public boolean isActive()
+            {
+                return false;
+            }
+        },
         SCATTER_PLOT()
         {
             @Override
@@ -193,7 +231,7 @@ public abstract class GenericChartReport extends AbstractReport
         public abstract String getId();
         public abstract String getName();
         public abstract String getDescription();
-        public abstract String getIconPath();
+        public abstract String getIconPath(); // TODO I believe this is deprecated, can it be removed all together?
         public abstract String getIconCls();
         public abstract String getThumbnailName();
         public abstract boolean isActive();

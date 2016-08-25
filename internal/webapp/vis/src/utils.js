@@ -105,7 +105,7 @@ LABKEY.vis.groupData = function(data, groupAccessor){
     return groupedData;
 };
 
-LABKEY.vis.groupCountData = function(data, groupAccessor){
+LABKEY.vis.groupCountData = function(data, groupAccessor, propNameMap){
     /*
         Groups data by the groupAccessor passed in and returns the number of occurances for that group.
         Most commonly used for processing data for a bar plot.
@@ -114,16 +114,18 @@ LABKEY.vis.groupCountData = function(data, groupAccessor){
 
     groupedData = LABKEY.vis.groupData(data, groupAccessor);
 
-    for (groupName in groupedData) {
-        if (groupedData.hasOwnProperty(groupName)) {
+    for (groupName in groupedData)
+    {
+        if (groupedData.hasOwnProperty(groupName))
+        {
             count = groupedData[groupName].length;
             total += count;
-            counts.push({
-                name: groupName,
-                count: count,
-                total: total,
-                rawData: groupedData[groupName]
-            });
+
+            var row = {rawData: groupedData[groupName]};
+            row[propNameMap && propNameMap.name ? propNameMap.name : 'name'] = groupName;
+            row[propNameMap && propNameMap.count ? propNameMap.count : 'count'] = count;
+            row[propNameMap && propNameMap.total ? propNameMap.total : 'total'] = total;
+            counts.push(row);
         }
     }
 
