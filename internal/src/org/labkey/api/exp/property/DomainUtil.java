@@ -291,7 +291,13 @@ public class DomainUtil
         if (columnXml.isSetPropertyURI())
             gwtProp.setPropertyURI(columnXml.getPropertyURI());
         if (columnXml.isSetRangeURI())
-            gwtProp.setRangeURI(columnXml.getRangeURI());
+        {
+            PropertyType pt = PropertyType.getFromURI(columnXml.getRangeURI(),null,null);
+            if (null != pt)
+                gwtProp.setRangeURI(pt.getTypeUri());
+            else
+                gwtProp.setRangeURI(columnXml.getRangeURI());
+        }
         if (columnXml.isSetIsHidden())
             gwtProp.setHidden(columnXml.getIsHidden());
         if (columnXml.isSetFk())
