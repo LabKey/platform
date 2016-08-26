@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.MenuButton;
@@ -49,6 +50,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayHeaderLinkProvider;
+import org.labkey.api.study.assay.AssayColumnInfoRenderer;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
@@ -105,6 +107,7 @@ public class AssayManager implements AssayService.Interface
 
     private List<AssayProvider> _providers = new ArrayList<>();
     private List<AssayHeaderLinkProvider> _headerLinkProviders = new ArrayList<>();
+    private List<AssayColumnInfoRenderer> _assayColumnInfoRenderers = new ArrayList<>();
 
     /** Synchronization lock object for ensuring that batch names are unique */
     private static final Object BATCH_NAME_LOCK = new Object();
@@ -191,6 +194,24 @@ public class AssayManager implements AssayService.Interface
     public List<AssayHeaderLinkProvider> getAssayHeaderLinkProviders()
     {
         return Collections.unmodifiableList(_headerLinkProviders);
+    }
+
+    @Override
+    public void registerAssayColumnInfoRenderer(AssayColumnInfoRenderer renderer)
+    {
+        _assayColumnInfoRenderers.add(renderer);
+    }
+
+    @Override
+    public AssayColumnInfoRenderer getAssayColumnInfoRenderer(ExpProtocol protocol, ColumnInfo columnInfo, Container container, User user)
+    {
+        for (AssayColumnInfoRenderer renderer : _assayColumnInfoRenderers)
+        {
+            if (renderer.isApplicable(protocol, columnInfo, container, user))
+                return renderer;
+        }
+
+        return null;
     }
 
     public ExpRunTable createRunTable(ExpProtocol protocol, AssayProvider provider, User user, Container container)
