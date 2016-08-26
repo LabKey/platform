@@ -1016,7 +1016,7 @@ public class StatementUtils
         }
         if (value instanceof SimpleTranslator.NowTimestamp)
         {
-            f.append("{fn now()}");
+            f.append("CURRENT_TIMESTAMP");   // Instead of {fn now()} -- see #27534
             return;
         }
         if (value instanceof java.sql.Date)
