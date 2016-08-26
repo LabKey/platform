@@ -132,12 +132,24 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
 
                 if (_columnName == null)
                 {
-                    List<String> pkColumns = table.getPkColumnNames();
+                    List<ColumnInfo> pkColumns = table.getPkColumns();
                     if (pkColumns != null && pkColumns.size() > 0)
-                        _columnName = pkColumns.get(0);
+                    {
+                        int first = 0;
+                        if (pkColumns.size() > 1 && isContainerColumn(pkColumns.get(0)))
+                            first = 1;
+                        _columnName = pkColumns.get(first).getName();
+                    }
                 }
             }
         }
+    }
+
+    boolean isContainerColumn(ColumnInfo c)
+    {
+        if (JdbcType.GUID != c.getJdbcType())
+            return false;
+        return "folder".equalsIgnoreCase(c.getName()) || "container".equalsIgnoreCase(c.getName());
     }
 
     @Override
