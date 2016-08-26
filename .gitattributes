@@ -1348,6 +1348,7 @@ api/src/org/labkey/api/study/assay/AbstractPlateBasedAssayProvider.java -text
 api/src/org/labkey/api/study/assay/AbstractTempDirDataCollector.java -text
 api/src/org/labkey/api/study/assay/AbstractTsvAssayProvider.java -text
 api/src/org/labkey/api/study/assay/AssayBatchesView.java -text
+api/src/org/labkey/api/study/assay/AssayColumnInfoRenderer.java -text
 api/src/org/labkey/api/study/assay/AssayDataCollector.java -text
 api/src/org/labkey/api/study/assay/AssayDataCollectorDisplayColumn.java -text
 api/src/org/labkey/api/study/assay/AssayDataLinkDisplayColumn.java -text

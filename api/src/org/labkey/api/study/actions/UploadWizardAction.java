@@ -46,6 +46,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.study.assay.AssayColumnInfoRenderer;
 import org.labkey.api.study.assay.AssayDataCollector;
 import org.labkey.api.study.assay.AssayDataCollectorDisplayColumn;
 import org.labkey.api.study.assay.AssayHeaderLinkProvider;
@@ -240,7 +241,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 for (DomainProperty property : domain.getProperties())
                 {
                     String paramName = AssayHeaderLinkProvider.PARAM_PREFIX + "." + property.getName();
-                    if (!defaultValues.containsKey(property) && parameterValueMap.containsKey(paramName))
+                    if (parameterValueMap.containsKey(paramName))
                         defaultValues.put(property, parameterValueMap.get(paramName));
                 }
             }
@@ -298,6 +299,22 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             view.getDataRegion().replaceDisplayColumn(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME,
                     new ParticipantVisitResolverChooser(participantVisitResolverCol.getName(), form.getProvider().getParticipantVisitResolverTypes(),
                             participantVisitResolverCol.getColumnInfo()));
+        }
+
+        // Allow registered AssayColumnInfoRenderer to replace display column for the given domain properties
+        for (DomainProperty property : properties)
+        {
+            DisplayColumn displayColumn = view.getDataRegion().getDisplayColumn(property.getName());
+            if (displayColumn != null)
+            {
+                AssayColumnInfoRenderer renderer = AssayService.get().getAssayColumnInfoRenderer(_protocol, displayColumn.getColumnInfo(), getContainer(), getUser());
+                if (renderer != null)
+                {
+                    ColumnInfo columnInfo = displayColumn.getColumnInfo();
+                    renderer.fixupColumnInfo(_protocol, columnInfo);
+                    view.getDataRegion().replaceDisplayColumn(displayColumn.getName(), columnInfo.getRenderer());
+                }
+            }
         }
 
         return view;

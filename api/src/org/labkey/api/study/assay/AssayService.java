@@ -19,6 +19,7 @@ package org.labkey.api.study.assay;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpExperiment;
@@ -153,5 +154,17 @@ public class AssayService
          * @return the list of registered providers
          */
         List<AssayHeaderLinkProvider> getAssayHeaderLinkProviders();
+
+        /**
+         * Register a renderer to be used on the assay insert form to customize the input field.
+         * @param renderer the renderer that will determine the display of the input field based on the column info.
+         */
+        void registerAssayColumnInfoRenderer(AssayColumnInfoRenderer renderer);
+
+        /**
+         * Return the first applicable renderer for the provided parameters.
+         * @return AssayColumnInfoRenderer
+         */
+        AssayColumnInfoRenderer getAssayColumnInfoRenderer(ExpProtocol protocol, ColumnInfo columnInfo, Container container, User user);
     }
 }
