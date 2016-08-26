@@ -251,7 +251,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
         defaultVisible.add(FieldKey.fromParts(Column.Name));
         defaultVisible.add(FieldKey.fromParts(Column.Flag));
 
-        addColumn(Column.RowId);
+        ColumnInfo rowIdCol = addColumn(Column.RowId);
         ColumnInfo nameCol = addColumn(Column.Name);
         addColumn(Column.Created);
         addColumn(Column.CreatedBy);
@@ -346,6 +346,7 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
         setDetailsURL(detailsURL);
 
         StringExpression url = StringExpressionFactory.create(detailsURL.getActionURL().getLocalURIString(true));
+        rowIdCol.setURL(url);
         nameCol.setURL(url);
 
         setTitleColumn("Name");
@@ -1070,6 +1071,10 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
                 catch (ExperimentException e)
                 {
                     throw new RuntimeException(e);
+                }
+                catch (ValidationException e)
+                {
+                    getErrors().addRowError(e);
                 }
             }
             return hasNext;

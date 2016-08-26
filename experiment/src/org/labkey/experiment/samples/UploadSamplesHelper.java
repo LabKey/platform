@@ -721,7 +721,7 @@ public class UploadSamplesHelper
     public static Pair<RunInputOutputBean, RunInputOutputBean> resolveInputsAndOutputs(User user, Container c,
                                                                          Set<Pair<String, String>> parentNames,
                                                                          @Nullable MaterialSource source)
-            throws ExperimentException
+            throws ExperimentException, ValidationException
     {
         Map<ExpMaterial, String> parentMaterials = new HashMap<>();
         Map<ExpData, String> parentData = new HashMap<>();
@@ -743,12 +743,16 @@ public class UploadSamplesHelper
                     ExpMaterial sample = findMaterial(c, parts[1], parentValue);
                     if (sample != null)
                         parentMaterials.put(sample, "Sample");
+                    else
+                        throw new ValidationException("Sample input '" + parentValue + "' in SampleSet '" + parts[1] + "' not found");
                 }
                 else if (parts[0].equalsIgnoreCase(MATERIAL_OUTPUT_CHILD))
                 {
                     ExpMaterial sample = findMaterial(c, parts[1], parentValue);
                     if (sample != null)
                         childMaterials.put(sample, "Sample");
+                    else
+                        throw new ValidationException("Sample output '" + parentValue + "' in SampleSet '" + parts[1] + "' not found");
                 }
                 else if (parts[0].equalsIgnoreCase(DATA_INPUT_PARENT))
                 {
@@ -757,12 +761,16 @@ public class UploadSamplesHelper
                     ExpData data = findData(c, user, parts[1], parentValue);
                     if (data != null)
                         parentData.put(data, data.getName());
+                    else
+                        throw new ValidationException("Data input '" + parentValue + "' in DataClass '" + parts[1] + "' not found");
                 }
                 else if (parts[0].equalsIgnoreCase(DATA_OUTPUT_CHILD))
                 {
                     ExpData data = findData(c, user, parts[1], parentValue);
                     if (data != null)
                         childData.put(data, data.getName());
+                    else
+                        throw new ValidationException("Data output '" + parentValue + "' in DataClass '" + parts[1] + "' not found");
                 }
             }
         }
@@ -919,24 +927,24 @@ public class UploadSamplesHelper
         return parents;
     }
 
-    private static ExpMaterial findMaterial(Container c, String sampleSetName, String sampleName)
+    private static ExpMaterial findMaterial(Container c, String sampleSetName, String sampleName) throws ValidationException
     {
         // Could easily do some caching here, but probably not a significant perf issue
         ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(c, sampleSetName, true);
-        if (sampleSet != null)
-            return sampleSet.getSample(c, sampleName);
+        if (sampleSet == null)
+            throw new ValidationException("SampleSet '" + sampleSetName + "' not found");
 
-        return null;
+        return sampleSet.getSample(c, sampleName);
     }
 
-    private static ExpData findData(Container c, User user, String dataClassName, String dataName)
+    private static ExpData findData(Container c, User user, String dataClassName, String dataName) throws ValidationException
     {
         // Could easily do some caching here, but probably not a significant perf issue
         ExpDataClass dataClass = ExperimentService.get().getDataClass(c, user, dataClassName);
-        if (dataClass != null)
-            return dataClass.getData(c, dataName);
+        if (dataClass == null)
+            throw new ValidationException("SampleSet '" + dataClassName + "' not found");
 
-        return null;
+        return dataClass.getData(c, dataName);
     }
 
     private class MaterialImportHelper implements OntologyManager.ImportHelper
