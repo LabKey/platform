@@ -51,12 +51,12 @@
     boolean showProjectNavigation = showExperimentalNavigation || context.isShowFolders();
     boolean showFolderNavigation = !showExperimentalNavigation && c != null && !c.isRoot() && c.getProject() != null && context.isShowFolders();
     Container p = c.getProject();
-    String projectName = "";
+    String projectTitle = "";
     if (null != p)
     {
-        projectName = p.getTitle();
-        if (null != projectName && projectName.equalsIgnoreCase("home"))
-            projectName = "Home";
+        projectTitle = p.getTitle();
+        if (null != projectTitle && projectTitle.equalsIgnoreCase("home"))
+            projectTitle = "Home";
     }
 %>
 <!-- TOPMENU -->
@@ -75,7 +75,7 @@
     if (showFolderNavigation)
     {
 %>
-        <li id="folderBar" class="menu-folders"><%=text(projectName)%></li>
+        <li id="folderBar" class="menu-folders"><%=h(projectTitle)%></li>
 <%
     }
 %>
