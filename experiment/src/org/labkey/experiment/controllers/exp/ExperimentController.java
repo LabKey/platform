@@ -378,10 +378,35 @@ public class ExperimentController extends SpringActionController
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
         {
             List<ExpRun> runs = new ArrayList<>();
-            JSONArray runIds = form.getJsonObject().getJSONArray("runIds");
-            for (int i = 0; i < runIds.length(); i++)
+            // Accept either an explicit list of run IDs
+            if (form.getJsonObject().has("runIds"))
             {
-                runs.add(ExperimentServiceImpl.get().getExpRun(runIds.getInt(i)));
+                JSONArray runIds = form.getJsonObject().getJSONArray("runIds");
+                for (int i = 0; i < runIds.length(); i++)
+                {
+                    ExpRunImpl run = ExperimentServiceImpl.get().getExpRun(runIds.getInt(i));
+                    if (run != null)
+                    {
+                        runs.add(run);
+                    }
+                }
+            }
+            // Or a reference to a DataRegion selection key
+            else if (form.getJsonObject().has("selectionKey"))
+            {
+                Set<String> ids = DataRegionSelection.getSelected(getViewContext(), form.getJsonObject().getString("selectionKey"), true, true);
+                for (String id : ids)
+                {
+                    try
+                    {
+                        ExpRunImpl run = ExperimentServiceImpl.get().getExpRun(Integer.parseInt(id));
+                        if (run != null)
+                        {
+                            runs.add(run);
+                        }
+                    }
+                    catch (NumberFormatException ignored) {}
+                }
             }
             if (runs.isEmpty())
             {
@@ -5127,9 +5152,13 @@ public class ExperimentController extends SpringActionController
             drg.addHiddenFormField(ActionURL.Param.returnUrl, getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name()));
             drg.addHiddenFormField("addSelectedRuns", java.lang.Boolean.toString("true".equals(getViewContext().getRequest().getParameter("addSelectedRuns"))));
             form.setDataRegionSelectionKey(getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY));
-            for (String rowId : DataRegionSelection.getSelected(getViewContext(), false))
+            // Fix issue 27562 - include session-stored selection
+            if (form.getDataRegionSelectionKey() != null)
             {
-                drg.addHiddenFormField(DataRegion.SELECT_CHECKBOX_NAME, rowId);
+                for (String rowId : DataRegionSelection.getSelected(getViewContext(), form.getDataRegionSelectionKey(), true, false))
+                {
+                    drg.addHiddenFormField(DataRegion.SELECT_CHECKBOX_NAME, rowId);
+                }
             }
             drg.addHiddenFormField(DataRegionSelection.DATA_REGION_SELECTION_KEY, getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY));
 
