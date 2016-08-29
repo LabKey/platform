@@ -60,7 +60,8 @@ public class SpecimenDesignerMainPanel extends AbstractDesignerMainPanel impleme
     private HandlerRegistration _closeHandlerManager;
     private boolean _showing = false;
 
-    private static final String COMMENTS = "Comments";                   // Reserved field name for Vial and Speciman
+    private static final String COMMENTS = "Comments";                   // Reserved field name for Vial and Specimen
+    private static final String COLUMN = "Column";                       // Reserved field name for Vial, Specimen and Event
 
     public SpecimenDesignerMainPanel(RootPanel rootPanel)
     {
@@ -187,8 +188,8 @@ public class SpecimenDesignerMainPanel extends AbstractDesignerMainPanel impleme
                     optionalSpecimenFields.add(prop);
                     if (prop.getName().contains(" "))
                         errors.add("Name '" + prop.getName() + "' should not contain spaces.");
-                    else if (COMMENTS.equalsIgnoreCase(prop.getName()))
-                        errors.add("Field name 'Comments' is reserved and may not be used in the Specimen or Vial table.");
+                    else if (COMMENTS.equalsIgnoreCase(prop.getName()) || COLUMN.equalsIgnoreCase(prop.getName()))
+                        errors.add("Field name '" + prop.getName() + "' is reserved and may not be used in the Specimen table.");
                 }
             }
         }
@@ -209,8 +210,8 @@ public class SpecimenDesignerMainPanel extends AbstractDesignerMainPanel impleme
                     optionalVialFields.add(prop);
                     if (prop.getName().contains(" "))
                         errors.add("Name '" + prop.getName() + "' should not contain spaces.");
-                    else if (COMMENTS.equalsIgnoreCase(prop.getName()))
-                        errors.add("Field name 'Comments' is reserved and may not be used in the Specimen or Vial table.");
+                    else if (COMMENTS.equalsIgnoreCase(prop.getName()) || COLUMN.equalsIgnoreCase(prop.getName()))
+                        errors.add("Field name '" + prop.getName() + "' is reserved and may not be used in the Vial table.");
                 }
             }
         }
@@ -222,6 +223,8 @@ public class SpecimenDesignerMainPanel extends AbstractDesignerMainPanel impleme
                 optionalEventFields.add(prop);
                 if (prop.getName().contains(" "))
                     errors.add("Name '" + prop.getName() + "' should not contain spaces.");
+                else if (COLUMN.equalsIgnoreCase(prop.getName()))
+                    errors.add("Field name '" + prop.getName() + "' is reserved and may not be used in the SpecimenEvent table.");
             }
 
         for (GWTPropertyDescriptor prop : domainSpecimen.getFields())
