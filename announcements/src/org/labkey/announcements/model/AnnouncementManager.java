@@ -69,7 +69,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.webdav.ActionResource;
+import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
@@ -555,14 +555,14 @@ public class AnnouncementManager
         if (null == c || isSecure(c))
             return;
 
-        SQLFragment sql = new SQLFragment("SELECT entityId FROM " + _comm.getTableInfoThreads());
-        sql.append(" WHERE container = ?");
+        SQLFragment sql = new SQLFragment("SELECT EntityId FROM " + _comm.getTableInfoThreads());
+        sql.append(" WHERE Container = ?");
         sql.add(containerId);
         String and = " AND ";
 
         if (null != threadId)
         {
-            sql.append(and).append(" entityid = ?");
+            sql.append(and).append(" EntityId = ?");
             sql.add(threadId);
         }
         else
@@ -572,23 +572,50 @@ public class AnnouncementManager
                 sql.append(and).append(modified);
         }
 
-        new SqlSelector(_comm.getSchema(), sql).forEach(rs ->
+        // Push a ViewContext onto the stack before translating the bodies; announcements may need this to render embedded webparts.
+        try (ViewContext.StackResetter ignored = ViewContext.pushMockViewContext(User.getSearchUser(), c, new ActionURL()))
         {
-            String entityId = rs.getString(1);
-            String docid = "thread:" + entityId;
-            ActionURL url = new ActionURL(AnnouncementsController.ThreadAction.class, null);
-            url.setExtraPath(containerId);
-            url.addParameter("entityId", entityId);
-            ActionResource r = new ActionResource(searchCategory, docid, url)
+            new SqlSelector(_comm.getSchema(), sql).forEach(rs ->
             {
-                @Override
-                public void setLastIndexed(long ms, long modified)
+                String entityId = rs.getString(1);
+                AnnouncementModel ann = AnnouncementManager.getAnnouncement(c, entityId);
+
+                if (null != ann)
                 {
-                    AnnouncementManager.setLastIndexed(entityId, ms);
+                    String docid = "thread:" + entityId;
+                    ActionURL url = new ActionURL(AnnouncementsController.ThreadAction.class, null);
+                    url.setExtraPath(containerId);
+                    url.addParameter("entityId", entityId);
+
+                    Map<String, Object> props = new HashMap<>();
+                    props.put(SearchService.PROPERTY.categories.toString(), searchCategory.toString());
+                    props.put(SearchService.PROPERTY.title.toString(), ann.getTitle());  // Title is fine for both indexing and displaying
+
+                    StringBuilder html = new StringBuilder(ann.translateBody(c));
+
+                    for (AnnouncementModel response : ann.getResponses())
+                        html.append(" ").append(response.translateBody(c));
+
+                    SimpleDocumentResource sdr = new SimpleDocumentResource(
+                            new Path(docid),
+                            docid,
+                            containerId,
+                            "text/html",
+                            html.toString().getBytes(),
+                            url,
+                            props)
+                    {
+                        @Override
+                        public void setLastIndexed(long ms, long modified)
+                        {
+                            AnnouncementManager.setLastIndexed(entityId, ms);
+                        }
+                    };
+
+                    task.addResource(sdr, SearchService.PRIORITY.item);
                 }
-            };
-            task.addResource(r, SearchService.PRIORITY.item);
-        });
+            });
+        }
 
         // Get the attachments... unfortunately, they're attached to individual announcementModels, not to the thread,
         // so we need a different query.
