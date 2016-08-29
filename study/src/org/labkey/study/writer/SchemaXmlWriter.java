@@ -17,6 +17,7 @@ package org.labkey.study.writer;
 
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.IndexInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoWriter;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -27,6 +28,8 @@ import org.labkey.api.study.assay.SpecimenForeignKey;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.IndexType;
+import org.labkey.data.xml.IndicesType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
@@ -36,6 +39,7 @@ import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.xml.StudyDocument;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -117,11 +121,13 @@ public class SchemaXmlWriter implements Writer<List<DatasetDefinition>, ImportCo
     private class DatasetTableInfoWriter extends TableInfoWriter
     {
         private final DatasetDefinition _def;
+        private final Collection<IndexInfo> _indices;
 
         private DatasetTableInfoWriter(TableInfo ti, DatasetDefinition def, boolean removeProtected)
         {
             super(def.getContainer(), ti, DatasetDataWriter.getColumnsToExport(ti, def, true, removeProtected));
             _def = def;
+            _indices = DatasetDataWriter.getIndicesToExport(ti);
         }
 
         @Override
@@ -134,7 +140,28 @@ public class SchemaXmlWriter implements Writer<List<DatasetDefinition>, ImportCo
                 tableXml.setTableTitle(_def.getLabel());
             if (null != _def.getDescription())
                 tableXml.setDescription(_def.getDescription());
+
+            if(_indices.size() > 0)
+            {
+                IndicesType indicesXml = tableXml.addNewIndices();
+                for (IndexInfo indexInfo : _indices)
+                {
+                    IndexType indexType = indicesXml.addNewIndex();
+                    writeIndex(indexInfo, indexType);
+                }
+            }
         }
+
+        private void writeIndex(IndexInfo indexInfo, IndexType indexXml)
+        {
+            indexXml.setType(indexInfo.getType().getXmlIndexType());
+
+            for (String columnName : indexInfo.getColumns())
+            {
+                indexXml.addColumn(columnName);
+            }
+        }
+
 
         @Override
         public void writeColumn(ColumnInfo column, ColumnType columnXml)

@@ -3929,7 +3929,7 @@ public class StudyManager
 
         buildPropertySaveAndDeleteLists(datasetDefEntryMap, list, domainsMap, domainsPropertiesMap);
 
-        dropNotRequiredIndices(reader, datasetDefEntryMap, domainsMap, study.getContainer());
+        dropNotRequiredIndices(reader, datasetDefEntryMap, domainsMap);
 
 
         if (!deleteAndSaveProperties(user, errors, domainsMap, domainsPropertiesMap)) return false;
@@ -4030,7 +4030,7 @@ public class StudyManager
         }
     }
 
-    private void dropNotRequiredIndices(SchemaReader reader, Map<String, DatasetDefinitionEntry> datasetDefEntryMap, Map<String, Domain> domainsMap, Container container)
+    private void dropNotRequiredIndices(SchemaReader reader, Map<String, DatasetDefinitionEntry> datasetDefEntryMap, Map<String, Domain> domainsMap)
     {
         for (SchemaReader.DatasetImportInfo datasetImportInfo : reader.getDatasetInfo().values())
         {

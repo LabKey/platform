@@ -16,6 +16,7 @@
 package org.labkey.study.writer;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.ColumnHeaderType;
@@ -23,13 +24,17 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.IndexInfo;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
@@ -38,6 +43,7 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.util.Pair;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DatasetDefinition;
@@ -53,9 +59,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by susanh on 1/19/16.
@@ -333,8 +341,158 @@ public class DatasetDataWriter implements InternalStudyWriter
         return outColumns;
     }
 
+    public static Collection<IndexInfo> getIndicesToExport(TableInfo tinfo)
+    {
+        if (tinfo == null)
+            return Collections.emptyList();
+
+        SchemaTableInfo schemaTableInfo = StorageProvisioner.getSchemaTableInfo(tinfo.getDomain());
+        Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> allIndices = schemaTableInfo.getAllIndices();
+        Collection<IndexInfo> outIndices = new LinkedHashSet<>(allIndices.size());
+
+        Set<PropertyStorageSpec.Index> domainIndices = tinfo.getDomainKind().getPropertyIndices();
+
+        for (Map.Entry<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> indexEntry : allIndices.entrySet())
+        {
+            List<ColumnInfo> columnInfoList = indexEntry.getValue().getValue();
+            if (indexEntry.getValue().getKey().equals(TableInfo.IndexType.Primary) ||
+                    columnInfoListMatchesDomainIndex(columnInfoList, domainIndices))
+            {
+                continue;
+            }
+            List<String> columnNames = new ArrayList<>();
+
+            for (ColumnInfo columnInfo : columnInfoList)
+            {
+                columnNames.add(columnInfo.getColumnName());
+            }
+
+            IndexInfo indexInfo = new IndexInfo(indexEntry.getValue().getKey(), columnNames.toArray(new String[columnInfoList.size()]));
+            outIndices.add(indexInfo);
+        }
+        return outIndices;
+    }
+
+    private static boolean columnInfoListMatchesDomainIndex(List<ColumnInfo> columnInfoList, Set<PropertyStorageSpec.Index> domainIndices)
+    {
+        if (columnInfoList == null || domainIndices == null)
+        {
+            return false;
+        }
+
+        //check each domain index for match with columns.
+        //if one matches return true
+        for (PropertyStorageSpec.Index domainIndex : domainIndices)
+        {
+            //if the column list size does not match index column list size skip to next domain index.
+            if (columnInfoList.size() != domainIndex.columnNames.length)
+            {
+                continue;
+            }
+
+            //if not found continue to next domain index
+            if(allColumnsMatch(columnInfoList, domainIndex))
+            {
+                return  true;
+            }
+        }
+        return false;
+    }
+
+    @Nullable
+    private static Boolean allColumnsMatch(List<ColumnInfo> columnInfoList, PropertyStorageSpec.Index domainIndex)
+    {
+        //for each column in list check that it is in domain index
+        for (ColumnInfo columnInfo : columnInfoList)
+        {
+            if (!isDomainIndexColumnMatch(domainIndex, columnInfo))
+            {
+                break;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean isDomainIndexColumnMatch(PropertyStorageSpec.Index domainIndex, ColumnInfo columnInfo)
+    {
+        boolean isColumnMatch = false;
+        for (String domainIndexColumnName : domainIndex.columnNames)
+        {
+            if (columnInfo.getName().toLowerCase().equalsIgnoreCase(domainIndexColumnName.toLowerCase()))
+            {
+                isColumnMatch = true;
+                break;
+            }
+        }
+        return isColumnMatch;
+    }
+
     public static class TestCase extends Assert
     {
+        @Test
+        public void testIndexMatch()
+        {
+            List<ColumnInfo> columnInfoList = new ArrayList<>();
+            Set<PropertyStorageSpec.Index> domainIndices = new HashSet<>();
+
+            columnInfoList.add(new ColumnInfo("objectId"));
+            domainIndices.add(new PropertyStorageSpec.Index(true, "objectId"));
+
+            Assert.assertTrue(columnInfoListMatchesDomainIndex(columnInfoList, domainIndices));
+
+            columnInfoList.clear();
+            columnInfoList.add(new ColumnInfo("taskId"));
+            Assert.assertFalse(columnInfoListMatchesDomainIndex(columnInfoList, domainIndices));
+
+            columnInfoList.clear();
+            columnInfoList.add(new ColumnInfo("objectid"));
+            Assert.assertTrue(columnInfoListMatchesDomainIndex(columnInfoList, domainIndices));
+
+            columnInfoList.add(new ColumnInfo("taskId"));
+            Assert.assertFalse(columnInfoListMatchesDomainIndex(columnInfoList, domainIndices));
+
+            domainIndices.clear();
+            domainIndices.add(new PropertyStorageSpec.Index(true, "objectid", "taskid"));
+            Assert.assertTrue(columnInfoListMatchesDomainIndex(columnInfoList, domainIndices));
+
+            domainIndices.clear();
+            domainIndices.add(new PropertyStorageSpec.Index(true, "taskid", "objectid"));
+            Assert.assertTrue(columnInfoListMatchesDomainIndex(columnInfoList, domainIndices));
+
+            domainIndices.clear();
+            domainIndices.add(new PropertyStorageSpec.Index(true, "taskid", "objectid", "blahId"));
+            Assert.assertFalse(columnInfoListMatchesDomainIndex(columnInfoList, domainIndices));
+
+            domainIndices.clear();
+            Assert.assertFalse(columnInfoListMatchesDomainIndex(columnInfoList, domainIndices));
+
+            columnInfoList.clear();
+            domainIndices.clear();
+            domainIndices.add(new PropertyStorageSpec.Index(true, "taskid", "objectid", "blahId"));
+            Assert.assertFalse(columnInfoListMatchesDomainIndex(columnInfoList, domainIndices));
+
+            columnInfoList.clear();
+            columnInfoList.add(new ColumnInfo("taskId"));
+            columnInfoList.add(new ColumnInfo("objectid"));
+            domainIndices.clear();
+            domainIndices.add(new PropertyStorageSpec.Index(true, "taskid", "objectid"));
+            domainIndices.add(new PropertyStorageSpec.Index(true, "taskid", "objectid", "blahId"));
+            Assert.assertTrue(columnInfoListMatchesDomainIndex(columnInfoList, domainIndices));
+
+            columnInfoList.clear();
+            columnInfoList.add(new ColumnInfo("taskId"));
+            columnInfoList.add(new ColumnInfo("objectid"));
+            domainIndices.clear();
+            domainIndices.add(new PropertyStorageSpec.Index(true, "taskid", "objectid", "fooId"));
+            domainIndices.add(new PropertyStorageSpec.Index(true, "taskid", "objectid", "blahId"));
+            Assert.assertFalse(columnInfoListMatchesDomainIndex(columnInfoList, domainIndices));
+
+            columnInfoList = null;
+            domainIndices = null;
+            Assert.assertFalse(columnInfoListMatchesDomainIndex(columnInfoList, domainIndices));
+        }
+
         @Test
         public void testShouldExportColumn()
         {
