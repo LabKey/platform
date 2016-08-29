@@ -104,7 +104,10 @@ LABKEY.Experiment = new function()
          * <li><b>runGroup:</b> a {@link LABKEY.Exp.RunGroup} object containing properties about the run group</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {Integer[]} config.runIds An array of integer ids for the runs to be members of the group.
+         * @param {Integer[]} [config.runIds] An array of integer ids for the runs to be members of the group. Either
+         * runIds or selectionKey must be specified.
+         * @param {string} [config.selectionKey] The DataRegion's selectionKey to be used to resolve the runs to be
+         * members of the group. Either runIds or selectionKey must be specified.
          * @param {function} [config.failure] A reference to a function to call when an error occurs. This
          * function will be passed the following parameters:
          * <ul>
@@ -123,11 +126,28 @@ LABKEY.Experiment = new function()
                 return new LABKEY.Exp.RunGroup(json);
             }
 
+            var jsonData = {};
+            if (config.runIds && config.selectionKey)
+            {
+                throw "Only one of runIds or selectionKey config parameter is allowed for a single call.";
+            }
+            else if (config.runIds)
+            {
+                jsonData.runIds = config.runIds;
+            }
+            else if (config.selectionKey)
+            {
+                jsonData.selectionKey = config.selectionKey;
+            }
+            else
+            {
+                throw "Either the runIds or the selectionKey config parameter is required.";
+            }
             LABKEY.Ajax.request(
             {
                 url : LABKEY.ActionURL.buildURL("experiment", "createHiddenRunGroup", config.containerPath),
                 method : 'POST',
-                jsonData : { runIds : config.runIds },
+                jsonData : jsonData,
                 success: getSuccessCallbackWrapper(createExp, LABKEY.Utils.getOnSuccess(config), config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 headers :

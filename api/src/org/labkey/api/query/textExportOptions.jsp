@@ -88,14 +88,16 @@
     <tr style="display:none"><td>
     <input id="<%=text(headerGUID)%>" name="headerType" value="<%=h(model.getHeaderType().toString())%>">
     </td></tr>
+    <% }
+    if (model.isSelectable()) { %>
+        <tr><td colspan="2"></td></tr>
+        <tr>
+            <td valign="center" colspan="2">
+                <input type="checkbox" id="<%=h(exportSelectedId)%>" value="exportSelected" <%=checked(hasSelected)%> <%=disabled(!hasSelected)%>/>
+                <label class="<%=text(hasSelected ? "" : "labkey-disabled")%>" id="<%=h(exportSelectedId + "_label")%>" for="<%=h(exportSelectedId)%>">Export selected rows</label>
+            </td>
+        </tr>
     <% } %>
-    <tr><td colspan="2"></td></tr>
-    <tr>
-        <td valign="center" colspan="2">
-            <input type="checkbox" id="<%=h(exportSelectedId)%>" value="exportSelected" <%=checked(hasSelected)%> <%=disabled(!hasSelected)%>/>
-            <label class="<%=text(hasSelected ? "" : "labkey-disabled")%>" id="<%=h(exportSelectedId + "_label")%>" for="<%=h(exportSelectedId)%>">Export selected rows</label>
-        </td>
-    </tr>
     <tr>
         <td colspan="2"><%= button("Export to Text").id(exportButtonId) %></td>
     </tr>

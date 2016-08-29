@@ -888,7 +888,10 @@ public class QueryView extends WebPartView<Object>
             if (null != b && b.hasSubPanels())
             {
                 // Issue 24530: Add record selectors for exporting selected items.  Assumes that all export panels support selection.
-                bar.setAlwaysShowRecordSelectors(true);
+                if (getTable() != null && !getTable().getPkColumns().isEmpty())
+                {
+                    bar.setAlwaysShowRecordSelectors(true);
+                }
                 bar.add(b);
             }
             ActionButton p = createPrintButton();
@@ -1061,7 +1064,7 @@ public class QueryView extends WebPartView<Object>
         private final String _selectionKey;
         private final ColumnHeaderType _headerType;
 
-        protected ExportOptionsBean(String dataRegionName, String exportRegionName, String selectionKey, ColumnHeaderType headerType)
+        protected ExportOptionsBean(String dataRegionName, String exportRegionName, @Nullable String selectionKey, ColumnHeaderType headerType)
         {
             _dataRegionName = dataRegionName;
             _exportRegionName = exportRegionName;
@@ -1079,13 +1082,24 @@ public class QueryView extends WebPartView<Object>
             return _exportRegionName;
         }
 
+        @Nullable
         public String getSelectionKey()
         {
             return _selectionKey;
         }
 
+        /** @return false if the region won't support row selectors, usually because it doesn't have a primary key */
+        public boolean isSelectable()
+        {
+            return _selectionKey != null;
+        }
+
         public boolean hasSelected(ViewContext context)
         {
+            if (!isSelectable())
+            {
+                return false;
+            }
             Set<String> selected = DataRegionSelection.getSelected(context, _selectionKey, true, false);
             return !selected.isEmpty();
         }
@@ -1103,7 +1117,7 @@ public class QueryView extends WebPartView<Object>
         private final ActionURL _iqyURL;
 
         public ExcelExportOptionsBean(
-                String dataRegionName, String exportRegionName, String selectionKey, ColumnHeaderType headerType,
+                String dataRegionName, String exportRegionName, @Nullable String selectionKey, ColumnHeaderType headerType,
                 ActionURL xlsURL, ActionURL xlsxURL, ActionURL iqyURL)
         {
             super(dataRegionName, exportRegionName, selectionKey, headerType);
@@ -1134,7 +1148,7 @@ public class QueryView extends WebPartView<Object>
         private final ActionURL _tsvURL;
 
         public TextExportOptionsBean(
-                String dataRegionName, String exportRegionName, String selectionKey, ColumnHeaderType headerType,
+                String dataRegionName, String exportRegionName, @Nullable String selectionKey, ColumnHeaderType headerType,
                 ActionURL tsvURL)
         {
             super(dataRegionName, exportRegionName, selectionKey, headerType);
@@ -1154,12 +1168,14 @@ public class QueryView extends WebPartView<Object>
         ActionURL exportRowsXlsURL = urlFor(QueryAction.exportRowsExcel);
         ActionURL exportRowsXlsxURL = urlFor(QueryAction.exportRowsXLSX);
 
+        boolean hasPKColumns = getTable() != null && !getTable().getPkColumns().isEmpty();
+
         if (exportRowsXlsURL != null && exportRowsXlsxURL != null)
         {
             ExcelExportOptionsBean excelBean = new ExcelExportOptionsBean(
                     getDataRegionName(),
                     getExportRegionName(),
-                    getSettings().getSelectionKey(),
+                    hasPKColumns ? getSettings().getSelectionKey() : null,
                     getExcelColumnHeaderType(),
                     exportRowsXlsURL,
                     exportRowsXlsxURL,
@@ -1171,7 +1187,7 @@ public class QueryView extends WebPartView<Object>
         ActionURL tsvURL = urlFor(QueryAction.exportRowsTsv);
         if (tsvURL != null)
         {
-            TextExportOptionsBean textBean = new TextExportOptionsBean(getDataRegionName(), getExportRegionName(), getSettings().getSelectionKey(), getColumnHeaderType(), tsvURL);
+            TextExportOptionsBean textBean = new TextExportOptionsBean(getDataRegionName(), getExportRegionName(), hasPKColumns ? getSettings().getSelectionKey() : null, getColumnHeaderType(), tsvURL);
             exportButton.addSubPanel("Text", new JspView<>("/org/labkey/api/query/textExportOptions.jsp", textBean));
         }
 
