@@ -931,7 +931,7 @@ public class StorageProvisioner
     }
 
 
-    private static SchemaTableInfo getSchemaTableInfo(Domain domain)
+    public static SchemaTableInfo getSchemaTableInfo(Domain domain)
     {
         DomainKind kind = getDomainKind(domain);
 

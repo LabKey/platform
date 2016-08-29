@@ -53,8 +53,8 @@ public class SchemaColumnMetaData
     private List<ColumnInfo> _pkColumns;
     private String _titleColumn = null;
     private boolean _hasDefaultTitleColumn = true;
-    private Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> _indices = Collections.emptyMap();
-    private Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> _allIndices = Collections.emptyMap();
+    private Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> _indices;
+    private Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> _allIndices;
     private static Logger _log = Logger.getLogger(SchemaColumnMetaData.class);
 
     protected SchemaColumnMetaData(SchemaTableInfo tinfo) throws SQLException
@@ -489,11 +489,33 @@ public class SchemaColumnMetaData
 
     public @NotNull Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> getIndices()
     {
+        if(_indices == null)
+        {
+            try
+            {
+                loadUniqueIndices(_tinfo);
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+        }
         return _indices;
     }
 
     public @NotNull Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> getAllIndices()
     {
+        if(_allIndices == null)
+        {
+            try
+            {
+                loadAllIndices(_tinfo);
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+        }
         return _allIndices;
     }
 

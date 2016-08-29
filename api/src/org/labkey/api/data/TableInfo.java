@@ -117,7 +117,31 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
 
     enum IndexType
     {
-        Primary, Unique, NonUnique
+        Primary(org.labkey.data.xml.IndexType.Type.PRIMARY),
+        Unique(org.labkey.data.xml.IndexType.Type.UNIQUE),
+        NonUnique(org.labkey.data.xml.IndexType.Type.NON_UNIQUE);
+
+        private final org.labkey.data.xml.IndexType.Type.Enum xmlIndexType;
+
+        IndexType(org.labkey.data.xml.IndexType.Type.Enum xmlIndexType)
+        {
+            this.xmlIndexType = xmlIndexType;
+        }
+
+        public org.labkey.data.xml.IndexType.Type.Enum getXmlIndexType()
+        {
+            return xmlIndexType;
+        }
+
+        public IndexType getForXmlIndexType(org.labkey.data.xml.IndexType xmlIndexType){
+            for (IndexType indexType : IndexType.values())
+            {
+                if(indexType.getXmlIndexType().equals(xmlIndexType)){
+                    return indexType;
+                }
+            }
+            throw new EnumConstantNotPresentException(IndexType.class, xmlIndexType.toString());
+        }
     }
 
     /** Get a list of columns that specifies a unique key, may return the same result as getPKColumns()
