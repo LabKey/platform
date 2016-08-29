@@ -727,7 +727,7 @@ if (!LABKEY.DataRegions) {
                 var p = param[0];
                 if (p.indexOf(me.name + '.') === 0 && p.indexOf('~') > -1) {
                     $.each(fieldKeys, function(j, name) {
-                        if (p.indexOf(me.name + '.' + name) > -1) {
+                        if (p.indexOf(me.name + '.' + name + '~') > -1) {
                             filterPrefixes.push(p);
                         }
                     });
@@ -1953,6 +1953,8 @@ if (!LABKEY.DataRegions) {
 
     var COHORT_LABEL = '/Cohort/Label';
     var ADV_COHORT_LABEL = '/InitialCohort/Label';
+    var COHORT_ENROLLED = '/Cohort/Enrolled';
+    var ADV_COHORT_ENROLLED = '/InitialCohort/Enrolled';
 
     /**
      * DO NOT CALL DIRECTLY. This method is private and only available for removing cohort/group filters
@@ -1967,7 +1969,9 @@ if (!LABKEY.DataRegions) {
 
         var keys = [
             subjectColumn + COHORT_LABEL,
-            subjectColumn + ADV_COHORT_LABEL
+            subjectColumn + ADV_COHORT_LABEL,
+            subjectColumn + COHORT_ENROLLED,
+            subjectColumn + ADV_COHORT_ENROLLED
         ];
 
         if ($.isArray(groupNames)) {
@@ -2004,7 +2008,7 @@ if (!LABKEY.DataRegions) {
         for (i = 0; i < params.length; i++) {
             p = params[i][0];
             if (p.indexOf(this.name + '.') == 0) {
-                if (p.indexOf(COHORT_LABEL) > -1 || p.indexOf(ADV_COHORT_LABEL) > -1) {
+                if (p.indexOf(COHORT_LABEL) > -1 || p.indexOf(ADV_COHORT_LABEL) > -1 || p.indexOf(COHORT_ENROLLED) > -1 || p.indexOf(ADV_COHORT_ENROLLED)) {
                     skips.push(p);
                 }
             }
