@@ -33,7 +33,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
-import java.util.Map;
 
 /**
  * User: matthewb
@@ -44,9 +43,12 @@ import java.util.Map;
 @Deprecated  // Avoid: yes, it's a simple way to index data, but it's inefficient, inflexible, and leads to poor search results.
 public class ActionResource extends AbstractDocumentResource
 {
-    final String _docid;
-    ActionURL _url;
-    ActionURL _indexUrl;
+    final private String _docid;
+    final private ActionURL _url;
+    final private ActionURL _indexUrl;
+
+    private SimpleDocumentResource _sdr = null; // Can be set when transitioning from ActionResource to SimpleDocumentResource,
+                                                // making it easier to compare the docs created by the old and new approaches
 
     public ActionResource(String str)
     {
@@ -61,19 +63,7 @@ public class ActionResource extends AbstractDocumentResource
     }
 
 
-    public ActionResource(SearchService.SearchCategory category, String docid, ActionURL url)
-    {
-        this(category, docid, url, url.clone(), null);
-    }
-
-
     public ActionResource(SearchService.SearchCategory category, String docid, ActionURL url, ActionURL source)
-    {
-        this(category, docid, url, source, null);
-    }
-
-
-    public ActionResource(SearchService.SearchCategory category, String docid, ActionURL url, ActionURL source, @Nullable Map<String, Object> properties)
     {
         super(new Path("action",url.getLocalURIString()));
         _docid = docid;
@@ -84,8 +74,6 @@ public class ActionResource extends AbstractDocumentResource
         _indexUrl.setScheme("http");
         _indexUrl.setHost("localhost");
         _properties = new HashMap<>();
-        if (null != properties)
-            _properties.putAll(properties);
         if (null != category)
             _properties.put(SearchService.PROPERTY.categories.toString(), category.getName());
     }
@@ -188,5 +176,15 @@ public class ActionResource extends AbstractDocumentResource
     public long getContentLength() throws IOException
     {
         throw new IllegalStateException();
+    }
+
+    public @Nullable SimpleDocumentResource getSimpleDocumentResource()
+    {
+        return _sdr;
+    }
+
+    public void setSimpleDocumentResource(SimpleDocumentResource sdr)
+    {
+        _sdr = sdr;
     }
 }
