@@ -47,7 +47,7 @@ public class TruncationTest extends BaseWebDriverTest
     @Override
     protected String getProjectName()
     {
-        return "StudyDatasetsTest Project";
+        return "TruncationTest Project";
     }
 
     protected String getFolderName()
