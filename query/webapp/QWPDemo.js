@@ -14,7 +14,8 @@
             testSetPaging: testSetPaging,
             test25337: test25337,
             testPageOffset: testPageOffset,
-            testRemovableFilters: testRemovableFilters
+            testRemovableFilters: testRemovableFilters,
+            testShowAllTotalRows: testShowAllTotalRows
         };
 
         var PAGE_OFFSET = 4;
@@ -369,6 +370,34 @@
                             }
                             else {
                                 LABKEY.Utils.signalWebDriverTest("testRemovableFilters");
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function testShowAllTotalRows() {
+            new LABKEY.QueryWebPart({
+                title: 'Show All Rows',
+                schemaName: 'Samples',
+                queryName: 'sampleDataTest1',
+                renderTo: RENDERTO,
+                failure: function() {
+                    alert('Failed test: Show All Rows');
+                },
+                listeners: {
+                    render: function(dr) {
+                        if (dr.maxRows != -1) {
+                            dr.showAllRows();
+                        }
+                        else {
+                            if (!dr.totalRows)
+                            {
+                                alert('Failed test: Show All Rows. totalRows is not set correctly with Show All.');
+                            }
+                            else {
+                                LABKEY.Utils.signalWebDriverTest("testShowAllTotalRows");
                             }
                         }
                     }
