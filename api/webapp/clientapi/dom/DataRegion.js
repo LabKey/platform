@@ -722,12 +722,14 @@ if (!LABKEY.DataRegions) {
         }
 
         // support fieldKeys (e.g. ["ColumnA", "ColumnA/Sub1"])
+        // A special case of fieldKey is "SUBJECT_PREFIX/", used by participant group facet
         if (fieldKeys.length > 0) {
             $.each(_getParameters(this, this.requestURL), function(i, param) {
                 var p = param[0];
                 if (p.indexOf(me.name + '.') === 0 && p.indexOf('~') > -1) {
                     $.each(fieldKeys, function(j, name) {
-                        if (p.indexOf(me.name + '.' + name + '~') > -1) {
+                        var postfix = name && name.length && name[name.length - 1] == '/' ? '' : '~';
+                        if (p.indexOf(me.name + '.' + name + postfix) > -1) {
                             filterPrefixes.push(p);
                         }
                     });
