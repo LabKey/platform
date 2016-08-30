@@ -341,7 +341,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         setDefaultVisibleColumns(columns);
     }
 
-    @org.jetbrains.annotations.Nullable
+    @Nullable
     @Override
     public Domain getDomain()
     {
@@ -355,7 +355,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         return (AbstractIssuesListDefDomainKind)super.getDomainKind();
     }
 
-    @org.jetbrains.annotations.Nullable
+    @Nullable
     @Override
     public QueryUpdateService getUpdateService()
     {
@@ -468,14 +468,14 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         }
 
         @Override
-        public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @org.jetbrains.annotations.Nullable Map<Enum,Object> configParameters, Map<String, Object> extraScriptContext)
+        public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum,Object> configParameters, Map<String, Object> extraScriptContext)
                 throws SQLException
         {
             return _importRowsUsingETL(user, container, rows, null, getDataIteratorContext(errors, InsertOption.IMPORT, configParameters), extraScriptContext);
         }
 
         @Override
-        public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @org.jetbrains.annotations.Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws DuplicateKeyException, QueryUpdateServiceException, SQLException
+        public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws DuplicateKeyException, QueryUpdateServiceException, SQLException
         {
             List<Map<String, Object>> results = super._insertRowsUsingETL(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
             return results;
