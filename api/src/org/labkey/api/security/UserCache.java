@@ -96,6 +96,16 @@ class UserCache
     }
 
 
+    // Return a new copy of the User with this display name, or null if user doesn't exist
+    static @Nullable User getUser(String displayName)
+    {
+        User user = getUserCollections().getDisplayNameMap().get(displayName);
+
+        // these should really be readonly
+        return null != user ? user.cloneUser() : null;
+    }
+
+
     // Returns a deep copy of the active users list, allowing callers to interrogate user permissions without affecting
     // cached users. Collection is ordered by email... maybe it should be ordered by display name?
     static @NotNull Collection<User> getActiveUsers()
@@ -140,12 +150,14 @@ class UserCache
     {
         private final Map<Integer, User> _userIdMap;
         private final Map<ValidEmail, User> _emailMap;
+        private final Map<String, User> _displayNameMap;
         private final List<User> _activeUsers;
 
-        private UserCollections(Map<Integer, User> userIdMap, Map<ValidEmail, User> emailMap, List<User> activeUsers)
+        private UserCollections(Map<Integer, User> userIdMap, Map<ValidEmail, User> emailMap, Map<String, User> displayNameMap, List<User> activeUsers)
         {
             _userIdMap = Collections.unmodifiableMap(userIdMap);
             _emailMap = Collections.unmodifiableMap(emailMap);
+            _displayNameMap = displayNameMap;
             _activeUsers = Collections.unmodifiableList(activeUsers);
         }
 
@@ -154,9 +166,14 @@ class UserCache
             return _userIdMap;
         }
 
-        public Map<ValidEmail, User> getEmailMap()
+        private Map<ValidEmail, User> getEmailMap()
         {
             return _emailMap;
+        }
+
+        private Map<String, User> getDisplayNameMap()
+        {
+            return _displayNameMap;
         }
 
         private List<User> getActiveUsers()
@@ -180,14 +197,16 @@ class UserCache
 
             Map<Integer, User> userIdMap = new HashMap<>((int)(1.3 * allUsers.size()));
             Map<ValidEmail, User> emailMap = new HashMap<>((int)(1.3 * allUsers.size()));
+            Map<String, User> displayNameMap = new HashMap<>((int)(1.3 * allUsers.size()));
             List<User> activeUsers = new LinkedList<>();
 
-            // We're using the same User object in multiple lists... UserCache must clone all users it return to prevent
+            // We're using the same User object in multiple lists... UserCache must clone all users it returns to prevent
             // concurrency issues (e.g., a caller might indirectly modify a cached User's group list, leading to stale credentials)
             for (User user : allUsers)
             {
                 Integer userId = user.getUserId();
                 userIdMap.put(userId, user);
+                displayNameMap.put(user.getFriendlyName(), user);
 
                 try
                 {
@@ -204,7 +223,7 @@ class UserCache
                     activeUsers.add(user);
             }
 
-            return new UserCollections(userIdMap, emailMap, activeUsers);
+            return new UserCollections(userIdMap, emailMap, displayNameMap, activeUsers);
         }
     }
 }
