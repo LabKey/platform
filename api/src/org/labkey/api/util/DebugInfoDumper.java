@@ -212,7 +212,7 @@ public class DebugInfoDumper
     /**
      * Writes the current set of thread stacks once to the supplied logger.
      */
-    public static void dumpThreads(Logger log)
+    public static synchronized void dumpThreads(Logger log)
     {
         log.debug("*********************************************");
         log.debug("Starting thread dump");
