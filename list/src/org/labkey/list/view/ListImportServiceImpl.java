@@ -16,6 +16,7 @@
 
 package org.labkey.list.view;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListImportProgress;
@@ -24,6 +25,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainImporterServiceBase;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.domain.GWTImportException;
 import org.labkey.api.gwt.client.ui.domain.ImportStatus;
 import org.labkey.api.query.BatchValidationException;
@@ -323,4 +325,39 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
 
         return ListController.getBeginURL(c).getLocalURIString();
     }
+
+    @Override
+    @NotNull
+    public List<String> updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update)
+    {
+        Domain domain = PropertyService.get().getDomain(orig.getDomainId());
+        if (domain == null)
+            throw new IllegalArgumentException("Attempt to import data into a non-existent domain");
+
+        if (!domain.getContainer().equals(getContainer()))
+            throw new IllegalArgumentException("Attempt to import data outside of this container");
+
+        ListDefinition def = ListService.get().getList(domain);
+        if (def == null)
+            throw new IllegalArgumentException("List definition not found");
+
+        if (!ListDefinition.KeyType.AutoIncrementInteger.equals(def.getKeyType()))
+        {
+            // File should define Key if not autoIncr
+            boolean foundKeyField = false;
+            for (GWTPropertyDescriptor field : update.getFields())
+            {
+                if (field.getName().equalsIgnoreCase(def.getKeyName()))
+                {
+                    foundKeyField = true;
+                    break;
+                }
+            }
+            if (!foundKeyField)
+                return Collections.singletonList("Because key field is not an Auto-increment integer, the import file must contain the key field '" + def.getKeyName() + "'.");
+        }
+
+        return super.updateDomainDescriptor(orig, update);
+    }
+
 }
