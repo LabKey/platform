@@ -676,7 +676,8 @@ public class DataRegion extends AbstractDataRegion
         assert rs != null;
         _complete = rs.isComplete();
 
-        boolean countAggregate = getMaxRows() == Table.ALL_ROWS || (getMaxRows() > 0 && !_complete && _showPagination && _showPaginationCount);
+        boolean countAggregate = getMaxRows() > 0 && !_complete && _showPagination && _showPaginationCount;
+        countAggregate = countAggregate || (getMaxRows() == Table.ALL_ROWS && getTable() != null);
 
         if (countAggregate)
         {
