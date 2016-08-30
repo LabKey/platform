@@ -34,6 +34,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
@@ -56,11 +57,14 @@ import org.labkey.query.CustomViewUtil;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: dave
@@ -251,12 +255,27 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
             resp.put("defaultView", getDefaultViewProps((UserSchema)schema, form.getQueryName()));
 
             List<Map<String, Object>> viewInfos = new ArrayList<>();
-            String[] viewNames;
+            Set<String> viewNames = new HashSet<>();
+            // Get the default view.
+            viewNames.add(null);
             if (form.getViewName() != null && form.getViewName().length > 0)
-                viewNames = form.getViewName();
-            else
-                // Get the default view.
-                viewNames = new String[] { null };
+            {
+                QueryDefinition querydef = QueryService.get().createQueryDefForTable((UserSchema)schema, form.getQueryName());
+                boolean includeAllViews = false;
+                for (String viewName : form.getViewName())
+                {
+                    if (viewName.trim().equalsIgnoreCase("*"))
+                        includeAllViews = true;
+                }
+                if (includeAllViews && querydef != null)
+                {
+                    Map<String, CustomView> views = querydef.getCustomViews(getUser(), getViewContext().getRequest(), true, false);
+                    if (views != null)
+                        viewNames.addAll(views.keySet());
+                }
+                else
+                    viewNames = new HashSet<>(Arrays.asList(form.getViewName()));
+            }
 
             for (String viewName : viewNames)
             {
