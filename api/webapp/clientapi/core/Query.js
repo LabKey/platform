@@ -1350,7 +1350,7 @@ LABKEY.Query = new function()
          * @param {Object} config An object that contains the following configuration parameters
          * @param {String} config.schemaName The name of the schema.
          * @param {String} config.queryName The name of the query.
-         * @param {String} [config.viewName] A view name or Array of view names to include custom view details.
+         * @param {String} [config.viewName] A view name or Array of view names to include custom view details. Use '*' to include all views for the query.
          * @param {String} [config.fields] A field key or Array of field keys to include in the metadata.
          * @param {Boolean} [config.initializeMissingView] Initialize the view based on the default view iff the view doesn't yet exist.
          * @param {function} config.success The function to call when the function finishes successfully.
