@@ -195,9 +195,14 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
             def.delete(user);
     }
 
-    public static String getLookupTableName(String domainName, String lookupTemplateName)
+    public static String getLookupListName(String domainName, String lookupTemplateName)
     {
         return domainName + "-" + lookupTemplateName + "-lookup";
+    }
+
+    public String getLookupTableName(String domainName, String tableName)
+    {
+        return getLookupListName(domainName, tableName);
     }
 
     public void setDefaultValues(Container domainContainer, Domain domain) throws ExperimentException

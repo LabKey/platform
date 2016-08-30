@@ -1,88 +1,62 @@
 package org.labkey.api.issues;
 
 
-import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.security.User;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
-/**
- * Created by davebradlee on 8/3/16.
- */
 public class IssuesListDefService
 {
-    private static final Logger LOG = Logger.getLogger(IssuesListDefService.class);
-    private static final IssuesListDefService INSTANCE = new IssuesListDefService();
+    private static Service INSTANCE;
 
-    private final Map<String, IssuesListDefProvider> _issuesListDefProviders = new ConcurrentHashMap<>();
-
-    private IssuesListDefService()
-    {
-    }
-
-    public static IssuesListDefService get()
+    public static Service get()
     {
         return INSTANCE;
     }
 
-
-    public void registerIssuesListDefProvider(IssuesListDefProvider provider)
+    public static void setInstance(Service impl)
     {
-        if (!_issuesListDefProviders.containsKey(provider.getName().toLowerCase()))
-        {
-            _issuesListDefProviders.put(provider.getName().toLowerCase(), provider);
-        }
-        else
-            throw new IllegalArgumentException("IssuesListDefProvider '" + provider.getName() + "' is already registered");
+        INSTANCE = impl;
     }
 
-    public List<IssuesListDefProvider> getIssuesListDefProviders()
+    public interface Service
     {
-        return Collections.unmodifiableList(
-            _issuesListDefProviders.values()
-                                   .stream()
-                                   .sorted((o1, o2) -> (o1.getLabel().compareToIgnoreCase(o2.getLabel())))
-                                   .collect(Collectors.toList()));
-    }
+        /**
+         * Register a provider that will be used as the "Kind" for a new issue list definition creation.
+         * @param provider the provider that defines the domain for the issue list definition.
+         */
+        void registerIssuesListDefProvider(IssuesListDefProvider provider);
 
-    public List<IssuesListDefProvider> getEnabledIssuesListDefProviders(Container container)
-    {
-        return Collections.unmodifiableList(
-            _issuesListDefProviders.values()
-                                   .stream()
-                                   .filter(provider -> provider.isEnabled(container))
-                                   .sorted((o1, o2) -> (o1.getLabel().compareToIgnoreCase(o2.getLabel())))
-                                   .collect(Collectors.toList()));
-    }
+        /**
+         * Get the full set of registered issue list definition providers.
+         * @return List of IssuesListDefProvider
+         */
+        List<IssuesListDefProvider> getIssuesListDefProviders();
 
-    public IssuesListDefProvider getIssuesListDefProvider(String providerName)
-    {
-        if (providerName == null)
-            return null;
-        return _issuesListDefProviders.get(providerName.toLowerCase());
-    }
+        /**
+         * Get the set of registered issue list definition providers that are enabled based on the given container (most likely
+         * based on the set of active modules for that container).
+         * @param container the container to check for enabled providers
+         * @return
+         */
+        List<IssuesListDefProvider> getEnabledIssuesListDefProviders(Container container);
 
-    private static Interface INTERFACE_INSTANCE;
+        /**
+         * Get a registered issue list definition provider based on the provider's name.
+         * @param providerName the name to check for in the registered list of providers
+         * @return IssuesListDefProvider
+         */
+        IssuesListDefProvider getIssuesListDefProvider(String providerName);
 
-    public static Interface getInstance()
-    {
-        return INTERFACE_INSTANCE;
-    }
-
-    public static void setInstance(Interface impl)
-    {
-        INTERFACE_INSTANCE = impl;
-    }
-
-    public interface Interface
-    {
+        /**
+         * Get the Domain for a specific issue list definition based on the issue list definition name.
+         * @param issueDefName the name of the issue list definition to look for
+         * @param container the container to look in
+         * @param user the user who made the request
+         * @return Domain
+         */
         Domain getDomainFromIssueDefName(String issueDefName, Container container, User user);
 
         /**
