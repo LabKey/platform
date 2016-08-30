@@ -16,6 +16,7 @@
 
 package org.labkey.query;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractTableInfo;
@@ -30,6 +31,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -51,6 +53,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
 {
     private String _sql;
     private String _title;
+    private static final Logger log = Logger.getLogger(TableQueryDefinition.class);
 
     public TableQueryDefinition(UserSchema schema, String tableName)
     {
@@ -159,7 +162,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     {
         if (null == _queryDef.getDescription())
         {
-            TableInfo t = getTable(new ArrayList<QueryException>(), true);
+            TableInfo t = getTable(new ArrayList<>(), true);
             if (null != t)
                 _queryDef.setDescription(t.getDescription());
         }
@@ -176,7 +179,16 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     @Override
     public TableInfo createTable(@NotNull UserSchema schema, List<QueryException> errors, boolean includeMetadata, @Nullable Query query)
     {
-        return schema.getTable(getName(), includeMetadata);
+        try
+        {
+            return schema.getTable(getName(), includeMetadata);
+        }
+        catch (Exception e)
+        {
+            log.warn("Exception from UserSchema.getTable", e);
+            errors.add(new QueryParseException("Exception from UserSchema.getTable", e, 0, 0));
+            return null;
+        }
     }
 
     @Override
