@@ -307,7 +307,7 @@ public class IssuesUpgradeCode implements UpgradeCode
                         {
                             // create the lookup as a list using the preexisting domain templates
                             DomainTemplateGroup templateGroup = DomainTemplateGroup.get(domain.getContainer(), IssueDefDomainKind.ISSUE_LOOKUP_TEMPLATE_GROUP);
-                            String lookupTableName = IssueDefDomainKind.getLookupTableName(domain.getName(), colName);
+                            String lookupTableName = IssueDefDomainKind.getLookupListName(domain.getName(), colName);
                             if (templateGroup != null)
                             {
                                 String templateName = prop.getPropertyType().equals(PropertyType.STRING) ? IssueDefDomainKind.AREA_LOOKUP : IssueDefDomainKind.PRIORITY_LOOKUP;

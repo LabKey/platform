@@ -1065,6 +1065,7 @@ issues/src/org/labkey/issue/model/Issue.java -text
 issues/src/org/labkey/issue/model/IssueListDef.java -text
 issues/src/org/labkey/issue/model/IssueManager.java -text
 issues/src/org/labkey/issue/model/IssuePage.java -text
+issues/src/org/labkey/issue/model/IssuesListDefServiceImpl.java -text
 issues/src/org/labkey/issue/model/KeywordManager.java -text
 issues/src/org/labkey/issue/query/AllIssuesTable.java -text
 issues/src/org/labkey/issue/query/CommentsTable.java -text

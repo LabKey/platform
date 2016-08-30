@@ -34,8 +34,6 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.issues.IssueDetailHeaderLinkProvider;
-import org.labkey.api.issues.IssuesListDefService;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -115,7 +113,7 @@ import static org.labkey.api.search.SearchService.PROPERTY.categories;
  * Date: Mar 11, 2005
  * Time: 11:07:27 AM
  */
-public class IssueManager implements IssuesListDefService.Interface
+public class IssueManager
 {
     private static final Logger _log = Logger.getLogger(IssueManager.class);
     public static final IssueManager INSTANCE = new IssueManager();
@@ -159,34 +157,8 @@ public class IssueManager implements IssuesListDefService.Interface
     private static final String CAT_COMMENT_SORT = "issueCommentSort";
     public static final String PICK_LIST_NAME = "pickListColumns";
 
-    private List<IssueDetailHeaderLinkProvider> _headerLinkProviders = new ArrayList<>();
-
     private IssueManager()
     {
-    }
-
-    @Override
-    public Domain getDomainFromIssueDefName(String issueDefName, Container container, User user)
-    {
-        IssueListDef issueListDef = getIssueListDef(container, issueDefName);
-        if (issueListDef != null)
-        {
-            return issueListDef.getDomain(user);
-        }
-
-        return null;
-    }
-
-    @Override
-    public void registerIssueDetailHeaderLinkProvider(IssueDetailHeaderLinkProvider provider)
-    {
-        _headerLinkProviders.add(provider);
-    }
-
-    @Override
-    public List<IssueDetailHeaderLinkProvider> getIssueDetailHeaderLinkProviders()
-    {
-        return Collections.unmodifiableList(_headerLinkProviders);
     }
 
     /**

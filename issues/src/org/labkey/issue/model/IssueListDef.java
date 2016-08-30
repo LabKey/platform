@@ -254,7 +254,7 @@ public class IssueListDef extends Entity
             if (foreignKeyMap.containsKey(spec.getName()))
             {
                 PropertyStorageSpec.ForeignKey fk = foreignKeyMap.get(spec.getName());
-                Lookup lookup = new Lookup(domain.getContainer(), fk.getSchemaName(), IssueDefDomainKind.getLookupTableName(getName(), fk.getTableName()));
+                Lookup lookup = new Lookup(domain.getContainer(), fk.getSchemaName(), domainKind.getLookupTableName(getName(), fk.getTableName()));
 
                 prop.setLookup(lookup);
             }

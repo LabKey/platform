@@ -49,6 +49,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.issue.model.GeneralIssuesListDefProvider;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
+import org.labkey.issue.model.IssuesListDefServiceImpl;
 import org.labkey.issue.query.IssueDefDomainKind;
 import org.labkey.issue.query.IssuesQuerySchema;
 import org.labkey.issue.view.IssuesSummaryWebPartFactory;
@@ -87,8 +88,10 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
 
         EmailTemplateService.get().registerTemplate(IssueUpdateEmailTemplate.class);
         PropertyService.get().registerDomainKind(new IssueDefDomainKind());
+
+        IssuesListDefService.setInstance(new IssuesListDefServiceImpl());
         IssuesListDefService.get().registerIssuesListDefProvider(new GeneralIssuesListDefProvider());
-        IssuesListDefService.setInstance(IssueManager.INSTANCE);
+
         NotificationService.get().registerNotificationType(Issue.class.getName(), "Issues", "fa-bug");
     }
 

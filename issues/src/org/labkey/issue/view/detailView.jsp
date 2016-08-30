@@ -124,7 +124,7 @@
     relatedIssues.append("})");
 
     List<NavTree> additionalHeaderLinks = new ArrayList<>();
-    for (IssueDetailHeaderLinkProvider provider : IssuesListDefService.getInstance().getIssueDetailHeaderLinkProviders())
+    for (IssueDetailHeaderLinkProvider provider : IssuesListDefService.get().getIssueDetailHeaderLinkProviders())
     {
         IssueListDef issueListDef = IssueManager.getIssueListDef(issue.getIssueDefId());
         if (issueListDef != null)
