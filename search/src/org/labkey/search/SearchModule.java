@@ -21,7 +21,6 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.module.DefaultModule;
@@ -102,19 +101,6 @@ public class SearchModule extends DefaultModule
         addController("search", SearchController.class);
         addController("umls", UmlsController.class);
         LuceneSearchServiceImpl ss = new LuceneSearchServiceImpl();
-        ss.addResourceResolver("action", new AbstractSearchService.ResourceResolver()
-        {
-            public WebdavResource resolve(@NotNull String str)
-            {
-                return new ActionResource(str);
-            }
-
-            @Override
-            public HttpView getCustomSearchResult(User user, @NotNull String resourceIdentifier)
-            {
-                return null;
-            }
-        });
         ss.addResourceResolver("dav", new AbstractSearchService.ResourceResolver()
         {
             public WebdavResource resolve(@NotNull String path)
@@ -141,6 +127,9 @@ public class SearchModule extends DefaultModule
         {
             ss.addSearchCategory(UmlsController.umlsCategory);
             AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "full-text search", new ActionURL(SearchController.AdminAction.class, null));
+
+            // Note: We upgraded to Lucene 6.x in 16.2. If they release and we upgrade to 7.x before 18.3, then the ss.clear() call
+            // below may fail. If so, consider switching the clear() mechanism to wipe out the index directory of all files instead.
 
             // Update the version number below to force a clear and rebuild of the index. This is used when we change our indexing content or methodology.
             final boolean clearIndex = (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 16.13);
