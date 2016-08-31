@@ -141,6 +141,11 @@ public class SchemaXmlWriter implements Writer<List<DatasetDefinition>, ImportCo
             if (null != _def.getDescription())
                 tableXml.setDescription(_def.getDescription());
 
+            writeTableIndices(tableXml);
+        }
+
+        private void writeTableIndices(TableType tableXml)
+        {
             if(_indices.size() > 0)
             {
                 IndicesType indicesXml = tableXml.addNewIndices();
