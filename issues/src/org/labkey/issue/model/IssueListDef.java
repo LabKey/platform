@@ -247,7 +247,7 @@ public class IssueListDef extends Entity
 
             prop.setName(spec.getName());
             prop.setPropertyURI(typeUri + "#" + spec.getName());
-            prop.setRangeURI(PropertyType.getFromJdbcType(spec.getJdbcType()).getTypeUri());
+            prop.setRangeURI(spec.getTypeURI());
             prop.setScale(spec.getSize());
             prop.setRequired(!spec.isNullable());
 

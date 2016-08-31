@@ -10,11 +10,14 @@ import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.issues.AbstractIssuesListDefDomainKind;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -146,6 +149,21 @@ public class IssueDefDomainKind extends AbstractIssuesListDefDomainKind
         }
         else
             throw new BatchValidationException(new ValidationException("Unable to load the issue-lookup domain template group. The issue module may not be enabled for this folder."));
+    }
+
+    @Override
+    public List<FieldKey> getDefaultColumnNames()
+    {
+        List<FieldKey> columns = new ArrayList<>();
+        columns.add(FieldKey.fromParts("IssueId"));
+        columns.add(FieldKey.fromParts("Type"));
+        columns.add(FieldKey.fromParts("Area"));
+        columns.add(FieldKey.fromParts("Title"));
+        columns.add(FieldKey.fromParts("AssignedTo"));
+        columns.add(FieldKey.fromParts("Priority"));
+        columns.add(FieldKey.fromParts("Status"));
+        columns.add(FieldKey.fromParts("Milestone"));
+        return columns;
     }
 }
 

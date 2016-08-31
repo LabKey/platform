@@ -327,15 +327,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
     private void setDefaultColumns()
     {
         List<FieldKey> columns = new ArrayList<>();
-
-        columns.add(FieldKey.fromParts("IssueId"));
-        columns.add(FieldKey.fromParts("Type"));
-        columns.add(FieldKey.fromParts("Area"));
-        columns.add(FieldKey.fromParts("Title"));
-        columns.add(FieldKey.fromParts("AssignedTo"));
-        columns.add(FieldKey.fromParts("Priority"));
-        columns.add(FieldKey.fromParts("Status"));
-        columns.add(FieldKey.fromParts("Milestone"));
+        columns.addAll(getDomainKind().getDefaultColumnNames());
         columns.addAll(_extraDefaultColumns);
 
         setDefaultVisibleColumns(columns);
