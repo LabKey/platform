@@ -24,6 +24,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -85,6 +86,7 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
 
     public abstract Set<PropertyStorageSpec> getRequiredProperties();
     public abstract void createLookupDomains(Container domainContainer, User user, String domainName) throws BatchValidationException;
+    public abstract List<FieldKey> getDefaultColumnNames();
 
     @Override
     public Set<PropertyStorageSpec> getBaseProperties()

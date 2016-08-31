@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -120,6 +121,7 @@ public class PropertyStorageSpec
 
     String name;
     JdbcType jdbcType;
+    private String typeURI;
     boolean primaryKey = false;
     boolean nullable = true;
     boolean autoIncrement = false;
@@ -153,6 +155,11 @@ public class PropertyStorageSpec
     public PropertyStorageSpec(String name, JdbcType jdbcType)
     {
         this(name, jdbcType, DEFAULT_SIZE);
+    }
+
+    public PropertyStorageSpec(String name, JdbcType jdbcType, String typeURI)
+    {
+        this(name, jdbcType, DEFAULT_SIZE, Special.None, true, false, null, null, null, typeURI);
     }
 
     public PropertyStorageSpec(String name, JdbcType jdbcType, int size)
@@ -189,8 +196,15 @@ public class PropertyStorageSpec
     public PropertyStorageSpec(String name, JdbcType jdbcType, int size, Special specialness, boolean nullable,
                                boolean autoIncrement, Object defaultValue, String description, String alias)
     {
+        this(name, jdbcType, size, specialness, nullable, autoIncrement, defaultValue, description, alias, null);
+    }
+
+    public PropertyStorageSpec(String name, JdbcType jdbcType, int size, Special specialness, boolean nullable,
+                               boolean autoIncrement, Object defaultValue, String description, String alias, String typeURI)
+    {
         this.name = name;
         this.jdbcType = jdbcType;
+        this.typeURI = typeURI;
         this.primaryKey = (specialness == Special.PrimaryKey);
         _setSize(size, jdbcType);
         this.nullable = nullable;
@@ -224,6 +238,20 @@ public class PropertyStorageSpec
     public PropertyStorageSpec setJdbcType(JdbcType jdbcType)
     {
         this.jdbcType = jdbcType;
+        return this;
+    }
+
+    public String getTypeURI()
+    {
+        if (typeURI != null)
+            return typeURI;
+        else
+            return PropertyType.getFromJdbcType(getJdbcType()).getTypeUri();
+    }
+
+    public PropertyStorageSpec setTypeURI(String typeURI)
+    {
+        this.typeURI = typeURI;
         return this;
     }
 
