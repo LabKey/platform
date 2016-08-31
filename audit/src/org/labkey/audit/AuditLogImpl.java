@@ -26,7 +26,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.Lsid;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -35,6 +34,7 @@ import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.audit.model.LogManager;
 import org.labkey.audit.query.AuditQuerySchema;
@@ -108,14 +108,15 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
 
             if (event.getContainer() == null)
             {
-                _log.warn("container was not specified, defaulting to root container.");
+                _log.warn("container was not specified for event type " + event.getEventType() + "; defaulting to root container.");
                 Container root = ContainerManager.getRoot();
                 event.setContainer(root.getId());
             }
 
             if (user == null)
             {
-                _log.warn("user was not specified, defaulting to guest user.");
+                if (HttpView.hasCurrentView() && HttpView.currentContext() != null)
+                    _log.warn("user was not specified for event type " + event.getEventType() + " in container " + ContainerManager.getForId(event.getContainer()).getPath() + "; defaulting to guest user.");
                 user = UserManager.getGuestUser();
             }
 
