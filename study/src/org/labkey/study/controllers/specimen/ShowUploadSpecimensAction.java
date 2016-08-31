@@ -253,6 +253,10 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
                 message = e.getSQLException().getNextException().getMessage();
             errors.reject(SpringActionController.ERROR_MSG, "A database error was reported during import: " + message);
         }
+        catch (RuntimeException e)
+        {
+            errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+        }
         return !errors.hasErrors();
     }
 

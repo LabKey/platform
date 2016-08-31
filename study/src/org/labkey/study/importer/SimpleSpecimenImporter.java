@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Filter;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.data.SimpleFilter;
@@ -39,6 +40,7 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyManager;
+import org.springframework.jdbc.BadSqlGrammarException;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,8 +51,10 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: Mark Igra
@@ -267,6 +271,12 @@ public class SimpleSpecimenImporter extends SpecimenImporter
                 logger.error("Error during import", ex);
             throw ex;
         }
+        catch (BadSqlGrammarException ex)
+        {
+            if (areDuplicateLabIds(labLookup))
+                throw new RuntimeException("Error possibly caused by duplicate ExternalIds in Location tables: " + ex.getSQLException().getMessage());
+            throw new RuntimeSQLException(ex.getSQLException());
+        }
     }
 
 
@@ -402,6 +412,11 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         {
             return foreignKeyCol;
         }
+
+        public Map<String, Integer> getExistingKeyMap()
+        {
+            return existingKeyMap;
+        }
     }
 
     private static class LabLookupTable extends LookupTable
@@ -451,5 +466,16 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         }
 
         return specimenColumnMap.get(name);
+    }
+
+    private static boolean areDuplicateLabIds(LabLookupTable labLookupTable)
+    {
+        Set<Integer> labids = new HashSet<>();
+        for (Integer id : labLookupTable.getExistingKeyMap().values())
+        {
+            if (!labids.add(id))
+                return true;        // already there
+        }
+        return false;
     }
 }
