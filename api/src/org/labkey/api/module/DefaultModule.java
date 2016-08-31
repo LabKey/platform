@@ -539,12 +539,12 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return Collections.emptySet();
     }
 
-    @Override
-    @NotNull
     /**
      * Returns all non-provisioned schemas claimed by the module in {@link:getSchemaNames()}. Override if a different
      * set of schemas should be tested.
      */
+    @Override
+    @NotNull
     public Set<DbSchema> getSchemasToTest()
     {
         Set<String> schemaNames = new LinkedHashSet<>(getSchemaNames());
@@ -558,13 +558,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             result.add(schema);
         }
         return result;
-    }
-
-    @Override
-    @NotNull
-    public Collection<String> getSchemaNames()
-    {
-        return Collections.emptySet();
     }
 
     @NotNull
