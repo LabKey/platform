@@ -12,6 +12,7 @@ import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.issues.IssuesListDefProvider;
 import org.labkey.api.issues.IssuesListDefService;
@@ -23,6 +24,7 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -31,6 +33,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -134,6 +137,8 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
         {
             if (perm.equals(InsertPermission.class) || perm.equals(DeletePermission.class))
                 return _userSchema.getContainer().hasPermission(user, AdminPermission.class);
+            else if (perm.equals(ReadPermission.class))
+                return _userSchema.getContainer().hasPermission(user, ReadPermission.class);
         }
         return false;
     }
@@ -149,6 +154,26 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
         public UpdateService(IssuesListDefTable table)
         {
             super(table, table.getRealTable());
+        }
+
+        @Override
+        protected Map<String, Object> getRow(User user, Container c, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+        {
+            Integer rowId = (Integer)keys.get("rowId");
+            String name = keys.get("label") != null ? nameFromLabel((String)keys.get("label")) : (String)keys.get("name");
+
+            IssueListDef def = null;
+            if (rowId != null)
+                def = IssueManager.getIssueListDef(rowId);
+            else if (name != null)
+                def = IssueManager.getIssueListDef(c, name);
+            else
+                throw new InvalidKeyException("rowId or name required");
+
+            if (def == null)
+                return null;
+
+            return ObjectFactory.Registry.getFactory(IssueListDef.class).toMap(def, new CaseInsensitiveHashMap<>());
         }
 
         @Override
@@ -175,7 +200,7 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
 
                 def = def.save(user);
 
-                return new CaseInsensitiveHashMap((Map<String,Object>)BeanUtils.describe(def));
+                return ObjectFactory.Registry.getFactory(IssueListDef.class).toMap(def, new CaseInsensitiveHashMap<>());
             }
             catch (Exception e)
             {

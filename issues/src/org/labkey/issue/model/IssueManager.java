@@ -30,7 +30,26 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.*;
+import org.labkey.api.data.AttachmentParentEntity;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseCache;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -71,6 +90,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.webdav.AbstractDocumentResource;
@@ -1509,12 +1529,26 @@ public class IssueManager
         return null;
     }
 
+    public static void deleteIssueListDef(String name, Container c, User user) throws DomainNotFoundException
+    {
+        IssueListDef def = getIssueListDef(c, name);
+        if (def == null)
+            throw new IllegalArgumentException("Can't find IssueDef with name " + name);
+
+        _deleteIssueListDef(def, c, user);
+    }
+
     public static void deleteIssueListDef(int rowId, Container c, User user) throws DomainNotFoundException
     {
         IssueListDef def = getIssueListDef(rowId);
         if (def == null)
             throw new IllegalArgumentException("Can't find IssueDef with rowId " + rowId);
 
+        _deleteIssueListDef(def, c, user);
+    }
+
+    private static void _deleteIssueListDef(IssueListDef def, Container c, User user) throws DomainNotFoundException
+    {
         Domain d = def.getDomain(user);
         if (d == null)
             throw new IllegalArgumentException("Unable to find the domain for this IssueDef");
@@ -1523,8 +1557,8 @@ public class IssueManager
         {
             TableInfo issueDefTable = IssuesSchema.getInstance().getTableInfoIssueListDef();
 
-            deleteIssueRecords(def, c, user);
-            Table.delete(issueDefTable, rowId);
+            truncateIssueList(def, c, user);
+            Table.delete(issueDefTable, def.getRowId());
 
             // if there are no other containers referencing this domain, then it's safe to delete
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Name"), def.getName());
@@ -1540,6 +1574,19 @@ public class IssueManager
                 d.getDomainKind().deleteDomain(user, d);
             }
             transaction.commit();
+        }
+    }
+
+    public static int truncateIssueList(IssueListDef def, Container c, User user)
+    {
+        if (!c.hasPermission(user, AdminPermission.class))
+            throw new UnauthorizedException();
+
+        try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
+        {
+            int rows = deleteIssueRecords(def, c, user);
+            transaction.commit();
+            return rows;
         }
     }
 

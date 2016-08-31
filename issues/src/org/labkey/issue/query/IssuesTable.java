@@ -468,6 +468,12 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         }
 
         @Override
+        protected int truncateRows(User user, Container container) throws QueryUpdateServiceException, SQLException
+        {
+            return IssueManager.truncateIssueList(_issueDef, container, user);
+        }
+
+        @Override
         public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum,Object> configParameters, Map<String, Object> extraScriptContext)
                 throws SQLException
         {
