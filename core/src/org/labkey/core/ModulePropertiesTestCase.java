@@ -22,7 +22,7 @@ import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.module.DefaultModule;
+import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleProperty;
@@ -114,7 +114,7 @@ public class ModulePropertiesTestCase extends Assert
         ContainerManager.deleteAll(_project, _user);
     }
 
-    private class TestModule extends DefaultModule
+    private class TestModule extends CodeOnlyModule
     {
         @Override
         public void doStartup(ModuleContext c)
@@ -140,12 +140,6 @@ public class ModulePropertiesTestCase extends Assert
         protected Collection<WebPartFactory> createWebPartFactories()
         {
             return new HashSet<>();
-        }
-
-        @Override
-        public boolean hasScripts()
-        {
-            return false;
         }
     }
 }
