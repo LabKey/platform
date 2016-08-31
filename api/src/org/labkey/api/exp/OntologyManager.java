@@ -2691,6 +2691,7 @@ public class OntologyManager
         p.setMeasure(pd.isMeasure());
         p.setRecommendedVariable(pd.isRecommendedVariable());
         p.setDefaultScale(pd.getDefaultScale());
+        p.setScale(pd.getScale());
         p.setFormat(pd.getFormat());
         p.setMvEnabled(pd.isMvEnabled());
 
