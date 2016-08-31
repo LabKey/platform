@@ -2649,6 +2649,7 @@ study/test/src/org/labkey/test/tests/study/SpecimenMergeTest.java -text
 study/test/src/org/labkey/test/tests/study/SpecimenReplaceTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyCohortExportTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyDatasetImportFieldsTest.java -text
+study/test/src/org/labkey/test/tests/study/StudyDatasetIndexTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyDatasetReloadTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyDatasetsTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyDataspaceTest.java -text
