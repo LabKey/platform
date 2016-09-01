@@ -101,6 +101,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -326,10 +327,9 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
 
     private void setDefaultColumns()
     {
-        List<FieldKey> columns = new ArrayList<>();
+        Set<FieldKey> columns = new LinkedHashSet<>();
         columns.addAll(getDomainKind().getDefaultColumnNames());
         columns.addAll(_extraDefaultColumns);
-
         setDefaultVisibleColumns(columns);
     }
 

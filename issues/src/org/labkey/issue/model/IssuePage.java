@@ -428,6 +428,13 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                 ColumnInfo col = table.getColumn(FieldKey.fromParts(prop.getName()));
                 if (col != null)
                 {
+                    // Issue 27672: text area input size too big for issue insert/update page
+                    if ("textarea".equalsIgnoreCase(col.getInputType()))
+                    {
+                        col.setInputLength(40);
+                        col.setInputRows(4);
+                    }
+
                     DisplayColumn dc = col.getRenderer();
                     RenderContext renderContext = getRenderContext(context);
 
