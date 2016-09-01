@@ -208,9 +208,18 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             roots.add(ModuleLoader.getInstance().getWebappDir());
 
             // This is so '_webdav' shows up as a child when someone does a propfind on '/'
-            _root = new StaticResource(null, Path.emptyPath, roots,
-                    new SymbolicLink(WebdavResolverImpl.get().getRootPath(), WebdavResolverImpl.get()),
-                    new SymbolicLink(UserResolverImpl.get().getRootPath(), UserResolverImpl.get()));
+
+            if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_USER_FOLDERS))
+            {
+                _root = new StaticResource(null, Path.emptyPath, roots,
+                            new SymbolicLink(WebdavResolverImpl.get().getRootPath(), WebdavResolverImpl.get()),
+                            new SymbolicLink(UserResolverImpl.get().getRootPath(), UserResolverImpl.get()));
+            }
+            else
+            {
+                _root = new StaticResource(null, Path.emptyPath, roots,
+                            new SymbolicLink(WebdavResolverImpl.get().getRootPath(), WebdavResolverImpl.get()));
+            }
             initialized.set(true);
         }
     }

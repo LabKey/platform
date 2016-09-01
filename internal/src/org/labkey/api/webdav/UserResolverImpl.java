@@ -2,21 +2,25 @@ package org.labkey.api.webdav;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.security.RoleAssignment;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.util.FileUtil;
+import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.Result;
 import org.labkey.api.view.HttpView;
 
 import java.io.File;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * Created by iansigmon on 6/20/16.
@@ -167,85 +171,50 @@ public class UserResolverImpl implements WebdavResolver
             return false;
         }
 
+        User getCurrentUser()
+        {
+            return HttpView.currentContext().getUser();
+        }
 
         @NotNull
         public Collection<String> listNames()
         {
-            Set<String> set = new TreeSet<>();
-            set.addAll(getWebFoldersNames());
-            ArrayList<String> list = new ArrayList<>(set);
-            Collections.sort(list);
-            return list;
+            User user = getCurrentUser();
+            if (null == user)
+                return Collections.emptyList();
+            return Collections.singletonList(user.getEmail());
         }
 
-        public synchronized List<String> getWebFoldersNames()
+        @Override
+        public Collection<? extends WebdavResource> list()
         {
-            File fileRoot = (File)UserManager.getHomeDirectory(HttpView.getRootContext().getUser()).get();
-            Path relPath = getRootPath().relativize(getPath());
-
-            File file = new File(fileRoot, relPath.toString());
-            List<String> children = new ArrayList<>();
-
-            for (String item : file.list())
-                children.add(item);
-            return children;
+            User user = getCurrentUser();
+            WebdavResource res = find(user.getEmail());
+            return Collections.singletonList(res);
         }
-
 
         public WebdavResource find(String child)
         {
-            Path relPath = getRootPath().relativize(getPath()).append(child);
+            User user = getCurrentUser();
+            if (null == user || !child.equalsIgnoreCase(user.getName()))
+                return null;
 
-            Result r = UserManager.getHomeDirectory(HttpView.getRootContext().getUser());
-            if (!r.success())
-                return new WebdavResolverImpl.UnboundResource(relPath);
-            File fileRoot = (File)r.get();
+            Result<File> r = UserManager.getHomeDirectory(user);
+            if (!r.success() || !r.get().isDirectory())
+                return null;
+            File fileRoot = r.get();
+            SecurityPolicy p = new SecurityPolicy
+            (
+                user.getEntityId(),
+                User.class.getName(),
+                ContainerManager.getRoot().getId(),
+                Arrays.asList(new RoleAssignment(user.getEntityId(), user, RoleManager.getRole(EditorRole.class))),
+                new Date()
+            );
 
-            for(String myChild:getWebFoldersNames())
-            {
-                if(myChild.equalsIgnoreCase(child))
-                {
-
-                    File file = new File(fileRoot, relPath.toString());
-                    if(file.isDirectory())
-                        return new UsersCollectionResource(getRootPath().append(relPath), getResolver());
-                    else if (file.isFile() && file.exists())
-                        return new UsersFileResource(this, child, file);
-                    else break;
-                }
-            }
-
-            return new WebdavResolverImpl.UnboundResource(relPath);
+            return new FileSystemResource(this, user.getName(), fileRoot, p, false);
         }
 
-
-        public class UsersFileResource extends FileSystemResource
-        {
-            protected UsersFileResource(Path item)
-            {
-                super(item);
-            }
-
-            protected UsersFileResource(Path folder, String name)
-            {
-                super(folder, name);
-            }
-
-            public UsersFileResource(WebdavResource folder, String name, File file)
-            {
-                super(folder.getPath(), name);
-                _folder = folder;
-                _name = name;
-                _files = Collections.singletonList(new FileInfo(FileUtil.getAbsoluteCaseSensitiveFile(file)));
-            }
-
-            @Override
-            public Set<Class<? extends Permission>> getPermissions(User user)
-            {
-                return Collections.emptySet();
-            }
-
-        }
 
         @Override
         public Set<Class<? extends Permission>> getPermissions(User user)

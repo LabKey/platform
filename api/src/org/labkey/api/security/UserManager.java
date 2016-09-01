@@ -333,7 +333,7 @@ public class UserManager
         return (null != user);
     }
 
-    public static Result getHomeDirectory(User user)
+    public static Result<File> getHomeDirectory(User user)
     {
         if (!AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_USER_FOLDERS))
             return Result.failure("User Folders are not enabled.");
