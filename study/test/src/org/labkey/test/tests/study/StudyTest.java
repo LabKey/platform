@@ -173,8 +173,7 @@ public class StudyTest extends StudyBaseTest
         waitAndClickAndWait(Locator.linkWithText("Quality Control Report"));
         waitAndClickAndWait(Locator.linkWithText("View Data"));
         // Add a new row to the dataset
-        DataRegionTable.findDataRegion(this).clickHeaderMenu("Insert", "Insert New Row");
-        setFormElement(Locator.name("quf_MouseId"), "888208905");
+        DataRegionTable.findDataRegion(this).clickInsertNewRowDropdown();        setFormElement(Locator.name("quf_MouseId"), "888208905");
         setFormElement(Locator.name("quf_SequenceNum"), "1");
         setFormElement(Locator.name("quf_QCREP_ID"), "42");
         waitAndClickAndWait(Locator.linkWithText("Submit"));
@@ -631,7 +630,7 @@ public class StudyTest extends StudyBaseTest
         assertTextPresent("unknown QC", "1234_B");
 
         // Issue 21234: Dataset import no longer merges rows during import
-        DataRegionTable.findDataRegion(this).clickHeaderMenu("Insert", "Import Bulk Data");
+        DataRegionTable.findDataRegion(this).clickImportBulkDataDropdown();
         _tsv = "mouseid\tsequencenum\tvisitdate\tSampleId\tDateField\tNumberField\tTextField\treplace\n" +
                 "999321234\t1\t1/1/2006\t1234_A\t2/1/2006\t5000\tnew text\tTRUE\n" +
                 "999321234\t1\t1/1/2006\t1234_B\t2/1/2006\t5000\tnew text\tTRUE\n";
@@ -697,7 +696,7 @@ public class StudyTest extends StudyBaseTest
         clickFolder(STUDY_NAME);
         clickAndWait(Locator.linkWithText("Alt ID mapping"));
         waitForElement(Locator.tagContainingText("div", "Contains up to one row of Alt ID mapping data for each "));
-        DataRegionTable.findDataRegion(this).clickHeaderMenu("Insert", "Import Bulk Data");
+        DataRegionTable.findDataRegion(this).clickImportBulkDataDropdown();
         waitForElement(Locator.tagWithText("div", "This is the Alias Dataset. You do not need to include information for the date column."));
 
         //the crawler should be paused (this is done in create) to verify
@@ -799,8 +798,7 @@ public class StudyTest extends StudyBaseTest
         _extHelper.clickMenuButton("Comments and QC", "Manage Mouse Comments");
 
         int datasetAuditEventCount = getDatasetAuditEventCount(); //inserting a new event should increase this by 1;
-        DataRegionTable.findDataRegion(this).clickHeaderMenu("Insert", "Insert New Row");
-        setFormElement(Locator.name("quf_MouseId"), "999320812");
+        DataRegionTable.findDataRegion(this).clickInsertNewRowDropdown();        setFormElement(Locator.name("quf_MouseId"), "999320812");
         setFormElement(Locator.name("quf_" + COMMENT_FIELD_NAME), "Mouse Comment");
         clickButton("Submit");
         //Issue 14894: Datasets no longer audit row insertion

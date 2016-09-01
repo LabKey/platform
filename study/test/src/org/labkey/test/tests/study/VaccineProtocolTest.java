@@ -169,8 +169,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
         clickButton("Done");
 
         clickAndWait(Locator.linkWithText(LIST_NAME));
-        DataRegionTable.findDataRegion(this).clickHeaderMenu("Insert", "Insert New Row");
-        setFormElement(Locator.name("quf_Key"), "1");
+        DataRegionTable.findDataRegion(this).clickInsertNewRowDropdown();        setFormElement(Locator.name("quf_Key"), "1");
         setFormElement(Locator.name("quf_Value"), "One");
         submit();
 
@@ -226,7 +225,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
         clickButton("Save");
         waitForElement(Locator.lkButton("View Data"), WAIT_FOR_JAVASCRIPT);
         clickButton("View Data");
-        DataRegionTable.findDataRegion(this).clickHeaderMenu("Insert", "Import Bulk Data");
+        DataRegionTable.findDataRegion(this).clickImportBulkDataDropdown();
         _listHelper.submitTsvData("participantid\tDate\tValue\treplace\nP1\t2/1/2007\tHello\nPnew\t11/17/2007\tGoodbye");
 
         _customizeViewsHelper.openCustomizeViewPanel();
@@ -246,7 +245,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
         assertTextPresent("Day 16");
         clickAndWait(Locator.linkWithText(STUDY_FOLDER + " Study"));
         clickAndWait(Locator.linkWithText("Subjects"));
-        DataRegionTable.findDataRegion(this).clickHeaderMenu("Insert", "Import Bulk Data");
+        DataRegionTable.findDataRegion(this).clickImportBulkDataDropdown();
         _listHelper.submitTsvData("participantid\tDate\tCohort\tStartDate\nPnew\t11/7/2007\tPlacebo\t11/7/2007");
         clickAndWait(Locator.linkWithText(STUDY_FOLDER + " Study"));
         clickAndWait(Locator.linkWithText("Study Navigator"));
@@ -377,8 +376,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
 
     private void insertLookupRecord(String name, String label)
     {
-        DataRegionTable.findDataRegion(this).clickHeaderMenu("Insert", "Insert New Row");
-        if (name != null) setFormElement(Locator.name("quf_Name"), name);
+        DataRegionTable.findDataRegion(this).clickInsertNewRowDropdown();        if (name != null) setFormElement(Locator.name("quf_Name"), name);
         if (label != null) setFormElement(Locator.name("quf_Label"), label);
         clickButton("Submit");
     }

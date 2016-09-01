@@ -18,6 +18,7 @@ package org.labkey.test.pages.studydesigncontroller;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
+import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
@@ -42,7 +43,7 @@ public class ManageTreatmentsTester
     public void insertNewTreatment(@LoggedParam String label, String description, TreatmentComponent... components)
     {
         Locator.XPathLocator treatmentsGrid = Locator.id("treatments-grid");
-        Locator.XPathLocator insertNewTreatmentButton = treatmentsGrid.append(Ext4Helper.Locators.ext4Button("Insert New"));
+        Locator.XPathLocator insertNewTreatmentButton = treatmentsGrid.append(Ext4Helper.Locators.ext4Button(DataRegionTable.getInsertNewButtonText()));
 
         _test.click(insertNewTreatmentButton);
         _test.waitForElement(Ext4Helper.Locators.window("Insert Treatment"));
@@ -66,7 +67,7 @@ public class ManageTreatmentsTester
     public void insertNewCohort(@LoggedParam String label, @Nullable Integer count, TreatmentVisit... treatmentVisits)
     {
         Locator.XPathLocator treatmentScheduleGrid = Locator.id("treatment-schedule-grid");
-        Locator.XPathLocator insertNewCohortButton = treatmentScheduleGrid.append(Ext4Helper.Locators.ext4Button("Insert New"));
+        Locator.XPathLocator insertNewCohortButton = treatmentScheduleGrid.append(Ext4Helper.Locators.ext4Button(DataRegionTable.getInsertNewButtonText()));
 
         _test.click(insertNewCohortButton);
         _test._extHelper.waitForExtDialog("Insert Cohort");

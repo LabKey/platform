@@ -262,7 +262,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         beginAt(WebTestHelper.buildURL("study", getProjectName() + "/" + STUDY2, "dataset", Maps.of("datasetId", SHARED_DEMOGRAPHICS_ID)));
         assertElementNotPresent(Locator.linkWithText(insertedPtid));
 
-        _extHelper.clickMenuButton("Insert", "Insert New Row");
+        _extHelper.clickInsertNewRow();
         new DatasetInsertPage(this, SHARED_DEMOGRAPHICS).insert(Maps.of("PandaId", insertedPtid));
 
         beginAt(WebTestHelper.buildURL("study", getProjectName() + "/" + STUDY2, "dataset", Maps.of("datasetId", STUDY2_DATASET_ID)));
@@ -364,7 +364,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         beginAt(WebTestHelper.buildURL("study", getProjectName() + "/" + STUDY2, "dataset", Maps.of("datasetId", SHARED_DEMOGRAPHICS_ID)));
         assertElementNotPresent(Locator.linkWithText(overlappingParticipant));
 
-        _extHelper.clickMenuButton("Insert", "Insert New Row");
+        _extHelper.clickInsertNewRow();
         new DatasetInsertPage(this, SHARED_DEMOGRAPHICS).insert(Maps.of("PandaId", overlappingParticipant));
 
         assertElementPresent(Locators.labkeyError.containing("Duplicate: Panda = " + overlappingParticipant));

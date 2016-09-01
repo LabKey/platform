@@ -21,6 +21,7 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyA;
 import org.labkey.test.tests.StudyBaseTest;
+import org.labkey.test.util.DataRegionTable;
 
 @Category({DailyA.class})
 public class StudySecurityTest extends StudyBaseTest
@@ -187,7 +188,7 @@ public class StudySecurityTest extends StudyBaseTest
             assertTextPresent(dsName);
             assertElementPresent(Locator.linkWithText("edit"));
             _extHelper.clickMenuButton(false, "Insert");
-            assertTextPresent("Insert New Row", "Import Bulk Data");
+            assertTextPresent(DataRegionTable.getInsertNewButtonText(), DataRegionTable.getImportBulkDataText());
             _extHelper.clickMenuButton(false, "Insert");
             clickFolder(getFolderName());
         }

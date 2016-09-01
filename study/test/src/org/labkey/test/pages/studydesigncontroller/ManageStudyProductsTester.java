@@ -17,6 +17,7 @@ package org.labkey.test.pages.studydesigncontroller;
 
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
+import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
@@ -39,7 +40,7 @@ public class ManageStudyProductsTester
     public void insertNewImmunogen(@LoggedParam String label, String type)
     {
         Locator.XPathLocator immunogensGrid = Locator.id("immunogens-grid");
-        Locator.XPathLocator insertNewImmunogenButton = immunogensGrid.append(Ext4Helper.Locators.ext4Button("Insert New"));
+        Locator.XPathLocator insertNewImmunogenButton = immunogensGrid.append(Ext4Helper.Locators.ext4Button(DataRegionTable.getInsertNewButtonText()));
 
         _test.click(insertNewImmunogenButton);
         _test.waitForElement(Ext4Helper.Locators.window("Insert Immunogen"));
@@ -61,7 +62,7 @@ public class ManageStudyProductsTester
     {
         if (genBankId != null || sequence != null)
             throw new IllegalArgumentException("genBankId and sequence are not yet supported");
-        _test.click(Ext4Helper.Locators.window("Edit HIV Antigens for " + immunogen).append(Ext4Helper.Locators.ext4Button("Insert New")));
+        _test.click(Ext4Helper.Locators.window("Edit HIV Antigens for " + immunogen).append(Ext4Helper.Locators.ext4Button(DataRegionTable.getInsertNewButtonText())));
         if (gene != null) _test._ext4Helper.selectComboBoxItem(Locators.antigenComboBox("Gene"), Ext4Helper.TextMatchTechnique.CONTAINS, gene);
         if (subType != null) _test._ext4Helper.selectComboBoxItem(Locators.antigenComboBox("SubType"), Ext4Helper.TextMatchTechnique.CONTAINS, subType);
         _test.click(Ext4Helper.Locators.ext4Button("Update"));
@@ -77,7 +78,7 @@ public class ManageStudyProductsTester
     public void insertNewAdjuvant(@LoggedParam String label)
     {
         Locator.XPathLocator adjuvantGrid = Locator.id("adjuvants-grid");
-        Locator.XPathLocator insertNewAdjuvantButton = adjuvantGrid.append(Ext4Helper.Locators.ext4Button("Insert New"));
+        Locator.XPathLocator insertNewAdjuvantButton = adjuvantGrid.append(Ext4Helper.Locators.ext4Button(DataRegionTable.getInsertNewButtonText()));
 
         Locator.XPathLocator insertAdjuvantWindow = Ext4Helper.Locators.window("Insert Adjuvant");
 
