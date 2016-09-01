@@ -35,6 +35,7 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="org.apache.commons.lang3.math.NumberUtils" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -68,7 +69,13 @@
 
     for (String issueId : issueIds )
     {
-        Issue issue = IssueManager.getIssue(getContainer(), getUser(), Integer.parseInt(issueId));
+        Issue issue = null;
+        if (NumberUtils.isNumber(issueId))
+            issue = IssueManager.getIssue(getContainer(), getUser(), Integer.parseInt(issueId));
+
+        if (issue == null)
+            continue;;
+
         boolean hasReadPermission = ContainerManager.getForId(issue.getContainerId()).hasPermission(getUser(), ReadPermission.class);
 
         if (!hasReadPermission)

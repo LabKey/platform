@@ -3,11 +3,21 @@ package org.labkey.issue.actions;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.NamedObjectList;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.issues.IssuesSchema;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.issue.CustomColumnConfiguration;
@@ -67,7 +77,7 @@ public class ChangeSummary
         return _summary;
     }
 
-    static public ChangeSummary createChangeSummary(IssueListDef issueListDef, Issue issue, Issue previous, @Nullable Issue duplicateOf,
+    static public ChangeSummary createChangeSummary(ViewContext context, IssueListDef issueListDef, Issue issue, Issue previous, @Nullable Issue duplicateOf,
                                                     Container container,
                                                     User user,
                                                     Class<? extends Controller> action,
@@ -121,16 +131,40 @@ public class ChangeSummary
             _appendChange(sbHTMLChanges, sbTextChanges, "Related", StringUtils.join(previous.getRelatedIssues(), ", "), StringUtils.join(issue.getRelatedIssues(), ", "), ccc, newIssue);
 
             Map<String, Object> oldProps = previous.getProperties();
-            for (Map.Entry<String, Object> entry : issue.getProperties().entrySet())
+            UserSchema schema = QueryService.get().getUserSchema(user, container, IssuesSchema.SCHEMA_NAME);
+            TableInfo table = schema.getTable(issueListDef.getName());
+            if (table != null)
             {
-                if (!_standardFields.contains(entry.getKey()))
-                {
-                    Object oldValue = oldProps.get(entry.getKey());
+                RenderContext ctx = new RenderContext(context);
+                ctx.setMode(DataRegion.MODE_DETAILS);
 
-                    _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, entry.getKey(),
-                            oldValue != null ? String.valueOf(oldValue) : "",
-                            entry.getValue() != null ? String.valueOf(entry.getValue()) : "",
-                            ccc, newIssue);
+                for (Map.Entry<String, Object> entry : issue.getProperties().entrySet())
+                {
+                    if (!_standardFields.contains(entry.getKey()))
+                    {
+                        Object oldValue = oldProps.get(entry.getKey());
+                        Object newValue = entry.getValue();
+
+                        ColumnInfo col = table.getColumn(FieldKey.fromParts(entry.getKey()));
+                        if (col != null && col.getFk() != null)
+                        {
+                            // if the column is a lookup, render the display column name versus the key : issue 27525
+                            NamedObjectList nol = col.getFk().getSelectList(ctx);
+                            if (nol != null)
+                            {
+                                Object ov = nol.get(String.valueOf(oldValue));
+                                Object nv = nol.get(String.valueOf(newValue));
+
+                                oldValue = ov != null ? ov : oldValue;
+                                newValue = nv != null ? nv : newValue;
+                            }
+                        }
+
+                        _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, entry.getKey(),
+                                oldValue != null ? String.valueOf(oldValue) : "",
+                                newValue != null ? String.valueOf(newValue) : "",
+                                ccc, newIssue);
+                    }
                 }
             }
             sbHTMLChanges.append("</table>\n");

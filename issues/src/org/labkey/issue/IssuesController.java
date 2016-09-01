@@ -752,7 +752,7 @@ public class IssuesController extends SpringActionController
                 // convert from email addresses & display names to userids before we hit the database
                 issue.parseNotifyList(issue.getNotifyList());
 
-                changeSummary = ChangeSummary.createChangeSummary(getIssueListDef(), issue, prevIssue, duplicateOf, getContainer(), user, form.getAction(), form.getComment(), getColumnConfiguration(), getUser());
+                changeSummary = ChangeSummary.createChangeSummary(getViewContext(), getIssueListDef(), issue, prevIssue, duplicateOf, getContainer(), user, form.getAction(), form.getComment(), getColumnConfiguration(), getUser());
                 IssueManager.saveIssue(user, c, issue);
                 detailsUrl = new DetailsAction(issue, getViewContext()).getURL();
                 AttachmentService.get().addAttachments(changeSummary.getComment(), getAttachmentFileList(), user);
