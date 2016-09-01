@@ -275,7 +275,7 @@ public class QueryWebPart extends VBox
                     QueryView queryView = createQueryView();
                     view = queryView;
                 }
-                catch (RuntimeSQLException | IllegalArgumentException | ConversionException x)
+                catch (RuntimeException x)
                 {
                     view = new HtmlView("<span class=error>" + PageFlowUtil.filter(x.getMessage()) + "</span>");
                 }
