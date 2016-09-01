@@ -248,7 +248,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         addOutputDatas(context, inputDatas, outputDatas, resolverType);
 
         DbScope scope = ExperimentService.get().getSchema().getScope();
-        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        try (DbScope.Transaction transaction = scope.ensureTransaction(ExperimentService.get().getProtocolImportLock()))
         {
             boolean saveBatchProps = forceSaveBatchProps;
 
