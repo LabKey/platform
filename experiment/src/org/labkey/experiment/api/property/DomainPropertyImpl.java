@@ -44,6 +44,7 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpressionFactory;
 
 import java.util.ArrayList;
@@ -611,7 +612,7 @@ public class DomainPropertyImpl implements DomainProperty
 
                 if (propResized)
                 {
-                    StorageProvisioner.resizeProperties(this.getDomain(), this);
+                    StorageProvisioner.resizeProperties(this.getDomain(), Pair.of(this, _pdOld.getScale()));
                 }
 
                 // Drop the MV column after it's been renamed to be in sync with any potential column name

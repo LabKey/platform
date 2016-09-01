@@ -1059,14 +1059,16 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         List<String> statements = new ArrayList<>();
 
         statements.addAll(getDropIndexStatements(change));
+
         //Generate the alter table portion of statement
-        String alterTableSegment = String.format("ALTER TABLE %s",
-                makeTableIdentifier(change)
-        );
+        String alterTableSegment = String.format("ALTER TABLE %s", makeTableIdentifier(change));
 
         //Don't use getSqlColumnSpec as constraints must be dropped and re-applied (exception for NOT NULL)
-        for (PropertyStorageSpec column : change.getColumns())
+        for (Map.Entry<String, Integer> entry : change.getColumnResizes().entrySet())
         {
+            final String name = entry.getKey();
+            PropertyStorageSpec column = change.getColumns().stream().filter(col -> name.equals(col.getName())).findFirst().orElseThrow(IllegalStateException::new);
+
             //T-SQL will throw an error for nvarchar sizes >4000
             //Use the common default max size to make type change to nvarchar(max)/text consistent
             String size = column.getSize() == -1 || column.getSize() > SqlDialect.MAX_VARCHAR_SIZE ?
@@ -1233,12 +1235,17 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         }
     }
 
-    // Returns the column storage size in bytes
-    // https://technet.microsoft.com/en-us/library/ms187752.aspx
     private int columnStorageSize(PropertyStorageSpec spec)
     {
+        return columnStorageSize(spec, null);
+    }
+
+    // Returns the column storage size in bytes
+    // https://technet.microsoft.com/en-us/library/ms187752.aspx
+    private int columnStorageSize(PropertyStorageSpec spec, @Nullable Integer oldScale)
+    {
         JdbcType jdbcType = spec.getJdbcType();
-        Integer size = spec.getSize();
+        Integer size = oldScale != null ? oldScale : spec.getSize();
         switch (jdbcType)
         {
             case BIGINT:
@@ -1337,7 +1344,11 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         {
             // If the set of columns is larger than 900 bytes, creating an index will succeed, but fail when trying to insert
             List<PropertyStorageSpec> specs = change.toSpecs(Arrays.asList(index.columnNames));
-            int bytes = specs.stream().collect(Collectors.summingInt(this::columnStorageSize));
+            int bytes = specs.stream().collect(Collectors.summingInt(spec -> {
+                // Use the old scale if we're in the process of resizing the column
+                Integer oldScale = change.getColumnResizes().get(spec.getName());
+                return columnStorageSize(spec, oldScale);
+            }));
 
             String nameIndex = nameIndex(change.getTableName(), index.columnNames, false);
             String nameIndexLegacy = nameIndex(change.getTableName(), index.columnNames, true);
