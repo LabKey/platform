@@ -187,7 +187,7 @@ public class StudySecurityTest extends StudyBaseTest
             assertTextPresent(dsName);
             assertElementPresent(Locator.linkWithText("edit"));
             _extHelper.clickMenuButton(false, "Insert");
-            assertTextPresent("Insert New", "Import Data");
+            assertTextPresent("Insert New Row", "Import Bulk Data");
             _extHelper.clickMenuButton(false, "Insert");
             clickFolder(getFolderName());
         }

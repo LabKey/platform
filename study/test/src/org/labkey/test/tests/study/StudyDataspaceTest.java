@@ -97,7 +97,7 @@ public class StudyDataspaceTest extends StudyBaseTest
         assertElementNotPresent(Locator.lkButton("Reload Study"));
         goToModule("Query");
         viewQueryData("study", "Product");
-        assertTextPresent("Insert New", "Import Data");     // Can insert into Product table in project
+        assertTextPresent("Insert New Row", "Import Bulk Data");     // Can insert into Product table in project
 
         // Import first study
         log("Import first study and verify");
@@ -245,11 +245,7 @@ public class StudyDataspaceTest extends StudyBaseTest
 
         assertEquals("Wrong Visit Tag Map Rows in study folder", expectedRows, actualRows);
 
-//        buttons = visitTagMaps.getHeaderButtons();
-//        Assert.assertTrue("Should be able to 'Insert New' into VisitTagMap from dataspace study", getTexts(buttons).contains("INSERT NEW"));
-        _extHelper.clickMenuButton("Insert");
-        assertTextPresent("Insert New", 1);
-        _extHelper.clickMenuButton("Insert");
+        visitTagMaps.openHeaderMenu("Insert", "Insert New Row");
 
         clickTab("Overview");
         _portalHelper.removeWebPart("VisitTagMap");
