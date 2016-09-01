@@ -27,10 +27,29 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Constraint;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseTableType;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.SchemaTableOptions;
 import org.labkey.api.data.DbScope.Transaction;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MVDisplayColumnFactory;
+import org.labkey.api.data.Parameter;
+import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SchemaTableInfo;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableChange.ChangeType;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.data.VirtualTable;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
@@ -422,15 +441,15 @@ public class StorageProvisioner
     /**
      * Generate and execute the appropriate SQL statements to resize properties
      * @param domain to execute within
-     * @param properties set of properties to resize
+     * @param properties set of properties to resize along with the old scale
      */
-    public static void resizeProperties(Domain domain, DomainProperty... properties) throws ChangePropertyDescriptorException
+    public static void resizeProperties(Domain domain, Pair<DomainProperty, Integer>... properties) throws ChangePropertyDescriptorException
     {
         DomainKind kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
 
         // should be in a transaction with propertydescriptor changes
-        if(!scope.isTransactionActive())
+        if (!scope.isTransactionActive())
             throw new ChangePropertyDescriptorException("Unable to change property size. Transaction is not active within change scope");
 
         TableChange resizePropChange = new TableChange(domain, ChangeType.ResizeColumns);
@@ -439,13 +458,14 @@ public class StorageProvisioner
         kind.getBaseProperties().forEach(s ->
                 base.add(s.getName()));
 
-        for (DomainProperty prop : properties)
+        for (Pair<DomainProperty, Integer> pair : properties)
         {
+            DomainProperty prop = pair.first;
             if (!base.contains(prop.getName()))
-                resizePropChange.addColumn(prop.getPropertyDescriptor());
+                resizePropChange.addColumnResize(prop.getPropertyDescriptor(), pair.second);
         }
 
-        if (resizePropChange.getColumns().isEmpty())
+        if (resizePropChange.getColumnResizes().isEmpty())
         {
             // Nothing to do, so don't try to run an ALTER TABLE that doesn't actually do anything
             return;

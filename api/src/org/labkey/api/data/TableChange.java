@@ -21,6 +21,7 @@ import org.labkey.api.data.PropertyStorageSpec.Index;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.util.Pair;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -48,6 +49,7 @@ public class TableChange
     private final String _tableName;
     private final Collection<PropertyStorageSpec> _columns = new LinkedHashSet<>();
     private final Map<String, String> _columnRenames = new LinkedHashMap<>();
+    private final Map<String, Integer> _columnResizes = new LinkedHashMap<>();
     private final Map<Index, Index> _indexRenames = new LinkedHashMap<>();
     private final Domain _domain;
 
@@ -92,16 +94,52 @@ public class TableChange
                     columnIndexMap.get(columnName).add(index);
                 }
             }
-            for (PropertyStorageSpec spec : getColumns())
+
+            // Get any custom indices added to the domain -- these aren't saved anywhere except in the database
+            DbSchema schema = DbSchema.get(_schemaName);
+            if (schema != null)
             {
-                if (columnIndexMap.containsKey(spec.getName()))
+                TableInfo storageTableInfo = schema.getTable(_domain.getStorageTableName());
+                if (storageTableInfo != null)
                 {
-                    changedIndexColumns.addAll(columnIndexMap.get(spec.getName()));
+                    for (Pair<TableInfo.IndexType, List<ColumnInfo>> index : storageTableInfo.getAllIndices().values())
+                    {
+                        List<String> columnNames = index.getValue().stream().map(ColumnInfo::getName).collect(Collectors.toList());
+
+                        // CONSIDER: Move this re-classification of the non-unique index as a unique index into SchemaColumnMetaData.loadUniqueIndices()
+                        // SQLServer creates a non-unique index for single large text columns with a "_hashed_" prefix.
+                        // The uniqueness is enforced by a database trigger.
+                        boolean unique = index.first == TableInfo.IndexType.Unique ||
+                                (schema.getSqlDialect().isSqlServer() && columnNames.size() == 1 && columnNames.get(0).startsWith("_hashed_"));
+
+                        // remove the _hashed_ column prefix for SQLServer
+                        if (schema.getSqlDialect().isSqlServer() && unique)
+                            columnNames = columnNames.stream().map(s -> s.startsWith("_hashed_") ? s.substring("_hashed_".length()) : s).collect(Collectors.toList());
+
+                        Index idx = new Index(unique, columnNames);
+
+                        for (String columnName : columnNames)
+                        {
+                            if (!columnIndexMap.containsKey(columnName))
+                                columnIndexMap.put(columnName, new ArrayList<>());
+
+                            columnIndexMap.get(columnName).add(idx);
+                        }
+                    }
                 }
             }
+
+            for (String name : getColumnResizes().keySet())
+            {
+                if (columnIndexMap.containsKey(name))
+                {
+                    changedIndexColumns.addAll(columnIndexMap.get(name));
+                }
+            }
+
             getIndexedColumns().addAll(changedIndexColumns);
         }
-        // TODO consider indices created from domain as well(domain does not persist property indices after creating currently, so they are not available during resizing)
+
         try
         {
             for (String sql : scope.getSqlDialect().getChangeStatements(this))
@@ -156,6 +194,13 @@ public class TableChange
         addColumn(new PropertyStorageSpec(prop));
     }
 
+    /** Add the property to the set of columns tracked in this change along with it's old scale. */
+    public void addColumnResize(PropertyDescriptor prop, Integer oldScale)
+    {
+        addColumn(prop);
+        _columnResizes.put(prop.getName(), oldScale);
+    }
+
     public void addColumnRename(String oldName, String newName)
     {
         _columnRenames.put(oldName, newName);
@@ -184,11 +229,21 @@ public class TableChange
     }
 
     /**
+     * Map of existing columns to previous column size.  The new column scale is
+     * found the the column map.
+     * @return map where key = existing column name, value = old column scale
+     */
+    public Map<String, Integer> getColumnResizes()
+    {
+        return Collections.unmodifiableMap(_columnResizes);
+    }
+
+    /**
      * @return  map where key = old column name, value = new column name
      */
     public Map<String, String> getColumnRenames()
     {
-        return _columnRenames;
+        return Collections.unmodifiableMap(_columnRenames);
     }
 
     /**
@@ -196,7 +251,7 @@ public class TableChange
      */
     public Map<Index, Index> getIndexRenames()
     {
-        return _indexRenames;
+        return Collections.unmodifiableMap(_indexRenames);
     }
 
     public Collection<Index> getIndexedColumns()
