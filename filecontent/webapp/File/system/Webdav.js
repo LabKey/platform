@@ -34,8 +34,15 @@
             // or even two instances on the same page
             this.pageId = LABKEY.Utils.generateUUID();
 
-            // '/labkey/_webdav'
-            this.contextUrl = LABKEY.contextPath + '/_webdav';
+            // this is the webdav "extended context path", e.g. the root of the webdav file tree
+            // usually one of /labkey/_webdav, /labkey/_users, /_webdav, /_users
+            if (!this.contextUrl)
+            {
+                if (this.rootPath.indexOf(LABKEY.contextPath + "/_webdav/") == 0)
+                    this.contextUrl = LABKEY.contextPath + "/_webdav";
+                else if (this.rootPath.indexOf(LABKEY.contextPath + "/_users/") == 0)
+                    this.contextUrl = LABKEY.contextPath + "/_users";
+            }
 
             // '/home/@files' -- a stripped version of the rootPath
             this.baseUrl = LABKEY.ActionURL.decodePath(this.rootPath.replace(this.contextUrl, ''));
@@ -44,9 +51,9 @@
 
             if (this.rootOffset)
             {
-                if (this.rootOffset.indexOf('/_webdav') == 0)
+                if (this.rootOffset.indexOf(this.contextUrl) == 0)
                 {
-                    this.rootOffset = this.rootOffset.replace('/_webdav', '');
+                    this.rootOffset = this.rootOffset.substring(this.contextUrl.length);
                 }
                 this.offsetUrl = LABKEY.ActionURL.decodePath(this.rootOffset.replace(this.baseUrl, ''));
             }
