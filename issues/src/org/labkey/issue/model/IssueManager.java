@@ -834,29 +834,34 @@ public class IssueManager
     }
 
 
-    public static int getUserEmailPreferences(Container c, int userId)
+    public static int getUserEmailPreferences(Container c, Integer userId)
     {
-        Integer[] emailPreference;
-
-        //if the user is inactive, don't send email
-        User user = UserManager.getUser(userId);
-        if(null != user && !user.isActive())
-            return 0;
-
-        emailPreference = new SqlSelector(
-                _issuesSchema.getSchema(),
-                "SELECT EmailOption FROM " + _issuesSchema.getTableInfoEmailPrefs() + " WHERE Container=? AND UserId=?",
-                c, userId).getArray(Integer.class);
-
-        if (emailPreference.length == 0)
+        if (userId != null)
         {
-            if (userId == UserManager.getGuestUser().getUserId())
+            Integer[] emailPreference;
+
+            //if the user is inactive, don't send email
+            User user = UserManager.getUser(userId);
+            if (null != user && !user.isActive())
+                return 0;
+
+            emailPreference = new SqlSelector(
+                    _issuesSchema.getSchema(),
+                    "SELECT EmailOption FROM " + _issuesSchema.getTableInfoEmailPrefs() + " WHERE Container=? AND UserId=?",
+                    c, userId).getArray(Integer.class);
+
+            if (emailPreference.length == 0)
             {
-                return 0; 
+                if (userId == UserManager.getGuestUser().getUserId())
+                {
+                    return 0;
+                }
+                return DEFAULT_EMAIL_PREFS;
             }
-            return DEFAULT_EMAIL_PREFS;
+            return emailPreference[0];
         }
-        return emailPreference[0];
+        else
+            return 0;
     }
 
     public static class EntryTypeNames
