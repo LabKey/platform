@@ -1399,10 +1399,16 @@ boxPlot.render();
         config.size.canvasWidth = config.width || config.size.canvasWidth;
         config.size.canvasHeight = config.height || config.size.canvasHeight;
 
-        // apply default font, it not explicitly set
+        // apply default font/colors/etc., it not explicitly set
         if (!config.header) config.header = {};
         if (!config.header.title) config.header.title = {};
         if (!config.header.title.font) config.header.title.font = 'Roboto, arial';
+        if (!config.header.title.fontSize) config.header.title.fontSize = 18;
+        if (!config.header.title.color) config.header.title.color = '#000000';
+        if (!config.header.subtitle) config.header.subtitle = {};
+        if (!config.header.subtitle.font) config.header.subtitle.font = 'Roboto, arial';
+        if (!config.header.subtitle.fontSize) config.header.subtitle.fontSize = 16;
+        if (!config.header.subtitle.color) config.header.subtitle.color = '#555555';
         if (!config.footer) config.footer = {};
         if (!config.footer.font) config.footer.font = 'Roboto, arial';
         if (!config.labels) config.labels = {};
@@ -1410,6 +1416,25 @@ boxPlot.render();
         if (!config.labels.mainLabel.font) config.labels.mainLabel.font = 'Roboto, arial';
         if (!config.labels.percentage) config.labels.percentage = {};
         if (!config.labels.percentage.font) config.labels.percentage.font = 'Roboto, arial';
+        if (!config.labels.outer) config.labels.outer = {};
+        if (!config.labels.outer.pieDistance) config.labels.outer.pieDistance = 10;
+        if (!config.labels.inner) config.labels.inner = {};
+        if (!config.labels.inner.format) config.labels.inner.format = 'percentage';
+        if (!config.labels.inner.hideWhenLessThanPercentage) config.labels.inner.hideWhenLessThanPercentage = 10;
+        if (!config.labels.lines) config.labels.lines = {};
+        if (!config.labels.lines.style) config.labels.lines.style = 'straight';
+        if (!config.labels.lines.color) config.labels.lines.color = '#222222';
+        if (!config.misc) config.misc = {};
+        if (!config.misc.colors) config.misc.colors = {};
+        if (!config.misc.colors.segments) config.misc.colors.segments = LABKEY.vis.Scale.ColorDiscrete();
+        if (!config.misc.colors.segmentStroke) config.misc.colors.segmentStroke = '#222222';
+        if (!config.effects) config.effects = {};
+        if (!config.effects.pullOutSegmentOnClick) config.effects.pullOutSegmentOnClick = {};
+        if (!config.effects.pullOutSegmentOnClick.effect) config.effects.pullOutSegmentOnClick.effect = 'none';
+        if (!config.tooltips) config.tooltips = {};
+        if (!config.tooltips.type) config.tooltips.type = 'placeholder';
+        if (!config.tooltips.string) config.tooltips.string = '{label}: {percentage}%';
+        if (!config.tooltips.styles) config.tooltips.styles = {backgroundOpacity: 1};
 
         return new d3pie(config.renderTo, config);
     };
