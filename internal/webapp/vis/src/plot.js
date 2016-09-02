@@ -1177,7 +1177,7 @@ boxPlot.render();
 
         this.bindBrushing = function(otherPlots) {
             this.renderer.bindBrushing(otherPlots);
-        }
+        };
 
         return this;
     };
