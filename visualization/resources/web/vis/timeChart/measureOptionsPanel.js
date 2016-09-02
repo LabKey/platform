@@ -121,7 +121,8 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
             }),
             columns: [{
                 flex: 1,
-                dataIndex: 'label'
+                dataIndex: 'label',
+                renderer: 'htmlEncode'
             }],
             listeners: {
                 scope: this,

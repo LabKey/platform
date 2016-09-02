@@ -560,13 +560,13 @@ LABKEY.vis.GenericChartHelper = new function(){
 
         if (measureUndefined)
         {
-            message = 'The measure ' + Ext4.util.Format.htmlEncode(chartConfig.measures[measureName].label) + ' was not found. It may have been renamed or removed.';
+            message = 'The measure ' + chartConfig.measures[measureName].label + ' was not found. It may have been renamed or removed.';
             return {success: false, message: message};
         }
 
         if ((chartType == 'scatter_plot' || measureName == 'y') && dataIsNull)
         {
-            message = 'All data values for ' + Ext4.util.Format.htmlEncode(chartConfig.measures[measureName].label) + ' are null. Please choose a different measure';
+            message = 'All data values for ' + chartConfig.measures[measureName].label + ' are null. Please choose a different measure.';
             return {success: false, message: message};
         }
 
@@ -579,7 +579,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             }
             else if (hasZeroes)
             {
-                message = "Some " + measureName + "-axis values are 0. Plotting all " + measureName + "-axis values as value+1";
+                message = "Some " + measureName + "-axis values are 0. Plotting all " + measureName + "-axis values as value+1.";
                 var accFn = aes[measureName];
                 aes[measureName] = function(row){return accFn(row) + 1};
             }

@@ -389,9 +389,9 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
                 multiSelect: false,
                 bubbleEvents : ['selectionchange'],
                 columns: [
-                    {header:'Dataset/Query Name', dataIndex:'queryName', flex: 2, hidden: true},
-                    {header:'Dataset/Query', dataIndex:'queryLabel', flex: 2},
-                    {header:'Measure', dataIndex:'label', flex: 2},
+                    {header:'Dataset/Query Name', dataIndex:'queryName', flex: 2, renderer: 'htmlEncode', hidden: true},
+                    {header:'Dataset/Query', dataIndex:'queryLabel', flex: 2, renderer: 'htmlEncode'},
+                    {header:'Measure', dataIndex:'label', flex: 2, renderer: 'htmlEncode'},
                     {header:'Description', dataIndex:'description', cls : 'normal-wrap', renderer : ttRenderer, flex: 3}
                 ],
                 listeners: {
@@ -621,7 +621,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
             var rec = selection[0];
             var textField = Ext4.getCmp(this.axisMap[axisId].labelId);
             if (textField) {
-                textField.setValue((rec.data.queryLabel || rec.data.queryName) + ' : ' + rec.data.label);
+                textField.setValue(Ext4.util.Format.htmlEncode((rec.data.queryLabel || rec.data.queryName) + ' : ' + rec.data.label));
                 this.fireEvent('measureChanged', axisId, rec.data);
             }
         }
