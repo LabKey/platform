@@ -247,8 +247,7 @@
                             header: {
                                 title: {
                                     text: mainLabel,
-                                    fontSize: 14,
-                                    color: '#000000'
+                                    fontSize: 14
                                 }
                             },
                             footer: {
@@ -262,13 +261,10 @@
                                     hideWhenLessThanPercentage: hideLabels ? 100 : undefined
                                 },
                                 inner: {
-                                    format: hasData ? 'percentage' : 'none',
-                                    hideWhenLessThanPercentage: 10
+                                    format: hasData ? 'percentage' : 'none'
                                 },
                                 lines: {
-                                    enabled: !hideLabels,
-                                    style: 'straight',
-                                    color: 'black'
+                                    enabled: !hideLabels
                                 },
                                 truncation: {
                                     enabled: true,
@@ -279,26 +275,14 @@
                                 pieInnerRadius: hasData ? '0%' : '100%',
                                 pieOuterRadius: hasData ? '76%' : '100%'
                             },
-                            misc: {
-                                colors: {
-                                    segments: LABKEY.vis.Scale.ColorDiscrete(),
-                                    segmentStroke: '#222222'
-                                }
-                            },
                             effects: {
                                 highlightSegmentOnMouseover: false,
                                 load: {
                                     effect: 'none'
-                                },
-                                pullOutSegmentOnClick: {
-                                    effect: 'none'
                                 }
                             },
                             tooltips: {
-                                enabled: true,
-                                type: 'placeholder',
-                                string: "{label}: {percentage}%",
-                                styles: {backgroundOpacity: 1}
+                                enabled: true
                             }
                         });
                     }

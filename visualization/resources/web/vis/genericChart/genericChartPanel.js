@@ -1554,15 +1554,19 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             plotConfig = Ext4.apply(plotConfig, {
                 data: data,
                 header: {
-                    title: {
-                        text: labels.main.value
-                    },
-                    subtitle: {
-                        text: labels.x.value,
-                        color: 'gray'
-                    },
+                    title: { text: labels.main.value },
+                    subtitle: { text: labels.x.value },
                     titleSubtitlePadding: 1
-                }
+                },
+                labels: {
+                    mainLabel: { fontSize: 14 },
+                    percentage: { fontSize: 14 },
+                    outer: { pieDistance: 20 },
+                    inner: { hideWhenLessThanPercentage: 5 }
+                },
+                //misc: { colors: { segments: LABKEY.vis.Scale.DarkColorDiscrete() } },
+                effects: { highlightSegmentOnMouseover: false },
+                tooltips: { enabled: true }
             });
         }
         else
