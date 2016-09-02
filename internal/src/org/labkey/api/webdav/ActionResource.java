@@ -50,19 +50,6 @@ public class ActionResource extends AbstractDocumentResource
     private SimpleDocumentResource _sdr = null; // Can be set when transitioning from ActionResource to SimpleDocumentResource,
                                                 // making it easier to compare the docs created by the old and new approaches
 
-    public ActionResource(String str)
-    {
-        super(new Path("action",str));
-        _url = new ActionURL(str);
-        _docid = _url.getLocalURIString();
-        _containerId = getContainerId(_url);
-        _indexUrl = _url.clone();
-        _indexUrl.replaceParameter("_print","1");
-        _indexUrl.setScheme("http");
-        _indexUrl.setHost("localhost");
-    }
-
-
     public ActionResource(SearchService.SearchCategory category, String docid, ActionURL url, ActionURL source)
     {
         super(new Path("action",url.getLocalURIString()));
