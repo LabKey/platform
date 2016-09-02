@@ -1318,8 +1318,9 @@ public abstract class Method
     oracleMethods.put("ascii", new PassthroughMethod("ascii", JdbcType.INTEGER, 1,1));
     oracleMethods.put("initcap", new PassthroughMethod("initcap", JdbcType.VARCHAR, 1,1));
     oracleMethods.put("chr", new PassthroughMethod("chr", JdbcType.VARCHAR, 1,1));
+    oracleMethods.put("regexp_like", new PassthroughMethod("regexp_like", JdbcType.VARCHAR, 2,2));
 
-    // Date Functions
+        // Date Functions
 
     oracleMethods.put("to_date", new PassthroughMethod("to_date", JdbcType.DATE, 1,3));
     oracleMethods.put("sysdate", new PassthroughMethod("sysdate", JdbcType.DATE, 0,0));
