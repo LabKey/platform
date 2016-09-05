@@ -621,9 +621,12 @@ public class RReport extends ExternalScriptEngineReport
     @Override
     public String getDefaultScript()
     {
-        return "# This sample code returns the query data in tab-separated values format, which LabKey then\n" +
-               "# renders as HTML. Replace this code with your R script. See the Help tab for more details.\n" +
-               "write.table(labkey.data, file = \"${tsvout:tsvfile}\", sep = \"\\t\", qmethod = \"double\", col.names=NA)\n";
+        // issue 27527: only use the write.table default script if we have a labkey.data data frame
+        return getDescriptor().getProperty("dataRegionName") == null
+            ? ""
+            : "# This sample code returns the query data in tab-separated values format, which LabKey then\n" +
+                "# renders as HTML. Replace this code with your R script. See the Help tab for more details.\n" +
+                "write.table(labkey.data, file = \"${tsvout:tsvfile}\", sep = \"\\t\", qmethod = \"double\", col.names=NA)\n";
     }
 
     @Override
