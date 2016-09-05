@@ -20,8 +20,8 @@ LABKEY.vis.GenericChartHelper = new function(){
                 title: 'Bar',
                 imgUrl: LABKEY.contextPath + '/visualization/images/barchart.png',
                 fields: [
-                    {name: 'x', label: 'X Categories', required: true, nonNumericOnly: true}
-                    //{name: 'y', label: 'Y Axis'}
+                    {name: 'x', label: 'X Categories', required: true, nonNumericOnly: true},
+                    {name: 'y', label: 'Y Axis', numericOnly: true}
                 ],
                 layoutOptions: {line: true}
             },
@@ -42,8 +42,8 @@ LABKEY.vis.GenericChartHelper = new function(){
                 title: 'Pie',
                 imgUrl: LABKEY.contextPath + '/visualization/images/piechart.png',
                 fields: [
-                    {name: 'x', label: 'Categories', required: true, nonNumericOnly: true}
-                    //{name: 'y', label: 'Measure'}
+                    {name: 'x', label: 'Categories', required: true, nonNumericOnly: true},
+                    {name: 'y', label: 'Measure', numericOnly: true}
                 ],
                 layoutOptions: {}
             },
@@ -522,6 +522,28 @@ LABKEY.vis.GenericChartHelper = new function(){
     };
 
     /**
+     *
+     * @param {Array} data The response data from selectRows.
+     * @param {String} dimensionName The grouping variable to get distinct members from.
+     * @param {String} measureName The variable to calculate aggregate values over. Nullable.
+     * @param {String} aggregate MIN/MAX/SUM/COUNT/etc.
+     */
+    var generateAggregateData = function(data, dimensionName, measureName, aggregate) {
+        var measureStore = LABKEY.Query.experimental.MeasureStore.create({
+            measures: measureName != null ? [measureName] : undefined,
+            records: data
+        });
+
+        var keys = measureStore.members(dimensionName),
+            values = measureStore.selectArray(dimensionName, measureName || "*", aggregate);
+
+        var results = [];
+        for (var i = 0; i < keys.length; i++)
+            results.push({label: keys[i], value: values[i]});
+        return results;
+    };
+
+    /**
      * Verifies that the axis measure is actually present and has data. Also checks to make sure that data can be used in a log
      * scale (if applicable). Returns an object with a success parameter (boolean) and a message parameter (string). If the
      * success parameter is false there is a critical error and the chart cannot be rendered. If success is true the chart
@@ -532,7 +554,7 @@ LABKEY.vis.GenericChartHelper = new function(){
      * @param {String} measureName The name of the axis measure property.
      * @param {Object} aes The aes object from generateAes.
      * @param {Object} scales The scales object from generateScales.
-     * @param {Array} data The data from selectRows.
+     * @param {Array} data The response data from selectRows.
      * @returns {Object}
      */
     var validateAxisMeasure = function(chartType, chartConfig, measureName, aes, scales, data){
@@ -619,6 +641,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         generateGeom: generateGeom,
         generateBoxplotGeom: generateBoxplotGeom,
         generatePointGeom: generatePointGeom,
+        generateAggregateData: generateAggregateData,
         validateAxisMeasure: validateAxisMeasure,
         validateXAxis: validateXAxis,
         validateYAxis: validateYAxis,

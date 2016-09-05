@@ -1530,6 +1530,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     getPlotConfig : function(newChartDiv, chartType, chartConfig, aes, scales, customRenderType)
     {
         var plotConfig, geom, labels, layers = [],
+            dimName = chartConfig.measures.x ? chartConfig.measures.x.name : null,
+            measureName = chartConfig.measures.y ? chartConfig.measures.y.name : null,
+            aggType = measureName != null ? 'SUM' : 'COUNT',
             data = this.chartData.rows;
 
         geom = LABKEY.vis.GenericChartHelper.generateGeom(chartType, chartConfig.geomOptions);
@@ -1551,7 +1554,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
         else if (this.renderType == 'pie_chart')
         {
-            data = LABKEY.vis.groupCountData(data, aes.x, {name: 'label', count: 'value'});
+            data = LABKEY.vis.GenericChartHelper.generateAggregateData(data, dimName, measureName, aggType);
 
             plotConfig = Ext4.apply(plotConfig, {
                 data: data,
@@ -1585,9 +1588,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
             else if (this.renderType == 'bar_chart')
             {
-                data = LABKEY.vis.groupCountData(data, aes.x);
-                aes = { x: 'name', y: 'count' };
-                scales.y = {domain: [0, null]};
+                data = LABKEY.vis.GenericChartHelper.generateAggregateData(data, dimName, measureName, aggType);
+                aes = { x: 'label', y: 'value' };
+                scales.y = {domain: [0, null]}; // TODO what about if the SUM is negative?
             }
 
             layers.push(
