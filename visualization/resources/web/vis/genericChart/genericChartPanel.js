@@ -95,15 +95,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.parameters = LABKEY.Filter.getQueryParamsFromUrl(params['filterUrl'], this.dataRegionName);
 
         // Issue 19163
-        if (this.autoColumnXName) {
-            fk = LABKEY.FieldKey.fromParts(this.autoColumnXName);
-            this.autoColumnXName = fk.toString();
-        }
-
-        if (this.autoColumnYName) {
-            fk = LABKEY.FieldKey.fromParts(this.autoColumnYName);
-            this.autoColumnYName = fk.toString();
-        }
+        Ext4.each(['autoColumnXName', 'autoColumnYName', 'autoColumnName'], function(autoColPropName)
+        {
+            if (this[autoColPropName])
+            {
+                fk = LABKEY.FieldKey.fromParts(this[autoColPropName]);
+                this[autoColPropName] = fk.toString();
+            }
+        }, this);
 
         // for backwards compatibility, map auto_plot to box_plot
         if (this.renderType === 'auto_plot')
@@ -846,6 +845,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 columns.push(measures.y.name);
             else if (this.autoColumnYName)
                 columns.push(this.autoColumnYName);
+
+            if (this.autoColumnName)
+                columns.push(this.autoColumnName);
 
             if (measures.color)
                 columns.push(measures.color.name);
@@ -1630,20 +1632,24 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     initMeasures : function(forExport)
     {
         // Initialize the x and y measures on first chart load. Returns false if we're missing the x or y measure.
-        var measure, fk, measureStore = this.getChartTypePanel().getStore();
+        var measure, fk,
+            measureStore = this.getChartTypePanel().getStore(),
+            requiredFieldNames = this.getChartTypePanel().getRequiredFieldNames(),
+            requiresX = requiredFieldNames.indexOf('x') > -1,
+            requiresY = requiredFieldNames.indexOf('y') > -1;
 
         if (!this.measures.y && !forExport)
         {
-            if (this.autoColumnYName)
+            if (this.autoColumnYName || (requiresY && this.autoColumnName))
             {
                 // In some cases the column name is escaped, so we need to unescape it when searching.
-                fk = LABKEY.FieldKey.fromString(this.autoColumnYName);
+                fk = LABKEY.FieldKey.fromString(this.autoColumnYName || this.autoColumnName);
                 measure = measureStore.findRecord('name', fk.name, 0, false, true, true);
                 if (measure)
                     this.setYAxisMeasure(measure, true);
             }
 
-            if (this.getChartTypePanel().getRequiredFieldNames().indexOf('y') > -1 && !this.measures.y)
+            if (requiresY && !this.measures.y)
             {
                 this.getEl().unmask();
                 this.showChartTypeWindow();
@@ -1655,15 +1661,15 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             if (this.renderType !== "box_plot" && this.renderType !== "auto_plot")
             {
-                if (this.autoColumnXName)
+                if (this.autoColumnXName || (requiresX && this.autoColumnName))
                 {
-                    fk = LABKEY.FieldKey.fromString(this.autoColumnXName);
+                    fk = LABKEY.FieldKey.fromString(this.autoColumnXName || this.autoColumnName);
                     measure = measureStore.findRecord('name', fk.name, 0, false, true, true);
                     if (measure)
                         this.setXAxisMeasure(measure, true);
                 }
 
-                if (!this.measures.x)
+                if (requiresX && !this.measures.x)
                 {
                     this.getEl().unmask();
                     this.showChartTypeWindow();

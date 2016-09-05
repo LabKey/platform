@@ -18,11 +18,10 @@ LABKEY.vis.GenericChartHelper = new function(){
             {
                 name: 'bar_chart',
                 title: 'Bar',
-                active: false,
                 imgUrl: LABKEY.contextPath + '/visualization/images/barchart.png',
                 fields: [
-                    {name: 'x', label: 'X Categories', required: true, nonNumericOnly: true},
-                    {name: 'y', label: 'Y Axis'}
+                    {name: 'x', label: 'X Categories', required: true, nonNumericOnly: true}
+                    //{name: 'y', label: 'Y Axis'}
                 ],
                 layoutOptions: {line: true}
             },
@@ -41,11 +40,10 @@ LABKEY.vis.GenericChartHelper = new function(){
             {
                 name: 'pie_chart',
                 title: 'Pie',
-                active: false,
                 imgUrl: LABKEY.contextPath + '/visualization/images/piechart.png',
                 fields: [
-                    {name: 'x', label: 'Categories', required: true, nonNumericOnly: true},
-                    {name: 'y', label: 'Measure'}
+                    {name: 'x', label: 'Categories', required: true, nonNumericOnly: true}
+                    //{name: 'y', label: 'Measure'}
                 ],
                 layoutOptions: {}
             },

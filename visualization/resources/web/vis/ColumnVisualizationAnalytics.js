@@ -304,6 +304,11 @@
             // add the provider to the custom view, if it isn't already included
             dataRegion.addAnalyticsProviderForCustomView(viewName, colFieldKey, analyticsProviderName);
 
+            // add click handler to go to the chart wizard with the render type and column selected
+            var chartWizardUrl = _getGenericChartWizardUrl(dataRegion, colFieldKey, analyticsProviderName);
+            if (chartWizardUrl != null)
+                $('#' + plotDivId).on('click', function() { window.location = chartWizardUrl; });
+
             // add the remove icon and register click handler for removing the visualization provider
             $('#' + plotDivId).append('<div class="fa fa-times plot-analytics-remove"></div>');
             $('#' + plotDivId + ' div.plot-analytics-remove').on('click', function() {
@@ -345,6 +350,47 @@
         var _truncateLabel = function(value, length)
         {
             return value != null && value.length > length ? value.substring(0, length) + '...' : value;
+        };
+
+        var _getGenericChartWizardUrl = function(dataRegion, colFieldKey, analyticsProviderName)
+        {
+            var renderType = _getRenderTypeForAnalyticsProviderName(analyticsProviderName);
+            if (renderType != null)
+            {
+                var params = {
+                    edit: true,
+                    renderType: renderType,
+                    schemaName: dataRegion.schemaName,
+                    queryName: dataRegion.queryName,
+                    autoColumnName: colFieldKey
+                };
+
+                if (dataRegion.viewName != null)
+                {
+                    params.viewName = dataRegion.viewName;
+                }
+
+                if (dataRegion.getUserFilterArray().length > 0)
+                {
+                    params.dataRegionName = dataRegion.name;
+                    params.filterUrl = window.location.search;
+                }
+
+                return LABKEY.ActionURL.buildURL('visualization', 'genericChartWizard', null, params);
+            }
+
+            return null;
+        };
+
+        var _getRenderTypeForAnalyticsProviderName = function(name)
+        {
+            if (name == 'VIS_BOX')
+                return 'box_plot';
+            if (name == 'VIS_BAR')
+                return 'bar_chart';
+            if (name == 'VIS_PIE')
+                return 'pie_chart';
+            return null;
         };
 
         return {

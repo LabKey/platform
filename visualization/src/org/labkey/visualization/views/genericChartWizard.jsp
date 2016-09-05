@@ -98,6 +98,7 @@
             allowShare      : <%=c.hasPermission(user, ShareReportPermission.class)%>,
             isDeveloper     : <%=user.isDeveloper()%>,
             hideSave        : <%=user.isGuest()%>,
+            autoColumnName  : <%=q(form.getAutoColumnName() != null ? form.getAutoColumnName() : null) %>,
             autoColumnYName  : <%=q(form.getAutoColumnYName() != null ? form.getAutoColumnYName() : null) %>,
             autoColumnXName  : <%=q(form.getAutoColumnXName() != null ? form.getAutoColumnXName() : null) %>,
             defaultNumberFormat: eval("<%=text(numberFormatFn)%>"),

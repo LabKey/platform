@@ -14,10 +14,8 @@
     background-color: #EEEEEE;
 }
 
-.labkey-dataregion-msg-plot-analytic a.bar-individual:hover,
-.labkey-dataregion-msg-plot-analytic a.box:hover,
-.labkey-dataregion-msg-plot-analytic svg text:hover {
-    cursor: default;
+.labkey-dataregion-msg-plot-analytic {
+    cursor: pointer;
 }
 
 .labkey-dataregion-msg-plot-analytic .plot-analytics-remove {

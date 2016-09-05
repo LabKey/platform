@@ -1520,6 +1520,7 @@ public class VisualizationController extends SpringActionController
         private String _renderType;
         private String _dataRegionName;
         private String _jsonData;
+        private String _autoColumnName;
         private String _autoColumnYName;
         private String _autoColumnXName;
         private String _svg;
@@ -1554,6 +1555,16 @@ public class VisualizationController extends SpringActionController
         public void setJsonData(String jsonData)
         {
             _jsonData = jsonData;
+        }
+
+        public String getAutoColumnName()
+        {
+            return _autoColumnName;
+        }
+
+        public void setAutoColumnName(String autoColumnName)
+        {
+            _autoColumnName = autoColumnName;
         }
 
         public String getAutoColumnYName()
