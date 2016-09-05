@@ -200,21 +200,18 @@ public class IssuesUpgradeCode implements UpgradeCode
     void migrateCustomViews(Container c, User user, IssueMigrationPlan plan) throws SQLException
     {
         // only need to change for non-default issue def names
-        if (!IssueListDef.DEFAULT_ISSUE_LIST_NAME.equals(plan.getIssueDefName()))
+        TableInfo tinfoCustomView = DbSchema.get("query", DbSchemaType.Module).getTable("CustomView");
+
+        if (tinfoCustomView != null)
         {
-            TableInfo tinfoCustomView = DbSchema.get("query", DbSchemaType.Module).getTable("CustomView");
+            SQLFragment sql = new SQLFragment("UPDATE ").append(tinfoCustomView, "").
+                    append(" SET QueryName = ? WHERE QueryName = ? AND Container = ?");
+            sql.addAll(plan.getIssueDefName(), "Issues", c);
 
-            if (tinfoCustomView != null)
-            {
-                SQLFragment sql = new SQLFragment("UPDATE ").append(tinfoCustomView, "").
-                        append(" SET QueryName = ? WHERE QueryName = ? AND Container = ?");
-                sql.addAll(plan.getIssueDefName(), "Issues", c);
-
-                new SqlExecutor(tinfoCustomView.getSchema()).execute(sql);
-            }
-            else
-                _log.error("Unable to get the table info for query.CustomView");
+            new SqlExecutor(tinfoCustomView.getSchema()).execute(sql);
         }
+        else
+            _log.error("Unable to get the table info for query.CustomView");
     }
 
     void migrateIssueProperties(Container c, User user, IssueMigrationPlan plan)
