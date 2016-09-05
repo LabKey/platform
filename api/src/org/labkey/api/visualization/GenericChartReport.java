@@ -73,7 +73,7 @@ public abstract class GenericChartReport extends AbstractReport
             @Override
             public boolean isActive()
             {
-                return false;
+                return true;
             }
         },
         BOX_PLOT()
@@ -149,7 +149,7 @@ public abstract class GenericChartReport extends AbstractReport
             @Override
             public boolean isActive()
             {
-                return false;
+                return true;
             }
         },
         SCATTER_PLOT()
