@@ -9,6 +9,7 @@ import org.labkey.api.security.User;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -72,6 +73,21 @@ public class IssuesListDefServiceImpl implements IssuesListDefService.Service
         }
 
         return null;
+    }
+
+    @Override
+    public Map<String, Domain> getDomainsForIssueDefKind(String kind, Container container, User user)
+    {
+        if (kind != null)
+        {
+            Map<String, Domain> domains = new HashMap<>();
+            for (IssueListDef issueListDef : IssueManager.getIssueListDefsByKind(kind, container))
+                domains.put(issueListDef.getName(), issueListDef.getDomain(user));
+
+            return domains;
+        }
+
+        return Collections.emptyMap();
     }
 
     @Override

@@ -29,4 +29,5 @@ public interface IssuesUrls extends UrlProvider
 {
     ActionURL getDetailsURL(Container c);
     ActionURL getInsertURL(Container c, String issueDefName);
+    ActionURL getListURL(Container c, String issueDefName);
 }

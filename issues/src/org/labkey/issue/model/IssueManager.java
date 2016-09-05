@@ -1498,12 +1498,17 @@ public class IssueManager
         }
     }
 
+    public static List<IssueListDef> getIssueListDefsByKind(@NotNull String kind, Container container)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("Kind"), kind);
+        return new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), filter, null).getArrayList(IssueListDef.class);
+    }
+
     public static List<IssueListDef> getIssueListDefs(Container container)
     {
         SimpleFilter filter = container == null ? null : SimpleFilter.createContainerFilter(container);
-        List<IssueListDef> classes = new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), filter, null).getArrayList(IssueListDef.class);
-
-        return classes;
+        return new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), filter, null).getArrayList(IssueListDef.class);
     }
 
     public static IssueListDef getIssueListDef(Container container, String name)

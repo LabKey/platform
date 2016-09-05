@@ -188,6 +188,14 @@ public class IssuesController extends SpringActionController
             url.addParameter("issueDefName", issueDefName);
             return url;
         }
+
+        @Override
+        public ActionURL getListURL(Container c, String issueDefName)
+        {
+            ActionURL url = new ActionURL(ListAction.class, c);
+            url.addParameter("issueDefName", issueDefName);
+            return url;
+        }
     }
 
 
