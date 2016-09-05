@@ -6,6 +6,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.security.User;
 
 import java.util.List;
+import java.util.Map;
 
 public class IssuesListDefService
 {
@@ -70,6 +71,14 @@ public class IssuesListDefService
          * @return the list of registered providers
          */
         List<IssueDetailHeaderLinkProvider> getIssueDetailHeaderLinkProviders();
+
+        /**
+         * Get a map of the issueDefName to the domain for a given issue domain kind.
+         * @param kind The name of the issue def domain kind to filter the set.
+         * @param container The container to query
+         * @return Map from IssueDefName to Domain
+         */
+        Map<String, Domain> getDomainsForIssueDefKind(String kind, Container container, User user);
     }
 }
 

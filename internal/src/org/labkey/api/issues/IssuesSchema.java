@@ -30,6 +30,7 @@ public class IssuesSchema
     private static final IssuesSchema instance = new IssuesSchema();
     public static final String SCHEMA_NAME = "issues";
     public static final String ISSUE_DEF_SCHEMA_NAME = "IssueDef";
+    public static final String ISSUE_LIST_DEF_TABLE_NAME = "IssueListDef";
 
     public static IssuesSchema getInstance()
     {
@@ -87,6 +88,6 @@ public class IssuesSchema
 
     public TableInfo getTableInfoIssueListDef()
     {
-        return getSchema().getTable("IssueListDef");
+        return getSchema().getTable(ISSUE_LIST_DEF_TABLE_NAME);
     }
 }
