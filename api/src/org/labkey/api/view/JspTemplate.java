@@ -72,7 +72,7 @@ public class JspTemplate<ModelClass> extends JspView<ModelClass>
             assertEquals("This is a JSP used by the JspTemplate.TestCase", test);
 
             RReport r = new RReport();
-            assertTrue(r.getDefaultScript().length() > 200);
+            assertTrue("".equals(r.getDefaultScript()));
             assertTrue(r.getDesignerHelpHtml().length() > 1000);
 
             JavaScriptReport js = new JavaScriptReport();
