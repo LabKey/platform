@@ -530,6 +530,7 @@ LABKEY.vis.GenericChartHelper = new function(){
      */
     var generateAggregateData = function(data, dimensionName, measureName, aggregate) {
         var measureStore = LABKEY.Query.experimental.MeasureStore.create({
+            nullDisplayValue: '[Blank]',
             measures: measureName != null ? [measureName] : undefined,
             records: data
         });

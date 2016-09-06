@@ -1113,8 +1113,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         {
             this.chart.insert(0, Ext4.create('Ext.panel.Panel', {
                 border: false,
-                padding: 10,
-                html : "<table width='100%'><tr><td align='center' style='font-style:italic'>" + this.warningText + "</td></tr></table>"
+                html : "<div style='padding: 10px; background-color: #ffe5e5; color: #d83f48; font-weight: bold;'>" + this.warningText + "</div>"
             }));
         }
 
@@ -1575,18 +1574,26 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         return function(result, request, options) {
             this.markDirty(false);
 
-            var msgBox = Ext4.create('Ext.window.Window', {
-                title    : 'Success',
-                html     : '<div style="margin-left: auto; margin-right: auto;"><span class="labkey-message">The chart has been successfully saved.</span></div>',
-                modal    : false,
-                closable : false,
-                width    : 300,
-                height   : 100
+            var msgbox = Ext4.create('Ext.window.Window', {
+                html     : '<span class="labkey-message">Report saved successfully.</span>',
+                style      : 'background-color: #eeeeee; border-color: #b4b4b4; box-shadow: none;',
+                bodyStyle : 'background: transparent;',
+                header   : false,
+                border   : false,
+                padding  : 20,
+                resizable: false,
+                draggable: false
             });
-            msgBox.show();
-            msgBox.getEl().fadeOut({duration : 2250, callback : function(){
-                msgBox.hide();
-            }});
+
+            msgbox.show();
+            msgbox.getEl().fadeOut({
+                delay : 1500,
+                duration: 1000,
+                callback : function()
+                {
+                    msgbox.hide();
+                }
+            });
 
             // if a new chart was created, we need to refresh the page with the correct report name on the URL
             if (!this.editorSavePanel.isSavedReport() || !replace)
@@ -1610,8 +1617,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         {
             this.chart.add(Ext4.create('Ext.panel.Panel', {
                 border: false,
-                padding: 10,
-                html : "<table width='100%'><tr><td align='center' style='font-style:italic'>" + message + "</td></tr></table>"
+                html : "<div style='padding: 10px; background-color: #ffe5e5; color: #d83f48; font-weight: bold;'>" + message + "</div>"
             }));
             this.unmaskPanel();
         }
