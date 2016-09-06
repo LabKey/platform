@@ -188,3 +188,57 @@ var survivalCensorData = [
     {group: 'Filtered Patients', time: 58, percent: 0.7},
     {group: 'Filtered Patients', time: 75, percent: 0.1}
 ];
+
+
+var timelineData = [
+    {
+        "event": "Concert",
+        "subevent": "Rock N' Roll",
+        "date": "2010-03-16T07:00:00.000Z"
+    },
+    {
+        "event": "Referral",
+        "subevent": null,
+        "date": "2010-07-11T07:00:00.000Z"
+    },
+    {
+        "event": "Breakfast",
+        "subevent": null,
+        "date": "2010-09-10T07:00:00.000Z"
+    },
+    {
+        "event": "Lunch",
+        "subevent": null,
+        "date": "2010-10-21T07:00:00.000Z"
+    },
+    {
+        "event": "Show",
+        "subevent": "Dog",
+        "date": "2011-10-07T07:00:00.000Z"
+    },
+    {
+        "event": "Show",
+        "subevent": "Car",
+        "date": "2011-10-27T07:00:00.000Z"
+    },
+    {
+        "event": "Show",
+        "subevent": "Drag",
+        "date": "2011-12-05T08:00:00.000Z"
+    },
+    {
+        "event": "Labkey",
+        "subevent": "Software",
+        "date": "2012-10-21T07:00:00.000Z"
+    },
+    {
+        "event": "Dev Meeting",
+        "subevent": null,
+        "date": "2013-01-11T08:00:00.000Z"
+    },
+    {
+        "event": "Finally Going Home",
+        "subevent": null,
+        "date": "2016-10-19T07:00:00.000Z"
+    }
+];

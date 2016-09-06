@@ -20,6 +20,9 @@ LABKEY.vis.Geom.XY = function(){
     this.type = "XY";
     this.xAes = null;
     this.yAes = null;
+    this.typeSubtypeAes = null;
+    this.parentNameAes = null;
+    this.childNameAes = null;
     this.xScale = null;
     this.yScale = null;
     this.colorAes = null;
@@ -71,6 +74,18 @@ LABKEY.vis.Geom.XY.prototype.initAesthetics = function(scales, layerAes, parentA
         return false;
     }
 
+    if (parentAes.typeSubtype) {
+        this.typeSubtypeAes = parentAes.typeSubtype;
+    }
+
+    if (parentAes.parentName) {
+        this.parentNameAes = parentAes.parentName;
+    }
+
+    if (parentAes.childName) {
+        this.childNameAes = parentAes.childName;
+    }
+
     return true;
 };
 
@@ -95,8 +110,18 @@ LABKEY.vis.Geom.XY.prototype.getX = function(row){
 };
 
 LABKEY.vis.Geom.XY.prototype.getY = function(row){
-    // Takes a row, returns the scaled x value.
+    // Takes a row, returns the scaled y value.
     return this.getVal(this.yScale.scale, this.yAes, row, true);
+};
+
+LABKEY.vis.Geom.XY.prototype.getTypeSubtype = function(row){
+    // Takes a row, returns the scaled y value.
+    return this.getVal(this.yScale.scale, this.typeSubtypeAes, row, true);
+};
+
+LABKEY.vis.Geom.XY.prototype.getParentY = function(row){
+    // Takes a row, returns the scaled parent name value.
+    return this.getVal(this.yScale.scale, this.parentNameAes, row, true);
 };
 
 /**
@@ -429,4 +454,97 @@ LABKEY.vis.Geom.BarPlot.prototype.render = function(renderer, grid, scales, data
 
     renderer.renderBarPlotGeom(data, this);
     return true;
+};
+
+/**
+ * @class Timeline plot geom, used to generate a timeline plot for a given set of data.
+ * @param config An object with the following properties:
+ * @param {String} [config.size] (Optional) A numeric value used for the timeline event icon size in pixels. Defaults to 10.
+ * @param {String} [config.color] (Optional) A string value used for the timeline event icon border color. Defaults to black (#000000).
+ * @param {String} [config.fill] (Optional) A string value used for the timeline event icon fill color. Defaults to black (#000000).
+ * @param {String} [config.dateKey] (Optional) property name of the date value that data objects contain. Used to create
+ *                  tooltips on hover. Defaults to 'date'.
+ * @param {Boolean} [config.isCollapsed] (Optional) If true, the timeline collapses subtypes into their parent rows. Defaults to True.
+ * @param {Number} [config.rowHeight] (Optional) The height of individual rows in pixels. For expanded timelines, row height
+ *                  will resize to 75% of this value. Defaults to 40px.
+ * @param {Object} [config.highlight] (Optional) Special Data object containing information to highlight a specific row
+ *                  in the timeline. Must have the same shape & properties as all other input data.
+ * @param {String} [config.highlightRowColor] (Optional) Hex color to specifiy what color the highlighted row will be if,
+ *                  found in the data. Defaults to #74B0C4.
+ * @param {String} [config.activeEventKey] (Optional) Name of property that is paired with @param config.activeEventIdentifier to
+ *                  identify a unique event in the data.
+ * @param {String} [config.activeEventIdentifier] (Optional) Name of value that is paired with @param config.activeEventKey
+ *                  to identify a unique event in the data.
+ * @param {String} [config.activeEventStrokeColor] (Optional) Hex color to specifiy what color the active event rect's
+ *                  stroke will be, if found in the data. Defaults to red.
+ * @param {Object} [config.emphasisEvents] (Optional) Object containing key:[value] pairs whose keys are property names
+ *                  of a data object and whose value is an array of possible values that should have a highlight line drawn
+ *                  on the chart when found. Example: {'type': ['death', 'Withdrawal']}
+ * @param {String} [config.tickColor] (Optional) Hex color to specifiy the color of Axis ticks. Defaults to #DDDDDD.
+ * @param {String} [config.emphasisTickColor] (Optional) Hex color to specify the color of emphasis event ticks, if
+ *                  found in the data. Defaults to #1a969d.
+ * @param {String} [config.timeUnit] (Optional) Unit of time to use when calculating how far an event's date is from
+ *                  the start date. Default is years. Valid string values include minutes, hours, days, years, and decades.
+ * @param {Number} [config.eventIconSize] (Optional) Size of event square width/height dimensions.
+ * @param {String} [config.eventIconColor] (Optional) Hex color of event square stroke.
+ * @param {String} [config.eventIconFill] (Optional) Hex color of event square inner fill. Defaults to black (#000000).
+ * @param {Number} [config.eventIconOpacity] (Optional) Float between 0 - 1 (inclusive) to specify how transparent the
+ *                  fill of event icons will be. Defaults to 1.
+ * @param {Array} [config.rowColorDomain] (Optional) Array of length 2 containing string Hex values for the two
+ *                  alternating colors of timeline row rectangles. Defaults to ['#f2f2f2', '#ffffff'].
+ */
+LABKEY.vis.Geom.TimelinePlot = function(config){
+    this.type = "TimelinePlot";
+
+    if(!config){
+        config = {};
+    }
+
+    this.dateKey = ('dateKey' in config && config.dateKey != null && config.dateKey != undefined) ? config.dateKey : 'date';
+    this.timeUnit = ('timeUnit' in config && config.timeUnit != null && config.timeUnit != undefined) ? config.timeUnit : 'years';
+    this.highlight = ('highlight' in config && config.highlight != null && config.highlight != undefined) ? config.highlight : null;
+    this.highlightRowColor = ('highlightRowColor' in config && config.highlightRowColor != null && config.highlightRowColor != undefined) ? config.highlightRowColor : '#74B0C4';
+    this.activeEventKey = ('activeEventKey' in config && config.activeEventKey != null && config.activeEventKey != undefined) ? config.activeEventKey : null;
+    this.activeEventIdentifier = ('activeEventIdentifier' in config && config.activeEventIdentifier != null && config.activeEventIdentifier != undefined) ? config.activeEventIdentifier : null;
+    this.activeEventStrokeColor = ('activeEventStrokeColor' in config && config.activeEventStrokeColor != null && config.activeEventStrokeColor != undefined) ? config.activeEventStrokeColor : 'red';
+    this.marginLeft = ('marginLeft' in config && config.marginLeft != null && config.marginLeft != undefined) ? config.marginLeft : 200;
+    this.parentName = ('parentName' in config && config.parentName != null && config.parentName != undefined) ? config.parentName : 'type';
+    this.childName = ('childName' in config  && config.childName != null && config.childName != undefined) ? config.childName : 'subtype';
+    this.width = ('width' in config && config.width != null && config.width != undefined) ? config.width : 900;
+    this.height = ('height' in config && config.height != null && config.height != undefined) ? config.height : 500;
+    this.rowHeight = ('rowHeight' in config && config.rowHeight != null && config.rowHeight != undefined) ? config.rowHeight : 40;
+    this.eventIconSize = ('eventIconSize' in config && config.eventIconSize != null && config.eventIconSize != undefined) ? config.eventIconSize : 10;
+    this.eventIconColor = ('eventIconColor' in config && config.eventIconColor != null && config.eventIconColor != undefined) ? config.eventIconColor : '#000000';
+    this.eventIconFill = ('eventIconFill' in config && config.eventIconFill != null && config.eventIconFill != undefined) ? config.eventIconFill : '#000000';
+    this.rowColorDomain = ('rowColorDomain' in config && config.rowColorDomain != null && config.rowColorDomain != undefined) ? config.rowColorDomain : ['#f2f2f2', '#ffffff'];
+    this.eventIconOpacity = ('eventIconOpacity' in config && config.eventIconOpacity != null && config.eventIconOpacity != undefined) ? config.eventIconOpacity : 1;
+    this.emphasisEvents = ('emphasisEvents' in config && config.emphasisEvents != null && config.emphasisEvents != undefined) ? config.emphasisEvents : null;
+    this.tickColor = ('tickColor' in config && config.tickColor != null && config.tickColor != undefined) ? config.tickColor : '#DDDDDD';
+    this.emphasisTickColor = ('emphasisTickColor' in config && config.emphasisTickColor != null && config.emphasisTickColor != undefined) ? config.emphasisTickColor : '#1a969d';
+    this.isCollapsed = ('isCollapsed' in config && config.isCollapsed != null && config.isCollapsed != undefined) ? config.isCollapsed : true;
+    return this;
+};
+LABKEY.vis.Geom.TimelinePlot.prototype = new LABKEY.vis.Geom.XY();
+LABKEY.vis.Geom.TimelinePlot.prototype.render = function(renderer, grid, scales, data, layerAes, parentAes, name, index){
+
+    if(!this.initAesthetics(scales, layerAes, parentAes, name, index)){
+        return false;
+    }
+
+    this.mouseOverRowFnAes = layerAes.mouseOverRowFn ? layerAes.mouseOverRowFn : parentAes.mouseOverRowFn;
+    this.mouseOutRowFnAes = layerAes.mouseOutRowFn ? layerAes.mouseOutRowFn : parentAes.mouseOutRowFn;
+    this.rowClickFnAes = layerAes.rowClickFn ? layerAes.rowClickFn : parentAes.rowClickFn;
+    this.eventClickFnAes = layerAes.eventIconClickFn ? layerAes.eventIconClickFn : parentAes.eventIconClickFn;
+    this.mouseOverFnAes = layerAes.mouseOverEventIconFn ? layerAes.mouseOverEventIconFn : parentAes.mouseOverEventIconFn;
+    this.mouseOutFnAes = layerAes.mouseOutEventIconFn ? layerAes.mouseOutEventIconFn : parentAes.mouseOutEventIconFn;
+
+    if (renderer.renderTimelinePlotGeom)
+    {
+        renderer.renderTimelinePlotGeom(data, this);
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 };

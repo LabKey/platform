@@ -1511,10 +1511,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                     .attr('fill', plot.gridColor);
         }
 
-        renderXAxis.call(this);
-        renderXTopAxis.call(this);
-        renderYLeftAxis.call(this);
-        renderYRightAxis.call(this);
+        if (!plot.disableAxis.xBottom) { renderXAxis.call(this); }
+        if (!plot.disableAxis.xTop) { renderXTopAxis.call(this); }
+        if (!plot.disableAxis.yLeft) { renderYLeftAxis.call(this); }
+        if (!plot.disableAxis.yRight) { renderYRightAxis.call(this); }
 
         addBrush.call(this);
     };
@@ -2659,6 +2659,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var bindMouseEvents = function(selection, geom, layer) {
+
+
         if (geom.mouseOverFnAes) {
             selection.on('mouseover', function(data) {
                 geom.mouseOverFnAes.value(d3.event, data, layer, this);
@@ -2765,6 +2767,299 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
     };
 
+    var renderTimelinePlotGeom = function(data, geom) {
+        var gridWidth = plot.grid.rightEdge - plot.grid.leftEdge;
+        var labelOffset = Math.floor(gridWidth / 40);
+        var perEventYOffset = geom.rowHeight / 2;
+        var collapsed = geom.isCollapsed;
+        var layer = getLayer.call(this, geom);
+        var iconSize = geom.eventIconSize;
+        var highlightedObject = geom.highlight;
+        var xAcc = function(d){
+            return geom.getX(d) - (iconSize / 2);
+        };
+        var typeSubtypeYAcc = function(d) {
+            return geom.getTypeSubtype(d) - geom.rowHeight;
+        };
+        var parentYAcc = function(d){
+            return geom.getParentY(d) - geom.rowHeight;
+        };
+
+        d3.selection.prototype.moveToBack = function()
+        {
+            return this.each(function()
+            {
+                if (this.parentNode.firstChild)
+                {
+                    this.parentNode.insertBefore(this, this.parentNode.firstChild);
+                }
+            });
+        };
+
+        //push the grid behind everything and make it invisible
+        d3.select('#timeline-0').moveToBack();
+        var grid = d3.select('g.grid-rect');
+        var gridRect = grid[0][0].firstChild;
+        gridRect.setAttribute('fill', 'none');
+
+        //Filters out duplicate values for background bars / event labels
+        var getYAxisData = function(data) {
+            var yAxisData = data;
+            var labels = {};
+            var key = collapsed ? geom.parentName : 'typeSubtype';
+            yAxisData = yAxisData.filter(function (row)
+            {
+                if (labels[row[key]])
+                {
+                    return false;
+                }
+                labels[row[key]] = true;
+                return true;
+            });
+
+            if(!collapsed)
+            {
+                //add dummy entries for parent rows/labels that won't have event squares
+                var dummies = [];
+                yAxisData.forEach(function (row)
+                {
+                    if (labels[row[key]] && !labels[row[geom.parentName]]) {
+                        labels[row[geom.parentName]] = true;
+                        var dummy = {};
+                        dummy[geom.parentName] = row[geom.parentName];
+                        dummy[geom.childName] = null;
+                        dummy['typeSubtype'] = row[geom.parentName];
+                        dummies.push(dummy);
+                    }
+                });
+                yAxisData = yAxisData.concat(dummies);
+            }
+            return yAxisData;
+        };
+
+        var renderHorizontalBars = function() {
+            var entries, eventbars, count = -1;
+
+            function compareTypeSubtype(a, b) {
+                if (a.typeSubtype < b.typeSubtype)
+                    return -1;
+                if (a.typeSubtype > b.typeSubtype)
+                    return 1;
+                return 0;
+            }
+
+            function compareParentName(a, b) {
+                if (a[geom.parentName] < b[geom.parentName])
+                    return -1;
+                if (a[geom.parentName] > b[geom.parentName])
+                    return 1;
+                return 0;
+            }
+
+            entries = getYAxisData(data);
+            if (collapsed) {
+                entries.sort(compareParentName);
+            } else {
+                entries.sort(compareTypeSubtype);
+            }
+            eventbars = layer.selectAll('rect').data(entries);
+            eventbars.exit().remove();
+            eventbars.enter().append('rect')
+                    .attr('class', 'timeline-bar')
+                    .attr('x', plot.grid.leftEdge - geom.marginLeft)
+                    .attr('y', collapsed ? parentYAcc : typeSubtypeYAcc)
+                    .attr('width', gridWidth + geom.marginLeft)
+                    .attr('height', geom.rowHeight)
+                    .attr('fill', function(d) {
+                        if (collapsed || !d[geom.childName]) {
+                            count++;
+                        }
+
+                        if (highlightedObject) {
+                            if ((!collapsed)) {
+                                if ((!highlightedObject[geom.childName] && d[geom.parentName] == highlightedObject[geom.parentName])
+                                    || (d.typeSubtype == highlightedObject.typeSubtype)) {
+                                    return geom.highlightRowColor;
+                                }
+                            } else if (highlightedObject[geom.parentName] == d[geom.parentName]) {
+                                    return geom.highlightRowColor;
+                            }
+                        }
+                        return count % 2 == 0 ? geom.rowColorDomain[0] : geom.rowColorDomain[1];
+                    });
+
+            //bind interaction events
+            if (geom.rowClickFnAes) {
+                eventbars.on('click', function(d) {
+                    geom.rowClickFnAes.value(d3.event, d, layer);
+                });
+            }
+            else { eventbars.on('click', null); }
+
+            if (geom.mouseOverRowFnAes) {
+                eventbars.on('mouseover', function(d) {
+                    geom.mouseOverRowFnAes.value(d3.event, d, layer);
+                });
+            }
+            else { eventbars.on('mouseover', null); }
+
+            if (geom.mouseOutRowFnAes) {
+                eventbars.on('mouseout', function(d) {
+                    geom.mouseOutRowFnAes.value(d3.event, d, layer);
+                });
+            }
+            else { eventbars.on('mouseout', null); }
+        };
+
+        var renderEventTypeLabels = function() {
+            var labelData = getYAxisData(data);
+            var eventLabels = layer.selectAll('text.row-label-text').data(labelData);
+            eventLabels.exit().remove();
+            eventLabels.enter().append('text')
+                    .attr('class', 'row-label-text');
+            eventLabels.text(function(d) {
+                if ( !collapsed && d[geom.childName]) {
+                    return d[geom.childName];
+                } else {
+                    return d[geom.parentName];
+                }
+            });
+            eventLabels.attr('font-size', function(d) {
+                    if (d[geom.childName] && !collapsed) {
+                        return '0.9em';
+                    } else {
+                        return '1em';
+                    }
+                })
+                    .attr('x', function(d) {
+                    if (d[geom.childName] && !collapsed) {
+                        return (plot.grid.leftEdge  + labelOffset) - geom.marginLeft;
+                    } else {
+                        return (plot.grid.leftEdge + 5)  - geom.marginLeft;
+                    }
+                })
+                    .attr('y', collapsed ? parentYAcc : typeSubtypeYAcc)
+                    .attr('dy', perEventYOffset * 1.2);
+        };
+
+        var renderEventIcons = function() {
+            var eventIcons = layer.selectAll('rect.timeline-event-rect').data(data);
+            eventIcons.exit().remove();
+            eventIcons.enter().append('rect').attr('class', 'timeline-event-rect')
+                    .attr('x', xAcc)
+                    .attr('y', function(d) {
+                        if (collapsed) {
+                            return parentYAcc(d) + perEventYOffset - (iconSize / 2);
+                        } else {
+                            return typeSubtypeYAcc(d) + perEventYOffset - (iconSize / 2);
+                        }
+                    })
+                    .attr('width', iconSize).attr('height', iconSize)
+                    .attr('stroke', function(d) {
+                        if (geom.activeEventKey && geom.activeEventIdentifier
+                                && d[geom.activeEventKey] == geom.activeEventIdentifier) {
+                            return geom.activeEventStrokeColor;
+                        }
+                        return geom.eventIconColor;
+                    })
+                    .attr('fill', function(d) {
+                        if (highlightedObject) {
+                            if (collapsed && d[geom.parentName] == highlightedObject[geom.parentName]) {
+                                return geom.eventIconFill;
+                            }
+                            else if (!collapsed) {
+                                if (!highlightedObject[geom.childName] && d[geom.parentName] == highlightedObject[geom.parentName]) {
+                                    return geom.eventIconFill;
+                                }
+                                else if (d.typeSubtype == highlightedObject.typeSubtype) {
+                                    return geom.eventIconFill;
+                                }
+                                else {
+                                    return 'none';
+                                }
+                            }
+                             else {
+                                return 'none';
+                            }
+                        }
+                        return geom.eventIconFill;
+                    })
+                    .attr('fill-opacity', geom.eventIconOpacity)
+                    .attr('stroke-width', '2')
+                    .append('svg:title').text(function (d) {
+                        return d[geom.dateKey].toUTCString();
+                    });
+
+            //bind events to mouse interaction
+            if (geom.eventClickFnAes) {
+                eventIcons.on('click', function(d) {
+                    geom.eventClickFnAes.value(d3.event, d, layer);
+                })
+            } else {
+                eventIcons.on('click', null);
+            }
+
+            bindMouseEvents(eventIcons, geom, layer);
+        };
+
+        var renderTickLines = function() {
+            //Draw the origin yLeft axis that was previously hidden
+            var lineObj = {};
+            lineObj[geom.timeUnit] = 0;
+            layer.append('line')
+                    .attr('class', 'tick-line')
+                    .attr('x1', function(d) {return xAcc(lineObj) + (iconSize / 2)})
+                    .attr('y1', plot.grid.bottomEdge)
+                    .attr('x2', function(d) {return xAcc(lineObj) + (iconSize / 2)})
+                    .attr('y2', plot.grid.topEdge)
+                    .attr('stroke-witth', 1)
+                    .attr('stroke', geom.tickColor);
+
+            //Render the special emphasis ticks if config gives us types/subtypes to check for
+            if (geom.emphasisEvents) {
+                for (var i = 0; i < data.length; i++) {
+                    const row = data[i];
+                    var match = false;
+                    for (var type in geom.emphasisEvents) {
+                        if (geom.emphasisEvents.hasOwnProperty(type)) {
+                            var ephasizedVals = geom.emphasisEvents[type];
+                            ephasizedVals.forEach(function(value) {
+                                if (row[type] == value) {
+                                    match = true;
+                                }
+                            });
+                        }
+                    }
+                    if (match) {
+                        layer.append('line')
+                                .attr('class', 'emphasis-tick-line')
+                                .attr('x1', function(d) {
+                                    var n = xAcc(row);
+                                    return n + (iconSize / 2)
+                                })
+                                .attr('y1', plot.grid.bottomEdge)
+                                .attr('x2', function(d) {
+                                    var n = xAcc(row);
+                                    return n + (iconSize / 2)
+                                })
+                                .attr('y2', plot.grid.topEdge)
+                                .attr('stroke-width', 2)
+                                .attr('stroke', geom.emphasisTickColor);
+                    }
+                }
+            }
+        };
+
+        //call render functions
+        renderHorizontalBars();
+        renderTickLines();
+        renderEventTypeLabels();
+        renderEventIcons();
+
+    };
+
+
+
     // <=0 data are filtered out for box plot in log scale but should still show in log gutter
     // it's possible for plot to have no box plot but not empty. use noSummary to turn off box plot
     var prepDataspaceBoxPlotData = function(data, geom) {
@@ -2805,6 +3100,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         renderBoxPlotGeom: renderBoxPlotGeom,
         renderDataspaceBoxPlotGeom: renderDataspaceBoxPlotGeom,
         renderBinGeom: renderBinGeom,
-        renderBarPlotGeom: renderBarPlotGeom
+        renderBarPlotGeom: renderBarPlotGeom,
+        renderTimelinePlotGeom: renderTimelinePlotGeom
     };
 };

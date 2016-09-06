@@ -927,6 +927,51 @@ var survivalCurvePlot = LABKEY.vis.SurvivalCurvePlot({
     }
 });
 
+var timelinePlot = LABKEY.vis.TimelinePlot({
+    renderTo: 'timeline',
+    rendererType: 'd3',
+    width: 900,
+    labels: {
+        main: {value: 'Example Timeline Report'}
+    },
+    margins: {
+        top: 40,
+        left: 200
+    },
+    aes: {
+        x: 'date',
+        parentName: 'event',
+        childName: 'subevent',
+        mouseOverEventIconFn: function(event, data, layerSel) {
+            layerSel.selectAll('rect.timeline-event-rect').attr('fill', function(d) {
+                d.origFill = this.getAttribute('fill');
+                return d == data ? 'yellow' : d.origFill;
+            });
+        },
+        mouseOutEventIconFn: function(event, data, layerSel) {
+            layerSel.selectAll('rect.timeline-event-rect').attr('fill', function(d){
+                return d.origFill ? d.origFill : this.getAttribute('fill');
+            });
+        }
+    },
+    data: timelineData,
+    disableAxis: {yLeft: true},
+    gridLinesVisible: 'y',
+    options: {
+        startDate: new Date('06-10-2008'),
+        isCollapsed: false,
+        rowHeight: 50,
+        eventIconSize: 12,
+        timeUnit: 'years',
+        emphasisEvents: {
+            'event': ['Withdrawal']
+        },
+        emphasisTickColor: '##1a969d',
+        eventIconColor: '#6a0fbd',
+        eventIconFill: '#6a0fbd'
+    }
+});
+
 var renderStats = function(){
     var labResultsStats = LABKEY.vis.Stat.summary(labResultsRows, function(row){return row.study_LabResults_CD4.value});
     var statsDiv = document.getElementById('stats');
@@ -961,4 +1006,5 @@ barChart2.render();
 leveyJenningsPlot.render();
 survivalCurvePlot.render();
 console.log(new Date().getTime() - start);
-renderStats();
+//renderStats();
+timelinePlot.render();

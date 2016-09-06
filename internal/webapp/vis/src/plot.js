@@ -888,7 +888,7 @@ boxPlot.render();
         this.throwErrors = config.throwErrors || false; // Allows the configuration to specify whether chart errors should be thrown or logged (default).
         this.brushing = ('brushing' in config && config.brushing != null && config.brushing != undefined) ? config.brushing : null;
         this.legendData = config.legendData ? config.legendData : null; // An array of rows for the legend text/color/etc. Optional.
-
+        this.disableAxis = config.disableAxis ? config.disableAxis : {xTop: false, xBottom: false, yLeft: false, yRight: false};
         this.bgColor = config.bgColor ? config.bgColor : null;
         this.gridColor = config.gridColor ? config.gridColor : null;
         this.gridLineColor = config.gridLineColor ? config.gridLineColor : null;
@@ -1947,3 +1947,239 @@ boxPlot.render();
         d3.selectAll('path.line').attr('fill-opacity', 1).attr('stroke-opacity', 1);
     };
 })();
+
+/**
+ * @name LABKEY.vis.TimelinePlot
+ * @class TimelinePlot Wrapper to create a plot which shows timeline events with event types on the y-axis and days/time on the x-axis.
+ * @param {Object} config An object that contains the following properties
+ * @param {String} [config.renderTo] The id of the div/span to insert the svg element into.
+ * @param {Number} [config.width] The chart canvas width in pixels.
+ * @param {Number} [config.height] The chart canvas height in pixels.
+ * @param {Array} [config.data] The array of event data including event types and subtypes for the plot.
+ * @param {String} [config.gridLinesVisible] Possible options are 'y', 'x', and 'both' to determine which sets of
+ *                  grid lines are rendered on the plot. Default is 'both'.
+ * @param {Object} [config.disableAxis] Object specifying whether to disable rendering of any Axes on the plot. Default: {xTop: false, xBottom: false, yLeft: false, yRight: false}
+ * @param {Date} [config.options.startDate] (Optional) The start date to use to calculate number of days until event date.
+ * @param {Object} [config.options] (Optional) Display options as defined in {@link LABKEY.vis.Geom.TimelinePlot}.
+ * @param {Boolean} [config.options.isCollapsed] (Optional) If true, the timeline collapses subtypes into their parent rows. Defaults to True.
+ * @param {Number} [config.options.rowHeight] (Optional) The height of individual rows in pixels. For expanded timelines,
+ *                  row height will resize to 75% of this value. Defaults to 1.
+ * @param {Object} [config.options.highlight] (Optional) Special Data object containing information to highlight a specific
+ *                  row in the timeline. Must have the same shape & properties as all other input data.
+ * @param {String} [config.options.highlightRowColor] (Optional) Hex color to specifiy what color the highlighted row will
+ *                  be if, found in the data. Defaults to #74B0C4.
+ * @param {String} [config.options.activeEventKey] (Optional) Name of property that is paired with
+ *                  @param config.options.activeEventIdentifier to identify a unique event in the data.
+ * @param {String} [config.options.activeEventIdentifier] (Optional) Name of value that is paired with
+ *                  @param config.options.activeEventKey to identify a unique event in the data.
+ * @param {String} [config.options.activeEventStrokeColor] (Optional) Hex color to specifiy what color the active event
+ *                  rect's stroke will be, if found in the data. Defaults to Red.
+ * @param {Object} [config.options.emphasisEvents] (Optional) Object containing key:[value] pairs whose keys are property
+ *                  names of a data object and whose value is an array of possible values that should have a highlight
+*                   line drawn on the chart when found. Example: {'type': ['death', 'Withdrawal']}
+ * @param {String} [config.options.tickColor] (Optional) Hex color to specifiy the color of Axis ticks.D efaults to #DDDDDD.
+ * @param {String} [config.options.emphasisTickColor] (Optional) Hex color to specify the color of emphasis event ticks,
+ *                  if found in the data. Defaults to #1a969d.
+ * @param {String} [config.options.timeUnit] (Optional) Unit of time to use when calculating how far an event's date
+ *                  is from the start date. Default is years. Valid string values include minutes, hours, days, years, and decades.
+ * @param {Number} [config.options.eventIconSize] (Optional) Size of event square width/height dimensions.
+ * @param {String} [config.options.eventIconColor] (Optional) Hex color of event square stroke. Defaults to black (#0000000).
+ * @param {String} [config.options.eventIconFill] (Optional) Hex color of event square inner fill. Defaults to black (#000000)..
+ * @param {Float} [config.options.eventIconOpacity] (Optional) Float between 0 - 1 (inclusive) to specify how transparent the
+ *                  fill of event icons will be. Defaults to 1.
+ * @param {Array} [config.options.rowColorDomain] (Optional) Array of length 2 containing string Hex values for the two
+ *                  alternating colors of timeline row rectangles. Defaults to ['#f2f2f2', '#ffffff'].
+ */
+(function(){
+
+    LABKEY.vis.TimelinePlot = function(config)
+    {
+        if (config.renderTo == undefined || config.renderTo == null) { throw new Error("Unable to create timeline plot, renderTo not specified."); }
+
+        if (config.data == undefined || config.data == null) { throw new Error("Unable to create timeline plot, data array not specified."); }
+
+        if (config.width == undefined || config.width == null) { throw new Error("Unable to create timeline plot, width not specified."); }
+
+        if (!config.aes.y) {
+            config.aes.y = 'key';
+        }
+
+        if (!config.options) {
+            config.options = {};
+        }
+
+        //default x scale is in years
+        if (!config.options.timeUnit) {
+            config.options.timeUnit = 'years';
+        }
+
+        //set default left margin to make room for event label text
+        if (!config.margins.left) {
+            config.margins.left = 200
+        }
+
+        //default row height value
+        if (!config.options.rowHeight) {
+            config.options.rowHeight = 40;
+        }
+
+        //override default plot values if not set
+        if (!config.margins.top) {
+            config.margins.top = 40;
+        }
+        if (!config.margins.bottom) {
+            config.margins.bottom = 50;
+        }
+        if (!config.gridLineWidth) {
+            config.gridLineWidth = 1;
+        }
+        if (!config.gridColor) {
+            config.gridColor = '#FFFFFF';
+        }
+        if (!config.borderColor) {
+            config.borderColor = '#DDDDDD';
+        }
+        if (!config.tickColor) {
+            config.tickColor = '#DDDDDD';
+        }
+
+        config.rendererType = 'd3';
+        config.options.marginLeft = config.margins.left;
+        config.options.parentName = config.aes.parentName;
+        config.options.childName = config.aes.childName;
+        config.options.dateKey = config.aes.x;
+
+        config.scales = {
+            x: {
+                scaleType: 'continuous'
+            },
+            yLeft: {
+                scaleType: 'discrete'
+            }
+        };
+
+        var millis;
+        switch(config.options.timeUnit.toLowerCase())
+        {
+            case 'minutes':
+                millis = 1000 * 60;
+                break;
+            case 'hours':
+                millis = 1000 * 60 * 60;
+                break;
+            case 'days':
+                millis = 1000 * 60 * 60 * 24;
+                break;
+            case 'months':
+                millis = 1000 * 60 * 60 * 24 * 30.42;
+                break;
+            case 'years':
+                millis = 1000 * 60 * 60 * 24 * 365;
+                break;
+            case 'decades':
+                millis = 1000 * 60 * 60 * 24 * 365 * 10;
+                break;
+            default:
+                millis = 1000;
+        }
+
+        //find the earliest occurring date in the data if startDate is not already specified
+        var min = config.options.startDate ? config.options.startDate : null;
+        if (min == null)
+        {
+            for (var i = 0; i < config.data.length; i++)
+            {
+                config.data[i][config.aes.x] = new Date(config.data[i][config.aes.x]);
+                if (min == null)
+                {
+                    min = config.data[i][config.aes.x];
+                }
+                min = config.data[i][config.aes.x] < min ? config.data[i][config.aes.x] : min;
+            }
+        }
+
+        //Loop through the data and do calculations for each entry
+        var max = 0;
+        var parents = new Set();
+        var children = new Set();
+        var types = new Set();
+        var domain = [];
+        for (var j = 0; j < config.data.length; j++)
+        {
+            //calculate difference in time units
+            var d = config.data[j];
+            d[config.aes.x] = config.options.startDate ? new Date(d[config.aes.x]) : d[config.aes.x];
+            var timeDifference = (d[config.aes.x] - min) / millis;
+            d[config.options.timeUnit] = timeDifference;
+
+            //update unique counts
+            parents.add(d[config.aes.parentName]);
+            children.add(d[config.aes.childName]);
+
+            //update domain
+            if (!config.options.isCollapsed) {
+                var str;
+                if (d[config.aes.parentName] != null && d[config.aes.parentName] != 'null' && d[config.aes.parentName] != undefined) {
+                    str = d[config.aes.parentName];
+                    if (!types.has(str) && str != undefined) {
+                        domain.push(str);
+                        types.add(str);
+                    }
+                    d.typeSubtype = str;
+                }
+                if (d[config.aes.childName] != null && d[config.aes.childName] != 'null' && d[config.aes.childName] != undefined) {
+                    str += '-' + d[config.aes.childName];
+                }
+                if (!types.has(str) && str != undefined) {
+                    domain.push(str);
+                    types.add(str);
+                }
+
+                //typeSubtype will be a simple unique identifier for this type & subtype of event
+                d.typeSubtype = str;
+            } else {
+                if (!types.has(d[config.aes.parentName])) {
+                    domain.push(d[config.aes.parentName]);
+                    types.add(d[config.aes.parentName]);
+                }
+            }
+
+            //update max value
+            max = timeDifference > max ? timeDifference : max;
+        }
+        var numParentChildUniques = parents.size + children.size;
+        var numParentUniques = parents.size;
+        domain.sort().reverse();
+
+        //For a better looking title
+        function capitalizeFirstLetter(string) {
+            return string.charAt(0).toUpperCase() + string.slice(1);
+        }
+
+        //Update x label to include the start date for better context
+        config.labels.x = {value: capitalizeFirstLetter(config.options.timeUnit) + " Since " + min.toDateString()};
+
+        if (!config.options.isCollapsed) {
+            config.scales.yLeft.domain = domain;
+            config.options.rowHeight = Math.floor(config.options.rowHeight * .75);
+            config.height = (config.options.rowHeight) * numParentChildUniques;
+            config.aes.typeSubtype = "typeSubtype";
+            config.options.rowHeight = (config.height - (config.margins.top + config.margins.bottom)) / numParentChildUniques;
+        } else {
+            config.scales.yLeft.domain = domain;
+            config.height = (config.options.rowHeight) * numParentUniques;
+            config.options.rowHeight = (config.height - (config.margins.top + config.margins.bottom)) / numParentUniques;
+        }
+
+        config.scales.x.domain = [0, Math.ceil(max)];
+        config.aes.x = config.options.timeUnit;
+        config.layers = [
+            new LABKEY.vis.Layer({
+                geom: new LABKEY.vis.Geom.TimelinePlot(config.options)
+            })
+        ];
+
+        return new LABKEY.vis.Plot(config);
+    };
+})();
+
