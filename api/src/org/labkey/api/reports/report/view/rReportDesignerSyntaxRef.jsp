@@ -88,8 +88,8 @@
         </pre>
             </td></tr>
         <tr><td class="labkey-form-label">fileout:&lt;name&gt;</td>
-            <td>A text output file that can be downloaded from the LabKey Server.  For example, use <code>fileout</code>
-                in the place of tsvout to print a table to a downloadable file:<br/>
+            <td>A file output that can be downloaded LabKey Server, and may be of any file type.  For example, use <code>fileout</code>
+                in the place of tsvout to allow users to download a TSV instead of seeing it in within the page:<br/>
         <pre>
         write.table(labkey.data, file = "<%="${fileout:tsvfile}"%>", sep = "\t",
             qmethod = "double", col.names=NA)
