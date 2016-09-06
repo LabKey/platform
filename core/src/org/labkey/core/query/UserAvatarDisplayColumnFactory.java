@@ -86,22 +86,30 @@ public class UserAvatarDisplayColumnFactory implements DisplayColumnFactory
                 return "<img src=\"" + renderUrl + "\"" + (size != null ? " height=\"" + size + "\" width=\"" + size + "\"" : "") + "/>";
             }
 
+            @Nullable
             private User getUserFromCtx(RenderContext ctx)
             {
                 return getUserFromValue(getValue(ctx));
             }
 
+            @Nullable
             private User getUserFromValue(Object value)
             {
+                User user = null;
+
                 try
                 {
-                    Integer userId = Integer.parseInt(value.toString());
-                    return UserManager.getUser(userId);
+                    if (value != null)
+                    {
+                        Integer userId = Integer.parseInt(value.toString());
+                        user = UserManager.getUser(userId);
+                    }
                 }
                 catch (NumberFormatException e)
                 {
-                    return null;
                 }
+
+                return user;
             }
         };
     }
