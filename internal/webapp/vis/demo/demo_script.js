@@ -1005,6 +1005,6 @@ barChart.render();
 barChart2.render();
 leveyJenningsPlot.render();
 survivalCurvePlot.render();
-console.log(new Date().getTime() - start);
-//renderStats();
 timelinePlot.render();
+console.log(new Date().getTime() - start);
+renderStats();
