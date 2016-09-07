@@ -990,10 +990,17 @@ validNum:       {
     }
 
 
-    /** Format date using using folder-specified default pattern */
+    /** Format date using folder-specified default pattern */
     public static String formatDate(Container c, Date date)
     {
         return formatDateTime(date, getDateFormatString(c));
+    }
+
+
+    /** Format date, inferring the appropriate folder-specified default pattern (date vs. date-time) based on class of date */
+    public static String formatDateInfer(Container c, Date date)
+    {
+        return formatDateTime(date, date instanceof java.sql.Date ? getDateFormatString(c) : getDateTimeFormatString(c));
     }
 
 
@@ -1004,7 +1011,7 @@ validNum:       {
     }
 
 
-    /** Format current date & time using using folder-specified default date/time pattern */
+    /** Format current date & time using folder-specified default date/time pattern */
     public static String formatDateTime(Container c)
     {
         return formatDateTime(c, new Date());
@@ -1024,7 +1031,7 @@ validNum:       {
     }
 
 
-    /** Format date & time using using folder-specified default date pattern plus standard time format */
+    /** Format date & time using folder-specified default date pattern plus standard time format */
     public static String formatDateTime(Container c, Date date)
     {
         return formatDateTime(date, getDateTimeFormatString(c));
