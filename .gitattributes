@@ -742,6 +742,7 @@ experiment/src/org/labkey/experiment/ArchiveURLRewriter.java -text
 experiment/src/org/labkey/experiment/ChooseExperimentTypeBean.java -text
 experiment/src/org/labkey/experiment/ConfirmDelete.jsp -text
 experiment/src/org/labkey/experiment/ConfirmDeleteView.java -text
+experiment/src/org/labkey/experiment/CustomProperties.java -text
 experiment/src/org/labkey/experiment/CustomProperties.jsp -text
 experiment/src/org/labkey/experiment/CustomPropertiesView.java -text
 experiment/src/org/labkey/experiment/CustomPropertyRenderer.java -text

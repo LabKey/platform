@@ -16,9 +16,9 @@
 
 package org.labkey.experiment;
 
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewContext;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.view.ViewContext;
 
 import java.util.List;
 
@@ -28,9 +28,9 @@ import java.util.List;
  */
 public interface CustomPropertyRenderer
 {
-    public boolean shouldRender(ObjectProperty prop, List<ObjectProperty> siblingProperties);
+    boolean shouldRender(ObjectProperty prop, List<ObjectProperty> siblingProperties);
 
-    public String getDescription(ObjectProperty prop, List<ObjectProperty> siblingProperties);
+    String getDescription(ObjectProperty prop, List<ObjectProperty> siblingProperties);
 
-    public String getValue(ObjectProperty prop, List<ObjectProperty> siblingProperties, ViewContext context);
+    String getValue(ObjectProperty prop, List<ObjectProperty> siblingProperties, Container c);
 }

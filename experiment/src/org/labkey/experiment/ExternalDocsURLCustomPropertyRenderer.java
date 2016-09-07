@@ -16,8 +16,8 @@
 
 package org.labkey.experiment;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -44,7 +44,7 @@ public class ExternalDocsURLCustomPropertyRenderer implements CustomPropertyRend
         return "External documentation";
     }
 
-    public String getValue(ObjectProperty prop, List<ObjectProperty> siblingProperties, ViewContext context)
+    public String getValue(ObjectProperty prop, List<ObjectProperty> siblingProperties, Container c)
     {
         String label = null;
         for (ObjectProperty p : siblingProperties)
@@ -64,7 +64,7 @@ public class ExternalDocsURLCustomPropertyRenderer implements CustomPropertyRend
             URL url = new URL(prop.getStringValue());
             if (url.getProtocol().equals("file"))
             {
-                ActionURL h = new ActionURL(ExperimentController.ShowExternalDocsAction.class, context.getContainer());
+                ActionURL h = new ActionURL(ExperimentController.ShowExternalDocsAction.class, c);
                 h.addParameter("objectURI", prop.getObjectURI());
                 h.addParameter("propertyURI", prop.getPropertyURI());
                 link = h.toString();

@@ -21,21 +21,19 @@ import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.view.JspView;
-import org.labkey.api.view.ActionURL;
 
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
 /**
  * User: jeckels
-* Date: Nov 21, 2007
-*/
+ * Date: Nov 21, 2007
+ */
 public class CustomPropertiesView extends JspView<CustomPropertiesView.CustomPropertiesBean>
 {
     private static final CustomPropertyRenderer DEFAULT_RENDERER = new DefaultCustomPropertyRenderer();
-    private static Map<String, CustomPropertyRenderer> _renderers = new HashMap<String, CustomPropertyRenderer>()
+    private static final Map<String, CustomPropertyRenderer> _renderers = new HashMap<String, CustomPropertyRenderer>()
     {
         public CustomPropertyRenderer get(Object key)
         {

@@ -16,8 +16,8 @@
 
 package org.labkey.experiment;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.ObjectProperty;
-import org.labkey.api.view.ViewContext;
 
 import java.util.List;
 
@@ -34,7 +34,7 @@ public class ExternalDocsLabelCustomPropertyRenderer implements CustomPropertyRe
         throw new UnsupportedOperationException();
     }
 
-    public String getValue(ObjectProperty prop, List<ObjectProperty> siblingProperties, ViewContext context)
+    public String getValue(ObjectProperty prop, List<ObjectProperty> siblingProperties, Container c)
     {
         throw new UnsupportedOperationException();
     }
