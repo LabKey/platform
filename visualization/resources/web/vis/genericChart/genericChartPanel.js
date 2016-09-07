@@ -1485,6 +1485,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.getEl().unmask();
             if (this.editMode && this.supportedBrowser)
             {
+                // TODO we shouldn't have to call this a second time anymore since we remove the clickable axis/title labels
                 // Update thumbnail
                 var thumbnail = this.renderPlot(true);
                 if (thumbnail)
@@ -1554,7 +1555,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
         else if (this.renderType == 'pie_chart')
         {
-            data = LABKEY.vis.GenericChartHelper.generateAggregateData(data, dimName, measureName, aggType);
+            data = LABKEY.vis.GenericChartHelper.generateAggregateData(data, dimName, measureName, aggType, '[Blank]');
 
             plotConfig = Ext4.apply(plotConfig, {
                 data: data,
@@ -1588,7 +1589,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
             else if (this.renderType == 'bar_chart')
             {
-                data = LABKEY.vis.GenericChartHelper.generateAggregateData(data, dimName, measureName, aggType);
+                data = LABKEY.vis.GenericChartHelper.generateAggregateData(data, dimName, measureName, aggType, '[Blank]');
                 aes = { x: 'label', y: 'value' };
                 scales.y = {domain: [0, null]}; // TODO what about if the SUM is negative?
             }

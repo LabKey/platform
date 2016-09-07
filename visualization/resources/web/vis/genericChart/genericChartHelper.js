@@ -526,21 +526,47 @@ LABKEY.vis.GenericChartHelper = new function(){
      * @param {Array} data The response data from selectRows.
      * @param {String} dimensionName The grouping variable to get distinct members from.
      * @param {String} measureName The variable to calculate aggregate values over. Nullable.
-     * @param {String} aggregate MIN/MAX/SUM/COUNT/etc.
+     * @param {String} aggregate MIN/MAX/SUM/COUNT/etc. Defaults to COUNT.
+     * @param {String} nullDisplayValue The display value to use for null dimension values. Defaults to 'null'.
      */
-    var generateAggregateData = function(data, dimensionName, measureName, aggregate) {
-        var measureStore = LABKEY.Query.experimental.MeasureStore.create({
-            nullDisplayValue: '[Blank]',
-            measures: measureName != null ? [measureName] : undefined,
-            records: data
-        });
+    var generateAggregateData = function(data, dimensionName, measureName, aggregate, nullDisplayValue)
+    {
+        var uniqueDimValues = {};
+        for (var i = 0; i < data.length; i++)
+        {
+            var dimVal = null;
+            if (typeof data[i][dimensionName] == 'object')
+                dimVal = data[i][dimensionName].hasOwnProperty('displayValue') ? data[i][dimensionName].displayValue : data[i][dimensionName].value;
 
-        var keys = measureStore.members(dimensionName),
-            values = measureStore.selectArray(dimensionName, measureName || "*", aggregate);
+            var measureVal = null;
+            if (measureName != undefined && measureName != null && typeof data[i][measureName] == 'object')
+                measureVal = data[i][measureName].value;
 
-        var results = [];
+            if (uniqueDimValues[dimVal] == undefined)
+                uniqueDimValues[dimVal] = {count: 0, sum: 0};
+
+            uniqueDimValues[dimVal].count++;
+            if (!isNaN(measureVal))
+                uniqueDimValues[dimVal].sum += measureVal;
+        }
+
+        var keys = Object.keys(uniqueDimValues), results = [];
         for (var i = 0; i < keys.length; i++)
-            results.push({label: keys[i], value: values[i]});
+        {
+            var row = {
+                label: keys[i] == null || keys[i] == 'null' ? nullDisplayValue || 'null' : keys[i]
+            };
+
+            // TODO add support for more aggregates
+            if (aggregate == undefined || aggregate == null || aggregate == 'COUNT')
+                row.value = uniqueDimValues[keys[i]].count;
+            else if (aggregate == 'SUM')
+                row.value = uniqueDimValues[keys[i]].sum;
+            else
+                throw 'Aggregate ' + aggregate + ' is not yet supported.';
+
+            results.push(row);
+        }
         return results;
     };
 
