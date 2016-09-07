@@ -161,7 +161,7 @@ public class SchemaXmlWriter implements Writer<List<DatasetDefinition>, ImportCo
         {
             indexXml.setType(indexInfo.getType().getXmlIndexType());
 
-            for (String columnName : indexInfo.getColumns())
+            for (String columnName :  indexInfo.getColumns())
             {
                 indexXml.addColumn(columnName);
             }

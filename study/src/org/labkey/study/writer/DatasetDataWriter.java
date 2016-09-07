@@ -350,13 +350,13 @@ public class DatasetDataWriter implements InternalStudyWriter
         Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> allIndices = schemaTableInfo.getAllIndices();
         Collection<IndexInfo> outIndices = new LinkedHashSet<>(allIndices.size());
 
-        Set<PropertyStorageSpec.Index> domainIndices = tinfo.getDomainKind().getPropertyIndices();
+        Set<PropertyStorageSpec.Index> domainKindIndices = tinfo.getDomainKind().getPropertyIndices();
 
         for (Map.Entry<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> indexEntry : allIndices.entrySet())
         {
             List<ColumnInfo> columnInfoList = indexEntry.getValue().getValue();
             if (indexEntry.getValue().getKey().equals(TableInfo.IndexType.Primary) ||
-                    columnInfoListMatchesDomainIndex(columnInfoList, domainIndices))
+                    columnInfoListMatchesDomainIndex(columnInfoList, domainKindIndices))
             {
                 continue;
             }
@@ -367,7 +367,7 @@ public class DatasetDataWriter implements InternalStudyWriter
                 columnNames.add(columnInfo.getColumnName());
             }
 
-            IndexInfo indexInfo = new IndexInfo(indexEntry.getValue().getKey(), columnNames.toArray(new String[columnInfoList.size()]));
+            IndexInfo indexInfo = new IndexInfo(indexEntry.getValue().getKey(), columnNames);
             outIndices.add(indexInfo);
         }
         return outIndices;
@@ -402,16 +402,19 @@ public class DatasetDataWriter implements InternalStudyWriter
     @Nullable
     private static Boolean allColumnsMatch(List<ColumnInfo> columnInfoList, PropertyStorageSpec.Index domainIndex)
     {
-        //for each column in list check that it is in domain index
+        List<String> columnInfoListCaseInsensitive = new ArrayList<>();
         for (ColumnInfo columnInfo : columnInfoList)
         {
-            if (!isDomainIndexColumnMatch(domainIndex, columnInfo))
-            {
-                break;
-            }
-            return true;
+            columnInfoListCaseInsensitive.add(columnInfo.getColumnName().toLowerCase());
         }
-        return false;
+
+
+        List<String> indexInfoListCaseInsensitive = new ArrayList<>();
+        for (String columnName : domainIndex.columnNames)
+        {
+            indexInfoListCaseInsensitive.add(columnName.toLowerCase());
+        }
+        return columnInfoListCaseInsensitive.equals(indexInfoListCaseInsensitive);
     }
 
     private static boolean isDomainIndexColumnMatch(PropertyStorageSpec.Index domainIndex, ColumnInfo columnInfo)
@@ -458,7 +461,7 @@ public class DatasetDataWriter implements InternalStudyWriter
 
             domainIndices.clear();
             domainIndices.add(new PropertyStorageSpec.Index(true, "taskid", "objectid"));
-            Assert.assertTrue(columnInfoListMatchesDomainIndex(columnInfoList, domainIndices));
+            Assert.assertFalse(columnInfoListMatchesDomainIndex(columnInfoList, domainIndices));
 
             domainIndices.clear();
             domainIndices.add(new PropertyStorageSpec.Index(true, "taskid", "objectid", "blahId"));

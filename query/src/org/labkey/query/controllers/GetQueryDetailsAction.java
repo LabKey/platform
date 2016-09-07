@@ -219,7 +219,7 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
 
             // table indices
             JSONObject jsonIndices = new JSONObject();
-            for (Map.Entry<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> entry : tinfo.getIndices().entrySet())
+            for (Map.Entry<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> entry : tinfo.getUniqueIndices().entrySet())
             {
                 JSONObject jsonIndex = new JSONObject();
                 jsonIndex.put("type", entry.getValue().getKey());

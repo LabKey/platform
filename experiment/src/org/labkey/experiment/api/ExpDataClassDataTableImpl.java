@@ -363,9 +363,9 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
 
     @NotNull
     @Override
-    public Map<String, Pair<IndexType, List<ColumnInfo>>> getIndices()
+    public Map<String, Pair<IndexType, List<ColumnInfo>>> getUniqueIndices()
     {
-        Map<String, Pair<IndexType, List<ColumnInfo>>> indices = new HashMap<>(super.getIndices());
+        Map<String, Pair<IndexType, List<ColumnInfo>>> indices = new HashMap<>(super.getUniqueIndices());
         indices.putAll(wrapTableIndices(_dataClass.getTinfo()));
         return Collections.unmodifiableMap(indices);
     }

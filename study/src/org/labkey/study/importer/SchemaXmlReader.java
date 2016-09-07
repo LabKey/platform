@@ -15,7 +15,6 @@
  */
 package org.labkey.study.importer;
 
-import com.google.common.collect.Lists;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
@@ -165,21 +164,20 @@ public class SchemaXmlReader implements SchemaReader
     private void addIndicesToDatasetImportInfo(TableType tableXml, DatasetImportInfo info, TablesDocument tablesDocument)
     {
         IndicesType tableXmlIndices = tableXml.getIndices();
-        List<List<String>> indicesColumnsAsSortedLists = Lists.newArrayList();
+        List<List<String>> indicesColumns = new ArrayList<>();
         if(tableXmlIndices != null && tableXmlIndices.getIndexArray().length > 0)
         {
             for (IndexType indexType : tableXmlIndices.getIndexArray())
             {
                 List<String> columns = Arrays.asList(indexType.getColumnArray());
-                columns.sort(String::compareTo);
 
-                indicesColumnsAsSortedLists.add(columns);
+                indicesColumns.add(columns);
                 PropertyStorageSpec.Index index = getIndexFromIndexType(indexType);
                 info.indices.add(index);
             }
         }
 
-        applySharedIndices(info, tablesDocument, indicesColumnsAsSortedLists);
+        applySharedIndices(info, tablesDocument, indicesColumns);
     }
 
     private void applySharedIndices(DatasetImportInfo info, TablesDocument tablesDocument, List<List<String>> indicesColumnsAsSortedLists)
@@ -214,7 +212,7 @@ public class SchemaXmlReader implements SchemaReader
 
     private List<PropertyStorageSpec.Index> getSharedConfigIndices(TablesDocument tablesDocument)
     {
-        List<PropertyStorageSpec.Index> indices = Lists.newArrayList();
+        List<PropertyStorageSpec.Index> indices = new ArrayList<>();
 
         SharedConfigType[] sharedConfigArray = tablesDocument.getTables().getSharedConfigArray();
 
