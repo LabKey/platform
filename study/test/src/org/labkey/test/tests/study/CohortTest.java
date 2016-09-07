@@ -620,7 +620,7 @@ public class CohortTest extends BaseWebDriverTest
 
     private void verifyNewCohort()
     {
-        clickButton("Insert New");
+        DataRegionTable.findDataRegion(this).clickInsertNewRowButton();
         assertChecked(Locator.checkboxByName("quf_enrolled"));
     }
 
