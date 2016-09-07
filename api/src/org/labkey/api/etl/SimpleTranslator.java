@@ -28,6 +28,8 @@ import org.labkey.api.ScrollableDataIterator;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
@@ -140,6 +142,144 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             msg = "Could not convert value";
         addFieldError(fieldName, msg);
         return null;
+    }
+
+    public static class RemapPostConvert
+    {
+        private final TableInfo _targetTable;
+        private final boolean _includeTitleColumn;
+
+        @Nullable
+        private final Set<Container> _searchContainers;
+
+        private List<MultiValuedMap<?, ?>> _maps = null;
+        private MultiValuedMap<String, Object> _titleColumnLookupMap = null;
+
+        public RemapPostConvert(@NotNull TableInfo targetTable, boolean includeTitleColumn)
+        {
+            this(targetTable, includeTitleColumn, null);
+        }
+
+        /**
+         * @param searchContainers an explicit set of containers to search based on some custom scoping. Resolved using
+         *                         by setting a ContainerFilter on the targetTable
+         */
+        public RemapPostConvert(@NotNull TableInfo targetTable, boolean includeTitleColumn, @Nullable Set<Container> searchContainers)
+        {
+            _targetTable = targetTable;
+            _includeTitleColumn = includeTitleColumn;
+            _searchContainers = searchContainers;
+        }
+
+        private List<MultiValuedMap<?, ?>> getMaps()
+        {
+            if (_maps == null)
+            {
+                _maps = new ArrayList<>();
+
+                ColumnInfo pkCol = _targetTable.getPkColumns().get(0);
+                Set<ColumnInfo> seen = new HashSet<>();
+
+                // See similar check in AbstractForeignKey.allowImportByAlternateKey()
+                // The lookup table must meet the following requirements:
+                // - Has a single primary key
+                // - Has a unique index over a single column that isn't the primary key
+                // - The column in the unique index must be a string type
+
+                ContainerFilter resetContainerFilter = null;
+                if (_targetTable instanceof ContainerFilterable && _searchContainers != null)
+                {
+                    resetContainerFilter = _targetTable.getContainerFilter();
+                    ((ContainerFilterable)_targetTable).setContainerFilter(new ContainerFilter.SimpleContainerFilter(_searchContainers));
+                }
+                try
+                {
+                    for (Pair<TableInfo.IndexType, List<ColumnInfo>> index : _targetTable.getIndices().values())
+                    {
+                        if (index.getKey() != TableInfo.IndexType.Unique)
+                            continue;
+
+                        if (index.getValue().size() != 1)
+                            continue;
+
+                        ColumnInfo col = index.getValue().get(0);
+                        if (!seen.add(col))
+                            continue;
+
+                        if (pkCol == col)
+                            continue;
+
+                        if (!col.getJdbcType().isText())
+                            continue;
+
+                        _maps.add(createMap(_targetTable, pkCol, col));
+                    }
+
+                    if (_includeTitleColumn)
+                    {
+                        ColumnInfo titleColumn = _targetTable.getTitleColumn() != null ? _targetTable.getColumn(_targetTable.getTitleColumn()) : null;
+                        if (titleColumn != null && !seen.contains(titleColumn))
+                        {
+                            TableSelector ts = new TableSelector(_targetTable, Arrays.asList(titleColumn, pkCol), null, null);
+                            _titleColumnLookupMap = ts.getMultiValuedMap();
+                        }
+                    }
+                }
+                finally
+                {
+                    if (resetContainerFilter != null)
+                    {
+                        ((ContainerFilterable) _targetTable).setContainerFilter(resetContainerFilter);
+                    }
+                }
+            }
+            return _maps;
+        }
+
+        // Create a value map from the altKeyCol -> pkCol
+        private MultiValuedMap<?, ?> createMap(TableInfo targetTable, ColumnInfo pkCol, ColumnInfo altKeyCol)
+        {
+            // While there should be at most one matching value for lookup targets with a true unique constraint,
+            // using a multi-valued map allows us to also work with things that are almost always unique, like
+            // exp.Material names, when only a single value matches
+            return new TableSelector(targetTable, Arrays.asList(altKeyCol, pkCol), null, null).getMultiValuedMap();
+        }
+
+        public Object mappedValue(Object k)
+        {
+            if (null == k)
+                return null;
+
+            for (MultiValuedMap map : getMaps())
+            {
+                Collection<Object> vs = map.get(k);
+                if (vs != null && !vs.isEmpty())
+                {
+                    return getSingleValue(k, vs);
+                }
+            }
+
+            getMaps();
+
+            if (_titleColumnLookupMap != null)
+            {
+                Collection<Object> vs = _titleColumnLookupMap.get(String.valueOf(k));
+                if (vs != null && !vs.isEmpty())
+                {
+                    return getSingleValue(k, vs);
+                }
+            }
+
+            return k;
+        }
+
+        private Object getSingleValue(Object k, Collection<Object> vs)
+        {
+            if (vs.size() == 1)
+                return vs.iterator().next();
+
+            throw new ConversionException("More than one value matched: " + String.valueOf(k));
+        }
     }
 
 
@@ -483,73 +623,16 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         final RemapMissingBehavior _missing;
         final boolean _includeTitleColumn;
 
-        List<Map<?, ?>> _maps = null;
-        MultiValuedMap<String, Object> _titleColumnLookupMap = null;
+        final private RemapPostConvert _remapper;
 
         public RemapPostConvertColumn(final @NotNull SimpleConvertColumn convertCol, final int fromIndex, final @NotNull ColumnInfo toCol, RemapMissingBehavior missing, boolean includeTitleColumn)
         {
             super(convertCol.fieldName, convertCol.index, convertCol.type);
-//            assert _data.getColumnInfo(fromIndex).getFk() != null && _data.getColumnInfo(fromIndex).getFk().allowImportByAlternateKey();
             _convertCol = convertCol;
             _toCol = toCol;
             _missing = missing;
             _includeTitleColumn = includeTitleColumn;
-        }
-
-        private List<Map<?,?>> getMaps()
-        {
-            if (_maps == null)
-            {
-                _maps = new ArrayList<>();
-
-                TableInfo targetTable = _toCol.getFkTableInfo();
-                ColumnInfo pkCol = targetTable.getPkColumns().get(0);
-                Set<ColumnInfo> seen = new HashSet<>();
-
-                // See similar check in AbstractForeignKey.allowImportByAlternateKey()
-                // The lookup table must meet the following requirements:
-                // - Has a single primary key
-                // - Has a unique index over a single column that isn't the primary key
-                // - The column in the unique index must be a string type
-                for (Pair<TableInfo.IndexType, List<ColumnInfo>> index : targetTable.getIndices().values())
-                {
-                    if (index.getKey() != TableInfo.IndexType.Unique)
-                        continue;
-
-                    if (index.getValue().size() != 1)
-                        continue;
-
-                    ColumnInfo col = index.getValue().get(0);
-                    if (seen.contains(col))
-                        continue;
-                    seen.add(col);
-
-                    if (pkCol == col)
-                        continue;
-
-                    if (!col.getJdbcType().isText())
-                        continue;
-
-                    _maps.add(createMap(targetTable, pkCol, col));
-                }
-
-                if (_includeTitleColumn)
-                {
-                    ColumnInfo titleColumn = targetTable.getTitleColumn() != null ? targetTable.getColumn(targetTable.getTitleColumn()) : null;
-                    if (titleColumn != null && !seen.contains(titleColumn))
-                    {
-                        TableSelector ts = new TableSelector(targetTable, Arrays.asList(titleColumn, pkCol), null, null);
-                        _titleColumnLookupMap = ts.getMultiValuedMap();
-                    }
-                }
-            }
-            return _maps;
-        }
-
-        // Create a value map from the altKeyCol -> pkCol
-        private Map<?, ?> createMap(TableInfo targetTable, ColumnInfo pkCol, ColumnInfo altKeyCol)
-        {
-            return new TableSelector(targetTable, Arrays.asList(altKeyCol, pkCol), null, null).getValueMap();
+            _remapper = new RemapPostConvert(_toCol.getFkTableInfo(), _includeTitleColumn);
         }
 
         @Override
@@ -561,41 +644,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             }
             catch (ConversionException ex)
             {
-                return mappedValue(o);
-            }
-        }
-
-        private Object mappedValue(Object k)
-        {
-            if (null == k)
-                return null;
-
-            for (Map<?,?> map : getMaps())
-            {
-                Object v = map.get(k);
-                if (null != v || map.containsKey(k))
-                    return v;
-            }
-
-            if (_titleColumnLookupMap != null)
-            {
-                Collection<Object> vs = _titleColumnLookupMap.get(String.valueOf(k));
-                if (vs != null && !vs.isEmpty())
-                {
-                    if (vs.size() == 1)
-                        return vs.iterator().next();
-
-                    if (vs.size() > 1)
-                        throw new ConversionException("More than one display value matched: " + String.valueOf(k));
-                }
-            }
-
-            switch (_missing)
-            {
-                case Null:          return null;
-                case OriginalValue: return k;
-                case Error:
-                default:            throw new ConversionException("Could not translate value: " + String.valueOf(k));
+                return _remapper.mappedValue(o);
             }
         }
     }

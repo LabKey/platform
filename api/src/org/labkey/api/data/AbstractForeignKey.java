@@ -277,6 +277,16 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
         if (pkCols.size() != 1)
             return false;
 
+        // Only use our alternative key approach if we're targeting the PK, since if we're targeting an
+        // alternative unique column directly, we don't need to resolve the PK value.
+        if (getLookupColumnName() == null)
+            return false;
+        ColumnInfo lookupColumn = lookupTable.getColumn(getLookupColumnName());
+        if (lookupColumn == null)
+            return false;
+        if (!lookupColumn.isKeyField())
+            return false;
+
         ColumnInfo pkCol = pkCols.get(0);
 
         Set<ColumnInfo> seen = new HashSet<>();

@@ -17,7 +17,6 @@
 package org.labkey.api.study.assay;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -27,6 +26,7 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilterable;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ForeignKey;
@@ -36,11 +36,11 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
+import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.MvFieldWrapper;
@@ -69,11 +69,11 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.springframework.jdbc.BadSqlGrammarException;
@@ -82,8 +82,6 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -555,10 +553,12 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         List<? extends DomainProperty> columns = dataDomain.getProperties();
         Map<DomainProperty, List<ColumnValidator>> validatorMap = new HashMap<>();
-        Map<DomainProperty, RemapPostConvert> remapMap = new HashMap<>();
+        Map<DomainProperty, SimpleTranslator.RemapPostConvert> remapMap = new HashMap<>();
 
         for (DomainProperty pd : columns)
         {
+            Set<Container> searchContainers = null;
+
             // initialize the DomainProperty validator map
             validatorMap.put(pd, ColumnValidators.create(null, pd));
 
@@ -610,6 +610,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     else
                         sampleIds.put(pd, new HashSet<>());
                 }
+                // Materials/samples get a special search scoping
+                searchContainers = getSearchContainers(container, ss, pd, user);
             }
 
             if (dataTable != null && settings.isAllowLookupByAlternateKey())
@@ -618,24 +620,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 ForeignKey fk = column != null ? column.getFk() : null;
                 if (fk != null && fk.allowImportByAlternateKey())
                 {
-                    // Only use our alternative key approach if we're targeting the PK, since if we're targeting an
-                    // alternative unique column directly, we don't need to resolve the PK value.
-                    TableInfo lookupTable = fk.getLookupTableInfo();
-                    if (lookupTable != null)
-                    {
-                        if (fk.getLookupColumnName() != null)
-                        {
-                            ColumnInfo lookupColumn = lookupTable.getColumn(fk.getLookupColumnName());
-                            if (lookupColumn != null && lookupColumn.isKeyField())
-                            {
-                                remapMap.put(pd, new RemapPostConvert(column, true));
-                            }
-                        }
-                        else
-                        {
-                            remapMap.put(pd, new RemapPostConvert(column, true));
-                        }
-                    }
+                    remapMap.put(pd, new SimpleTranslator.RemapPostConvert(fk.getLookupTableInfo(), true, searchContainers));
                 }
             }
         }
@@ -780,7 +765,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 // See similar conversion performed in SimpleTranslator.RemapPostConvertColumn
                 if (o instanceof String && remapMap.containsKey(pd))
                 {
-                    RemapPostConvert remap = remapMap.get(pd);
+                    SimpleTranslator.RemapPostConvert remap = remapMap.get(pd);
                     Object remapped = null;
                     try
                     {
@@ -876,113 +861,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         return materialInputs;
     }
 
-    // TODO: Replace with SimpleTranslator.RemapPostConvertColumn someday
-    private class RemapPostConvert
-    {
-        private final ColumnInfo _toCol;
-        private final boolean _includeTitleColumn;
-
-        private List<Map<?, ?>> _maps = null;
-        private MultiValuedMap<String, Object> _titleColumnLookupMap = null;
-
-        private RemapPostConvert(@NotNull ColumnInfo toCol, boolean includeTitleColunn)
-        {
-            _toCol = toCol;
-            _includeTitleColumn = includeTitleColunn;
-        }
-
-        private List<Map<?, ?>> getMaps()
-        {
-            if (_maps == null)
-            {
-                _maps = new ArrayList<>();
-
-                TableInfo targetTable = _toCol.getFkTableInfo();
-                ColumnInfo pkCol = targetTable.getPkColumns().get(0);
-                Set<ColumnInfo> seen = new HashSet<>();
-
-                // See similar check in AbstractForeignKey.allowImportByAlternateKey()
-                // The lookup table must meet the following requirements:
-                // - Has a single primary key
-                // - Has a unique index over a single column that isn't the primary key
-                // - The column in the unique index must be a string type
-                for (Pair<TableInfo.IndexType, List<ColumnInfo>> index : targetTable.getIndices().values())
-                {
-                    if (index.getKey() != TableInfo.IndexType.Unique)
-                        continue;
-
-                    if (index.getValue().size() != 1)
-                        continue;
-
-                    ColumnInfo col = index.getValue().get(0);
-                    if (seen.contains(col))
-                        continue;
-                    seen.add(col);
-
-                    if (pkCol == col)
-                        continue;
-
-                    if (!col.getJdbcType().isText())
-                        continue;
-
-                    _maps.add(createMap(targetTable, pkCol, col));
-                }
-
-                if (_includeTitleColumn)
-                {
-                    ColumnInfo titleColumn = targetTable.getTitleColumn() != null ? targetTable.getColumn(targetTable.getTitleColumn()) : null;
-                    if (titleColumn != null && !seen.contains(titleColumn))
-                    {
-                        TableSelector ts = new TableSelector(targetTable, Arrays.asList(titleColumn, pkCol), null, null);
-                        _titleColumnLookupMap = ts.getMultiValuedMap();
-                    }
-                }
-            }
-            return _maps;
-        }
-
-        // Create a value map from the altKeyCol -> pkCol
-        private Map<?, ?> createMap(TableInfo targetTable, ColumnInfo pkCol, ColumnInfo altKeyCol)
-        {
-            return new TableSelector(targetTable, Arrays.asList(altKeyCol, pkCol), null, null).getValueMap();
-        }
-
-        private Object mappedValue(Object k)
-        {
-            if (null == k)
-                return null;
-
-            for (Map<?,?> map : getMaps())
-            {
-                Object v = map.get(k);
-                if (null != v || map.containsKey(k))
-                    return v;
-            }
-
-            if (_titleColumnLookupMap != null)
-            {
-                Collection<Object> vs = _titleColumnLookupMap.get(String.valueOf(k));
-                if (vs != null && !vs.isEmpty())
-                {
-                    if (vs.size() == 1)
-                        return vs.iterator().next();
-
-                    if (vs.size() > 1)
-                        throw new ConversionException("More than one display value matched: " + String.valueOf(k));
-                }
-            }
-
-//            switch (_missing)
-//            {
-//                case Null:          return null;
-//                case OriginalValue: return k;
-//                case Error:
-//                default:            throw new ConversionException("Could not translate value: " + String.valueOf(k));
-//            }
-            return k;
-        }
-    }
-
     private void resolveSampleNames(Container container, User user, Map<DomainProperty, ExpSampleSet> sampleSets, Map<ExpSampleSet, Set<String>> sampleNamesBySampleSet, Map<ExpMaterial, String> materialInputs) throws ExperimentException
     {
         for (Map.Entry<ExpSampleSet, Set<String>> entry : sampleNamesBySampleSet.entrySet())
@@ -1006,30 +884,69 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
     }
 
-    private void resolveSampleNames(Container container, User user, @Nullable ExpSampleSet ss, DomainProperty dp, Set<String> sampleNames, Map<ExpMaterial, String> materialInputs) throws ExperimentException
+    private void resolveSampleNames(Container container, User user, @Nullable ExpSampleSet ss, @Nullable DomainProperty dp, Set<String> sampleNames, Map<ExpMaterial, String> materialInputs) throws ExperimentException
     {
-        // Default to looking in the current container
-        Container sampleContainer = container;
-
         // use DomainProperty name as the role
-        String role = null;
+        String role = dp == null ? null : dp.getName(); // TODO: More than one DomainProperty could be a lookup to the SampleSet
+
+        Set<Container> searchContainers = getSearchContainers(container, ss, dp, user);
+
+        for (Container searchContainer : searchContainers)
+        {
+            List<? extends ExpMaterial> materials = ExperimentService.get().getExpMaterials(searchContainer, user, sampleNames, ss, false, false);
+
+            for (ExpMaterial material : materials)
+                if (!materialInputs.containsKey(material))
+                    materialInputs.put(material, role);
+        }
+    }
+
+    @NotNull
+    private Set<Container> getSearchContainers(Container currentContainer, @Nullable ExpSampleSet ss, @Nullable DomainProperty dp, User user)
+    {
+        Set<Container> searchContainers = new LinkedHashSet<>();
         if (dp != null)
         {
-            role = dp.getName(); // TODO: More than one DomainProperty could be a lookup to the SampleSet
             Lookup lookup = dp.getLookup();
             if (lookup != null && lookup.getContainer() != null)
             {
-                // The property is specifically targeting a container, so look there
-                sampleContainer = lookup.getContainer();
+                Container lookupContainer = lookup.getContainer();
+                if (lookupContainer.hasPermission(user, ReadPermission.class))
+                {
+                    // The property is specifically targeting a container, so look there
+                    searchContainers.add(lookup.getContainer());
+                }
             }
         }
 
-        List<? extends ExpMaterial> materials = ExperimentService.get().getExpMaterials(sampleContainer, user, sampleNames, ss, false, false);
-
-        for (ExpMaterial material : materials)
-            if (!materialInputs.containsKey(material))
-                materialInputs.put(material, role);
-    }
+        if (searchContainers.isEmpty())
+        {
+            // Default to looking in the current container
+            searchContainers.add(currentContainer);
+            if (ss == null || (ss.getContainer().isProject() && !currentContainer.isProject()))
+            {
+                Container c = currentContainer.getParent();
+                // Recurse up the chain to the project
+                while (c != null && !c.isRoot())
+                {
+                    if (c.hasPermission(user, ReadPermission.class))
+                    {
+                        searchContainers.add(c);
+                    }
+                    c = c.getParent();
+                }
+            }
+            Container sharedContainer = ContainerManager.getSharedContainer();
+            if (ss == null || ss.getContainer().equals(sharedContainer))
+            {
+                if (sharedContainer.hasPermission(user, ReadPermission.class))
+                {
+                    searchContainers.add(ContainerManager.getSharedContainer());
+                }
+            }
+        }
+        return searchContainers;
+}
 
 
     private void resolveSampleIds(Map<DomainProperty, ExpSampleSet> sampleSets, Map<ExpSampleSet, Set<Integer>> sampleIdsBySampleSet, Map<ExpMaterial, String> materialInputs)
