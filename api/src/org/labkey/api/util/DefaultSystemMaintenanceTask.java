@@ -20,7 +20,7 @@ import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 /**
  * Created by klum on 9/29/2015.
  */
-@Deprecated // No need for this... default methods are now implemented directly in MaintenanceTask interface
+@Deprecated // Unused... default methods are now implemented directly in MaintenanceTask interface
 public abstract class DefaultSystemMaintenanceTask implements MaintenanceTask
 {
 }

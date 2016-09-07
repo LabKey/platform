@@ -54,7 +54,7 @@ public class Formats
         return FolderSettingsCache.getDefaultNumberFormat(c);
     }
 
-    /** Format number using using folder-specified default pattern */
+    /** Format number using folder-specified default pattern */
     public static String formatNumber(Container c, Number n)
     {
         String formatString = FolderSettingsCache.getDefaultNumberFormat(c);

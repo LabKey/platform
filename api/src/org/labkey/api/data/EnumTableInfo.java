@@ -75,7 +75,7 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
     }
 
     /**
-     * Exposes an enum as a three column virtual table, using using its toString() as the value, rowIdGetter to determine rowId, and ordinal() as ordinal
+     * Exposes an enum as a three column virtual table, using its toString() as the value, rowIdGetter to determine rowId, and ordinal() as ordinal
      * @param e class of the enum
      * @param schema parent DBSchema
      * @param rowIdGetter callback to determine the int rowId of each item in the enum

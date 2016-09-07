@@ -170,7 +170,7 @@ public class Encryption
             if (null == passPhrase)
                 throw new IllegalStateException("Pass phrase cannot be null");
 
-            // Turn pass phrase into a keyLength-bit key using using PKCS #5 v2.0, a standard salt and 65,536 iterations
+            // Turn pass phrase into a keyLength-bit key using PKCS #5 v2.0, a standard salt and 65,536 iterations
             try
             {
                 byte[] key = generateSecretKeyFromPassPhrase(passPhrase, keyLength);
