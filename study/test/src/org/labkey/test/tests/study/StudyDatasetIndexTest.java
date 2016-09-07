@@ -60,7 +60,7 @@ public class StudyDatasetIndexTest extends StudyBaseTest
         selectQueryInSubfolder("study","built-in queries & tables", "DEM-1");
         waitForText(10000, "view raw table metadata");
         clickAndWait(Locator.linkWithText("view raw table metadata"));
-        waitForText("dem_minus_1_indexedColumn");
+        assertTextPresentCaseInsensitive("dem_minus_1_indexedColumn");
 
         reloadStudyFromZip(STUDY_WITH_DATASET_SHARED_INDEX);
 
@@ -68,14 +68,14 @@ public class StudyDatasetIndexTest extends StudyBaseTest
         selectQueryInSubfolder("study","built-in queries & tables", "DEM-1");
         waitForText(10000, "view raw table metadata");
         clickAndWait(Locator.linkWithText("view raw table metadata"));
-        waitForText("dem_minus_1_indexedColumn");
-        waitForText("dem_minus_1_sharedColumn");
+        assertTextPresentCaseInsensitive("dem_minus_1_indexedColumn");
+        assertTextPresentCaseInsensitive("dem_minus_1_sharedColumn");
 
         beginAt("/query/" + getProjectName() + "/" + getFolderName()  + "/schema.view?schemaName=study");
         selectQueryInSubfolder("study","built-in queries & tables", "DEM-2");
         waitForText(10000, "view raw table metadata");
         clickAndWait(Locator.linkWithText("view raw table metadata"));
         assertTextNotPresent("indexedColumn");
-        waitForText("dem_minus_2_sharedColumn");
+        assertTextPresentCaseInsensitive("dem_minus_2_sharedColumn");
     }
 }
