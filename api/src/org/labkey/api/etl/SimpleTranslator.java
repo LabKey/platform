@@ -194,7 +194,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 }
                 try
                 {
-                    for (Pair<TableInfo.IndexType, List<ColumnInfo>> index : _targetTable.getIndices().values())
+                    for (Pair<TableInfo.IndexType, List<ColumnInfo>> index : _targetTable.getUniqueIndices().values())
                     {
                         if (index.getKey() != TableInfo.IndexType.Unique)
                             continue;

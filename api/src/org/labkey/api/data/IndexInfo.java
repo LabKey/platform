@@ -18,6 +18,9 @@ package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Represents an index that's part of a {@link TableInfo}.
  */
@@ -28,12 +31,12 @@ public class IndexInfo
 
 
     private TableInfo.IndexType _type;
-    private String[] _columns;
+    private List<String> _columns;
 
-    public IndexInfo(TableInfo.IndexType type, String[] columns)
+    public IndexInfo(TableInfo.IndexType type, List<String> columns)
     {
         _type = type;
-        _columns = columns;
+        _columns = Collections.unmodifiableList(columns);
     }
 
 
@@ -42,7 +45,7 @@ public class IndexInfo
         return _type;
     }
 
-    public String[] getColumns()
+    public List<String> getColumns()
     {
         return _columns;
     }

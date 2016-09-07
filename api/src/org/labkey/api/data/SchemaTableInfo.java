@@ -260,9 +260,9 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     }
 
     @Override @NotNull
-    public Map<String, Pair<IndexType, List<ColumnInfo>>> getIndices()
+    public Map<String, Pair<IndexType, List<ColumnInfo>>> getUniqueIndices()
     {
-        return getColumnMetaData().getIndices();
+        return getColumnMetaData().getUniqueIndices();
     }
 
     @NotNull

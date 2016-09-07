@@ -21,6 +21,8 @@ import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlCursor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
@@ -143,7 +145,7 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
 
     @NotNull
     @Override
-    public Map<String, Pair<IndexType, List<ColumnInfo>>> getIndices()
+    public Map<String, Pair<IndexType, List<ColumnInfo>>> getUniqueIndices()
     {
         return Collections.emptyMap();
     }
@@ -160,7 +162,7 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
     public List<ColumnInfo> getAlternateKeyColumns()
     {
         List<ColumnInfo> pkCols = getPkColumns();
-        Map<String, Pair<IndexType, List<ColumnInfo>>> indices = getIndices();
+        Map<String, Pair<IndexType, List<ColumnInfo>>> indices = getUniqueIndices();
         for (Pair<IndexType, List<ColumnInfo>> pair : indices.values())
         {
             if (pair.getKey() == IndexType.Primary)
@@ -1517,5 +1519,14 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         for (ColumnInfo column : selectColumns)
             allInvolvedColumns.add(column);
         return allInvolvedColumns;
+    }
+
+    public static class TestCase extends Assert{
+        @Test
+        public void testEnum()
+        {
+            Assert.assertEquals(IndexType.Primary, IndexType.getForXmlIndexType(org.labkey.data.xml.IndexType.Type.PRIMARY));
+            Assert.assertNotEquals(IndexType.Unique, IndexType.getForXmlIndexType(org.labkey.data.xml.IndexType.Type.PRIMARY));
+        }
     }
 }

@@ -110,7 +110,7 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
     @NotNull List<ColumnInfo> getPkColumns();
 
     @NotNull
-    Map<String, Pair<IndexType, List<ColumnInfo>>> getIndices();
+    Map<String, Pair<IndexType, List<ColumnInfo>>> getUniqueIndices();
 
     @NotNull
     Map<String, Pair<IndexType, List<ColumnInfo>>> getAllIndices();
@@ -133,7 +133,7 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
             return xmlIndexType;
         }
 
-        public IndexType getForXmlIndexType(org.labkey.data.xml.IndexType xmlIndexType){
+        public static IndexType getForXmlIndexType(org.labkey.data.xml.IndexType.Type.Enum xmlIndexType){
             for (IndexType indexType : IndexType.values())
             {
                 if(indexType.getXmlIndexType().equals(xmlIndexType)){
