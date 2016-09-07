@@ -2997,6 +2997,8 @@ public class DavController extends SpringActionController
             checkAllowedFileName(resource.getName());
 
             boolean exists = resource.exists();
+            boolean overwrite = getOverwriteParameter(true);
+
             boolean deleteFileOnFail = false;
             boolean temp = false;
 
@@ -3008,7 +3010,6 @@ public class DavController extends SpringActionController
 
             if (exists)
             {
-                boolean overwrite = getOverwriteParameter(true);
                 if (!overwrite)
                 {
                     // allow finder to overwrite zero byte files without overwrite header
@@ -3117,7 +3118,7 @@ public class DavController extends SpringActionController
             }
 
             lockNullResources.remove(resource.getPath());
-            if (exists)
+            if (exists && !overwrite) //TODO: review this
                 return WebdavStatus.SC_OK;
             else
                 return WebdavStatus.SC_CREATED;
