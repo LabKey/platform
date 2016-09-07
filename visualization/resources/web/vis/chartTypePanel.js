@@ -181,9 +181,6 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
                     {
                         store.filterBy(function(record)
                         {
-                            if (record.get('hidden'))
-                                return false;
-
                             if (this.restrictColumnsEnabled && !(record.get('measure') || record.get('dimension')))
                                 return false;
 

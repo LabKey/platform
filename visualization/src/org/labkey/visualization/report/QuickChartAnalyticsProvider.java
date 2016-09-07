@@ -33,7 +33,7 @@ public class QuickChartAnalyticsProvider extends ColumnAnalyticsProvider
     @Override
     public boolean isApplicable(@NotNull ColumnInfo col)
     {
-        return col.isNumericType();
+        return true;
     }
 
     @Override
@@ -48,8 +48,12 @@ public class QuickChartAnalyticsProvider extends ColumnAnalyticsProvider
         VisualizationUrls urlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
         if (urlProvider != null && settings != null && settings.getSchemaName() != null && settings.getQueryName() != null)
         {
-            ActionURL url = urlProvider.getGenericChartDesignerURL(ctx.getContainer(), ctx.getViewContext().getUser(), settings, RenderType.BOX_PLOT);
-            url.addParameter("autoColumnYName", col.getName());
+            RenderType renderType = col.isNumericType() ? RenderType.BOX_PLOT : RenderType.BAR_PLOT;
+            ActionURL url = urlProvider.getGenericChartDesignerURL(ctx.getContainer(), ctx.getViewContext().getUser(), settings, renderType);
+
+            String autoColParam = col.isNumericType() ? "autoColumnYName" : "autoColumnName";
+            url.addParameter(autoColParam, col.getName());
+
             return url;
         }
 
