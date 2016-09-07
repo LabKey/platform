@@ -920,7 +920,7 @@ public class StudyPublishTest extends StudyProtectedExportTest
 
         _ext4Helper.checkGridRowCheckbox("All");
         _ext4Helper.uncheckGridRowCheckbox("All");
-        waitForElement(Locator.tagWithText("td", "No mouse selected. Please select at least one mouse."));
+        waitForElement(Locator.tagWithText("div", "No mouse selected. Please select at least one mouse."));
         for (String mouseId : GROUP1_PTIDS)
         {
             // Select all of the Mice in GROUP1
