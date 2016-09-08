@@ -118,7 +118,13 @@ abstract public class DomainKind implements Handler<String>
      */
     abstract public void deleteDomain(User user, Domain domain);
 
-    abstract public Set<PropertyStorageSpec> getBaseProperties();
+    /**
+     * Get base properties defined for that domainkind. The domain parameter is only when there may be a condition
+     * with the particular domain that could affect the base properties (see DatasetDomainKind).  Other domainkinds
+     * may pass through null (see AssayDomainKind).
+     * @param domain
+     */
+    abstract public Set<PropertyStorageSpec> getBaseProperties(@Nullable Domain domain);
 
     /**
      * Any additional properties which will get special handling in the Properties Editor.
@@ -148,7 +154,7 @@ abstract public class DomainKind implements Handler<String>
      */
     abstract public DbScope getScope();
     abstract public String getStorageSchemaName();
-    abstract public Set<PropertyStorageSpec.Index> getPropertyIndices();
+    abstract public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain);
 
     /**
      * If domain needs metadata, give the metadata schema and table names

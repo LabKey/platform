@@ -52,7 +52,7 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
 
     protected static final Set<PropertyStorageSpec> BASE_PROPERTIES;
     protected static final Set<PropertyStorageSpec> BASE_REQUIRED_PROPERTIES;
-    private static final Set<PropertyStorageSpec.Index> INDEXES;
+    protected static final Set<PropertyStorageSpec.Index> INDEXES;
 
     static
     {
@@ -89,13 +89,13 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
     public abstract List<FieldKey> getDefaultColumnNames();
 
     @Override
-    public Set<PropertyStorageSpec> getBaseProperties()
+    public Set<PropertyStorageSpec> getBaseProperties(Domain domain)
     {
         return BASE_PROPERTIES;
     }
 
     @Override
-    public Set<PropertyStorageSpec.Index> getPropertyIndices()
+    public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
     {
         return INDEXES;
     }

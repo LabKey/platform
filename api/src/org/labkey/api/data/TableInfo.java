@@ -319,6 +319,9 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
 
     public String getPublicSchemaName();
 
+    // Most datasets do not have a container column
+    boolean hasContainerColumn();
+
     public boolean needsContainerClauseAdded();
 
     @Nullable

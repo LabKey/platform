@@ -129,7 +129,7 @@ public class StorageProvisioner
 
             Set<String> base = Sets.newCaseInsensitiveHashSet();
 
-            for (PropertyStorageSpec spec : kind.getBaseProperties())
+            for (PropertyStorageSpec spec : kind.getBaseProperties(domain))
             {
                 change.addColumn(spec);
                 base.add(spec.getName());
@@ -158,7 +158,7 @@ public class StorageProvisioner
             }
 
             List<PropertyStorageSpec.Index> indices = new ArrayList<>();
-            indices.addAll(kind.getPropertyIndices());
+            indices.addAll(kind.getPropertyIndices(domain));
             indices.addAll(domain.getPropertyIndices());
             change.setIndexedColumns(indices);
 
@@ -187,9 +187,13 @@ public class StorageProvisioner
 
     private static PropertyStorageSpec makeMvColumn(DomainProperty property)
     {
-        return new PropertyStorageSpec(property.getName() + "_" + MvColumn.MV_INDICATOR_SUFFIX, JdbcType.VARCHAR, 50);
+        return makeMvColumn(new PropertyStorageSpec(property.getPropertyDescriptor()));
     }
 
+    private static PropertyStorageSpec makeMvColumn(PropertyStorageSpec property)
+    {
+        return new PropertyStorageSpec(property.getName() + "_" + MvColumn.MV_INDICATOR_SUFFIX, JdbcType.VARCHAR, 50);
+    }
 
     public static void drop(Domain domain)
     {
@@ -233,6 +237,44 @@ public class StorageProvisioner
         }
     }
 
+    public static void addStorageProperties(Domain domain, Collection<PropertyStorageSpec> properties, boolean allowAddBaseProperty)
+    {
+        DomainKind kind = domain.getDomainKind();
+        DbScope scope = kind.getScope();
+
+        // should be in a transaction
+        assert scope.isTransactionActive();
+
+        TableChange change = new TableChange(domain, ChangeType.AddColumns);
+
+        Set<String> base = Sets.newCaseInsensitiveHashSet();
+        for (PropertyStorageSpec s : kind.getBaseProperties(domain))
+            base.add(s.getName());
+
+        for (PropertyStorageSpec prop : properties)
+        {
+            if (prop.getName() == null || prop.getName().length() == 0)
+                throw new IllegalArgumentException("Can't add property with no name.");
+
+            if (!allowAddBaseProperty && base.contains(prop.getName()))
+            {
+                // apparently this is a case where the domain allows a propertydescriptor to be defined with the same
+                // name as a built-in column. e.g. to allow setting overrides?
+                log.warn("StorageProvisioner ignored property with name of built-in column: " + prop.getName());
+                continue;
+            }
+
+            change.addColumn(prop);
+
+            if (prop.isMvEnabled())
+            {
+                change.addColumn(makeMvColumn(prop));
+            }
+        }
+
+        change.execute();
+    }
+
 
     public static void addProperties(Domain domain, Collection<DomainProperty> properties, boolean allowAddBaseProperty)
     {
@@ -252,7 +294,7 @@ public class StorageProvisioner
         TableChange change = new TableChange(domain, ChangeType.AddColumns);
 
         Set<String> base = Sets.newCaseInsensitiveHashSet();
-        for (PropertyStorageSpec s : kind.getBaseProperties())
+        for (PropertyStorageSpec s : kind.getBaseProperties(domain))
             base.add(s.getName());
 
         int changeCount = 0;
@@ -279,12 +321,6 @@ public class StorageProvisioner
                 change.addColumn(makeMvColumn(prop));
                 changeCount++;
             }
-        }
-
-        if (change.getColumns().isEmpty())
-        {
-            // Nothing to do, so don't try to run an ALTER TABLE that doesn't actually do anything
-            return;
         }
 
         change.execute();
@@ -347,6 +383,27 @@ public class StorageProvisioner
         change.execute();
     }
 
+    public static void dropStorageProperties(Domain domain, Collection<PropertyStorageSpec> properties)
+    {
+        DomainKind kind = domain.getDomainKind();
+        DbScope scope = kind.getScope();
+
+        assert scope.isTransactionActive() : "should be in a transaction with propertydescriptor changes";
+
+        if (domain.getStorageTableName() == null)
+        {
+            throw new IllegalStateException("No storage table name set for domain: " + domain.getTypeURI());
+        }
+
+        TableChange change = new TableChange(domain, ChangeType.DropColumns);
+
+        for (PropertyStorageSpec prop : properties)
+        {
+            change.addColumn(prop);
+        }
+
+        change.execute();
+    }
 
     public static void dropProperties(Domain domain, Collection<DomainProperty> properties)
     {
@@ -356,7 +413,7 @@ public class StorageProvisioner
         assert scope.isTransactionActive() : "should be in a transaction with propertydescriptor changes";
 
         Set<String> base = Sets.newCaseInsensitiveHashSet();
-        for (PropertyStorageSpec s : kind.getBaseProperties())
+        for (PropertyStorageSpec s : kind.getBaseProperties(domain))
             base.add(s.getName());
 
         if (domain.getStorageTableName() == null)
@@ -377,12 +434,6 @@ public class StorageProvisioner
             }
         }
 
-        if (change.getColumns().isEmpty())
-        {
-            // Nothing to do, so don't try to run an ALTER TABLE that doesn't actually do anything
-            return;
-        }
-
         change.execute();
     }
 
@@ -400,7 +451,7 @@ public class StorageProvisioner
         TableChange renamePropChange = new TableChange(domain, ChangeType.RenameColumns);
 
         Set<String> base = Sets.newCaseInsensitiveHashSet();
-        for (PropertyStorageSpec s : kind.getBaseProperties())
+        for (PropertyStorageSpec s : kind.getBaseProperties(domain))
             base.add(s.getName());
 
         for (Map.Entry<DomainProperty, PropertyDescriptor> rename : propsRenamed.entrySet())
@@ -451,7 +502,7 @@ public class StorageProvisioner
         TableChange resizePropChange = new TableChange(domain, ChangeType.ResizeColumns);
 
         Set<String> base = Sets.newCaseInsensitiveHashSet();
-        kind.getBaseProperties().forEach(s ->
+        kind.getBaseProperties(domain).forEach(s ->
                 base.add(s.getName()));
 
         for (Pair<DomainProperty, Integer> pair : properties)
@@ -459,12 +510,6 @@ public class StorageProvisioner
             DomainProperty prop = pair.first;
             if (!base.contains(prop.getName()))
                 resizePropChange.addColumnResize(prop.getPropertyDescriptor(), pair.second);
-        }
-
-        if (resizePropChange.getColumnResizes().isEmpty())
-        {
-            // Nothing to do, so don't try to run an ALTER TABLE that doesn't actually do anything
-            return;
         }
 
         resizePropChange.execute();
@@ -819,7 +864,7 @@ public class StorageProvisioner
     private static Map<String, PropertyStorageSpec.Index> getRequiredIndices(Domain domain, SqlDialect sqlDialect)
     {
         Collection<PropertyStorageSpec.Index> requiredIndices = new ArrayList<>();
-        requiredIndices.addAll(domain.getDomainKind().getPropertyIndices());
+        requiredIndices.addAll(domain.getDomainKind().getPropertyIndices(domain));
         requiredIndices.addAll(domain.getPropertyIndices());
 
         Map<String,PropertyStorageSpec.Index> requiredIndicesMap = new CaseInsensitiveMapWrapper<>(new HashMap<>());
@@ -966,7 +1011,7 @@ public class StorageProvisioner
         return getSchemaTableInfo(domain, schemaName, tableName, schema);
     }
 
-    public static void addOrDropTableIndices(Domain domain, boolean doAdd)
+    public static void addOrDropTableIndices(Domain domain, Set<PropertyStorageSpec.Index> indices, boolean doAdd, TableChange.IndexSizeMode sizeMode)
     {
         DomainKind kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
@@ -977,9 +1022,16 @@ public class StorageProvisioner
 
         TableChange change = new TableChange(domain, doAdd ? ChangeType.AddIndices : ChangeType.DropIndices);
 
-        Collection<PropertyStorageSpec.Index> indices = new ArrayList<>();
-        indices.addAll(kind.getPropertyIndices());
-        indices.addAll(domain.getPropertyIndices());
+        if(null != sizeMode)
+            change.setIndexSizeMode(sizeMode);
+
+        // If indices not passed in, get them from domain definition
+        if(null == indices)
+        {
+            indices = new HashSet<>();
+            indices.addAll(kind.getPropertyIndices(domain));
+            indices.addAll(domain.getPropertyIndices());
+        }
 
         change.setIndexedColumns(indices);
 
@@ -998,7 +1050,7 @@ public class StorageProvisioner
 
         // Some domains have property descriptors for base properties
         Set<String> basePropertyNames = new HashSet<>();
-        for (PropertyStorageSpec s : kind.getBaseProperties())
+        for (PropertyStorageSpec s : kind.getBaseProperties(domain))
         {
             ColumnInfo c = ti.getColumn(s.getName());
             basePropertyNames.add(s.getName().toLowerCase());
@@ -1097,9 +1149,7 @@ public class StorageProvisioner
             ProvisioningReport.DomainReport report = preport.getProvisionedDomains().iterator().next();
 
             TableChange drops = new TableChange(domain, ChangeType.DropColumns);
-            boolean hasDrops = false;
             TableChange adds = new TableChange(domain, ChangeType.AddColumns);
-            boolean hasAdds = false;
 
             for (ProvisioningReport.ColumnStatus st : report.getColumns())
             {
@@ -1110,12 +1160,10 @@ public class StorageProvisioner
                     if (null != st.colName)
                     {
                         drops.dropColumnExactName(st.colName);
-                        hasDrops = true;
                     }
                     if (null != st.mvColName)
                     {
                         drops.dropColumnExactName(st.mvColName);
-                        hasDrops = true;
                     }
                 }
                 else if (st.prop != null)
@@ -1123,25 +1171,21 @@ public class StorageProvisioner
                     if (st.colName == null)
                     {
                         adds.addColumn(st.prop.getPropertyDescriptor());
-                        hasAdds = true;
                     }
                     if (st.mvColName == null && st.prop.isMvEnabled())
                     {
                         adds.addColumn(makeMvColumn(st.prop));
-                        hasAdds = true;
                     }
                     if (st.mvColName != null && !st.prop.isMvEnabled())
                     {
                         drops.dropColumnExactName(st.mvColName);
-                        hasDrops = true;
                     }
                 }
             }
 
-            if (hasDrops)
-                drops.execute();
-            if (hasAdds)
-                adds.execute();
+
+            drops.execute();
+            adds.execute();
             kind.invalidate(domain);
             transaction.commit();
             return !errors.hasErrors();
@@ -1272,7 +1316,7 @@ public class StorageProvisioner
             Set<String> basePropertyNames = new HashSet<>();
             if (kind.hasPropertiesIncludeBaseProperties())
             {
-                basePropertyNames.addAll(kind.getBaseProperties()
+                basePropertyNames.addAll(kind.getBaseProperties(domain)
                     .stream()
                     .map(spec -> spec.getName().toLowerCase())
                     .collect(Collectors.toList()));
@@ -1313,7 +1357,7 @@ public class StorageProvisioner
                     status.hasProblem = true;
                 }
             }
-            for (PropertyStorageSpec spec : kind.getBaseProperties())
+            for (PropertyStorageSpec spec : kind.getBaseProperties(domain))
             {
                 ProvisioningReport.ColumnStatus status = new ProvisioningReport.ColumnStatus();
                 domainReport._columns.add(status);

@@ -123,7 +123,6 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         return super.getTitleColumn();
     }
 
-
     @Override
     public boolean hasDefaultTitleColumn()
     {
@@ -476,11 +475,15 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     protected void applyContainerFilter(ContainerFilter filter)
     {
-        ColumnInfo containerColumn = _rootTable.getColumn(getContainerFilterColumn());
-        if (containerColumn != null && getContainer() != null)
+        // Datasets need to determine if they have container column in their root table
+        if(_rootTable.hasContainerColumn())
         {
-            clearConditions(containerColumn.getFieldKey());
-            addCondition(new SimpleFilter(getContainerFilterClause(filter, containerColumn.getFieldKey())));
+            ColumnInfo containerColumn = _rootTable.getColumn(getContainerFilterColumn());
+            if (containerColumn != null && getContainer() != null)
+            {
+                clearConditions(containerColumn.getFieldKey());
+                addCondition(new SimpleFilter(getContainerFilterClause(filter, containerColumn.getFieldKey())));
+            }
         }
     }
 

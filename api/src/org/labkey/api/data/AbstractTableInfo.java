@@ -143,6 +143,12 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         return Collections.unmodifiableList(ret);
     }
 
+    @Override
+    public boolean hasContainerColumn()
+    {
+        return true;
+    }
+
     @NotNull
     @Override
     public Map<String, Pair<IndexType, List<ColumnInfo>>> getUniqueIndices()

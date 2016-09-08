@@ -123,6 +123,7 @@ public class PropertyStorageSpec
     JdbcType jdbcType;
     private String typeURI;
     boolean primaryKey = false;
+    boolean primaryKeyNonClustered = false;
     boolean nullable = true;
     boolean autoIncrement = false;
     boolean isMvEnabled = false;
@@ -206,6 +207,7 @@ public class PropertyStorageSpec
         this.jdbcType = jdbcType;
         this.typeURI = typeURI;
         this.primaryKey = (specialness == Special.PrimaryKey);
+        this.primaryKeyNonClustered = (specialness == Special.PrimaryKeyNonClustered);
         _setSize(size, jdbcType);
         this.nullable = nullable;
         this.autoIncrement = autoIncrement;
@@ -257,6 +259,11 @@ public class PropertyStorageSpec
 
     public boolean isPrimaryKey()
     {
+        return primaryKey | primaryKeyNonClustered;
+    }
+
+    public boolean isPrimaryClusteredKey()
+    {
         return primaryKey;
     }
 
@@ -267,6 +274,16 @@ public class PropertyStorageSpec
     {
         this.primaryKey = primaryKey;
         return this;
+    }
+
+    public boolean isPrimaryKeyNonClustered()
+    {
+        return primaryKeyNonClustered;
+    }
+
+    public void setPrimaryKeyNonClustered(boolean primaryKeyNonClustered)
+    {
+        this.primaryKeyNonClustered = primaryKeyNonClustered;
     }
 
     public boolean isNullable()
@@ -382,17 +399,27 @@ public class PropertyStorageSpec
     {
         final public String[] columnNames;
         final public boolean isUnique;
+        final public boolean isClustered;
 
         public Index(boolean unique, String... columnNames)
         {
             this.columnNames = columnNames;
             this.isUnique = unique;
+            this.isClustered = false;
         }
 
         public Index(boolean unique, Collection<String> columnNames)
         {
             this.columnNames = columnNames.toArray(new String[columnNames.size()]);
             this.isUnique = unique;
+            this.isClustered = false;
+        }
+
+        public Index(boolean unique, boolean clustered, String... columnNames)
+        {
+            this.columnNames = columnNames;
+            this.isUnique = unique;
+            this.isClustered = clustered;
         }
 
     }
@@ -400,9 +427,32 @@ public class PropertyStorageSpec
     public enum Special
     {
         None,
-        PrimaryKey
+        PrimaryKey,
+        PrimaryKeyNonClustered
     }
 
+    public enum CLUSTER_TYPE
+    {
+        CLUSTERED,
+        NONCLUSTERED,
+        CLUSTER;
+
+        @Override
+        public String toString()
+        {
+            switch (this)
+            {
+                case CLUSTERED:
+                    return "CLUSTERED";
+                case NONCLUSTERED:
+                    return "NONCLUSTERED";
+                case CLUSTER:
+                    return "CLUSTER";
+            }
+
+            return "";
+        }
+    }
 
     /*** SPECIAL CASES for fixing broken tables ***/
 

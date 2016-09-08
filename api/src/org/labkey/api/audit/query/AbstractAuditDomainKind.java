@@ -106,7 +106,7 @@ public abstract class AbstractAuditDomainKind extends DomainKind
     }
 
     @Override
-    public Set<PropertyStorageSpec> getBaseProperties()
+    public Set<PropertyStorageSpec> getBaseProperties(Domain domain)
     {
         return _baseFields;
     }
@@ -116,7 +116,7 @@ public abstract class AbstractAuditDomainKind extends DomainKind
     {
         if (_reservedNames.isEmpty())
         {
-            for (PropertyStorageSpec spec : getBaseProperties())
+            for (PropertyStorageSpec spec : getBaseProperties(domain))
                 _reservedNames.add(spec.getName());
             for (PropertyDescriptor pd : getProperties())
                 _reservedNames.add(pd.getName());
@@ -251,7 +251,7 @@ public abstract class AbstractAuditDomainKind extends DomainKind
     }
 
     @Override
-    public Set<PropertyStorageSpec.Index> getPropertyIndices()
+    public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
     {
         return Collections.emptySet();
     }
@@ -279,7 +279,7 @@ public abstract class AbstractAuditDomainKind extends DomainKind
     {
         Set<String> names = new HashSet<>();
 
-        for (PropertyStorageSpec spec : getBaseProperties())
+        for (PropertyStorageSpec spec : getBaseProperties(domain))
             names.add(spec.getName());
 
         return names;

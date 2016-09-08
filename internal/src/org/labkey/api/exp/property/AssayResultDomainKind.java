@@ -45,7 +45,7 @@ public class AssayResultDomainKind extends AssayDomainKind
     }
 
     @Override
-    public Set<PropertyStorageSpec> getBaseProperties()
+    public Set<PropertyStorageSpec> getBaseProperties(Domain domain)
     {
         PropertyStorageSpec dataIdSpec = new PropertyStorageSpec(AbstractTsvAssayProvider.DATA_ID_COLUMN_NAME, JdbcType.INTEGER);
         dataIdSpec.setNullable(false);
@@ -58,7 +58,7 @@ public class AssayResultDomainKind extends AssayDomainKind
     }
 
     @Override
-    public Set<PropertyStorageSpec.Index> getPropertyIndices()
+    public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
     {
         return PageFlowUtil.set(new PropertyStorageSpec.Index(false, AbstractTsvAssayProvider.DATA_ID_COLUMN_NAME));
     }

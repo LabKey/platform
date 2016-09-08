@@ -389,6 +389,11 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         return _selectListTimeout;
     }
 
+    @Override
+    public boolean hasContainerColumn()
+    {
+        return true;
+    }
 
     @Override
     public ColumnInfo getColumn(@NotNull String colName)

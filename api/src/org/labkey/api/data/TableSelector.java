@@ -360,7 +360,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
                 filter.addCondition(pkColumns.get(i), pks[i]);
         }
 
-        if (null != c)
+        if (null != c && null != _table.getColumn("container"))
             filter.addCondition(FieldKey.fromParts("container"), c);
 
         // Ignore the sort -- we're just getting one object

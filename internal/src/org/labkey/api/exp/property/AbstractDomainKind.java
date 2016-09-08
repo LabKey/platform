@@ -112,13 +112,13 @@ public abstract class AbstractDomainKind extends DomainKind
     }
 
     @Override
-    public Set<PropertyStorageSpec> getBaseProperties()
+    public Set<PropertyStorageSpec> getBaseProperties(Domain domain)
     {
         return Collections.emptySet();
     }
 
     @Override
-    public Set<PropertyStorageSpec.Index> getPropertyIndices()
+    public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
     {
         return Collections.emptySet();
     }
@@ -193,7 +193,7 @@ public abstract class AbstractDomainKind extends DomainKind
     public Set<String> getMandatoryPropertyNames(Domain domain)
     {
         TreeSet<String> ret = new TreeSet<>();
-        for (PropertyStorageSpec spec : getBaseProperties())
+        for (PropertyStorageSpec spec : getBaseProperties(domain))
             ret.add(spec.getName());
 
         DomainTemplate template = getDomainTemplate(domain);

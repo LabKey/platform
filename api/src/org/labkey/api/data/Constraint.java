@@ -1,6 +1,8 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -12,22 +14,25 @@ public class Constraint
 {
     private String name;
     private CONSTRAINT_TYPES type;
-    private Collection<String> columns = new LinkedHashSet<String>();
+    private boolean cluster;
+    private Collection<String> columns = new LinkedHashSet<>();
 
-    public Constraint() {}
-
-    public Constraint(String name, CONSTRAINT_TYPES type, Collection<String> columns)
-    {
-        this.name = name;
-        this.type = type;
-        this.columns = columns;
-    }
-
-    public Constraint(String schemaName, String tableName, CONSTRAINT_TYPES type, Collection<String> columns)
+    public Constraint(@NotNull String tableName, @NotNull CONSTRAINT_TYPES type, boolean cluster, @Nullable Collection<String> columns)
     {
         this.type = type;
         this.columns = columns;
-        this.name = type.getAbbrev() + "_" + schemaName + "_" + tableName + "_" + StringUtils.join(columns, "_");
+        this.cluster = cluster;
+
+        switch(type)
+        {
+            case UNIQUE:
+                this.name = type.getAbbrev() + "_" + tableName +
+                        ((columns!=null && !columns.isEmpty())?("_" + StringUtils.join(columns, "_")):"");
+                break;
+            case PRIMARYKEY:
+                this.name = tableName + "_" + type.getAbbrev();
+                break;
+        }
     }
 
     public String getName()
@@ -50,6 +55,16 @@ public class Constraint
         this.type = type;
     }
 
+    public boolean isCluster()
+    {
+        return cluster;
+    }
+
+    public void setCluster(boolean cluster)
+    {
+        this.cluster = cluster;
+    }
+
     public Collection<String> getColumns()
     {
         return columns;
@@ -70,14 +85,14 @@ public class Constraint
         UNIQUE,
         PRIMARYKEY;
 
-        String getAbbrev()
+        public String getAbbrev()
         {
             switch (this)
             {
                 case UNIQUE:
                     return "UQ";
                 case PRIMARYKEY:
-                    return "PK";
+                    return "pk";
             }
 
             return "";
@@ -96,7 +111,5 @@ public class Constraint
 
             return "";
         }
-
-
     }
 }

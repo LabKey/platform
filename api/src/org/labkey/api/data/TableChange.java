@@ -57,6 +57,7 @@ public class TableChange
     private Collection<PropertyStorageSpec.ForeignKey> _foreignKeys = Collections.emptySet();
     private Collection<Constraint> _constraints;
     private Set<String> _indicesToBeDroppedByName;
+    private IndexSizeMode _sizeMode = IndexSizeMode.Auto;
 
     /** In most cases, domain knows the storage table name **/
     public TableChange(Domain domain, ChangeType changeType)
@@ -75,16 +76,72 @@ public class TableChange
 
     public void execute()
     {
-        DomainKind kind = _domain.getDomainKind();
-        DbScope scope = kind.getScope();
-        SqlExecutor executor = new SqlExecutor(scope);
+        if (isValidChange())
+        {
+            DomainKind kind = _domain.getDomainKind();
+            DbScope scope = kind.getScope();
+            SqlExecutor executor = new SqlExecutor(scope);
 
-        // Issue 26311: when resizing, we need to change the indices as well and SQL Server needs to be given explicit instructions for this.
+            try
+            {
+                for (String sql : scope.getSqlDialect().getChangeStatements(this))
+                {
+                    LOG.debug("Will issue: " + sql);
+                    executor.execute(sql);
+                }
+            }
+            finally
+            {
+                kind.invalidate(_domain);
+            }
+        }
+    }
+
+    private boolean isValidChange()
+    {
+        boolean valid = null != getType();
+        valid |= null != getSchemaName();
+        valid |= null != getTableName();
+
+        if (valid)
+        {
+            switch (_type)
+            {
+                case AddColumns:
+                case DropColumns:
+                case ResizeColumns:
+                    valid |= !getColumns().isEmpty();
+                    break;
+                case RenameColumns:
+                    valid |= !getColumnRenames().isEmpty();
+                    break;
+                case DropIndices:
+                case AddIndices:
+                    valid |= !getIndexedColumns().isEmpty();
+                    break;
+                case DropIndicesByName:
+                    valid |= !getIndicesToBeDroppedByName().isEmpty();
+                    break;
+                case AddConstraints:
+                case DropConstraints:
+                    valid |= !getConstraints().isEmpty();
+
+            }
+        }
+        return valid;
+    }
+
+    // Issue 26311: when resizing, we need to change the indices as well and SQL Server needs to be given explicit instructions for this.
+    // TODO consider indices created from domain as well(domain does not persist property indices after creating currently, so they are not available during resizing)
+    public void updateResizeIndices()
+    {
+        DomainKind kind = _domain.getDomainKind();
+
         if (_type == ChangeType.ResizeColumns)
         {
             Set<Index> changedIndexColumns = new HashSet<>();
             Map<String, List<Index>> columnIndexMap = new HashMap<>();
-            for (Index index : kind.getPropertyIndices())
+            for (Index index : kind.getPropertyIndices(_domain))
             {
                 for (String columnName : index.columnNames)
                 {
@@ -97,9 +154,7 @@ public class TableChange
 
             // Get any custom indices added to the domain -- these aren't saved anywhere except in the database
             DbSchema schema = DbSchema.get(_schemaName);
-            if (schema != null)
-            {
-                TableInfo storageTableInfo = schema.getTable(_domain.getStorageTableName());
+                       TableInfo storageTableInfo = schema.getTable(_domain.getStorageTableName());
                 if (storageTableInfo != null)
                 {
                     for (Pair<TableInfo.IndexType, List<ColumnInfo>> index : storageTableInfo.getAllIndices().values())
@@ -127,7 +182,7 @@ public class TableChange
                         }
                     }
                 }
-            }
+
 
             for (String name : getColumnResizes().keySet())
             {
@@ -139,19 +194,16 @@ public class TableChange
 
             getIndexedColumns().addAll(changedIndexColumns);
         }
+    }
 
-        try
-        {
-            for (String sql : scope.getSqlDialect().getChangeStatements(this))
-            {
-                LOG.debug("Will issue: " + sql);
-                executor.execute(sql);
-            }
-        }
-        finally
-        {
-            kind.invalidate(_domain);
-        }
+    public IndexSizeMode getIndexSizeMode()
+    {
+        return _sizeMode;
+    }
+
+    public void setIndexSizeMode(IndexSizeMode sizeMode)
+    {
+        _sizeMode = sizeMode;
     }
 
     public ChangeType getType()
@@ -289,7 +341,7 @@ public class TableChange
         final DomainKind kind = _domain.getDomainKind();
 
         Map<String, PropertyStorageSpec> specs = new CaseInsensitiveHashMap<>();
-        kind.getBaseProperties().forEach(p -> specs.put(p.getName(), p));
+        kind.getBaseProperties(_domain).forEach(p -> specs.put(p.getName(), p));
         domain.getProperties().forEach(dp -> specs.put(dp.getName(), kind.getPropertySpec(dp.getPropertyDescriptor(), domain)));
 
         return columnNames
@@ -310,11 +362,18 @@ public class TableChange
         AddColumns,
         DropColumns,
         RenameColumns,
-        DropIndices,
-        AddIndices,
         ResizeColumns,
-        DropConstraints,
+        DropIndices,
         DropIndicesByName,
+        AddIndices,
+        DropConstraints,
         AddConstraints
+    }
+
+    public enum IndexSizeMode
+    {
+        Auto,
+        Normal,
+        OverSized
     }
 }

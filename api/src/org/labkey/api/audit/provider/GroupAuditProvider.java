@@ -34,6 +34,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
@@ -281,7 +282,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
         }
 
         @Override
-        public Set<Index> getPropertyIndices()
+        public Set<Index> getPropertyIndices(Domain domain)
         {
             return PageFlowUtil.set(
                     new Index(false, COLUMN_NAME_USER),
