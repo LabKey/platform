@@ -24,29 +24,8 @@ import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ConnectionWrapper;
-import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbSchemaType;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.InClauseGenerator;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MetadataSqlSelector;
-import org.labkey.api.data.ParameterMarkerInClauseGenerator;
-import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
+import org.labkey.api.data.*;
 import org.labkey.api.data.Selector.ForEachBlock;
-import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.StopIteratingException;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableChange;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TempTableInClauseGenerator;
-import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.data.dialect.JdbcHelper;
@@ -1192,6 +1171,7 @@ class PostgreSql91Dialect extends SqlDialect
         List<String> statements = new ArrayList<>();
         List<String> sqlParts = new ArrayList<>();
         String pkColumn = null;
+        Constraint constraint = null;
 
         for (PropertyStorageSpec prop : change.getColumns())
         {
@@ -1200,15 +1180,17 @@ class PostgreSql91Dialect extends SqlDialect
             {
                 assert null == pkColumn : "no more than one primary key defined";
                 pkColumn = prop.getName();
+                constraint = new Constraint(change.getTableName(), Constraint.CONSTRAINT_TYPES.PRIMARYKEY, false, null);
             }
         }
 
         statements.add(String.format("ALTER TABLE %s %s", makeTableIdentifier(change), StringUtils.join(sqlParts, ", ")));
         if (null != pkColumn)
         {
-            statements.add(String.format("ALTER TABLE %s ADD CONSTRAINT %s PRIMARY KEY(%s)",
+            statements.add(String.format("ALTER TABLE %s ADD CONSTRAINT %s %s (%s)",
                     makeTableIdentifier(change),
-                    change.getTableName() + "_pk",
+                    constraint.getName(),
+                    constraint.getType(),
                     makePropertyIdentifier(pkColumn)));
         }
 
@@ -1225,10 +1207,25 @@ class PostgreSql91Dialect extends SqlDialect
 
     private List<String> getAddConstraintsStatement(TableChange change)
     {
-        List<String> statements = change.getConstraints().stream().map(constraint ->
-                String.format("ALTER TABLE %s ADD CONSTRAINT %s %s (%s)",
-                        change.getSchemaName() + "." + change.getTableName(), constraint.getName(), constraint.getType(),
-                        StringUtils.join(constraint.getColumns(), ","))).collect(Collectors.toList());
+        List<String> statements = new ArrayList<>();
+        Collection<Constraint> constraints = change.getConstraints();
+
+        if(null!=constraints && !constraints.isEmpty())
+        {
+            statements = constraints.stream().map(constraint ->
+                    String.format("DO $$\n " +
+                            "BEGIN\n " +
+                            "IF NOT EXISTS\n" +
+                            "(SELECT 1 FROM information_schema.constraint_column_usage\n " +
+                            "WHERE table_name = '%s'  and constraint_name = '%s') THEN\n" +
+                            "ALTER TABLE %s ADD CONSTRAINT %s %s (%s);\n" +
+                            "END IF;\n" +
+                            "END$$;",
+                            change.getSchemaName() + "." + change.getTableName(), constraint.getName(),
+                            change.getSchemaName() + "." + change.getTableName(), constraint.getName(), constraint.getType(),
+                            StringUtils.join(constraint.getColumns(), ","))).collect(Collectors.toList());
+
+        }
 
         return statements;
     }
@@ -1265,12 +1262,19 @@ class PostgreSql91Dialect extends SqlDialect
 
         statements.add(String.format("CREATE TABLE %s (%s)", makeTableIdentifier(change), StringUtils.join(createTableSqlParts, ", ")));
         if (null != pkColumn)
-            statements.add(String.format("ALTER TABLE %s ADD CONSTRAINT %s PRIMARY KEY(%s)",
+        {
+            // Making this just for consistent naming
+            Constraint constraint = new Constraint(change.getTableName(), Constraint.CONSTRAINT_TYPES.PRIMARYKEY, false, null);
+
+            statements.add(String.format("ALTER TABLE %s ADD CONSTRAINT %s %s (%s)",
                     makeTableIdentifier(change),
-                    change.getTableName() + "_pk",
+                    constraint.getName(),
+                    constraint.getType(),
                     makePropertyIdentifier(pkColumn)));
+        }
 
         addCreateIndexStatements(statements, change);
+        statements.addAll(getAddConstraintsStatement(change));
         return statements;
     }
 
@@ -1285,11 +1289,30 @@ class PostgreSql91Dialect extends SqlDialect
     {
         for (PropertyStorageSpec.Index index : change.getIndexedColumns())
         {
-            statements.add(String.format("CREATE %s INDEX %s ON %s (%s)",
+            statements.add(String.format("DO $$\n" +
+                            "BEGIN\n" +
+                            "IF NOT EXISTS (\n" +
+                            "    SELECT 1\n" +
+                            "    FROM   pg_class c\n" +
+                            "    JOIN   pg_namespace n ON n.oid = c.relnamespace\n" +
+                            "    WHERE  c.relname = '%s'\n" +
+                            "    AND    n.nspname = '%s'\n" +
+                            "    ) THEN \n" +
+                            "       CREATE %s INDEX %s ON %s (%s);\n" +
+                            "END IF;\n" +
+                            "END$$",
+                    nameIndex(change.getTableName(), index.columnNames),
+                    change.getSchemaName(),
                     index.isUnique ? "UNIQUE" : "",
                     nameIndex(change.getTableName(), index.columnNames),
                     makeTableIdentifier(change),
                     makePropertyIdentifiers(index.columnNames)));
+
+            if(index.isClustered)
+            {
+                statements.add(String.format("%s %s.%s USING %s", PropertyStorageSpec.CLUSTER_TYPE.CLUSTER, change.getSchemaName(),
+                        change.getTableName(), nameIndex(change.getTableName(), index.columnNames)));
+            }
         }
     }
 
@@ -1304,7 +1327,7 @@ class PostgreSql91Dialect extends SqlDialect
     {
         for (PropertyStorageSpec.Index index : change.getIndexedColumns())
         {
-            statements.add(String.format("DROP INDEX %s.%s",
+            statements.add(String.format("DROP INDEX IF EXISTS %s.%s",
                     change.getSchemaName(),
                     nameIndex(change.getTableName(), index.columnNames)));
         }

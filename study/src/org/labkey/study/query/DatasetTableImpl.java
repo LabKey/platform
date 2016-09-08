@@ -24,6 +24,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
+import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -335,6 +336,16 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         lsidColumn.setShownInUpdateView(false);
         getColumn("SourceLSID").setHidden(true);
 
+        ColumnInfo dsRowIdColumn = getColumn("dsrowid");
+        dsRowIdColumn.setHidden(true);
+        dsRowIdColumn.setKeyField(false);
+        dsRowIdColumn.setShownInInsertView(false);
+        dsRowIdColumn.setShownInUpdateView(false);
+        getColumn("dsrowid").setHidden(true);
+
+        if(null!=_userSchema.getStudy() && !_userSchema.getStudy().isDataspaceStudy())
+            addContainerColumn(true);
+
         ColumnInfo autoJoinColumn = new AliasedColumn(this, "DataSets", _rootTable.getColumn("ParticipantId"));
         autoJoinColumn.setDescription("Contains lookups to each Dataset that can be joined by the " + _dsd.getLabel() + " Dataset's '" + _dsd.getKeyTypeDescription() + "' combination.");
         autoJoinColumn.setKeyField(false);
@@ -431,12 +442,49 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 }
                 ExpProtocol protocol = _dsd.getAssayProtocol();
                 AssayProvider provider = AssayService.get().getProvider(protocol);
-                defaultVisibleCols.add(new FieldKey(provider.getTableMetadata(protocol).getRunFieldKeyFromResults(), ExpRunTable.Column.Name.toString()));
-                defaultVisibleCols.add(new FieldKey(provider.getTableMetadata(protocol).getRunFieldKeyFromResults(), ExpRunTable.Column.Comments.toString()));
+                if(null != provider)
+                {
+                    defaultVisibleCols.add(new FieldKey(provider.getTableMetadata(protocol).getRunFieldKeyFromResults(), ExpRunTable.Column.Name.toString()));
+                    defaultVisibleCols.add(new FieldKey(provider.getTableMetadata(protocol).getRunFieldKeyFromResults(), ExpRunTable.Column.Comments.toString()));
+                }
             }
         }
 
         addFolderColumn();
+    }
+
+    @Override
+    public boolean hasContainerColumn()
+    {
+        return null!=_rootTable.getColumn("container");
+    }
+
+    @Override
+    public String getContainerFilterColumn()
+    {
+        if(null == _rootTable.getColumn("container"))
+                return null;
+
+        return "Container";
+    }
+
+    @Override
+    protected ColumnInfo addFolderColumn()
+    {
+        // Workaround to prevent IllegalArgumentException for assay tables
+        if (getColumn("Folder") == null)
+        {
+            ColumnInfo ci = _rootTable.getColumn("Container");
+            if(null == ci)
+            {
+                ci = getColumn("Container");
+            }
+            ColumnInfo folder = new AliasedColumn(this, "Folder", ci);
+            ContainerForeignKey.initColumn(folder,getUserSchema());
+            folder.setHidden(true);
+            addColumn(folder);
+        }
+        return getColumn("Folder");
     }
 
 
@@ -655,8 +703,18 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             if (_userSchema.getStudy().getTimepointType() == TimepointType.DATE)
                 sqlf.append(", PV.Day");
             SQLFragment from = getRealTable().getFromSQL(innerAlias);
-            sqlf.append("\n FROM ").append(from).append(" LEFT OUTER JOIN ").append(participantVisit.getFromSQL("PV")).append("\n" +
-                    "    ON " + innerAlias + ".ParticipantId=PV.ParticipantId AND " + innerAlias + ".SequenceNum=PV.SequenceNum AND PV.Container =  " + innerAlias + ".Container");
+            sqlf.append("\n FROM ").append(from).append(" LEFT OUTER JOIN ").append(participantVisit.getFromSQL("PV"))
+                    .append("\n" + "    ON ").append(innerAlias).append(".ParticipantId=PV.ParticipantId AND ")
+                    .append(innerAlias).append(".SequenceNum=PV.SequenceNum");
+
+            if(null!=this.getRealTable().getColumn("container"))
+            {
+                sqlf.append(" AND PV.Container =  ").append(innerAlias).append(".Container");
+            }
+            else
+            {
+                sqlf.append(" AND PV.Container =  '").append(getContainer().getId()).append("'");
+            }
         }
 
         boolean hasWhere = false;
@@ -880,7 +938,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         }
     }
 
-    private static final Set<String> defaultHiddenCols = new CaseInsensitiveHashSet("Container", "VisitRowId", "SequenceNum", "Created", "CreatedBy", "ModifiedBy", "Modified", "lsid", "SourceLsid");
+    private static final Set<String> defaultHiddenCols = new CaseInsensitiveHashSet("Container", "VisitRowId", "SequenceNum", "Created", "CreatedBy", "ModifiedBy", "Modified", "lsid", "SourceLsid", "DSRowID");
     private boolean isVisibleByDefault(ColumnInfo col)
     {
         // If this is a server-managed key, or an assay-backed dataset, don't include the key column in the default

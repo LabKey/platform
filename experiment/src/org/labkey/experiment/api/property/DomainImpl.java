@@ -246,7 +246,7 @@ public class DomainImpl implements Domain
     public List<DomainProperty> getNonBaseProperties()
     {
         Set<String> basePropertyNames = new HashSet<>();
-        for (PropertyStorageSpec spec : getDomainKind().getBaseProperties())
+        for (PropertyStorageSpec spec : getDomainKind().getBaseProperties(this))
             basePropertyNames.add(spec.getName().toLowerCase());
 
         List<DomainProperty> nonBaseProperties = new ArrayList<>();
@@ -261,7 +261,7 @@ public class DomainImpl implements Domain
     public Set<DomainProperty> getBaseProperties()
     {
         Set<String> basePropertyNames = new HashSet<>();
-        for (PropertyStorageSpec spec : getDomainKind().getBaseProperties())
+        for (PropertyStorageSpec spec : getDomainKind().getBaseProperties(this))
             basePropertyNames.add(spec.getName().toLowerCase());
 
         Set<DomainProperty> baseProperties = new HashSet<>();
@@ -715,7 +715,7 @@ public class DomainImpl implements Domain
             DomainKind k = getDomainKind();
             if (null != k)
             {
-                for (PropertyStorageSpec s : k.getBaseProperties())
+                for (PropertyStorageSpec s : k.getBaseProperties(this))
                 {
                     _aliasManager.claimAlias(s.getName(),s.getName());
                 }

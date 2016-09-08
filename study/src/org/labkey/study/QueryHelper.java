@@ -75,9 +75,20 @@ public class QueryHelper<K extends StudyCachable>
             @Override
             public Object load(String key, Object argument)
             {
-                SimpleFilter filter = null != filterArg ? filterArg : SimpleFilter.createContainerFilter(c);
-                if (!filter.hasContainerEqualClause())
+                SimpleFilter filter = null;
+
+                if(null != filterArg)
+                {
+                    filter = filterArg;
+                }
+                else if(null != getTableInfo().getColumn("container"))
+                {
+                    filter = SimpleFilter.createContainerFilter(c);
+                }
+
+                if (null != filter && !filter.hasContainerEqualClause())
                     filter.addCondition(FieldKey.fromParts("Container"), c);
+
                 Sort sort = null;
                 if (sortString != null)
                     sort = new Sort(sortString);

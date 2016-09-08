@@ -350,7 +350,7 @@ public class DatasetDataWriter implements InternalStudyWriter
         Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> allIndices = schemaTableInfo.getAllIndices();
         Collection<IndexInfo> outIndices = new LinkedHashSet<>(allIndices.size());
 
-        Set<PropertyStorageSpec.Index> domainKindIndices = tinfo.getDomainKind().getPropertyIndices();
+        Set<PropertyStorageSpec.Index> domainKindIndices = tinfo.getDomainKind().getPropertyIndices(tinfo.getDomain());
 
         for (Map.Entry<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> indexEntry : allIndices.entrySet())
         {

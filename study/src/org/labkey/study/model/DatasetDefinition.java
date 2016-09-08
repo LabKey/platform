@@ -179,6 +179,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         "QCState",
         "visitRowId",
         "lsid",
+        "dsrowid",
         "Dataset",
         "ParticipantSequenceNum",
         "_key",
@@ -213,6 +214,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         "QCState",
         "visitRowId",
         "lsid",
+        "dsrowid",
         "Dataset",
         "ParticipantSequenceNum"
     };
@@ -744,7 +746,10 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             CPUTimer time = new CPUTimer("purge");
             time.start();
 
-            boolean deleteSharedRows = isShared() && getContainer().getId().equals(getDefinitionContainer().getId());
+            Study study = StudyManager.getInstance().getStudy(getContainer());
+
+            boolean deleteSharedRows = (isShared() && getContainer().getId().equals(getDefinitionContainer().getId()))
+                    || ((null!=study) && !study.isDataspaceStudy());
 
             SQLFragment studyDataFrag = new SQLFragment("DELETE FROM " + getStorageTableInfo().getSelectName() + "\n");
             String and = "WHERE ";
@@ -1247,7 +1252,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
             // base columns
 
-            for (String name : Arrays.asList("Container","lsid","ParticipantSequenceNum","sourcelsid","Created","CreatedBy","Modified","ModifiedBy"))
+            for (String name : Arrays.asList("Container","lsid","ParticipantSequenceNum","sourcelsid","Created","CreatedBy","Modified","ModifiedBy", "dsrowid"))
             {
                 ColumnInfo col = getStorageColumn(name);
                 if (null == col) continue;
@@ -1772,10 +1777,13 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             for (Collection<String> rowLSIDs : rowLSIDSlices)
             {
                 SimpleFilter filter = new SimpleFilter();
-                Container rowsContainer = getContainer();
-                if (getDataSharingEnum() != DataSharing.NONE)
-                    rowsContainer = getDefinitionContainer();
-                filter.addWhereClause("Container=?", new Object[]{rowsContainer});
+                if(null!=data.getColumn("container"))
+                {
+                    Container rowsContainer = getContainer();
+                    if (getDataSharingEnum() != DataSharing.NONE)
+                        rowsContainer = getDefinitionContainer();
+                    filter.addWhereClause("Container=?", new Object[]{rowsContainer});
+                }
                 filter.addInClause(FieldKey.fromParts("LSID"), rowLSIDs);
                 Table.delete(data, filter);
                 StudyManager.datasetModified(this, user, true);
@@ -1949,7 +1957,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
     public String translateSQLException(SQLException e)
     {
-        if (RuntimeSQLException.isConstraintException(e) && e.getMessage() != null && e.getMessage().contains("_pk"))
+        if (RuntimeSQLException.isConstraintException(e) && e.getMessage() != null &&
+                (e.getMessage().contains("_pk") || e.getMessage().contains("duplicate key")))
         {
             StringBuilder sb = new StringBuilder("Duplicate dataset row. All rows must have unique ");
             sb.append(getStudy().getSubjectColumnName());
@@ -2028,7 +2037,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         List<SQLFragment> parts = new ArrayList<>();
         parts.add(new SQLFragment("''"));
         parts.add(new SQLFragment("?", "urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":Study.Data-"));
-        parts.add(new SQLFragment("(SELECT CAST(RowId AS VARCHAR(15)) FROM Core.Containers WHERE EntityId = Container)"));
+        parts.add(new SQLFragment("(SELECT CAST(RowId AS VARCHAR(15)) FROM Core.Containers WHERE EntityId = '" + getContainer().getId() + "')"));
         parts.add(new SQLFragment("':" + String.valueOf(getDatasetId()) + ".'"));
         parts.add(new SQLFragment("participantid"));
 

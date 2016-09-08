@@ -127,10 +127,10 @@ public abstract class ListDomainKind extends AbstractDomainKind
 
 
     @Override
-    public Set<PropertyStorageSpec> getBaseProperties()
+    public Set<PropertyStorageSpec> getBaseProperties(Domain domain)
     {
         Set<PropertyStorageSpec> specs = new HashSet<>(BASE_PROPERTIES);
-        specs.addAll(super.getBaseProperties());
+        specs.addAll(super.getBaseProperties(domain));
         return specs;
     }
 
@@ -213,7 +213,7 @@ public abstract class ListDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public Set<PropertyStorageSpec.Index> getPropertyIndices()
+    public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
     {
         // return PageFlowUtil.set(new PropertyStorageSpec.Index(false, ListDomainKind.KEY_FIELD));
         return Collections.emptySet(); // TODO: Allow this to return the Key Column

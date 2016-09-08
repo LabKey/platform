@@ -607,6 +607,15 @@
           <ns:datatype>Varchar</ns:datatype>
           <ns:nullable>false</ns:nullable>
       </ns:column>
+      <ns:column columnName="dsrowid">
+        <ns:columnTitle>DSRowId</ns:columnTitle>
+        <ns:propertyURI>http://cpas.labkey.com/Study#DSRowId</ns:propertyURI>
+        <ns:shownInInsertView>false</ns:shownInInsertView>
+        <ns:shownInUpdateView>false</ns:shownInUpdateView>
+        <ns:shownInDetailsView>false</ns:shownInDetailsView>
+        <ns:datatype>numeric</ns:datatype>
+        <ns:nullable>false</ns:nullable>
+      </ns:column>
       <ns:column columnName="sourcelsid">
         <ns:columnTitle>Source Lsid</ns:columnTitle>
         <ns:propertyURI>http://cpas.labkey.com/Study#SourceLSID</ns:propertyURI>

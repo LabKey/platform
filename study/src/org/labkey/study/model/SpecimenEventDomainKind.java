@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.study.query.SpecimenTablesProvider;
 
@@ -180,13 +181,13 @@ public final class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
     }
 
     @Override
-    public Set<PropertyStorageSpec> getBaseProperties()
+    public Set<PropertyStorageSpec> getBaseProperties(Domain domain)
     {
         return new LinkedHashSet<>(BASE_PROPERTIES);
     }
 
     @Override
-    public Set<PropertyStorageSpec.Index> getPropertyIndices()
+    public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
     {
         return new HashSet<>(BASE_INDICES);
     }

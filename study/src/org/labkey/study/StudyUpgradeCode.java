@@ -18,25 +18,32 @@ package org.labkey.study;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Constraint;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DeferredUpgrade;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudySnapshotType;
+import org.labkey.study.model.DatasetDomainKind;
 import org.labkey.study.model.LocationDomainKind;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.LocationTable;
@@ -46,6 +53,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -348,6 +356,82 @@ public class StudyUpgradeCode implements UpgradeCode
                         }
                     }
                 }
+            }
+        }
+    }
+
+    // Invoked by study-16.20-16.21.sql
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void updatePKAndContainer(final ModuleContext context) throws Exception
+    {
+        if (!context.isNewInstall())
+        {
+            try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
+            {
+                List<String> updated = new ArrayList<>();
+                Set<Container> allContainers = ContainerManager.getAllChildren(ContainerManager.getRoot());
+                for (Container c : allContainers)
+                {
+                    Study study = StudyManager.getInstance().getStudy(c);
+                    if (null != study)
+                    {
+                        List<? extends Dataset> datasets = study.getDatasets();
+                        for (Dataset dataset : datasets)
+                        {
+                            Domain domain = dataset.getDomain();
+                            if (domain != null)
+                            {
+                                if(updated.contains(domain.getStorageTableName()))
+                                    continue;
+
+                                // These have changed in DatasetDomainKind so need to identify old indices to delete
+                                PropertyStorageSpec.Index[] indices = {
+                                        new PropertyStorageSpec.Index(false, DatasetDomainKind.PARTICIPANTID, DatasetDomainKind.DATE),
+                                        new PropertyStorageSpec.Index(false, DatasetDomainKind.CONTAINER, DatasetDomainKind.QCSTATE),
+                                        new PropertyStorageSpec.Index(false, DatasetDomainKind.CONTAINER, DatasetDomainKind.PARTICIPANTSEQUENCENUM),
+                                        new PropertyStorageSpec.Index(true, DatasetDomainKind.CONTAINER, DatasetDomainKind.PARTICIPANTID, DatasetDomainKind.SEQUENCENUM, DatasetDomainKind._KEY)
+                                };
+                                Set<PropertyStorageSpec.Index> dropIndices = new HashSet<>(Arrays.asList(indices));
+
+                                // Container column to be dropped
+                                Collection<PropertyStorageSpec> propsDropped = new ArrayList<>();
+                                propsDropped.add(new PropertyStorageSpec(DatasetDomainKind.CONTAINER, JdbcType.GUID));
+
+                                // Lsid primary key to be dropped
+                                Constraint dropPk = new Constraint(domain.getStorageTableName(), Constraint.CONSTRAINT_TYPES.PRIMARYKEY, false, null);
+                                List<Constraint> constDrops = new ArrayList<>();
+                                constDrops.add(dropPk);
+
+                                // New primary key
+                                PropertyStorageSpec ps = new PropertyStorageSpec(DatasetDomainKind.DSROWID, JdbcType.BIGINT, 0,
+                                        PropertyStorageSpec.Special.PrimaryKeyNonClustered, false, true, null);
+                                Collection<PropertyStorageSpec> propsAdded = new ArrayList<>();
+                                propsAdded.add(ps);
+
+                                try
+                                {
+                                    // Drop indices, drop container, drop pk, add rowid pk, rebuild indices
+                                    StorageProvisioner.addOrDropTableIndices(domain, dropIndices, false, TableChange.IndexSizeMode.Normal);
+                                    if (!StudyManager.getInstance().getStudy(domain.getContainer()).isDataspaceStudy())
+                                    {
+                                        StorageProvisioner.dropStorageProperties(domain, propsDropped);
+                                    }
+
+                                    StorageProvisioner.addOrDropConstraints(domain, constDrops, false);
+                                    StorageProvisioner.addStorageProperties(domain, propsAdded, true);
+                                    StorageProvisioner.addOrDropTableIndices(domain, null, true, null);
+                                    updated.add(domain.getStorageTableName());
+                                }
+                                catch (Exception e)
+                                {
+                                    _log.error("Error upgrading study dataset schemas: ", e);
+                                    throw (e);
+                                }
+                            }
+                        }
+                    }
+                }
+                transaction.commit();
             }
         }
     }

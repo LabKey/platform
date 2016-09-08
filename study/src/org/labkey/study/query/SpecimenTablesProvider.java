@@ -104,7 +104,7 @@ public class SpecimenTablesProvider
                 domain = PropertyService.get().createDomain(_container, domainURI, domainKind.getKindName());
 
                 // Add properties for all required fields
-                for (PropertyStorageSpec propSpec : domainKind.getBaseProperties())
+                for (PropertyStorageSpec propSpec : domainKind.getBaseProperties(domain))
                 {
                     DomainProperty prop = domain.addProperty(propSpec);
                     prop.setRequired(true);
@@ -174,14 +174,14 @@ public class SpecimenTablesProvider
     {
         Domain domain = getDomain(tableName, false);
         if (null != domain)
-            StorageProvisioner.addOrDropTableIndices(domain, true);
+            StorageProvisioner.addOrDropTableIndices(domain, null, true, null);
     }
 
     public void dropTableIndices(String tableName)
     {
         Domain domain = getDomain(tableName, false);
         if (null != domain)
-            StorageProvisioner.addOrDropTableIndices(domain, false);
+            StorageProvisioner.addOrDropTableIndices(domain, null, false, null);
     }
 
     private AbstractSpecimenDomainKind getDomainKind(String tableName)

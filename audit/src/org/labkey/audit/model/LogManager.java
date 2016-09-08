@@ -171,7 +171,7 @@ public class LogManager
         Domain domain = provider.getDomain();
 
         DomainKind domainKind = domain.getDomainKind();
-        for (PropertyStorageSpec prop : domainKind.getBaseProperties())
+        for (PropertyStorageSpec prop : domainKind.getBaseProperties(domain))
         {
             Object value = values.get(prop.getName());
             if (prop.getJdbcType().isText() && value instanceof String)

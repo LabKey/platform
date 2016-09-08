@@ -33,6 +33,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.study.Study;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.StudySchema;
@@ -54,15 +55,16 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
 {
     public final static String LSID_PREFIX = "StudyDataset";
 
-    final static String CONTAINER = "container";
+    public final static String CONTAINER = "container";
     public final static String DATE = "date";
-    final static String PARTICIPANTID = "participantid";
-    final static String LSID = "lsid";
-    final static String SEQUENCENUM = "sequencenum";
-    final static String SOURCELSID = "sourcelsid";
-    final static String _KEY = "_key";
-    final static String QCSTATE = "qcstate";
-    final static String PARTICIPANTSEQUENCENUM = "participantsequencenum";
+    public final static String PARTICIPANTID = "participantid";
+    public final static String LSID = "lsid";
+    public final static String DSROWID = "dsrowid";
+    public final static String SEQUENCENUM = "sequencenum";
+    public final static String SOURCELSID = "sourcelsid";
+    public final static String _KEY = "_key";
+    public final static String QCSTATE = "qcstate";
+    public final static String PARTICIPANTSEQUENCENUM = "participantsequencenum";
 
     public static final String CREATED = "created";
     public static final String MODIFIED = "modified";
@@ -74,7 +76,9 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
      * the columns common to all datasets
      */
     private final static Set<PropertyStorageSpec> BASE_PROPERTIES;
-    private final static Set<PropertyStorageSpec.Index> PROPERTY_INDICES;
+    private final static Set<PropertyStorageSpec> DATASPACE_BASE_PROPERTIES;
+    protected final static Set<PropertyStorageSpec.Index> PROPERTY_INDICES;
+    private final static Set<PropertyStorageSpec.Index> DATASPACE_PROPERTY_INDICES;
 
     static
     {
@@ -82,7 +86,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
         {
             new PropertyStorageSpec(CONTAINER, JdbcType.GUID),
             new PropertyStorageSpec(PARTICIPANTID, JdbcType.VARCHAR, 32),
-            new PropertyStorageSpec(LSID, JdbcType.VARCHAR, 200, PropertyStorageSpec.Special.PrimaryKey),
+            new PropertyStorageSpec(LSID, JdbcType.VARCHAR, 200, PropertyStorageSpec.Special.PrimaryKeyNonClustered),
             new PropertyStorageSpec(SEQUENCENUM, JdbcType.DECIMAL),
             new PropertyStorageSpec(SOURCELSID, JdbcType.VARCHAR, 200),
             new PropertyStorageSpec(_KEY, JdbcType.VARCHAR, 200),
@@ -95,15 +99,44 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
             new PropertyStorageSpec(DATE, JdbcType.TIMESTAMP)
         };
 
-        BASE_PROPERTIES = new HashSet<>(Arrays.asList(props));
+        DATASPACE_BASE_PROPERTIES = new HashSet<>(Arrays.asList(props));
 
-        PropertyStorageSpec.Index[] indices = {
-          new PropertyStorageSpec.Index(false, CONTAINER, QCSTATE),
-          new PropertyStorageSpec.Index(false, CONTAINER, PARTICIPANTSEQUENCENUM),
-          new PropertyStorageSpec.Index(true, CONTAINER, PARTICIPANTID, SEQUENCENUM, _KEY)
+        PropertyStorageSpec[] propsNonDS =
+        {
+            new PropertyStorageSpec(DSROWID, JdbcType.BIGINT, 0, PropertyStorageSpec.Special.PrimaryKeyNonClustered, false, true, null),
+            new PropertyStorageSpec(PARTICIPANTID, JdbcType.VARCHAR, 32),
+            new PropertyStorageSpec(LSID, JdbcType.VARCHAR, 200),
+            new PropertyStorageSpec(SEQUENCENUM, JdbcType.DECIMAL),
+            new PropertyStorageSpec(SOURCELSID, JdbcType.VARCHAR, 200),
+            new PropertyStorageSpec(_KEY, JdbcType.VARCHAR, 200),
+            new PropertyStorageSpec(QCSTATE, JdbcType.INTEGER),
+            new PropertyStorageSpec(PARTICIPANTSEQUENCENUM, JdbcType.VARCHAR, 200),
+            new PropertyStorageSpec(CREATED, JdbcType.TIMESTAMP),
+            new PropertyStorageSpec(MODIFIED, JdbcType.TIMESTAMP),
+            new PropertyStorageSpec(CREATED_BY, JdbcType.INTEGER),
+            new PropertyStorageSpec(MODIFIED_BY, JdbcType.INTEGER),
+            new PropertyStorageSpec(DATE, JdbcType.TIMESTAMP)
         };
 
-        PROPERTY_INDICES = new HashSet<>(Arrays.asList(indices));
+        BASE_PROPERTIES = new HashSet<>(Arrays.asList(propsNonDS));
+
+        PropertyStorageSpec.Index[] indices = {
+            new PropertyStorageSpec.Index(false, true, CONTAINER, PARTICIPANTID, DATE),
+            new PropertyStorageSpec.Index(false, CONTAINER, QCSTATE),
+            new PropertyStorageSpec.Index(true, CONTAINER, PARTICIPANTID, SEQUENCENUM, _KEY),
+            new PropertyStorageSpec.Index(true, LSID)
+        };
+
+        DATASPACE_PROPERTY_INDICES = new HashSet<>(Arrays.asList(indices));
+
+        PropertyStorageSpec.Index[] indicesNonDS = {
+            new PropertyStorageSpec.Index(false, true, PARTICIPANTID, DATE),
+            new PropertyStorageSpec.Index(false, QCSTATE),
+            new PropertyStorageSpec.Index(true, PARTICIPANTID, SEQUENCENUM, _KEY),
+            new PropertyStorageSpec.Index(true, LSID)
+        };
+
+        PROPERTY_INDICES = new HashSet<>(Arrays.asList(indicesNonDS));
     }
 
 
@@ -197,18 +230,32 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
 
     public abstract Set<String> getReservedPropertyNames(Domain domain);
 
-    
     @Override
-    public Set<PropertyStorageSpec> getBaseProperties()
+    public Set<PropertyStorageSpec> getBaseProperties(Domain domain)
     {
-        Set<PropertyStorageSpec> specs = new HashSet<>(BASE_PROPERTIES);
-        specs.addAll(super.getBaseProperties());
+        Set<PropertyStorageSpec> specs;
+        Study study = StudyManager.getInstance().getStudy(domain.getContainer());
+
+        if(study == null || study.isDataspaceStudy())
+        {
+            specs = new HashSet<>(DATASPACE_BASE_PROPERTIES);
+        }
+        else
+        {
+            specs = new HashSet<>(BASE_PROPERTIES);
+        }
+        specs.addAll(super.getBaseProperties(domain));
         return specs;
     }
 
     @Override
-    public Set<PropertyStorageSpec.Index> getPropertyIndices()
+    public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
     {
+        Study study = StudyManager.getInstance().getStudy(domain.getContainer());
+
+        if(study == null || study.isDataspaceStudy())
+            return DATASPACE_PROPERTY_INDICES;
+
         return PROPERTY_INDICES;
     }
 
@@ -275,7 +322,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
         // Grab the "standard" properties and apply them to this dataset table
         TableInfo template = DatasetDefinition.getTemplateTableInfo();
 
-        for (PropertyStorageSpec pss : domain.getDomainKind().getBaseProperties())
+        for (PropertyStorageSpec pss : domain.getDomainKind().getBaseProperties(domain))
         {
             ColumnInfo c = ti.getColumn(pss.getName());
             ColumnInfo tCol = template.getColumn(pss.getName());

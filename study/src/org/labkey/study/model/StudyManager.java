@@ -182,6 +182,7 @@ import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
+import static org.labkey.api.exp.OntologyManager.getSqlDialect;
 
 public class StudyManager
 {
@@ -4604,11 +4605,17 @@ public class StudyManager
             return;
         final String nav = NavTree.toJS(Collections.singleton(new NavTree("study", PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(c))), null, false).toString();
 
-        SQLFragment f = new SQLFragment("SELECT Container, ParticipantId FROM " + StudySchema.getInstance().getTableInfoParticipant().getSelectName());
+        SQLFragment f = new SQLFragment("SELECT CAST('" + c.getId() + "' AS " + getSqlDialect().getGuidType() + ") AS Container, ParticipantId FROM " + StudySchema.getInstance().getTableInfoParticipant().getSelectName());
+
         String prefix = " WHERE ";
-        f.append(prefix).append(" Container = ?");
-        f.add(c);
-        prefix = " AND ";
+
+        // No container column in base table in non-dataspace
+        if(study.isDataspaceStudy())
+        {
+            f.append(prefix).append(" Container = ?");
+            f.add(c);
+            prefix = " AND ";
+        }
 
         if (null != ptids)
         {

@@ -134,7 +134,7 @@ public class DataClassDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public Set<PropertyStorageSpec> getBaseProperties()
+    public Set<PropertyStorageSpec> getBaseProperties(Domain domain)
     {
         return BASE_PROPERTIES;
     }
@@ -146,7 +146,7 @@ public class DataClassDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public Set<PropertyStorageSpec.Index> getPropertyIndices()
+    public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
     {
         return INDEXES;
     }

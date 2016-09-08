@@ -25,6 +25,7 @@ import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Constraint;
 import org.labkey.api.data.DatabaseMetaDataWrapper;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -1058,6 +1059,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     {
         List<String> statements = new ArrayList<>();
 
+        change.updateResizeIndices();
         statements.addAll(getDropIndexStatements(change));
 
         //Generate the alter table portion of statement
@@ -1095,6 +1097,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         List<String> statements = new ArrayList<>();
         List<String> createTableSqlParts = new ArrayList<>();
         String pkColumn = null;
+        boolean pkClustered = true;
         for (PropertyStorageSpec prop : change.getColumns())
         {
             createTableSqlParts.add(getSqlColumnSpec(prop));
@@ -1102,6 +1105,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             {
                 assert null == pkColumn : "no more than one primary key defined";
                 pkColumn = prop.getName();
+                pkClustered = !prop.isPrimaryKeyNonClustered();
             }
         }
 
@@ -1123,13 +1127,19 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         statements.add(String.format("CREATE TABLE %s (%s)", makeTableIdentifier(change), StringUtils.join(createTableSqlParts, ",\n")));
 
         if (null != pkColumn)
-            statements.add(String.format("ALTER TABLE %s ADD CONSTRAINT %s PRIMARY KEY (%s)",
+        {
+            Constraint constraint = new Constraint(change.getTableName(), Constraint.CONSTRAINT_TYPES.PRIMARYKEY, pkClustered, null);
+
+            statements.add(String.format("ALTER TABLE %s ADD CONSTRAINT %s %s %s (%s)",
                     makeTableIdentifier(change),
-                    change.getTableName() + "_pk",
+                    constraint.getName(),
+                    constraint.getType(),
+                    (constraint.isCluster()?"":"NONCLUSTERED"),
                     makeLegalIdentifier(pkColumn)));
 
-
+        }
         addCreateIndexStatements(statements, change);
+        statements.addAll(getAddConstraintsStatement(change));
         return statements;
     }
 
@@ -1154,8 +1164,10 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
             if (bytes <= MAX_INDEX_SIZE)
             {
-                statements.add(String.format("CREATE %s INDEX %s ON %s (%s)",
+                statements.add(String.format("IF NOT EXISTS (SELECT 1 FROM sys.indexes i where i.name = '%s') CREATE %s %s INDEX %s ON %s (%s)",
+                        nameIndex(change.getTableName(), index.columnNames, false),
                         index.isUnique ? "UNIQUE" : "",
+                        index.isClustered ? "CLUSTERED" : "",
                         nameIndex(change.getTableName(), index.columnNames, false),
                         makeTableIdentifier(change),
                         makeLegalIdentifiers(index.columnNames)));
@@ -1343,16 +1355,21 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         for (PropertyStorageSpec.Index index : change.getIndexedColumns())
         {
             // If the set of columns is larger than 900 bytes, creating an index will succeed, but fail when trying to insert
-            List<PropertyStorageSpec> specs = change.toSpecs(Arrays.asList(index.columnNames));
-            int bytes = specs.stream().collect(Collectors.summingInt(spec -> {
-                // Use the old scale if we're in the process of resizing the column
-                Integer oldScale = change.getColumnResizes().get(spec.getName());
-                return columnStorageSize(spec, oldScale);
-            }));
+            int bytes = 0;
+            TableChange.IndexSizeMode mode = change.getIndexSizeMode();
+            if(mode == TableChange.IndexSizeMode.Auto)
+            {
+                List<PropertyStorageSpec> specs = change.toSpecs(Arrays.asList(index.columnNames));
+                bytes = specs.stream().collect(Collectors.summingInt(spec -> {
+                    // Use the old scale if we're in the process of resizing the column
+                    Integer oldScale = change.getColumnResizes().get(spec.getName());
+                    return columnStorageSize(spec, oldScale);
+                }));
+            }
 
             String nameIndex = nameIndex(change.getTableName(), index.columnNames, false);
             String nameIndexLegacy = nameIndex(change.getTableName(), index.columnNames, true);
-            if (bytes < MAX_INDEX_SIZE)
+            if ((mode == TableChange.IndexSizeMode.Auto && bytes < MAX_INDEX_SIZE) || mode == TableChange.IndexSizeMode.Normal)
             {
                 statements.add(String.format("IF EXISTS (SELECT 1 FROM sys.indexes i where i.name = '%s') DROP INDEX %s ON %s",
                         nameIndex,
@@ -1465,19 +1482,25 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
     private List<String> getAddConstraintsStatement(TableChange change)
     {
-        List<String> statements = change.getConstraints().stream().map(constraint ->
-                String.format("ALTER TABLE %s ADD CONSTRAINT %s %s (%s)",
-                change.getSchemaName() + "." + change.getTableName(), constraint.getName(), constraint.getType(),
-                StringUtils.join(constraint.getColumns(), ","))).collect(Collectors.toList());
+        List<String> statements = new ArrayList<>();
+        Collection<Constraint> constraints = change.getConstraints();
+
+        if(null!=constraints && !constraints.isEmpty())
+        {
+            statements = constraints.stream().map(constraint ->
+                    String.format("IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS i where i.CONSTRAINT_NAME = '%s') ALTER TABLE %s ADD CONSTRAINT %s %s (%s)",
+                            constraint.getName(), change.getSchemaName() + "." + change.getTableName(), constraint.getName(),
+                            constraint.getType(), StringUtils.join(constraint.getColumns(), ","))).collect(Collectors.toList());
+        }
 
         return statements;
     }
 
     private List<String> getAddColumnsStatements(TableChange change)
     {
-        List<String> statements = new ArrayList<>();
-        List<String> sqlParts = new ArrayList<>();
+        Collection<String> sqlParts = new ArrayList<>();
         String pkColumn = null;
+        Constraint constraint = null;
 
         for (PropertyStorageSpec prop : change.getColumns())
         {
@@ -1486,15 +1509,19 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             {
                 assert null == pkColumn : "no more than one primary key defined";
                 pkColumn = prop.getName();
+                constraint = new Constraint(change.getTableName(), Constraint.CONSTRAINT_TYPES.PRIMARYKEY, !prop.isPrimaryKeyNonClustered(), null);
             }
         }
 
-        statements.add(String.format("ALTER TABLE %s ADD %s", change.getSchemaName() + "." + change.getTableName(), StringUtils.join(sqlParts, ",\n")));
+        List<String> statements = sqlParts.stream().map(sql ->
+                String.format("ALTER TABLE %s ADD %s", change.getSchemaName() + "." + change.getTableName(), sql)).collect(Collectors.toList());
         if (null != pkColumn)
         {
-            statements.add(String.format("ALTER TABLE %s ADD CONSTRAINT %s PRIMARY KEY (%s)",
+            statements.add(String.format("ALTER TABLE %s ADD CONSTRAINT %s %s %s (%s)",
                     makeTableIdentifier(change),
-                    change.getTableName() + "_pk",
+                    constraint.getName(),
+                    constraint.getType(),
+                    (constraint.isCluster()?"":PropertyStorageSpec.CLUSTER_TYPE.NONCLUSTERED),
                     makeLegalIdentifier(pkColumn)));
         }
 

@@ -114,7 +114,7 @@ public abstract class AbstractStudyDesignDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public Set<PropertyStorageSpec> getBaseProperties()
+    public Set<PropertyStorageSpec> getBaseProperties(Domain domain)
     {
         return _standardFields;
     }
@@ -186,7 +186,7 @@ public abstract class AbstractStudyDesignDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public Set<PropertyStorageSpec.Index> getPropertyIndices()
+    public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
     {
         return Collections.emptySet();
     }
@@ -196,7 +196,7 @@ public abstract class AbstractStudyDesignDomainKind extends AbstractDomainKind
     {
         Set<String> names = new HashSet<>();
 
-        for (PropertyStorageSpec spec : getBaseProperties())
+        for (PropertyStorageSpec spec : getBaseProperties(domain))
             names.add(spec.getName());
 
         return names;

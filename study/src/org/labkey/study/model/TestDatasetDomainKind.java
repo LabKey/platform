@@ -15,7 +15,9 @@
  */
 package org.labkey.study.model;
 
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.study.Study;
 
 import java.util.Collections;
 import java.util.Set;
@@ -46,5 +48,26 @@ public class TestDatasetDomainKind extends DatasetDomainKind
     public Set<String> getReservedPropertyNames(Domain domain)
     {
         return Collections.emptySet();
+    }
+
+    @Override
+    public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
+    {
+        Set<PropertyStorageSpec.Index> ret = super.getPropertyIndices(domain);
+        Study study = StudyManager.getInstance().getStudy(domain.getContainer());
+
+        if(null != study)
+        {
+            if(!study.isDataspaceStudy())
+            {
+                ret.add(new PropertyStorageSpec.Index(false, PARTICIPANTSEQUENCENUM));
+            }
+            else
+            {
+                ret.add(new PropertyStorageSpec.Index(false, CONTAINER, PARTICIPANTSEQUENCENUM));
+            }
+        }
+
+        return ret;
     }
 }

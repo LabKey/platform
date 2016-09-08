@@ -25,6 +25,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.VirtualTable;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.study.model.DatasetDefinition;
@@ -122,7 +123,16 @@ public class StudyUnionTableInfo extends VirtualTable
             {
                 if ("_visitdate".equalsIgnoreCase(column))
                     continue;
+
                 ColumnInfo ci = ti.getColumn(column);
+                if (!_study.isDataspaceStudy() && "container".equalsIgnoreCase(column))
+                {
+                    SQLFragment containerSql = new SQLFragment(" CAST(");
+                    containerSql.append("'").append(def.getContainer().getId()).append("'");
+                    containerSql.append(" AS UNIQUEIDENTIFIER) AS container");
+                    ci = new ExprColumn(this, "container", containerSql, JdbcType.GUID);
+                }
+
                 if (null == ci)
                     throw new RuntimeException("Schema consistency problem, column not found: " + def.getName() + "." + column);
                 sqlf.append(", ").append(ci.getValueSql("D"));

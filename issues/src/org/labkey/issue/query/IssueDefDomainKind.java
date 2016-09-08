@@ -87,6 +87,11 @@ public class IssueDefDomainKind extends AbstractIssuesListDefDomainKind
     }
 
     @Override
+    public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
+    {
+        return INDEXES;
+    }
+
     public Set<PropertyStorageSpec> getRequiredProperties()
     {
         return REQUIRED_PROPERTIES;

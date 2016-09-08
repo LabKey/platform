@@ -23,6 +23,7 @@ import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.data.PropertyStorageSpec.Index;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
 
@@ -160,7 +161,7 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
         }
 
         @Override
-        public Set<Index> getPropertyIndices()
+        public Set<Index> getPropertyIndices(Domain domain)
         {
             return PageFlowUtil.set(new Index(false, COLUMN_NAME_ATTACHMENT_PARENT_ENTITY_ID));
         }
