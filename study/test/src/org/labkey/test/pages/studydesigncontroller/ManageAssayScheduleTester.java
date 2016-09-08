@@ -18,7 +18,6 @@ package org.labkey.test.pages.studydesigncontroller;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
-import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
@@ -41,7 +40,7 @@ public class ManageAssayScheduleTester
     public void insertNewAssayConfiguration(@LoggedParam @Nullable String name, @Nullable String description, @Nullable String lab, @Nullable String sampleType)
     {
         Locator.XPathLocator assayConfigGrid = Locator.id("AssaySpecimenConfigGrid");
-        Locator.XPathLocator insertNewConfigButton = assayConfigGrid.append(Ext4Helper.Locators.ext4Button(DataRegionTable.getInsertNewButtonText()));
+        Locator.XPathLocator insertNewConfigButton = assayConfigGrid.append(Ext4Helper.Locators.ext4Button("Insert New"));
 
         Locator.XPathLocator addAssayConfigWindow = Ext4Helper.Locators.window("Add Assay Configuration");
 
