@@ -827,7 +827,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
             else if (this.autoColumnXName)
             {
-                columns.push(this.autoColumnXName);
+                columns.push(LABKEY.FieldKey.fromString(this.autoColumnXName).getName());
             }
             else
             {
@@ -845,10 +845,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             if (measures.y)
                 columns.push(measures.y.name);
             else if (this.autoColumnYName)
-                columns.push(this.autoColumnYName);
+                columns.push(LABKEY.FieldKey.fromString(this.autoColumnYName).getName());
 
             if (this.autoColumnName)
-                columns.push(this.autoColumnName);
+                columns.push(LABKEY.FieldKey.fromString(this.autoColumnName).getName());
 
             if (measures.color)
                 columns.push(measures.color.name);
@@ -1664,7 +1664,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 if (this.autoColumnXName || (requiresX && this.autoColumnName))
                 {
                     fk = LABKEY.FieldKey.fromString(this.autoColumnXName || this.autoColumnName);
-                    measure = measureStore.findRecord('name', fk.name, 0, false, true, true);
+                    measure = measureStore.findRecord('name', fk.getName(), 0, false, true, true);
                     if (measure)
                         this.setXAxisMeasure(measure, true);
                 }

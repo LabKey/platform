@@ -48,10 +48,10 @@ public class QuickChartAnalyticsProvider extends ColumnAnalyticsProvider
         VisualizationUrls urlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
         if (urlProvider != null && settings != null && settings.getSchemaName() != null && settings.getQueryName() != null)
         {
-            RenderType renderType = col.isNumericType() ? RenderType.BOX_PLOT : RenderType.BAR_PLOT;
+            RenderType renderType = col.isNumericType() && !col.isLookup() ? RenderType.BOX_PLOT : RenderType.BAR_PLOT;
             ActionURL url = urlProvider.getGenericChartDesignerURL(ctx.getContainer(), ctx.getViewContext().getUser(), settings, renderType);
 
-            String autoColParam = col.isNumericType() ? "autoColumnYName" : "autoColumnName";
+            String autoColParam = col.isNumericType() && !col.isLookup() ? "autoColumnYName" : "autoColumnName";
             url.addParameter(autoColParam, col.getName());
 
             return url;
