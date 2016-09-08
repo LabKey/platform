@@ -18,6 +18,7 @@ package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -35,6 +36,10 @@ public class PdLookupForeignKey extends AbstractForeignKey
     PropertyDescriptor _pd;
     Container _currentContainer;
     private Container _targetContainer;
+
+    /** The FK may target a different set of containers from the original query - might be useful to pull up to AbstractForeignKey */
+    @Nullable
+    private ContainerFilter _customContainerFilter;
 
     public PdLookupForeignKey(@NotNull User user, @NotNull PropertyDescriptor pd, @NotNull Container container)
     {
@@ -70,7 +75,10 @@ public class PdLookupForeignKey extends AbstractForeignKey
         return _lookupSchemaName;
     }
 
-
+    public void setCustomContainerFilter(@Nullable ContainerFilter customContainerFilter)
+    {
+        _customContainerFilter = customContainerFilter;
+    }
 
     @Override
     public Container getLookupContainer()
@@ -111,6 +119,12 @@ public class PdLookupForeignKey extends AbstractForeignKey
 
         if (table.getPkColumns().size() < 1 || table.getPkColumns().size() > 2)
             return null;
+
+        if (_customContainerFilter != null)
+        {
+            // Assume it's containerFilterable
+            ((ContainerFilterable)table).setContainerFilter(_customContainerFilter);
+        }
 
         return table;
     }
@@ -218,5 +232,10 @@ public class PdLookupForeignKey extends AbstractForeignKey
         if (null == columnName)
             return null;
         return LookupForeignKey.getDetailsURL(parent, lookupTable, columnName);
+    }
+
+    public void setContainerFilter(ContainerFilter filter)
+    {
+        _customContainerFilter = filter;
     }
 }

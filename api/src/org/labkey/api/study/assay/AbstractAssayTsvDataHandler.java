@@ -18,7 +18,6 @@ package org.labkey.api.study.assay;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -26,7 +25,6 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilterable;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ForeignKey;
@@ -58,7 +56,6 @@ import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -69,7 +66,6 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -610,8 +606,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     else
                         sampleIds.put(pd, new HashSet<>());
                 }
-                // Materials/samples get a special search scoping
-                searchContainers = getSearchContainers(container, ss, pd, user);
             }
 
             if (dataTable != null && settings.isAllowLookupByAlternateKey())
@@ -620,7 +614,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 ForeignKey fk = column != null ? column.getFk() : null;
                 if (fk != null && fk.allowImportByAlternateKey())
                 {
-                    remapMap.put(pd, new SimpleTranslator.RemapPostConvert(fk.getLookupTableInfo(), true, searchContainers));
+                    remapMap.put(pd, new SimpleTranslator.RemapPostConvert(fk.getLookupTableInfo(), true));
                 }
             }
         }
@@ -889,7 +883,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         // use DomainProperty name as the role
         String role = dp == null ? null : dp.getName(); // TODO: More than one DomainProperty could be a lookup to the SampleSet
 
-        Set<Container> searchContainers = getSearchContainers(container, ss, dp, user);
+        Set<Container> searchContainers = AssayResultTable.getSearchContainers(container, ss, dp, user);
 
         for (Container searchContainer : searchContainers)
         {
@@ -900,53 +894,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     materialInputs.put(material, role);
         }
     }
-
-    @NotNull
-    private Set<Container> getSearchContainers(Container currentContainer, @Nullable ExpSampleSet ss, @Nullable DomainProperty dp, User user)
-    {
-        Set<Container> searchContainers = new LinkedHashSet<>();
-        if (dp != null)
-        {
-            Lookup lookup = dp.getLookup();
-            if (lookup != null && lookup.getContainer() != null)
-            {
-                Container lookupContainer = lookup.getContainer();
-                if (lookupContainer.hasPermission(user, ReadPermission.class))
-                {
-                    // The property is specifically targeting a container, so look there
-                    searchContainers.add(lookup.getContainer());
-                }
-            }
-        }
-
-        if (searchContainers.isEmpty())
-        {
-            // Default to looking in the current container
-            searchContainers.add(currentContainer);
-            if (ss == null || (ss.getContainer().isProject() && !currentContainer.isProject()))
-            {
-                Container c = currentContainer.getParent();
-                // Recurse up the chain to the project
-                while (c != null && !c.isRoot())
-                {
-                    if (c.hasPermission(user, ReadPermission.class))
-                    {
-                        searchContainers.add(c);
-                    }
-                    c = c.getParent();
-                }
-            }
-            Container sharedContainer = ContainerManager.getSharedContainer();
-            if (ss == null || ss.getContainer().equals(sharedContainer))
-            {
-                if (sharedContainer.hasPermission(user, ReadPermission.class))
-                {
-                    searchContainers.add(ContainerManager.getSharedContainer());
-                }
-            }
-        }
-        return searchContainers;
-}
 
 
     private void resolveSampleIds(Map<DomainProperty, ExpSampleSet> sampleSets, Map<ExpSampleSet, Set<Integer>> sampleIdsBySampleSet, Map<ExpMaterial, String> materialInputs)

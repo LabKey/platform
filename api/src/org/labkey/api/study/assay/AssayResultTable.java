@@ -16,12 +16,15 @@
 package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DelegatingContainerFilter;
 import org.labkey.api.data.DisplayColumn;
@@ -41,16 +44,19 @@ import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.RowIdForeignKey;
@@ -64,6 +70,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -134,6 +141,14 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
                     PropertyDescriptor pd = domainProperty.getPropertyDescriptor();
                     FieldKey pkFieldKey = new FieldKey(null, AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME);
                     PropertyColumn.copyAttributes(_userSchema.getUser(), col, pd, schema.getContainer(), _userSchema.getSchemaPath(), getPublicName(), pkFieldKey);
+
+                    ExpSampleSet ss = DefaultAssayRunCreator.getLookupSampleSet(domainProperty, getContainer());
+                    if (col.getFk() instanceof PdLookupForeignKey && (ss != null || DefaultAssayRunCreator.isLookupToMaterials(domainProperty)))
+                    {
+                        Set<Container> searchContainers = getSearchContainers(getContainer(), ss, domainProperty, getUserSchema().getUser());
+                        ContainerFilter.SimpleContainerFilter filter = new ContainerFilter.SimpleContainerFilter(searchContainers);
+                        ((PdLookupForeignKey)col.getFk()).setContainerFilter(filter);
+                    }
                 }
                 addColumn(col);
 
@@ -154,61 +169,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
                 visibleColumns.add(col.getFieldKey());
         }
 
-        // Add FK to specimens
-        if (specimenIdCol != null && specimenIdCol.getFk() == null)
-        {
-            if (!foundTargetStudyCol)
-            {
-                for (DomainProperty runDP : _provider.getRunDomain(_protocol).getProperties())
-                {
-                    if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(runDP.getName()))
-                    {
-                        foundTargetStudyCol = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!foundTargetStudyCol)
-            {
-                for (DomainProperty batchDP : _provider.getBatchDomain(_protocol).getProperties())
-                {
-                    if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(batchDP.getName()))
-                    {
-                        foundTargetStudyCol = true;
-                        break;
-                    }
-                }
-            }
-
-            specimenIdCol.setDisplayColumnFactory(new DisplayColumnFactory()
-            {
-                @Override
-                public DisplayColumn createRenderer(ColumnInfo colInfo)
-                {
-                    DataColumn result = new DataColumn(colInfo)
-                    {
-                        @Override
-                        public String renderURL(RenderContext ctx)
-                        {
-                            // Don't make a url unless there's a specimen in the target study
-                            FieldKey specimenIdKey = FieldKey.fromParts("SpecimenId", "RowId");
-                            if (null != ctx.get(specimenIdKey))
-                                return super.renderURL(ctx);
-                            return null;
-                        }
-                    };
-                    result.setInputType("text");
-                    return result;
-                }
-            });
-
-            if (foundTargetStudyCol)
-            {
-                specimenIdCol.setFk(new SpecimenForeignKey(_userSchema, _provider, _protocol));
-                specimenIdCol.setDisplayColumnFactory(ColumnInfo.NOLOOKUP_FACTORY);
-            }
-        }
+        configureSpecimensLookup(specimenIdCol, foundTargetStudyCol);
 
         ColumnInfo dataColumn = getColumn("DataId");
         dataColumn.setLabel("Data");
@@ -283,6 +244,112 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         }
 
         setDefaultVisibleColumns(visibleColumns);
+    }
+
+    @NotNull
+    public static Set<Container> getSearchContainers(Container currentContainer, @Nullable ExpSampleSet ss, @Nullable DomainProperty dp, User user)
+    {
+        Set<Container> searchContainers = new LinkedHashSet<>();
+        if (dp != null)
+        {
+            Lookup lookup = dp.getLookup();
+            if (lookup != null && lookup.getContainer() != null)
+            {
+                Container lookupContainer = lookup.getContainer();
+                if (lookupContainer.hasPermission(user, ReadPermission.class))
+                {
+                    // The property is specifically targeting a container, so look there and only there
+                    searchContainers.add(lookup.getContainer());
+                }
+            }
+        }
+
+        if (searchContainers.isEmpty())
+        {
+            // Default to looking in the current container
+            searchContainers.add(currentContainer);
+            if (ss == null || (ss.getContainer().isProject() && !currentContainer.isProject()))
+            {
+                Container c = currentContainer.getParent();
+                // Recurse up the chain to the project
+                while (c != null && !c.isRoot())
+                {
+                    if (c.hasPermission(user, ReadPermission.class))
+                    {
+                        searchContainers.add(c);
+                    }
+                    c = c.getParent();
+                }
+            }
+            Container sharedContainer = ContainerManager.getSharedContainer();
+            if (ss == null || ss.getContainer().equals(sharedContainer))
+            {
+                if (sharedContainer.hasPermission(user, ReadPermission.class))
+                {
+                    searchContainers.add(ContainerManager.getSharedContainer());
+                }
+            }
+        }
+        return searchContainers;
+}
+
+    private void configureSpecimensLookup(ColumnInfo specimenIdCol, boolean foundTargetStudyCol)
+    {
+        // Add FK to specimens
+        if (specimenIdCol != null && specimenIdCol.getFk() == null)
+        {
+            if (!foundTargetStudyCol)
+            {
+                for (DomainProperty runDP : _provider.getRunDomain(_protocol).getProperties())
+                {
+                    if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(runDP.getName()))
+                    {
+                        foundTargetStudyCol = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!foundTargetStudyCol)
+            {
+                for (DomainProperty batchDP : _provider.getBatchDomain(_protocol).getProperties())
+                {
+                    if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(batchDP.getName()))
+                    {
+                        foundTargetStudyCol = true;
+                        break;
+                    }
+                }
+            }
+
+            specimenIdCol.setDisplayColumnFactory(new DisplayColumnFactory()
+            {
+                @Override
+                public DisplayColumn createRenderer(ColumnInfo colInfo)
+                {
+                    DataColumn result = new DataColumn(colInfo)
+                    {
+                        @Override
+                        public String renderURL(RenderContext ctx)
+                        {
+                            // Don't make a url unless there's a specimen in the target study
+                            FieldKey specimenIdKey = FieldKey.fromParts("SpecimenId", "RowId");
+                            if (null != ctx.get(specimenIdKey))
+                                return super.renderURL(ctx);
+                            return null;
+                        }
+                    };
+                    result.setInputType("text");
+                    return result;
+                }
+            });
+
+            if (foundTargetStudyCol)
+            {
+                specimenIdCol.setFk(new SpecimenForeignKey(_userSchema, _provider, _protocol));
+                specimenIdCol.setDisplayColumnFactory(ColumnInfo.NOLOOKUP_FACTORY);
+            }
+        }
     }
 
     @Override

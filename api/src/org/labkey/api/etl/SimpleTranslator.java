@@ -149,26 +149,13 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         private final TableInfo _targetTable;
         private final boolean _includeTitleColumn;
 
-        @Nullable
-        private final Set<Container> _searchContainers;
-
         private List<MultiValuedMap<?, ?>> _maps = null;
         private MultiValuedMap<String, Object> _titleColumnLookupMap = null;
 
         public RemapPostConvert(@NotNull TableInfo targetTable, boolean includeTitleColumn)
         {
-            this(targetTable, includeTitleColumn, null);
-        }
-
-        /**
-         * @param searchContainers an explicit set of containers to search based on some custom scoping. Resolved using
-         *                         by setting a ContainerFilter on the targetTable
-         */
-        public RemapPostConvert(@NotNull TableInfo targetTable, boolean includeTitleColumn, @Nullable Set<Container> searchContainers)
-        {
             _targetTable = targetTable;
             _includeTitleColumn = includeTitleColumn;
-            _searchContainers = searchContainers;
         }
 
         private List<MultiValuedMap<?, ?>> getMaps()
@@ -185,51 +172,34 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 // - Has a single primary key
                 // - Has a unique index over a single column that isn't the primary key
                 // - The column in the unique index must be a string type
-
-                ContainerFilter resetContainerFilter = null;
-                if (_targetTable instanceof ContainerFilterable && _searchContainers != null)
+                for (Pair<TableInfo.IndexType, List<ColumnInfo>> index : _targetTable.getUniqueIndices().values())
                 {
-                    resetContainerFilter = _targetTable.getContainerFilter();
-                    ((ContainerFilterable)_targetTable).setContainerFilter(new ContainerFilter.SimpleContainerFilter(_searchContainers));
+                    if (index.getKey() != TableInfo.IndexType.Unique)
+                        continue;
+
+                    if (index.getValue().size() != 1)
+                        continue;
+
+                    ColumnInfo col = index.getValue().get(0);
+                    if (!seen.add(col))
+                        continue;
+
+                    if (pkCol == col)
+                        continue;
+
+                    if (!col.getJdbcType().isText())
+                        continue;
+
+                    _maps.add(createMap(_targetTable, pkCol, col));
                 }
-                try
+
+                if (_includeTitleColumn)
                 {
-                    for (Pair<TableInfo.IndexType, List<ColumnInfo>> index : _targetTable.getUniqueIndices().values())
+                    ColumnInfo titleColumn = _targetTable.getTitleColumn() != null ? _targetTable.getColumn(_targetTable.getTitleColumn()) : null;
+                    if (titleColumn != null && !seen.contains(titleColumn))
                     {
-                        if (index.getKey() != TableInfo.IndexType.Unique)
-                            continue;
-
-                        if (index.getValue().size() != 1)
-                            continue;
-
-                        ColumnInfo col = index.getValue().get(0);
-                        if (!seen.add(col))
-                            continue;
-
-                        if (pkCol == col)
-                            continue;
-
-                        if (!col.getJdbcType().isText())
-                            continue;
-
-                        _maps.add(createMap(_targetTable, pkCol, col));
-                    }
-
-                    if (_includeTitleColumn)
-                    {
-                        ColumnInfo titleColumn = _targetTable.getTitleColumn() != null ? _targetTable.getColumn(_targetTable.getTitleColumn()) : null;
-                        if (titleColumn != null && !seen.contains(titleColumn))
-                        {
-                            TableSelector ts = new TableSelector(_targetTable, Arrays.asList(titleColumn, pkCol), null, null);
-                            _titleColumnLookupMap = ts.getMultiValuedMap();
-                        }
-                    }
-                }
-                finally
-                {
-                    if (resetContainerFilter != null)
-                    {
-                        ((ContainerFilterable) _targetTable).setContainerFilter(resetContainerFilter);
+                        TableSelector ts = new TableSelector(_targetTable, Arrays.asList(titleColumn, pkCol), null, null);
+                        _titleColumnLookupMap = ts.getMultiValuedMap();
                     }
                 }
             }
