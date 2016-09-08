@@ -672,11 +672,10 @@ public class QueryView extends WebPartView<Object>
         URLHelper ret = getSettings().getReturnUrl();
         if (null == ret)
             ret = getSettings().getSortFilterURL();
+        ret = ret.clone();
         ret.deleteParameter(param(QueryParam.queryName));
         ret.deleteParameter(param(QueryParam.viewName));
         ret.deleteParameter(param(QueryParam.reportId));
-        ret.deleteParameter("x");
-        ret.deleteParameter("y");
         for (String key : ret.getKeysByPrefix(getDataRegionName() + "."))
         {
             ret.deleteFilterParameters(key);
@@ -687,8 +686,6 @@ public class QueryView extends WebPartView<Object>
     protected ActionURL urlBaseView()
     {
         ActionURL ret = getSettings().getSortFilterURL();
-        ret.deleteParameter("x");
-        ret.deleteParameter("y");
         for (String key : ret.getKeysByPrefix(getDataRegionName() + "."))
         {
             ret.deleteFilterParameters(key);
@@ -704,6 +701,7 @@ public class QueryView extends WebPartView<Object>
             ret = getSettings().getSortFilterURL();
         else if (getSettings().getDataRegionName() != null)
         {
+            ret = ret.clone();
             // if we are using a returnUrl for this QV, make sure we apply any sort and filter
             // parameters so that reports stay in sync with the data region.
             URLHelper url = getSettings().getSortFilterURL();
@@ -712,11 +710,13 @@ public class QueryView extends WebPartView<Object>
                 ret.replaceParameter(param, url.getParameter(param));
             }
         }
+        else
+        {
+            ret = ret.clone();
+        }
 
         ret.deleteParameter(param(QueryParam.viewName));
         ret.deleteParameter(param(QueryParam.reportId));
-        ret.deleteParameter("x");
-        ret.deleteParameter("y");
         ret.deleteParameter(RunReportView.CACHE_PARAM);
         ret.deleteParameter(RunReportView.TAB_PARAM);
         return ret;
@@ -1323,13 +1323,12 @@ public class QueryView extends WebPartView<Object>
 
             button.addSeparator();
         }
-        StringBuilder baseFilterItems = new StringBuilder();
 
         if (getSettings().isAllowCustomizeView())
             addCustomizeViewItems(button);
         if (!getQueryDef().isTemporary())
         {
-            addManageViewItems(button, PageFlowUtil.map("baseFilterItems", PageFlowUtil.encode(baseFilterItems.toString()),
+            addManageViewItems(button, PageFlowUtil.map(
                     "schemaName", getSchema().getSchemaName(),
                     "queryName", getSettings().getQueryName()));
             addFilterItems(button);
@@ -1342,8 +1341,6 @@ public class QueryView extends WebPartView<Object>
         NavTreeMenuButton button = new NavTreeMenuButton("Reports");
         NavTree menu = button.getNavTree();
         menu.setId(getBaseMenuId() + ".Menu.Reports");
-
-        StringBuilder baseFilterItems = new StringBuilder();
 
         if (!getQueryDef().isTemporary() && _report == null)
         {
@@ -1359,17 +1356,8 @@ public class QueryView extends WebPartView<Object>
                 }
             }
 
-            Collections.sort(reportDesigners, new Comparator<ReportService.DesignerInfo>()
-            {
-                @Override
-                public int compare(ReportService.DesignerInfo o1, ReportService.DesignerInfo o2)
-                {
-                    return o1.getLabel().compareTo(o2.getLabel());
-                }
-            });
+            Collections.sort(reportDesigners, (o1, o2) -> o1.getLabel().compareTo(o2.getLabel()));
 
-            NavTree submenu = null;
-            String sep = "";
             ReportService.ItemFilter viewItemFilter = getItemFilter();
 
             for (ReportService.DesignerInfo designer : reportDesigners)
@@ -1382,14 +1370,6 @@ public class QueryView extends WebPartView<Object>
                     item.setImageCls(designer.getIconCls());
 
                     menu.addChild(item);
-                }
-
-                // we want to keep track of the available report types that the base (built-in) item filter accepts
-                if (_itemFilter.accept(designer.getReportType(), designer.getLabel()))
-                {
-                    baseFilterItems.append(sep);
-                    baseFilterItems.append(designer.getReportType());
-                    sep = "&";
                 }
             }
         }
@@ -1422,14 +1402,7 @@ public class QueryView extends WebPartView<Object>
                 }
             }
 
-            Collections.sort(reportDesigners, new Comparator<ReportService.DesignerInfo>()
-            {
-                @Override
-                public int compare(ReportService.DesignerInfo o1, ReportService.DesignerInfo o2)
-                {
-                    return o1.getLabel().compareTo(o2.getLabel());
-                }
-            });
+            Collections.sort(reportDesigners, (o1, o2) -> o1.getLabel().compareTo(o2.getLabel()));
 
             for (ReportService.DesignerInfo designer : reportDesigners)
             {
@@ -1499,6 +1472,7 @@ public class QueryView extends WebPartView<Object>
             URLHelper url = getSettings().getReturnUrl();
             if (null == url)
                 url = getSettings().getSortFilterURL();
+            url = url.clone();
             NavTree item;
             String label = "Apply Grid Filter";
             if (ignoreUserFilter())
@@ -1516,12 +1490,10 @@ public class QueryView extends WebPartView<Object>
             button.addMenuItem(item);
         }
 
-        boolean isUnionTable = false;
         TableInfo t = getTable();
         if (t instanceof UnionTable)
         {
             t = ((UnionTable) t).getComponentTable();   // check against a component table
-            isUnionTable = true;                        // UnionTable implies CurrentAndSubFolder (TODO: can other multi-folder cases occur?)
         }
         if (t instanceof ContainerFilterable && t.supportsContainerFilter() && !getAllowableContainerFilterTypes().isEmpty())
         {
@@ -1529,8 +1501,6 @@ public class QueryView extends WebPartView<Object>
             NavTree containerFilterItem = new NavTree("Folder Filter");
             containerFilterItem.setId(getBaseMenuId() + ":GridViews:Folder Filter");
             button.addMenuItem(containerFilterItem);
-
-            ContainerFilterable table = (ContainerFilterable) t;
 
             ContainerFilter selectedFilter = getContainerFilter();
             ContainerFilter.Type selectedFilterType = null != selectedFilter ? selectedFilter.getType() : ContainerFilter.Type.Current;
@@ -1540,6 +1510,7 @@ public class QueryView extends WebPartView<Object>
                 URLHelper url = getSettings().getReturnUrl();
                 if (null == url)
                     url = getSettings().getSortFilterURL();
+                url = url.clone();
                 String propName = getDataRegionName() + DataRegion.CONTAINER_FILTER_NAME;
                 url.replaceParameter(propName, filterType.name());
                 NavTree filterItem = new NavTree(filterType.toString(), url);
@@ -1589,17 +1560,14 @@ public class QueryView extends WebPartView<Object>
         }
 
         // sort the grid view alphabetically, with default first (null name), then private views over public ones
-        Collections.sort(views, new Comparator<CustomView>()
+        Collections.sort(views, (o1, o2) ->
         {
-            public int compare(CustomView o1, CustomView o2)
-            {
-                if (o1.getName() == null) return -1;
-                if (o2.getName() == null) return 1;
-                if (!o1.isShared() && o2.isShared()) return -1;
-                if (o1.isShared() && !o2.isShared()) return 1;
+            if (o1.getName() == null) return -1;
+            if (o2.getName() == null) return 1;
+            if (!o1.isShared() && o2.isShared()) return -1;
+            if (o1.isShared() && !o2.isShared()) return 1;
 
-                return o1.getName().compareToIgnoreCase(o2.getName());
-            }
+            return o1.getName().compareToIgnoreCase(o2.getName());
         });
 
         for (CustomView view : views)
@@ -1692,7 +1660,7 @@ public class QueryView extends WebPartView<Object>
                 if (canViewReport(getUser(), getContainer(), report) && !report.getDescriptor().isHidden())
                 {
                     if (!views.containsKey(report.getType()))
-                        views.put(report.getType(), new ArrayList<Report>());
+                        views.put(report.getType(), new ArrayList<>());
 
                     views.get(report.getType()).add(report);
                 }
@@ -1707,16 +1675,12 @@ public class QueryView extends WebPartView<Object>
             List<Report> reports = entry.getValue();
 
             // sort the list of reports within each type grouping
-            Collections.sort(reports, new Comparator<Report>()
+            Collections.sort(reports, (o1, o2) ->
             {
-                @Override
-                public int compare(Report o1, Report o2)
-                {
-                    String n1 = StringUtils.defaultString(o1.getDescriptor().getReportName(), "");
-                    String n2 = StringUtils.defaultString(o2.getDescriptor().getReportName(), "");
+                String n1 = StringUtils.defaultString(o1.getDescriptor().getReportName(), "");
+                String n2 = StringUtils.defaultString(o2.getDescriptor().getReportName(), "");
 
-                    return n1.compareToIgnoreCase(n2);
-                }
+                return n1.compareToIgnoreCase(n2);
             });
 
             for (Report report : reports)
@@ -1755,7 +1719,7 @@ public class QueryView extends WebPartView<Object>
                 if (canViewReport(getUser(), getContainer(), report))
                 {
                     if (!views.containsKey(report.getType()))
-                        views.put(report.getType(), new ArrayList<Report>());
+                        views.put(report.getType(), new ArrayList<>());
 
                     views.get(report.getType()).add(report);
                 }
@@ -1769,16 +1733,12 @@ public class QueryView extends WebPartView<Object>
         {
             List<Report> charts = entry.getValue();
 
-            Collections.sort(charts, new Comparator<Report>()
+            Collections.sort(charts, (o1, o2) ->
             {
-                @Override
-                public int compare(Report o1, Report o2)
-                {
-                    String n1 = StringUtils.defaultString(o1.getDescriptor().getReportName(), "");
-                    String n2 = StringUtils.defaultString(o2.getDescriptor().getReportName(), "");
+                String n1 = StringUtils.defaultString(o1.getDescriptor().getReportName(), "");
+                String n2 = StringUtils.defaultString(o2.getDescriptor().getReportName(), "");
 
-                    return n1.compareToIgnoreCase(n2);
-                }
+                return n1.compareToIgnoreCase(n2);
             });
 
             for (Report chart : charts)

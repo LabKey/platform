@@ -290,7 +290,9 @@ public class QuerySettings
         {
             try
             {
-                setReturnUrl(new URLHelper(returnURL));
+                URLHelper url = new URLHelper(returnURL);
+                url.setReadOnly();
+                setReturnUrl(url);
             }
             catch (URISyntaxException | IllegalArgumentException ignored) { }
         }

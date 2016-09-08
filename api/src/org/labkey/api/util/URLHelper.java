@@ -47,6 +47,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 /**
  * Represents a URL, typically within this instance of LabKey Server.
@@ -205,11 +206,6 @@ public class URLHelper implements Cloneable, Serializable, Taintable
         if (null != _fragment && _fragment.length() > 0)
             uriString.append("#").append(_fragment);
 
-        if (_tainted)
-        {
-            //_log.warn("tainted URL: " + uriString.toString());
-        }
-
         return uriString.toString();
     }
 
@@ -219,26 +215,6 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     {
         return PageFlowUtil.filter(getLocalURIString());
     }
-
-
-    /* server or web-app relative URI
-     *
-     * @param asForward if true return web-app relative URI
-     * @return URI
-    public URI getLocalURI(boolean asForward)
-    {
-        try
-        {
-            URI uri;
-            uri = new URI(null, null, getPath(asForward), getQueryString(), getFragment());
-            return uri;
-        }
-        catch (URISyntaxException x)
-        {
-            throw new RuntimeException(x);
-        }
-    }
-    */
 
 
     protected void _setURI(URI uri)
@@ -720,10 +696,9 @@ public class URLHelper implements Cloneable, Serializable, Taintable
             URLHelper n = (URLHelper) super.clone();
             n._path = _path;
             n._readOnly = false;
-            n._parameters = _parameters==null ? null : new ArrayList<Pair<String,String>>(_parameters.size());
+            n._parameters = _parameters == null ? null : new ArrayList<>(_parameters.size());
             if (null != _parameters)
-                for (Pair<String,String> p : _parameters)
-                    n._parameters.add(p.copy());
+                n._parameters.addAll(_parameters.stream().map(Pair::copy).collect(Collectors.toList()));
             return n;
         }
         catch (Exception x)

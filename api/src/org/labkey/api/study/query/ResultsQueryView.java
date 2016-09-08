@@ -92,7 +92,14 @@ public class ResultsQueryView extends AssayBaseQueryView
         String returnURL = getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name());
 
         if (returnURL == null)
-            returnURL = getViewContext().getActionURL().toString();
+        {
+            // 27693: Respect returnURL from async webpart requests
+            if (getSettings().getReturnUrl() != null)
+                returnURL = getSettings().getReturnUrl().toString();
+            else
+                returnURL = getViewContext().getActionURL().toString();
+        }
+
         view.getDataRegion().addHiddenFormField(ActionURL.Param.returnUrl, returnURL);
 
         String redirectUrl = getViewContext().getRequest().getParameter(ActionURL.Param.redirectUrl.name());

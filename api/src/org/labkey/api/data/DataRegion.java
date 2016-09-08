@@ -323,11 +323,10 @@ public class DataRegion extends AbstractDataRegion
         addHiddenFormField(name.toString(), value);
     }
 
-
     public void addHiddenFormField(String name, String value)
     {
         if (null != value)
-            _hiddenFormFields.add(new Pair<String, Object>(name, value));
+            _hiddenFormFields.add(Pair.of(name, value));
     }
 
     public String getHiddenFormFieldValue(String name)
