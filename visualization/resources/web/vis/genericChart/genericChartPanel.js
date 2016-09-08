@@ -1424,7 +1424,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         var chartType, aes, scales, plotConfig,
             chartConfig = this.getChartConfig(),
             customRenderType = this.customRenderTypes ? this.customRenderTypes[this.renderType] : undefined,
-            xAxisType = chartConfig.measures.x ? chartConfig.measures.x.normalizedType : null;
+            xAxisType = this.getXAxisType(chartConfig.measures.x);
 
         chartType = LABKEY.vis.GenericChartHelper.getChartType(this.renderType, xAxisType);
 
@@ -1602,7 +1602,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             );
 
             // client has specified a line type (only applicable for scatter plot)
-            if (this.curveFit && this.measures.x && this.isScatterPlot(this.renderType, this.measures.x.normalizedType))
+            if (this.curveFit && this.measures.x && this.isScatterPlot(this.renderType, this.getXAxisType(this.measures.x)))
             {
                 var factory = this.lineRenderers[this.curveFit.type];
                 if (factory)
@@ -1811,12 +1811,17 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     {
         if (Ext4.isString(this.renderType) && this.renderType !== 'auto_plot')
             return this.renderType;
-        else if (!this.measures.x || this.isBoxPlot(this.renderType, this.measures.x.normalizedType))
+        else if (!this.measures.x || this.isBoxPlot(this.renderType, this.getXAxisType(this.measures.x)))
             return 'box_plot';
-        else if (this.measures.x && this.isScatterPlot(this.renderType, this.measures.x.normalizedType))
+        else if (this.measures.x && this.isScatterPlot(this.renderType, this.getXAxisType(this.measures.x)))
             return 'scatter_plot';
 
         return null;
+    },
+
+    getXAxisType : function(xMeasure)
+    {
+        return xMeasure ? (xMeasure.normalizedType || xMeasure.type) : null;
     },
 
     clearChartPanel : function()

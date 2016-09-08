@@ -171,8 +171,10 @@ LABKEY.vis.GenericChartHelper = new function(){
                 trans: savedScales.y ? savedScales.y.trans : 'linear'
             };
         }
-        else {
-            if (measures.x.normalizedType == "float" || measures.x.normalizedType == "int")
+        else
+        {
+            var xMeasureType = _getMeasureType(measures.x);
+            if (xMeasureType == "float" || xMeasureType == "int")
             {
                 scales.x = {
                     scaleType: 'continuous',
@@ -230,11 +232,13 @@ LABKEY.vis.GenericChartHelper = new function(){
      * @returns {Object}
      */
     var generateAes = function(chartType, measures, schemaName, queryName) {
-        var aes = {};
+        var aes = {},
+            xMeasureType = _getMeasureType(measures.x),
+            yMeasureType = _getMeasureType(measures.y);
 
         if(chartType == "box_plot" && !measures.x) {
             aes.x = generateMeasurelessAcc(queryName);
-        } else if (measures.x.normalizedType == "float" || measures.x.normalizedType == "int") {
+        } else if (xMeasureType == "float" || xMeasureType == "int") {
             aes.x = generateContinuousAcc(measures.x.name);
         } else {
             aes.x = generateDiscreteAcc(measures.x.name, measures.x.label);
@@ -242,7 +246,7 @@ LABKEY.vis.GenericChartHelper = new function(){
 
         if (measures.y)
         {
-            if (measures.y.normalizedType == "float" || measures.y.normalizedType == "int")
+            if (yMeasureType == "float" || yMeasureType == "int")
                 aes.y = generateContinuousAcc(measures.y.name);
             else
                 aes.y = generateDiscreteAcc(measures.y.name, measures.y.label);
@@ -646,6 +650,10 @@ LABKEY.vis.GenericChartHelper = new function(){
      */
     var validateYAxis = function(chartType, chartConfig, aes, scales, data){
         return this.validateAxisMeasure(chartType, chartConfig, 'y', aes, scales, data);
+    };
+
+    var _getMeasureType = function(measure) {
+        return measure ? (measure.normalizedType || measure.type) : null;
     };
 
     return {
