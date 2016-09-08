@@ -141,6 +141,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     getViewPanel : function()
     {
+        // TODO change usages of this.viewPanel to this.getViewPanel()
         if (!this.viewPanel)
         {
             this.viewPanel = Ext4.create('Ext.panel.Panel', {
@@ -1392,6 +1393,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.getEl().unmask();
     },
 
+    // TODO: I think we can remove the forExport param and related code now that thumbnails don't need to re-render
     renderPlot : function(forExport)
     {
         // Don't attempt to render if the view panel isn't visible or the chart type window is visible.
@@ -1417,6 +1419,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         var newChartDiv = Ext4.create('Ext.container.Container', {
             border: 1,
+            cls: 'chart-display',
             autoEl: {tag: 'div'}
         });
         this.viewPanel.add(newChartDiv);
@@ -1485,16 +1488,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.getEl().unmask();
             if (this.editMode && this.supportedBrowser)
             {
-                // TODO we shouldn't have to call this a second time anymore since we remove the clickable axis/title labels
-                // Update thumbnail
-                var thumbnail = this.renderPlot(true);
-                if (thumbnail)
-                {
-                    this.chartSVG = LABKEY.vis.SVGConverter.svgToStr(Ext4.get(thumbnail).child('svg').dom);
-                    this.getSavePanel().updateCurrentChartThumbnail(this.chartSVG);
-                    // destroy the temp chart element
-                    Ext4.getCmp(thumbnail).destroy();
-                }
+                // TODO get thumbnail to work for pie chart
+                this.chartSVG = LABKEY.vis.SVGConverter.svgToStr(newChartDiv.getEl().child('svg').dom);
+                this.getSavePanel().updateCurrentChartThumbnail(this.chartSVG);
             }
         }
         else
@@ -1912,24 +1908,19 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     exportChartToPdf : function()
     {
-        var tempDivId = this.renderPlot(true);
-        if (tempDivId)
-        {
-            // export the temp chart as a pdf with the chart title as the file name
-            LABKEY.vis.SVGConverter.convert(Ext4.get(tempDivId).child('svg').dom, 'pdf', this.getChartConfig().labels.main);
-            Ext4.getCmp(tempDivId).destroy();
-        }
+        this.exportChartToImage('pdf');
     },
 
     exportChartToPng : function()
     {
-        var tempDivId = this.renderPlot(true);
-        if (tempDivId)
-        {
-            // export the temp chart as a png with the chart title as the file name
-            LABKEY.vis.SVGConverter.convert(Ext4.get(tempDivId).child('svg').dom, 'png', this.getChartConfig().labels.main);
-            Ext4.getCmp(tempDivId).destroy();
-        }
+        this.exportChartToImage('png');
+    },
+
+    exportChartToImage : function(type)
+    {
+        var chartContainer = this.getViewPanel().down('container[cls~=chart-display]');
+        if (chartContainer != null)
+            LABKEY.vis.SVGConverter.convert(chartContainer.getEl().child('svg').dom, (type || 'pdf'), this.getChartConfig().labels.main);
     },
 
     exportChartToScript : function()
