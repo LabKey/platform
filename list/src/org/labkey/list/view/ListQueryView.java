@@ -41,7 +41,6 @@ public class ListQueryView extends QueryView
     public ListQueryView(ListQueryForm form, BindException errors)
     {
         super(form, errors);
-        getSettings().setReturnUrl(null);
         _list = form.getList();
         init();
     }

@@ -129,28 +129,11 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
                 crosstabInfo.setId("create_crosstabReport");
                 designers.add(crosstabInfo);
 
-/*
-                DesignerInfoImpl xlsInfo = new DesignerInfoImpl(ExportExcelReport.TYPE, "Workbook (.xls)",
-                        new ActionURL(ReportsController.ExportExcelConfigureAction.class, context.getContainer()),
-                        _getIconPath(ExportExcelReport.TYPE));
-                xlsInfo.setId("create_exportXlsView");
-                designers.add(xlsInfo);
-
-                DesignerInfoImpl enrollmentInfo = new DesignerInfoImpl(EnrollmentReport.TYPE, "Enrollment View",
-                        new ActionURL(ReportsController.EnrollmentReportAction.class, context.getContainer()),
-                        _getIconPath(EnrollmentReport.TYPE));
-                enrollmentInfo.setId("create_enrollmentView");
-                enrollmentInfo.setDisabled(!context.hasPermission(AdminPermission.class));
-                if (EnrollmentReport.getEnrollmentReport(context.getUser(), study, false) != null)
-                    enrollmentInfo.setLabel("Configure Enrollment View");
-*/
                 DesignerInfoImpl prInfo = new DesignerInfoImpl(ParticipantReport.TYPE, study.getSubjectNounSingular() + " Report", null,
                         new ActionURL(ReportsController.ParticipantReportAction.class, context.getContainer()),
                         _getIconPath(ParticipantReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(ParticipantReport.TYPE));
                 prInfo.setId("create_participantReport");
                 designers.add(prInfo);
-
-//                designers.add(enrollmentInfo);
             }
             catch (Exception e)
             {

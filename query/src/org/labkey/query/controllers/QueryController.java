@@ -2181,16 +2181,12 @@ public class QueryController extends SpringActionController
     @RequiresPermission(DeletePermission.class)
     public class DeleteQueryRowsAction extends FormHandlerAction<QueryForm>
     {
-        ActionURL _url = null;
-
         public void validateCommand(QueryForm target, Errors errors)
         {
         }
 
         public boolean handlePost(QueryForm form, BindException errors) throws Exception
         {
-            ActionURL forward = form.getReturnActionURL();
-
             TableInfo table = form.getQueryDef().getTable(form.getSchema(), null, true);
 
             if (!table.hasPermission(getUser(), DeletePermission.class))
@@ -2234,7 +2230,6 @@ public class QueryController extends SpringActionController
             try (DbScope.Transaction tx = dbSchema.getScope().ensureTransaction())
             {
                 updateService.deleteRows(getUser(), getContainer(), keyValues, null, null);
-                _url = forward;
                 tx.commit();
             }
             catch (SQLException x)
@@ -2262,9 +2257,9 @@ public class QueryController extends SpringActionController
             return true;
         }
 
-        public ActionURL getSuccessURL(QueryForm queryForm)
+        public ActionURL getSuccessURL(QueryForm form)
         {
-            return _url;
+            return form.getReturnActionURL();
         }
     }
 

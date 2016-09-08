@@ -224,8 +224,7 @@ public class ListController extends SpringActionController
         {
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), ListManagerSchema.SCHEMA_NAME);
             QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, ListManagerSchema.LIST_MANAGER);
-            QueryView queryView = schema.createView(getViewContext(), settings, errors);
-            return queryView;
+            return schema.createView(getViewContext(), settings, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)

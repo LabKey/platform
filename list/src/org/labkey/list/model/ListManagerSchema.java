@@ -15,6 +15,7 @@
  */
 package org.labkey.list.model;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.ActionButton;
@@ -89,6 +90,7 @@ public class ListManagerSchema extends UserSchema
             }
         });
     }
+
     @Nullable
     @Override
     protected TableInfo createTable(String name)
@@ -118,7 +120,7 @@ public class ListManagerSchema extends UserSchema
     }
 
     @Override
-    public QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
+    public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
     {
         if (settings.getQueryName().equalsIgnoreCase(LIST_MANAGER))
         {
@@ -134,9 +136,6 @@ public class ListManagerSchema extends UserSchema
                     bar.add(createCreateNewListButton());
                     bar.add(createDeleteButton());
                     bar.add(super.createExportButton());
-//  TODO: Might be nice to add these, but these start making the grid very wide...
-//                    bar.add(super.createPrintButton());
-//                    bar.add(super.createPageSizeMenuButton());
                     bar.add(createImportListArchiveButton());
                     bar.add(createExportArchiveButton());
                 }
@@ -200,8 +199,6 @@ public class ListManagerSchema extends UserSchema
                 @Override
                 protected void addDetailsAndUpdateColumns(List<DisplayColumn> ret, TableInfo table)
                 {
-                    super.addDetailsAndUpdateColumns(ret, table);
-
                     if (getContainer().hasPermission(getUser(), DesignListPermission.class))
                     {
                         SimpleDisplayColumn designColumn = new SimpleDisplayColumn()
