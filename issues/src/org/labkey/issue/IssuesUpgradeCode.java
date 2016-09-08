@@ -90,7 +90,7 @@ public class IssuesUpgradeCode implements UpgradeCode
         _log.info("Analyzing site-wide configuration to generate the issue list migration plan");
         MultiValuedMap<Container, IssueMigrationPlan> migrationPlans = generateMigrationPlan();
         User upgradeUser = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.getRole(SiteAdminRole.class)), false);
-        ObjectFactory<Issue> factory = ObjectFactory.Registry.getFactory(Issue.class);
+        ObjectFactory<LegacyIssue> factory = ObjectFactory.Registry.getFactory(LegacyIssue.class);
 
         try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
         {
@@ -144,7 +144,7 @@ public class IssuesUpgradeCode implements UpgradeCode
      * to the hard tables instead of using the query update service to avoid double writing to the legacy
      * issues table.
      */
-    void populateProvisionedTable(Container c, User user, ObjectFactory<Issue> factory, IssueMigrationPlan plan) throws SQLException
+    void populateProvisionedTable(Container c, User user, ObjectFactory<LegacyIssue> factory, IssueMigrationPlan plan) throws SQLException
     {
         IssueListDef issueListDef = IssueManager.getIssueListDef(c, plan.getIssueDefName());
         if (issueListDef != null)
@@ -166,7 +166,7 @@ public class IssuesUpgradeCode implements UpgradeCode
                 new TableSelector(IssuesSchema.getInstance().getTableInfoIssues(), SimpleFilter.createContainerFilter(c), null).forEachBatch(batch -> {
                     rows.clear();
 
-                    for (Issue issue : batch)
+                    for (LegacyIssue issue : batch)
                     {
                         Map<String, Object> row = new CaseInsensitiveHashMap<>();
                         factory.toMap(issue, row);
@@ -185,7 +185,7 @@ public class IssuesUpgradeCode implements UpgradeCode
                     {
                         Table.insert(user, table, row);
                     }
-                }, Issue.class, 1000);
+                }, LegacyIssue.class, 1000);
 
                 // need to set the issue def id in the issues table to be able to determine the issue definition for
                 // each individual issue record
@@ -856,6 +856,125 @@ public class IssuesUpgradeCode implements UpgradeCode
                 new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(sql);
             }
             transaction.commit();
+        }
+    }
+
+    /**
+     * Bean to represent the legacy issue table which is needed to migrate data from the old to new structures.
+     */
+    public static class LegacyIssue extends Issue
+    {
+        private String string1;
+        private String string2;
+        private String string3;
+        private String string4;
+        private String string5;
+        private Integer int1;
+        private Integer int2;
+
+        public String getString1()
+        {
+            return string1;
+        }
+
+        public void setString1(String string1)
+        {
+            this.string1 = string1;
+        }
+
+        public String getString2()
+        {
+            return string2;
+        }
+
+        public void setString2(String string2)
+        {
+            this.string2 = string2;
+        }
+
+        public String getString3()
+        {
+            return string3;
+        }
+
+        public void setString3(String string3)
+        {
+            this.string3 = string3;
+        }
+
+        public String getString4()
+        {
+            return string4;
+        }
+
+        public void setString4(String string4)
+        {
+            this.string4 = string4;
+        }
+
+        public String getString5()
+        {
+            return string5;
+        }
+
+        public void setString5(String string5)
+        {
+            this.string5 = string5;
+        }
+
+        public Integer getInt1()
+        {
+            return int1;
+        }
+
+        public void setInt1(Integer int1)
+        {
+            this.int1 = int1;
+        }
+
+        public Integer getInt2()
+        {
+            return int2;
+        }
+
+        public void setInt2(Integer int2)
+        {
+            this.int2 = int2;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (!super.equals(o))
+                return false;
+
+            LegacyIssue issue = (LegacyIssue) o;
+
+            if (int1 != null ? !int1.equals(issue.int1) : issue.int1 != null) return false;
+            if (int2 != null ? !int2.equals(issue.int2) : issue.int2 != null) return false;
+            if (string1 != null ? !string1.equals(issue.string1) : issue.string1 != null) return false;
+            if (string2 != null ? !string2.equals(issue.string2) : issue.string2 != null) return false;
+            if (string3 != null ? !string3.equals(issue.string3) : issue.string3 != null) return false;
+            if (string4 != null ? !string4.equals(issue.string4) : issue.string4 != null) return false;
+            if (string5 != null ? !string5.equals(issue.string5) : issue.string5 != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result = super.hashCode();
+
+            result = 31 * result + (string1 != null ? string1.hashCode() : 0);
+            result = 31 * result + (string2 != null ? string2.hashCode() : 0);
+            result = 31 * result + (string3 != null ? string3.hashCode() : 0);
+            result = 31 * result + (string4 != null ? string4.hashCode() : 0);
+            result = 31 * result + (string5 != null ? string5.hashCode() : 0);
+            result = 31 * result + (int1 != null ? int1.hashCode() : 0);
+            result = 31 * result + (int2 != null ? int2.hashCode() : 0);
+
+            return result;
         }
     }
 }
