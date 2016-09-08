@@ -67,8 +67,8 @@
         </tr>
         <% if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_USER_FOLDERS)) {%>
         <tr>
-            <td class="labkey-form-label">User-Level&nbsp;File&nbsp;Root&nbsp;<%=helpPopup("User File Root", "Set the root folder for users personal folders. ")%></td>
-            <td><input type="text" name="userRootPath" size="64" value="<%=h(StringUtils.defaultIfBlank(bean.getUserRootPath(), bean.getRootPath() + "/Users" ))%>"></td>
+            <td class="labkey-form-label">Home&nbsp;Directory&nbsp;File&nbsp;Root&nbsp;<%=helpPopup("User File Root", "Set the root folder for users personal folders. ")%></td>
+            <td><input type="text" name="userRootPath" size="64" value="<%=h(StringUtils.defaultIfBlank(bean.getUserRootPath(), ""))%>"></td>
         </tr>
         <%}%>
         <tr><td>&nbsp;</td></tr>
