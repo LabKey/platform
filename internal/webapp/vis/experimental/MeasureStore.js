@@ -579,6 +579,8 @@
 
             this._dimensions = {};
             this._records = config.records || [];
+            for (var r=0 ; r<this._records.length ; r++)
+                this._records[r]["__rownumber__"] = r;
             this._columns = [countStar];
             this._responseMetadata = config.responseMetadata;
             this._columnMap = {
@@ -758,6 +760,9 @@
                     firstRow = this._records.length ? this._records[0] : null,
                     nullDisplayValue = this._nullDisplayValue,
                     getter;
+
+                if (dimName === '*')
+                    dimArray = ["__rownumber__"];
 
                 if (LABKEY.Utils.isArray(dimName))
                 {
@@ -1032,7 +1037,7 @@
                 results.metaData.fields.forEach(function(field)
                 {
                     if (field.measure)
-                        measures.push(field.name);
+                        measures.push(field.name || field.fieldKey.toString());
                 });
             }
 
