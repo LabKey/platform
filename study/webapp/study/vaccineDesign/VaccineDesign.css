@@ -1,0 +1,52 @@
+
+.study-vaccine-design .x4-panel-body {
+    background-color: transparent;
+}
+
+.study-vaccine-design .main-title {
+    font-weight: bold;
+    font-size: 18px;
+    padding-bottom: 5px;
+}
+
+.study-vaccine-design table.outer,
+.study-vaccine-design table.subgrid {
+    border-collapse: collapse;
+}
+
+.study-vaccine-design td.cell-display,
+.study-vaccine-design td.cell-value {
+    padding: 3px 5px;
+    border: solid 1px #DDDDDD;
+}
+
+.study-vaccine-design table.subgrid td {
+    background-color: #FFFFFF !important;
+}
+
+.study-vaccine-design tr.header-row td {
+    font-weight: bold;
+    padding: 5px;
+    background-color: #EEEEEE !important;
+    border-bottom-color: #C0C0C0;
+}
+
+.study-vaccine-design table.outer tr.row td {
+    background-color: #FFFFFF;
+}
+.study-vaccine-design table.outer tr.alternate-row td {
+    background-color: #F4F4F4;
+}
+
+.study-vaccine-design td.cell-value {
+    cursor: pointer;
+    height: 30px;
+}
+
+.study-vaccine-design td.action i {
+    color: #777777;
+}
+.study-vaccine-design td.action i:hover {
+    cursor: pointer;
+    color: #000000;
+}
