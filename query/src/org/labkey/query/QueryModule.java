@@ -23,7 +23,6 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.property.PropertyService;
@@ -208,9 +207,6 @@ public class QueryModule extends DefaultModule
 
         AdminConsole.addExperimentalFeatureFlag(QueryView.EXPERIMENTAL_GENERIC_DETAILS_URL, "Generic [details] link in grids/queries",
                 "This feature will turn on generating a generic [details] URL link in most grids.", false);
-
-        AdminConsole.addExperimentalFeatureFlag(DataRegion.EXPERIMENTAL_MIGRATE_DATA_REGION, "Data Region & Query Web Part Migration",
-                "Use the ExtJS independent Data Region and Query Web Part components for all grids.", false);
 
         AdminConsole.addExperimentalFeatureFlag(QueryView.EXPERIMENTAL_EXPORT_COLUMN_HEADER_TYPE,
                 "Column Header Export Type",
