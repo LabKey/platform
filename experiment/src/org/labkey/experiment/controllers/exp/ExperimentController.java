@@ -602,9 +602,9 @@ public class ExperimentController extends SpringActionController
                 }
 
                 @Override
-                public PanelButton createExportButton()
+                public PanelButton createExportButton(@Nullable List<String> recordSelectorColumns)
                 {
-                    PanelButton result = super.createExportButton();
+                    PanelButton result = super.createExportButton(recordSelectorColumns);
                     ActionURL url = new ActionURL(ExportSampleSetAction.class, getContainer());
                     url.addParameter("sampleSetId", _source.getRowId());
                     result.addSubPanel("XAR", new JspView<>("/org/labkey/experiment/controllers/exp/exportSampleSetAsXar.jsp", url));

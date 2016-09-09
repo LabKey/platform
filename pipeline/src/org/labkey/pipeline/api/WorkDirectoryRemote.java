@@ -104,7 +104,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
                     if (name.length() > 10)
                     {
                         // Don't let the total path get too long - Windows doesn't like paths longer than 255 characters
-                        // so if there's a ridulously long file name, we don't want to duplicate its name in the
+                        // so if there's a ridiculously long file name, we don't want to duplicate its name in the
                         // directory too
                         name = name.substring(0, 9);
                     }

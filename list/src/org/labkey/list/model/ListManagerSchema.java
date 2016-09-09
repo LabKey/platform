@@ -135,7 +135,7 @@ public class ListManagerSchema extends UserSchema
                     bar.add(createReportButton());
                     bar.add(createCreateNewListButton());
                     bar.add(createDeleteButton());
-                    bar.add(super.createExportButton());
+                    bar.add(super.createExportButton(view.getDataRegion().getRecordSelectorValueColumns()));
                     bar.add(createImportListArchiveButton());
                     bar.add(createExportArchiveButton());
                 }

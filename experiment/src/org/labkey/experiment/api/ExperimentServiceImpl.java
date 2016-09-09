@@ -3980,7 +3980,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         try
         {
-            try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
+            try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction(XAR_IMPORT_LOCK))
             {
                 if (run.getContainer() == null)
                 {

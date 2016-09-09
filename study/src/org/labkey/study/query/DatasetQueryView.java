@@ -392,7 +392,7 @@ public class DatasetQueryView extends StudyQueryView
         if (StudyManager.getInstance().showQCStates(getContainer()))
             bar.add(createQCStateButton(_qcStateSet));
 
-        bar.add(createExportButton());
+        bar.add(createExportButton(view.getDataRegion().getRecordSelectorValueColumns()));
         bar.add(createPrintButton());
         bar.add(createPageSizeMenuButton());
 

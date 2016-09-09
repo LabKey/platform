@@ -80,7 +80,7 @@ public class LocationQueryView extends QueryView
             bar.add(deleteAllUnused);
         }
 
-        ActionButton b = createExportButton();
+        ActionButton b = createExportButton(view.getDataRegion().getRecordSelectorValueColumns());
         if (null != b)
             bar.add(b);
         b = createPrintButton();
