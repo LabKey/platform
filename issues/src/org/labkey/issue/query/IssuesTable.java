@@ -32,12 +32,12 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.ForeignKey;
-import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.MultiValuedDisplayColumn;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.MultiValuedLookupColumn;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableExtension;
@@ -64,6 +64,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.DuplicateKeyException;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.PdLookupForeignKey;
@@ -228,7 +229,6 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         entityId.setHidden(true);
 
         TableInfo defTable = _issueDef.createTable(getUserSchema().getUser());
-        _extension = TableExtension.create(this, defTable, "entityId", "entityId", LookupColumn.JoinType.inner);
 
         HashMap<String,DomainProperty> properties = new HashMap<>();
         for (DomainProperty dp : _issueDef.getDomain(getUserSchema().getUser()).getProperties())
@@ -249,10 +249,16 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
             if (colNameMap.containsKey(colName))
                 colName = colNameMap.get(colName);
 
-            if (colName.equalsIgnoreCase(_extension.getLookupColumnName()) || ignoreColumn(colName))
+            if (colName.equalsIgnoreCase("entityId") || ignoreColumn(colName))
                 continue;
 
-            ColumnInfo extensionCol = _extension.addExtensionColumn(col, colName);
+            ColumnInfo extensionCol = new ExprColumn(this, colName, col.getValueSql(ExprColumn.STR_TABLE_ALIAS), col.getJdbcType());
+            addColumn(extensionCol);
+            extensionCol.copyAttributesFrom(col);
+
+            if (col.isHidden())
+                extensionCol.setHidden(true);
+
             if (isUserId(colName))
             {
                 UserIdForeignKey.initColumn(extensionCol);
@@ -331,6 +337,28 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         columns.addAll(getDomainKind().getDefaultColumnNames());
         columns.addAll(_extraDefaultColumns);
         setDefaultVisibleColumns(columns);
+    }
+
+    @NotNull
+    @Override
+    public SQLFragment getFromSQL(String alias)
+    {
+        TableInfo provisioned = _issueDef.createTable(getUserSchema().getUser());
+
+        // NOTE: Issue 27795: Duplicate duplicate columns on issue.issues and provisioned issue table
+        SQLFragment sql = new SQLFragment();
+        sql.append("(SELECT * FROM\n");
+        sql.append("(SELECT i.issueid, /*i.duplicate,*/ i.lastIndexed, i.issueDefId, p.* FROM ");
+        sql.append(_rootTable, "i");
+        sql.append(" INNER JOIN ").append(provisioned, "p").append(" ON i.entityId = p.entityId");
+        sql.append(") x");
+
+        // WHERE
+        Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
+        SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), columnMap);
+        sql.append("\n").append(filterFrag).append(") ").append(alias);
+
+        return sql;
     }
 
     @Nullable

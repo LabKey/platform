@@ -27,7 +27,27 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.*;
+import org.labkey.api.data.AttachmentParentEntity;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbSequence;
+import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.MultiValuedDisplayColumn;
+import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.Parameter;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
@@ -53,6 +73,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.DuplicateKeyException;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.InvalidKeyException;
@@ -107,7 +128,6 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
     private static final Logger LOG = Logger.getLogger(ExpDataClassDataTableImpl.class);
 
     private ExpDataClassImpl _dataClass;
-    private TableExtension _extension;
 
     public ExpDataClassDataTableImpl(String name, UserSchema schema, ExpDataClassImpl dataClass)
     {
@@ -240,17 +260,14 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             setContainerFilter(new ContainerFilter.CurrentPlusExtras(getUserSchema().getUser(), _dataClass.getContainer()));
         }
 
-        // Need to add the LSID column before creating the TableExtension otherwise creating the TableExtension will fail.
-        ColumnInfo lsidCol = addColumn(Column.LSID);
 
         TableInfo extTable = _dataClass.getTinfo();
-        _extension = TableExtension.create(this, extTable,
-                "lsid", "lsid", LookupColumn.JoinType.inner);
 
         LinkedHashSet<FieldKey> defaultVisible = new LinkedHashSet<>();
         defaultVisible.add(FieldKey.fromParts(Column.Name));
         defaultVisible.add(FieldKey.fromParts(Column.Flag));
 
+        ColumnInfo lsidCol = addColumn(Column.LSID);
         ColumnInfo rowIdCol = addColumn(Column.RowId);
         ColumnInfo nameCol = addColumn(Column.Name);
         addColumn(Column.Created);
@@ -271,13 +288,12 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
         {
             // Skip the lookup column itself, LSID, and exp.data.rowid -- it is added above
             String colName = col.getName();
-            if (colName.equalsIgnoreCase(_extension.getLookupColumnName()) || colName.equalsIgnoreCase("rowid"))
+            if (colName.equalsIgnoreCase("lsid") || colName.equalsIgnoreCase("rowid"))
                 continue;
 
             if (colName.equalsIgnoreCase("genid"))
             {
                 col.setHidden(true);
-                col.setKeyField(true);
                 col.setShownInDetailsView(false);
                 col.setShownInInsertView(false);
                 col.setShownInUpdateView(false);
@@ -285,7 +301,13 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
             String newName = col.getName();
             for (int i = 0; null != getColumn(newName); i++)
                 newName = newName + i;
-            cols.add(_extension.addExtensionColumn(col, newName));
+
+            ExprColumn expr = new ExprColumn(this, col.getName(), col.getValueSql(ExprColumn.STR_TABLE_ALIAS), col.getJdbcType());
+            expr.copyAttributesFrom(col);
+            if (col.isHidden())
+                expr.setHidden(true);
+            addColumn(expr);
+            cols.add(expr);
         }
 
         HashMap<String,DomainProperty> properties = new HashMap<>();
@@ -352,6 +374,32 @@ public class ExpDataClassDataTableImpl extends ExpTableImpl<ExpDataClassDataTabl
         setTitleColumn("Name");
         setDefaultVisibleColumns(defaultVisible);
 
+    }
+
+    @NotNull
+    @Override
+    public SQLFragment getFromSQL(String alias)
+    {
+        TableInfo provisioned = _dataClass.getTinfo();
+
+        // all columns from exp.data except lsid
+        Set<String> dataCols = new CaseInsensitiveHashSet(_rootTable.getColumnNameSet());
+        dataCols.remove("lsid");
+
+        SQLFragment sql = new SQLFragment();
+        sql.append("(SELECT ");
+        for (String dataCol : dataCols)
+            sql.append("d.").append(dataCol).append(", ");
+        sql.append("p.* FROM ");
+        sql.append(_rootTable, "d");
+        sql.append(" INNER JOIN ").append(provisioned, "p").append(" ON d.lsid = p.lsid");
+
+        // WHERE
+        Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
+        SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), columnMap);
+        sql.append("\n").append(filterFrag).append(") ").append(alias);
+
+        return sql;
     }
 
     private static final Set<String> DEFAULT_HIDDEN_COLS = new CaseInsensitiveHashSet("Container", "Created", "CreatedBy", "ModifiedBy", "Modified", "Owner", "EntityId", "RowId");
