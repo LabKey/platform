@@ -133,45 +133,20 @@ public abstract class AbstractDataRegion extends DisplayElement
 
     protected void renderHeaderScript(RenderContext ctx, Writer writer, Map<String, String> messages, boolean showRecordSelectors) throws IOException
     {
-        if (DataRegion.useExperimentalDataRegion())
-        {
-            JSONObject dataRegionJSON = getDataRegionJSON(ctx, true);
+        JSONObject dataRegionJSON = getDataRegionJSON(ctx, true);
 
-            if (messages != null && !messages.isEmpty())
-            {
-                dataRegionJSON.put("messages", messages);
-            }
-
-            StringWriter out = new StringWriter();
-            out.write("<script type=\"text/javascript\">\n");
-            out.write("LABKEY.DataRegion.create(");
-            out.write(dataRegionJSON.toString(2));
-            out.write(");\n");
-            out.write("</script>\n");
-            writer.write(out.toString());
-        }
-        else
+        if (messages != null && !messages.isEmpty())
         {
-            StringWriter out = new StringWriter();
-            out.write("<script type=\"text/javascript\">\n");
-            out.write("Ext.onReady(function() {\n");
-            out.write("new LABKEY.DataRegion(\n");
-            out.write(getDataRegionJSON(ctx, true).toString(2));
-            out.write(");\n");
-            if (messages != null && !messages.isEmpty())
-            {
-                for (Map.Entry<String, String> entry : messages.entrySet())
-                {
-                    out.write("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].addMessage(" +
-                            PageFlowUtil.jsString(entry.getValue()) + "," +
-                            PageFlowUtil.jsString(entry.getKey()) + ");\n");
-                }
-                out.write("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].showMessageArea();\n");
-            }
-            out.write("});\n");
-            out.write("</script>\n");
-            writer.write(out.toString());
+            dataRegionJSON.put("messages", messages);
         }
+
+        StringWriter out = new StringWriter();
+        out.write("<script type=\"text/javascript\">\n");
+        out.write("LABKEY.DataRegion.create(");
+        out.write(dataRegionJSON.toString(2));
+        out.write(");\n");
+        out.write("</script>\n");
+        writer.write(out.toString());
     }
 
     private SimpleFilter getValidFilter(RenderContext ctx)
@@ -388,10 +363,7 @@ public abstract class AbstractDataRegion extends DisplayElement
     protected void renderRibbon(RenderContext ctx, Writer out) throws IOException
     {
         out.write("<tr>");
-        if (DataRegion.useExperimentalDataRegion())
-            out.write("<td colspan=\"2\" class=\"labkey-ribbon\" style=\"display:none;\"></td>");
-        else
-            out.write("<td colspan=\"2\" class=\"labkey-ribbon extContainer\" style=\"display:none;\"></td>");
+        out.write("<td colspan=\"2\" class=\"labkey-ribbon\" style=\"display:none;\"></td>");
         out.write("</tr>\n");
     }
 

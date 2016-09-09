@@ -86,7 +86,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -2912,8 +2911,6 @@ public class QueryView extends WebPartView<Object>
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        if (!DataRegion.useExperimentalDataRegion())
-            resources.add(ClientDependency.fromPath("clientapi/ext3"));
         resources.addAll(super.getClientDependencies());
 
         ButtonBarConfig cfg = _buttonBarConfig;

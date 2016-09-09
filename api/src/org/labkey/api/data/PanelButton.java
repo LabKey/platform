@@ -57,14 +57,6 @@ public class PanelButton extends ActionButton
     @Override
     public void render(RenderContext ctx, Writer out) throws IOException
     {
-        if (DataRegion.useExperimentalDataRegion())
-            newRender(ctx, out);
-        else
-            oldRender(ctx, out);
-    }
-
-    private void newRender(RenderContext ctx, Writer out) throws IOException
-    {
         String requiresSelectionDataRegion = _requiresSelection ? ctx.getCurrentRegion().getName() : null;
         String id = getId();
         String panelId = getId();
@@ -75,7 +67,6 @@ public class PanelButton extends ActionButton
         if (requiresSelectionDataRegion != null)
             attributes.put("labkey-requires-selection", PageFlowUtil.filter(requiresSelectionDataRegion));
 
-        boolean includeContent = !ctx.containsKey(id);
         boolean active = true;
         // Remember that we've already rendered the content once
         ctx.put(id, true);
@@ -123,58 +114,6 @@ public class PanelButton extends ActionButton
         // -- render tab contents
 
         out.write("</div>");
-    }
-
-    private void oldRender(RenderContext ctx, Writer out) throws IOException
-    {
-        String requiresSelectionDataRegion = _requiresSelection ? ctx.getCurrentRegion().getName() : null;
-        String id = getId();
-        Map<String, String> attributes = new HashMap<>();
-        attributes.put("panelId", id);
-        if (requiresSelectionDataRegion != null)
-            attributes.put("labkey-requires-selection", PageFlowUtil.filter(requiresSelectionDataRegion));
-
-        boolean includeContent = !ctx.containsKey(id);
-        // Remember that we've already rendered the content once
-        ctx.put(id, true);
-
-        StringBuilder config = new StringBuilder("{ ");
-        config.append("height: ").append(Math.max(_height, VERTICAL_TAB_HEIGHT*_subpanels.size())).append(", ");
-        config.append("items: [");
-        String separator = "";
-        for (Map.Entry<String, HttpView> entry : _subpanels.entrySet())
-        {
-            config.append(separator);
-            separator = ", ";
-            config.append("new Ext.ux.GroupTab({ mainItem: 0, expanded: false, frame: true, headerAsText: true, hideBorders: false, items: [{layout: 'fit', contentEl:");
-            String subPanelId = id + PageFlowUtil.filter(entry.getKey());
-            config.append(PageFlowUtil.jsString(subPanelId));
-            config.append(", title:");
-            config.append(PageFlowUtil.jsString(entry.getKey()));
-            config.append(", autoScroll: true");
-            config.append("}]})");
-            if (includeContent)
-            {
-                out.write("<div class=\"x-hide-display\" id=\"" + subPanelId + "\">");
-                try
-                {
-                    entry.getValue().render(ctx.getRequest(), ctx.getViewContext().getResponse());
-                }
-                catch (IOException e)
-                {
-                    throw e;
-                }
-                catch (Exception e)
-                {
-                    throw new UnexpectedException(e);
-                }
-                out.write("</div>");
-            }
-        }
-        config.append("]}\n");
-        out.append(PageFlowUtil.generateDropDownButton(getCaption(), "javascript:void(0)",
-                // Sadly, we need to do all this because we initialize the GroupTab in the 'config' that is handed in here.
-                "(function(el) { LABKEY.requiresExt3ClientAPI(function() { LABKEY.DataRegions[" + PageFlowUtil.jsString(_dataRegionName) + "].showButtonPanel(el, " + config + "); }); })(this);", attributes));
     }
 
     public void addSubPanel(String caption, HttpView view)

@@ -137,14 +137,6 @@ public class DataRegion extends AbstractDataRegion
     public static final String CONTAINER_FILTER_NAME = ".containerFilterName";
     protected static final String TOGGLE_CHECKBOX_NAME = ".toggle";
 
-    // This is a flag that is used to distinguish code paths while migrating the client Data Region
-    public static final String EXPERIMENTAL_MIGRATE_DATA_REGION = "migrate-data-region";
-
-    public static boolean useExperimentalDataRegion()
-    {
-        return true;// AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_MIGRATE_DATA_REGION);
-    }
-
     private class GroupTable
     {
         private List<DisplayColumnGroup> _groups = new ArrayList<>();
@@ -1296,8 +1288,6 @@ public class DataRegion extends AbstractDataRegion
             out.write("<input type=checkbox title='Select/unselect all on current page' name='");
             out.write(TOGGLE_CHECKBOX_NAME);
             out.write("' ");
-            if (!DataRegion.useExperimentalDataRegion())
-                out.write("onClick='LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].selectPage(this.checked); event.stopPropagation(); event.cancelBubble = true; return false;'");
             out.write(">");
 
             // TODO: move inline style to stylesheet
@@ -1387,8 +1377,6 @@ public class DataRegion extends AbstractDataRegion
                 out.write("\">");
 
                 out.write("<input type=checkbox title='Select/unselect all on current page' ");
-                if (!DataRegion.useExperimentalDataRegion())
-                    out.write(" onClick='LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].selectPage(this.checked);'");
                 out.write(">");
 
                 out.write("<span style=\"display:inline-block; background: url('");
@@ -1690,8 +1678,6 @@ public class DataRegion extends AbstractDataRegion
 
         if (!enabled)
             out.write(" DISABLED");
-        if (!DataRegion.useExperimentalDataRegion())
-            out.write(" onclick=\"LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].selectRow(this);\"");
         out.write(">");
         renderExtraRecordSelectorContent(ctx, out);
 
