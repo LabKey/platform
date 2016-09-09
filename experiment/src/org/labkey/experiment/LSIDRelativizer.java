@@ -252,7 +252,7 @@ public enum LSIDRelativizer
             StringBuilder sb = new StringBuilder(prefix);
             sb.append(":");
             sb.append(Lsid.encodePart(objectId).replace("%23", "#"));
-            if (version != null && !(version.length() == 0))  // TODO: Not sure if StringUtils.isNotBlank(version) would be better here. Diff case: " "
+            if (version != null && !(version.length() == 0))
             {
                 sb.append(":");
                 sb.append(Lsid.encodePart(version));
@@ -271,59 +271,6 @@ public enum LSIDRelativizer
 
             return sb.toString();
         }
-
-//        private String uniquifyRelativizedLSID(String prefix, String objectId, String version, Integer exportVersion)
-//        {
-//            StringBuilder sb = new StringBuilder(prefix);
-//            sb.append(":");
-//            sb.append(Lsid.encodePart(objectId).replace("%23", "#"));
-//            if (version != null && !(version.length() == 0))
-//            {
-//                sb.append(":");
-//                sb.append(Lsid.encodePart(version));
-//
-//                if (exportVersion != null)
-//                {
-//                    sb.append("-Export");
-//                    sb.append(exportVersion.toString());
-//                }
-//            }
-//            else if (exportVersion != null)
-//            {
-//                sb.append(":Export");
-//                sb.append(exportVersion.toString());
-//            }
-//            String newLSID = sb.toString();
-//
-//            boolean foundMatch = false;
-//            for (String existing : _lsids.values())
-//            {
-//                if (newLSID.equals(existing))
-//                {
-//                    foundMatch = true;
-//                    break;
-//                }
-//            }
-//
-//            if (foundMatch)
-//            {
-//                Integer newExportVersion;
-//                if (exportVersion == null)
-//                {
-//                    newExportVersion = new Integer( 1 );
-//                }
-//                else
-//                {
-//                    newExportVersion = new Integer(exportVersion.intValue() + 1);
-//                }
-//
-//                return uniquifyRelativizedLSID(prefix, objectId, version, newExportVersion);
-//            }
-//            else
-//            {
-//                return newLSID;
-//            }
-//        }
 
         public int getNextDataId()
         {
