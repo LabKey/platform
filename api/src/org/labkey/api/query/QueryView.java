@@ -883,11 +883,13 @@ public class QueryView extends WebPartView<Object>
 
         if (showExportButtons())
         {
-            PanelButton b = createExportButton();
+            List<String> recordSelectorColumns = view.getDataRegion().getRecordSelectorValueColumns();
+
+            PanelButton b = createExportButton(recordSelectorColumns);
             if (null != b && b.hasSubPanels())
             {
                 // Issue 24530: Add record selectors for exporting selected items.  Assumes that all export panels support selection.
-                if (getTable() != null && !getTable().getPkColumns().isEmpty())
+                if ((recordSelectorColumns != null && !recordSelectorColumns.isEmpty()) || (getTable() != null && !getTable().getPkColumns().isEmpty()))
                 {
                     bar.setAlwaysShowRecordSelectors(true);
                 }
@@ -1161,20 +1163,20 @@ public class QueryView extends WebPartView<Object>
 
     }
 
-    public PanelButton createExportButton()
+    public PanelButton createExportButton(@Nullable List<String> recordSelectorColumns)
     {
         PanelButton exportButton = new PanelButton("Export", getDataRegionName(), 132);
         ActionURL exportRowsXlsURL = urlFor(QueryAction.exportRowsExcel);
         ActionURL exportRowsXlsxURL = urlFor(QueryAction.exportRowsXLSX);
 
-        boolean hasPKColumns = getTable() != null && !getTable().getPkColumns().isEmpty();
+        boolean hasRecordSelectors = (recordSelectorColumns != null && !recordSelectorColumns.isEmpty()) || (getTable() != null && !getTable().getPkColumns().isEmpty());
 
         if (exportRowsXlsURL != null && exportRowsXlsxURL != null)
         {
             ExcelExportOptionsBean excelBean = new ExcelExportOptionsBean(
                     getDataRegionName(),
                     getExportRegionName(),
-                    hasPKColumns ? getSettings().getSelectionKey() : null,
+                    hasRecordSelectors ? getSettings().getSelectionKey() : null,
                     getExcelColumnHeaderType(),
                     exportRowsXlsURL,
                     exportRowsXlsxURL,
@@ -1186,7 +1188,7 @@ public class QueryView extends WebPartView<Object>
         ActionURL tsvURL = urlFor(QueryAction.exportRowsTsv);
         if (tsvURL != null)
         {
-            TextExportOptionsBean textBean = new TextExportOptionsBean(getDataRegionName(), getExportRegionName(), hasPKColumns ? getSettings().getSelectionKey() : null, getColumnHeaderType(), tsvURL);
+            TextExportOptionsBean textBean = new TextExportOptionsBean(getDataRegionName(), getExportRegionName(), hasRecordSelectors ? getSettings().getSelectionKey() : null, getColumnHeaderType(), tsvURL);
             exportButton.addSubPanel("Text", new JspView<>("/org/labkey/api/query/textExportOptions.jsp", textBean));
         }
 

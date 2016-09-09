@@ -1647,6 +1647,11 @@ public class DataRegion extends AbstractDataRegion
         _recordSelectorValueColumns = Arrays.asList(columns);
     }
 
+    @Nullable
+    /**
+     * @return an override for the columns to be used for generating record selector checkbox form values. If null, the
+     * primary key columns (if any) will be used.
+     */
     public List<String> getRecordSelectorValueColumns()
     {
         return _recordSelectorValueColumns;

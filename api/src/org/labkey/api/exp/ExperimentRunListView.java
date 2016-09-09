@@ -17,6 +17,7 @@
 package org.labkey.api.exp;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.Container;
@@ -263,9 +264,9 @@ public class ExperimentRunListView extends QueryView
     }
 
     @Override
-    public PanelButton createExportButton()
+    public PanelButton createExportButton(@Nullable List<String> recordSelectorColumns)
     {
-        PanelButton result = super.createExportButton();
+        PanelButton result = super.createExportButton(recordSelectorColumns);
         String defaultFilenamePrefix = "Exported " + (getTitle() == null ? "Runs" : getTitle());
 
         HttpView filesView = ExperimentService.get().createFileExportView(getContainer(), defaultFilenamePrefix);
