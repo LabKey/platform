@@ -88,26 +88,6 @@ public abstract class HTMLContentExtractor extends HTMLEditorKit.ParserCallback
             return _title.toString();
     }
 
-    // Extract readable text between <!-- BODY --> <!-- /BODY -->
-    public static class LabKeyPageHTMLExtractor extends HTMLContentExtractor
-    {
-        public LabKeyPageHTMLExtractor(String html)
-        {
-            super(html);
-        }
-
-        @Override
-        public void handleComment(char[] data, int pos)
-        {
-            String comment = new String(data);
-
-            if (" BODY ".equals(comment))
-                _isBody = true;
-            else if (" /BODY ".equals(comment))
-                _isBody = false;
-        }
-    }
-
     // Extract readable text between <body> </body>
     public static class GenericHTMLExtractor extends HTMLContentExtractor
     {
