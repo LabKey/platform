@@ -337,13 +337,18 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         getColumn("SourceLSID").setHidden(true);
 
         ColumnInfo dsRowIdColumn = getColumn("dsrowid");
-        dsRowIdColumn.setHidden(true);
-        dsRowIdColumn.setKeyField(false);
-        dsRowIdColumn.setShownInInsertView(false);
-        dsRowIdColumn.setShownInUpdateView(false);
-        getColumn("dsrowid").setHidden(true);
 
-        if(null!=_userSchema.getStudy() && !_userSchema.getStudy().isDataspaceStudy())
+        // Importing old study may not have this column
+        if(dsRowIdColumn != null)
+        {
+            dsRowIdColumn.setHidden(true);
+            dsRowIdColumn.setKeyField(false);
+            dsRowIdColumn.setShownInInsertView(false);
+            dsRowIdColumn.setShownInUpdateView(false);
+            getColumn("dsrowid").setHidden(true);
+        }
+
+        if(null!=_userSchema.getStudy() && !_userSchema.getStudy().isDataspaceStudy() && null == getColumn("container"))
             addContainerColumn(true);
 
         ColumnInfo autoJoinColumn = new AliasedColumn(this, "DataSets", _rootTable.getColumn("ParticipantId"));
