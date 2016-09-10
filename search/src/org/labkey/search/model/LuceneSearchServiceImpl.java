@@ -97,7 +97,6 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.search.view.SearchWebPart;
@@ -464,8 +463,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             Map<String, ?> props = r.getProperties();
             assert null != props;
 
-            String body = null;
-
             String keywordsMed = "";
 
             try
@@ -492,7 +489,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             if (null != description)
                 keywordsMed += " " + description;
 
-            String type = r.getContentType();
+            final String type = r.getContentType();
+            final String body;
+
             String title = (String)props.get(PROPERTY.title.toString());
 
             // Don't load content of images or zip files (for now), but allow searching by name and properties
@@ -518,23 +517,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     else
                         html = PageFlowUtil.getStreamContentsAsString(is);
 
-                    // TODO: Need better check for issue HTML vs. rendered page HTML
-                    if (r instanceof ActionResource)
-                    {
-                        HTMLContentExtractor extractor = new HTMLContentExtractor.LabKeyPageHTMLExtractor(html);
-                        body = extractor.extract();
-                        String extractedTitle = extractor.getTitle();
-
-                        if (StringUtils.isBlank(title))
-                            title = extractedTitle;
-
-                        keywordsMed = keywordsMed + " " + extractedTitle;
-                    }
-
-                    if (StringUtils.isEmpty(body))
-                    {
-                        body = new HTMLContentExtractor.GenericHTMLExtractor(html).extract();
-                    }
+                    body = new HTMLContentExtractor.GenericHTMLExtractor(html).extract();
 
                     if (null == title)
                         logBadDocument("Null title", r);
