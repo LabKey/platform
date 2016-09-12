@@ -2109,6 +2109,11 @@ groupByLoop:
             if (hidden)
                 to.setHidden(hidden);
 
+            // does not remove the FK, just changes display behaviour
+            boolean nolookup = null != _annotations && _annotations.containsKey("nolookup");
+            if (nolookup)
+                to.setDisplayColumnFactory(ColumnInfo.NOLOOKUP_FACTORY);
+
             // copy URL if possible
             FieldKey fk = null != _resolved ? _resolved.getFieldKey() : null;
             if (null != fk)
