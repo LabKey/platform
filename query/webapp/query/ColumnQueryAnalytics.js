@@ -36,8 +36,33 @@ LABKEY.ColumnQueryAnalytics = new function ()
         }
     };
 
+    /**
+     * Used to generate and navigate to the URL for the generic chart wizard for the given column field key (i.e. Quick Chart).
+     * @param dataRegionName
+     * @param colFieldKey
+     */
+    var goToChartWizardFromDataRegion = function(dataRegionName, colFieldKey)
+    {
+        var region = LABKEY.DataRegions[dataRegionName];
+        if (region)
+        {
+            var column = region.getColumn(colFieldKey);
+            if (column != null && region.chartWizardURL != undefined)
+            {
+                var isNumeric = column.jsonType == 'int' || column.jsonType == 'float',
+                    isLookup = column.hasOwnProperty('lookup') && column.lookup.hasOwnProperty('queryName');
+
+                if (isNumeric && !isLookup)
+                    window.location = region.chartWizardURL + '&renderType=box_plot&autoColumnYName=' + colFieldKey;
+                else
+                    window.location = region.chartWizardURL + '&renderType=bar_chart&autoColumnName=' + colFieldKey;
+            }
+        }
+    };
+
     return {
         applyAggregateFromDataRegion: applyAggregateFromDataRegion,
-        removeColumnFromDataRegion: removeColumnFromDataRegion
+        removeColumnFromDataRegion: removeColumnFromDataRegion,
+        goToChartWizardFromDataRegion: goToChartWizardFromDataRegion
     };
 };

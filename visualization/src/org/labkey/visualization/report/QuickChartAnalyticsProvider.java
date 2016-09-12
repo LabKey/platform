@@ -1,14 +1,17 @@
 package org.labkey.visualization.report;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.analytics.ColumnAnalyticsProvider;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.visualization.GenericChartReport.RenderType;
-import org.labkey.api.visualization.VisualizationUrls;
+
+import java.util.Set;
 
 public class QuickChartAnalyticsProvider extends ColumnAnalyticsProvider
 {
@@ -42,28 +45,26 @@ public class QuickChartAnalyticsProvider extends ColumnAnalyticsProvider
         return RenderType.SCATTER_PLOT.getIconCls();
     }
 
+    @Nullable
     @Override
     public ActionURL getActionURL(RenderContext ctx, QuerySettings settings, ColumnInfo col)
     {
-        VisualizationUrls urlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
-        if (urlProvider != null && settings != null && settings.getSchemaName() != null && settings.getQueryName() != null)
-        {
-            RenderType renderType = col.isNumericType() && !col.isLookup() ? RenderType.BOX_PLOT : RenderType.BAR_PLOT;
-            ActionURL url = urlProvider.getGenericChartDesignerURL(ctx.getContainer(), ctx.getViewContext().getUser(), settings, renderType);
-
-            String autoColParam = col.isNumericType() && !col.isLookup() ? "autoColumnYName" : "autoColumnName";
-            url.addParameter(autoColParam, col.getName());
-
-            return url;
-        }
-
         return null;
     }
 
     @Override
     public String getScript(RenderContext ctx, QuerySettings settings, ColumnInfo col)
     {
-        return null;
+        return "LABKEY.ColumnQueryAnalytics.goToChartWizardFromDataRegion(" +
+                PageFlowUtil.jsString(ctx.getCurrentRegion().getName()) + "," +
+                PageFlowUtil.jsString(col.getFieldKey().toString()) +
+            ");";
+    }
+
+    @Override
+    public void addClientDependencies(Set<ClientDependency> dependencies)
+    {
+        dependencies.add(ClientDependency.fromPath("query/ColumnQueryAnalytics.js"));
     }
 
     @Override
