@@ -50,7 +50,12 @@ Ext4.define('LABKEY.VaccineDesign.Utils', {
      */
     getStudyDesignStore : function(queryName)
     {
+        var store = Ext4.getStore(queryName);
+        if (Ext4.isDefined(store))
+            return store;
+
         return Ext4.create('LABKEY.ext4.Store', {
+            storeId: queryName,
             schemaName: 'study',
             queryName: queryName,
             columns: 'Name,Label',
@@ -64,6 +69,17 @@ Ext4.define('LABKEY.VaccineDesign.Utils', {
                     store.insert(0, {Name: null});
                 }
             }
-        })
+        });
+    },
+
+    getLabelFromStore : function(queryName, value)
+    {
+        var store = LABKEY.VaccineDesign.Utils.getStudyDesignStore(queryName);
+
+        var record = store.findRecord('Name', value, 0, false, true, true);
+        if (record)
+            return record.get("Label");
+
+        return value;
     }
 });

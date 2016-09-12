@@ -62,6 +62,7 @@ Ext4.define('LABKEY.VaccineDesign.ImmunogensGrid', {
                 label: 'Type',
                 width: 200,
                 dataIndex: 'Type',
+                queryName: 'StudyDesignImmunogenTypes',
                 editorType: 'LABKEY.ext4.ComboBox',
                 editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignFieldEditorConfig('Type', false, 190, 'StudyDesignImmunogenTypes')
             }, {
@@ -73,12 +74,14 @@ Ext4.define('LABKEY.VaccineDesign.ImmunogensGrid', {
                         label: 'Gene',
                         width: 140,
                         dataIndex: 'Gene',
+                        queryName: 'StudyDesignGenes',
                         editorType: 'LABKEY.ext4.ComboBox',
                         editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignFieldEditorConfig('Gene', false, 130, 'StudyDesignGenes')
                     },{
                         label: 'Subtype',
                         width: 140,
                         dataIndex: 'SubType',
+                        queryName: 'StudyDesignSubTypes',
                         editorType: 'LABKEY.ext4.ComboBox',
                         editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignFieldEditorConfig('SubType', false, 130, 'StudyDesignSubTypes')
                     },{

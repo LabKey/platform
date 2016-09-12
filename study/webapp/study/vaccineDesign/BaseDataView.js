@@ -11,6 +11,8 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
 
     cellEditField : null,
 
+    studyDesignQueryNames : null,
+
     // for a dataspace project, some scenarios don't make sense to allow insert/update
     disableEdit : false,
 
@@ -29,6 +31,29 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
             this.getMainTitle(),
             this.getDataView()
         ];
+
+        // Pre-load the study design lookup queries that will be used in dropdowns for this page.
+        // Note: these stores are also used for getting display values in the data view XTempalte so don't
+        //      bind the data view store until they are all loaded.
+        if (Ext4.isArray(this.studyDesignQueryNames) && this.studyDesignQueryNames.length > 0)
+        {
+            var loadCounter = 0;
+            Ext4.each(this.studyDesignQueryNames, function(queryName)
+            {
+                var studyDesignStore = LABKEY.VaccineDesign.Utils.getStudyDesignStore(queryName);
+                studyDesignStore.on('load', function()
+                {
+                    loadCounter++;
+
+                    if (loadCounter == this.studyDesignQueryNames.length)
+                        this.bindDataViewStore();
+                }, this);
+            }, this);
+        }
+        else
+        {
+            this.bindDataViewStore();
+        }
 
         this.callParent();
     },
@@ -49,8 +74,9 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
     {
         if (!this.dataView)
         {
+            // NOTE: store will bind in this.bindDataViewStore()
             this.dataView = Ext4.create('Ext.view.View', {
-                store: this.getStore(),
+                hidden: true,
                 tpl: this.getDataViewTpl(),
                 itemSelector: 'tr.row'
             });
@@ -79,11 +105,19 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
             if (Ext4.isString(column.dataIndex))
             {
                 if (Ext4.isObject(column.subgridConfig) && Ext4.isArray(column.subgridConfig.columns))
+                {
                     tplArr = tplArr.concat(this.getSubGridTpl(column.dataIndex, column.subgridConfig.columns));
+                }
+                else if (Ext4.isString(column.queryName))
+                {
+                    tplArr.push('<td class="cell-value" data-index="' + column.dataIndex + '">'
+                            + '{[this.getLabelFromStore(values["' + column.dataIndex + '"], "' + column.queryName + '")]}'
+                            + '</td>');
+                }
                 else
+                {
                     tplArr.push('<td class="cell-value" data-index="' + column.dataIndex + '">{' + column.dataIndex + ':htmlEncode}</td>');
-
-                // TODO need to show label value if this is a combo/store
+                }
             }
         }, this);
         tplArr.push('</tr>');
@@ -91,6 +125,15 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
 
         tplArr = tplArr.concat(this.getAddNewRowTpl(columns));
         tplArr.push('</table>');
+
+        tplArr.push({
+            getLabelFromStore : function(val, queryName) {
+                if (val != null && val != '')
+                    val = LABKEY.VaccineDesign.Utils.getLabelFromStore(queryName, val);
+
+                return Ext4.util.Format.htmlEncode(val);
+            }
+        });
 
         return new Ext4.XTemplate(tplArr);
     },
@@ -119,8 +162,20 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
         Ext4.each(columns, function(column)
         {
             if (Ext4.isString(column.dataIndex))
-                tplArr.push('<td class="cell-value" outer-data-index="' + dataIndex + '" data-index="' + column.dataIndex + '" '
-                        + 'subgrid-index="{[xindex-1]}">{' + column.dataIndex + ':htmlEncode}</td>');
+            {
+                if (Ext4.isString(column.queryName))
+                {
+                    tplArr.push('<td class="cell-value" outer-data-index="' + dataIndex + '" '
+                            + 'data-index="' + column.dataIndex + '" subgrid-index="{[xindex-1]}">'
+                            + '{[this.getLabelFromStore(values["' + column.dataIndex + '"], "' + column.queryName + '")]}'
+                            + '</td>');
+                }
+                else
+                {
+                    tplArr.push('<td class="cell-value" outer-data-index="' + dataIndex + '" data-index="' + column.dataIndex + '" '
+                            + 'subgrid-index="{[xindex-1]}">{' + column.dataIndex + ':htmlEncode}</td>');
+                }
+            }
         }, this);
         tplArr.push('</tr>');
         tplArr.push('</tpl>');
@@ -395,6 +450,12 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
         }, this);
 
         return editor;
+    },
+
+    bindDataViewStore : function()
+    {
+        this.getDataView().bindStore(this.getStore());
+        this.getDataView().show();
     },
 
     onFailure : function(text)
