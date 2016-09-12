@@ -95,8 +95,11 @@ public class ChangeSummary
 
             if (action.equals(IssuesController.ResolveAction.class))
             {
-                // Add the resolution; e.g. "resolve as Fixed"
-                summary += " as " + issue.getResolution();
+                if (issue.getResolution() != null)
+                {
+                    // Add the resolution; e.g. "resolve as Fixed"
+                    summary += " as " + issue.getResolution();
+                }
                 if (duplicateOf != null)
                     summary += " of " + duplicateOf.getIssueId();
             }
