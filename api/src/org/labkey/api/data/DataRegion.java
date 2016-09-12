@@ -56,6 +56,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.PopupMenu;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.visualization.VisualizationUrls;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -1086,6 +1087,10 @@ public class DataRegion extends AbstractDataRegion
         if (getSettings() != null)
             ignoreFilter = getSettings().getIgnoreUserFilter();
         dataRegionJSON.put("ignoreFilter", ignoreFilter);
+
+        VisualizationUrls visUrlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
+        if (visUrlProvider != null)
+            dataRegionJSON.put("chartWizardURL", visUrlProvider.getGenericChartDesignerURL(ctx.getContainer(), ctx.getViewContext().getUser(), getSettings(), null));
 
         // TODO: Don't get available container filters from render context.
         // 11082: Populate customize view with list of allowable container filters from the QueryView

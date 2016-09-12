@@ -223,6 +223,8 @@ if (!LABKEY.DataRegions) {
 
                 buttonBarPosition: undefined,
 
+                chartWizardURL: undefined,
+
                 /**
                  * All rows visible on the current page.
                  */
