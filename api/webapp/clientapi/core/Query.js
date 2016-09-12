@@ -278,6 +278,9 @@ LABKEY.Query = new function()
             if (config.requiredVersion)
                 dataObject.apiVersion = config.requiredVersion;
 
+            if (config.includeStyle)
+                dataObject.includeStyle = config.includeStyle;
+
             var qsParams = {};
             if (config.sort)
                 qsParams["query.sort"] = config.sort;
