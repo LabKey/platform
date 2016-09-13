@@ -16,14 +16,13 @@
  */
 %>
 <%@ page import="org.labkey.api.assay.dilution.DilutionAssayRun" %>
-<%@ page import="org.labkey.api.assay.dilution.DilutionCurve" %>
 <%@ page import="org.labkey.api.assay.dilution.DilutionSummary" %>
-<%@ page import="org.labkey.api.assay.dilution.SampleInfo" %>
+<%@ page import="org.labkey.api.assay.dilution.SampleInfoMethod" %>
 <%@ page import="org.labkey.api.assay.nab.RenderAssayBean" %>
+<%@ page import="org.labkey.api.data.statistics.FitFailedException" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="java.text.DecimalFormat" %>
-<%@ page import="org.labkey.api.data.statistics.FitFailedException" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<RenderAssayBean> me = (JspView<RenderAssayBean>) HttpView.currentView();
@@ -130,7 +129,7 @@
                         }
 
                         DecimalFormat shortDecFormat;
-                        if (summary.getMethod() == SampleInfo.Method.Concentration || (val > -1 && val < 1))
+                        if (summary.getMethod() == SampleInfoMethod.Concentration || (val > -1 && val < 1))
                             shortDecFormat = new DecimalFormat("0.###");
                         else
                             shortDecFormat = new DecimalFormat("0");

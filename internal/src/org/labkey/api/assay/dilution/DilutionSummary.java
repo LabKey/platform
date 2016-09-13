@@ -189,7 +189,7 @@ public class DilutionSummary implements Serializable
     {
         if (!_dilutionCurve.containsKey(type))
         {
-            DilutionCurve curve = PlateService.get().getDilutionCurve(_sampleGroups, getMethod() == SampleInfo.Method.Dilution, _assay, type);
+            DilutionCurve curve = PlateService.get().getDilutionCurve(_sampleGroups, getMethod() == SampleInfoMethod.Dilution, _assay, type);
             _dilutionCurve.put(type, curve);
         }
         return _dilutionCurve.get(type);
@@ -224,10 +224,10 @@ public class DilutionSummary implements Serializable
         return (Double) _firstGroup.getProperty(SampleProperty.Factor.name());
     }
 
-    public SampleInfo.Method getMethod()
+    public SampleInfoMethod getMethod()
     {
         String name = (String) _firstGroup.getProperty(SampleProperty.Method.name());
-        return SampleInfo.Method.valueOf(name);
+        return SampleInfoMethod.valueOf(name);
     }
 
     public double getCutoffDilution(double cutoff, StatsService.CurveFitType type) throws FitFailedException

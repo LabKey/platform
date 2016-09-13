@@ -18,7 +18,7 @@ package org.labkey.api.assay.dilution.query;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.dilution.DilutionAssayProvider;
 import org.labkey.api.assay.dilution.DilutionDataHandler;
-import org.labkey.api.assay.dilution.SampleInfo;
+import org.labkey.api.assay.dilution.SampleInfoMethod;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.EnumTableInfo;
 import org.labkey.api.data.TableInfo;
@@ -87,7 +87,7 @@ public class DilutionProviderSchema extends AssayProviderSchema
     {
         if (SAMPLE_PREPARATION_METHOD_TABLE_NAME.equalsIgnoreCase(name))
         {
-            EnumTableInfo<SampleInfo.Method> result = new EnumTableInfo<>(SampleInfo.Method.class, this,
+            EnumTableInfo<SampleInfoMethod> result = new EnumTableInfo<>(SampleInfoMethod.class, this,
                     "List of possible sample preparation methods for the " + getProvider().getResourceName() + " assay.", false);
             result.setPublicSchemaName(_schemaName);
             result.setPublicName(SAMPLE_PREPARATION_METHOD_TABLE_NAME);

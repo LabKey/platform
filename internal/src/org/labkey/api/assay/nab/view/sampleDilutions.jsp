@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.labkey.api.assay.dilution.DilutionAssayRun" %>
 <%@ page import="org.labkey.api.assay.dilution.DilutionSummary" %>
-<%@ page import="org.labkey.api.assay.dilution.SampleInfo" %>
+<%@ page import="org.labkey.api.assay.dilution.SampleInfoMethod" %>
 <%@ page import="org.labkey.api.assay.nab.Luc5Assay" %>
 <%@ page import="org.labkey.api.assay.nab.RenderAssayBean" %>
 <%@ page import="org.labkey.api.study.WellData" %>
@@ -55,7 +55,7 @@
                         WellData data = dataList.get(dataIndex);
                         double dilution = summary.getDilution(data);
                         DecimalFormat shortDecFormat;
-                        if (summary.getMethod() == SampleInfo.Method.Concentration || (dilution > -1 && dilution < 1))
+                        if (summary.getMethod() == SampleInfoMethod.Concentration || (dilution > -1 && dilution < 1))
                             shortDecFormat = new DecimalFormat("0.###");
                         else
                             shortDecFormat = new DecimalFormat("0");

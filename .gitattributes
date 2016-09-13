@@ -6600,8 +6600,7 @@ internal/src/org/labkey/api/assay/dilution/DilutionManager.java -text
 internal/src/org/labkey/api/assay/dilution/DilutionMaterialKey.java -text
 internal/src/org/labkey/api/assay/dilution/DilutionRunUploadForm.java -text
 internal/src/org/labkey/api/assay/dilution/DilutionSummary.java -text
-internal/src/org/labkey/api/assay/dilution/SafeTextConverter.java -text
-internal/src/org/labkey/api/assay/dilution/SampleInfo.java -text
+internal/src/org/labkey/api/assay/dilution/SampleInfoMethod.java -text
 internal/src/org/labkey/api/assay/dilution/SampleProperty.java -text
 internal/src/org/labkey/api/assay/dilution/WellDataRow.java -text
 internal/src/org/labkey/api/assay/dilution/query/DilutionProviderSchema.java -text

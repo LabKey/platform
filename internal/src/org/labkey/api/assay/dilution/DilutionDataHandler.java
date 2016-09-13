@@ -378,11 +378,11 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         }
 
         // Issue 21452: catch values for Method not in Enum
-        if (!EnumUtils.isValidEnum(SampleInfo.Method.class, methodString))
+        if (!EnumUtils.isValidEnum(SampleInfoMethod.class, methodString))
         {
             throw new ExperimentException("Method value \"" + methodString + "\" is not an accepted value.");
         }
-        SampleInfo.Method method = SampleInfo.Method.valueOf(methodString);
+        SampleInfoMethod method = SampleInfoMethod.valueOf(methodString);
 
         // Single plate NAb run specimens get more dilute as you move up or left on the plate, while
         // high-throughput layouts get more dilute as you move down through the plates:
@@ -398,9 +398,9 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
             WellData well = wells.get(wellIndex);
             if (!first && factor != 0)
             {
-                if (method == SampleInfo.Method.Dilution)
+                if (method == SampleInfoMethod.Dilution)
                     dilution *= factor;
-                else if (method == SampleInfo.Method.Concentration)
+                else if (method == SampleInfoMethod.Concentration)
                     dilution /= factor;
             }
             else

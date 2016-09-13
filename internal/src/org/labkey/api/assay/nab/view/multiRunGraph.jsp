@@ -1,4 +1,3 @@
-<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
 /*
  * Copyright (c) 2006-2013 LabKey Corporation
@@ -16,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.assay.nab.view.GraphSelectedBean"%>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>

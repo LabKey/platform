@@ -35,7 +35,6 @@ import java.util.List;
  */
 public interface DilutionCurve
 {
-
     DoublePoint[] getCurve() throws FitFailedException;
 
     CurveFit.Parameters getParameters() throws FitFailedException;
@@ -54,11 +53,10 @@ public interface DilutionCurve
 
     double calculateAUC(StatsService.AUCType type) throws FitFailedException;
 
-    public static interface PercentCalculator
+    interface PercentCalculator
     {
         double getPercent(WellGroup group, WellData data) throws FitFailedException;
 
-        @Nullable
         /**
          * Returns the WellGroup for the cell control wells. An optional list of positions can be specified for the
          * case where control wells may be specific to a particular virus well group (or other type of well group).
@@ -67,9 +65,9 @@ public interface DilutionCurve
          * For the case where control wells have no affinity to other well groups on the plate, null can be
          * specified for the data positions and by default all cell control wells will be returned.
          */
+        @Nullable
         WellGroup getCellControlWells(Plate plate, @Nullable List<Position> dataPositions);
 
-        @Nullable
         /**
          * Returns the WellGroup for the virus control wells. An optional list of positions can be specified for the
          * case where control wells may be specific to a particular virus well group (or other type of well group).
@@ -78,6 +76,7 @@ public interface DilutionCurve
          * For the case where control wells have no affinity to other well groups on the plate, null can be
          * specified for the data positions and by default all virus control wells will be returned.
          */
+        @Nullable
         WellGroup getVirusControlWells(Plate plate, @Nullable List<Position> dataPositions);
     }
 }
