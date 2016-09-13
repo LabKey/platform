@@ -581,24 +581,16 @@ public class ExperimentController extends SpringActionController
                     return _source.canImportMoreSamples() && super.canUpdate();
                 }
 
-                protected void populateButtonBar(DataView view, ButtonBar bar)
+                @Override
+                public ActionButton createDeleteButton()
                 {
-                    super.populateButtonBar(view, bar);
-
                     ActionURL deleteMaterialUrl = new ActionURL(DeleteMaterialByRowIdAction.class, getContainer());
                     deleteMaterialUrl.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
                     ActionButton deleteMaterial = new ActionButton(deleteMaterialUrl, "Delete");
                     deleteMaterial.setActionType(ActionButton.Action.POST);
                     deleteMaterial.setDisplayPermission(DeletePermission.class);
                     deleteMaterial.setRequiresSelection(true);
-                    bar.add(deleteMaterial);
-
-                    ActionURL urlDeriveSamples = new ActionURL(DeriveSamplesChooseTargetAction.class, getContainer());
-                    ActionButton deriveButton = new ActionButton(urlDeriveSamples, "Derive Samples");
-                    deriveButton.setActionType(ActionButton.Action.POST);
-                    deriveButton.setDisplayPermission(InsertPermission.class);
-                    deriveButton.setRequiresSelection(true);
-                    bar.add(deriveButton);
+                    return deleteMaterial;
                 }
 
                 @Override
@@ -610,12 +602,16 @@ public class ExperimentController extends SpringActionController
                     result.addSubPanel("XAR", new JspView<>("/org/labkey/experiment/controllers/exp/exportSampleSetAsXar.jsp", url));
                     return result;
                 }
-            };
-            queryView.setShowDeleteButton(false);
-            queryView.setShowRecordSelectors(getContainer().hasPermission(getUser(), DeletePermission.class) || getContainer().hasPermission(getUser(), InsertPermission.class));
-            queryView.setShowBorders(true);
-            queryView.setShadeAlternatingRows(true);
 
+                @Override
+                protected void populateButtonBar(DataView view, ButtonBar bar)
+                {
+                    super.populateButtonBar(view, bar);
+
+                    bar.add(getDeriveSamplesButton());
+                }
+
+            };
             queryView.setTitle("Sample Set Contents");
 
             DetailsView detailsView = new DetailsView(getMaterialSourceRegion(getViewContext(), true), _source.getRowId());
@@ -727,17 +723,9 @@ public class ExperimentController extends SpringActionController
                 protected void populateButtonBar(DataView view, ButtonBar bar)
                 {
                     super.populateButtonBar(view, bar);
-
-                    ActionURL urlDeriveSamples = new ActionURL(DeriveSamplesChooseTargetAction.class, getContainer());
-                    ActionButton deriveButton = new ActionButton(urlDeriveSamples, "Derive Samples");
-                    deriveButton.setActionType(ActionButton.Action.POST);
-                    deriveButton.setDisplayPermission(InsertPermission.class);
-                    deriveButton.setRequiresSelection(true);
-                    bar.add(deriveButton);
+                    bar.add(getDeriveSamplesButton());
                 }
             };
-            view.setShadeAlternatingRows(true);
-            view.setShowBorders(true);
             view.setShowDetailsColumn(false);
             return view;
         }
@@ -4434,6 +4422,16 @@ public class ExperimentController extends SpringActionController
         {
             return _inputRoles;
         }
+    }
+
+    private ActionButton getDeriveSamplesButton()
+    {
+        ActionURL urlDeriveSamples = new ActionURL(DeriveSamplesChooseTargetAction.class, getContainer());
+        ActionButton deriveButton = new ActionButton(urlDeriveSamples, "Derive Samples");
+        deriveButton.setActionType(ActionButton.Action.POST);
+        deriveButton.setDisplayPermission(InsertPermission.class);
+        deriveButton.setRequiresSelection(true);
+        return deriveButton;
     }
 
     private List<ExpSampleSet> getUploadableSampleSets()
