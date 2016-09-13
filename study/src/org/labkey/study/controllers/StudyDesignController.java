@@ -312,22 +312,6 @@ public class StudyDesignController extends BaseStudyController
         }
     }
 
-    // TODO this can be removed after the manage study products page migration is complete
-    @RequiresPermission(DeletePermission.class)
-    public class DeleteStudyProductAction extends MutatingApiAction<IdForm>
-    {
-        @Override
-        public ApiResponse execute(IdForm form, BindException errors) throws Exception
-        {
-            if (form.getId() != 0)
-            {
-                TreatmentManager.getInstance().deleteStudyProduct(getContainer(), getUser(), form.getId());
-                return new ApiSimpleResponse("success", true);
-            }
-            return new ApiSimpleResponse("success", false);
-        }
-    }
-
     @RequiresPermission(UpdatePermission.class)
     public class UpdateStudyProductsAction extends MutatingApiAction<StudyProductsForm>
     {
