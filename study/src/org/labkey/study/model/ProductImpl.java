@@ -15,10 +15,15 @@
  */
 package org.labkey.study.model;
 
+import org.jetbrains.annotations.NotNull;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.study.Product;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -32,6 +37,7 @@ public class ProductImpl implements Product
     private String _label;
     private String _role;
     private String _type;
+    private List<ProductAntigenImpl> _antigens;
 
     // from TreatmentProductMap (not serialized with product)
     private String _dose;
@@ -45,6 +51,12 @@ public class ProductImpl implements Product
         _container = container;
         _label = label;
         _role = role;
+    }
+
+    public ProductImpl(Container container, String label, String role, String type)
+    {
+        this(container, label, role);
+        _type = type;
     }
 
     public boolean isNew()
@@ -97,6 +109,16 @@ public class ProductImpl implements Product
         _type = type;
     }
 
+    public List<ProductAntigenImpl> getAntigens()
+    {
+        return _antigens;
+    }
+
+    public void setAntigens(List<ProductAntigenImpl> antigens)
+    {
+        _antigens = antigens;
+    }
+
     public String getDose()
     {
         return _dose;
@@ -117,6 +139,16 @@ public class ProductImpl implements Product
         _route = route;
     }
 
+    public Container getContainer()
+    {
+        return _container;
+    }
+
+    public void setContainer(Container container)
+    {
+        _container = container;
+    }
+
     public Map<String, Object> serialize()
     {
         Map<String, Object> props = new HashMap<>();
@@ -127,13 +159,24 @@ public class ProductImpl implements Product
         return props;
     }
 
-    public Container getContainer()
+    public static ProductImpl fromJSON(@NotNull JSONObject o, Container container)
     {
-        return _container;
-    }
+        ProductImpl product = new ProductImpl(container, o.getString("Label"), o.getString("Role"), o.getString("Type"));
 
-    public void setContainer(Container container)
-    {
-        _container = container;
+        if (o.containsKey("RowId"))
+            product.setRowId(o.getInt("RowId"));
+
+        if (o.containsKey("Antigens") && o.get("Antigens")  instanceof JSONArray)
+        {
+            JSONArray antigensJSON = (JSONArray) o.get("Antigens");
+
+            List<ProductAntigenImpl> antigens = new ArrayList<>();
+            for (int j = 0; j < antigensJSON.length(); j++)
+                antigens.add(ProductAntigenImpl.fromJSON(antigensJSON.getJSONObject(j), container));
+
+            product.setAntigens(antigens);
+        }
+
+        return product;
     }
 }

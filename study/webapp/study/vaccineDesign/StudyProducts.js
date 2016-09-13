@@ -37,6 +37,14 @@ Ext4.define('LABKEY.VaccineDesign.StudyProductsGrid', {
     getNewModelInstance : function()
     {
         return LABKEY.VaccineDesign.Product.create({Role: this.filterRole});
+    },
+
+    //Override - see LABKEY.VaccineDesign.BaseDataView
+    getDeleteConfirmationMsg : function()
+    {
+        return 'Are you sure you want to delete the selected study product?<br/><br/>'
+            + 'Note: if this study product is being used by any treatment definitions, '
+            + 'those associations will also be deleted upon save.';
     }
 });
 
@@ -56,6 +64,7 @@ Ext4.define('LABKEY.VaccineDesign.ImmunogensGrid', {
                 label: 'Label',
                 width: 200,
                 dataIndex: 'Label',
+                required: true,
                 editorType: 'Ext.form.field.Text',
                 editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignFieldEditorConfig('Label', true, 190)
             }, {
@@ -121,6 +130,7 @@ Ext4.define('LABKEY.VaccineDesign.AdjuvantsGrid', {
                 label: 'Label',
                 width: 400,
                 dataIndex: 'Label',
+                required: true,
                 editorType: 'Ext.form.field.Text',
                 editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignFieldEditorConfig('Label', true, 363)
             }];

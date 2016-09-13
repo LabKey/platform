@@ -33,6 +33,7 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
     @Override
@@ -79,9 +80,11 @@
 
         if (canEdit)
         {
+            ActionURL editUrl = new ActionURL(StudyDesignController.ManageTreatmentsAction.class, getContainer());
+            editUrl.addReturnURL(getActionURL());
 %>
             To change the set of groups/cohorts and edit the immunization schedule, click the edit button below.<br/>
-            <%= button("Edit").href(StudyDesignController.ManageTreatmentsAction.class, getContainer()) %>
+            <%= button("Edit").href(editUrl) %>
 <%
         }
 

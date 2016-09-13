@@ -5,7 +5,7 @@
 
 .study-vaccine-design .main-title {
     font-weight: bold;
-    font-size: 18px;
+    font-size: 16px;
     padding-bottom: 5px;
 }
 
@@ -18,6 +18,7 @@
 .study-vaccine-design td.cell-value {
     padding: 3px 5px;
     border: solid 1px #DDDDDD;
+    height: 30px;
 }
 
 .study-vaccine-design table.subgrid td {
@@ -40,7 +41,14 @@
 
 .study-vaccine-design td.cell-value {
     cursor: pointer;
-    height: 30px;
+}
+
+.study-vaccine-design td.cell-value.missing-required {
+    background-color: #ffe5e5 !important;
+}
+
+.study-vaccine-design td.empty {
+    font-style: italic;
 }
 
 .study-vaccine-design td.action i {

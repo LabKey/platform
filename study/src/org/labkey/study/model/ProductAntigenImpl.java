@@ -15,6 +15,8 @@
  */
 package org.labkey.study.model;
 
+import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.study.ProductAntigen;
 
@@ -44,6 +46,13 @@ public class ProductAntigenImpl implements ProductAntigen
         _productId = productId;
         _gene = gene;
         _subType = subType;
+    }
+
+    public ProductAntigenImpl(Container container, String gene, String subType, String genBankId, String sequence)
+    {
+        this(container, 0, gene, subType);
+        _genBankId = genBankId;
+        _sequence = sequence;
     }
 
     public boolean isNew()
@@ -116,6 +125,16 @@ public class ProductAntigenImpl implements ProductAntigen
         _sequence = sequence;
     }
 
+    public Container getContainer()
+    {
+        return _container;
+    }
+
+    public void setContainer(Container container)
+    {
+        _container = container;
+    }
+
     public Map<String, Object> serialize()
     {
         Map<String, Object> props = new HashMap<>();
@@ -128,13 +147,19 @@ public class ProductAntigenImpl implements ProductAntigen
         return props;
     }
 
-    public Container getContainer()
+    public static ProductAntigenImpl fromJSON(@NotNull JSONObject o, Container container)
     {
-        return _container;
-    }
+        ProductAntigenImpl antigen = new ProductAntigenImpl(
+            container, o.getString("Gene"), o.getString("SubType"),
+            o.getString("GenBankId"), o.getString("Sequence")
+        );
 
-    public void setContainer(Container container)
-    {
-        _container = container;
+        if (o.containsKey("RowId"))
+            antigen.setRowId(o.getInt("RowId"));
+
+        if (o.containsKey("ProductId"))
+            antigen.setProductId(o.getInt("ProductId"));
+
+        return antigen;
     }
 }

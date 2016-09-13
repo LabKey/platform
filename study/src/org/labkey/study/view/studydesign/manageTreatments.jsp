@@ -146,7 +146,11 @@ Enter treatment information in the grids below.
 <div id="treatments-grid"></div>
 <div style='font-style: italic; font-size: smaller; display: <%=h(isDataspace ? "none" : "inline")%>;'>* Double click to edit a treatment record and its product definition</div>
 <br/>
-<%=textLink("Manage Study Products", StudyDesignController.ManageStudyProductsAction.class)%>
+<%
+    ActionURL manageStudyProductsURL = new ActionURL(StudyDesignController.ManageStudyProductsAction.class, getContainer());
+    manageStudyProductsURL.addReturnURL(getActionURL());
+%>
+<%=textLink("Manage Study Products", manageStudyProductsURL)%>
 <br/><br/>
 <div id="treatment-schedule-grid"></div>
 <div style='font-style: italic; font-size: smaller; display: <%=h(isDataspace ? "none" : "inline")%>;'>* Double click to edit a group/cohort and its treatment/visit map definition</div>

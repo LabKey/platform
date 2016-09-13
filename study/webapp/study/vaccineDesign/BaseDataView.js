@@ -90,7 +90,9 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
 
     getDataViewTpl : function()
     {
-        var tplArr = [], columns = this.getColumnConfig();
+        var tplArr = [],
+            tdCls = this.disableEdit ? 'cell-display' : 'cell-value',
+            columns = this.getColumnConfig();
 
         tplArr.push('<table class="outer">');
         tplArr = tplArr.concat(this.getTableHeaderRowTpl(columns));
@@ -104,25 +106,30 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
         {
             if (Ext4.isString(column.dataIndex))
             {
+                var checkMissingReqTpl = '';
+                if (column.required)
+                    checkMissingReqTpl = ' {[this.checkMissingRequired(values, "' + column.dataIndex + '")]}';
+
                 if (Ext4.isObject(column.subgridConfig) && Ext4.isArray(column.subgridConfig.columns))
                 {
                     tplArr = tplArr.concat(this.getSubGridTpl(column.dataIndex, column.subgridConfig.columns));
                 }
                 else if (Ext4.isString(column.queryName))
                 {
-                    tplArr.push('<td class="cell-value" data-index="' + column.dataIndex + '">'
+                    tplArr.push('<td class="' + tdCls + checkMissingReqTpl + '" data-index="' + column.dataIndex + '">'
                             + '{[this.getLabelFromStore(values["' + column.dataIndex + '"], "' + column.queryName + '")]}'
                             + '</td>');
                 }
                 else
                 {
-                    tplArr.push('<td class="cell-value" data-index="' + column.dataIndex + '">{' + column.dataIndex + ':htmlEncode}</td>');
+                    tplArr.push('<td class="' + tdCls + checkMissingReqTpl + '" data-index="' + column.dataIndex + '">{' + column.dataIndex + ':htmlEncode}</td>');
                 }
             }
         }, this);
         tplArr.push('</tr>');
         tplArr.push('</tpl>');
 
+        tplArr = tplArr.concat(this.getEmptyTableTpl(columns));
         tplArr = tplArr.concat(this.getAddNewRowTpl(columns));
         tplArr.push('</table>');
 
@@ -132,6 +139,13 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
                     val = LABKEY.VaccineDesign.Utils.getLabelFromStore(queryName, val);
 
                 return Ext4.util.Format.htmlEncode(val);
+            },
+
+            checkMissingRequired : function(values, dataIndex) {
+                if (Ext4.isDefined(values['RowId']) && (values[dataIndex] == null || values[dataIndex] == ''))
+                    return ' missing-required';
+
+                return '';
             }
         });
 
@@ -140,7 +154,8 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
 
     getSubGridTpl : function(dataIndex, columns)
     {
-        var tplArr = [];
+        var tplArr = [],
+            tdCls = this.disableEdit ? 'cell-display' : 'cell-value';
 
         tplArr.push('<td class="cell-display">');
 
@@ -165,14 +180,18 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
             {
                 if (Ext4.isString(column.queryName))
                 {
-                    tplArr.push('<td class="cell-value" outer-data-index="' + dataIndex + '" '
+                    var checkMissingReqTpl = '';
+                    if (column.required)
+                        checkMissingReqTpl = ' {[this.checkMissingRequired(values, "' + column.dataIndex + '")]}';
+
+                    tplArr.push('<td class="' + tdCls + checkMissingReqTpl + '" outer-data-index="' + dataIndex + '" '
                             + 'data-index="' + column.dataIndex + '" subgrid-index="{[xindex-1]}">'
                             + '{[this.getLabelFromStore(values["' + column.dataIndex + '"], "' + column.queryName + '")]}'
                             + '</td>');
                 }
                 else
                 {
-                    tplArr.push('<td class="cell-value" outer-data-index="' + dataIndex + '" data-index="' + column.dataIndex + '" '
+                    tplArr.push('<td class="' + tdCls + '" outer-data-index="' + dataIndex + '" data-index="' + column.dataIndex + '" '
                             + 'subgrid-index="{[xindex-1]}">{' + column.dataIndex + ':htmlEncode}</td>');
                 }
             }
@@ -204,6 +223,22 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
         return tplArr;
     },
 
+    getEmptyTableTpl : function(columns)
+    {
+        var tplArr = [];
+
+        if (this.disableEdit)
+        {
+            tplArr.push('<tpl if="length == 0">');
+            tplArr.push('<tr>');
+            tplArr.push('<td class="cell-display empty" colspan="' + columns.length + '">No data to show.</td>');
+            tplArr.push('</tr>');
+            tplArr.push('</tpl>');
+        }
+
+        return tplArr;
+    },
+
     getAddNewRowTpl : function(columns, dataIndex)
     {
         var tplArr = [];
@@ -229,7 +264,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
         if (!this.disableEdit)
         {
             // handle click on a cell that is editable
-            if (event.target.getAttribute('class') == 'cell-value' && event.target.hasAttribute('data-index'))
+            if (event.target.getAttribute('class').indexOf('cell-value') > -1 && event.target.hasAttribute('data-index'))
             {
                 if (this.cellEditField != null)
                     this.clearPreviousCellEditField();
@@ -319,7 +354,9 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
 
     removeOuterRecord : function(title, record)
     {
-        Ext4.Msg.confirm('Confirm Delete: ' + title, 'Are you sure you want to delete the selected row?', function(btn)
+        var msg = this.getDeleteConfirmationMsg() != null ? this.getDeleteConfirmationMsg() : 'Are you sure you want to delete the selected row?';
+
+        Ext4.Msg.confirm('Confirm Delete: ' + title, msg, function(btn)
         {
             if (btn == 'yes')
             {
@@ -482,5 +519,10 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
     getColumnConfig : function()
     {
         throw "getColumnConfig must be overridden in subclass";
+    },
+
+    getDeleteConfirmationMsg : function()
+    {
+        return null;
     }
 });

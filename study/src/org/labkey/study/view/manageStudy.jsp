@@ -262,12 +262,20 @@
     <tr>
         <th align="left">Study Products</th>
         <td>This study defines <%= getStudyProducts(user, null).size() %> study products</td>
-        <td><%= textLink("Manage Study Products", StudyDesignController.ManageStudyProductsAction.class) %></td>
+        <%
+            ActionURL manageStudyProductsURL = new ActionURL(StudyDesignController.ManageStudyProductsAction.class, getContainer());
+            manageStudyProductsURL.addReturnURL(getActionURL());
+        %>
+        <td><%= textLink("Manage Study Products", manageStudyProductsURL) %></td>
     </tr>
     <tr>
         <th align="left">Treatments</th>
         <td>This study defines <%= getStudyTreatments(user).size() %> treatments</td>
-        <td><%= textLink("Manage Treatments", StudyDesignController.ManageTreatmentsAction.class) %></td>
+        <%
+            ActionURL manageTreatmentsURL = new ActionURL(StudyDesignController.ManageTreatmentsAction.class, getContainer());
+            manageTreatmentsURL.addReturnURL(getActionURL());
+        %>
+        <td><%= textLink("Manage Treatments", manageTreatmentsURL) %></td>
     </tr>
     <tr>
         <th align="left">Assay Schedule</th>
@@ -275,6 +283,7 @@
         <%
             boolean hasRhoModule = getContainer().getActiveModules().contains(ModuleLoader.getInstance().getModule("rho"));
             ActionURL assayScheduleURL = PageFlowUtil.urlProvider(StudyUrls.class).getManageAssayScheduleURL(getContainer(), hasRhoModule);
+            assayScheduleURL.addReturnURL(getActionURL());
         %>
         <td><%= textLink("Manage Assay Schedule", assayScheduleURL) %></td>
     </tr>

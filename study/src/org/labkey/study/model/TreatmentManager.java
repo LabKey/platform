@@ -15,10 +15,12 @@
  */
 package org.labkey.study.model;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
@@ -27,6 +29,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
@@ -44,7 +47,6 @@ import org.labkey.api.util.TestContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.query.StudyQuerySchema;
 
-import javax.servlet.ServletException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -76,8 +78,7 @@ public class TreatmentManager
 
     public List<ProductImpl> getStudyProducts(Container container, User user, @Nullable String role, @Nullable Integer rowId)
     {
-        //Using a user schema so containerFilter will be created for us later don't need
-        //SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        //Using a user schema so containerFilter will be created for us later (so don't need SimpleFilter.createContainerFilter)
         SimpleFilter filter = new SimpleFilter();
         if (role != null)
             filter.addCondition(FieldKey.fromParts("Role"), role);
@@ -88,12 +89,37 @@ public class TreatmentManager
         return new TableSelector(ti, filter, new Sort("RowId")).getArrayList(ProductImpl.class);
     }
 
+    public List<ProductImpl> getFilteredStudyProducts(Container container, User user, List<Integer> filterRowIds)
+    {
+        TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.PRODUCT_TABLE_NAME);
+
+        //Using a user schema so containerFilter will be created for us later (so don't need SimpleFilter.createContainerFilter)
+        SimpleFilter filter = new SimpleFilter();
+        if (filterRowIds != null && !filterRowIds.isEmpty())
+            filter.addCondition(FieldKey.fromParts("RowId"), filterRowIds, CompareType.NOT_IN);
+
+        return new TableSelector(ti, filter, new Sort("RowId")).getArrayList(ProductImpl.class);
+    }
+
     public List<ProductAntigenImpl> getStudyProductAntigens(Container container, User user, int productId)
     {
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("ProductId"), productId);
 
         TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
+        return new TableSelector(ti, filter, new Sort("RowId")).getArrayList(ProductAntigenImpl.class);
+    }
+
+    public List<ProductAntigenImpl> getFilteredStudyProductAntigens(Container container, User user, @NotNull Integer productId, List<Integer> filterRowIds)
+    {
+        TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
+
+        //Using a user schema so containerFilter will be created for us later (so don't need SimpleFilter.createContainerFilter)
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("ProductId"), productId);
+        if (filterRowIds != null && !filterRowIds.isEmpty())
+            filter.addCondition(FieldKey.fromParts("RowId"), filterRowIds, CompareType.NOT_IN);
+
         return new TableSelector(ti, filter, new Sort("RowId")).getArrayList(ProductAntigenImpl.class);
     }
 
@@ -192,7 +218,7 @@ public class TreatmentManager
 
         try (DbScope.Transaction transaction = schema.getSchema().getScope().ensureTransaction())
         {
-            // delete the uages of this treatment in the TreatmentVisitMap
+            // delete the usages of this treatment in the TreatmentVisitMap
             SimpleFilter filter = SimpleFilter.createContainerFilter(container);
             filter.addCondition(FieldKey.fromParts("TreatmentId"), rowId);
             Table.delete(schema.getTableInfoTreatmentVisitMap(), filter);
@@ -227,7 +253,7 @@ public class TreatmentManager
 
         try (DbScope.Transaction transaction = schema.getSchema().getScope().ensureTransaction())
         {
-            // delete the uages of this study procut in the ProductAntigen table (provision table)
+            // delete the usages of this study product in the ProductAntigen table (provision table)
             deleteProductAntigens(container, user, rowId);
 
             // delete the associated treatment study product mappings (provision table)
@@ -256,13 +282,71 @@ public class TreatmentManager
         }
     }
 
-    public void deleteProductAntigens(Container container, User user, int rowId) throws Exception
+    public Integer saveStudyProduct(Container container, User user, ProductImpl product) throws Exception
+    {
+        TableInfo productTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.PRODUCT_TABLE_NAME);
+        return saveStudyDesignRow(container, user, productTable, product.serialize(), product.isNew() ? null : product.getRowId(), "RowId");
+    }
+
+    public Integer saveStudyProductAntigen(Container container, User user, ProductAntigenImpl antigen) throws Exception
+    {
+        TableInfo productAntigenTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
+        return saveStudyDesignRow(container, user, productAntigenTable, antigen.serialize(), antigen.isNew() ? null : antigen.getRowId(), "RowId");
+    }
+
+    public Integer saveStudyDesignRow(Container container, User user, TableInfo tableInfo, Map<String, Object> row, Integer key, String pkColName) throws Exception
+    {
+        QueryUpdateService qus = tableInfo != null ? tableInfo.getUpdateService() : null;
+        if (qus != null)
+        {
+            BatchValidationException errors = new BatchValidationException();
+            List<Map<String, Object>> updatedRows;
+
+            if (key == null)
+            {
+                updatedRows = qus.insertRows(user, container, Collections.singletonList(row), errors, null, null);
+            }
+            else
+            {
+                List<Map<String, Object>> oldKeys = Collections.singletonList(Collections.singletonMap(pkColName, key));
+                updatedRows = qus.updateRows(user, container, Collections.singletonList(row), oldKeys, null, null);
+            }
+
+            if (errors.hasErrors())
+                throw errors.getLastRowError();
+
+            if (updatedRows.size() == 1)
+                return (Integer) updatedRows.get(0).get(pkColName);
+        }
+
+        return null;
+    }
+
+    public void deleteStudyProductAntigen(Container container, User user, int rowId) throws Exception
+    {
+        TableInfo productAntigenTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
+        if (productAntigenTable != null)
+        {
+            QueryUpdateService qus = productAntigenTable.getUpdateService();
+            if (qus != null)
+            {
+                List<Map<String, Object>> keys = Collections.singletonList(Collections.singletonMap("RowId", rowId));
+                qus.deleteRows(user, container, keys, null, null);
+            }
+            else
+                throw new IllegalStateException("Could not find query update service for table: " + StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
+        }
+        else
+            throw new IllegalStateException("Could not find table: " + StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
+    }
+
+    public void deleteProductAntigens(Container container, User user, int productId) throws Exception
     {
         TableInfo productAntigenTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
         if (productAntigenTable != null)
         {
             SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-            filter.addCondition(FieldKey.fromParts("ProductId"), rowId);
+            filter.addCondition(FieldKey.fromParts("ProductId"), productId);
             TableSelector selector = new TableSelector(productAntigenTable, Collections.singleton("RowId"), filter, null);
             Integer[] productAntigenIds = selector.getArray(Integer.class);
 

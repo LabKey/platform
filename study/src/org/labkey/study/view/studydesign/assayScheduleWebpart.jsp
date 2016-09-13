@@ -29,6 +29,7 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
     @Override
@@ -70,9 +71,11 @@
 
         if (canEdit)
         {
+            ActionURL editUrl = new ActionURL(StudyDesignController.ManageAssayScheduleAction.class, getContainer());
+            editUrl.addReturnURL(getActionURL());
 %>
             To change the set of assays and edit the assay schedule, click the edit button below.<br/>
-            <%= button("Edit").href(StudyDesignController.ManageAssayScheduleAction.class, getContainer()) %>
+            <%= button("Edit").href(editUrl) %>
 <%
         }
 

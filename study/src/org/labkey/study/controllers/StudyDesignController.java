@@ -15,11 +15,15 @@
  */
 package org.labkey.study.controllers;
 
+import org.json.JSONArray;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresPermission;
@@ -29,6 +33,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.study.StudySchema;
@@ -78,7 +83,7 @@ public class StudyDesignController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            setHelpTopic("studyDesign#assay");
+            setHelpTopic("manageAssaySchedule");
             if (getContainer().hasPermission(getUser(), ManageStudyPermission.class))
                 root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
             return root.addChild("Manage Assay Schedule");
@@ -101,16 +106,16 @@ public class StudyDesignController extends BaseStudyController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public class ManageStudyProductsAction extends SimpleViewAction<Object>
+    public class ManageStudyProductsAction extends SimpleViewAction<ReturnUrlForm>
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(ReturnUrlForm form, BindException errors) throws Exception
         {
-            return new JspView<>("/org/labkey/study/view/studydesign/manageStudyProducts.jsp", o);
+            return new JspView<>("/org/labkey/study/view/studydesign/manageStudyProducts.jsp", form);
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            setHelpTopic("studyDesign#setup");
+            setHelpTopic("studyProducts");
             if (getContainer().hasPermission(getUser(), ManageStudyPermission.class))
                 root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
             return root.addChild("Manage Study Products");
@@ -127,7 +132,7 @@ public class StudyDesignController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            setHelpTopic("studyDesign#immun");
+            setHelpTopic("manageTreatments");
             if (getContainer().hasPermission(getUser(), ManageStudyPermission.class))
                 root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
             return root.addChild("Manage Treatments");
@@ -156,14 +161,14 @@ public class StudyDesignController extends BaseStudyController
             List<ProductImpl> studyProducts = TreatmentManager.getInstance().getStudyProducts(getContainer(), getUser(), form.getRole(), form.getRowId());
             for (ProductImpl product : studyProducts)
             {
-                // note: we are currently only inclusing the base fields for this extensible table
+                // note: we are currently only including the base fields for this extensible table
                 Map<String, Object> productProperties = product.serialize();
 
                 List<Map<String, Object>> productAntigenList = new ArrayList<>();
                 List<ProductAntigenImpl> studyProductAntigens = TreatmentManager.getInstance().getStudyProductAntigens(getContainer(), getUser(), product.getRowId());
                 for (ProductAntigenImpl antigen : studyProductAntigens)
                 {
-                    // note: we are currently only inclusing the base fields for this extensible table
+                    // note: we are currently only including the base fields for this extensible table
                     productAntigenList.add(antigen.serialize());
                 }
                 productProperties.put("Antigens", productAntigenList);
@@ -307,6 +312,7 @@ public class StudyDesignController extends BaseStudyController
         }
     }
 
+    // TODO this can be removed after the manage study products page migration is complete
     @RequiresPermission(DeletePermission.class)
     public class DeleteStudyProductAction extends MutatingApiAction<IdForm>
     {
@@ -319,6 +325,120 @@ public class StudyDesignController extends BaseStudyController
                 return new ApiSimpleResponse("success", true);
             }
             return new ApiSimpleResponse("success", false);
+        }
+    }
+
+    @RequiresPermission(UpdatePermission.class)
+    public class UpdateStudyProductsAction extends MutatingApiAction<StudyProductsForm>
+    {
+        @Override
+        public void validateForm(StudyProductsForm form, Errors errors)
+        {
+            if (form.getProducts() == null)
+                errors.reject(ERROR_MSG, "No study products provided.");
+
+            // label field is required
+            for (ProductImpl product : form.getProducts())
+            {
+                if (product.getLabel() == null || "".equals(product.getLabel()))
+                {
+                    errors.reject(ERROR_MSG, "Label field is required for all study products.");
+                    break;
+                }
+            }
+        }
+
+        @Override
+        public ApiResponse execute(StudyProductsForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            Study study = StudyManager.getInstance().getStudy(getContainer());
+
+            if (study != null)
+            {
+                StudySchema schema = StudySchema.getInstance();
+
+                try (DbScope.Transaction transaction = schema.getSchema().getScope().ensureTransaction())
+                {
+                    updateProducts(form.getProducts());
+                    transaction.commit();
+                }
+
+                response.put("success", true);
+                return response;
+            }
+            else
+                throw new IllegalStateException("A study does not exist in this folder");
+        }
+
+        private void updateProducts(List<ProductImpl> products) throws Exception
+        {
+            // insert new study products and update any existing ones
+            List<Integer> productRowIds = new ArrayList<>();
+            for (ProductImpl product : products)
+            {
+                Integer updatedRowId = TreatmentManager.getInstance().saveStudyProduct(getContainer(), getUser(), product);
+                if (updatedRowId != null)
+                {
+                    productRowIds.add(updatedRowId);
+
+                    updateProductAntigens(updatedRowId, product.getAntigens());
+                }
+            }
+
+            // delete any other study products, not included in the insert/update list, by RowId for this container
+            for (ProductImpl product : TreatmentManager.getInstance().getFilteredStudyProducts(getContainer(), getUser(), productRowIds))
+                TreatmentManager.getInstance().deleteStudyProduct(getContainer(), getUser(), product.getRowId());
+        }
+
+        private void updateProductAntigens(int productId, List<ProductAntigenImpl> antigens) throws Exception
+        {
+            // insert new study products antigens and update any existing ones
+            List<Integer> antigenRowIds = new ArrayList<>();
+            for (ProductAntigenImpl antigen : antigens)
+            {
+                // make sure the productId is set based on the product rowId
+                antigen.setProductId(productId);
+
+                Integer updatedRowId = TreatmentManager.getInstance().saveStudyProductAntigen(getContainer(), getUser(), antigen);
+                if (updatedRowId != null)
+                    antigenRowIds.add(updatedRowId);
+            }
+
+            // delete any other study products antigens, not included in the insert/update list, for the given productId
+            for (ProductAntigenImpl antigen : TreatmentManager.getInstance().getFilteredStudyProductAntigens(getContainer(), getUser(), productId, antigenRowIds))
+                TreatmentManager.getInstance().deleteStudyProductAntigen(getContainer(), getUser(), antigen.getRowId());
+        }
+    }
+
+    public static class StudyProductsForm implements CustomApiForm
+    {
+        private List<ProductImpl> _products;
+
+        public List<ProductImpl> getProducts()
+        {
+            return _products;
+        }
+
+        public void setProducts(List<ProductImpl> products)
+        {
+            _products = products;
+        }
+
+        @Override
+        public void bindProperties(Map<String, Object> props)
+        {
+            Container container = HttpView.currentContext().getContainer();
+
+            Object productsInfo = props.get("products");
+            if (productsInfo != null && productsInfo instanceof JSONArray)
+            {
+                JSONArray productsJSON = (JSONArray) productsInfo;
+
+                _products = new ArrayList<>();
+                for (int i = 0; i < productsJSON.length(); i++)
+                    _products.add(ProductImpl.fromJSON(productsJSON.getJSONObject(i), container));
+            }
         }
     }
 
