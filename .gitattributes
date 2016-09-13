@@ -1126,6 +1126,7 @@ api/src/org/labkey/api/resource/FileResource.java -text
 api/src/org/labkey/api/resource/MergedDirectoryResource.java -text
 api/src/org/labkey/api/resource/Resolver.java -text
 api/src/org/labkey/api/resource/Resource.java -text
+api/src/org/labkey/api/rstudio/RStudioService.java -text
 api/src/org/labkey/api/script/ScriptReference.java -text
 api/src/org/labkey/api/script/ScriptService.java -text
 api/src/org/labkey/api/search/AbstractDocumentParser.java -text
