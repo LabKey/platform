@@ -379,6 +379,8 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
             return;
 
         _domain = d;
+        _domain.setSchemaName("lists");
+        _domain.setQueryName(d.getName());
 
         _propTable.init(new GWTDomain(d));
         if (null == d.getFields() || d.getFields().size() == 0)
