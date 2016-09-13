@@ -894,7 +894,6 @@ public class StatementUtils
             String fnName = _dialect.getGlobalTempTablePrefix() + "fn_" + GUID.makeHash();
             String typeName = fnName + "type";
             fn.append("CREATE TYPE ").append(typeName).append(" AS (");
-            final SQLFragment drop = new SQLFragment("DROP TYPE ").append(typeName).append(" CASCADE;");
             // TODO d.execute() doesn't handle temp schema
             SQLFragment call = new SQLFragment();
             call.append(fnName).append("(ROW(");
@@ -956,6 +955,8 @@ public class StatementUtils
             }
             fn.append("END;\n$$ LANGUAGE plpgsql;\n");
             _log.debug(fn.toDebugString());
+            final SQLFragment drop = new SQLFragment("DROP TYPE IF EXISTS ").append(typeName).append(" CASCADE;");
+            _log.debug(drop.toDebugString());
             new SqlExecutor(table.getSchema()).execute(fn);
             ret = new Parameter.ParameterMap(table.getSchema().getScope(), conn, call, updatable.remapSchemaColumns());
             ret.setDebugSql(fn.getSQL() + "--\n" + call.toDebugString());
@@ -966,7 +967,7 @@ public class StatementUtils
                 }
                 catch (Exception x)
                 {
-                    _log.error("Error dropping temp function.", x);
+                    _log.error("Error dropping custom rowtype for temp function.", x);
                 }
             });
         }
