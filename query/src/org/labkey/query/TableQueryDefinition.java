@@ -183,7 +183,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
         {
             return schema.getTable(getName(), includeMetadata);
         }
-        catch (Exception e)
+        catch (QueryParseException e)
         {
             log.warn("Exception from UserSchema.getTable", e);
             errors.add(new QueryParseException("Exception from UserSchema.getTable", e, 0, 0));
