@@ -102,6 +102,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -196,7 +197,9 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         // Keep files that might be Query reports (end in .xml);
         // below we'll remove ones that are associated with R or JS reports
         HashMap<String, Resource> possibleQueryReportFiles = new HashMap<>();
-        reportFiles.stream().filter(file -> file.getName().toLowerCase().endsWith(ModuleQueryReportDescriptor.FILE_EXTENSION))
+        reportFiles
+            .stream()
+            .filter(file -> StringUtils.endsWithIgnoreCase(file.getName(), ModuleQueryReportDescriptor.FILE_EXTENSION))
             .forEach(file -> possibleQueryReportFiles.put(file.getName(), file));
 
         for (Resource file : reportFiles)
@@ -223,7 +226,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             }
         }
 
-        // Anything left if this map should be a Query Report
+        // Anything left in this map should be a Query Report
         list.addAll(getDescriptorsHelper(possibleQueryReportFiles.values(), module, container, user));
 
         return list;
@@ -282,7 +285,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         }
 
         HashMap<String, Resource> possibleQueryReportFiles = new HashMap<>();
-        reportDirectory.list().stream().filter(file -> file.getName().toLowerCase().endsWith(ModuleQueryReportDescriptor.FILE_EXTENSION))
+        reportDirectory.list().stream().filter(file -> StringUtils.endsWithIgnoreCase(file.getName(), ModuleQueryReportDescriptor.FILE_EXTENSION))
             .forEach(file -> possibleQueryReportFiles.put(file.getName(), file));
 
         List<ReportDescriptor> reportDescriptors = new ArrayList<>();
@@ -321,7 +324,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             reportDescriptors.add(descriptor);
         }
 
-        // Anything left if this map should be a Query Report
+        // Anything left in this map should be a Query Report
         for (Resource file : possibleQueryReportFiles.values())
         {
             descriptor = module.getCachedReport(file.getPath());
@@ -355,8 +358,33 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         return reportDescriptors;
     }
 
+    // TODO: Temporary... for verification of module report caching changes
+    private static boolean equals(ReportDescriptor rpt1, ReportDescriptor rpt2)
+    {
+        if (rpt1.getClass() == rpt2.getClass())
+        {
+            if (Objects.equals(rpt1.getAuthor(), rpt2.getAuthor()))
+            {
+                if (Objects.equals(rpt1.getCategory(), rpt2.getCategory()))
+                {
+                    if (rpt1.getReportName().equals(rpt2.getReportName()) &&
+                        rpt1.getDescriptorType().equals(rpt2.getDescriptorType()) &&
+                        rpt1.getFlags() == rpt2.getFlags() &&
+                        rpt1.getAccess().equals(rpt2.getAccess()) &&
+                        rpt1.getDisplayOrder() == rpt2.getDisplayOrder() &&
+                        rpt1.getReportKey().equals(rpt2.getReportKey()))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
     @NotNull
-    private List<ReportDescriptor> getDescriptorsHelper(Collection<? extends Resource> files, Module module, Container container, User user)
+    private static List<ReportDescriptor> getDescriptorsHelper(Collection<? extends Resource> files, Module module, Container container, User user)
     {
         List<ReportDescriptor> list = new ArrayList<>();
         ReportDescriptor descriptor;
@@ -385,7 +413,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
     }
 
     @NotNull
-    private ReportDescriptor createModuleReportDescriptorInstance(Module module, Resource reportFile, Container container, User user)
+    static ReportDescriptor createModuleReportDescriptorInstance(Module module, Resource reportFile, Container container, User user)
     {
         Path path = reportFile.getPath();
         String parent = path.getParent().toString("","");
@@ -403,12 +431,12 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         return new ModuleQueryReportDescriptor(module, parent, reportFile, path, container, user);
     }
 
-    private Resource getQueryReportsDirectory(Module module)
+    private static Resource getQueryReportsDirectory(Module module)
     {
         return module.getModuleResource("reports/schemas");
     }
 
-    private Path getLegalFilePath(@NotNull Path key)
+    private static Path getLegalFilePath(@NotNull Path key)
     {
         Path legalPath = Path.emptyPath;
 
@@ -465,7 +493,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         return report;
     }
 
-    public TableInfo getTable()
+    private static TableInfo getTable()
     {
         return CoreSchema.getInstance().getTableInfoReport();
     }
@@ -473,7 +501,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
     public void containerDeleted(Container c, User user)
     {
         ContainerUtil.purgeTable(getTable(), c, "ContainerId");
-        ReportCache.uncache(c);
+        DatabaseReportCache.uncache(c);
     }
 
     public Report createFromQueryString(String queryString) throws Exception
@@ -521,7 +549,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ContainerId"), c.getId());
         filter.addCondition(FieldKey.fromParts("RowId"), reportId);
         Table.delete(getTable(), filter);
-        ReportCache.uncache(c);
+        DatabaseReportCache.uncache(c);
     }
 
     @Override
@@ -627,7 +655,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         else
             reportDB = Table.insert(user, getTable(), reportDB);
 
-        ReportCache.uncache(c);
+        DatabaseReportCache.uncache(c);
 
         return reportDB;
     }
@@ -697,19 +725,19 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
 
             new SqlExecutor(table.getSchema()).execute(sql);
 
-            ReportCache.uncache(context.getContainer());
+            DatabaseReportCache.uncache(context.getContainer());
         }
     }
 
     public Report getReportByEntityId(Container c, String entityId)
     {
-        return ReportCache.getReportByEntityId(c, entityId);
+        return DatabaseReportCache.getReportByEntityId(c, entityId);
     }
 
     @Override
     public Report getReport(Container c, int rowId)
     {
-        Report report = ReportCache.getReport(c, rowId);
+        Report report = DatabaseReportCache.getReport(c, rowId);
 
         if (null != report)
             return report;
@@ -717,7 +745,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         while (!c.isRoot())
         {
             c = c.getParent();
-            report = ReportCache.getReport(c, rowId);
+            report = DatabaseReportCache.getReport(c, rowId);
 
             if (null != report)
             {
@@ -729,7 +757,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         }
 
         // Look for this report in the shared project
-        return (!ContainerManager.getSharedContainer().equals(c)) ? ReportCache.getReport(ContainerManager.getSharedContainer(), rowId) : null;
+        return (!ContainerManager.getSharedContainer().equals(c)) ? DatabaseReportCache.getReport(ContainerManager.getSharedContainer(), rowId) : null;
     }
 
     public ReportIdentifier getReportIdentifier(String reportId)
@@ -740,7 +768,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
     public Collection<Report> getReports(@Nullable User user, @NotNull Container c)
     {
         List<Report> reportsList = new ArrayList<>();
-        reportsList.addAll(ReportCache.getReports(c));
+        reportsList.addAll(DatabaseReportCache.getReports(c));
         return getSortedReadableReports(reportsList, user);
     }
 
@@ -780,11 +808,11 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
 
         if (key == null)
         {
-            reports.addAll(ReportCache.getReports(c));
+            reports.addAll(DatabaseReportCache.getReports(c));
         }
         else
         {
-            reports.addAll(ReportCache.getReportsByReportKey(c, key));
+            reports.addAll(DatabaseReportCache.getReportsByReportKey(c, key));
         }
 
         return getSortedReadableReports(reports, user);
@@ -793,7 +821,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
     @Deprecated
     public Collection<Report> getInheritableReports(User user, Container c, @Nullable String reportKey)
     {
-        Collection<Report> inheritable = ReportCache.getInheritableReports(c);
+        Collection<Report> inheritable = DatabaseReportCache.getInheritableReports(c);
 
         // If reportKey is specified then grab just those from the inheritable reports
         if (null != reportKey)
@@ -1151,7 +1179,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         {
             if (category != null)
             {
-                return ReportCache.getReports(category.lookupContainer())
+                return DatabaseReportCache.getReports(category.lookupContainer())
                     .stream()
                     .filter(report -> category.equals(report.getDescriptor().getCategory()))
                     .collect(Collectors.toList());

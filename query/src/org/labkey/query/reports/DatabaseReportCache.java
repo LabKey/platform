@@ -21,7 +21,6 @@ import org.apache.commons.collections4.multimap.UnmodifiableMultiValuedMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
-import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
@@ -41,16 +40,9 @@ import java.util.Map;
 /**
  * Created by adam on 8/13/2015.
  */
-public class ReportCache
+public class DatabaseReportCache
 {
-    private static final Cache<Container, ReportCollections> REPORT_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Database Report Cache", new CacheLoader<Container, ReportCollections>()
-    {
-        @Override
-        public ReportCollections load(Container c, @Nullable Object argument)
-        {
-            return new ReportCollections(c);
-        }
-    });
+    private static final Cache<Container, ReportCollections> REPORT_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Database Report Cache", (c, argument) -> new ReportCollections(c));
 
     private static class ReportCollections
     {
