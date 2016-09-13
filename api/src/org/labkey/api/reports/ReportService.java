@@ -21,7 +21,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.Filter;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.ValidationError;
@@ -47,7 +46,7 @@ import java.util.List;
  */
 public class ReportService
 {
-    static private I _instance;
+    private static I _instance;
 
     public static synchronized ReportService.I get()
     {
@@ -205,10 +204,5 @@ public class ReportService
         boolean accept(String type, String label);
     }
 
-    public static ItemFilter EMPTY_ITEM_LIST = new ItemFilter() {
-        public boolean accept(String type, String label)
-        {
-            return false;
-        }
-    };
+    public static ItemFilter EMPTY_ITEM_LIST = (type, label) -> false;
 }

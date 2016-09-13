@@ -87,7 +87,8 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
 {
     public static final String TYPE = "reportDescriptor";
     public static final int FLAG_INHERITABLE = 0x01;
-    final static public int FLAG_HIDDEN = 0x02;
+
+    private final static int FLAG_HIDDEN = 0x02;
 
     private String _reportKey;
     private Integer _owner;
@@ -965,6 +966,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
     public static final String REPORT_ACCESS_PUBLIC = "public";
     public static final String REPORT_ACCESS_PRIVATE = "private";
     public static final String REPORT_ACCESS_CUSTOM = "custom";
+
     public String getAccess()
     {
         String access;
