@@ -43,12 +43,12 @@ import org.labkey.api.util.TestContext;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * User: adam
@@ -82,7 +82,7 @@ public class StatementUtils
     private boolean useVariables = false;
     private final Map<String, Object> _constants = new CaseInsensitiveHashMap<>();
     final Map<String, ParameterHolder> parameters = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
-
+    private boolean usePgRowVariable = false;
 
     //
     // builder style methods
@@ -213,7 +213,7 @@ public class StatementUtils
     }
 
 
-    public static Parameter.ParameterMap mergeStatement(Connection conn, TableInfo table, @Nullable Set<String> skipColumnNames, @Nullable Set<String> dontUpdate, @Nullable Container c, @Nullable User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
+    private static Parameter.ParameterMap mergeStatement(Connection conn, TableInfo table, @Nullable Set<String> skipColumnNames, @Nullable Set<String> dontUpdate, @Nullable Container c, @Nullable User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
     {
         return new StatementUtils(Operation.merge, table)
                 .skip(skipColumnNames)
@@ -256,6 +256,10 @@ public class StatementUtils
         return (_dialect.isSqlServer() ? "@p" : "_$p") + (parameters.size()+1) + AliasManager.makeLegalName(name, null);
     }
 
+    private String makePgRowVariableName(String variableName)
+    {
+        return StringUtils.substringAfter(variableName, "_$");
+    }
 
     private ParameterHolder createParameter(ColumnInfo c)
     {
@@ -325,11 +329,15 @@ public class StatementUtils
     }
 
 
-    public SQLFragment appendParameterOrVariable(SQLFragment f, ParameterHolder ph)
+    private SQLFragment appendParameterOrVariable(SQLFragment f, ParameterHolder ph)
     {
         if (ph.isConstant)
         {
             toLiteral(f, ph.constantValue);
+        }
+        else if (usePgRowVariable)
+        {
+            f.append("$1.").append(makePgRowVariableName(ph.variableName));
         }
         else if (useVariables)
         {
@@ -344,14 +352,14 @@ public class StatementUtils
     }
 
 
-    public SQLFragment appendParameterOrVariable(SQLFragment f, ColumnInfo col)
+    private SQLFragment appendParameterOrVariable(SQLFragment f, ColumnInfo col)
     {
         ParameterHolder p = createParameter(col);
         return appendParameterOrVariable(f, p);
     }
 
 
-    public SQLFragment appendPropertyValue(SQLFragment f, DomainProperty dp, ParameterHolder p)
+    private SQLFragment appendPropertyValue(SQLFragment f, DomainProperty dp, ParameterHolder p)
     {
         if (JdbcType.valueOf(dp.getSqlType()) == JdbcType.BOOLEAN)
         {
@@ -389,6 +397,7 @@ public class StatementUtils
         }
 
         useVariables = Operation.merge == _operation; //  && dialect.isPostgreSQL();
+        usePgRowVariable = useVariables && _dialect.isPostgreSQL();
         String ifTHEN = _dialect.isSqlServer() ? " BEGIN " : " THEN ";
         String ifEND = _dialect.isSqlServer() ? " END " : " END IF ";
 
@@ -845,8 +854,7 @@ public class StatementUtils
         if (!useVariables)
         {
             SQLFragment script = new SQLFragment();
-            Arrays.asList(sqlfDeclare, sqlfInsertObject, sqlfSelectObject, sqlfDelete, sqlfUpdate, sqlfInsertInto, sqlfObjectProperty, sqlfSelectIds)
-                .stream()
+            Stream.of(sqlfDeclare, sqlfInsertObject, sqlfSelectObject, sqlfDelete, sqlfUpdate, sqlfInsertInto, sqlfObjectProperty, sqlfSelectIds)
                 .filter(f -> null != f && !f.isEmpty())
                 .forEach(script::append);
             ret = new Parameter.ParameterMap(table.getSchema().getScope(), conn, script, remap);
@@ -873,8 +881,7 @@ public class StatementUtils
                 sqlfDeclare.append(";\n");
             }
             SQLFragment script = new SQLFragment();
-            Arrays.asList(sqlfDeclare, sqlfInsertObject, sqlfSelectObject, sqlfDelete, sqlfUpdate, sqlfInsertInto, sqlfObjectProperty, sqlfSelectIds)
-                .stream()
+            Stream.of(sqlfDeclare, sqlfInsertObject, sqlfSelectObject, sqlfDelete, sqlfUpdate, sqlfInsertInto, sqlfObjectProperty, sqlfSelectIds)
                 .filter(f -> null != f && !f.isEmpty())
                 .forEach(script::append);
             _log.debug(script.toDebugString());
@@ -882,38 +889,37 @@ public class StatementUtils
         }
         else
         {
-            // wrap in a function
+            // wrap in a function with a single ROW() constructor argument
             SQLFragment fn = new SQLFragment();
             String fnName = _dialect.getGlobalTempTablePrefix() + "fn_" + GUID.makeHash();
-            fn.append("CREATE FUNCTION ").append(fnName).append("(");
+            String typeName = fnName + "type";
+            fn.append("CREATE TYPE ").append(typeName).append(" AS (");
+            final SQLFragment drop = new SQLFragment("DROP TYPE ").append(typeName).append(" CASCADE;");
             // TODO d.execute() doesn't handle temp schema
             SQLFragment call = new SQLFragment();
-            call.append(fnName).append("(");
-            final SQLFragment drop = new SQLFragment("DROP FUNCTION " + fnName + "(");
+            call.append(fnName).append("(ROW(");
             comma = "";
             for (Map.Entry<String, ParameterHolder> e : parameters.entrySet())
             {
                 ParameterHolder ph = e.getValue();
-                String variable = ph.variableName;
                 String type = _dialect.sqlTypeNameFromJdbcType(ph.p.getType());
                 fn.append("\n").append(comma);
-                fn.append(variable);
+                fn.append(makePgRowVariableName(ph.variableName));
                 fn.append(" ");
                 fn.append(type);
-//                fn.append(" -- ").append(AliasManager.makeLegalName(p.getName(), null, false));
-                drop.append(comma).append(type);
                 call.append(comma).append("?");
                 call.add(ph.p);
                 comma = ",";
             }
-            fn.append("\n) RETURNS ");
+            fn.append("\n);\n");
+            fn.append("CREATE FUNCTION ").append(fnName).append("(").append(typeName).append(") ");
+            fn.append("RETURNS ");
             if (null != sqlfSelectIds)
                 fn.append("SETOF RECORD");
             else
                 fn.append("void");
             fn.append(" AS $$\n");
-            drop.append(");");
-            call.append(")");
+            call.append("))");
 
 
             if (null != sqlfSelectIds)
@@ -935,8 +941,7 @@ public class StatementUtils
 
             fn.append("BEGIN\n");
             fn.append("-- ").append(_operation.name()).append("\n");
-            Arrays.asList(sqlfInsertObject, sqlfSelectObject, sqlfDelete, sqlfUpdate, sqlfInsertInto, sqlfObjectProperty)
-                .stream()
+            Stream.of(sqlfInsertObject, sqlfSelectObject, sqlfDelete, sqlfUpdate, sqlfInsertInto, sqlfObjectProperty)
                 .filter(f -> null != f && !f.isEmpty())
                 .forEach(fn::append);
             if (null == sqlfSelectIds)
