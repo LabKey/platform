@@ -223,4 +223,9 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
     {
         return null;
     }
+
+    public abstract String getDefaultSingularName();
+
+    public abstract String getDefaultPluralName();
+
 }
