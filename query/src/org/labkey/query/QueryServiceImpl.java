@@ -95,6 +95,8 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.assay.AssaySchema;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.ExceptionUtil;
@@ -173,6 +175,7 @@ public class QueryServiceImpl extends QueryService
 
     private static final Cache<String, List<String>> NAMED_SET_CACHE = CacheManager.getCache(100, CacheManager.DAY, "Named sets for IN clause cache");
     private static final String NAMED_SET_CACHE_ENTRY = "NAMEDSETS:";
+    public static final String EXPERIMENTAL_DATA_VIEW_PERFORMANCE = "data-views-performance";
 
     private final List<CompareType> COMPARE_TYPES = new CopyOnWriteArrayList<>(Arrays.asList(
             CompareType.EQUAL,
@@ -513,6 +516,162 @@ public class QueryServiceImpl extends QueryService
         return views;
     }
 
+    /**
+     * Return all custom views for the specified container. This is an experimental optimized version of the current implementation which uses the
+     * SchemaTreeWalker. We try to minimize the highly iterative nature of the STW which often times does many queries and tableinfo creations to yield
+     * a very small number of custom views. Probably the most effective optimization would be to make tableinfos immutable and then begin to cache them
+     * but that is a much larger chunk of work.
+     */
+    private Collection<CustomView> getCustomViewsForContainer(@NotNull User user, Container container, @Nullable User owner, boolean inheritable, boolean sharedOnly, boolean alwaysUseTitlesForLoadingCustomViews)
+    {
+        Map<String, CustomView> views = new CaseInsensitiveHashMap<>();
+
+        // module query views have lower precedence, so add them first
+        Collection<Module> modules = container.getActiveModules();
+        Collection<Module> currentModules = new HashSet<>(modules);
+        currentModules = ModuleLoader.getInstance().orderModules(currentModules);
+
+        // find out if there are any module custom views to deal with
+        Map<Module, Map<Path, Collection<ModuleCustomViewDef>>> moduleMap = new LinkedHashMap<>();
+        for (Module module : currentModules)
+        {
+            Map<Path, Collection<ModuleCustomViewDef>> map = MODULE_CUSTOM_VIEW_CACHE.getResourceMap(module);
+            if (!map.isEmpty())
+                moduleMap.put(module, map);
+        }
+
+        for (Map.Entry<Module, Map<Path, Collection<ModuleCustomViewDef>>> moduleEntry : moduleMap.entrySet())
+        {
+            for (Map.Entry<Path, Collection<ModuleCustomViewDef>> queryEntry : moduleEntry.getValue().entrySet())
+            {
+                // create the query definition to associate with the module custom view
+                Path path = queryEntry.getKey();
+                if (path.get(0).equals(MODULE_QUERIES_DIRECTORY))
+                {
+                    // after the queries directory, paths should contain schema and query name information
+                    if (path.size() >= 3)
+                    {
+                        String[] parts = new String[path.size() - 2];
+                        for (int i=0; i < path.size()-2; i++)
+                            parts[i] = path.get(i+1);
+
+                        SchemaKey schemaKey = SchemaKey.fromParts(parts);
+                        String query = path.get(path.size()-1);
+                        QueryDefinition qd = getQueryDefinition(user, container, schemaKey.toString(), query);
+                        if (qd != null)
+                        {
+                            for (ModuleCustomViewDef def : queryEntry.getValue())
+                            {
+                                if (!views.containsKey(def.getName()))
+                                    views.put(def.getName(), new ModuleCustomView(qd, def));
+                            }
+                        }
+                    }
+                }
+                else if (path.get(0).equals(AssayService.ASSAY_DIR_NAME))
+                {
+                    // assays have special support for legacy custom view locations, best to let the schemas
+                    // handle those cases.
+                    UserSchema defaultSchema = DefaultSchema.get(user, container).getUserSchema(AssaySchema.NAME);
+
+                    // get all the provider and protocol sub schemas
+                    Set<UserSchema> assaySchemas = new HashSet<>();
+                    getAssaySchemas(defaultSchema, assaySchemas);
+
+                    for (UserSchema schema : assaySchemas)
+                    {
+                        Map<String, QueryDefinition> queryDefMap = schema.getQueryDefs();
+                        for (String name : schema.getTableAndQueryNames(false))
+                        {
+                            QueryDefinition qd = queryDefMap.get(name);
+                            if (qd == null)
+                                qd = schema.getQueryDefForTable(name);
+
+                            for (CustomView view : qd.getSchema().getModuleCustomViews(container, qd, alwaysUseTitlesForLoadingCustomViews))
+                            {
+                                if (!views.containsKey(view.getName()))
+                                    views.put(view.getName(), view);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // custom views in the database get highest precedence, so let them overwrite the module-defined views in the map
+        for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, null, null, owner, inheritable, sharedOnly))
+        {
+            // The database custom views are in priority order so check if the view has already been added
+            if (!views.containsKey(cstmView.getName()))
+            {
+                views.put(cstmView.getName(), new CustomViewImpl(getQueryDefinition(user, container, cstmView), cstmView));
+            }
+            else if (views.get(cstmView.getName()) instanceof ModuleCustomView && views.get(cstmView.getName()).isOverridable())
+            {
+                //if the module-based view has set overridable=true, we allow the DB view to override it
+                CustomViewImpl view = new CustomViewImpl(getQueryDefinition(user, container, cstmView), cstmView);
+                view.setOverridesModuleView(true);
+                views.put(cstmView.getName(), view);
+            }
+        }
+
+        return views.values();
+    }
+
+    private void getAssaySchemas(UserSchema schema, Set<UserSchema> schemas)
+    {
+        for (QuerySchema querySchema : schema.getSchemas(false))
+        {
+            if (querySchema.getName() != null)
+            {
+                UserSchema userSchema = schema.getUserSchema(querySchema.getName());
+                if (userSchema != null)
+                {
+                    schemas.add(userSchema);
+                    getAssaySchemas(userSchema, schemas);
+                }
+            }
+        }
+    }
+
+    private QueryDefinition getQueryDefinition(User user, Container container, CstmView cstmView)
+    {
+        return getQueryDefinition(user, container, cstmView.getSchema(), cstmView.getQueryName());
+    }
+
+    private QueryDefinition getQueryDefinition(User user, Container container, String schemaName, String queryName)
+    {
+        QueryDefinition qd = getQueryDef(user, container, schemaName, queryName);
+        if (qd == null)
+        {
+            UserSchema schema = DefaultSchema.get(user, container).getUserSchema(schemaName);
+            Set<String> tableNames = new HashSet<>();
+            tableNames.addAll(schema.getTableAndQueryNames(true));
+
+            if (tableNames.contains(queryName))
+            {
+                qd = schema.getQueryDefForTable(queryName);
+            }
+            else
+            {
+                Map<String, QueryDefinition> queryDefinitionMap = schema.getQueryDefs();
+                // look for the table title name match
+                for (String tableName : tableNames)
+                {
+                    if (!queryDefinitionMap.containsKey(tableName))
+                    {
+                        QueryDefinition def = schema.getQueryDefForTable(tableName);
+                        if (def.getTitle().equals(queryName))
+                        {
+                            return def;
+                        }
+                    }
+                }
+            }
+        }
+        return qd;
+    }
+
     public CustomView getCustomView(@NotNull User user, Container container, @Nullable User owner, String schema, String query, String name)
     {
         Map<String, CustomView> views = getCustomViewMap(user, container, owner, schema, query, false, false, true);
@@ -554,55 +713,63 @@ public class QueryServiceImpl extends QueryService
 
         if (schemaName == null || queryName == null)
         {
-            DefaultSchema defSchema = DefaultSchema.get(user, container);
-            SchemaTreeNode topNode = null != schemaName ? defSchema.getUserSchema(schemaName) : defSchema;
+            if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_DATA_VIEW_PERFORMANCE))
+            {
+                views = new ArrayList<>();
+                views.addAll(getCustomViewsForContainer(user, container, owner, includeInherited, sharedOnly, alwaysUseTitlesForLoadingCustomViews));
+            }
+            else
+            {
+                DefaultSchema defSchema = DefaultSchema.get(user, container);
+                SchemaTreeNode topNode = null != schemaName ? defSchema.getUserSchema(schemaName) : defSchema;
 
-            views = new SchemaTreeWalker<Set<CustomView>, Void>(false) {
-                @Override
-                protected Set<CustomView> visitTablesAndReduce(UserSchema schema, Iterable<String> names, Path path, Void param, Set<CustomView> customViews)
-                {
-                    Set<CustomView> views = new HashSet<>();
-                    views = reduce(views, customViews);
-                    //TODO should getQueryDefForTable() optimize the case where it is a query?
-                    Map<String,QueryDefinition> queries = schema.getQueryDefs();
-                    for (String name : names)
+                views = new SchemaTreeWalker<Set<CustomView>, Void>(false) {
+                    @Override
+                    protected Set<CustomView> visitTablesAndReduce(UserSchema schema, Iterable<String> names, Path path, Void param, Set<CustomView> customViews)
                     {
-                        QueryDefinition qd = queries.get(name);
-                        if (null == qd)
-                            qd = schema.getQueryDefForTable(name);
-                        if (qd != null)
+                        Set<CustomView> views = new HashSet<>();
+                        views = reduce(views, customViews);
+                        //TODO should getQueryDefForTable() optimize the case where it is a query?
+                        Map<String,QueryDefinition> queries = schema.getQueryDefs();
+                        for (String name : names)
                         {
-                            try
+                            QueryDefinition qd = queries.get(name);
+                            if (null == qd)
+                                qd = schema.getQueryDefForTable(name);
+                            if (qd != null)
                             {
-                                Map<String, CustomView> viewMap = getCustomViewMap(user, container, owner, qd, includeInherited, sharedOnly, alwaysUseTitlesForLoadingCustomViews);
+                                try
+                                {
+                                    Map<String, CustomView> viewMap = getCustomViewMap(user, container, owner, qd, includeInherited, sharedOnly, alwaysUseTitlesForLoadingCustomViews);
 
-                                if (!viewMap.isEmpty())
-                                    views.addAll(viewMap.values());
-                            }
-                            catch (Exception e)
-                            {
-                                // Ignore bad columns, etc.
+                                    if (!viewMap.isEmpty())
+                                        views.addAll(viewMap.values());
+                                }
+                                catch (Exception e)
+                                {
+                                    // Ignore bad columns, etc.
+                                }
                             }
                         }
+                        return views;
                     }
-                    return views;
-                }
 
-                @Override
-                public Set<CustomView> reduce(Set<CustomView> r1, Set<CustomView> r2)
-                {
-                    if (r1 == null)
-                        return r2;
-                    if (r2 == null)
-                        return r1;
+                    @Override
+                    public Set<CustomView> reduce(Set<CustomView> r1, Set<CustomView> r2)
+                    {
+                        if (r1 == null)
+                            return r2;
+                        if (r2 == null)
+                            return r1;
 
-                    Set<CustomView> set = new HashSet<>();
-                    set.addAll(r1);
-                    set.addAll(r2);
+                        Set<CustomView> set = new HashSet<>();
+                        set.addAll(r1);
+                        set.addAll(r2);
 
-                    return set;
-                }
-            }.visitTop(topNode, null);
+                        return set;
+                    }
+                }.visitTop(topNode, null);
+            }
         }
         else
         {

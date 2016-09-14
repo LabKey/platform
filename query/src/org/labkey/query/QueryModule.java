@@ -211,6 +211,10 @@ public class QueryModule extends DefaultModule
         AdminConsole.addExperimentalFeatureFlag(QueryView.EXPERIMENTAL_EXPORT_COLUMN_HEADER_TYPE,
                 "Column Header Export Type",
                 "Add column header type option to the excel and tsv export panel in grids", false);
+
+        AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_DATA_VIEW_PERFORMANCE,
+                "Data Views Performance",
+                "Speeds up display of Custom Views in the Data Views Webpart", false);
     }
 
 
