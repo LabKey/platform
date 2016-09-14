@@ -82,7 +82,7 @@
             this.count--;
             if (null == value)
                 return;
-            var b = crossfilter.bisectRight(this.values, value, 0, this.values.length);
+            var b = crossfilter.bisect.right(this.values, value, 0, this.values.length);
             this.values.splice(b, 1);
         },
 
@@ -151,7 +151,7 @@
         {
             if (null == value)
                 return;
-            var b = crossfilter.bisectRight(this.values, value, 0, this.values.length);
+            var b = crossfilter.bisect.right(this.values, value, 0, this.values.length);
             this.values.splice(b, 1);
         },
 
@@ -317,8 +317,8 @@
         {
             if (null == value)
                 return;
-            var b = crossfilter.bisectRight(this.values, value, 0, this.values.length);
-            if (this.values[b] != measure.values[i])
+            var b = crossfilter.bisect.right(this.values, value, 0, this.values.length);
+            if (this.values[b] != value)
                 throw "IllegalState";
             this.values.splice(b, 1);
             this.sum = null;
@@ -400,7 +400,7 @@
                 this.sumOfSquares -= v;
 
             if (null != value) {
-                var b = crossfilter.bisectRight(this.values, value, 0, this.values.length);
+                var b = crossfilter.bisect.right(this.values, value, 0, this.values.length);
                 this.values.splice(b, 1);
             }
             return this;
