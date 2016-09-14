@@ -1398,6 +1398,8 @@ boxPlot.render();
         }
         config.size.canvasWidth = config.width || config.size.canvasWidth;
         config.size.canvasHeight = config.height || config.size.canvasHeight;
+        config.size.pieInnerRadius = config.size.innerRadius;
+        config.size.pieOuterRadius = config.size.outerRadius;
 
         // apply default font/colors/etc., it not explicitly set
         if (!config.header) config.header = {};
@@ -1420,7 +1422,7 @@ boxPlot.render();
         if (!config.labels.outer.pieDistance) config.labels.outer.pieDistance = 10;
         if (!config.labels.inner) config.labels.inner = {};
         if (!config.labels.inner.format) config.labels.inner.format = 'percentage';
-        if (!config.labels.inner.hideWhenLessThanPercentage) config.labels.inner.hideWhenLessThanPercentage = 10;
+        if (!config.labels.inner.hideWhenLessThanPercentage) config.labels.inner.hideWhenLessThanPercentage = 5;
         if (!config.labels.lines) config.labels.lines = {};
         if (!config.labels.lines.style) config.labels.lines.style = 'straight';
         if (!config.labels.lines.color) config.labels.lines.color = '#222222';
@@ -1428,6 +1430,10 @@ boxPlot.render();
         if (!config.misc.colors) config.misc.colors = {};
         if (!config.misc.colors.segments) config.misc.colors.segments = LABKEY.vis.Scale.ColorDiscrete();
         if (!config.misc.colors.segmentStroke) config.misc.colors.segmentStroke = '#222222';
+        if (!config.misc.gradient) config.misc.gradient = {};
+        if (!config.misc.gradient.enabled) config.misc.gradient.enabled = false;
+        if (!config.misc.gradient.percentage) config.misc.gradient.percentage = 95;
+        if (!config.misc.gradient.color) config.misc.gradient.color = "#000000";
         if (!config.effects) config.effects = {};
         if (!config.effects.pullOutSegmentOnClick) config.effects.pullOutSegmentOnClick = {};
         if (!config.effects.pullOutSegmentOnClick.effect) config.effects.pullOutSegmentOnClick.effect = 'none';

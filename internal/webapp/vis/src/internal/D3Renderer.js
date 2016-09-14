@@ -2691,7 +2691,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
     var renderBarPlotGeom = function(data, geom) {
         var layer = getLayer.call(this, geom), barWrappers,
-                binWidth, barWidth, offsetWidth, rects, hoverFn, heightFn, xAcc, yAcc;
+                binWidth, barWidth, offsetWidth, rects, hoverFn, heightFn, xAcc, yZero;
 
         if (geom.xScale.scaleType == 'continuous') {
             console.error('Bar Plots not supported for continuous data yet.');
@@ -2704,7 +2704,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         hoverFn = function(d) { return geom.yAes.getValue(d) };
         xAcc = function(d){ return geom.getX(d) - offsetWidth };
-        yAcc = function(d){ return geom.getY(d) };
+        yZero = {};
+        yZero[geom.yAes.value] = 0;
 
         // group each bar with an a tag for hover
         barWrappers = layer.selectAll('a.bar-individual').data(data);
@@ -2715,9 +2716,18 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         // add the bars and styling for the counts
         rects = barWrappers.selectAll('rect.bar-rect').data(function(d){ return [d] });
         rects.exit().remove();
-        heightFn = function(d) { return plot.grid.bottomEdge - geom.getY(d) };
+        heightFn = function(d) {
+            return Math.abs(geom.getY(d) - geom.getY(yZero))
+        };
         rects.enter().append('rect').attr('class', 'bar-rect')
-                .attr('x', xAcc).attr('y', yAcc)
+                .attr('x', xAcc)
+                .attr('y', function(d) {
+                    if (geom.getY(d) > geom.getY(yZero)) {
+                        return geom.getY(yZero); // negative value
+                    } else {
+                        return geom.getY(d); // positive value
+                    }
+                })
                 .attr('width', barWidth).attr('height', heightFn)
                 .attr('stroke', geom.color).attr('stroke-width', geom.lineWidth)
                 .attr('fill', geom.fill).attr('fill-opacity', geom.opacity);
@@ -2725,7 +2735,14 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         // For selenium testing
         rects.enter().append("text").style('display', 'none')
                 .attr('class', 'bar-text')
-                .attr('x', xAcc).attr('y', yAcc)
+                .attr('x', xAcc)
+                .attr('y', function(d) {
+                    if (geom.getY(d) > geom.getY(yZero)) {
+                        return geom.getY(yZero);
+                    } else {
+                        return geom.getY(d);
+                    }
+                })
                 .text(function(d) { return d.count; });
 
         if (geom.clickFn) {
@@ -2734,12 +2751,23 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             });
         }
 
+        // draw solid line on x of 0 if the y-domain min is set to be < 0
+        if (geom.yScale.domain[0] < 0) {
+            layer.append('line')
+                    .attr('class', 'zero-line')
+                    .attr('x1', plot.grid.leftEdge)
+                    .attr('y1', geom.getY(yZero))
+                    .attr('x2', plot.grid.rightEdge)
+                    .attr('y2', geom.getY(yZero))
+                    .attr('stroke-width', 1)
+                    .attr('stroke', "#000000");
+        }
+
         // add the bars and styling for the totals
         if (geom.showCumulativeTotals)
         {
             hoverFn = function(d) { return d.total };
             xAcc = function(d){ return geom.getX(d) + (offsetWidth - barWidth) };
-            yAcc = function(d){ return geom.yScale.scale(d.total) };
             heightFn = function(d) { return plot.grid.bottomEdge - geom.yScale.scale(d.total) };
 
             barWrappers = layer.selectAll('a.bar-total').data(data);
@@ -2750,7 +2778,14 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             rects = barWrappers.selectAll('rect.bar-rect').data(function(d){ return [d] });
             rects.exit().remove();
             rects.enter().append('rect').attr('class', 'bar-rect')
-                    .attr('x', xAcc).attr('y', yAcc)
+                    .attr('x', xAcc)
+                    .attr('y', function(d) {
+                        if (geom.getY(d) > geom.getY(yZero)) {
+                            return geom.getY(yZero);
+                        } else {
+                            return geom.getY(d);
+                        }
+                    })
                     .attr('width', barWidth).attr('height', heightFn)
                     .attr('stroke', geom.colorTotal).attr('stroke-width', geom.lineWidthTotal)
                     .attr('fill', geom.fillTotal).attr('fill-opacity', geom.opacityTotal);
@@ -2758,7 +2793,14 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             // For selenium testing
             rects.enter().append("text").style('display', 'none')
                     .attr('class', 'bar-text')
-                    .attr('x', xAcc).attr('y', yAcc)
+                    .attr('x', xAcc)
+                    .attr('y', function(d) {
+                        if (geom.getY(d) > geom.getY(yZero)) {
+                            return geom.getY(yZero);
+                        } else {
+                            return geom.getY(d);
+                        }
+                    })
                     .text(function(d) { return d.total });
 
             // Render legend for Individual vs Total bars

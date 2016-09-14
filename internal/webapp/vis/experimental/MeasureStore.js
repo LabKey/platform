@@ -565,7 +565,6 @@
          *    config.dimensions is optional
          *    config.measures must specify the columns that are to be aggregated and plotted
          *    config.records should be a an array of objects, both of selectRows formats are supported
-         *    config.nullDisplayValue is optional, the text value to use for null dimension values
          */
         var MeasureStore = function(config)
         {
@@ -586,7 +585,6 @@
             this._columnMap = {
                 '*': countStar
             };
-            this._nullDisplayValue = config.nullDisplayValue || 'null';
 
             if (!config.columns && 0 < config.records.length)
             {
@@ -758,7 +756,6 @@
             {
                 var dimArray = [dimName],
                     firstRow = this._records.length ? this._records[0] : null,
-                    nullDisplayValue = this._nullDisplayValue,
                     getter;
 
                 if (dimName === '*')
@@ -798,7 +795,7 @@
                     {
                         var key = record[name];
                         if (null != key && typeof key === "object" && 'value' in key)
-                            key = key.value == null ? nullDisplayValue : key.value;
+                            key = key.value;
                         return key;
                     }).bind(null, dimName);
                 }
@@ -811,7 +808,7 @@
                         {
                             var key = record[names[i]];
                             if (null != key && typeof key === "object" && 'value' in key)
-                                key = key.value == null ? nullDisplayValue : key.value;
+                                key = key.value;
                             keys.push(key);
                         }
                         return keys.join(CONCAT_STRING);
