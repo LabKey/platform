@@ -82,7 +82,6 @@ public class StatementUtils
     private boolean useVariables = false;
     private final Map<String, Object> _constants = new CaseInsensitiveHashMap<>();
     final Map<String, ParameterHolder> parameters = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
-    private boolean usePgRowVariable = false;
 
     //
     // builder style methods
@@ -250,15 +249,15 @@ public class StatementUtils
         boolean isConstant = false;
     }
 
-
+    private final static String pgRowVarPrefix = "$1.";
     private String makeVariableName(String name)
     {
-        return (_dialect.isSqlServer() ? "@p" : "_$p") + (parameters.size()+1) + AliasManager.makeLegalName(name, null);
+        return (_dialect.isSqlServer() ? "@p"  + (parameters.size()+1) : pgRowVarPrefix) + AliasManager.makeLegalName(name, null);
     }
 
-    private String makePgRowVariableName(String variableName)
+    private String makePgRowTypeName(String variableName)
     {
-        return StringUtils.substringAfter(variableName, "_$");
+        return StringUtils.substringAfter(variableName, pgRowVarPrefix);
     }
 
     private ParameterHolder createParameter(ColumnInfo c)
@@ -335,10 +334,6 @@ public class StatementUtils
         {
             toLiteral(f, ph.constantValue);
         }
-        else if (usePgRowVariable)
-        {
-            f.append("$1.").append(makePgRowVariableName(ph.variableName));
-        }
         else if (useVariables)
         {
             f.append(ph.variableName);
@@ -397,7 +392,6 @@ public class StatementUtils
         }
 
         useVariables = Operation.merge == _operation; //  && dialect.isPostgreSQL();
-        usePgRowVariable = useVariables && _dialect.isPostgreSQL();
         String ifTHEN = _dialect.isSqlServer() ? " BEGIN " : " THEN ";
         String ifEND = _dialect.isSqlServer() ? " END " : " END IF ";
 
@@ -903,7 +897,7 @@ public class StatementUtils
                 ParameterHolder ph = e.getValue();
                 String type = _dialect.sqlTypeNameFromJdbcType(ph.p.getType());
                 fn.append("\n").append(comma);
-                fn.append(makePgRowVariableName(ph.variableName));
+                fn.append(makePgRowTypeName(ph.variableName));
                 fn.append(" ");
                 fn.append(type);
                 call.append(comma).append("?");
