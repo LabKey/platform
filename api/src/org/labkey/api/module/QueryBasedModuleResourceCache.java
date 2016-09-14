@@ -140,6 +140,12 @@ public final class QueryBasedModuleResourceCache<T>
         return null != collection ? collection : Collections.emptyList();
     }
 
+    @NotNull
+    public Map<Path, Collection<T>> getResourceMap(Module module)
+    {
+        return _cache.get(module);
+    }
+
     // Clear a single module's resources from the cache
     private void remove(Module module)
     {
