@@ -1016,6 +1016,10 @@ public class IssuesController extends SpringActionController
 
                 for (Map.Entry<String, String> entry : newFields.entrySet())
                 {
+                    // special case the assigned to field if the status is closed
+                    if (entry.getKey().equals("assignedTo") && form.getBean().getStatus().equals(Issue.statusCLOSED))
+                        continue;
+
                     ColumnInfo col = tableInfo.getColumn(FieldKey.fromParts(entry.getKey()));
                     if (col != null)
                     {
@@ -1034,6 +1038,10 @@ public class IssuesController extends SpringActionController
             // When resolving Duplicate, the 'duplicate' field should be set.
             if ("Duplicate".equals(newFields.get("resolution")))
                 validateRequired("duplicate", newFields.get("duplicate"), "duplicate", requiredErrors);
+
+            // when resolving, a resolution is always required
+            if (newFields.containsKey("resolution"))
+                validateRequired("resolution", newFields.get("resolution"), "resolution", requiredErrors);
 
             errors.addAllErrors(requiredErrors);
         }
