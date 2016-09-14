@@ -866,8 +866,8 @@ public class IssueManager
 
     public static class EntryTypeNames
     {
-        public String singularName = "Issue";
-        public String pluralName = "Issues";
+        public String singularName = IssueDefDomainKind.DEFAULT_ENTRY_TYPE_SINGULAR;
+        public String pluralName = IssueDefDomainKind.DEFAULT_ENTRY_TYPE_PLURAL;
 
         public String getIndefiniteSingularArticle()
         {
@@ -954,9 +954,14 @@ public class IssueManager
 
     public static void saveEntryTypeNames(Container container, String issueDefName, EntryTypeNames names)
     {
+        saveEntryTypeNames(container, issueDefName, names.singularName, names.pluralName);
+    }
+
+    public static void saveEntryTypeNames(Container container, String issueDefName, String singularName, String pluralName)
+    {
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(container, getPropMapName(issueDefName), true);
-        props.put(PROP_ENTRY_TYPE_NAME_SINGULAR, names.singularName);
-        props.put(PROP_ENTRY_TYPE_NAME_PLURAL, names.pluralName);
+        props.put(PROP_ENTRY_TYPE_NAME_SINGULAR, singularName);
+        props.put(PROP_ENTRY_TYPE_NAME_PLURAL, pluralName);
         props.save();
     }
 

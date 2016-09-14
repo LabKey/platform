@@ -39,6 +39,9 @@ public class IssueDefDomainKind extends AbstractIssuesListDefDomainKind
     public static final String MILESTONE_LOOKUP = "milestone";
     public static final String RESOLUTION_LOOKUP = "resolution";
 
+    public static final String DEFAULT_ENTRY_TYPE_SINGULAR = "Issue";
+    public static final String DEFAULT_ENTRY_TYPE_PLURAL = "Issues";
+
     static
     {
 
@@ -169,6 +172,18 @@ public class IssueDefDomainKind extends AbstractIssuesListDefDomainKind
         columns.add(FieldKey.fromParts("Status"));
         columns.add(FieldKey.fromParts("Milestone"));
         return columns;
+    }
+
+    @Override
+    public String getDefaultSingularName()
+    {
+        return DEFAULT_ENTRY_TYPE_SINGULAR;
+    }
+
+    @Override
+    public String getDefaultPluralName()
+    {
+        return DEFAULT_ENTRY_TYPE_PLURAL;
     }
 }
 

@@ -12,7 +12,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -171,6 +170,8 @@ public class IssueListDef extends Entity
                     ensureDomainProperties(domain, domainKind, domainKind.getRequiredProperties(), domainKind.getPropertyForeignKeys(domainContainer));
                     domain.save(user);
                     setDefaultValues(domain, domainKind.getRequiredProperties());
+
+                    setDefaultEntryTypeNames(domainContainer, domainKind.getDefaultSingularName(), domainKind.getDefaultPluralName());
                 }
                 catch (BatchValidationException | ExperimentException e)
                 {
@@ -280,6 +281,11 @@ public class IssueListDef extends Entity
 
         if (!defaultValues.isEmpty())
             DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
+    }
+
+    private void setDefaultEntryTypeNames(Container domainContainer, String singular, String plural)
+    {
+        IssueManager.saveEntryTypeNames(domainContainer, getName(), singular, plural);
     }
 
     private String getDomainKindName(String kind)
