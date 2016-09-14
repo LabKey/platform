@@ -510,7 +510,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         this.setRenderType(values.type);
                         this.measures = values.fields;
 
-                        this.getChartLayoutPanel().onMeasuresChange(this.measures);
+                        this.getChartLayoutPanel().onMeasuresChange(this.measures, this.renderType);
                         this.getChartLayoutPanel().updateVisibleLayoutOptions(this.getSelectedChartTypeData());
                         this.ensureChartLayoutOptions();
 
@@ -879,13 +879,28 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             config.width = this.options.general.width;
             config.height = this.options.general.height;
+            if (!config.size) config.size = {};
+            config.size.innerRadius = '' + this.options.general.innerRadius + '%';
+            config.size.outerRadius = '' + this.options.general.outerRadius + '%';
             config.pointType = this.options.general.pointType;
             config.geomOptions = Ext4.apply({}, this.options.general);
             config.geomOptions.showOutliers = config.pointType ? config.pointType == 'outliers' : true;
             config.labels.main = this.options.general.label;
+            config.labels.x = this.options.general.subtitle;
+            config.labels.y = this.options.general.footer;
+            if (!config.labels.inner) config.labels.inner = {};
+            config.labels.inner.format = this.options.general.showPercentages ? 'percentage' : 'none';
+            config.labels.inner.hideWhenLessThanPercentage = this.options.general.hideWhenLessThanPercentage;
+            if (!config.misc) config.misc = {};
+            config.misc.gradient = {};
+            config.misc.gradient.enabled = this.options.general.gradient != 0;
+            config.misc.gradient.percentage = this.options.general.gradient;
+            config.misc.gradient.color = '#' + this.options.general.gradientColor;
+            config.misc.colors = {};
+            config.misc.colors.segments = this.options.general.colorPaletteCombo ? LABKEY.vis.Scale[this.options.general.colorPaletteCombo]() : LABKEY.vis.Scale.ColorDiscrete();
         }
 
-        if (this.options.x)
+        if (this.options.x && !config.labels.x)
         {
             config.labels.x = this.options.x.label;
             config.scales.x = {
@@ -893,7 +908,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             };
         }
 
-        if (this.options.y)
+        if (this.options.y && !config.labels.y)
         {
             config.labels.y = this.options.y.label;
             config.scales.y = {
@@ -1552,7 +1567,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         else if (this.renderType == 'pie_chart')
         {
             data = LABKEY.vis.GenericChartHelper.generateAggregateData(data, dimName, measureName, aggType, '[Blank]');
-
+            var footerText = aggType == 'SUM' ? labels.y.value : '';
+            var negativeValues = this.checkForNegativeData(data);
+            if (negativeValues.length > 0) {
+                plotConfig.height = Math.floor(plotConfig.height * 0.95); // adding warning text without shrinking height cuts off the footer text
+                var str = 'There are negative values in the data that the Pie will not display. Omitted: ' + negativeValues.toString();
+                this.addWarningText(str);
+            }
             plotConfig = Ext4.apply(plotConfig, {
                 data: data,
                 header: {
@@ -1560,13 +1581,18 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     subtitle: { text: labels.x.value },
                     titleSubtitlePadding: 1
                 },
+                footer: {
+                    text: footerText,
+                    location: 'bottom-center'
+                },
                 labels: {
                     mainLabel: { fontSize: 14 },
                     percentage: { fontSize: 14 },
                     outer: { pieDistance: 20 },
-                    inner: { hideWhenLessThanPercentage: 5 }
+                    inner: chartConfig.labels.inner
                 },
-                //misc: { colors: { segments: LABKEY.vis.Scale.DarkColorDiscrete() } },
+                size: chartConfig.size,
+                misc: chartConfig.misc,
                 effects: { highlightSegmentOnMouseover: false },
                 tooltips: { enabled: true }
             });
@@ -1585,9 +1611,24 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
             else if (this.renderType == 'bar_chart')
             {
+                if (aggType == 'COUNT' && labels.y.value != '') {
+                    labels.y.value = '';
+                }
+                else if (aggType == 'SUM' && labels.y.value) {
+                    labels.y.value = 'Sum of ' + labels.y.value;
+                }
                 data = LABKEY.vis.GenericChartHelper.generateAggregateData(data, dimName, measureName, aggType, '[Blank]');
+                var min = null;
+                Ext4.each(data, function(entry) {
+                   if (min == null) {
+                       min = entry.value;
+                   } else if (entry.value < min) {
+                       min = entry.value;
+                   }
+                });
+                if (min > 0) { min = 0; }
                 aes = { x: 'label', y: 'value' };
-                scales.y = {domain: [0, null]}; // TODO what about if the SUM is negative?
+                scales.y = {domain: [min, null]};
             }
 
             layers.push(
@@ -1627,6 +1668,16 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             plotConfig.rendererType = 'd3';
 
         return plotConfig;
+    },
+
+    checkForNegativeData : function(data) {
+        var negativesFound = [];
+        Ext4.each(data, function(entry) {
+            if (entry.value < 0) {
+                negativesFound.push(entry.label)
+            }
+        });
+        return negativesFound;
     },
 
     initMeasures : function(forExport)

@@ -261,12 +261,14 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
     },
 
     restoreValues : function(initValues) {
-        if (initValues.hasOwnProperty("pointClickFn"))
-        {
-            if (initValues.pointClickFn != null)
-                this.setEditorEnabled(initValues.pointClickFn);
-            else
-                this.setEditorDisabled();
+        if (initValues) {
+            if (initValues.hasOwnProperty("pointClickFn"))
+            {
+                if (initValues.pointClickFn != null)
+                    this.setEditorEnabled(initValues.pointClickFn);
+                else
+                    this.setEditorDisabled();
+            }
         }
     },
 

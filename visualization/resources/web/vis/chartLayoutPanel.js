@@ -51,11 +51,13 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
                 name: 'x',
                 cardId: 'card-2',
                 label: 'X-Axis',
+                layoutOptions: 'axisBased',
                 cardClass: 'LABKEY.vis.GenericChartAxisPanel'
             },{
                 name: 'y',
                 cardId: 'card-3',
                 label: 'Y-Axis',
+                layoutOptions: 'axisBased',
                 cardClass: 'LABKEY.vis.GenericChartAxisPanel'
             }];
 
@@ -333,7 +335,7 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
         return hasChanges;
     },
 
-    onMeasuresChange : function(measures)
+    onMeasuresChange : function(measures, renderType)
     {
         Ext4.Object.each(measures, function(key, props)
         {
@@ -345,6 +347,18 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
                     panel.onMeasureChange(props);
             }
         }, this);
+
+        if (renderType == 'pie_chart') {
+            var navIndex = this.getNavigationPanel().getStore().findExact('name', 'general');
+            if (navIndex > -1)
+            {
+                var generalOptionsPanel = this.getCenterPanel().getLayout().getLayoutItems()[navIndex];
+                if (generalOptionsPanel.onMeasureChange)
+                    if (measures.x || measures.y) {
+                        generalOptionsPanel.onMeasureChange(measures.x, measures.y);
+                    }
+            }
+        }
     },
 
     getDefaultPointClickFn : function()

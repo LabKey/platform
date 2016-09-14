@@ -32,6 +32,7 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
         this.scaleTypeRadioGroup = Ext4.create('Ext.form.RadioGroup', {
             fieldLabel: 'Scale Type',
             columns: 1,
+            layoutOptions: 'point',
             items: [
                 Ext4.create('Ext.form.field.Radio', {
                     width: 100,
@@ -81,6 +82,7 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
 
     setPanelOptionValues: function(config)
     {
+        if (config) {
         if (config.label)
             this.setAxisLabel(config.label);
 
@@ -88,6 +90,7 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             this.setScaleTrans(config.trans);
         else if (config.scaleTrans)
             this.setScaleTrans(config.scaleTrans);
+        }
     },
 
     getAxisLabel: function(){

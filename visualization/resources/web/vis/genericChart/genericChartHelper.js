@@ -23,7 +23,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                     {name: 'x', label: 'X Categories', required: true, nonNumericOnly: true},
                     {name: 'y', label: 'Y Axis', numericOnly: true}
                 ],
-                layoutOptions: {line: true}
+                layoutOptions: {line: true, opacity: true, axisBased: true}
             },
             {
                 name: 'box_plot',
@@ -35,7 +35,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                     {name: 'color', label: 'Color', nonNumericOnly: true},
                     {name: 'shape', label: 'Shape', nonNumericOnly: true}
                 ],
-                layoutOptions: {point: true, box: true, line: true}
+                layoutOptions: {point: true, box: true, line: true, opacity: true, axisBased: true}
             },
             {
                 name: 'pie_chart',
@@ -45,7 +45,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                     {name: 'x', label: 'Categories', required: true, nonNumericOnly: true},
                     {name: 'y', label: 'Measure', numericOnly: true}
                 ],
-                layoutOptions: {}
+                layoutOptions: {pie: true}
             },
             {
                 name: 'scatter_plot',
@@ -57,7 +57,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                     {name: 'color', label: 'Color', nonNumericOnly: true},
                     {name: 'shape', label: 'Shape', nonNumericOnly: true}
                 ],
-                layoutOptions: {point: true, box: false, line: false}
+                layoutOptions: {point: true, box: false, line: false, opacity: true, axisBased: true}
             }
         ];
     };
@@ -504,6 +504,7 @@ LABKEY.vis.GenericChartHelper = new function(){
      */
     var generateBarGeom = function(chartOptions){
         return new LABKEY.vis.Geom.BarPlot({
+            opacity: chartOptions.opacity,
             color: '#' + chartOptions.lineColor,
             fill: '#' + chartOptions.boxFillColor,
             lineWidth: chartOptions.lineWidth
