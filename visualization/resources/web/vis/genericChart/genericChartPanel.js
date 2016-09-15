@@ -873,8 +873,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         config.measures = Ext4.apply({}, this.measures);
         config.scales = {};
         config.labels = {};
-        config.renderType = this.renderType;
-
+        
         this.ensureChartLayoutOptions();
         if (this.options.general)
         {
@@ -1454,8 +1453,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         scales = LABKEY.vis.GenericChartHelper.generateScales(chartType, chartConfig.measures, chartConfig.scales, aes, this.chartData, this.defaultNumberFormat);
         if (customRenderType && customRenderType.generateScales)
             scales = customRenderType.generateScales(this, chartConfig, scales);
-        console.log(aes);
-        console.log(scales);
         if (!Ext4.isDefined(chartConfig.width) || chartConfig.width == null)
             chartConfig.width = !forExport ? this.viewPanel.getWidth() : 1200;
         if (!Ext4.isDefined(chartConfig.height) || chartConfig.height == null)

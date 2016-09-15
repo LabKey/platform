@@ -82,6 +82,8 @@ LABKEY.vis.GenericChartHelper = new function(){
             return 'box_plot';
         }
 
+
+
         return (xAxisType === 'string' || xAxisType === 'boolean') ? 'box_plot' : 'scatter_plot';
     };
 
