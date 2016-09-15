@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -32,6 +33,8 @@ import org.labkey.api.util.HeartBeat;
 import org.labkey.di.pipeline.TransformUtils;
 
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.labkey.di.DataIntegrationQuerySchema.Columns.TransformModified;
 import static org.labkey.di.DataIntegrationQuerySchema.Columns.TransformRunId;
@@ -50,8 +53,9 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
     PipelineJob _job;
     private final String _statusName;
     final Map<String, String> _columnMap;
+    final Map<ParameterDescription, Object> _constants;
 
-    public TransformDataIteratorBuilder(int transformRunId, DataIteratorBuilder input, @Nullable Logger statusLogger, @NotNull PipelineJob job, String statusName, Map<String, String> columnMap)
+    public TransformDataIteratorBuilder(int transformRunId, DataIteratorBuilder input, @Nullable Logger statusLogger, @NotNull PipelineJob job, String statusName, Map<String, String> columnMap, Map<ParameterDescription, Object> constants)
     {
         _transformRunId = transformRunId;
         _input = input;
@@ -59,6 +63,7 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
         _job = job;
         _statusName = statusName;
         _columnMap = columnMap;
+        _constants = constants;
     }
 
 
@@ -105,15 +110,21 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
             }
         };
 
+        Set<String> constantNames = _constants.keySet().stream().map(ParameterDescription::getName).collect(Collectors.toCollection(CaseInsensitiveHashSet::new));
+
         for (int i=1 ; i<=in.getColumnCount() ; i++)
         {
             ColumnInfo c = in.getColumnInfo(i);
-            if (diColumns.contains(c.getName()) || TransformUtils.isRowversionColumn(c))
+            if (diColumns.contains(c.getName()) || TransformUtils.isRowversionColumn(c) || constantNames.contains(c.getName()))
                 continue;
             int outColIndex = out.addColumn(i);
             if (_columnMap.containsKey(c.getColumnName())) // Map to a different output name
                 out.getColumnInfo(outColIndex).setName(_columnMap.get(c.getColumnName()));
         }
+        _constants.entrySet().stream().filter(e -> !diColumns.contains(e.getKey().getName())).forEach(e ->
+        {
+            out.addConstantColumn(e.getKey().getName(), e.getKey().getJdbcType(), e.getValue());
+        });
         out.addConstantColumn(TransformRunId.getColumnName(), JdbcType.INTEGER, _transformRunId);
         out.addTimestampColumn(TransformModified.getColumnName());
 

@@ -166,7 +166,8 @@ public class TransformManager implements DataIntegrationService.Interface
         }
         catch (XmlValidationException|XmlException|IOException e)
         {
-            LOG.warn("Unable to parse " + resource, e);
+            LOG.warn("ETL Config: Unable to parse " + resource + " : " + e.getMessage());
+            LOG.debug(e);
         }
         return null;
     }
@@ -228,6 +229,12 @@ public class TransformManager implements DataIntegrationService.Interface
                 }
             }
 
+            Map<ParameterDescription, Object> constants = new LinkedHashMap<>();
+            if (null != etlXml.getConstants())
+            {
+                populateParameterMap(etlXml.getConstants().getColumnArray(), constants);
+            }
+
             TransformsType transforms = etlXml.getTransforms();
             boolean hasGateStep = false;
             if (null != transforms)
@@ -235,7 +242,7 @@ public class TransformManager implements DataIntegrationService.Interface
                 TransformType[] transformTypes = transforms.getTransformArray();
                 for (TransformType t : transformTypes)
                 {
-                    StepMeta meta = buildTransformStepMeta(t, stepIds);
+                    StepMeta meta = buildTransformStepMeta(t, stepIds, constants);
                     stepMetaDatas.add(meta);
                     if (meta.isGating())
                         hasGateStep = true;
@@ -245,22 +252,7 @@ public class TransformManager implements DataIntegrationService.Interface
             Map<ParameterDescription,Object> declaredVariables = new LinkedHashMap<>();
             if (null != etlXml.getParameters())
             {
-                for (ParameterType xmlp : etlXml.getParameters().getParameterArray())
-                {
-                    String name = xmlp.getName();
-                    try
-                    {
-                        JdbcType type = JdbcType.valueOf(xmlp.getType());
-                        String strValue = xmlp.isSetValue() ? xmlp.getValue() : null;
-                        Object value = type.convert(strValue);
-                        ParameterDescription p = new ParameterDescriptionImpl(name, type, null);
-                        declaredVariables.put(p, value);
-                    }
-                    catch (IllegalArgumentException e)
-                    {
-                        throw new IllegalArgumentException("Unknown JDBC parameter type: '" + xmlp.getType() + "'. Supported types are: " + Arrays.toString(JdbcType.values()), e);
-                    }
-                }
+                populateParameterMap(etlXml.getParameters().getParameterArray(), declaredVariables);
             }
 
             Map<String, String> pipelineParameters = new LinkedHashMap<>();
@@ -275,7 +267,27 @@ public class TransformManager implements DataIntegrationService.Interface
             // XmlSchema validate the document after we've attempted to parse it since we can provide better error messages.
             XmlBeansUtil.validateXmlDocument(document, "ETL '" + resource.getPath() + "'");
 
-            return new TransformDescriptor(configId, etlXml, module.getName(), interval, cron, defaultFactory, stepMetaDatas, declaredVariables, hasGateStep, pipelineParameters);
+            return new TransformDescriptor(configId, etlXml, module.getName(), interval, cron, defaultFactory, stepMetaDatas, declaredVariables, hasGateStep, pipelineParameters, constants);
+        }
+    }
+
+    public void populateParameterMap(ParameterType[] params, Map<ParameterDescription, Object> mapToPopulate)
+    {
+        for (ParameterType xmlp : params)
+        {
+            String name = xmlp.getName();
+            try
+            {
+                JdbcType type = JdbcType.valueOf(xmlp.getType().toUpperCase());
+                String strValue = xmlp.isSetValue() ? xmlp.getValue() : null;
+                Object value = type.convert(strValue);
+                ParameterDescription p = new ParameterDescriptionImpl(name, type, null);
+                mapToPopulate.put(p, value);
+            }
+            catch (IllegalArgumentException e)
+            {
+                throw new IllegalArgumentException("Unknown JDBC parameter type: '" + xmlp.getType() + "'. Supported types are: " + Arrays.toString(JdbcType.values()), e);
+            }
         }
     }
 
@@ -321,7 +333,7 @@ public class TransformManager implements DataIntegrationService.Interface
     public static final String INVALID_DESTINATION = "No destination element specified.";
     public static final String INVALID_PROCEDURE = "No procedure element specified.";
 
-    private StepMeta buildTransformStepMeta(TransformType transformXML, Set<String> stepIds) throws XmlException
+    private StepMeta buildTransformStepMeta(TransformType transformXML, Set<String> stepIds, Map<ParameterDescription, Object> constants) throws XmlException
     {
         if (null == transformXML.getId())
             throw new XmlException(ID_REQUIRED);
@@ -342,6 +354,10 @@ public class TransformManager implements DataIntegrationService.Interface
 
         meta = provider.createMetaInstance();
         meta.setProvider(provider);
+        // Apply the global set of constants to be provided to the target.
+        // When the StepMeta config is parsed, any constants at the step level
+        // will override this initial set.
+        meta.putConstants(constants);
         meta.parseConfig(transformXML); // will throw XmlException on validation error
 
         // Only add to the list of steps after passing validation, including whatever extra validation was in StepMeta

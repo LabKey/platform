@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.impl.values.XmlValueOutOfRangeException;
+import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.dataiterator.CopyConfig;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.di.pipeline.TransformManager;
@@ -27,6 +28,7 @@ import org.labkey.etl.xml.SourceObjectType;
 import org.labkey.etl.xml.TargetObjectType;
 import org.labkey.etl.xml.TransformType;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -38,6 +40,7 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
 {
     protected String description;
     protected StepProvider provider;
+    private Map<ParameterDescription, Object> _constants = new LinkedHashMap<>();
 
     @Override
     public StepProvider getProvider()
@@ -174,6 +177,12 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
                 for (ColumnTransformType column : destination.getColumnTransforms().getColumnArray())
                     _columnTransforms.put(column.getSource(), column.getTarget());
             }
+            // The constants map may have already been populated with values from the global etl level. Any which are defined
+            // at the step level will override those in the event of a collision.
+            if (null != destination.getConstants())
+            {
+                TransformManager.get().populateParameterMap(destination.getConstants().getColumnArray(), _constants);
+            }
         }
         else
             _useTarget = false;
@@ -185,9 +194,22 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
                 || (getTargetType().equals(TargetTypes.file) && (getTargetFileProperties().get(TargetFileProperties.dir) == null || getTargetFileProperties().get(TargetFileProperties.baseName) == null))) // OK to allow empty extension?
             throw new XmlException(TransformManager.INVALID_DESTINATION);
     }
+
     @Override
     public Map<String, String> getColumnTransforms()
     {
-        return _columnTransforms;
+        return Collections.unmodifiableMap(_columnTransforms);
+    }
+
+    @Override
+    public Map<ParameterDescription, Object> getConstants()
+    {
+        return Collections.unmodifiableMap(_constants);
+    }
+
+    @Override
+    public void putConstants(Map<ParameterDescription, Object> constants)
+    {
+        _constants.putAll(constants);
     }
 }

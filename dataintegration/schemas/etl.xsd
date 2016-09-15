@@ -20,6 +20,7 @@
             <element name="incrementalFilter" type="etl:FilterType" minOccurs="0" maxOccurs="1"/>
             <element name="parameters" type="etl:ParametersType" minOccurs="0" maxOccurs="1"/>
             <element name="pipelineParameters" type="etl:PipelineParametersType" minOccurs="0" maxOccurs="1"/>
+            <element name="constants" type="etl:ConstantsType" minOccurs="0" maxOccurs="1"/>
         </all>
         <attribute name="loadReferencedFiles" type="boolean" default="false"/>
         <attribute name="standalone" type="boolean" default="true">
@@ -72,6 +73,7 @@
         </annotation>
         <all>
             <element name="columnTransforms" type="etl:ColumnTransformsType" minOccurs="0" maxOccurs="1"/>
+            <element name="constants" type="etl:ConstantsType" minOccurs="0" maxOccurs="1"/>
         </all>
         <attribute name="schemaName" type="string" use="optional"/>
         <attribute name="queryName" type="string" use="optional"/>
@@ -345,12 +347,6 @@
     </simpleType>
 
     <complexType name="ParametersType">
-        <sequence minOccurs="0" maxOccurs="unbounded">
-            <element name="parameter" type="etl:ParameterType"/>
-        </sequence>
-    </complexType>
-
-    <complexType name="ParameterType">
         <annotation>
             <documentation>
                 Intended for use when the ETL's source query is a parameterized SQL query.
@@ -361,6 +357,12 @@
                 https://www.labkey.org/wiki/home/Documentation/page.view?name=etlSamples#param
             </documentation>
         </annotation>
+        <sequence minOccurs="0" maxOccurs="unbounded">
+            <element name="parameter" type="etl:ParameterType"/>
+        </sequence>
+    </complexType>
+
+    <complexType name="ParameterType">
         <attribute name="name" type="string" use="required" />
         <attribute name="value" type="string" use="optional" />
         <attribute name="type" type="string" use="required" />
@@ -415,5 +417,23 @@
         </annotation>
         <attribute name="source" type="string" use="required" />
         <attribute name="target" type="string" use="required"/>
+    </complexType>
+
+    <complexType name="ConstantsType">
+        <annotation>
+            <documentation>
+                A list of fields with constant values that will be added to the source fields.
+                If there is a column with that name in the source query, the value provided here will
+                be an override.
+                These can be defined at the global etl level, applying to all steps, or at the individual step
+                (destination) level. If the same column is specified both globally and in an individual step,
+                that step will receive the value defined at the step level.
+                The form of these are the same as for source query parameters. See
+                https://www.labkey.org/wiki/home/Documentation/page.view?name=etlSamples#param
+            </documentation>
+        </annotation>
+        <sequence minOccurs="1" maxOccurs="unbounded">
+            <element name="column" type="etl:ParameterType"/>
+        </sequence>
     </complexType>
 </schema>

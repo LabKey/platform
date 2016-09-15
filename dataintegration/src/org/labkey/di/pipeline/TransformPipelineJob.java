@@ -47,6 +47,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: jeckels
@@ -112,6 +113,17 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
             if (info._params.containsKey(pd))
                 value = info._params.get(pd);
             _variableMap.put(pd,value);
+        }
+
+        if (!_etlDescriptor.getConstants().isEmpty())
+        {
+            Map<String, Object> persistConstants = _etlDescriptor.getConstants().entrySet().stream()
+                    .collect(Collectors.toMap(entry -> entry.getKey().getName(), Map.Entry::getValue));
+            _variableMap.put(TransformProperty.GlobalConstants, persistConstants);
+        }
+        if (!_etlDescriptor.getPipelineParameters().isEmpty())
+        {
+            _variableMap.put(TransformProperty.PipelineParameters, _etlDescriptor.getPipelineParameters());
         }
 
         _variableMap.put(TransformProperty.RanStep1, false, VariableMap.Scope.global);

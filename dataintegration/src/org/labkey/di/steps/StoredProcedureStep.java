@@ -656,7 +656,7 @@ public class StoredProcedureStep extends TransformTask
         context.setFailFast(true);
 
         int transformRunId = getTransformJob().getTransformRunId();
-        DataIteratorBuilder transformSource = new TransformDataIteratorBuilder(transformRunId, new DataIteratorBuilder.Wrapper(ResultSetDataIterator.wrap(rs, context)), getJob().getLogger(), getTransformJob(), _factory.getStatusName(), _meta.getColumnTransforms());
+        DataIteratorBuilder transformSource = new TransformDataIteratorBuilder(transformRunId, new DataIteratorBuilder.Wrapper(ResultSetDataIterator.wrap(rs, context)), getJob().getLogger(), getTransformJob(), _factory.getStatusName(), _meta.getColumnTransforms(), _meta.getConstants());
         _recordsInserted = appendToTarget(_meta, _context.getContainer(), _context.getUser(), context, transformSource , getJob().getLogger(), txTarget);
 
         if (context.getErrors().hasErrors())

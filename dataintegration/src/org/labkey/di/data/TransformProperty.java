@@ -38,6 +38,9 @@ public abstract class TransformProperty
     static public final String Parameters = "Parameters";
     static public final String GlobalParameters = "GlobalParameters";
     static public final String RanStep1 = "RanStep1";
+    static public final String Constants = "Constants";
+    static public final String GlobalConstants = "GlobalConstants";
+    static public final String PipelineParameters = "PipelineParameters";
 
     public static void register()
     {

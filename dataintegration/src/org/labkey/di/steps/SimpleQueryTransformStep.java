@@ -139,7 +139,7 @@ public class SimpleQueryTransformStep extends TransformTask
                 if (null == source)
                     return false;
                 int transformRunId = getTransformJob().getTransformRunId();
-                DataIteratorBuilder transformSource = new TransformDataIteratorBuilder(transformRunId, source, log, getTransformJob(), _factory.getStatusName(), _meta.getColumnTransforms());
+                DataIteratorBuilder transformSource = new TransformDataIteratorBuilder(transformRunId, source, log, getTransformJob(), _factory.getStatusName(), _meta.getColumnTransforms(), _meta.getConstants());
 
                 _recordsInserted = appendToTarget(meta, c, u, context, transformSource, log, txTarget);
 

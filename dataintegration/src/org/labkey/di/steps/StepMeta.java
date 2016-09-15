@@ -16,6 +16,7 @@
 package org.labkey.di.steps;
 
 import org.apache.xmlbeans.XmlException;
+import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.etl.xml.TransformType;
 
@@ -63,4 +64,8 @@ public interface StepMeta
     boolean isSaveState();
 
     Map<String, String> getColumnTransforms();
+
+    Map<ParameterDescription, Object> getConstants();
+
+    void putConstants(Map<ParameterDescription, Object> constants);
 }

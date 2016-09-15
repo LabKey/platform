@@ -75,6 +75,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * User: daxh
@@ -128,6 +129,14 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
 
     protected int appendToTarget(CopyConfig meta, Container c, User u, DataIteratorContext context, DataIteratorBuilder source, Logger log, @Nullable DbScope.Transaction txTarget)
     {
+        // Only persist constants to the transform state for steps that have them and write to a target query/file
+        if (!_meta.getConstants().isEmpty())
+        {
+            Map<String, Object> persistConstants = _meta.getConstants().entrySet().stream()
+                    .collect(Collectors.toMap(entry -> entry.getKey().getName(), Map.Entry::getValue));
+            _variableMap.put(TransformProperty.Constants, persistConstants);
+        }
+
         if (CopyConfig.TargetTypes.query.equals(meta.getTargetType()))
             return appendToTargetQuery(meta, c, u, context, source, log, txTarget);
         else if (CopyConfig.TargetTypes.file.equals(meta.getTargetType()))
