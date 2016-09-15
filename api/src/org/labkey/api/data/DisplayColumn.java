@@ -769,39 +769,42 @@ public abstract class DisplayColumn extends RenderColumn
 
                 for (ColumnAnalyticsProvider analyticsProvider : getAnalyticsProviders())
                 {
-                    ActionURL providerUrl = analyticsProvider.getActionURL(ctx, rgn.getSettings(), getColumnInfo());
-                    String onClickScript = analyticsProvider.getScript(ctx, rgn.getSettings(), getColumnInfo());
-                    if (providerUrl != null || onClickScript != null)
+                    if (analyticsProvider.isVisible(ctx, rgn.getSettings(), getColumnInfo()))
                     {
-                        if (toAddSeparator && navtree.hasChildren())
+                        ActionURL providerUrl = analyticsProvider.getActionURL(ctx, rgn.getSettings(), getColumnInfo());
+                        String onClickScript = analyticsProvider.getScript(ctx, rgn.getSettings(), getColumnInfo());
+                        if (providerUrl != null || onClickScript != null)
                         {
-                            navtree.addSeparator();
-                            toAddSeparator = false;
-                        }
-
-                        NavTree item = new NavTree();
-                        item.setId(baseId + ":analytics-" + analyticsProvider.getName());
-                        item.setText(analyticsProvider.getLabel());
-                        item.setImageCls(analyticsProvider.getIconCls(ctx, rgn.getSettings(), getColumnInfo()));
-                        item.setDisabled(getColumnInfo() != null && ctx.containsAnalyticsProvider(getColumnInfo().getFieldKey(), analyticsProvider.getName()));
-                        if (providerUrl != null)
-                            item.setHref(providerUrl.getLocalURIString());
-                        if (onClickScript != null)
-                            item.setScript(onClickScript);
-
-                        if (analyticsProvider.getGroupingHeader() != null)
-                        {
-                            NavTree subtree = navtree.findSubtree(analyticsProvider.getGroupingHeader());
-                            if (subtree == null)
+                            if (toAddSeparator && navtree.hasChildren())
                             {
-                                subtree = navtree.addChild(analyticsProvider.getGroupingHeader());
-                                subtree.setImageCls(analyticsProvider.getGroupingHeaderIconCls());
+                                navtree.addSeparator();
+                                toAddSeparator = false;
                             }
-                            subtree.addChild(item);
-                        }
-                        else
-                        {
-                            navtree.addChild(item);
+
+                            NavTree item = new NavTree();
+                            item.setId(baseId + ":analytics-" + analyticsProvider.getName());
+                            item.setText(analyticsProvider.getLabel());
+                            item.setImageCls(analyticsProvider.getIconCls(ctx, rgn.getSettings(), getColumnInfo()));
+                            item.setDisabled(getColumnInfo() != null && ctx.containsAnalyticsProvider(getColumnInfo().getFieldKey(), analyticsProvider.getName()));
+                            if (providerUrl != null)
+                                item.setHref(providerUrl.getLocalURIString());
+                            if (onClickScript != null)
+                                item.setScript(onClickScript);
+
+                            if (analyticsProvider.getGroupingHeader() != null)
+                            {
+                                NavTree subtree = navtree.findSubtree(analyticsProvider.getGroupingHeader());
+                                if (subtree == null)
+                                {
+                                    subtree = navtree.addChild(analyticsProvider.getGroupingHeader());
+                                    subtree.setImageCls(analyticsProvider.getGroupingHeaderIconCls());
+                                }
+                                subtree.addChild(item);
+                            }
+                            else
+                            {
+                                navtree.addChild(item);
+                            }
                         }
                     }
                 }
