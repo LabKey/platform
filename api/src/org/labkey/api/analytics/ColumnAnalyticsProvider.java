@@ -14,6 +14,11 @@ public abstract class ColumnAnalyticsProvider implements AnalyticsProvider, Comp
 {
     public abstract boolean isApplicable(@NotNull ColumnInfo col);
 
+    public boolean isVisible(RenderContext ctx, QuerySettings settings, ColumnInfo col)
+    {
+        return true;
+    }
+
     @Override
     public String getLabel()
     {
