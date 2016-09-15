@@ -228,7 +228,7 @@ public class DefaultStudyDesignImporter
 
                     if (transformBuilder != null || transformHelper != null)
                     {
-                        // optimally we would use ETL to convert imported FKs so that the relationships are intact, but since
+                        // optimally we would use DIB to convert imported FKs so that the relationships are intact, but since
                         // the underlying tableInfo's do not implement UpdateableTableInfo, we are forced to use the deprecated insertRows
                         // method on QueryUpdateService.
 

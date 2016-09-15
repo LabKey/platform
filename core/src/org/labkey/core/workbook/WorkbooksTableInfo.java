@@ -33,13 +33,13 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
-import org.labkey.api.etl.DataIterator;
-import org.labkey.api.etl.DataIteratorBuilder;
-import org.labkey.api.etl.DataIteratorContext;
-import org.labkey.api.etl.DataIteratorUtil;
-import org.labkey.api.etl.LoggingDataIterator;
-import org.labkey.api.etl.SimpleTranslator;
-import org.labkey.api.etl.TableInsertDataIterator;
+import org.labkey.api.dataiterator.DataIterator;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.dataiterator.LoggingDataIterator;
+import org.labkey.api.dataiterator.SimpleTranslator;
+import org.labkey.api.dataiterator.TableInsertDataIterator;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.query.AbstractQueryUpdateService;
@@ -191,7 +191,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
         @Override
         public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws DuplicateKeyException, QueryUpdateServiceException, SQLException
         {
-            return super._insertRowsUsingETL(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
+            return super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
         }
 
         @Override
@@ -244,10 +244,10 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
         }
 
         @Override
-        public DataIteratorBuilder createImportETL(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
+        public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
         {
             // NOTE: we aren't using the StardardETL since it Path column is overriding the Name column
-            DataIteratorBuilder etl = LessThanStandardETL.forInsert(getQueryTable(), data, container, user, context);
+            DataIteratorBuilder etl = LessThanStandardDIB.forInsert(getQueryTable(), data, container, user, context);
             return ((UpdateableTableInfo)getQueryTable()).persistRows(etl, context);
         }
     }
@@ -338,7 +338,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
     }
 
     // Just wraps built-in columns
-    private static class LessThanStandardETL implements DataIteratorBuilder
+    private static class LessThanStandardDIB implements DataIteratorBuilder
     {
         private final TableInfo _target;
         private final DataIteratorBuilder _inputBuilder;
@@ -346,7 +346,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
         private final User _user;
         private final DataIteratorContext _context;
 
-        public LessThanStandardETL(TableInfo target, DataIteratorBuilder data, Container container, User user, DataIteratorContext context)
+        public LessThanStandardDIB(TableInfo target, DataIteratorBuilder data, Container container, User user, DataIteratorContext context)
         {
             _target = target;
             _inputBuilder = data;
@@ -366,7 +366,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
 
         public static DataIteratorBuilder forInsert(TableInfo queryTable, DataIteratorBuilder data, Container container, User user, DataIteratorContext context)
         {
-            return new LessThanStandardETL(queryTable, data, container, user, context);
+            return new LessThanStandardDIB(queryTable, data, container, user, context);
         }
     }
 

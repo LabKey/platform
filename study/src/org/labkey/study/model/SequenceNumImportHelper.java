@@ -22,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.etl.DataIterator;
+import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
@@ -104,7 +104,7 @@ public class SequenceNumImportHelper
                 }
                 catch (ConversionException x)
                 {
-                    // ETL will catch this an report an error, and we shouldn't usually be getting strings here
+                    // DataIterator will catch this an report an error, and we shouldn't usually be getting strings here
                 }
                 Double sequencenum = translateSequenceNum(seq, date);
                 return null==sequencenum ? seq : sequencenum;

@@ -42,13 +42,13 @@ import org.labkey.api.data.*;
 import org.labkey.api.data.DbScope.CommitTaskOption;
 import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.etl.BeanDataIterator;
-import org.labkey.api.etl.DataIteratorBuilder;
-import org.labkey.api.etl.DataIteratorContext;
-import org.labkey.api.etl.DataIteratorUtil;
-import org.labkey.api.etl.ListofMapsDataIterator;
-import org.labkey.api.etl.Pump;
-import org.labkey.api.etl.StandardETL;
+import org.labkey.api.dataiterator.BeanDataIterator;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.dataiterator.ListofMapsDataIterator;
+import org.labkey.api.dataiterator.Pump;
+import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.DomainNotFoundException;
@@ -1216,7 +1216,7 @@ public class StudyManager
 
             DataIteratorContext context = new DataIteratorContext();
             context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
-            StandardETL etl = StandardETL.forInsert(tinfo, loader, study.getContainer(), user, context);
+            StandardDataIteratorBuilder etl = StandardDataIteratorBuilder.forInsert(tinfo, loader, study.getContainer(), user, context);
             DataIteratorBuilder insert = ((UpdateableTableInfo) tinfo).persistRows(etl, context);
             Pump p = new Pump(insert, context);
             p.run();
@@ -1423,7 +1423,7 @@ public class StudyManager
         {
             DataIteratorContext context = new DataIteratorContext();
             context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
-            StandardETL etl = StandardETL.forInsert(tinfo, loader, container, user, context);
+            StandardDataIteratorBuilder etl = StandardDataIteratorBuilder.forInsert(tinfo, loader, container, user, context);
             DataIteratorBuilder insert = ((UpdateableTableInfo) tinfo).persistRows(etl, context);
             Pump p = new Pump(insert, context);
             p.run();
@@ -3730,7 +3730,7 @@ public class StudyManager
             columnMap = new CaseInsensitiveHashMap<>(columnMap);
         }
 
-        // StandardETL will handle most aliasing, HOWEVER, ...
+        // StandardDataIteratorBuilder will handle most aliasing, HOWEVER, ...
         // columnMap may contain propertyURIs (dataset import job) and labels (GWT import file)
         Map<String,ColumnInfo> nameMap = DataIteratorUtil.createTableMap(tinfo, true);
 
@@ -3751,7 +3751,7 @@ public class StudyManager
                 continue;
             }
 
-            // let ETL do conversions
+            // let DataIterator do conversions
             col.clazz = String.class;
 
             if (columnMap.containsKey(name))

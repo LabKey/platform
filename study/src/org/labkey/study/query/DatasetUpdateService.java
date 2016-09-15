@@ -22,8 +22,8 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.etl.DataIteratorBuilder;
-import org.labkey.api.etl.DataIteratorContext;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DuplicateKeyException;
@@ -90,7 +90,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
             throws SQLException
     {
-        int count = _importRowsUsingETL(user, container, rows, null,  getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
+        int count = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
         if (count > 0)
         {
             StudyManager.datasetModified(_dataset, user, true);
@@ -102,7 +102,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     @Override
     public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext) throws SQLException
     {
-        int count = _importRowsUsingETL(user, container, rows, null, context, extraScriptContext);
+        int count = _importRowsUsingDIB(user, container, rows, null, context, extraScriptContext);
         if (count > 0)
         {
             StudyManager.datasetModified(_dataset, user, true);
@@ -124,7 +124,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             throws DuplicateKeyException, QueryUpdateServiceException, SQLException
     {
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.INSERT, configParameters);
-        List<Map<String, Object>> result = super._insertRowsUsingETL(user, container, rows, context, extraScriptContext);
+        List<Map<String, Object>> result = super._insertRowsUsingDIB(user, container, rows, context, extraScriptContext);
         if (null != result && result.size() > 0)
         {
             for (Map<String, Object> row : result)
@@ -152,7 +152,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
 
     @Override
-    public DataIteratorBuilder createImportETL(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
+    public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
         QCState defaultQCState = StudyManager.getInstance().getDefaultQCState(_dataset.getStudy());
         DatasetDefinition.CheckForDuplicates dupePolicy;

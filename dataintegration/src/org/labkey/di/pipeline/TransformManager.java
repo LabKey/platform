@@ -42,7 +42,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.di.ScheduledPipelineJobContext;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
-import org.labkey.api.etl.CopyConfig;
+import org.labkey.api.dataiterator.CopyConfig;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;

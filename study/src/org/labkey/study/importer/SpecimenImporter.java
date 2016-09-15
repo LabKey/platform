@@ -30,16 +30,16 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
 import org.labkey.api.data.Selector.ForEachBatchBlock;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.etl.DataIterator;
-import org.labkey.api.etl.DataIteratorBuilder;
-import org.labkey.api.etl.DataIteratorContext;
-import org.labkey.api.etl.DataIteratorUtil;
-import org.labkey.api.etl.ListofMapsDataIterator;
-import org.labkey.api.etl.MapDataIterator;
-import org.labkey.api.etl.Pump;
-import org.labkey.api.etl.SimpleTranslator;
-import org.labkey.api.etl.StandardETL;
-import org.labkey.api.etl.TableInsertDataIterator;
+import org.labkey.api.dataiterator.DataIterator;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.dataiterator.ListofMapsDataIterator;
+import org.labkey.api.dataiterator.MapDataIterator;
+import org.labkey.api.dataiterator.Pump;
+import org.labkey.api.dataiterator.SimpleTranslator;
+import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
+import org.labkey.api.dataiterator.TableInsertDataIterator;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpSampleSet;
@@ -77,7 +77,6 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.SpecimenServiceImpl;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ParticipantIdImportHelper;
 import org.labkey.study.model.SequenceNumImportHelper;
 import org.labkey.study.model.SpecimenComment;
@@ -2715,7 +2714,7 @@ public class SpecimenImporter
         dontUpdate.add("entityid");
         skipColumns.remove("entityid");
 
-        // NOTE entityid is handled by ETL so ignore EntityIdComputedColumn
+        // NOTE entityid is handled by DataIterator so ignore EntityIdComputedColumn
         if (idCol instanceof EntityIdComputedColumn)
             idCol = null;
 
@@ -2744,7 +2743,7 @@ public class SpecimenImporter
             keyColumns = null;
 
         DataIteratorBuilder specimenIter = new SpecimenImportBuilder(target, new DataIteratorBuilder.Wrapper(iter), potentialColumns, Collections.singletonList(idCol));
-        DataIteratorBuilder std = StandardETL.forInsert(target,specimenIter,_container,getUser(),dix);
+        DataIteratorBuilder std = StandardDataIteratorBuilder.forInsert(target, specimenIter, _container, getUser(), dix);
         DataIteratorBuilder tableIter = TableInsertDataIterator.create(std, target, _container, dix, keyColumns, skipColumns, dontUpdate);
 
         assert !_specimensTableType.getTableName().equalsIgnoreCase(tableName);
@@ -2883,7 +2882,7 @@ public class SpecimenImporter
             //DataIteratorBuilder asyncIn = new AsyncDataIterator.Builder(tsv);
             DataIteratorBuilder asyncIn = tsv;
             DataIteratorBuilder specimenWrapped = new SpecimenImportBuilder(target, asyncIn, file.getTableType().getColumns(), computedColumns);
-            DataIteratorBuilder standardEtl = StandardETL.forInsert(target, specimenWrapped, _container, getUser(), dix);
+            DataIteratorBuilder standardEtl = StandardDataIteratorBuilder.forInsert(target, specimenWrapped, _container, getUser(), dix);
             DataIteratorBuilder persist = ((UpdateableTableInfo)target).persistRows(standardEtl, dix);
             Pump pump = new Pump(persist,dix);
             pump.setProgress(new ListImportProgress()
@@ -2965,9 +2964,9 @@ public class SpecimenImporter
         }
     }
 
-    // TODO We should consider trying to let the Standard ETL "import alias" replace some of this ImportableColumn behavior
-    // TODO that might let us switch SpecimenImportBuilder to after StandardETL instead of before
-    // TODO StandardETL should be enforcing max length
+    // TODO We should consider trying to let the Standard DataIterator "import alias" replace some of this ImportableColumn behavior
+    // TODO that might let us switch SpecimenImportBuilder to after StandardDataIteratorBuilder instead of before
+    // TODO StandardDataIteratorBuilder should be enforcing max length
     private class SpecimenImportIterator extends SimpleTranslator
     {
         Map<String,Object> _rowMap;
@@ -3120,7 +3119,7 @@ public class SpecimenImporter
 
         // remove VISIT_COL since that's a computed column
         // 1) should that be removed from SPECIMEN_COLUMNS?
-        // 2) convert this to ETL?
+        // 2) convert this to DataIterator?
         SpecimenColumn _visitCol = null;
         SpecimenColumn _participantIdCol = null;
         for (SpecimenColumn sc : _specimenColumns)

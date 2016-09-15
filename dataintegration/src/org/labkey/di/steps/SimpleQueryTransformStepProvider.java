@@ -15,7 +15,7 @@
  */
 package org.labkey.di.steps;
 
-import org.labkey.api.etl.CopyConfig;
+import org.labkey.api.dataiterator.CopyConfig;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformTask;

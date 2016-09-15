@@ -33,8 +33,8 @@ import org.labkey.api.data.Selector.ForEachBatchBlock;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.etl.DataIteratorBuilder;
-import org.labkey.api.etl.DataIteratorContext;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.list.ListDefinition;
@@ -176,7 +176,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             throws DuplicateKeyException, QueryUpdateServiceException, SQLException
     {
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.INSERT, configParameters);
-        List<Map<String, Object>> result = super._insertRowsUsingETL(user, container, rows, context, extraScriptContext);
+        List<Map<String, Object>> result = super._insertRowsUsingDIB(user, container, rows, context, extraScriptContext);
 
         if (null != result)
         {
@@ -201,8 +201,8 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         return result;
     }
 
-    public int insertETL(DataLoader loader, User user, Container container, BatchValidationException errors, @Nullable VirtualFile attachmentDir,
-                         @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importLookupsByAlternateKey)
+    public int insertUsingDataIterator(DataLoader loader, User user, Container container, BatchValidationException errors, @Nullable VirtualFile attachmentDir,
+                                       @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importLookupsByAlternateKey)
     {
         DataIteratorContext context = new DataIteratorContext(errors);
         context.setFailFast(false);
@@ -216,7 +216,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         {
             try (DbScope.Transaction transaction = ti.getSchema().getScope().ensureTransaction())
             {
-                int inserted = _importRowsUsingETL(user, container, loader, null, context, new HashMap<>());
+                int inserted = _importRowsUsingDIB(user, container, loader, null, context, new HashMap<>());
 
                 //If no errors commit transaction
                 if(!errors.hasErrors())
@@ -247,7 +247,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors,
                          @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws SQLException
     {
-        return _importRowsUsingETL(user, container, rows, null,  getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
+        return _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
     }
 
 
@@ -256,7 +256,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                           Map<Enum,Object> configParameters, Map<String, Object> extraScriptContext) throws SQLException
     {
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.IMPORT, configParameters);
-        int count = super._importRowsUsingETL(user, container, rows, null, context, extraScriptContext);
+        int count = super._importRowsUsingDIB(user, container, rows, null, context, extraScriptContext);
         if (count > 0 && !errors.hasErrors())
             ListManager.get().indexList(_list);
         return count;

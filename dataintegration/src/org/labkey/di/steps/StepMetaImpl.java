@@ -19,7 +19,7 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.impl.values.XmlValueOutOfRangeException;
-import org.labkey.api.etl.CopyConfig;
+import org.labkey.api.dataiterator.CopyConfig;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.di.pipeline.TransformManager;
 import org.labkey.etl.xml.ColumnTransformType;

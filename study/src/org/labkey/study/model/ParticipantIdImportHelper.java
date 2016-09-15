@@ -22,7 +22,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.etl.DataIterator;
+import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;

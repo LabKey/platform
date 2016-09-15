@@ -28,12 +28,12 @@ import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
-import org.labkey.api.etl.DataIterator;
-import org.labkey.api.etl.DataIteratorBuilder;
-import org.labkey.api.etl.DataIteratorContext;
-import org.labkey.api.etl.SimpleTranslator;
-import org.labkey.api.etl.TableInsertDataIterator;
-import org.labkey.api.etl.ValidatorIterator;
+import org.labkey.api.dataiterator.DataIterator;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.SimpleTranslator;
+import org.labkey.api.dataiterator.TableInsertDataIterator;
+import org.labkey.api.dataiterator.ValidatorIterator;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -418,7 +418,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
-        // NOTE: it's a little ambiguous how to factor code between persistRows() and createImportETL()
+        // NOTE: it's a little ambiguous how to factor code between persistRows() and createImportDIB()
         data = new _DataIteratorBuilder(data, context);
         return TableInsertDataIterator.create(data, this, _userSchema.getContainer(), context, new CaseInsensitiveHashSet(getPkColumnNames()), null, null);
     }

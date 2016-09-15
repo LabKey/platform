@@ -11,13 +11,13 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.etl.DataIterator;
-import org.labkey.api.etl.DataIteratorBuilder;
-import org.labkey.api.etl.DataIteratorContext;
-import org.labkey.api.etl.DataIteratorUtil;
-import org.labkey.api.etl.ErrorIterator;
-import org.labkey.api.etl.LoggingDataIterator;
-import org.labkey.api.etl.SimpleTranslator;
+import org.labkey.api.dataiterator.DataIterator;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.dataiterator.ErrorIterator;
+import org.labkey.api.dataiterator.LoggingDataIterator;
+import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
@@ -200,7 +200,7 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
                 }
                 else if (match == keyColumn && _datasetDefinition.getKeyManagementType() == Dataset.KeyManagementType.None)
                 {
-                    // usually we let ETL handle convert, but we need to convert for consistent _key/lsid generation
+                    // usually we let DataIterator handle convert, but we need to convert for consistent _key/lsid generation
                     out = it.addConvertColumn(match.getName(), in, match.getJdbcType(), null != match.getMvColumnName());
                 }
                 else if (match == keyColumn && _datasetDefinition.getKeyManagementType() == Dataset.KeyManagementType.GUID)
@@ -210,7 +210,7 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
                 }
                 else
                 {
-                    // to simplify a little, use matched name/propertyuri here (even though StandardETL would rematch using the same logic)
+                    // to simplify a little, use matched name/propertyuri here (even though StandardDataIteratorBuilder would rematch using the same logic)
                     out = it.addColumn(match.getName(), in);
                 }
                 it.getColumnInfo(out).setPropertyURI(match.getPropertyURI());
@@ -225,8 +225,8 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
         Map<String, Integer> outputMap = DataIteratorUtil.createColumnAndPropertyMap(it);
 
         // find important columns in the input
-        // NOTE: Standard ETL usually is responsible for matching input columns by label/uri/importAlias
-        // NOTE: However, this Builder is _before_ StandardETL, so for these columns we have to duplicate that effort
+        // NOTE: Standard DataIterator usually is responsible for matching input columns by label/uri/importAlias
+        // NOTE: However, this Builder is _before_ StandardDataIteratorBuilder, so for these columns we have to duplicate that effort
         Integer indexPTIDInput = findColumnInMap(inputMap, subjectCol);
         Integer indexPTID = findColumnInMap(outputMap, subjectCol);
         Integer indexKeyProperty = findColumnInMap(outputMap, keyColumn);
