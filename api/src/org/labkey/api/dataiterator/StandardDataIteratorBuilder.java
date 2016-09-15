@@ -136,7 +136,7 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
         // pass through all the source columns
         // associate each with a target column if possible and handle convert, validate
         //
-        // NOTE: although some columns may be matched by propertyURI, I assumie that create/modified etc are bound by name
+        // NOTE: although some columns may be matched by propertyURI, I assume that create/modified etc are bound by name
         //
 
         input = SimpleTranslator.wrapBuiltInColumns(input, context, _c, _user, _target);

@@ -56,4 +56,27 @@ public class ParameterDescriptionImpl implements ParameterDescription, Serializa
     {
         return _type;
     }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ParameterDescriptionImpl that = (ParameterDescriptionImpl) o;
+
+        if (!_name.equals(that._name)) return false;
+        if (_uri != null ? !_uri.equals(that._uri) : that._uri != null) return false;
+        return _type == that._type;
+
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = _name.hashCode();
+        result = 31 * result + (_uri != null ? _uri.hashCode() : 0);
+        result = 31 * result + _type.hashCode();
+        return result;
+    }
 }
