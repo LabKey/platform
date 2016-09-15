@@ -129,6 +129,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         });
 
         this.colorPaletteFieldContainer = Ext4.create('Ext.Component',  {
+            layoutOptions: 'pie',
            html:  "<div id=\"colorPalette\"></div>",
             listeners: {
                 scope: this,

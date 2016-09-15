@@ -6,11 +6,10 @@ import org.labkey.api.analytics.ColumnAnalyticsProvider;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.FolderSettingsCache;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.template.ClientDependency;
-import org.labkey.visualization.VisualizationModule;
 
 import java.util.Set;
 
@@ -37,7 +36,23 @@ public class MeasureBoxPlotAnalyticsProvider extends ColumnAnalyticsProvider
     @Override
     public boolean isApplicable(@NotNull ColumnInfo col)
     {
-        return col.isMeasure() && !"serial".equalsIgnoreCase(col.getSqlTypeName()) && !"entityid".equalsIgnoreCase(col.getSqlTypeName());
+        return col.isNumericType() &&
+                !col.isLookup() &&
+                !col.getSqlTypeName().equalsIgnoreCase("serial") &&
+                !col.getSqlTypeName().equalsIgnoreCase("entityid");
+    }
+
+    @Override
+    public boolean isVisible(RenderContext ctx, QuerySettings settings, ColumnInfo col)
+    {
+        if (FolderSettingsCache.areRestrictedColumnsEnabled(ctx.getContainer()))
+        {
+            return col.isMeasure();
+        }
+        else
+        {
+            return true;
+        }
     }
 
     @Nullable
