@@ -873,7 +873,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         config.measures = Ext4.apply({}, this.measures);
         config.scales = {};
         config.labels = {};
-
+        
         this.ensureChartLayoutOptions();
         if (this.options.general)
         {
