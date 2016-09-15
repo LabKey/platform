@@ -143,9 +143,9 @@ public class SimpleQueryTransformStep extends TransformTask
 
                 _recordsInserted = appendToTarget(meta, c, u, context, transformSource, log, txTarget);
 
-                if (null != txTarget && !txTarget.isAborted())
+                if (null != txTarget && !context.getErrors().hasErrors() && !txTarget.isAborted())
                     txTarget.commit();
-                if (null != txSource && !txSource.isAborted())
+                if (null != txSource && !context.getErrors().hasErrors() && !txSource.isAborted())
                     txSource.commit();
             }
             long finish = System.currentTimeMillis();

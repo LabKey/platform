@@ -351,9 +351,9 @@ public class StoredProcedureStep extends TransformTask
             if (procResult == null)
                 return false;
             else returnValue = procResult;
-            if (txProc != null)
+            if (txProc != null && !txProc.isAborted())
                 txProc.commit();
-            if (txTarget != null)
+            if (txTarget != null && !txTarget.isAborted())
                 txTarget.commit();
             if ((procReturns.equals(RETURN_TYPE.INTEGER)) && returnValue > 0)
                 badReturn = true;
