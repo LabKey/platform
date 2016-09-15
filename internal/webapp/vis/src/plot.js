@@ -877,7 +877,9 @@ boxPlot.render();
             height: config.hasOwnProperty('height') ? config.height: null // widht of the grid.
         };
         this.originalScales = config.scales ? config.scales : {}; // The scales specified by the user.
+        console.log(config.scales);
         this.scales = copyUserScales(this.originalScales); // The scales used internally.
+        console.log(this.scales);
         this.originalAes = config.aes ? config.aes : null; // The original aesthetic specified by the user.
         this.aes = LABKEY.vis.convertAes(this.originalAes); // The aesthetic object used internally.
         this.labels = config.labels ? config.labels : {};
