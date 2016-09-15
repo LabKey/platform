@@ -19,12 +19,12 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.etl.DataIterator;
-import org.labkey.api.etl.DataIteratorBuilder;
-import org.labkey.api.etl.DataIteratorContext;
-import org.labkey.api.etl.DataIteratorUtil;
-import org.labkey.api.etl.LoggingDataIterator;
-import org.labkey.api.etl.SimpleTranslator;
+import org.labkey.api.dataiterator.DataIterator;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.dataiterator.LoggingDataIterator;
+import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.SimpleUserSchema.SimpleTable;
@@ -33,7 +33,6 @@ import org.labkey.api.security.User;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
 /**
@@ -56,7 +55,7 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
     public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum,Object> configParameters, Map<String, Object> extraScriptContext)
             throws SQLException
     {
-        return _importRowsUsingETL(user, container, rows, null, getDataIteratorContext(errors, InsertOption.IMPORT, configParameters), extraScriptContext);
+        return _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.IMPORT, configParameters), extraScriptContext);
     }
 
 
@@ -64,14 +63,14 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
     public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
             throws SQLException
     {
-        return _importRowsUsingETL(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
+        return _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
     }
 
 
     @Override
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws DuplicateKeyException, QueryUpdateServiceException, SQLException
     {
-        List<Map<String, Object>> result = super._insertRowsUsingETL(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
+        List<Map<String, Object>> result = super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
         return result;
     }
 
@@ -82,7 +81,7 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
         return (SimpleTable)super.getQueryTable();
     }
 
-    public DataIteratorBuilder createImportETL(User user, Container container, final DataIteratorBuilder data, DataIteratorContext context)
+    public DataIteratorBuilder createImportDIB(User user, Container container, final DataIteratorBuilder data, DataIteratorContext context)
     {
         // Create object uri if column is present and domain is not empty.
         final ColumnInfo objectUriColumn = getQueryTable().getObjectUriColumn();
@@ -115,11 +114,11 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
             };
         }
 
-        return super.createImportETL(user, container, ret, context);
+        return super.createImportDIB(user, container, ret, context);
     }
 
 
-    // TODO kill DomainUpdateHelper! Should be replaced by ETL
+    // TODO kill DomainUpdateHelper! Should be replaced by DataIterator
     public static class SimpleDomainUpdateHelper implements DomainUpdateHelper
     {
         SimpleTable _queryTable;

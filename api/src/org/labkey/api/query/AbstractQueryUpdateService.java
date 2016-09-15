@@ -34,18 +34,18 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.etl.DataIterator;
-import org.labkey.api.etl.DataIteratorBuilder;
-import org.labkey.api.etl.DataIteratorContext;
-import org.labkey.api.etl.DataIteratorUtil;
-import org.labkey.api.etl.ListofMapsDataIterator;
-import org.labkey.api.etl.LoggingDataIterator;
-import org.labkey.api.etl.MapDataIterator;
-import org.labkey.api.etl.Pump;
-import org.labkey.api.etl.StandardETL;
-import org.labkey.api.etl.TriggerDataBuilderHelper;
-import org.labkey.api.etl.WrapperDataIterator;
-import org.labkey.api.etl.AttachmentDataIterator;
+import org.labkey.api.dataiterator.DataIterator;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.dataiterator.ListofMapsDataIterator;
+import org.labkey.api.dataiterator.LoggingDataIterator;
+import org.labkey.api.dataiterator.MapDataIterator;
+import org.labkey.api.dataiterator.Pump;
+import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
+import org.labkey.api.dataiterator.TriggerDataBuilderHelper;
+import org.labkey.api.dataiterator.WrapperDataIterator;
+import org.labkey.api.dataiterator.AttachmentDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -127,12 +127,12 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
 
     /*
-     * construct the core ETL transformation pipeline for this table, may be just StandardETL.
+     * construct the core DataIterator transformation pipeline for this table, may be just StandardDataIteratorBuilder.
      * does NOT handle triggers or the insert/update iterator.
      */
-    public DataIteratorBuilder createImportETL(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
+    public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
-        StandardETL etl = StandardETL.forInsert(getQueryTable(), data, container, user, context);
+        StandardDataIteratorBuilder etl = StandardDataIteratorBuilder.forInsert(getQueryTable(), data, container, user, context);
 
         DataIteratorBuilder dib = ((UpdateableTableInfo)getQueryTable()).persistRows(etl, context);
         dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption() == InsertOption.IMPORT ? getAttachmentDirectory(): null, container, getAttachmentParentFactory());
@@ -142,7 +142,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
 
     /**
-     * Implementation to use insertRows() while we migrate to using ETL for all code paths
+     * Implementation to use insertRows() while we migrate to using DIB for all code paths
      *
      * DataIterator should/must use same error collection as passed in
      */
@@ -186,7 +186,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
 
-    protected int _importRowsUsingETL(User user, Container container, DataIteratorBuilder in, @Nullable final ArrayList<Map<String, Object>> outputRows, DataIteratorContext context, Map<String, Object> extraScriptContext)
+    protected int _importRowsUsingDIB(User user, Container container, DataIteratorBuilder in, @Nullable final ArrayList<Map<String, Object>> outputRows, DataIteratorContext context, Map<String, Object> extraScriptContext)
             throws SQLException
     {
         if (!hasPermission(user, InsertPermission.class))
@@ -200,10 +200,10 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         TriggerDataBuilderHelper helper = new TriggerDataBuilderHelper(getQueryTable(), container, extraScriptContext, context.getInsertOption().useImportAliases);
         if (hasTableScript)
             in = helper.before(in);
-        DataIteratorBuilder importETL = createImportETL(user, container, in, context);
-        DataIteratorBuilder out = importETL;
+        DataIteratorBuilder importDIB = createImportDIB(user, container, in, context);
+        DataIteratorBuilder out = importDIB;
         if (hasTableScript)
-            out = helper.after(importETL);
+            out = helper.after(importDIB);
 
         out = postTriggerDataIterator(out, context);
 
@@ -265,7 +265,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     @Override
     public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext) throws SQLException
     {
-        return _importRowsUsingETL(user, container, rows, null, context, extraScriptContext);
+        return _importRowsUsingDIB(user, container, rows, null, context, extraScriptContext);
     }
 
     @Override
@@ -291,8 +291,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException;
 
 
-    protected @Nullable List<Map<String, Object>> _insertRowsUsingETL(User user, Container container, List<Map<String, Object>> rows,
-          DataIteratorContext context, Map<String, Object> extraScriptContext) throws DuplicateKeyException, QueryUpdateServiceException, SQLException
+    protected @Nullable List<Map<String, Object>> _insertRowsUsingDIB(User user, Container container, List<Map<String, Object>> rows,
+                                                      DataIteratorContext context, Map<String, Object> extraScriptContext) throws DuplicateKeyException, QueryUpdateServiceException, SQLException
     {
         if (!hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
@@ -300,7 +300,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         DataIterator di = _toDataIterator(getClass().getSimpleName() + ".insertRows()", rows);
         DataIteratorBuilder dib = new DataIteratorBuilder.Wrapper(di);
         ArrayList<Map<String,Object>> outputRows = new ArrayList<>();
-        int count = _importRowsUsingETL(user, container, dib, outputRows, context, extraScriptContext);
+        int count = _importRowsUsingDIB(user, container, dib, outputRows, context, extraScriptContext);
 
         if (context.getErrors().hasErrors())
             return null;
@@ -335,7 +335,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
 
-    /** @deprecated switch to using ETL based method */
+    /** @deprecated switch to using DIB based method */
     @Deprecated
     protected List<Map<String, Object>> _insertRowsUsingInsertRow(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
             throws DuplicateKeyException, BatchValidationException, QueryUpdateServiceException, SQLException

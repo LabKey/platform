@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.etl;
+package org.labkey.api.dataiterator;
 
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
@@ -201,7 +201,7 @@ public class DataIteratorUtil
         ArrayList<Pair<ColumnInfo,MatchType>> matches = new ArrayList<>(input.getColumnCount()+1);
         matches.add(null);
 
-        // match columns to target columninfos (duplicates StandardETL, extract shared method?)
+        // match columns to target columninfos (duplicates StandardDataIteratorBuilder, extract shared method?)
         for (int i=1 ; i<=input.getColumnCount() ; i++)
         {
             ColumnInfo from = input.getColumnInfo(i);
@@ -300,7 +300,7 @@ public class DataIteratorUtil
     // this is just a point-to-point copy _without_ triggers
     public static int copy(DataIteratorContext context, DataIteratorBuilder from, TableInfo to, Container c, User user) throws IOException, BatchValidationException
     {
-        StandardETL etl = StandardETL.forInsert(to, from, c, user, context);
+        StandardDataIteratorBuilder etl = StandardDataIteratorBuilder.forInsert(to, from, c, user, context);
         DataIteratorBuilder insert = ((UpdateableTableInfo)to).persistRows(etl, context);
         Pump pump = new Pump(insert, context);
         pump.run();

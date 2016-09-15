@@ -38,7 +38,7 @@ import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
-import org.labkey.api.etl.SimpleTranslator;
+import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.MvFieldWrapper;

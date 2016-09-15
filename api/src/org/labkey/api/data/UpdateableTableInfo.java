@@ -18,8 +18,8 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.etl.DataIteratorBuilder;
-import org.labkey.api.etl.DataIteratorContext;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.security.User;
 
 import java.sql.Connection;
@@ -102,7 +102,7 @@ public interface UpdateableTableInfo extends TableInfo
      * If there are idiosyncratic column mapping problems (hidden columns?) etc, you can override this method.
      * Try to use generic code paths to get the input data iterator to match the parameters when possible.
      *
-     * This method is _NOT_ usually called directly. See TableInfo.getUpdateService(), and StandardETL.
+     * This method is _NOT_ usually called directly. See TableInfo.getUpdateService(), and StandardDataIteratorBuilder.
      */
     DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context);
 

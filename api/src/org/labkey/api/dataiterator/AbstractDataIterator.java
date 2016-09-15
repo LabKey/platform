@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.etl;
+package org.labkey.api.dataiterator;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.query.BatchValidationException;

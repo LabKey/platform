@@ -16,10 +16,10 @@
 package org.labkey.remoteapi;
 
 import org.apache.commons.io.IOUtils;
-import org.labkey.api.etl.DataIterator;
-import org.labkey.api.etl.DataIteratorBuilder;
-import org.labkey.api.etl.DataIteratorContext;
-import org.labkey.api.etl.WrapperDataIterator;
+import org.labkey.api.dataiterator.DataIterator;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.JSONDataLoader;
 import org.labkey.remoteapi.query.SelectRowsCommand;

@@ -17,8 +17,8 @@ package org.labkey.api.query;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.etl.DataIteratorBuilder;
-import org.labkey.api.etl.DataIteratorContext;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.security.User;
 
 import java.sql.SQLException;

@@ -17,8 +17,8 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.etl.DataIterator;
-import org.labkey.api.etl.DataIteratorUtil;
+import org.labkey.api.dataiterator.DataIterator;
+import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.etl;
+package org.labkey.api.dataiterator;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MultiValuedMap;
@@ -28,8 +28,6 @@ import org.labkey.api.ScrollableDataIterator;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;

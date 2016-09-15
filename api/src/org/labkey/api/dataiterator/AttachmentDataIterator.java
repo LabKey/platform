@@ -1,4 +1,4 @@
-package org.labkey.api.etl;
+package org.labkey.api.dataiterator;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;

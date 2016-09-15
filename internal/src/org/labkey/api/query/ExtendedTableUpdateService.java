@@ -19,8 +19,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.etl.DataIteratorBuilder;
-import org.labkey.api.etl.DataIteratorContext;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.security.User;
 
 import java.sql.SQLException;
@@ -109,9 +109,9 @@ public class ExtendedTableUpdateService extends SimpleQueryUpdateService
     }
 
     @Override
-    public DataIteratorBuilder createImportETL(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
+    public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
-        return super.createImportETL(user, container, data, context);
+        return super.createImportDIB(user, container, data, context);
     }
 
 }

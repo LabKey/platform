@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.etl;
+package org.labkey.api.dataiterator;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -306,7 +306,7 @@ public class StatementDataIterator extends AbstractDataIterator
                 processBatch();
             }
 
-            // ETL's allow specifying more granular commits than the transaction wrapping the entire operation
+            // This allows specifying more granular commits than the transaction wrapping the entire operation
             if (_currentTxSize == _txSize && _currentStmt.getScope().isTransactionActive() && hasNextRow)
             {
                 _currentTxSize = 0;

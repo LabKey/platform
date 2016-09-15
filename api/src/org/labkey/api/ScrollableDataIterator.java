@@ -15,7 +15,7 @@
  */
 package org.labkey.api;
 
-import org.labkey.api.etl.DataIterator;
+import org.labkey.api.dataiterator.DataIterator;
 
 /**
  *

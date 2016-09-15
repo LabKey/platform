@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.etl;
+package org.labkey.api.dataiterator;
 
 
 import org.labkey.api.collections.CaseInsensitiveHashMap;

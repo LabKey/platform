@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.etl;
+package org.labkey.api.dataiterator;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -52,7 +52,7 @@ import java.util.Map;
  */
 
 
-public class StandardETL implements DataIteratorBuilder
+public class StandardDataIteratorBuilder implements DataIteratorBuilder
 {
     final DataIteratorBuilder _inputBuilder;
     final TableInfo _target;
@@ -64,19 +64,19 @@ public class StandardETL implements DataIteratorBuilder
     ValidatorIterator _it;
 
 
-    public static StandardETL forInsert(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, DataIteratorContext context)
+    public static StandardDataIteratorBuilder forInsert(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, DataIteratorContext context)
     {
-        return new StandardETL(target, in, c, user, context);
+        return new StandardDataIteratorBuilder(target, in, c, user, context);
     }
 
 
-    public static StandardETL forUpdate(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, DataIteratorContext context)
+    public static StandardDataIteratorBuilder forUpdate(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, DataIteratorContext context)
     {
         throw new UnsupportedOperationException();
     }
 
 
-    protected StandardETL(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, DataIteratorContext context)
+    protected StandardDataIteratorBuilder(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, DataIteratorContext context)
     {
         if (!(target instanceof UpdateableTableInfo))
             throw new IllegalArgumentException("Must implement UpdateableTableInfo: " + target.getName() + " (" + target.getClass().getSimpleName() + ")");
@@ -217,10 +217,10 @@ public class StandardETL implements DataIteratorBuilder
         //
 
         SimpleTranslator convert = new SimpleTranslator(input, context);
-        convert.setDebugName("StandardETL convert");
+        convert.setDebugName("StandardDIB convert");
         convert.setMvContainer(_c);
         ValidatorIterator validate = new ValidatorIterator(LoggingDataIterator.wrap(convert), context, _c, _user);
-        validate.setDebugName("StandardETL validate");
+        validate.setDebugName("StandardDIB validate");
 
         for (TranslateHelper pair : targetCols)
         {

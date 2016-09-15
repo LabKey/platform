@@ -17,7 +17,7 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.etl.DataIterator;
+import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.ResultSetUtil;
 

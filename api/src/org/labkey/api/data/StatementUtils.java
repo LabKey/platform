@@ -25,7 +25,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.etl.SimpleTranslator;
+import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
@@ -73,7 +73,7 @@ public class StatementUtils
     private Set<String> _keyColumnNames = null;       // override the primary key of _table
     private Set<String> _skipColumnNames = null;
     private Set<String> _dontUpdateColumnNames = null;
-    private boolean _updateBuiltInColumns = false;      // default to false, this should usually be handled by StandardETL
+    private boolean _updateBuiltInColumns = false;      // default to false, this should usually be handled by StandardDataIteratorBuilder
     private boolean _selectIds = false;
     private boolean _allowUpdateAutoIncrement = false;
     private boolean _allowInsertByLookupDisplayValue = false;

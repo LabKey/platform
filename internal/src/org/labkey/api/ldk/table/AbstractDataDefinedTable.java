@@ -24,11 +24,11 @@ import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.etl.DataIterator;
-import org.labkey.api.etl.DataIteratorBuilder;
-import org.labkey.api.etl.DataIteratorContext;
-import org.labkey.api.etl.LoggingDataIterator;
-import org.labkey.api.etl.SimpleTranslator;
+import org.labkey.api.dataiterator.DataIterator;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.LoggingDataIterator;
+import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
@@ -159,7 +159,7 @@ abstract public class AbstractDataDefinedTable extends SimpleUserSchema.SimpleTa
             return super.getRow(user, container, keys);
         }
 
-        //NOTE: this code should never be called, now that we have migrated to ETL
+        //NOTE: this code should never be called, now that we have migrated to DIB
         @Override
         protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {

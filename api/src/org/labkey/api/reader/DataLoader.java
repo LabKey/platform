@@ -33,11 +33,11 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MvUtil;
-import org.labkey.api.etl.DataIterator;
-import org.labkey.api.etl.DataIteratorBuilder;
-import org.labkey.api.etl.DataIteratorContext;
-import org.labkey.api.etl.LoggingDataIterator;
-import org.labkey.api.etl.MapDataIterator;
+import org.labkey.api.dataiterator.DataIterator;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.LoggingDataIterator;
+import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.iterator.CloseableIterator;
@@ -796,7 +796,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     /**
      * It might be nice to go one level lower in the parser
      * (pre conversion, missing value) but this is a quick way to
-     * get all the DataLoaders to play with the newer ETL code
+     * get all the DataLoaders to play with the newer DataIterator code
      * @return null if there was an IOException trying to parse the input
      */
     @Override

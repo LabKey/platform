@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.etl;
+package org.labkey.api.dataiterator;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;

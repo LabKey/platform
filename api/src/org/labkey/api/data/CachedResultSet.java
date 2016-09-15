@@ -21,7 +21,7 @@ import org.apache.commons.collections4.IteratorUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.RowMap;
-import org.labkey.api.etl.DataIterator;
+import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
