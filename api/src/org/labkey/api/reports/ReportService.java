@@ -100,8 +100,14 @@ public class ReportService
         Report getReport(Container c, int reportId);
         Report getReportByEntityId(Container c, String entityId);
 
+        /**
+         * Returns ONLY reports stored in the database (not module reports)
+         */
         Collection<Report> getReports(@Nullable User user, @NotNull Container c);
-        Collection<Report> getReports(User user, Container c, String key);
+        /**
+         * Returns both database reports and module reports
+         */
+        Collection<Report> getReports(@Nullable User user, @NotNull Container c, @Nullable String key);
 
         // update the data views display order for this report
         void setReportDisplayOrder(ContainerUser context, Report report, int displayOrder);
