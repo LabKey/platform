@@ -54,6 +54,7 @@ import org.labkey.api.reports.report.DbReportIdentifier;
 import org.labkey.api.reports.report.ModuleQueryJavaScriptReportDescriptor;
 import org.labkey.api.reports.report.ModuleQueryRReportDescriptor;
 import org.labkey.api.reports.report.ModuleQueryReportDescriptor;
+import org.labkey.api.reports.report.ModuleReportDescriptor;
 import org.labkey.api.reports.report.ReportDB;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
@@ -103,7 +104,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
@@ -118,10 +118,14 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
     private static final List<UIProvider> _uiProviders = new CopyOnWriteArrayList<>();
     private static final Map<String, UIProvider> _typeToProviderMap = new ConcurrentHashMap<>();
 
-    /** maps descriptor types to providers */
+    /**
+     * maps descriptor types to providers
+     */
     private final Map<String, Class> _descriptors = new ConcurrentHashMap<>();
 
-    /** maps report types to implementations */
+    /**
+     * maps report types to implementations
+     */
     private final Map<String, Class> _reports = new ConcurrentHashMap<>();
 
     private final static ReportServiceImpl INSTANCE = new ReportServiceImpl();
@@ -188,51 +192,6 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
     }
 
     @NotNull
-    private List<ReportDescriptor> getAllModuleReportDescriptors(Module module, Container container, User user)
-    {
-        Set<Resource> reportFiles = module.getReportFiles();
-
-        ArrayList<ReportDescriptor> list = new ArrayList<>(reportFiles.size());
-
-        // Keep files that might be Query reports (end in .xml);
-        // below we'll remove ones that are associated with R or JS reports
-        HashMap<String, Resource> possibleQueryReportFiles = new HashMap<>();
-        reportFiles
-            .stream()
-            .filter(file -> StringUtils.endsWithIgnoreCase(file.getName(), ModuleQueryReportDescriptor.FILE_EXTENSION))
-            .forEach(file -> possibleQueryReportFiles.put(file.getName(), file));
-
-        for (Resource file : reportFiles)
-        {
-            if (!DefaultModule.moduleReportFilter.accept(null, file.getName()))
-                continue;
-
-            ReportDescriptor descriptor = module.getCachedReport(file.getPath());
-            if ((null == descriptor || descriptor.isStale()) && file.exists())
-            {
-                // NOTE: reportKeyToLegalFile() is not a two-way mapping, this can cause inconsistencies
-                // so don't cache files with _ (underscore) in path
-                descriptor = createModuleReportDescriptorInstance(module, file, container, user);
-                if (!file.getPath().toString().contains("_"))
-                    module.cacheReport(file.getPath(), descriptor);
-            }
-
-            if (null != descriptor)
-            {
-                descriptor.setContainer(container.getId());
-                list.add(descriptor);
-                if (null != descriptor.getMetaDataFile())
-                    possibleQueryReportFiles.remove(descriptor.getMetaDataFile().getName());
-            }
-        }
-
-        // Anything left in this map should be a Query Report
-        list.addAll(getDescriptorsHelper(possibleQueryReportFiles.values(), module, container, user));
-
-        return list;
-    }
-
-    @NotNull
     public List<ReportDescriptor> getModuleReportDescriptors(Module module, Container container, User user, @Nullable String path)
     {
         if (module.getReportFiles().isEmpty())
@@ -241,7 +200,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         }
         else if (null == path)
         {
-            return getAllModuleReportDescriptors(module, container, user);
+            return getReportDescriptors(module.getReportFiles(), module, container, user);
         }
 
         Path legalPath = Path.parse(path);
@@ -284,78 +243,67 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             reportDirectory = module.getModuleResource(reportDirectory.getPath().getParent());
         }
 
-        HashMap<String, Resource> possibleQueryReportFiles = new HashMap<>();
-        reportDirectory.list().stream().filter(file -> StringUtils.endsWithIgnoreCase(file.getName(), ModuleQueryReportDescriptor.FILE_EXTENSION))
-            .forEach(file -> possibleQueryReportFiles.put(file.getName(), file));
+        List<ReportDescriptor> reportDescriptors = getReportDescriptors(reportDirectory.list(), module, container, user);
 
-        List<ReportDescriptor> reportDescriptors = new ArrayList<>();
-        ReportDescriptor descriptor;
-        for (Resource file : reportDirectory.list())
+        for (ReportDescriptor descriptor : reportDescriptors)
+        {
+            if (((ModuleReportDescriptor) descriptor).getReportPath().getName().equals(legalPath.getName()))
+                return Collections.singletonList(descriptor);
+        }
+
+        return reportDescriptors;
+    }
+
+    private static List<ReportDescriptor> getReportDescriptors(Collection<? extends Resource> reportFiles, Module module, Container container, User user)
+    {
+        reportFiles = reportFiles.stream().filter(Resource::exists).collect(Collectors.toList());
+
+        // Keep files that might be Query reports (end in .xml);
+        // below we'll remove ones that are associated with R or JS reports
+        HashMap<String, Resource> possibleQueryReportFiles = new HashMap<>();
+        reportFiles
+                .stream()
+                .filter(file -> StringUtils.endsWithIgnoreCase(file.getName(), ModuleQueryReportDescriptor.FILE_EXTENSION))
+                .forEach(file -> possibleQueryReportFiles.put(file.getName(), file));
+
+        List<ReportDescriptor> reportDescriptors = new ArrayList<>(reportFiles.size());
+
+        for (Resource file : reportFiles)
         {
             if (!DefaultModule.moduleReportFilter.accept(null, file.getName()))
                 continue;
 
-            descriptor = module.getCachedReport(file.getPath());
-
-            // cache miss
-            if (null == descriptor || descriptor.isStale())
-            {
-                descriptor = createModuleReportDescriptorInstance(module, file, container, user);
-
-                // NOTE: getLegalFilePath() is not a two-way mapping, this can cause inconsistencies
-                // so don't cache files with _ (underscore) in path
-                if (!file.getPath().toString().contains("_"))
-                    module.cacheReport(file.getPath(), descriptor);
-            }
-
-            descriptor.setContainer(container.getId());
-
-            // Return one file
-            if (legalPath.getName().equals(file.getPath().getName()))
-            {
-                reportDescriptors.clear();
-                reportDescriptors.add(descriptor);
-                return reportDescriptors;
-            }
+            ReportDescriptor descriptor = getReportDescriptor(module, file, container, user);
+            reportDescriptors.add(descriptor);
 
             if (null != descriptor.getMetaDataFile())
                 possibleQueryReportFiles.remove(descriptor.getMetaDataFile().getName());
-
-            reportDescriptors.add(descriptor);
         }
 
         // Anything left in this map should be a Query Report
-        for (Resource file : possibleQueryReportFiles.values())
-        {
-            descriptor = module.getCachedReport(file.getPath());
-
-            // cache miss
-            if (null == descriptor || descriptor.isStale())
-            {
-                descriptor = createModuleReportDescriptorInstance(module, file, container, user);
-
-                // NOTE: getLegalFilePath() is not a two-way mapping, this can cause inconsistencies
-                // so don't cache files with _ (underscore) in path
-                if (!file.getPath().toString().contains("_"))
-                    module.cacheReport(file.getPath(), descriptor);
-            }
-
-            // TODO: Make a copy of the cached ReportDescriptor rather than setting the container
-            // as this does not hold up in race conditions.
-            descriptor.setContainer(container.getId());
-
-            // Return one file
-            if (legalPath.getName().equals(file.getPath().getName()))
-            {
-                reportDescriptors.clear();
-                reportDescriptors.add(descriptor);
-                return reportDescriptors;
-            }
-
-            reportDescriptors.add(descriptor);
-        }
+        possibleQueryReportFiles.values().forEach(file -> reportDescriptors.add(getReportDescriptor(module, file, container, user)));
 
         return reportDescriptors;
+    }
+
+    private static ReportDescriptor getReportDescriptor(Module module, Resource file, Container container, User user)
+    {
+        ReportDescriptor descriptor = module.getCachedReport(file.getPath());
+
+        // cache miss
+        if (null == descriptor || descriptor.isStale())
+        {
+            descriptor = createModuleReportDescriptorInstance(module, file, container, user);
+
+            // NOTE: getLegalFilePath() is not a two-way mapping, this can cause inconsistencies
+            // so don't cache files with _ (underscore) in path
+            if (!file.getPath().toString().contains("_"))
+                module.cacheReport(file.getPath(), descriptor);
+        }
+
+        descriptor.setContainer(container.getId());
+
+        return descriptor;
     }
 
     // TODO: Temporary... for verification of module report caching changes
@@ -381,35 +329,6 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         }
 
         return false;
-    }
-
-    @NotNull
-    private static List<ReportDescriptor> getDescriptorsHelper(Collection<? extends Resource> files, Module module, Container container, User user)
-    {
-        List<ReportDescriptor> list = new ArrayList<>();
-        ReportDescriptor descriptor;
-
-        for (Resource file : files)
-        {
-            descriptor = module.getCachedReport(file.getPath());
-
-            // cache miss
-            if (null == descriptor || descriptor.isStale())
-            {
-                descriptor = createModuleReportDescriptorInstance(module, file, container, user);
-
-                // NOTE: getLegalFilePath() is not a two-way mapping, this can cause inconsistencies
-                // so don't cache files with _ (underscore) in path
-                if (!file.getPath().toString().contains("_"))
-                    module.cacheReport(file.getPath(), descriptor);
-            }
-
-            descriptor.setContainer(container.getId());
-
-            list.add(descriptor);
-        }
-
-        return list;
     }
 
     @NotNull
@@ -776,12 +695,9 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
     {
         List<ReportDescriptor> moduleReportDescriptors = new ArrayList<>();
 
-        List<ReportDescriptor> descriptors;
         for (Module module : c.getActiveModules())
         {
-            descriptors = getModuleReportDescriptors(module, c, user, key);
-//            descriptors = module.getReportDescriptors(key, c, user);
-            moduleReportDescriptors.addAll(descriptors);
+            moduleReportDescriptors.addAll(getModuleReportDescriptors(module, c, user, key));
         }
 
         List<Report> reports = new ArrayList<>();
@@ -837,7 +753,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         return getSortedReadableReports(reportsList, user);
     }
 
-    private Collection<Report> getSortedReadableReports(List<Report> reports, @Nullable User user)
+    private static Collection<Report> getSortedReadableReports(List<Report> reports, @Nullable User user)
     {
         List<Report> readableReports;
 
