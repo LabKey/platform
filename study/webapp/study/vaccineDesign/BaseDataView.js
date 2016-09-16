@@ -13,7 +13,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
 
     studyDesignQueryNames : null,
 
-    // for a dataspace project, some scenarios don't make sense to allow insert/update
+    // for a DataSpace project, some scenarios don't make sense to allow insert/update
     disableEdit : false,
 
     DELETE_ICON_CLS : 'fa fa-trash',
@@ -22,14 +22,14 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
     constructor : function(config)
     {
         this.callParent([config]);
-        this.addEvents('dirtychange');
+        this.addEvents('dirtychange', 'loadcomplete', 'celledited', 'beforerowdeleted');
     },
 
     initComponent : function()
     {
         this.items = [
-            this.getMainTitle(),
-            this.getDataView()
+            this.getMainTitle()
+            // Note: this.getDataView() will be added after the store loads in this.loadDataViewStore()
         ];
 
         // Pre-load the study design lookup queries that will be used in dropdowns for this page.
@@ -46,13 +46,13 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
                     loadCounter++;
 
                     if (loadCounter == this.studyDesignQueryNames.length)
-                        this.bindDataViewStore();
+                        this.loadDataViewStore();
                 }, this);
             }, this);
         }
         else
         {
-            this.bindDataViewStore();
+            this.loadDataViewStore();
         }
 
         this.callParent();
@@ -74,10 +74,9 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
     {
         if (!this.dataView)
         {
-            // NOTE: store will bind in this.bindDataViewStore()
             this.dataView = Ext4.create('Ext.view.View', {
-                hidden: true,
                 tpl: this.getDataViewTpl(),
+                store: this.getStore(),
                 itemSelector: 'tr.row'
             });
 
@@ -92,7 +91,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
     {
         var tplArr = [],
             tdCls = this.disableEdit ? 'cell-display' : 'cell-value',
-            columns = this.getColumnConfig();
+            columns = this.getColumnConfigs();
 
         tplArr.push('<table class="outer">');
         tplArr = tplArr.concat(this.getTableHeaderRowTpl(columns));
@@ -120,9 +119,20 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
                             + '{[this.getLabelFromStore(values["' + column.dataIndex + '"], "' + column.queryName + '")]}'
                             + '</td>');
                 }
+                else if (Ext4.isString(column.lookupStoreId) && Ext4.isDefined(column.dataIndexArrFilterValue))
+                {
+                    tplArr.push('<td class="' + tdCls + checkMissingReqTpl + '" data-index="' + column.dataIndex
+                            + '" data-filter-value="' + column.dataIndexArrFilterValue + '">'
+                            + '{[this.getDisplayValue(values["' + column.dataIndex + '"], '
+                            + '"' + column.dataIndexArrFilterProp + '", "' + column.dataIndexArrFilterValue + '", '
+                            + '"' + column.dataIndexArrValue + '", "' + column.lookupStoreId + '")]}'
+                            + '</td>');
+                }
                 else
                 {
-                    tplArr.push('<td class="' + tdCls + checkMissingReqTpl + '" data-index="' + column.dataIndex + '">{' + column.dataIndex + ':htmlEncode}</td>');
+                    tplArr.push('<td class="' + tdCls + checkMissingReqTpl + '" data-index="' + column.dataIndex + '">'
+                            + '{[this.getDisplayValue(values["' + column.dataIndex + '"])]}'
+                            + '</td>');
                 }
             }
         }, this);
@@ -134,15 +144,48 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
         tplArr.push('</table>');
 
         tplArr.push({
-            getLabelFromStore : function(val, queryName) {
+            getDisplayValue : function(val, arrPropFilterName, arrPropFilterVal, arrPropDisplayField, lookupStoreId)
+            {
+                // allow showing a certain filtered row from an array
+                if (Ext4.isDefined(arrPropDisplayField))
+                {
+                    var matchingIndex = LABKEY.VaccineDesign.Utils.getMatchingRowIndexFromArray(val, arrPropFilterName, arrPropFilterVal);
+                    if (matchingIndex > -1 && Ext4.isObject(val[matchingIndex]))
+                        val = val[matchingIndex][arrPropDisplayField];
+                    else
+                        val = '';
+                }
+
+                // if we have a specific lookupStoreId, get the label value from the matching RowId record in that store
+                if (Ext4.isDefined(lookupStoreId) && val != null && val != '')
+                {
+                    var store = Ext4.getStore(lookupStoreId);
+                    if (store != null)
+                    {
+                        var record = store.findRecord('RowId', val);
+                        if (record != null)
+                            val = record.get('Label');
+                    }
+                }
+
+                // need to htmlEncode and then handle newlines in multiline text fields (i.e. Treatment/Description)
+                val = Ext4.util.Format.htmlEncode(val);
+                val = val.replace(/\n/g, '<br/>');
+
+                return val;
+            },
+
+            getLabelFromStore : function(val, queryName)
+            {
                 if (val != null && val != '')
                     val = LABKEY.VaccineDesign.Utils.getLabelFromStore(queryName, val);
 
                 return Ext4.util.Format.htmlEncode(val);
             },
 
-            checkMissingRequired : function(values, dataIndex) {
-                if (Ext4.isDefined(values['RowId']) && (values[dataIndex] == null || values[dataIndex] == ''))
+            checkMissingRequired : function(values, dataIndex)
+            {
+                if (values[dataIndex] == null || values[dataIndex] == '')
                     return ' missing-required';
 
                 return '';
@@ -162,7 +205,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
         // only show the subgrid if we are allowing edits of if it has at least one row
         tplArr.push('<tpl if="' + dataIndex + '.length &gt; 0 || ' + !this.disableEdit + '">');
 
-        tplArr.push('<table class="subgrid" width="100%">');
+        tplArr.push('<table class="subgrid subgrid-' + dataIndex + '" width="100%">');
         tplArr = tplArr.concat(this.getTableHeaderRowTpl(columns));
 
         // data rows
@@ -296,24 +339,25 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
     createNewCellEditField : function(target, record, index)
     {
         var dataIndex = target.getAttribute('data-index'),
+            dataFilterValue = target.getAttribute('data-filter-value'),
             outerDataIndex = target.getAttribute('outer-data-index'),
             subgridIndex = Number(target.getAttribute('subgrid-index')),
-            editor = this.getColumnEditorConfig(dataIndex, outerDataIndex);
+            column = this.getColumnConfig(dataIndex, dataFilterValue, outerDataIndex),
+            editor = this.getColumnEditorConfig(column);
 
         if (editor != null)
         {
-            var currentValue = Ext4.isString(outerDataIndex)
-                    ? record.get(outerDataIndex)[subgridIndex][dataIndex]
-                    : record.get(dataIndex);
-
-            // clear the existing HTML in the td cell
-            Ext4.get(target).update('');
+            // clear the existing HTML in the td cell and remove the missing-required cls while in edit mode
+            var targetEl = Ext4.get(target);
+            targetEl.update('');
+            targetEl.removeCls('missing-required');
 
             // create a new form field to place in the td cell
             this.cellEditField = Ext4.create(editor.type, Ext4.apply(editor.config, {
                 renderTo: target,
-                value: currentValue,
+                value: this.getCurrentCellValue(column, record, dataIndex, outerDataIndex, subgridIndex),
                 storeIndex: index,
+                dataFilterValue: dataFilterValue,
                 outerDataIndex: outerDataIndex,
                 subgridIndex: subgridIndex
             }));
@@ -328,6 +372,11 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
         }
     },
 
+    getCurrentCellValue : function(column, record, dataIndex, outerDataIndex, subgridIndex)
+    {
+        return Ext4.isString(outerDataIndex) ? record.get(outerDataIndex)[subgridIndex][dataIndex] : record.get(dataIndex);
+    },
+
     updateStoreValueForCellEdit : function()
     {
         if (this.cellEditField != null)
@@ -336,6 +385,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
                 newValue = this.cellEditField.getValue(),
                 index = this.cellEditField.storeIndex,
                 record = this.getStore().getAt(index),
+                dataFilterValue = this.cellEditField.dataFilterValue,
                 outerDataIndex = this.cellEditField.outerDataIndex,
                 subgridIndex = Number(this.cellEditField.subgridIndex);
 
@@ -345,11 +395,20 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
                     record.get(outerDataIndex)[subgridIndex][fieldName] = newValue;
             }
             else
-                record.set(fieldName, newValue);
+            {
+                var column = this.getColumnConfig(fieldName, dataFilterValue, outerDataIndex);
+                this.updateStoreRecordValue(record, column, newValue);
+            }
 
             this.cellEditField = null;
             this.refresh(true);
         }
+    },
+
+    updateStoreRecordValue : function(record, column, newValue)
+    {
+        record.set(column.dataIndex, newValue);
+        this.fireEvent('celledited', this);
     },
 
     removeOuterRecord : function(title, record)
@@ -360,6 +419,8 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
         {
             if (btn == 'yes')
             {
+                this.fireEvent('beforerowdeleted', this, record);
+
                 // suspend events on remove so that we don't re-render the dataview twice
                 this.getStore().suspendEvents();
                 this.getStore().remove(record);
@@ -434,7 +495,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
             // on refresh, call to give focus to the first column of the new row
             this.getDataView().on('refresh', function(){
                 var index = rowIndex,
-                    selector = 'table.subgrid:nth(' + (rowIndex+1) + ') tr.subrow:last td.cell-value:first';
+                    selector = 'table.subgrid-' + dataIndex + ':nth(' + (rowIndex+1) + ') tr.subrow:last td.cell-value:first';
                 this.giveLastRowFocus(index, selector);
             }, this, {single: true});
 
@@ -459,9 +520,9 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
             this.fireEvent('dirtychange', this);
     },
 
-    getColumnEditorConfig : function(dataIndex, parentDataIndex)
+    getColumnConfig : function(dataIndex, dataFilterValue, parentDataIndex)
     {
-        var editor = null, columns = this.getColumnConfig();
+        var columns = this.getColumnConfigs(), matchingColumn = null;
 
         // if the parentDataIndex is defined, then we are looking for the subgrid column editor config
         if (Ext4.isString(parentDataIndex))
@@ -475,35 +536,36 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
 
         Ext4.each(columns, function(column)
         {
-            if (column.dataIndex == dataIndex && column.hasOwnProperty('editorType') && column.hasOwnProperty('editorConfig'))
+            if (column.dataIndex == dataIndex && (!Ext4.isDefined(dataFilterValue) || column.dataIndexArrFilterValue == dataFilterValue))
             {
-                editor = {
-                    type: column.editorType,
-                    config: column.editorConfig
-                };
-
+                matchingColumn = column;
                 return false; // break;
             }
         }, this);
 
-        return editor;
+        return matchingColumn;
     },
 
-    bindDataViewStore : function()
+    getColumnEditorConfig : function(column)
     {
-        this.getDataView().bindStore(this.getStore());
-        this.getDataView().show();
+        if (column != null && column.hasOwnProperty('editorType') && column.hasOwnProperty('editorConfig'))
+        {
+            return {
+                type: column.editorType,
+                config: Ext4.isFunction(column.editorConfig) ? column.editorConfig.call(this) : column.editorConfig
+            };
+        }
+
+        return null;
     },
 
-    onFailure : function(text)
+    loadDataViewStore : function()
     {
-        Ext4.Msg.show({
-            cls: 'data-window',
-            title: 'Error',
-            msg: text || 'Unknown error occurred.',
-            icon: Ext4.Msg.ERROR,
-            buttons: Ext4.Msg.OK
-        });
+        // since some tables might need information from the store, wait to add the data view until the store loads
+        this.getStore().on('load', function() {
+            this.add(this.getDataView());
+            this.fireEvent('loadcomplete', this);
+        }, this, {single: true});
     },
 
     getStore : function()
@@ -516,9 +578,9 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
         throw "getNewModelInstance must be overridden in subclass";
     },
 
-    getColumnConfig : function()
+    getColumnConfigs : function()
     {
-        throw "getColumnConfig must be overridden in subclass";
+        throw "getColumnConfigs must be overridden in subclass";
     },
 
     getDeleteConfirmationMsg : function()

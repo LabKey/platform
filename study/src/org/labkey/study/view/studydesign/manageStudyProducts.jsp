@@ -47,118 +47,12 @@
 <script type="text/javascript">
     Ext4.onReady(function()
     {
-        configureStudyProductGrids();
-        configureMenu();
-    });
-
-    var configureStudyProductGrids = function()
-    {
-        var immunogensGrid = Ext4.create('LABKEY.VaccineDesign.ImmunogensGrid', {
-            renderTo : 'immunogens-grid',
-            studyDesignQueryNames : ['StudyDesignImmunogenTypes', 'StudyDesignGenes', 'StudyDesignSubTypes'],
-            disableEdit : <%=isDataspaceStudy%>
+        Ext4.create('LABKEY.VaccineDesign.StudyProductsPanel', {
+            renderTo : 'study-products-panel',
+            disableEdit : <%=isDataspaceStudy%>,
+            returnURL : <%=q(returnUrl)%>
         });
 
-        var adjuvantsGrid = Ext4.create('LABKEY.VaccineDesign.AdjuvantsGrid', {
-            renderTo : 'adjuvants-grid',
-            disableEdit : <%=isDataspaceStudy%>
-        });
-
-        var saveBtn = Ext4.create('Ext.button.Button', {
-            renderTo : 'save-btn',
-            width: 75,
-            text: 'Save',
-            disabled: true,
-            hidden: <%=isDataspaceStudy%>,
-            handler: function()
-            {
-                immunogensGrid.getEl().mask('Saving...');
-                adjuvantsGrid.getEl().mask('Saving...');
-                saveBtn.disable();
-                cancelBtn.disable();
-
-                var studyProducts = [];
-                Ext4.each(immunogensGrid.getStore().getRange(), function(record)
-                {
-                    // drop any empty rows that were just added
-                    if (Ext4.isDefined(record.get('RowId')) || record.get('Label') != '' || record.get('Type') != '' || record.get('Antigens').length > 0)
-                    {
-                        var recData = record.data;
-
-                        // drop and empty antigen rows that were just added
-                        var antigenArr = [];
-                        Ext4.each(recData['Antigens'], function(antigen)
-                        {
-                            var hasNonNull = false;
-                            Ext4.Object.each(antigen, function(key, value){
-                                if (value != null && value != '')
-                                {
-                                    hasNonNull = true;
-                                    return false;
-                                }
-                            });
-
-                            if (Ext4.isDefined(antigen['RowId']) || hasNonNull)
-                                antigenArr.push(antigen);
-                        });
-                        recData['Antigens'] = antigenArr;
-
-                        studyProducts.push(recData);
-                    }
-                });
-                Ext4.each(adjuvantsGrid.getStore().getRange(), function(record)
-                {
-                    // drop any empty rows that were just added
-                    if (Ext4.isDefined(record.get('RowId')) || record.get('Label') != '')
-                        studyProducts.push(record.data);
-                });
-
-                LABKEY.Ajax.request({
-                    url     : LABKEY.ActionURL.buildURL('study-design', 'updateStudyProducts.api'),
-                    method  : 'POST',
-                    jsonData: {
-                        products: studyProducts
-                    },
-                    success: function(response)
-                    {
-                        var resp = Ext4.decode(response.responseText);
-                        if (resp.success)
-                            window.location = <%=q(returnUrl)%>;
-                        else
-                            immunogensGrid.onFailure("Unknown failure updating study products.");
-                    },
-                    failure: function(response)
-                    {
-                        var resp = Ext4.decode(response.responseText);
-                        immunogensGrid.onFailure(resp.exception);
-
-                        immunogensGrid.getEl().unmask();
-                        adjuvantsGrid.getEl().unmask();
-                        saveBtn.enable();
-                        cancelBtn.enable();
-                    },
-                    scope   : this
-                });
-            }
-        });
-
-        var cancelBtn = Ext4.create('Ext.button.Button', {
-            renderTo : 'cancel-btn',
-            width: 75,
-            margin: <%=q(isDataspaceStudy ? "0" : "0 0 0 10px")%>,
-            text: <%=q(isDataspaceStudy ? "Done" : "Cancel")%>,
-            handler: function() {
-                window.location = <%=q(returnUrl)%>;
-            }
-        });
-
-        // TODO handle listener for page nav to check for dirty state
-        immunogensGrid.on('dirtychange', function() { saveBtn.enable(); });
-        adjuvantsGrid.on('dirtychange', function() { saveBtn.enable(); });
-    };
-
-    var configureMenu = function()
-    {
         var projectMenu = null;
         if (LABKEY.container.type != "project")
         {
@@ -207,7 +101,7 @@
             renderTo: 'config-dropdown-menu',
             menu: projectMenu ? {items: [projectMenu, folderMenu]} : folderMenu.menu
         });
-    };
+    });
 </script>
 
 Enter vaccine design information in the grids below.
@@ -230,10 +124,4 @@ Enter vaccine design information in the grids below.
         </li>
     </ul>
 </div>
-<div id="immunogens-grid"></div>
-<br/>
-<div id="adjuvants-grid"></div>
-<br/>
-<span id="save-btn"></span>
-<span id="cancel-btn"></span>
-
+<div id="study-products-panel"></div>

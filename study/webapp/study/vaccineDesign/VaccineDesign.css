@@ -16,9 +16,10 @@
 
 .study-vaccine-design td.cell-display,
 .study-vaccine-design td.cell-value {
-    padding: 3px 5px;
+    padding: 5px;
     border: solid 1px #DDDDDD;
     height: 30px;
+    vertical-align: top;
 }
 
 .study-vaccine-design table.subgrid td {

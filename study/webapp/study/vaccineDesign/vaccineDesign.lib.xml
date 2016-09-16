@@ -4,6 +4,7 @@
         <script path="/study/vaccineDesign/Models.js"/>
         <script path="/study/vaccineDesign/BaseDataView.js"/>
         <script path="/study/vaccineDesign/StudyProducts.js"/>
+        <script path="/study/vaccineDesign/TreatmentSchedule.js"/>
     </library>
     <dependencies>
         <dependency path="Ext4ClientApi"/>
