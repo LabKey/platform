@@ -36,7 +36,7 @@ public class DimensionPieChartAnalyticsProvider extends ColumnAnalyticsProvider
     @Override
     public boolean isApplicable(@NotNull ColumnInfo col)
     {
-        return !col.getSqlTypeName().equalsIgnoreCase("entityid");
+        return !"entityid".equalsIgnoreCase(col.getSqlTypeName());
     }
 
     @Override

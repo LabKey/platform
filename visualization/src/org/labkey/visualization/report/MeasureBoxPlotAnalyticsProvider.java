@@ -36,10 +36,9 @@ public class MeasureBoxPlotAnalyticsProvider extends ColumnAnalyticsProvider
     @Override
     public boolean isApplicable(@NotNull ColumnInfo col)
     {
-        return col.isNumericType() &&
-                !col.isLookup() &&
-                !col.getSqlTypeName().equalsIgnoreCase("serial") &&
-                !col.getSqlTypeName().equalsIgnoreCase("entityid");
+        return col.isNumericType() && !col.isLookup()
+            && !"serial".equalsIgnoreCase(col.getSqlTypeName())
+            && !"entityid".equalsIgnoreCase(col.getSqlTypeName());
     }
 
     @Override
