@@ -17,6 +17,7 @@ package org.labkey.study;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NullColumnInfo;
@@ -139,36 +140,41 @@ public class StudyUnionTableInfo extends VirtualTable
             }
 
             // Add all of the properties that are common to all datasets
+            Set<String> addedProperties = new CaseInsensitiveHashSet();
             for (PropertyDescriptor pd : sharedProperties)
             {
-                ColumnInfo col = ti.getColumn(pd.getName());
-                if (col != null)
+                // Avoid double-adding columns with the same name but different property descriptors
+                if (addedProperties.add(pd.getName()))
                 {
-                    sqlf.append(", ").append(col.getValueSql("D"));
-                }
-                else
-                {
-                    // in at least Postgres, it isn't legal to union two columns where one is NULL and the other is
-                    // numeric. It's OK when the other column is text.
-                    String empty;
-                    switch (pd.getSqlTypeInt())
+                    ColumnInfo col = ti.getColumn(pd.getName());
+                    if (col != null)
                     {
-                        case Types.BIGINT:
-                        case Types.INTEGER:
-                        case Types.NUMERIC:
-                        case Types.DOUBLE:
-                        case Types.DECIMAL:
-                        case Types.FLOAT:
-                        case Types.TIMESTAMP:
-                        case Types.TIME:
-                        case Types.DATE:
-                            empty = "CAST(NULL AS " + getSqlDialect().sqlTypeNameFromSqlType(pd.getSqlTypeInt()) + ")";
-                            break;
-                        default:
-                            empty = "NULL";
+                        sqlf.append(", ").append(col.getValueSql("D"));
                     }
+                    else
+                    {
+                        // in at least Postgres, it isn't legal to union two columns where one is NULL and the other is
+                        // numeric. It's OK when the other column is text.
+                        String empty;
+                        switch (pd.getSqlTypeInt())
+                        {
+                            case Types.BIGINT:
+                            case Types.INTEGER:
+                            case Types.NUMERIC:
+                            case Types.DOUBLE:
+                            case Types.DECIMAL:
+                            case Types.FLOAT:
+                            case Types.TIMESTAMP:
+                            case Types.TIME:
+                            case Types.DATE:
+                                empty = "CAST(NULL AS " + getSqlDialect().sqlTypeNameFromSqlType(pd.getSqlTypeInt()) + ")";
+                                break;
+                            default:
+                                empty = "NULL";
+                        }
 
-                    sqlf.append(String.format(", %s AS %s", empty, getSqlDialect().makeLegalIdentifier(pd.getName())));
+                        sqlf.append(String.format(", %s AS %s", empty, getSqlDialect().makeLegalIdentifier(pd.getName())));
+                    }
                 }
             }
 
