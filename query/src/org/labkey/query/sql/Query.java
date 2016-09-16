@@ -453,6 +453,11 @@ public class Query
         return _parseWarnings;
     }
 
+    public void reportError(String error)
+    {
+        _parseErrors.add(new QueryParseException(error, null, 0, 0));
+    }
+
     public void reportWarning(String warning)
     {
         _parseWarnings.add(new QueryParseWarning(warning, null, 0, 0));

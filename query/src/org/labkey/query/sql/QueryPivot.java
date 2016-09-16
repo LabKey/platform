@@ -20,7 +20,26 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.NamedObjectList;
-import org.labkey.api.data.*;
+import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.AggregateColumnInfo;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.CrosstabDimension;
+import org.labkey.api.data.CrosstabMeasure;
+import org.labkey.api.data.CrosstabMember;
+import org.labkey.api.data.CrosstabSettings;
+import org.labkey.api.data.CrosstabTableInfo;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.NullColumnInfo;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.query.AliasManager;
@@ -671,9 +690,38 @@ public class QueryPivot extends QueryRelation
                 continue;
             }
 
+            // Add aggregate around summary columns -- the non-key and non-pivoted-aggregates
             if (!isAgg)
             {
-                sql.append(comma).append("MAX(").append(col.getValueSql()).append(") AS ").append(col.getAlias());
+                String wrappedAgg = "MAX";
+                if (col instanceof QuerySelect.SelectColumn && ((QuerySelect.SelectColumn)col)._field instanceof QAggregate)
+                {
+                    QAggregate aggregate = (QAggregate)((QuerySelect.SelectColumn)col)._field;
+                    switch (aggregate.getType())
+                    {
+                        case COUNT:
+                        case SUM:
+                            wrappedAgg = "SUM";
+                            break;
+                        case MIN:
+                            wrappedAgg = "MIN";
+                            break;
+                        case MAX:
+                            wrappedAgg = "MAX";
+                            break;
+                        case AVG:
+                        case STDDEV:
+                        case STDERR:
+                        case GROUP_CONCAT:
+                        default:
+                            // illegal
+                            _query.reportError("Can't use '" + aggregate.getType().name() + "' in summary column '" + ((QuerySelect.SelectColumn) col).getName() + "'.  " +
+                                    "Either remove this column from the select list; change the aggregate to SUM, MIN, MAX; or add this column to the GROUP BY or PIVOT BY column set.");
+                            break;
+                    }
+                }
+
+                sql.append(comma).append(wrappedAgg).append("(").append(col.getValueSql()).append(") AS ").append(col.getAlias());
                 comma = ",\n";
                 continue;
             }
