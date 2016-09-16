@@ -83,8 +83,7 @@
             ActionURL editUrl = new ActionURL(StudyDesignController.ManageTreatmentsAction.class, getContainer());
             editUrl.addReturnURL(getActionURL());
 %>
-            To change the set of groups/cohorts and edit the immunization schedule, click the edit button below.<br/>
-            <%= button("Edit").href(editUrl) %>
+            <%=textLink("Manage Treatments", editUrl)%><br/>
 <%
         }
 

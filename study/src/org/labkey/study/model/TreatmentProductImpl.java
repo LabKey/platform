@@ -15,6 +15,8 @@
  */
 package org.labkey.study.model;
 
+import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.study.TreatmentProduct;
 
@@ -104,6 +106,16 @@ public class TreatmentProductImpl implements TreatmentProduct
         _route = route;
     }
 
+    public Container getContainer()
+    {
+        return _container;
+    }
+
+    public void setContainer(Container container)
+    {
+        _container = container;
+    }
+
     public Map<String, Object> serialize()
     {
         Map<String, Object> props = new HashMap<>();
@@ -115,13 +127,18 @@ public class TreatmentProductImpl implements TreatmentProduct
         return props;
     }
 
-    public Container getContainer()
+    public static TreatmentProductImpl fromJSON(@NotNull JSONObject o, Container container)
     {
-        return _container;
-    }
+        TreatmentProductImpl treatmentProduct = new TreatmentProductImpl();
+        treatmentProduct.setDose(o.getString("Dose"));
+        treatmentProduct.setRoute(o.getString("Route"));
+        if (o.containsKey("ProductId") && o.get("ProductId") instanceof Integer)
+            treatmentProduct.setProductId(o.getInt("ProductId"));
+        if (o.containsKey("TreatmentId") && o.get("TreatmentId") instanceof Integer)
+            treatmentProduct.setTreatmentId(o.getInt("TreatmentId"));
+        if (o.containsKey("RowId"))
+            treatmentProduct.setRowId(o.getInt("RowId"));
 
-    public void setContainer(Container container)
-    {
-        _container = container;
+        return treatmentProduct;
     }
 }

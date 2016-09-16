@@ -15,6 +15,8 @@
  */
 package org.labkey.study.model;
 
+import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.study.TreatmentVisitMap;
 
@@ -26,6 +28,7 @@ public class TreatmentVisitMapImpl implements TreatmentVisitMap
 {
     private int _cohortId;
     private int _treatmentId;
+    private String _tempTreatmentId;  // used to map new treatment records used in mappings to the tempRowId in TreatmentImpl
     private int _visitId;
     private Container _container;
 
@@ -53,6 +56,16 @@ public class TreatmentVisitMapImpl implements TreatmentVisitMap
         _treatmentId = treatmentId;
     }
 
+    public String getTempTreatmentId()
+    {
+        return _tempTreatmentId;
+    }
+
+    private void setTempTreatmentId(String tempTreatmentId)
+    {
+        _tempTreatmentId = tempTreatmentId;
+    }
+
     public int getVisitId()
     {
         return _visitId;
@@ -71,5 +84,36 @@ public class TreatmentVisitMapImpl implements TreatmentVisitMap
     public void setContainer(Container container)
     {
         _container = container;
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+
+        final TreatmentVisitMapImpl o = (TreatmentVisitMapImpl) obj;
+
+        return o.getCohortId() == getCohortId()
+                && o.getTreatmentId() == getTreatmentId()
+                && o.getVisitId() == getVisitId()
+                && ((o.getContainer() == null && getContainer() == null) || o.getContainer().equals(getContainer()));
+    }
+
+    public static TreatmentVisitMapImpl fromJSON(@NotNull JSONObject o)
+    {
+        TreatmentVisitMapImpl visitMap = new TreatmentVisitMapImpl();
+        visitMap.setVisitId(o.getInt("VisitId"));
+        if (o.containsKey("CohortId"))
+            visitMap.setCohortId(o.getInt("CohortId"));
+        if (o.containsKey("TreatmentId"))
+        {
+            if (o.get("TreatmentId") instanceof Integer)
+                visitMap.setTreatmentId(o.getInt("TreatmentId"));
+            else
+                visitMap.setTempTreatmentId(o.getString("TreatmentId"));
+        }
+
+        return visitMap;
     }
 }

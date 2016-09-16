@@ -122,7 +122,9 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentSchedulePanel', {
     {
         this.getEl().mask('Saving...');
 
-        var treatments = [], index = 0, errorMsg = [];
+        var treatments = [], cohorts = [],
+            index = 0, errorMsg = [];
+
         Ext4.each(this.getTreatmentsGrid().getStore().getRange(), function(record)
         {
             var recData = Ext4.clone(record.data);
@@ -161,13 +163,43 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentSchedulePanel', {
         if (errorMsg.length > 0)
         {
             this.onFailure(errorMsg.join('<br/>'));
-            this.getEl().unmask();
         }
         else
         {
-            //console.log(treatments);
-            //console.log(this.getTreatmentScheduleGrid().getStore().getRange());
-            this.getEl().unmask();
+            Ext4.each(this.getTreatmentScheduleGrid().getStore().getRange(), function(record)
+            {
+                var recData = Ext4.clone(record.data);
+
+                // drop any empty rows that were just added
+                var hasData = recData['Label'] != '' || recData['SubjectCount'] != '' || recData['VisitMap'].length > 0;
+                if (Ext4.isDefined(recData['RowId']) || hasData)
+                {
+                    cohorts.push(recData);
+                }
+            }, this);
+
+            LABKEY.Ajax.request({
+                url     : LABKEY.ActionURL.buildURL('study-design', 'updateTreatmentSchedule.api'),
+                method  : 'POST',
+                jsonData: {
+                    treatments: treatments,
+                    cohorts: cohorts
+                },
+                scope: this,
+                success: function(response)
+                {
+                    var resp = Ext4.decode(response.responseText);
+                    if (resp.success)
+                        this.goToReturnURL();
+                    else
+                        this.onFailure();
+                },
+                failure: function(response)
+                {
+                    var resp = Ext4.decode(response.responseText);
+                    this.onFailure(resp.exception);
+                }
+            });
         }
     },
 
@@ -185,6 +217,8 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentSchedulePanel', {
             icon: Ext4.Msg.ERROR,
             buttons: Ext4.Msg.OK
         });
+
+        this.getEl().unmask();
     }
 });
 

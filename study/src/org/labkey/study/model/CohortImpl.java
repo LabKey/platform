@@ -15,10 +15,15 @@
  */
 package org.labkey.study.model;
 
+import org.jetbrains.annotations.NotNull;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.exp.Lsid;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -35,6 +40,7 @@ public class CohortImpl extends ExtensibleStudyEntity<CohortImpl> implements Coh
     private boolean _enrolled = true;
     private Integer _subjectCount;
     private String _description;
+    List<TreatmentVisitMapImpl> _treatmentVisitMap;
 
     public Object getPrimaryKey()
     {
@@ -128,5 +134,39 @@ public class CohortImpl extends ExtensibleStudyEntity<CohortImpl> implements Coh
     {
         verifyMutability();
         _description = description;
+    }
+
+    public void setTreatmentVisitMap(List<TreatmentVisitMapImpl> treatmentVisitMap)
+    {
+        _treatmentVisitMap = treatmentVisitMap;
+    }
+
+    public List<TreatmentVisitMapImpl> getTreatmentVisitMap()
+    {
+        return _treatmentVisitMap;
+    }
+
+    public static CohortImpl fromJSON(@NotNull JSONObject o)
+    {
+        CohortImpl cohort = new CohortImpl();
+        cohort.setLabel(o.getString("Label"));
+        if (o.containsKey("SubjectCount") && !"".equals(o.getString("SubjectCount")))
+            cohort.setSubjectCount(o.getInt("SubjectCount"));
+        if (o.containsKey("RowId"))
+            cohort.setRowId(o.getInt("RowId"));
+
+        Object visitMapInfo = o.get("VisitMap");
+        if (visitMapInfo != null && visitMapInfo instanceof JSONArray)
+        {
+            JSONArray visitMapJSON = (JSONArray) visitMapInfo;
+
+            List<TreatmentVisitMapImpl> treatmentVisitMap = new ArrayList<>();
+            for (int j = 0; j < visitMapJSON.length(); j++)
+                treatmentVisitMap.add(TreatmentVisitMapImpl.fromJSON(visitMapJSON.getJSONObject(j)));
+
+            cohort.setTreatmentVisitMap(treatmentVisitMap);
+        }
+
+        return cohort;
     }
 }

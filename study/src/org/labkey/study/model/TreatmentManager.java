@@ -123,6 +123,12 @@ public class TreatmentManager
         return new TableSelector(ti, filter, new Sort("RowId")).getArrayList(ProductAntigenImpl.class);
     }
 
+    public Integer saveTreatment(Container container, User user, TreatmentImpl treatment) throws Exception
+    {
+        TableInfo treatmentTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
+        return saveStudyDesignRow(container, user, treatmentTable, treatment.serialize(), treatment.isNew() ? null : treatment.getRowId(), "RowId");
+    }
+
     public List<TreatmentImpl> getStudyTreatments(Container container, User user)
     {
         SimpleFilter filter = new SimpleFilter();
@@ -155,6 +161,24 @@ public class TreatmentManager
         return treatment;
     }
 
+    public List<TreatmentImpl> getFilteredTreatments(Container container, User user, List<Integer> filterRowIds)
+    {
+        TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
+
+        //Using a user schema so containerFilter will be created for us later (so don't need SimpleFilter.createContainerFilter)
+        SimpleFilter filter = new SimpleFilter();
+        if (filterRowIds != null && !filterRowIds.isEmpty())
+            filter.addCondition(FieldKey.fromParts("RowId"), filterRowIds, CompareType.NOT_IN);
+
+        return new TableSelector(ti, filter, new Sort("RowId")).getArrayList(TreatmentImpl.class);
+    }
+
+    public Integer saveTreatmentProductMapping(Container container, User user, TreatmentProductImpl treatmentProduct) throws Exception
+    {
+        TableInfo treatmentProductTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
+        return saveStudyDesignRow(container, user, treatmentProductTable, treatmentProduct.serialize(), treatmentProduct.isNew() ? null : treatmentProduct.getRowId(), "RowId");
+    }
+
     public List<TreatmentProductImpl> getStudyTreatmentProducts(Container container, User user, int treatmentId)
     {
         return getStudyTreatmentProducts(container, user, treatmentId, new Sort("RowId"));
@@ -166,6 +190,19 @@ public class TreatmentManager
 
         TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
         return new TableSelector(ti, filter, sort).getArrayList(TreatmentProductImpl.class);
+    }
+
+    public List<TreatmentProductImpl> getFilteredTreatmentProductMappings(Container container, User user, @NotNull Integer treatmentId, List<Integer> filterRowIds)
+    {
+        TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
+
+        //Using a user schema so containerFilter will be created for us later (so don't need SimpleFilter.createContainerFilter)
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("TreatmentId"), treatmentId);
+        if (filterRowIds != null && !filterRowIds.isEmpty())
+            filter.addCondition(FieldKey.fromParts("RowId"), filterRowIds, CompareType.NOT_IN);
+
+        return new TableSelector(ti, filter, new Sort("RowId")).getArrayList(TreatmentProductImpl.class);
     }
 
     public List<TreatmentVisitMapImpl> getStudyTreatmentVisitMap(Container container, @Nullable Integer cohortId)
@@ -375,17 +412,24 @@ public class TreatmentManager
         if (productMapTable != null)
         {
             TableSelector selector = new TableSelector(productMapTable, Collections.singleton("RowId"), filter, null);
-            Integer[] productMapIds = selector.getArray(Integer.class);
+            deleteTreatmentProductMap(container, user, selector.getArrayList(Integer.class));
+        }
+        else
+            throw new IllegalStateException("Could not find table: " + StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
+    }
 
+    public void deleteTreatmentProductMap(Container container, User user, List<Integer> rowIds) throws Exception
+    {
+        TableInfo productMapTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
+        if (productMapTable != null)
+        {
             QueryUpdateService qus = productMapTable.getUpdateService();
             if (qus != null)
             {
                 List<Map<String, Object>> keys = new ArrayList<>();
                 ColumnInfo productMapPk = productMapTable.getColumn(FieldKey.fromParts("RowId"));
-                for (Integer productMapId : productMapIds)
-                {
-                    keys.add(Collections.singletonMap(productMapPk.getName(), productMapId));
-                }
+                for (Integer rowId : rowIds)
+                    keys.add(Collections.singletonMap(productMapPk.getName(), rowId));
 
                 qus.deleteRows(user, container, keys, null, null);
             }

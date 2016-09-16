@@ -27,20 +27,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * User: cnathe
- * Date: 1/14/14
- */
-
-/**
  * Represents a study's cohort/treatment/visit mapping information. Used to serialize JSON to the treatment schedule.
  */
 public class StudyTreatmentSchedule implements CustomApiForm
 {
     Container _container;
-    Integer _cohortRowId;
-    String _cohortLabel;
-    Integer _cohortSubjectCount;
-    Map<Integer, Integer> _treatmentVisitMap = new HashMap<>(); // map visitId -> treatmentId
 
     // treatment schedule properties
     List<TreatmentImpl> _treatments;
@@ -60,6 +51,11 @@ public class StudyTreatmentSchedule implements CustomApiForm
         _treatments = treatments;
     }
 
+    public List<TreatmentImpl> getTreatments()
+    {
+        return _treatments;
+    }
+
     public List<Map<String, Object>> serializeTreatments()
     {
         List<Map<String, Object>> treatmentList = new ArrayList<>();
@@ -73,6 +69,11 @@ public class StudyTreatmentSchedule implements CustomApiForm
     public void setVisits(List<VisitImpl> visits)
     {
         _visits = visits;
+    }
+
+    public List<VisitImpl> getVisits()
+    {
+        return _visits;
     }
 
     public List<Map<String, Object>> serializeVisits()
@@ -94,9 +95,29 @@ public class StudyTreatmentSchedule implements CustomApiForm
         return visitList;
     }
 
+    private List<Integer> getIncludedVisitIds()
+    {
+        List<Integer> ids = new ArrayList<>();
+        for (CohortImpl cohort : _cohorts)
+        {
+            for (TreatmentVisitMapImpl tvm : TreatmentManager.getInstance().getStudyTreatmentVisitMap(_container, cohort.getRowId()))
+            {
+                if (!ids.contains(tvm.getVisitId()))
+                    ids.add(tvm.getVisitId());
+            }
+        }
+
+        return ids;
+    }
+
     public void setCohorts(List<CohortImpl> cohorts)
     {
         _cohorts = cohorts;
+    }
+
+    public List<CohortImpl> getCohorts()
+    {
+        return _cohorts;
     }
 
     public List<Map<String, Object>> serializeCohortMapping()
@@ -109,48 +130,20 @@ public class StudyTreatmentSchedule implements CustomApiForm
             mapProperties.put("Label", cohort.getLabel());
             mapProperties.put("SubjectCount", cohort.getSubjectCount());
 
-            List<TreatmentVisitMapImpl> treatmentVisitMap = TreatmentManager.getInstance().getStudyTreatmentVisitMap(_container, cohort.getRowId());
-            for (TreatmentVisitMapImpl tvm : treatmentVisitMap)
-                mapProperties.put("Visit"+tvm.getVisitId(), tvm.getTreatmentId());
+            List<Map<String, Integer>> treatmentVisitMap = new ArrayList<>();
+            for (TreatmentVisitMapImpl mapping : TreatmentManager.getInstance().getStudyTreatmentVisitMap(_container, cohort.getRowId()))
+            {
+                Map<String, Integer> visitMapping = new HashMap<>();
+                visitMapping.put("CohortId", mapping.getCohortId());
+                visitMapping.put("TreatmentId", mapping.getTreatmentId());
+                visitMapping.put("VisitId", mapping.getVisitId());
+                treatmentVisitMap.add(visitMapping);
+            }
+            mapProperties.put("VisitMap", treatmentVisitMap);
 
             cohortMappingList.add(mapProperties);
         }
         return cohortMappingList;
-    }
-
-    private List<Integer> getIncludedVisitIds()
-    {
-        List<Integer> ids = new ArrayList<>();
-        for (CohortImpl cohort : _cohorts)
-        {
-            List<TreatmentVisitMapImpl> treatmentVisitMap = TreatmentManager.getInstance().getStudyTreatmentVisitMap(_container, cohort.getRowId());
-            for (TreatmentVisitMapImpl tvm : treatmentVisitMap)
-            {
-                if (!ids.contains(tvm.getVisitId()))
-                    ids.add(tvm.getVisitId());
-            }
-        }
-        return ids;
-    }
-
-    public Integer getCohortRowId()
-    {
-        return _cohortRowId;
-    }
-
-    public String getCohortLabel()
-    {
-        return _cohortLabel;
-    }
-
-    public Integer getCohortSubjectCount()
-    {
-        return _cohortSubjectCount;
-    }
-
-    public Map<Integer, Integer> getTreatmentVisitMap()
-    {
-        return _treatmentVisitMap;
     }
 
     @Override
@@ -158,23 +151,26 @@ public class StudyTreatmentSchedule implements CustomApiForm
     {
         _container = HttpView.currentContext().getContainer();
 
-        Object cohortInfo = props.get("cohort");
-        if (cohortInfo != null && cohortInfo instanceof JSONObject)
+        Object treatmentsInfo = props.get("treatments");
+        if (treatmentsInfo != null && treatmentsInfo instanceof JSONArray)
         {
-            JSONObject cohortJSON = (JSONObject) cohortInfo;
-            _cohortRowId = (Integer) cohortJSON.get("rowId");
-            _cohortLabel = (String) cohortJSON.get("label");
-            _cohortSubjectCount = (Integer) cohortJSON.get("subjectCount");
+            _treatments = new ArrayList<>();
+
+            JSONArray treatmentsJSON = (JSONArray) treatmentsInfo;
+            for (int i = 0; i < treatmentsJSON.length(); i++)
+                _treatments.add(TreatmentImpl.fromJSON(treatmentsJSON.getJSONObject(i), _container));
         }
 
-        Object treatmentVisitMappingInfo = props.get("treatmentVisitMapping");
-        if (treatmentVisitMappingInfo != null && treatmentVisitMappingInfo instanceof JSONArray)
+        Object cohortsInfo = props.get("cohorts");
+        if (cohortsInfo != null && cohortsInfo instanceof JSONArray)
         {
-            JSONArray treatmentVisitMapping = (JSONArray) treatmentVisitMappingInfo;
-            for (int i = 0; i < treatmentVisitMapping.length(); i++)
+            _cohorts = new ArrayList<>();
+
+            JSONArray cohortsJSON = (JSONArray) cohortsInfo;
+            for (int i = 0; i < cohortsJSON.length(); i++)
             {
-                JSONObject mapping = treatmentVisitMapping.getJSONObject(i);
-                _treatmentVisitMap.put(mapping.getInt("visitId"), mapping.getInt("treatmentId"));
+                JSONObject cohortJSON = cohortsJSON.getJSONObject(i);
+                _cohorts.add(CohortImpl.fromJSON(cohortJSON));
             }
         }
     }

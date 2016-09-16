@@ -28,71 +28,51 @@
 <%@ page import="org.labkey.study.controllers.StudyDesignController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.security.permissions.ManageStudyPermission" %>
+<%@ page import="org.labkey.api.action.ReturnUrlForm" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.portal.ProjectUrls" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
-        dependencies.add("Ext4ClientApi");
-        dependencies.add("study/StudyVaccineDesign.js");
-        dependencies.add("dataview/DataViewsPanel.css");
-        dependencies.add("study/StudyVaccineDesign.css");
+        dependencies.add("study/vaccineDesign/vaccineDesign.lib.xml");
+        dependencies.add("study/vaccineDesign/VaccineDesign.css");
     }
 %>
 <%
+    JspView<ReturnUrlForm> me = (JspView<ReturnUrlForm>) HttpView.currentView();
+    ReturnUrlForm bean = me.getModelBean();
+
     Container c = getContainer();
     User user = getUser();
-    ActionURL returnURL = getActionURL();
 
     Study study = StudyManager.getInstance().getStudy(c);
     boolean canManageStudy = c.hasPermission(user, ManageStudyPermission.class);
-    boolean isDataspace = c.isProject() && c.isDataspace();
+    boolean isDataspaceStudy = c.getProject() != null && c.getProject().isDataspace() && !c.isDataspace();
 
-    String visitDisplayName = "Visit";
+    String visitNoun = "Visit";
     if (study != null && study.getTimepointType() == TimepointType.DATE)
-        visitDisplayName = "Timepoint";
+        visitNoun = "Timepoint";
 
-    String subjectName = "Subject";
+    String subjectNoun = "Subject";
     if (study != null)
-        subjectName = study.getSubjectNounSingular();
+        subjectNoun = study.getSubjectNounSingular();
+
+    String returnUrl = bean.getReturnUrl() != null ? bean.getReturnUrl() : PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(c).toString();
 %>
 
-<style>
-    .x4-panel-header-default
-    {
-        background-color: transparent;
-        background-image: none !important;
-        border: none;
-    }
-    .x4-panel-header-text-container-default
-    {
-        font-size: 15px;
-        color: black;
-    }
-
-    .x4-grid-cell-inner
-    {
-        white-space: normal;
-    }
-</style>
-
 <script type="text/javascript">
-    Ext4.onReady(function(){
-        var treatmentsGrid = Ext4.create('LABKEY.ext4.TreatmentsGrid', {
-            renderTo : "treatments-grid",
-            disableEdit : <%=isDataspace%>,
-            listeners: {
-                treatmentsAddedOrRemoved: function() {
-                    treatmentScheduleGrid.getTreatmentScheduleData(false);
-                }
-            }
-        });
-
-        var treatmentScheduleGrid = Ext4.create('LABKEY.ext4.TreatmentScheduleGrid', {
-            renderTo : "treatment-schedule-grid",
-            disableEdit : <%=isDataspace%>,
-            visitNoun : <%=q(visitDisplayName)%>,
-            subjectNoun : <%=q(subjectName)%>
+    Ext4.onReady(function()
+    {
+        Ext4.create('LABKEY.VaccineDesign.TreatmentSchedulePanel', {
+            renderTo : 'treatment-schedule-panel',
+            disableEdit : <%=isDataspaceStudy%>,
+            subjectNoun : <%=q(subjectNoun)%>,
+            visitNoun : <%=q(visitNoun)%>,
+            returnURL : <%=q(returnUrl)%>
         });
 
         var projectMenu = null;
@@ -122,7 +102,7 @@
             }
         };
 
-        var menu = Ext4.create('Ext.button.Button', {
+        Ext4.create('Ext.button.Button', {
             text: 'Configure',
             renderTo: 'config-dropdown-menu',
             menu: projectMenu ? {items: [projectMenu, folderMenu]} : folderMenu.menu
@@ -131,40 +111,47 @@
 </script>
 
 Enter treatment information in the grids below.
-<div style="width: 700px;">
+<div style="width: 1400px;">
     <ul>
         <li>
             Configure dropdown options for routes at the project level to be shared across study designs or within this folder for
             study specific properties: <span id='config-dropdown-menu'></span>
         </li>
-        <li>Use the "Insert New" button in the treatments grid to add a new study treatment.</li>
-        <li>Each treatment may consist of several study products, i.e. immunogens and/or adjuvants.</li>
-        <li>Use the "Insert New" button in the treatment schedule grid to add a new study cohort.</li>
-        <li>Enter the number of subjects for the cohort in the count column.</li>
-    </ul>
-</div>
-<div id="treatments-grid"></div>
-<div style='font-style: italic; font-size: smaller; display: <%=h(isDataspace ? "none" : "inline")%>;'>* Double click to edit a treatment record and its product definition</div>
-<br/>
-<%
-    ActionURL manageStudyProductsURL = new ActionURL(StudyDesignController.ManageStudyProductsAction.class, getContainer());
-    manageStudyProductsURL.addReturnURL(getActionURL());
-%>
-<%=textLink("Manage Study Products", manageStudyProductsURL)%>
-<br/><br/>
-<div id="treatment-schedule-grid"></div>
-<div style='font-style: italic; font-size: smaller; display: <%=h(isDataspace ? "none" : "inline")%>;'>* Double click to edit a group/cohort and its treatment/visit map definition</div>
-<br/>
+        <li>Each treatment label must be unique and must consist of at least one study products, i.e. immunogens and/or adjuvants.</li>
+        <li>
+            Use the manage study products page to change or update the set of available immunogens and adjuvants.
+            <%
+                ActionURL manageStudyProductsURL = new ActionURL(StudyDesignController.ManageStudyProductsAction.class, getContainer());
+                manageStudyProductsURL.addReturnURL(getActionURL());
+            %>
+            <%=textLink("Manage Study Products", manageStudyProductsURL)%>
+        </li>
+        <li>
+            Each cohort label must be unique. Enter the number of <%=study.getSubjectNounPlural().toLowerCase()%> for
+            the cohort in the count column.</li>
+        <li>
+            Use the manage cohorts page to further configuration information about the cohorts for this study.
+            <%=textLink("Manage Cohorts", CohortController.ManageCohortsAction.class)%>
+        </li>
+        <li>
+            Use the manage <%=h(visitNoun.toLowerCase())%>s page to further configuration
+            information about the <%=h(visitNoun.toLowerCase())%>s for this study.
+            <%=textLink("Manage " + visitNoun + "s", StudyController.ManageVisitsAction.class)%>
+        </li>
 <%
     if (canManageStudy)
     {
         if (study != null && study.getTimepointType() == TimepointType.VISIT && study.getVisits(Visit.Order.DISPLAY).size() > 1)
         {
-            %><%= textLink("Change Visit Order", new ActionURL(StudyController.VisitOrderAction.class, c).addReturnURL(returnURL)) %><%
-        }
 %>
-        <%=textLink("Manage " + visitDisplayName + "s", StudyController.ManageVisitsAction.class)%>
-        <%=textLink("Manage Cohorts", CohortController.ManageCohortsAction.class)%>
+            <li>Use the change visit order page to adjust the display order of visits in the treatment schedule table.
+            <%= textLink("Change Visit Order", new ActionURL(StudyController.VisitOrderAction.class, c).addReturnURL(getActionURL())) %>
+            </li>
 <%
+        }
     }
 %>
+    </ul>
+</div>
+<div id="treatment-schedule-panel"></div>
+<br/>

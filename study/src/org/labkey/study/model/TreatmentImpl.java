@@ -15,6 +15,9 @@
  */
 package org.labkey.study.model;
 
+import org.jetbrains.annotations.NotNull;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Sort;
 import org.labkey.api.query.FieldKey;
@@ -33,8 +36,10 @@ public class TreatmentImpl implements Treatment
 {
     private Container _container;
     private int _rowId;
+    private String _tempRowId; // used to map new treatment records being inserted to their usage in TreatmentVisitMapImpl
     private String _label;
     private String _description;
+    private List<TreatmentProductImpl> _treatmentProducts;
     private List<ProductImpl> _products;
 
     public TreatmentImpl()
@@ -67,6 +72,16 @@ public class TreatmentImpl implements Treatment
         _rowId = rowId;
     }
 
+    private void setTempRowId(String tempRowId)
+    {
+        _tempRowId = tempRowId;
+    }
+
+    public String getTempRowId()
+    {
+        return _tempRowId;
+    }
+
     public String getLabel()
     {
         return _label;
@@ -87,6 +102,16 @@ public class TreatmentImpl implements Treatment
         _description = description;
     }
 
+    public List<TreatmentProductImpl> getTreatmentProducts()
+    {
+        return _treatmentProducts;
+    }
+
+    public void setTreatmentProducts(List<TreatmentProductImpl> treatmentProducts)
+    {
+        _treatmentProducts = treatmentProducts;
+    }
+
     public List<ProductImpl> getProducts()
     {
         return _products;
@@ -103,6 +128,16 @@ public class TreatmentImpl implements Treatment
             _products = new ArrayList<>();
 
         _products.add(product);
+    }
+
+    public Container getContainer()
+    {
+        return _container;
+    }
+
+    public void setContainer(Container container)
+    {
+        _container = container;
     }
 
     public Map<String, Object> serialize()
@@ -123,13 +158,29 @@ public class TreatmentImpl implements Treatment
         return sort;
     }
 
-    public Container getContainer()
+    public static TreatmentImpl fromJSON(@NotNull JSONObject o, Container container)
     {
-        return _container;
-    }
+        TreatmentImpl treatment = new TreatmentImpl(container, o.getString("Label"), o.getString("Description"));
 
-    public void setContainer(Container container)
-    {
-        _container = container;
+        if (o.containsKey("RowId"))
+        {
+            if (o.get("RowId") instanceof Integer)
+                treatment.setRowId(o.getInt("RowId"));
+            else
+                treatment.setTempRowId(o.getString("RowId"));
+        }
+
+        if (o.containsKey("Products") && o.get("Products")  instanceof JSONArray)
+        {
+            JSONArray productsJSON = (JSONArray) o.get("Products");
+
+            List<TreatmentProductImpl> treatmentProducts = new ArrayList<>();
+            for (int j = 0; j < productsJSON.length(); j++)
+                treatmentProducts.add(TreatmentProductImpl.fromJSON(productsJSON.getJSONObject(j), container));
+
+            treatment.setTreatmentProducts(treatmentProducts);
+        }
+
+        return treatment;
     }
 }

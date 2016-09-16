@@ -25,9 +25,9 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.Study;
@@ -37,9 +37,9 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.study.StudySchema;
+import org.labkey.study.model.CohortManager;
 import org.labkey.study.model.StudyTreatmentSchedule;
 import org.labkey.study.model.CohortImpl;
-import org.labkey.study.model.CohortManager;
 import org.labkey.study.model.ProductAntigenImpl;
 import org.labkey.study.model.ProductImpl;
 import org.labkey.study.model.StudyImpl;
@@ -47,6 +47,7 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.TreatmentImpl;
 import org.labkey.study.model.TreatmentManager;
 import org.labkey.study.model.TreatmentProductImpl;
+import org.labkey.study.model.TreatmentVisitMapImpl;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.visitmanager.VisitManager;
@@ -55,6 +56,8 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -123,11 +126,11 @@ public class StudyDesignController extends BaseStudyController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public class ManageTreatmentsAction extends SimpleViewAction<Object>
+    public class ManageTreatmentsAction extends SimpleViewAction<ReturnUrlForm>
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(ReturnUrlForm form, BindException errors) throws Exception
         {
-            return new JspView<>("/org/labkey/study/view/studydesign/manageTreatments.jsp", o);
+            return new JspView<>("/org/labkey/study/view/studydesign/manageTreatments.jsp", form);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -210,12 +213,12 @@ public class StudyDesignController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetStudyTreatments extends ApiAction<Object>
+    public class GetStudyTreatments extends ApiAction<GetStudyTreatmentsForm>
     {
         private StudyImpl _study;
 
         @Override
-        public void validateForm(Object form, Errors errors)
+        public void validateForm(GetStudyTreatmentsForm form, Errors errors)
         {
             _study = getStudy(getContainer());
             if (_study == null)
@@ -223,7 +226,7 @@ public class StudyDesignController extends BaseStudyController
         }
 
         @Override
-        public ApiResponse execute(Object form, BindException errors) throws Exception
+        public ApiResponse execute(GetStudyTreatmentsForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
@@ -231,24 +234,46 @@ public class StudyDesignController extends BaseStudyController
             List<TreatmentImpl> studyTreatments = TreatmentManager.getInstance().getStudyTreatments(getContainer(), getUser());
             for (TreatmentImpl treatment : studyTreatments)
             {
-                // note: we are currently only inclusing the base fields for this extensible table
+                // note: we are currently only including the base fields for this extensible table
                 Map<String, Object> treatmentProperties = treatment.serialize();
 
                 List<Map<String, Object>> treatmentProductList = new ArrayList<>();
                 List<TreatmentProductImpl> studyTreatmentProducts = TreatmentManager.getInstance().getStudyTreatmentProducts(getContainer(), getUser(), treatment.getRowId(), treatment.getProductSort());
                 for (TreatmentProductImpl treatmentProduct : studyTreatmentProducts)
                 {
-                    // note: we are currently only inclusing the base fields for this extensible table
+                    // note: we are currently only including the base fields for this extensible table
                     Map<String, Object> treatmentProductProperties = treatmentProduct.serialize();
 
-                    // add the product label for convenience, to prevent the need for another round trip to the server
+                    // add the product label and role for convenience, to prevent the need for another round trip to the server
                     List<ProductImpl> products = TreatmentManager.getInstance().getStudyProducts(getContainer(), getUser(), null, treatmentProduct.getProductId());
                     if (products.size() == 1)
+                    {
                         treatmentProductProperties.put("ProductId/Label", products.get(0).getLabel());
+                        treatmentProductProperties.put("ProductId/Role", products.get(0).getRole());
+                    }
 
                     treatmentProductList.add(treatmentProductProperties);
                 }
-                treatmentProperties.put("Products", treatmentProductList);
+
+                if (!form.isSplitByRole())
+                {
+                    treatmentProperties.put("Products", treatmentProductList);
+                }
+                else
+                {
+                    Map<String, List<Map<String, Object>>> treatmentProductsListByRole = new HashMap<>();
+                    for (Map<String, Object> productProperties : treatmentProductList)
+                    {
+                        String role = productProperties.get("ProductId/Role").toString();
+                        if (!treatmentProductsListByRole.containsKey(role))
+                            treatmentProductsListByRole.put(role, new ArrayList<>());
+
+                        treatmentProductsListByRole.get(role).add(productProperties);
+                    }
+
+                    for (Map.Entry<String, List<Map<String, Object>>> entry : treatmentProductsListByRole.entrySet())
+                        treatmentProperties.put(entry.getKey(), entry.getValue());
+                }
 
                 treatmentList.add(treatmentProperties);
             }
@@ -257,6 +282,21 @@ public class StudyDesignController extends BaseStudyController
             resp.put("treatments", treatmentList);
 
             return resp;
+        }
+    }
+
+    private static class GetStudyTreatmentsForm
+    {
+        private boolean _splitByRole;
+
+        public boolean isSplitByRole()
+        {
+            return _splitByRole;
+        }
+
+        public void setSplitByRole(boolean splitByRole)
+        {
+            _splitByRole = splitByRole;
         }
     }
 
@@ -281,34 +321,14 @@ public class StudyDesignController extends BaseStudyController
 
             // include all cohorts for the study, regardless of it they have associated visits or not
             treatmentSchedule.setCohorts(StudyManager.getInstance().getCohorts(getContainer(), getUser()));
+            resp.put("cohorts", treatmentSchedule.serializeCohortMapping());
 
             // include all visits from the study, ordered by visit display order
             treatmentSchedule.setVisits(StudyManager.getInstance().getVisits(_study, Visit.Order.DISPLAY));
-
-            // include all treatments for the study
-            treatmentSchedule.setTreatments(TreatmentManager.getInstance().getStudyTreatments(getContainer(), getUser()));
-
-            resp.put("mapping", treatmentSchedule.serializeCohortMapping());
             resp.put("visits", treatmentSchedule.serializeVisits());
-            resp.put("treatments", treatmentSchedule.serializeTreatments());
+
             resp.put("success", true);
-
             return resp;
-        }
-    }
-
-    @RequiresPermission(DeletePermission.class)
-    public class DeleteTreatmentAction extends MutatingApiAction<IdForm>
-    {
-        @Override
-        public ApiResponse execute(IdForm form, BindException errors) throws Exception
-        {
-            if (form.getId() != 0)
-            {
-                TreatmentManager.getInstance().deleteTreatment(getContainer(), getUser(), form.getId());
-                return new ApiSimpleResponse("success", true);
-            }
-            return new ApiSimpleResponse("success", false);
         }
     }
 
@@ -427,24 +447,44 @@ public class StudyDesignController extends BaseStudyController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public class UpdateStudyTreatmentScheduleAction extends MutatingApiAction<StudyTreatmentSchedule>
+    public class UpdateTreatmentScheduleAction extends MutatingApiAction<StudyTreatmentSchedule>
     {
+        private Map<String, Integer> _tempTreatmentIdMap = new HashMap<>();
+
         @Override
         public void validateForm(StudyTreatmentSchedule form, Errors errors)
         {
-            if (form.getCohortLabel() == null)
-                errors.reject(ERROR_MSG, "Cohort label is required.");
+            // validate that each treatment has a label
+            for (TreatmentImpl treatment : form.getTreatments())
+            {
+                if (treatment.getLabel() == null)
+                    errors.reject(ERROR_MSG, "Treatment label is required.");
 
-            CohortImpl cohortByLabel = StudyManager.getInstance().getCohortByLabel(getContainer(), getUser(), form.getCohortLabel());
-            if (form.getCohortRowId() != null)
-            {
-                CohortImpl cohortByRowId = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), form.getCohortRowId());
-                if (cohortByRowId != null && cohortByLabel != null && cohortByRowId.getRowId() != cohortByLabel.getRowId())
-                    errors.reject(ERROR_MSG, "A cohort with the label '" + form.getCohortLabel() + "' already exists");
+                // validate that each treatment product mapping has a selected product
+                for (TreatmentProductImpl treatmentProduct : treatment.getTreatmentProducts())
+                {
+                    if (treatmentProduct.getProductId() <= 0)
+                        errors.reject(ERROR_MSG, "Each treatment product must have a selected Immunogen or Adjuvant.");
+                }
             }
-            else if (cohortByLabel != null)
+
+            // validate that each cohort has a label and it is unique
+            for (CohortImpl cohort : form.getCohorts())
             {
-                errors.reject(ERROR_MSG, "A cohort with the label '" + form.getCohortLabel() + "' already exists");
+                if (cohort.getLabel() == null)
+                    errors.reject(ERROR_MSG, "Cohort label is required.");
+
+                CohortImpl cohortByLabel = StudyManager.getInstance().getCohortByLabel(getContainer(), getUser(), cohort.getLabel());
+                if (cohort.getRowId() > 0)
+                {
+                    CohortImpl cohortByRowId = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), cohort.getRowId());
+                    if (cohortByRowId != null && cohortByLabel != null && cohortByRowId.getRowId() != cohortByLabel.getRowId())
+                        errors.reject(ERROR_MSG, "A cohort with the label '" + cohort.getLabel() + "' already exists in this study.");
+                }
+                else if (cohortByLabel != null)
+                {
+                    errors.reject(ERROR_MSG, "A cohort with the label '" + cohort.getLabel() + "' already exists in this study.");
+                }
             }
         }
 
@@ -456,10 +496,14 @@ public class StudyDesignController extends BaseStudyController
 
             if (study != null)
             {
-                CohortImpl cohort = insertOrUpdateCohort(form, study);
-                response.put("cohortId", cohort.getRowId());
+                StudySchema schema = StudySchema.getInstance();
 
-                updateTreatmentVisitMapping(form, cohort);
+                try (DbScope.Transaction transaction = schema.getSchema().getScope().ensureTransaction())
+                {
+                    updateTreatments(form.getTreatments());
+                    updateCohorts(form.getCohorts(), study);
+                    transaction.commit();
+                }
 
                 response.put("success", true);
                 return response;
@@ -468,76 +512,124 @@ public class StudyDesignController extends BaseStudyController
                 throw new IllegalStateException("A study does not exist in this folder");
         }
 
-        private CohortImpl insertOrUpdateCohort(StudyTreatmentSchedule form, Study study) throws Exception
+        private void updateTreatments(List<TreatmentImpl> treatments) throws Exception
         {
-            CohortImpl cohort;
-            if (form.getCohortRowId() != null)
+            // insert new study treatments and update any existing ones
+            List<Integer> treatmentRowIds = new ArrayList<>();
+            for (TreatmentImpl treatment : treatments)
             {
-                cohort = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), form.getCohortRowId());
-                cohort = cohort.createMutable();
-                cohort.setLabel(form.getCohortLabel());
-                cohort.setSubjectCount(form.getCohortSubjectCount());
-                StudyManager.getInstance().updateCohort(getUser(), cohort);
-            }
-            else
-            {
-                cohort = CohortManager.getInstance().createCohort(study, getUser(), form.getCohortLabel(), true, form.getCohortSubjectCount(), null);
-            }
-
-            return cohort;
-        }
-
-        private void updateTreatmentVisitMapping(StudyTreatmentSchedule form, CohortImpl cohort)
-        {
-            if (cohort != null)
-            {
-                StudySchema schema = StudySchema.getInstance();
-
-                try (DbScope.Transaction transaction = schema.getSchema().getScope().ensureTransaction())
+                Integer updatedRowId = TreatmentManager.getInstance().saveTreatment(getContainer(), getUser(), treatment);
+                if (updatedRowId != null)
                 {
-                    // the mapping that is passed in will have all of the current treatment/visit maps, so we will
-                    // delete all of the existing records and then insert the new ones
-                    TreatmentManager.getInstance().deleteTreatmentVisitMapForCohort(getContainer(), cohort.getRowId());
+                    treatmentRowIds.add(updatedRowId);
 
-                    for (Map.Entry<Integer, Integer> treatmentVisitMap : form.getTreatmentVisitMap().entrySet())
-                    {
-                        // map entry key = visitId and value = treatmentId
-                        TreatmentManager.getInstance().insertTreatmentVisitMap(getUser(), getContainer(), cohort.getRowId(), treatmentVisitMap.getKey(), treatmentVisitMap.getValue());
-                    }
+                    if (treatment.getTempRowId() != null)
+                        _tempTreatmentIdMap.put(treatment.getTempRowId(), updatedRowId);
 
-                    transaction.commit();
+                    updateTreatmentProducts(updatedRowId, treatment.getTreatmentProducts());
                 }
             }
-        }
-    }
 
-    @RequiresPermission(DeletePermission.class)
-    public class DeleteCohortAction extends MutatingApiAction<IdForm>
-    {
-        @Override
-        public ApiResponse execute(IdForm form, BindException errors) throws Exception
+            // delete any other study treatments, not included in the insert/update list, by RowId for this container
+            for (TreatmentImpl treatment : TreatmentManager.getInstance().getFilteredTreatments(getContainer(), getUser(), treatmentRowIds))
+                TreatmentManager.getInstance().deleteTreatment(getContainer(), getUser(), treatment.getRowId());
+        }
+
+        private void updateTreatmentProducts(int treatmentId, List<TreatmentProductImpl> treatmentProducts) throws Exception
         {
-            if (form.getId() != 0)
+            // insert new study treatment product mappings and update any existing ones
+            List<Integer> treatmentProductRowIds = new ArrayList<>();
+            for (TreatmentProductImpl treatmentProduct : treatmentProducts)
             {
-                CohortImpl cohort = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), form.getId());
-                if (cohort != null)
+                // make sure the treatmentId is set based on the treatment rowId
+                treatmentProduct.setTreatmentId(treatmentId);
+
+                Integer updatedRowId = TreatmentManager.getInstance().saveTreatmentProductMapping(getContainer(), getUser(), treatmentProduct);
+                if (updatedRowId != null)
+                    treatmentProductRowIds.add(updatedRowId);
+            }
+
+            // delete any other treatment product mappings, not included in the insert/update list, for the given treatmentId
+            for (TreatmentProductImpl treatmentProduct : TreatmentManager.getInstance().getFilteredTreatmentProductMappings(getContainer(), getUser(), treatmentId, treatmentProductRowIds))
+                TreatmentManager.getInstance().deleteTreatmentProductMap(getContainer(), getUser(), Collections.singletonList(treatmentProduct.getRowId()));
+        }
+
+
+        private void updateCohorts(List<CohortImpl> cohorts, Study study) throws ValidationException
+        {
+            // insert new cohorts and update any existing ones
+            List<Integer> cohortRowIds = new ArrayList<>();
+            for (CohortImpl cohort : cohorts)
+            {
+                if (cohort.getRowId() > 0)
                 {
-                    if (!cohort.isInUse())
-                    {
-                        StudyManager.getInstance().deleteCohort(cohort);
-                        return new ApiSimpleResponse("success", true);
-                    }
-                    else
-                    {
-                        errors.reject(ERROR_MSG, "Unable to delete in-use cohort: " + cohort.getLabel());
-                    }
+                    CohortImpl updatedCohort = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), cohort.getRowId());
+                    updatedCohort = updatedCohort.createMutable();
+                    updatedCohort.setLabel(cohort.getLabel());
+                    updatedCohort.setSubjectCount(cohort.getSubjectCount());
+                    StudyManager.getInstance().updateCohort(getUser(), updatedCohort);
+                    cohortRowIds.add(updatedCohort.getRowId());
                 }
                 else
                 {
-                    errors.reject(ERROR_MSG, "Unable to find cohort for id " + form.getId());
+                    CohortImpl newCohort = CohortManager.getInstance().createCohort(study, getUser(), cohort.getLabel(), true, cohort.getSubjectCount(), null);
+                    cohortRowIds.add(newCohort.getRowId());
+                    // stash the new cohort RowId in the original cohort instance
+                    cohort.setRowId(newCohort.getRowId());
+                }
+
+                updateTreatmentVisitMap(cohort.getRowId(), cohort.getTreatmentVisitMap());
+            }
+
+            // delete any other study cohorts, not included in the insert/update list, by RowId for this container
+            for (CohortImpl existingCohort : StudyManager.getInstance().getCohorts(getContainer(), getUser()))
+            {
+                if (!cohortRowIds.contains(existingCohort.getRowId()))
+                {
+                    if (!existingCohort.isInUse())
+                        StudyManager.getInstance().deleteCohort(existingCohort);
+                    else
+                        throw new ValidationException("Unable to delete in-use cohort: " + existingCohort.getLabel());
                 }
             }
-            return new ApiSimpleResponse("success", false);
+        }
+
+        private void updateTreatmentVisitMap(int cohortId, List<TreatmentVisitMapImpl> treatmentVisitMaps)
+        {
+            // the mapping that is passed in will have all of the current treatment/visit maps, so we will compare
+            // this set with the set from the DB and if they are different, replace all
+            List<TreatmentVisitMapImpl> existingVisitMaps = TreatmentManager.getInstance().getStudyTreatmentVisitMap(getContainer(), cohortId);
+            boolean visitMapsDiffer = existingVisitMaps.size() != treatmentVisitMaps.size();
+            if (!visitMapsDiffer)
+            {
+                for (TreatmentVisitMapImpl newVisitMap : treatmentVisitMaps)
+                {
+                    newVisitMap.setContainer(getContainer());
+                    newVisitMap.setCohortId(cohortId);
+
+                    if (!existingVisitMaps.contains(newVisitMap))
+                    {
+                        visitMapsDiffer = true;
+                        break;
+                    }
+                }
+            }
+
+            // if we have differences, replace all at this point
+            if (visitMapsDiffer)
+            {
+                TreatmentManager.getInstance().deleteTreatmentVisitMapForCohort(getContainer(), cohortId);
+                for (TreatmentVisitMapImpl newVisitMap : treatmentVisitMaps)
+                {
+                    // if the treatmentId used here was from a treatment that was created as part of this transaction,
+                    // lookup the new treatment record RowId from the tempRowId
+                    if (newVisitMap.getTempTreatmentId() != null && _tempTreatmentIdMap.containsKey(newVisitMap.getTempTreatmentId()))
+                        newVisitMap.setTreatmentId(_tempTreatmentIdMap.get(newVisitMap.getTempTreatmentId()));
+
+                    if (cohortId > 0 && newVisitMap.getVisitId() > 0 && newVisitMap.getTreatmentId() > 0)
+                        TreatmentManager.getInstance().insertTreatmentVisitMap(getUser(), getContainer(), cohortId, newVisitMap.getVisitId(), newVisitMap.getTreatmentId());
+                }
+            }
         }
     }
 
@@ -575,6 +667,7 @@ public class StudyDesignController extends BaseStudyController
             response.put("SortOrder", visit.getDisplayOrder());
             response.put("Included", true);
             response.put("success", true);
+
             return response;
         }
     }

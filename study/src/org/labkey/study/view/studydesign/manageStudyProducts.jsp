@@ -105,7 +105,7 @@
 </script>
 
 Enter vaccine design information in the grids below.
-<div style="width: 810px;">
+<div style="width: 850px;">
     <ul>
         <li>
             Configure dropdown options for immunogen types, genes, and subtypes at the project level to be shared across study designs or within this folder for

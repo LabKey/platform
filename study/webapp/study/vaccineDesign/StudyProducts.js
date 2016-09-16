@@ -133,7 +133,7 @@ Ext4.define('LABKEY.VaccineDesign.StudyProductsPanel', {
         {
             // drop any empty rows that were just added
             if (Ext4.isDefined(record.get('RowId')) || record.get('Label') != '')
-                studyProducts.push(record.data);
+                studyProducts.push(Ext4.clone(record.data));
         }, this);
 
         LABKEY.Ajax.request({
@@ -153,7 +153,6 @@ Ext4.define('LABKEY.VaccineDesign.StudyProductsPanel', {
             {
                 var resp = Ext4.decode(response.responseText);
                 this.onFailure(resp.exception);
-                this.getEl().unmask();
             }
         });
     },
@@ -172,6 +171,8 @@ Ext4.define('LABKEY.VaccineDesign.StudyProductsPanel', {
             icon: Ext4.Msg.ERROR,
             buttons: Ext4.Msg.OK
         });
+
+        this.getEl().unmask();
     }
 });
 
