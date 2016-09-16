@@ -1490,7 +1490,8 @@ public class DataRegion extends AbstractDataRegion
                             {
                                 if (r.getValue() == null)
                                 {
-                                    out.write("&lt;none&gt;");
+                                    // no values to aggregate
+                                    out.write("&nbsp;");
                                 }
                                 else if (formatter != null &&
                                         (inputType == returnType ||

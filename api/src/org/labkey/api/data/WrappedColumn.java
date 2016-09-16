@@ -33,6 +33,11 @@ public class WrappedColumn extends ExprColumn
         // Need to propagate if this is a special kind of column, like "entityid" or "userid"
         setSqlTypeName(col.getSqlTypeName());
         setCalculated(true);
+
+        // By definition, you can't set a value on a wrapped column. Set directly on the source column instead.
+        // However, allow the developer to override in metadata xml
+        setShownInInsertView(false);
+        setShownInUpdateView(false);
         _col = col;
     }
 
@@ -42,17 +47,4 @@ public class WrappedColumn extends ExprColumn
         return _col.getValueSql(tableAlias);
     }
 
-    @Override
-    public boolean isShownInInsertView()
-    {
-        // By definition, you can't set a value on a wrapped column. Set directly on the source column instead.
-        return false;
-    }
-
-    @Override
-    public boolean isShownInUpdateView()
-    {
-        // By definition, you can't set a value on a wrapped column. Set directly on the source column instead.
-        return false;
-    }
 }

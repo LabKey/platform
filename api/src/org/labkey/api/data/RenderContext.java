@@ -355,8 +355,41 @@ public class RenderContext implements Map<String, Object>, Serializable
 
         for (Aggregate aggregate : aggregatesIn)
         {
-            if (aggregate.isCountStar() || availableFieldKeys.containsKey(aggregate.getFieldKey()))
+            FieldKey fieldKey = aggregate.getFieldKey();
+            if (aggregate.isCountStar() || availableFieldKeys.containsKey(fieldKey))
+            {
                 aggregates.add(aggregate);
+            }
+            else if (fieldKey.getName().startsWith("*::") || fieldKey.getName().endsWith("::*"))
+            {
+                // expand aggregates containing "::" to match pivot field keys
+                String[] aggNameParts = fieldKey.getName().split("::", 2);
+                if (aggNameParts.length == 2)
+                {
+                    for (FieldKey availableFieldKey : availableFieldKeys.keySet())
+                    {
+                        if (availableFieldKey.getName().contains("::"))
+                        {
+                            String[] colNameParts = availableFieldKey.getName().split("::", 2);
+                            if (colNameParts.length == 2)
+                            {
+                                if ("*".equals(aggNameParts[0]) && "*".equals(aggNameParts[1]))
+                                {
+                                    aggregates.add(new Aggregate(availableFieldKey, aggregate.getType(), aggregate.getLabel(), aggregate.isDistinct()));
+                                }
+                                else if ("*".equals(aggNameParts[0]) && aggNameParts[1].equalsIgnoreCase(colNameParts[1]))
+                                {
+                                    aggregates.add(new Aggregate(availableFieldKey, aggregate.getType(), aggregate.getLabel(), aggregate.isDistinct()));
+                                }
+                                else if ("*".equals(aggNameParts[1]) && aggNameParts[0].equalsIgnoreCase(colNameParts[0]))
+                                {
+                                    aggregates.add(new Aggregate(availableFieldKey, aggregate.getType(), aggregate.getLabel(), aggregate.isDistinct()));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         if (!aggregates.isEmpty())
