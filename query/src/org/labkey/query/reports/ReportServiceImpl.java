@@ -36,7 +36,6 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -51,17 +50,12 @@ import org.labkey.api.reports.model.ViewCategoryListener;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
 import org.labkey.api.reports.report.DbReportIdentifier;
-import org.labkey.api.reports.report.ModuleQueryJavaScriptReportDescriptor;
-import org.labkey.api.reports.report.ModuleQueryRReportDescriptor;
-import org.labkey.api.reports.report.ModuleQueryReportDescriptor;
-import org.labkey.api.reports.report.ModuleReportDescriptor;
 import org.labkey.api.reports.report.ReportDB;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportIdentifierConverter;
 import org.labkey.api.reports.report.ScriptEngineReport;
 import org.labkey.api.reports.report.view.ReportUtil;
-import org.labkey.api.resource.Resource;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
@@ -76,10 +70,8 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ContainerUtil;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.Path;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 import org.labkey.api.util.XmlValidationException;
@@ -99,11 +91,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
@@ -185,184 +174,13 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
     @Nullable
     public ReportDescriptor getModuleReportDescriptor(Module module, Container container, User user, String path)
     {
-        List<ReportDescriptor> ds = getModuleReportDescriptors(module, container, user, path);
-        if (ds.size() == 1)
-            return ds.get(0);
-        return null;
+        return ModuleReportCache.getModuleReportDescriptor(module, container, user, path);
     }
 
     @NotNull
     public List<ReportDescriptor> getModuleReportDescriptors(Module module, Container container, User user, @Nullable String path)
     {
-        if (module.getReportFiles().isEmpty())
-        {
-            return Collections.emptyList();
-        }
-        else if (null == path)
-        {
-            return getReportDescriptors(module.getReportFiles(), module, container, user);
-        }
-
-        Path legalPath = Path.parse(path);
-        legalPath = getLegalFilePath(legalPath);
-
-        // module relative file path
-        Resource reportDirectory = module.getModuleResource(legalPath);
-        Path moduleReportDirectory = getQueryReportsDirectory(module).getPath();
-
-        // report folder relative file path
-        if (null == reportDirectory)
-        {
-            reportDirectory = module.getModuleResource(moduleReportDirectory.append(legalPath));
-
-            // The directory does not exist
-            if (null == reportDirectory)
-            {
-                // 15966 -- check to see if it is resolving from parent report directory
-                reportDirectory = module.getModuleResource(moduleReportDirectory.getParent().append(legalPath));
-
-                if (null == reportDirectory)
-                    return Collections.emptyList();
-            }
-        }
-
-        // Check if it is a file
-        if (!reportDirectory.isFile())
-        {
-            // Not a file so must be within the valid module report path
-            if (!reportDirectory.getPath().startsWith(moduleReportDirectory))
-                return Collections.emptyList();
-        }
-        else
-        {
-            // cannot access files outside of report directory
-            if (!reportDirectory.getPath().startsWith(moduleReportDirectory))
-                return Collections.emptyList();
-
-            // It is a file so iterate across all files within this file's parent folder.
-            reportDirectory = module.getModuleResource(reportDirectory.getPath().getParent());
-        }
-
-        List<ReportDescriptor> reportDescriptors = getReportDescriptors(reportDirectory.list(), module, container, user);
-
-        for (ReportDescriptor descriptor : reportDescriptors)
-        {
-            if (((ModuleReportDescriptor) descriptor).getReportPath().getName().equals(legalPath.getName()))
-                return Collections.singletonList(descriptor);
-        }
-
-        return reportDescriptors;
-    }
-
-    private static List<ReportDescriptor> getReportDescriptors(Collection<? extends Resource> reportFiles, Module module, Container container, User user)
-    {
-        reportFiles = reportFiles.stream().filter(Resource::exists).collect(Collectors.toList());
-
-        // Keep files that might be Query reports (end in .xml);
-        // below we'll remove ones that are associated with R or JS reports
-        HashMap<String, Resource> possibleQueryReportFiles = new HashMap<>();
-        reportFiles
-                .stream()
-                .filter(file -> StringUtils.endsWithIgnoreCase(file.getName(), ModuleQueryReportDescriptor.FILE_EXTENSION))
-                .forEach(file -> possibleQueryReportFiles.put(file.getName(), file));
-
-        List<ReportDescriptor> reportDescriptors = new ArrayList<>(reportFiles.size());
-
-        for (Resource file : reportFiles)
-        {
-            if (!DefaultModule.moduleReportFilter.accept(null, file.getName()))
-                continue;
-
-            ReportDescriptor descriptor = getReportDescriptor(module, file, container, user);
-            reportDescriptors.add(descriptor);
-
-            if (null != descriptor.getMetaDataFile())
-                possibleQueryReportFiles.remove(descriptor.getMetaDataFile().getName());
-        }
-
-        // Anything left in this map should be a Query Report
-        possibleQueryReportFiles.values().forEach(file -> reportDescriptors.add(getReportDescriptor(module, file, container, user)));
-
-        return reportDescriptors;
-    }
-
-    private static ReportDescriptor getReportDescriptor(Module module, Resource file, Container container, User user)
-    {
-        ReportDescriptor descriptor = module.getCachedReport(file.getPath());
-
-        // cache miss
-        if (null == descriptor || descriptor.isStale())
-        {
-            descriptor = createModuleReportDescriptorInstance(module, file, container, user);
-
-            // NOTE: getLegalFilePath() is not a two-way mapping, this can cause inconsistencies
-            // so don't cache files with _ (underscore) in path
-            if (!file.getPath().toString().contains("_"))
-                module.cacheReport(file.getPath(), descriptor);
-        }
-
-        descriptor.setContainer(container.getId());
-
-        return descriptor;
-    }
-
-    // TODO: Temporary... for verification of module report caching changes
-    private static boolean equals(ReportDescriptor rpt1, ReportDescriptor rpt2)
-    {
-        if (rpt1.getClass() == rpt2.getClass())
-        {
-            if (Objects.equals(rpt1.getAuthor(), rpt2.getAuthor()))
-            {
-                if (Objects.equals(rpt1.getCategory(), rpt2.getCategory()))
-                {
-                    if (rpt1.getReportName().equals(rpt2.getReportName()) &&
-                        rpt1.getDescriptorType().equals(rpt2.getDescriptorType()) &&
-                        rpt1.getFlags() == rpt2.getFlags() &&
-                        rpt1.getAccess().equals(rpt2.getAccess()) &&
-                        rpt1.getDisplayOrder() == rpt2.getDisplayOrder() &&
-                        rpt1.getReportKey().equals(rpt2.getReportKey()))
-                    {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
-    @NotNull
-    static ReportDescriptor createModuleReportDescriptorInstance(Module module, Resource reportFile, Container container, User user)
-    {
-        Path path = reportFile.getPath();
-        String parent = path.getParent().toString("","");
-        String lower = path.toString().toLowerCase();
-
-        // Create R Report Descriptor
-        if (ModuleQueryRReportDescriptor.accept(lower))
-            return new ModuleQueryRReportDescriptor(module, parent, reportFile, path, container, user);
-
-        // Create JS Report Descriptor
-        if (lower.endsWith(ModuleQueryJavaScriptReportDescriptor.FILE_EXTENSION))
-            return new ModuleQueryJavaScriptReportDescriptor(module, parent, reportFile, path, container, user);
-
-         // Create Query Report Descriptor
-        return new ModuleQueryReportDescriptor(module, parent, reportFile, path, container, user);
-    }
-
-    private static Resource getQueryReportsDirectory(Module module)
-    {
-        return module.getModuleResource("reports/schemas");
-    }
-
-    private static Path getLegalFilePath(@NotNull Path key)
-    {
-        Path legalPath = Path.emptyPath;
-
-        for (int idx = 0; idx < key.size() ; ++idx)
-            legalPath = legalPath.append(FileUtil.makeLegalName(key.get(idx)));
-
-        return legalPath;
+        return ModuleReportCache.getModuleReportDescriptors(module, container, user, path);
     }
 
     public void registerReport(Report report)
@@ -765,13 +583,11 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         {
             readableReports = new ArrayList<>();
 
-            for (Report report : reports)
-            {
-                if (report.hasPermission(user, report.getDescriptor().getResourceContainer(), ReadPermission.class))
-                {
-                    readableReports.add(report);
-                }
-            }
+            readableReports.addAll(
+                reports
+                    .stream()
+                    .filter(report -> report.hasPermission(user, report.getDescriptor().getResourceContainer(), ReadPermission.class))
+                    .collect(Collectors.toList()));
         }
 
         // must re-sort to allow file-based reports to show in proper positions
@@ -1101,23 +917,6 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
                     .collect(Collectors.toList());
             }
             return Collections.emptyList();
-        }
-    }
-
-    private static class ReportComparator implements Comparator<Report>
-    {
-        private static final ReportComparator _instance = new ReportComparator();
-
-        private ReportComparator(){}
-
-        public static ReportComparator getInstance()
-        {
-            return _instance;
-        }
-
-        public int compare(Report o1, Report o2)
-        {
-            return o1.getDescriptor().getReportId().toString().compareToIgnoreCase(o2.getDescriptor().getReportId().toString());
         }
     }
 
