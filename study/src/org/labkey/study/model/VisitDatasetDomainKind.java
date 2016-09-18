@@ -61,7 +61,7 @@ public class VisitDatasetDomainKind extends DatasetDomainKind
     @Override
     public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
     {
-        Set<PropertyStorageSpec.Index> ret = super.getPropertyIndices(domain);
+        Set<PropertyStorageSpec.Index> ret = new HashSet<>(super.getPropertyIndices(domain));
         Study study = StudyManager.getInstance().getStudy(domain.getContainer());
 
         if(null != study)
