@@ -11,8 +11,10 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.DailyB;
+import org.labkey.test.components.BodyWebPart;
 import org.labkey.test.pages.issues.InsertPage;
 import org.labkey.test.pages.mothership.EditUpgradeMessagePage;
+import org.labkey.test.pages.mothership.ReportsPage;
 import org.labkey.test.pages.mothership.ShowExceptionsPage;
 import org.labkey.test.pages.mothership.ShowExceptionsPage.ExceptionSummaryDataRegion;
 import org.labkey.test.pages.mothership.StackTraceDetailsPage;
@@ -23,6 +25,7 @@ import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
 import org.labkey.test.util.Maps;
 import org.labkey.test.util.PermissionsHelper.MemberType;
+import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.TextSearcher;
 import org.labkey.test.util.mothership.MothershipHelper;
 
@@ -32,6 +35,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 import static org.labkey.test.pages.test.TestActions.*;
 import static org.labkey.test.util.mothership.MothershipHelper.MOTHERSHIP_PROJECT;
 
@@ -218,6 +222,21 @@ public class MothershipTest extends BaseWebDriverTest
         assertNotEquals("Should not group exceptions from different actions", exceptionIds.get(0), exceptionIds.get(1));
     }
 
+    @Test
+    public void testReports() throws Exception
+    {
+        final ReportsPage reportsPage = ReportsPage.beginAt(this);
+        final List<BodyWebPart> bodyWebParts = new PortalHelper(getDriver()).getBodyWebParts();
+
+        List<String> expected = Arrays.asList("\"Unbugged\" Exceptions by Owner", "Unassigned Exceptions", "Installations");
+        List<String> actual = new ArrayList<>();
+        bodyWebParts.stream().forEachOrdered(wp -> actual.add(wp.getTitle()));
+
+        // Very basic check.
+        assertEquals("Wrong mothership reports", expected, actual);
+        // TODO: Verify report contents
+    }
+
     private ShowExceptionsPage goToMothership()
     {
         clickProject(MOTHERSHIP_PROJECT);
@@ -270,7 +289,7 @@ public class MothershipTest extends BaseWebDriverTest
     @Override
     protected String getProjectName()
     {
-        return null;
+        return MOTHERSHIP_PROJECT;
     }
 
     @Override
