@@ -20,21 +20,30 @@
 
         var PAGE_OFFSET = 4;
         var PAGE_OFFSET_SKIPP = false;
-        function resetVariables () {
+
+        function getRowCount(region) {
+            if (!region) {
+                return -1;
+            }
+
+            var id = '#' + region.domId;
+            return $(id + ' tr.labkey-row').size() + $(id + ' tr.labkey-alternate-row').size();
+        }
+
+        function resetVariables() {
             PAGE_OFFSET = 4;
             PAGE_OFFSET_SKIPP = false;
         }
 
         var tabsSel = '.qwp-demo .tab',
-                activeCls = 'active-tab';
+            activeCls = 'active-tab';
 
         $(tabsSel).click(function() {
             $(tabsSel).removeClass(activeCls);
             $(this).addClass(activeCls);
         });
 
-        function onHashChange(initial)
-        {
+        function onHashChange(initial) {
             resetVariables();
             var hash = location.hash;
             if (initial === true) {
@@ -223,18 +232,18 @@
                 maxRows: 3,
                 success: function(dr) {
                     if (dr.maxRows !== 3) {
-                        alert('Failed test: Set Paging to 3 with maxRows config');
+                        alert('Failed test: Set Paging to 3 with maxRows config. Expected maxRows to be 3. Max rows is ' + dr.maxRows);
                     }
-                    var results = $("a:contains('sampleDataTest1')");
-                    if (!results || results.length != 3) {
-                        alert('Failed to set Paging to 3 with maxRows config');
+
+                    if (getRowCount(dr) !== 3) {
+                        alert('Failed to set Paging to 3 with maxRows config. Expected 3 rows to be in the region.');
                     }
                     else {
-                        LABKEY.Utils.signalWebDriverTest("testPagingConfig");
+                        LABKEY.Utils.signalWebDriverTest('testPagingConfig');
                     }
                 },
                 failure: function() {
-                    alert('Failed test: Set Paging to 3 with config');
+                    alert('Failed test: Set Paging to 3 with config. Failed to load.');
                 }
             });
         }
@@ -254,12 +263,11 @@
                             dr.setMaxRows(2);
                         }
                         else {
-                            var results = $("a:contains('sampleDataTest1')");
-                            if (!results || results.length != 2) {
-                                alert('Failed to set Paging to 2 with API');
+                            if (getRowCount(dr) !== 2) {
+                                alert('Failed to set Paging to 2 with API. Expected 2 rows to be in the region.');
                             }
                             else {
-                                LABKEY.Utils.signalWebDriverTest("testSetPaging");
+                                LABKEY.Utils.signalWebDriverTest('testSetPaging');
                             }
                         }
                     }
