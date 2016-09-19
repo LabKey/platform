@@ -110,7 +110,8 @@ public class IssuesQueryView extends QueryView
 
             if (!getUser().isGuest())
             {
-                ActionButton prefsButton = new ActionButton(IssuesController.EmailPrefsAction.class, "Email Preferences", DataRegion.MODE_GRID, ActionButton.Action.LINK);
+                ActionURL url = new ActionURL(IssuesController.EmailPrefsAction.class, getContainer()).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, _issueDef.getName());
+                ActionButton prefsButton = new ActionButton(url, "Email Preferences", DataRegion.MODE_GRID, ActionButton.Action.LINK);
                 bar.add(prefsButton);
             }
         }
