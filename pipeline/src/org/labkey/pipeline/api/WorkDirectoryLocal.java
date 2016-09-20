@@ -32,18 +32,18 @@ public class WorkDirectoryLocal extends AbstractWorkDirectory
 {
     public static class Factory extends AbstractFactory
     {
-        public WorkDirectory createWorkDirectory(String jobId, FileAnalysisJobSupport support, Logger log) throws IOException
+        public WorkDirectory createWorkDirectory(String jobId, FileAnalysisJobSupport support, boolean useDeterministicFolderPath, Logger log) throws IOException
         {
             File dir = FT_WORK_DIR.newFile(support.getAnalysisDirectory(),
                     support.getBaseName());
 
-            return new WorkDirectoryLocal(support, this, dir, log);
+            return new WorkDirectoryLocal(support, this, dir, useDeterministicFolderPath, log);
         }
     }
 
-    public WorkDirectoryLocal(FileAnalysisJobSupport support, WorkDirFactory factory, File dir, Logger log) throws IOException
+    public WorkDirectoryLocal(FileAnalysisJobSupport support, WorkDirFactory factory, File dir, boolean reuseExistingDirectory, Logger log) throws IOException
     {
-        super(support, factory, dir, log);
+        super(support, factory, dir, reuseExistingDirectory, log);
     }
 
     public File inputFile(File fileInput, boolean forceCopy) throws IOException

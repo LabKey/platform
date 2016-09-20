@@ -107,7 +107,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         }
     }
 
-    public AbstractWorkDirectory(FileAnalysisJobSupport support, WorkDirFactory factory, File dir, Logger log) throws IOException
+    public AbstractWorkDirectory(FileAnalysisJobSupport support, WorkDirFactory factory, File dir, boolean reuseExistingDirectory, Logger log) throws IOException
     {
         _support = support;
         _factory = factory;
@@ -116,8 +116,15 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
 
         if (_dir.exists())
         {
-            if (!FileUtil.deleteDirectoryContents(_dir))
-                throw new IOException("Failed to clean up existing work directory " + _dir);
+            if (!reuseExistingDirectory)
+            {
+                if (!FileUtil.deleteDirectoryContents(_dir))
+                    throw new IOException("Failed to clean up existing work directory " + _dir);
+            }
+            else
+            {
+                _jobLog.debug("existing work directory found, re-using");
+            }
         }
         else
         {

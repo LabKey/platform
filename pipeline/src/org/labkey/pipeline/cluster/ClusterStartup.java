@@ -51,7 +51,7 @@ public class ClusterStartup extends AbstractPipelineStartup
         if (args.length < 1)
         {
             System.out.println("No job file provided, exiting");
-            return;
+            System.exit(0);
         }
 
         String localFile = PipelineJobService.get().getPathMapper().remoteToLocal(args[0]);

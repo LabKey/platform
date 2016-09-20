@@ -15,22 +15,26 @@
  */
 package org.labkey.pipeline.api;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.pipeline.WorkDirFactory;
 import org.labkey.api.pipeline.WorkDirectory;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
-import org.apache.log4j.Logger;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.springframework.beans.factory.InitializingBean;
 
-import java.io.*;
-import java.nio.channels.FileLock;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.Map;
-import java.util.HashMap;
 
 /**
  * Used to copy files from (and back to) a remote file system so that they can be used directly on the local file system 
@@ -50,12 +54,18 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
     @Override
     public File inputFile(File fileInput, boolean forceCopy) throws IOException
     {
-        return copyInputFile(fileInput);
+        return inputFile(fileInput, newFile(fileInput.getName()), forceCopy);
     }
 
     @Override
     public File inputFile(File fileInput, File fileWork, boolean forceCopy) throws IOException
     {
+        //can be used to prevent duplicate copy attempts
+        if (fileWork.exists() && !forceCopy)
+        {
+            _copiedInputs.put(fileInput, fileWork);
+        }
+
         return copyInputFile(fileInput, fileWork);
     }
 
@@ -64,6 +74,8 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
         private String _lockDirectory;
         private String _tempDirectory;
         private boolean _sharedTempDirectory;
+        private boolean _allowReuseExistingTempDirectory;
+        private boolean _deterministicWorkingDirName;
         private boolean _cleanupOnStartup;
         private String _transferToDirOnFailure = null;
 
@@ -79,8 +91,16 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
             }
         }
 
-        public WorkDirectory createWorkDirectory(String jobId, FileAnalysisJobSupport support, Logger log) throws IOException
+        @Override
+        public WorkDirectory createWorkDirectory(String jobId, FileAnalysisJobSupport support, boolean useDeterministicFolderPath, Logger log) throws IOException
         {
+            if (useDeterministicFolderPath)
+            {
+                _sharedTempDirectory = true;
+                _allowReuseExistingTempDirectory = true;
+                _deterministicWorkingDirName = true;
+            }
+
             File tempDir;
             int attempt = 0;
             do
@@ -95,9 +115,24 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
                 {
                     if (_sharedTempDirectory)
                     {
-                        dirParent = File.createTempFile(jobId, "", dirParent);
-                        dirParent.delete();
-                        dirParent.mkdirs();
+                        if (_deterministicWorkingDirName)
+                        {
+                            dirParent = new File(dirParent, jobId);
+                        }
+                        else
+                        {
+                            dirParent = File.createTempFile(jobId, "", dirParent);
+                        }
+
+                        if (_allowReuseExistingTempDirectory && dirParent.exists())
+                        {
+                            log.info("parent directory exists, reusing: " + dirParent.getPath());
+                        }
+                        else
+                        {
+                            dirParent.delete();
+                            dirParent.mkdirs();
+                        }
                     }
 
                     String name = support.getBaseName();
@@ -114,9 +149,24 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
                         name = "wd_" + name;
                     }
 
-                    tempDir = File.createTempFile(name, WORK_DIR_SUFFIX, dirParent);
-                    tempDir.delete();
-                    tempDir.mkdirs();
+                    if (_deterministicWorkingDirName)
+                    {
+                        tempDir = new File(dirParent, name + WORK_DIR_SUFFIX);
+                    }
+                    else
+                    {
+                        tempDir = File.createTempFile(name, WORK_DIR_SUFFIX, dirParent);
+                    }
+
+                    if (_allowReuseExistingTempDirectory && tempDir.exists())
+                    {
+                        log.info("working directory exists, reusing: " + dirParent.getPath());
+                    }
+                    else
+                    {
+                        tempDir.delete();
+                        tempDir.mkdirs();
+                    }
                 }
                 catch (IOException e)
                 {
@@ -136,7 +186,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
 
             File lockDir = (_lockDirectory == null ? null : new File(_lockDirectory));
             File transferToDirOnFailure = (_transferToDirOnFailure == null ? null : new File(_transferToDirOnFailure));
-            return new WorkDirectoryRemote(support, this, log, lockDir, tempDir, transferToDirOnFailure);
+            return new WorkDirectoryRemote(support, this, log, lockDir, tempDir, transferToDirOnFailure, _allowReuseExistingTempDirectory);
         }
 
         public String getLockDirectory()
@@ -238,11 +288,41 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
         {
             _transferToDirOnFailure = transferToDirOnFailure;
         }
+
+        public boolean isAllowReuseExistingTempDirectory()
+        {
+            return _allowReuseExistingTempDirectory;
+        }
+
+        /**
+         * If true, instead of deleting an existing working directory on job startup, an existing directory will be reused.
+         * This is mostly used to allow job resume, and should only be used
+         * @param allowReuseExistingTempDirectory
+         */
+        public void setAllowReuseExistingTempDirectory(boolean allowReuseExistingTempDirectory)
+        {
+            _allowReuseExistingTempDirectory = allowReuseExistingTempDirectory;
+        }
+
+        public boolean isDeterministicWorkingDirName()
+        {
+            return _deterministicWorkingDirName;
+        }
+
+        /**
+         * If true, the working directory for each job will be named using the job' name alone (as opposed to a random temp file based on jobName)
+         * This is intended to support job resume, and should be used with sharedTempDirectory=true to avoid conflicts.
+         * @param deterministicWorkingDirName
+         */
+        public void setDeterministicWorkingDirName(boolean deterministicWorkingDirName)
+        {
+            _deterministicWorkingDirName = deterministicWorkingDirName;
+        }
     }
 
-    public WorkDirectoryRemote(FileAnalysisJobSupport support, WorkDirFactory factory, Logger log, File lockDir, File tempDir, File transferToDirOnFailure) throws IOException
+    public WorkDirectoryRemote(FileAnalysisJobSupport support, WorkDirFactory factory, Logger log, File lockDir, File tempDir, File transferToDirOnFailure, boolean reuseExistingDirectory) throws IOException
     {
-        super(support, factory, tempDir, log);
+        super(support, factory, tempDir, reuseExistingDirectory, log);
 
         _lockDirectory = lockDir;
         _transferToDirOnFailure = transferToDirOnFailure;
