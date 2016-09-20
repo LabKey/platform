@@ -553,8 +553,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         for (DomainProperty pd : columns)
         {
-            Set<Container> searchContainers = null;
-
             // initialize the DomainProperty validator map
             validatorMap.put(pd, ColumnValidators.create(null, pd));
 
