@@ -19,11 +19,11 @@ import org.junit.experimental.categories.Category;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
-import org.labkey.test.categories.DailyA;
+import org.labkey.test.categories.DailyC;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
 
-@Category({DailyA.class})
+@Category({DailyC.class})
 public class StudySecurityTest extends StudyBaseTest
 {
     protected static final String READER = "dsreader@studysecurity.test";

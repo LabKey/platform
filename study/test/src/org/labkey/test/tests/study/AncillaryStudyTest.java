@@ -19,7 +19,7 @@ import org.junit.experimental.categories.Category;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
-import org.labkey.test.categories.DailyB;
+import org.labkey.test.categories.DailyC;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.ChartHelper;
 import org.labkey.test.util.DataRegionTable;
@@ -33,7 +33,7 @@ import java.util.Map;
 
 import static org.junit.Assert.*;
 
-@Category({DailyB.class})
+@Category({DailyC.class})
 public class AncillaryStudyTest extends StudyBaseTest
 {
     private static final String PROJECT_NAME = "AncillaryStudyTest Project";

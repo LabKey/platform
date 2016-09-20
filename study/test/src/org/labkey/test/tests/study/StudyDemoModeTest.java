@@ -18,7 +18,7 @@ package org.labkey.test.tests.study;
 
 import org.junit.experimental.categories.Category;
 import org.labkey.test.Locator;
-import org.labkey.test.categories.DailyB;
+import org.labkey.test.categories.DailyC;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.Crawler;
 
@@ -26,9 +26,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
 
-@Category({DailyB.class})
+@Category({DailyC.class})
 public class StudyDemoModeTest extends StudyBaseTest
 {
     @Override

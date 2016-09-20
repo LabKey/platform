@@ -21,7 +21,7 @@ import org.junit.rules.Timeout;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
-import org.labkey.test.categories.DailyB;
+import org.labkey.test.categories.DailyC;
 import org.labkey.test.categories.FileBrowser;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
@@ -29,9 +29,10 @@ import org.labkey.test.util.Ext4Helper;
 import java.io.File;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
-@Category({DailyB.class, FileBrowser.class})
+@Category({DailyC.class, FileBrowser.class})
 public class StudyExportTest extends StudyManualTest
 {
     private static final String SPECIMEN_ARCHIVE_B = "/sampledata/study/specimens/sample_b.specimens";

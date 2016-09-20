@@ -28,7 +28,7 @@ import org.labkey.test.Locators;
 import org.labkey.test.SortDirection;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
-import org.labkey.test.categories.DailyB;
+import org.labkey.test.categories.DailyC;
 import org.labkey.test.categories.Specimen;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.ChartHelper;
@@ -59,7 +59,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.labkey.test.util.PasswordUtil.getUsername;
 
-@Category({Specimen.class, DailyB.class})
+@Category({Specimen.class, DailyC.class})
 public class StudyTest extends StudyBaseTest
 {
     private String datasetLink = datasetCount + " datasets";

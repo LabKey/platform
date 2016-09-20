@@ -25,7 +25,7 @@ import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
-import org.labkey.test.categories.DailyB;
+import org.labkey.test.categories.DailyC;
 import org.labkey.test.categories.FileBrowser;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
@@ -50,7 +50,7 @@ import static org.junit.Assert.*;
  * The @BeforeClass creates a new study manually using the default settings.
  * Each @Test then sets a property in that study, exports the study, and reimports it into a subfolder
  */
-@Category({DailyB.class, FileBrowser.class})
+@Category({DailyC.class, FileBrowser.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 60)
 public class StudySimpleExportTest extends StudyBaseTest
 {

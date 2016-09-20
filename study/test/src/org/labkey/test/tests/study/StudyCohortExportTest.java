@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.labkey.test.tests.study;
+
 import org.junit.experimental.categories.Category;
-import org.labkey.test.categories.DailyB;
+import org.labkey.test.categories.DailyC;
 import org.labkey.test.util.DataRegionTable;
 
-@Category({DailyB.class})
+@Category({DailyC.class})
 public class StudyCohortExportTest extends StudyExportTest
 {
     @Override

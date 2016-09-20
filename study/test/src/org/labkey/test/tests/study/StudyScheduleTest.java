@@ -18,7 +18,7 @@ package org.labkey.test.tests.study;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
-import org.labkey.test.categories.DailyA;
+import org.labkey.test.categories.DailyC;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.LogMethod;
@@ -28,9 +28,9 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 
 import java.io.File;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.fail;
 
-@Category({DailyA.class})
+@Category({DailyC.class})
 public class StudyScheduleTest extends StudyBaseTest
 {
     // dataset names

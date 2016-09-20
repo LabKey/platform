@@ -19,14 +19,14 @@ import org.junit.experimental.categories.Category;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.WebTestHelper;
-import org.labkey.test.categories.DailyB;
+import org.labkey.test.categories.DailyC;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 
 import java.io.File;
 
-@Category(DailyB.class)
+@Category(DailyC.class)
 public class StudyMergeParticipantsTest extends StudyBaseTest
 {
     private static final String PROJECT_NAME =  "Merge Participants Test Project";

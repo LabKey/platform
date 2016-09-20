@@ -30,7 +30,7 @@ import org.labkey.test.Locators;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.WebTestHelper;
-import org.labkey.test.categories.DailyA;
+import org.labkey.test.categories.DailyC;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.LogMethod;
@@ -55,7 +55,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@Category({DailyA.class})
+@Category({DailyC.class})
 public class StudyPublishTest extends StudyProtectedExportTest
 {
     private final String ID_PREFIX = "PUBLISHED-";
