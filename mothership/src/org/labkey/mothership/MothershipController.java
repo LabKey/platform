@@ -47,6 +47,7 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
@@ -880,11 +881,11 @@ public class MothershipController extends SpringActionController
         {
             super(new DataRegion(), (BindException) null);
             setTitle(title);
-            TableInfo exceptionTableInfo = MothershipManager.get().getTableInfoServerInstallation();
-            getDataRegion().setTable(exceptionTableInfo);
+            TableInfo exceptionTableInfo = MothershipManager.get().getTableInfoExceptionReport();
             ResultSet rs = new SqlSelector(exceptionTableInfo.getSchema(), new SQLFragment(sql)).getResultSet();
-            setResultSet(rs);
-            getDataRegion().setColumns(DataRegion.colInfosFromMetaData(rs.getMetaData()));
+            List<ColumnInfo> colInfos = DataRegion.colInfosFromMetaData(rs.getMetaData());
+            setResults(new ResultsImpl(rs, colInfos));
+            getDataRegion().setColumns(colInfos);
             getDataRegion().setSortable(false);
             getDataRegion().setShowFilters(false);
             getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
