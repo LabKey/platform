@@ -19,7 +19,6 @@ import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.XarContext;
@@ -120,7 +119,7 @@ public class LsidUtils
                 throw new XarFormatException("Infinite replacement in template " + originalTemplate);
             }
 
-            if (template.indexOf("${") != -1)
+            if (template.contains("${"))
             {
                 resolved = doReplacements(template, replacer);
                 changed = !resolved.equals(template);

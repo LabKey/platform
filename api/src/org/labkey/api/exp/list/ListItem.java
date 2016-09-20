@@ -21,16 +21,19 @@ import org.labkey.api.exp.property.DomainProperty;
 
 import java.util.Map;
 
+/**
+ * Represents a single row in a list.
+ */
 public interface ListItem
 {
-    public Object getKey();
-    public void setKey(Object key);
+    Object getKey();
+    void setKey(Object key);
 
-    public String getEntityId();
-    public void setEntityId(String entityId);
+    String getEntityId();
+    void setEntityId(String entityId);
 
-    public Object getProperty(DomainProperty property);
-    public void setProperty(DomainProperty property, Object value);
+    Object getProperty(DomainProperty property);
+    void setProperty(DomainProperty property, Object value);
 
-    public Map<String, ObjectProperty> getProperties();
+    Map<String, ObjectProperty> getProperties();
 }

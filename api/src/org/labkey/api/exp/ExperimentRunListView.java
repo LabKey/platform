@@ -56,6 +56,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
+ * A grid view of a subset of all experiment runs, typically of a given protocol or assay type.
  * User: jeckels
  * Date: Oct 12, 2006
  */

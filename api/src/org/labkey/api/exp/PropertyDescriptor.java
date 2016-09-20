@@ -30,9 +30,11 @@ import java.io.Serializable;
 import java.util.Map;
 
 /**
+ * Bean class for property types managed via the ontology system and stored in exp.PropertyDescriptor.
+ * Most code should not reference PropertyDescriptors
+ * directly but should instead use the wrapper {@link org.labkey.api.exp.property.DomainProperty}.
  * User: migra
  * Date: Aug 15, 2005
- * Time: 2:41:47 PM
  */
 public class PropertyDescriptor extends ColumnRenderProperties implements ParameterDescription, Serializable, Cloneable
 {                           

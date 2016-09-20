@@ -29,12 +29,10 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 
 /**
- * User: migra
- * Date: Oct 3, 2005
- * Time: 10:24:41 AM
- * <p/>
  * NOTE: The names of these literally are the LSID prefixes. Need to
  * refactor if you want to change these to some other casing or something like that
+ * User: migra
+ * Date: Oct 3, 2005
  */
 public enum LsidType
 {

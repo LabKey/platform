@@ -23,12 +23,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * A one-based list (for the initial index), useful for JDBC operations, etc.
  * User: adam
  * Date: 10/21/12
- * Time: 6:28 AM
  */
-
-// A one-based list, useful for JDBC operations, etc.
 public class OneBasedList<E> extends IndexMappingList<OneBasedList<E>, E>
 {
     public OneBasedList()

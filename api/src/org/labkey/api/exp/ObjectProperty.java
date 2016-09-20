@@ -28,9 +28,9 @@ import java.util.Collections;
 import java.io.File;
 
 /**
+ * A single object-property-value triple.
  * User: migra
  * Date: Oct 25, 2005
- * Time: 1:22:35 PM
  */
 public class ObjectProperty extends OntologyManager.PropertyRow
 {
@@ -38,13 +38,11 @@ public class ObjectProperty extends OntologyManager.PropertyRow
     public static final int STRING_LENGTH = 4000;
 
     // Object fields
-//    private int objectId = 0;
     private Container container;
     private String objectURI;
     private Integer objectOwnerId;
 
     // PropertyDescriptor
-//	private int propertyId = 0;
 	private String propertyURI;
     private String name;
     private String rangeURI;
@@ -52,11 +50,6 @@ public class ObjectProperty extends OntologyManager.PropertyRow
     private String format;
 
     // ObjectProperty
-//    private char typeTag;
-//    private Double floatValue;
-//    private String stringValue;
-//    private String textValue;
-//    private Date dateTimeValue;
     private Identifiable objectValue;
     private Map<String, ObjectProperty> _childProperties;
 

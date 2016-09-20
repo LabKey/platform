@@ -15,12 +15,13 @@
  */
 package org.labkey.api.exp;
 
-import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.AliasedColumn;
 
 /**
- * Display column for holding the raw value for a qc-enabled field.
+ * {@link DisplayColumn} for rendering the raw value for a MV-enabled field.
  *
  * User: jgarms
  * Date: Mar 10, 2009

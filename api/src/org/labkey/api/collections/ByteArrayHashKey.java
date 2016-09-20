@@ -18,12 +18,10 @@ package org.labkey.api.collections;
 import java.util.Arrays;
 
 /**
-* User: adam
-* Date: 1/12/12
-* Time: 9:21 PM
-*/
-
-// Simple wrapper that allows use of byte[] as a HashMap key or member of a HashSet
+ * Simple wrapper that allows use of byte[] as a HashMap key or member of a HashSet
+ * User: adam
+ * Date: 1/12/12
+ */
 public class ByteArrayHashKey
 {
     private final byte[] _bytes;

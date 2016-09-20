@@ -19,7 +19,7 @@ import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.util.FileType;
 
 /**
- * Pointer for {@link TaskId}
+ * Pointer for {@link TaskId} for a XAR generator pipeline task, used to create runs and import data files.
  * User: jeckels
  * Date: Jul 28, 2008
  */

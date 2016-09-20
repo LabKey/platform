@@ -29,11 +29,11 @@ import java.util.Random;
 import java.util.concurrent.ExecutionException;
 
 /**
+ * {@link Map} implementation that uses case-insensitive {@link String}s for keys. Unlike many other implementations,
+ * retains the original case of the String for use when iterating and such.
  * User: arauch
  * Date: Dec 25, 2004
- * Time: 4:07:57 PM
  */
-
 public class CaseInsensitiveHashMap<V> extends CaseInsensitiveMapWrapper<V> implements Serializable
 {
     public CaseInsensitiveHashMap()

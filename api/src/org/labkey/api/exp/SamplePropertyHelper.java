@@ -32,6 +32,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 
 /**
+ * Helper for mapping user-specified property values to the desired {@link DomainProperty} collection.
  * User: jeckels
  * Date: Oct 3, 2007
  */

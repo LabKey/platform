@@ -17,7 +17,11 @@ package org.labkey.api.exp;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.LookupColumn;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
@@ -26,16 +30,16 @@ import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.FileLinkDisplayColumn;
-import org.labkey.api.util.StringExpression;
 
 import java.util.List;
 import java.util.Map;
 
 
 /**
+ * {@link ColumnInfo} which is specified via an ontology-managed property, and may be persisted in exp.ObjectProperty or
+ * in a hard table managed by {@link org.labkey.api.exp.api.StorageProvisioner}.
  * User: migra
  * Date: Sep 20, 2005
- * Time: 9:15:38 AM
  */
 public class PropertyColumn extends LookupColumn
 {

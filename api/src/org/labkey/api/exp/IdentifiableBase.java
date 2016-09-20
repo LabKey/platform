@@ -18,9 +18,9 @@ package org.labkey.api.exp;
 import java.io.Serializable;
 
 /**
+ * Utility base class for implementations of {@link Identifiable}
  * User: migra
  * Date: Jun 14, 2005
- * Time: 2:58:29 PM
  */
 public class IdentifiableBase implements Identifiable, Serializable
 {

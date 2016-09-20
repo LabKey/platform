@@ -16,13 +16,13 @@
 package org.labkey.api.exp;
 
 /**
+ * Base functionality for objects that have an LSID.
  * User: migra
  * Date: Jun 14, 2005
- * Time: 2:54:59 PM
  */
 public interface Identifiable
 {
-    public String getLSID();
+    String getLSID();
 
-    public String getName();
+    String getName();
 }

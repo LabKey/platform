@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Serializes and deserializes experiment objects to and from JSON.
  * User: jeckels
  * Date: Jan 21, 2009
  */

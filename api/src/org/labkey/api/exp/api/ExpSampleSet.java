@@ -25,7 +25,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import java.util.List;
 
 /**
- * A collection of {@link ExpMaterial}, with a custom Domain for additional properties.
+ * A collection of {@link ExpMaterial}, with a custom {@link Domain} for additional properties.
  * Material version of {@link ExpDataClass}
  */
 public interface ExpSampleSet extends ExpObject
@@ -80,5 +80,7 @@ public interface ExpSampleSet extends ExpObject
 
     void setMaterialLSIDPrefix(String s);
 
+    /** @return all of the ID columns. Should be a list of 0-3 elements */
+    @NotNull
     List<DomainProperty> getIdCols();
 }

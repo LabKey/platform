@@ -18,15 +18,13 @@ package org.labkey.api.collections;
 
 import java.util.concurrent.ConcurrentSkipListMap;
 
-/*
-* User: adam
-* Date: Nov 30, 2010
-* Time: 8:09:27 AM
-*/
-
-// As the name suggests, this is a concurrent, case-insensitive map of <String, V> that is sorted by its keys, ignoring
-// case. A ConcurrentSkipListMap is not as efficient as a concurrent case-insensitive hash map would be (if we had one)
-// but it's sorted and should beat a synchronized CaseInsensitiveHashMap.
+/**
+ * As the name suggests, this is a concurrent, case-insensitive map of &lt;String, V&gt; that is sorted by its keys, ignoring
+ * case. A ConcurrentSkipListMap is not as efficient as a concurrent case-insensitive hash map would be (if we had one)
+ * but it's sorted and should beat a synchronized CaseInsensitiveHashMap.
+ * User: adam
+ * Date: Nov 30, 2010
+ */
 public class ConcurrentCaseInsensitiveSortedMap<V> extends ConcurrentSkipListMap<String, V>
 {
     public ConcurrentCaseInsensitiveSortedMap()

@@ -16,6 +16,7 @@
 package org.labkey.api.exp;
 
 /**
+ * Quality control flag bean class, attached to an {@link org.labkey.api.exp.api.ExpRun}.
  * User: cnathe
  * Date: Dec 16, 2011
  */

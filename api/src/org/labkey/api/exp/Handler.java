@@ -22,7 +22,7 @@ import java.util.Collection;
 
 /**
  * Allows for recognition of objects based on their type or other characteristics. Allows multiple
- * implementations to recognize and claim reponsibility for a particular object, routing the handling
+ * implementations to recognize and claim responsibility for a particular object, routing the handling
  * to the one that claims to be the best fit.
  *
  * User: jeckels

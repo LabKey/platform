@@ -27,6 +27,10 @@ import org.labkey.api.util.UnexpectedException;
 
 import java.util.Map;
 
+/**
+ * Bean class for domains (persisted in exp.DomainDescriptor). Most code shouldn't use this class directly, but should
+ * instead use a {@link org.labkey.api.exp.property.Domain} wrapper.
+ */
 public final class DomainDescriptor
 {
     static

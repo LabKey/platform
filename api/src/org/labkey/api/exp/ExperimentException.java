@@ -16,6 +16,7 @@
 package org.labkey.api.exp;
 
 /**
+ * Indicates something went wrong when operating over data managed by the Experiment module.
  * User: jeckels
  * Date: Sep 21, 2005
  */

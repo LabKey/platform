@@ -19,7 +19,7 @@ import java.util.Set;
 
 /**
  * For fields with associated missing value indicator, this wrapper holds both an actual value
- * (which may be null) and an mv indicator (which also may be null).
+ * (which may be null) and an MV indicator (which also may be null).
  *
  * User: jgarms
  * Date: Jan 15, 2009

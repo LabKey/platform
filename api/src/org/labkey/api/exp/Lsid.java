@@ -34,13 +34,11 @@ import java.net.URLEncoder;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
 /**
+ * Life-sciences identifier (LSID). A structured URI to describe things like samples, data files, assay runs, and protocols.
  * User: migra
  * Date: Aug 10, 2005
- * Time: 12:23:48 PM
  */
-
 public class Lsid
 {
     private static final Pattern LSID_REGEX = Pattern.compile("(?i)^urn:lsid:([^:]+):([^:]+):([^:]+)(?::(.*))?");
