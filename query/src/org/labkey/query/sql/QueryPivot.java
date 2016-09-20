@@ -694,32 +694,33 @@ public class QueryPivot extends QueryRelation
             if (!isAgg)
             {
                 String wrappedAgg = "MAX";
-                if (col instanceof QuerySelect.SelectColumn && ((QuerySelect.SelectColumn)col)._field instanceof QAggregate)
-                {
-                    QAggregate aggregate = (QAggregate)((QuerySelect.SelectColumn)col)._field;
-                    switch (aggregate.getType())
-                    {
-                        case COUNT:
-                        case SUM:
-                            wrappedAgg = "SUM";
-                            break;
-                        case MIN:
-                            wrappedAgg = "MIN";
-                            break;
-                        case MAX:
-                            wrappedAgg = "MAX";
-                            break;
-                        case AVG:
-                        case STDDEV:
-                        case STDERR:
-                        case GROUP_CONCAT:
-                        default:
-                            // illegal
-                            _query.reportError("Can't use '" + aggregate.getType().name() + "' in summary column '" + ((QuerySelect.SelectColumn) col).getName() + "'.  " +
-                                    "Either remove this column from the select list; change the aggregate to SUM, MIN, MAX; or add this column to the GROUP BY or PIVOT BY column set.");
-                            break;
-                    }
-                }
+                // Issue 27910: pivot query summary columns not aggregated correctly -- revert temporarily until we can get a better solution
+//                if (col instanceof QuerySelect.SelectColumn && ((QuerySelect.SelectColumn)col)._field instanceof QAggregate)
+//                {
+//                    QAggregate aggregate = (QAggregate)((QuerySelect.SelectColumn)col)._field;
+//                    switch (aggregate.getType())
+//                    {
+//                        case COUNT:
+//                        case SUM:
+//                            wrappedAgg = "SUM";
+//                            break;
+//                        case MIN:
+//                            wrappedAgg = "MIN";
+//                            break;
+//                        case MAX:
+//                            wrappedAgg = "MAX";
+//                            break;
+//                        case AVG:
+//                        case STDDEV:
+//                        case STDERR:
+//                        case GROUP_CONCAT:
+//                        default:
+//                            // illegal
+//                            _query.reportError("Can't use '" + aggregate.getType().name() + "' in summary column '" + ((QuerySelect.SelectColumn) col).getName() + "'.  " +
+//                                    "Either remove this column from the select list; change the aggregate to SUM, MIN, MAX; or add this column to the GROUP BY or PIVOT BY column set.");
+//                            break;
+//                    }
+//                }
 
                 sql.append(comma).append(wrappedAgg).append("(").append(col.getValueSql()).append(") AS ").append(col.getAlias());
                 comma = ",\n";
