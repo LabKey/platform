@@ -104,6 +104,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         return null;
     }
 
+    @NotNull
     public List<DomainProperty> getIdCols()
     {
         List<DomainProperty> result = new ArrayList<>();
