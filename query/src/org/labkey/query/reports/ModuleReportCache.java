@@ -34,9 +34,10 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- *  This cache will replace the complex module report loading and caching code in ReportServiceImpl. Once complete, we should be able to remove that
- *  code, report-specific functionality in Module/DefaultModule (e.g., getCachedReport(Path), cacheReport(Path, ReportDescriptor), getReportFiles(),
- *  preloadReports(), moduleReportFilter), ReportDescriptor.isStale(), etc. This class is not ready to be used and not tested.
+ *  This cache will replace the complex module report loading and caching code that used to reside in ReportServiceImpl (recently moved to
+ *  the bottom of this file). Once complete, we should be able to remove that code, report-specific functionality in Module/DefaultModule
+ *  (e.g., getCachedReport(Path), cacheReport(Path, ReportDescriptor), getReportFiles(), preloadReports(), moduleReportFilter),
+ *  ReportDescriptor methods like isStale(), and ModuleReportResource.ensureScriptCurrent() The new cache is not ready to be tested.
  *
  *  Created by adam on 9/12/2016.
  */
@@ -144,14 +145,32 @@ public class ModuleReportCache
     @Nullable
     public static ReportDescriptor getModuleReportDescriptor(Module module, Container container, User user, String path)
     {
-        List<ReportDescriptor> ds = getModuleReportDescriptors(module, container, user, path);
+        ReportDescriptor old = getModuleReportDescriptorOLD(module, container, user, path);
+
+        return old;
+    }
+
+    @NotNull
+    public static List<ReportDescriptor> getModuleReportDescriptors(Module module, Container container, User user, @Nullable String path)
+    {
+        List<ReportDescriptor> old = getModuleReportDescriptorsOLD(module, container, user, path);
+
+        return old;
+    }
+
+    /* ===== Once new cache is implemented and tested, delete everything below this point ===== */
+
+    @Nullable
+    private static ReportDescriptor getModuleReportDescriptorOLD(Module module, Container container, User user, String path)
+    {
+        List<ReportDescriptor> ds = getModuleReportDescriptorsOLD(module, container, user, path);
         if (ds.size() == 1)
             return ds.get(0);
         return null;
     }
 
     @NotNull
-    public static List<ReportDescriptor> getModuleReportDescriptors(Module module, Container container, User user, @Nullable String path)
+    private static List<ReportDescriptor> getModuleReportDescriptorsOLD(Module module, Container container, User user, @Nullable String path)
     {
         if (module.getReportFiles().isEmpty())
         {
@@ -219,11 +238,10 @@ public class ModuleReportCache
 
         // Keep files that might be Query reports (end in .xml);
         // below we'll remove ones that are associated with R or JS reports
-        HashMap<String, Resource> possibleQueryReportFiles = new HashMap<>();
-        reportFiles
-                .stream()
-                .filter(file -> StringUtils.endsWithIgnoreCase(file.getName(), ModuleQueryReportDescriptor.FILE_EXTENSION))
-                .forEach(file -> possibleQueryReportFiles.put(file.getName(), file));
+        Map<String, Resource> possibleQueryReportFiles = reportFiles
+            .stream()
+            .filter(file -> StringUtils.endsWithIgnoreCase(file.getName(), ModuleQueryReportDescriptor.FILE_EXTENSION))
+            .collect(Collectors.toMap(Resource::getName, file->file));
 
         List<ReportDescriptor> reportDescriptors = new ArrayList<>(reportFiles.size());
 
@@ -240,7 +258,9 @@ public class ModuleReportCache
         }
 
         // Anything left in this map should be a Query Report
-        possibleQueryReportFiles.values().forEach(file -> reportDescriptors.add(getReportDescriptor(module, file, container, user)));
+        possibleQueryReportFiles
+            .values()
+            .forEach(file -> reportDescriptors.add(getReportDescriptor(module, file, container, user)));
 
         return reportDescriptors;
     }
@@ -266,7 +286,7 @@ public class ModuleReportCache
     }
 
     @NotNull
-    static ReportDescriptor createModuleReportDescriptorInstance(Module module, Resource reportFile, Container container, User user)
+    private static ReportDescriptor createModuleReportDescriptorInstance(Module module, Resource reportFile, Container container, User user)
     {
         Path path = reportFile.getPath();
         String parent = path.getParent().toString("","");
@@ -299,7 +319,6 @@ public class ModuleReportCache
         return legalPath;
     }
 
-    // TODO: Temporary... for verification of module report caching changes
     private static boolean equals(ReportDescriptor rpt1, ReportDescriptor rpt2)
     {
         if (rpt1.getClass() == rpt2.getClass())
