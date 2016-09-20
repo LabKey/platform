@@ -2710,6 +2710,7 @@ study/webapp/study/vaccineDesign/StudyProducts.js -text
 study/webapp/study/vaccineDesign/TreatmentSchedule.js -text
 study/webapp/study/vaccineDesign/Utils.js -text
 study/webapp/study/vaccineDesign/VaccineDesign.css -text
+study/webapp/study/vaccineDesign/VisitWindow.js -text
 study/webapp/study/vaccineDesign/vaccineDesign.lib.xml -text
 survey/Survey.iml -text
 survey/module.properties -text

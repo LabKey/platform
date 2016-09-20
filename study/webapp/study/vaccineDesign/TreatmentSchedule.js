@@ -211,7 +211,6 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentSchedulePanel', {
     onFailure : function(text)
     {
         Ext4.Msg.show({
-            cls: 'data-window',
             title: 'Error',
             msg: text || 'Unknown error occurred.',
             icon: Ext4.Msg.ERROR,
@@ -429,17 +428,20 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleGrid', {
 
         Ext4.each(this.getVisitStore().getRange(), function(visit)
         {
-            visitConfigs.push({
-                label: visit.get('Label') || (this.visitNoun + visit.get('RowId')),
-                width: 150,
-                dataIndex: 'VisitMap',
-                dataIndexArrFilterProp: 'VisitId',
-                dataIndexArrFilterValue: visit.get('RowId'),
-                dataIndexArrValue: 'TreatmentId',
-                lookupStoreId: 'TreatmentsGridStore',
-                editorType: 'LABKEY.ext4.ComboBox',
-                editorConfig: this.getTreatmentComboBoxConfig
-            });
+            if (visit.get('Included'))
+            {
+                visitConfigs.push({
+                    label: visit.get('Label') || (this.visitNoun + visit.get('RowId')),
+                    width: 150,
+                    dataIndex: 'VisitMap',
+                    dataIndexArrFilterProp: 'VisitId',
+                    dataIndexArrFilterValue: visit.get('RowId'),
+                    dataIndexArrValue: 'TreatmentId',
+                    lookupStoreId: 'TreatmentsGridStore',
+                    editorType: 'LABKEY.ext4.ComboBox',
+                    editorConfig: this.getTreatmentComboBoxConfig
+                });
+            }
         }, this);
 
         return visitConfigs;
@@ -577,5 +579,77 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleGrid', {
         {
             this.callParent([record, column, newValue]);
         }
+    },
+
+    //Override
+    getAddNewRowTpl : function(columns, dataIndex)
+    {
+        var tplArr = [];
+
+        if (!this.disableEdit)
+        {
+            tplArr.push('<tr>');
+            tplArr.push('<td class="cell-display">&nbsp;</td>');
+            tplArr.push('<td class="cell-display action" colspan="' + columns.length + '">');
+            tplArr.push('<i class="' + this.ADD_ICON_CLS + ' add-new-row"> Add new row</i>&nbsp;&nbsp;&nbsp;');
+            tplArr.push('<i class="' + this.ADD_ICON_CLS + ' add-visit-column"> Add new ' + this.visitNoun.toLowerCase() + '</i>');
+            tplArr.push('</td>');
+            tplArr.push('</tr>');
+        }
+
+        return tplArr;
+    },
+
+    //Override
+    attachAddRowListeners : function(view)
+    {
+        this.callParent([view]);
+
+        var addIconEls = Ext4.DomQuery.select('i.add-visit-column', view.getEl().dom);
+
+        Ext4.each(addIconEls, function(addIconEl)
+        {
+            Ext4.get(addIconEl).on('click', this.addNewVisitColumn, this);
+        }, this);
+    },
+
+    addNewVisitColumn : function()
+    {
+        var win = Ext4.create('LABKEY.VaccineDesign.VisitWindow', {
+            title: 'Add ' + this.visitNoun,
+            visitNoun: this.visitNoun,
+            visitStore: this.getVisitStore(),
+            listeners: {
+                scope: this,
+                closewindow: function(){
+                    win.close();
+                },
+                selectexistingvisit: function(w, visitId){
+                    win.close();
+
+                    // set the selected visit to be included
+                    this.getVisitStore().findRecord('RowId', visitId).set('Included', true);
+
+                    this.updateDataViewTemplate();
+                },
+                newvisitcreated: function(w, newVisitData){
+                    win.close();
+
+                    // add the new visit to the store
+                    this.getVisitStore().add(LABKEY.VaccineDesign.Visit.create(newVisitData));
+
+                    this.updateDataViewTemplate();
+                }
+            }
+        });
+
+        win.show();
+    },
+
+    updateDataViewTemplate : function()
+    {
+        // explicitly clear the column configs so the new visit column will be added
+        this.columnConfigs = null;
+        this.getDataView().setTemplate(this.getDataViewTpl());
     }
 });

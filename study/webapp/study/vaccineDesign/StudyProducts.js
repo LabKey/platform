@@ -165,7 +165,6 @@ Ext4.define('LABKEY.VaccineDesign.StudyProductsPanel', {
     onFailure : function(text)
     {
         Ext4.Msg.show({
-            cls: 'data-window',
             title: 'Error',
             msg: text || 'Unknown error occurred.',
             icon: Ext4.Msg.ERROR,

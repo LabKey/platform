@@ -77,7 +77,12 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
             this.dataView = Ext4.create('Ext.view.View', {
                 tpl: this.getDataViewTpl(),
                 store: this.getStore(),
-                itemSelector: 'tr.row'
+                itemSelector: 'tr.row',
+                setTemplate: function(newTpl)
+                {
+                    this.tpl = newTpl;
+                    this.refresh();
+                }
             });
 
             this.dataView.on('itemclick', this.onDataViewItemClick, this);
@@ -292,9 +297,9 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
             tplArr.push('<td class="cell-display">&nbsp;</td>');
             tplArr.push('<td class="cell-display action" colspan="' + columns.length + '">');
             if (Ext4.isString(dataIndex))
-                tplArr.push('<i class="' + this.ADD_ICON_CLS + '" data-index="' + dataIndex + '" outer-index="{[xindex-1]}"> Add new row</i>');
+                tplArr.push('<i class="' + this.ADD_ICON_CLS + ' add-new-row" data-index="' + dataIndex + '" outer-index="{[xindex-1]}"> Add new row</i>');
             else
-                tplArr.push('<i class="' + this.ADD_ICON_CLS + '"> Add new row</i>');
+                tplArr.push('<i class="' + this.ADD_ICON_CLS + ' add-new-row"> Add new row</i>');
             tplArr.push('</td>');
             tplArr.push('</tr>');
         }
@@ -451,7 +456,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
 
     attachAddRowListeners : function(view)
     {
-        var addIconEls = Ext4.DomQuery.select('i.' + this.ADD_ICON_CLS.replace(/ /g, '.'), view.getEl().dom);
+        var addIconEls = Ext4.DomQuery.select('i.add-new-row', view.getEl().dom);
 
         Ext4.each(addIconEls, function(addIconEl)
         {
