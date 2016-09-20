@@ -43,7 +43,6 @@
     .study-vaccine-design tr.header-row td {
         background-color: #<%= WebThemeManager.getTheme(container).getGridColor() %> !important;
     }
-
 </style>
 
 <%

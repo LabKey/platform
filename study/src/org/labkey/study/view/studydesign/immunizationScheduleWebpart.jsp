@@ -39,8 +39,7 @@
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
-        dependencies.add("study/StudyVaccineDesign.js");
-        dependencies.add("study/StudyVaccineDesign.css");
+        dependencies.add("study/vaccineDesign/VaccineDesign.css");
     }
 %>
 <%
@@ -52,11 +51,12 @@
 %>
 
 <style type="text/css">
-
-    table.study-vaccine-design .labkey-col-header {
-        background-color: #<%= WebThemeManager.getTheme(c).getGridColor() %>;
+    .study-vaccine-design tr.header-row td {
+        background-color: #<%= WebThemeManager.getTheme(c).getGridColor() %> !important;
     }
-
+    .study-vaccine-design td.cell-display {
+        height: auto;
+    }
 </style>
 
 <%
@@ -69,14 +69,7 @@
       else
       {
         List<CohortImpl> cohorts = study.getCohorts(user);
-        if (cohorts.size() == 0)
-        {
-            %>No cohort/treatment/timepoint mappings have been defined.<br/><%
-        }
-        else
-        {
-            %>This section shows the immunization schedule. Each treatment may consist of several immunogens and adjuvants.<br/><%
-        }
+        %>This section shows the immunization schedule. Each treatment may consist of several immunogens and adjuvants.<br/><%
 
         if (canEdit)
         {
@@ -87,34 +80,37 @@
 <%
         }
 
-        if (cohorts.size() > 0)
-        {
-            List<VisitImpl> visits = study.getVisitsForTreatmentSchedule();
+        List<VisitImpl> visits = study.getVisitsForTreatmentSchedule();
 %>
-        <table class='study-vaccine-design'>
-            <tr><td>
-                <table class="labkey-read-only labkey-data-region labkey-show-borders" style="border: solid #ddd 1px;">
-                    <tr>
-                        <td class="labkey-col-header" colspan="<%=visits.size()+2%>"><div class="study-vaccine-design-header">Immunization Schedule</div></td>
-                    </tr>
-                    <tr>
-                        <td class="labkey-col-header">Group / Cohort</td>
-                        <td class="labkey-col-header">Count</td>
+        <br/>
+        <div class="study-vaccine-design">
+            <div class="main-title">Immunization Schedule</div>
+            <table class='outer'>
+                <tr class="header-row">
+                    <td class="cell-display">Group / Cohort</td>
+                    <td class="cell-display">Count</td>
 <%
                     for (VisitImpl visit : visits)
                     {
 %>
-                        <td class="labkey-col-header">
+                        <td class="cell-display">
                             <%=h(visit.getDisplayString())%>
                             <%=(visit.getDescription() != null ? PageFlowUtil.helpPopup("Description", visit.getDescription()) : "")%>
                         </td>
 <%
                     }
 %>
-                    </tr>
+                </tr>
 <%
+                if (cohorts.size() == 0)
+                {
+                    %><tr><td class="cell-display empty" colspan="2">No data to show.</td></tr><%
+                }
+
+                int index = 0;
                 for (CohortImpl cohort : cohorts)
                 {
+                    index++;
                     List<TreatmentVisitMapImpl> mapping = study.getStudyTreatmentVisitMap(c, cohort.getRowId());
                     Map<Integer, Integer> visitTreatments = new HashMap<>();
                     for (TreatmentVisitMapImpl treatmentVisitMap : mapping)
@@ -122,9 +118,9 @@
                         visitTreatments.put(treatmentVisitMap.getVisitId(), treatmentVisitMap.getTreatmentId());
                     }
 %>
-                    <tr>
-                        <td class="assay-row-padded-view"><%=h(cohort.getLabel())%></td>
-                        <td class="assay-row-padded-view"><%=cohort.getSubjectCount() != null ? cohort.getSubjectCount() : ""%></td>
+                    <tr class="row <%=index % 2 == 0 ? "alternate-row" : ""%>">
+                        <td class="cell-display "><%=h(cohort.getLabel())%></td>
+                        <td class="cell-display "><%=cohort.getSubjectCount() != null ? cohort.getSubjectCount() : ""%></td>
 <%
                     for (VisitImpl visit : visits)
                     {
@@ -137,24 +133,24 @@
                         String productHover = "";
                         if (treatment != null && treatment.getProducts() != null)
                         {
-                            productHover += "<table class='study-vaccine-design'><tr>"
-                                    + "<td class='labkey-col-header'>Label</td>"
-                                    + "<td class='labkey-col-header'>Dose and units</td>"
-                                    + "<td class='labkey-col-header'>Route</td></tr>";
+                            productHover += "<div class='study-vaccine-design'><table class='outer'><tr class='header-row'>"
+                                    + "<td class='cell-display'>Label</td>"
+                                    + "<td class='cell-display'>Dose and units</td>"
+                                    + "<td class='cell-display'>Route</td></tr>";
 
                             for (ProductImpl product : treatment.getProducts())
                             {
                                 String routeLabel = TreatmentManager.getInstance().getStudyDesignRouteLabelByName(c, product.getRoute());
 
-                                productHover += "<tr><td class='assay-row-padded-view'>" + h(product.getLabel()) + "</td>"
-                                        + "<td class='assay-row-padded-view'>" + h(product.getDose()) + "</td>"
-                                        + "<td class='assay-row-padded-view'>" + h(routeLabel != null ? routeLabel : product.getRoute()) + "</td></tr>";
+                                productHover += "<tr><td class='cell-display '>" + h(product.getLabel()) + "</td>"
+                                        + "<td class='cell-display '>" + h(product.getDose()) + "</td>"
+                                        + "<td class='cell-display '>" + h(routeLabel != null ? routeLabel : product.getRoute()) + "</td></tr>";
                             }
 
-                            productHover += "</table>";
+                            productHover += "</table></div>";
                         }
 %>
-                        <td class="assay-row-padded-view">
+                        <td class="cell-display ">
                             <%=h(treatment != null ? treatment.getLabel() : "")%>
                             <%=(productHover.length() > 0 ? PageFlowUtil.helpPopup("Treatment Products", productHover, true, 500) : "")%>
                         </td>
@@ -165,11 +161,9 @@
 <%
                 }
 %>
-                </table>
-            </td></tr>
-        </table>
+            </table>
+        </div>
 <%
-        }
       }
     }
     else

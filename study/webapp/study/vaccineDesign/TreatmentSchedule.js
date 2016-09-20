@@ -349,6 +349,52 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentsGrid', {
     {
         return 'Are you sure you want to delete the selected treatment?<br/><br/>'
             + 'Note: this will also delete any usages of this treatment record in the Treatment Schedule grid below.';
+    },
+
+    //Override
+    updateSubgridRecordValue : function(record, outerDataIndex, subgridIndex, fieldName, newValue)
+    {
+        var preProductIds = Ext4.Array.pluck(record.get('Immunogen'), 'ProductId').concat(Ext4.Array.pluck(record.get('Adjuvant'), 'ProductId'));
+
+        this.callParent([record, outerDataIndex, subgridIndex, fieldName, newValue]);
+
+        // auto populate the treatment label if the user has not already entered a value
+        if (fieldName == 'ProductId')
+            this.populateTreatmentLabel(record, preProductIds);
+    },
+
+    //Override
+    removeSubgridRecord : function(target, record)
+    {
+        var preProductIds = Ext4.Array.pluck(record.get('Immunogen'), 'ProductId').concat(Ext4.Array.pluck(record.get('Adjuvant'), 'ProductId'));
+        this.callParent([target, record]);
+        this.populateTreatmentLabel(record, preProductIds);
+    },
+
+    populateTreatmentLabel : function(record, preProductIds)
+    {
+        var currentLabel = record.get('Label');
+        if (currentLabel == '' || currentLabel == this.getLabelFromProductIds(preProductIds))
+        {
+            var postProductIds = Ext4.Array.pluck(record.get('Immunogen'), 'ProductId').concat(Ext4.Array.pluck(record.get('Adjuvant'), 'ProductId'));
+            record.set('Label', this.getLabelFromProductIds(postProductIds));
+            this.fireEvent('celledited');
+        }
+    },
+
+    getLabelFromProductIds : function(productIdsArr)
+    {
+        var labelArr = [];
+
+        if (Ext4.isArray(productIdsArr))
+        {
+            Ext4.each(productIdsArr, function(productId){
+                if (productId != undefined || productId != null)
+                    labelArr.push(LABKEY.VaccineDesign.Utils.getLabelFromStore('Product', productId));
+            });
+        }
+
+        return labelArr.join(' | ');
     }
 });
 

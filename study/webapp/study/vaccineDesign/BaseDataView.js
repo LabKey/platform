@@ -329,7 +329,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
                 // handle click on trashcan icon for outer grid
                 else if (event.target.hasAttribute('subgrid-data-index') && event.target.hasAttribute('subgrid-index'))
                 {
-                    this.removeSubgridRecord(event.target, record);
+                    this.confirmRemoveSubgridRecord(event.target, record);
                 }
             }
         }
@@ -397,7 +397,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
             if (Ext4.isString(outerDataIndex))
             {
                 if (!isNaN(subgridIndex) && Ext4.isArray(record.get(outerDataIndex)))
-                    record.get(outerDataIndex)[subgridIndex][fieldName] = newValue;
+                    this.updateSubgridRecordValue(record, outerDataIndex, subgridIndex, fieldName, newValue);
             }
             else
             {
@@ -408,6 +408,11 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
             this.cellEditField = null;
             this.refresh(true);
         }
+    },
+
+    updateSubgridRecordValue : function(record, outerDataIndex, subgridIndex, fieldName, newValue)
+    {
+        record.get(outerDataIndex)[subgridIndex][fieldName] = newValue;
     },
 
     updateStoreRecordValue : function(record, column, newValue)
@@ -436,7 +441,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
         }, this);
     },
 
-    removeSubgridRecord : function(target, record)
+    confirmRemoveSubgridRecord : function(target, record)
     {
         var subgridDataIndex = target.getAttribute('subgrid-data-index'),
             subgridArr = record.get(subgridDataIndex);
@@ -446,12 +451,18 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
             Ext4.Msg.confirm('Confirm Delete: ' + subgridDataIndex, 'Are you sure you want to delete the selected row?', function(btn)
             {
                 if (btn == 'yes')
-                {
-                    subgridArr.splice(target.getAttribute('subgrid-index'), 1);
-                    this.refresh(true);
-                }
+                    this.removeSubgridRecord(target, record);
             }, this);
         }
+    },
+
+    removeSubgridRecord : function(target, record)
+    {
+        var subgridDataIndex = target.getAttribute('subgrid-data-index'),
+            subgridArr = record.get(subgridDataIndex);
+
+        subgridArr.splice(target.getAttribute('subgrid-index'), 1);
+        this.refresh(true);
     },
 
     attachAddRowListeners : function(view)
