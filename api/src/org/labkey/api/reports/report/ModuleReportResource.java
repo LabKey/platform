@@ -15,7 +15,6 @@
  */
 package org.labkey.api.reports.report;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.data.Container;
@@ -33,10 +32,11 @@ import java.io.InputStream;
  */
 public class ModuleReportResource
 {
-    protected Resource _sourceFile;
+    protected final Resource _sourceFile;
+    protected final ReportDescriptor _reportDescriptor;
+    protected final Resource _metaDataFile;
+
     protected long _sourceLastModified = 0;
-    protected ReportDescriptor _reportDescriptor;
-    protected Resource _metaDataFile;
     private long _metaDataLastModified = 0;
 
     public ModuleReportResource(ReportDescriptor reportDescriptor, Resource sourceFile)

@@ -230,15 +230,13 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         preloadReports();
     }
 
-    Set<Resource> _reportFiles = Collections.synchronizedSet(new TreeSet<>((o, o1) -> {
-        return o.getPath().compareTo(o1.getPath());
-    }));
+    Set<Resource> _reportFiles = Collections.synchronizedSet(new TreeSet<>((o, o1) -> o.getPath().compareTo(o1.getPath())));
 
     public static final FilenameFilter moduleReportFilter = (dir, name) -> ModuleRReportDescriptor.accept(name) ||
-           StringUtils.endsWithIgnoreCase(name, ModuleJavaScriptReportDescriptor.FILE_EXTENSION);
+        StringUtils.endsWithIgnoreCase(name, ModuleJavaScriptReportDescriptor.FILE_EXTENSION);
 
     protected static final FilenameFilter moduleReportFilterWithQuery = (dir, name) -> moduleReportFilter.accept(dir, name) ||
-            name.toLowerCase().endsWith(ModuleQueryReportDescriptor.FILE_EXTENSION);
+        StringUtils.endsWithIgnoreCase(name, ModuleQueryReportDescriptor.FILE_EXTENSION);
 
     private void preloadReports()
     {
