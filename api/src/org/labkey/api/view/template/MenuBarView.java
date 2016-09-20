@@ -17,11 +17,14 @@
 package org.labkey.api.view.template;
 
 import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.WebPartView;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -36,15 +39,11 @@ public class MenuBarView extends JspView<MenuBarView.MenuBarBean>
 {
     public static final String EXPERIMENTAL_NAV = "experimental-navigation";
 
-    public MenuBarView(List<Portal.WebPart> menus, PageConfig page)
-    {
-        super(MenuBarView.class,  "menuBar.jsp", new MenuBarBean(menus, page));
-        setFrame(FrameType.NONE);
-    }
-
     public MenuBarView(ViewContext ctx, PageConfig page)
     {
-        this(Collections.emptyList(), page);
+        super(MenuBarView.class, "menuBar.jsp", null /* will be set later in constructor */);
+        setFrame(FrameType.NONE);
+
         Container container = ctx.getContainer();
         Container project = container.getProject();
 
@@ -57,12 +56,31 @@ public class MenuBarView extends JspView<MenuBarView.MenuBarBean>
             if (null == menuParts)
                 menuParts = Collections.emptyList();
 
+            for (Portal.WebPart part : menuParts)
+            {
+                try
+                {
+                    WebPartFactory factory = Portal.getPortalPart(part.getName());
+                    if (null != factory)
+                    {
+                        WebPartView view = factory.getWebPartView(getViewContext(), part);
+                        if (!view.isEmpty())
+                        {
+                            addClientDependencies(view.getClientDependencies());
+                        }
+                    }
+                }
+                catch (Exception x)
+                {
+                    Logger.getLogger(JspView.class).error(x);
+                }
+            }
+
             setModelBean(new MenuBarBean(menuParts, page));
         }
         else
         {
-            List<Portal.WebPart> menuParts = Collections.emptyList();
-            setModelBean(new MenuBarBean(menuParts, page));
+            setModelBean(new MenuBarBean(Collections.emptyList(), page));
         }
     }
 

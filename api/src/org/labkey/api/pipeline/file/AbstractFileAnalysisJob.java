@@ -264,26 +264,31 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     @Override
     public File findOutputFile(@NotNull String outputDir, @NotNull String fileName)
     {
+        return getOutputFile(outputDir, fileName, getPipeRoot(), getLogger(), getAnalysisDirectory());
+    }
+
+    public static File getOutputFile(@NotNull String outputDir, @NotNull String fileName, PipeRoot root, Logger log, File analysisDirectory)
+    {
         File dir;
         if (outputDir.startsWith("/"))
         {
-            dir = getPipeRoot().resolvePath(outputDir);
+            dir = root.resolvePath(outputDir);
             if (dir == null)
                 throw new RuntimeException("Output directory not under pipeline root: " + outputDir);
 
             if (!NetworkDrive.exists(dir))
             {
-                getLogger().info("Creating output directory under pipeline root: " + dir);
+                log.info("Creating output directory under pipeline root: " + dir);
                 if (!dir.mkdirs())
                     throw new RuntimeException("Failed to create output directory under pipeline root: " + outputDir);
             }
         }
         else
         {
-            dir = new File(getAnalysisDirectory(), outputDir);
+            dir = new File(analysisDirectory, outputDir);
             if (!NetworkDrive.exists(dir))
             {
-                getLogger().info("Creating output directory under pipeline analysis dir: " + dir);
+                log.info("Creating output directory under pipeline analysis dir: " + dir);
                 if (!dir.mkdirs())
                     throw new RuntimeException("Failed to create output directory under analysis dir: " + outputDir);
             }

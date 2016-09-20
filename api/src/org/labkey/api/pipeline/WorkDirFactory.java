@@ -28,7 +28,7 @@ import java.io.File;
  */
 public interface WorkDirFactory
 {
-    WorkDirectory createWorkDirectory(String jobId, FileAnalysisJobSupport support, Logger log)
+    WorkDirectory createWorkDirectory(String jobId, FileAnalysisJobSupport support, boolean useDeterministicFolderPath, Logger log)
             throws IOException;
 
     void setPermissions(File outputFile) throws IOException;

@@ -15,8 +15,8 @@
  */
 package org.labkey.api.pipeline;
 
-import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 
 import java.io.File;
 import java.net.URI;
@@ -65,9 +65,26 @@ public class RecordedAction
         addInput(input.toURI(), role);
     }
 
+    private boolean uriExists(URI toTest, Set<DataFile> set)
+    {
+        for (DataFile df : set)
+        {
+            if (toTest.equals(df.getURI()))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public void addInput(URI input, String role)
     {
-        _inputs.add(new DataFile(input, role, false, false));
+        //only add if this input does not already exist.  exp.datainputs only allows one row per distinct input
+        if (!uriExists(input, _inputs))
+        {
+            _inputs.add(new DataFile(input, role, false, false));
+        }
     }
 
     public void addOutput(File output, String role, boolean transientFile)
@@ -289,6 +306,38 @@ public class RecordedAction
     public String toString()
     {
         return _description + " Inputs: " + _inputs + " Outputs: " + _outputs;
+    }
+
+    public boolean updateForMovedFile(File original, File moved)
+    {
+        boolean changed = false;
+
+        if (potentiallySwapFiles(original, moved, _inputs))
+        {
+            changed = true;
+        }
+
+        if (potentiallySwapFiles(original, moved, _outputs))
+        {
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    private boolean potentiallySwapFiles(File original, File moved, Set<DataFile> toInspect)
+    {
+        boolean changed = false;
+        for (DataFile df : toInspect)
+        {
+            if (original.toURI().equals(df.getURI()))
+            {
+                df._uri = moved.toURI();
+                changed = true;
+            }
+        }
+
+        return changed;
     }
 
     @Override

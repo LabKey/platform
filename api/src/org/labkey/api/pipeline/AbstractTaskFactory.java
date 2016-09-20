@@ -233,7 +233,7 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
         PipelineJobService service = PipelineJobService.get();
         WorkDirFactory factory = (_largeWork ? service.getLargeWorkDirFactory() :
                 service.getWorkDirFactory());
-        return factory.createWorkDirectory(jobGUID, jobSupport, logger);
+        return factory.createWorkDirectory(jobGUID, jobSupport, false, logger);
     }
 
     /**

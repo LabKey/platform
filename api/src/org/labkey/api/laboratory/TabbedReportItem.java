@@ -192,7 +192,7 @@ public class TabbedReportItem extends AbstractNavItem
     @Override
     public String getPropertyManagerKey()
     {
-        return getDataProvider().getKey() + "||" + getReportCategory() + "||" + getName() + "||" + getLabel();
+        return getOverridesPropertyKey(this);
     }
 
     public static String getOverridesPropertyKey(NavItem item)

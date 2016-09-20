@@ -18,7 +18,7 @@ package org.labkey.api.pipeline;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Extra interface methods for {@link TaskFactory}s that need to work with temporary failes.
+ * Extra interface methods for {@link TaskFactory}s that need to work with temporary files.
  * User: jeckels
  * Date: Sep 11, 2008
  */
