@@ -36,19 +36,14 @@ public class DimensionPieChartAnalyticsProvider extends ColumnAnalyticsProvider
     @Override
     public boolean isApplicable(@NotNull ColumnInfo col)
     {
-        return !"entityid".equalsIgnoreCase(col.getSqlTypeName());
+        return (col.isDimension() || !col.isNumericType() || col.isLookup())
+            && !"entityid".equalsIgnoreCase(col.getSqlTypeName());
     }
 
     @Override
     public boolean isVisible(RenderContext ctx, QuerySettings settings, ColumnInfo col)
     {
-        if (FolderSettingsCache.areRestrictedColumnsEnabled(ctx.getContainer())) {
-            return col.isDimension();
-        }
-        else
-        {
-            return true;
-        }
+        return !FolderSettingsCache.areRestrictedColumnsEnabled(ctx.getContainer()) || col.isDimension();
     }
 
     @Nullable

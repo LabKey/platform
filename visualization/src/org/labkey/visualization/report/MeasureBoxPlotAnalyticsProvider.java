@@ -36,7 +36,7 @@ public class MeasureBoxPlotAnalyticsProvider extends ColumnAnalyticsProvider
     @Override
     public boolean isApplicable(@NotNull ColumnInfo col)
     {
-        return col.isNumericType() && !col.isLookup()
+        return (col.isMeasure() || (col.isNumericType() && !col.isLookup()))
             && !"serial".equalsIgnoreCase(col.getSqlTypeName())
             && !"entityid".equalsIgnoreCase(col.getSqlTypeName());
     }
@@ -44,14 +44,7 @@ public class MeasureBoxPlotAnalyticsProvider extends ColumnAnalyticsProvider
     @Override
     public boolean isVisible(RenderContext ctx, QuerySettings settings, ColumnInfo col)
     {
-        if (FolderSettingsCache.areRestrictedColumnsEnabled(ctx.getContainer()))
-        {
-            return col.isMeasure();
-        }
-        else
-        {
-            return true;
-        }
+        return !FolderSettingsCache.areRestrictedColumnsEnabled(ctx.getContainer()) || col.isMeasure();
     }
 
     @Nullable
