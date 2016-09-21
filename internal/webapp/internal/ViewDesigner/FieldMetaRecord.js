@@ -87,7 +87,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaRecord', {
     ],
 
     getToolTipHtml : function () {
-        var body = "<table>";
+        var body = "<table style=\"white-space: nowrap;\">";
         var field = this.data;
         if (field.description) {
             body += "<tr><td valign='top'><strong>Description:</strong></td><td>" + Ext4.htmlEncode(field.description) + "</td></tr>";
