@@ -1081,6 +1081,7 @@ issues/src/org/labkey/issue/view/IssuesListView.java -text
 issues/src/org/labkey/issue/view/IssuesSummaryWebPartFactory.java -text
 issues/src/org/labkey/issue/view/IssuesWebPartFactory.java -text
 issues/src/org/labkey/issue/view/SummaryWebPart.java -text
+issues/src/org/labkey/issue/view/buildSummary.jsp -text
 issues/src/org/labkey/issue/view/deleteIssueList.jsp -text
 issues/src/org/labkey/issue/view/detailList.jsp -text
 issues/src/org/labkey/issue/view/detailView.jsp -text

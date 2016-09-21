@@ -40,24 +40,7 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.AttachmentParentEntity;
-import org.labkey.api.data.BeanViewForm;
-import org.labkey.api.data.ColumnHeaderType;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.ObjectFactory;
-import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.TSVGridWriter;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.*;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.exp.property.Domain;
@@ -140,10 +123,14 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -2592,4 +2579,200 @@ public class IssuesController extends SpringActionController
             this.issueId = issueId;
         }
     }
+
+    @RequiresPermission(AdminPermission.class)
+    public class BuildSummaryAction extends SimpleViewAction<IssuesController.BuildSummaryBean>
+    {
+        @Override
+        public ModelAndView getView(IssuesController.BuildSummaryBean buildSummaryBean, BindException errors) throws Exception
+        {
+            String issueDefName = getViewContext().getActionURL().getParameter(IssuesListView.ISSUE_LIST_DEF_NAME);
+            IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issueDefName);
+            if (issueListDef == null)
+            {
+                return new HtmlView(getUndefinedIssueListMessage(getViewContext(), issueDefName));
+            }
+
+            TableInfo table = IssuesSchema.getInstance().getTableInfoIssues();
+            Collection<ColumnInfo> columns = table.getColumns();
+            Filter idFilter = new SimpleFilter(FieldKey.fromString("IssueDefId"), issueListDef.getRowId());
+            TableSelector selector = new TableSelector(table, columns, idFilter, null);
+            ArrayList<BuildIssue> buildIssues;
+            Container c = getContainer();
+            User user = getUser();
+
+            try (TableResultSet rs = selector.getResultSet())
+            {
+                buildIssues = new ArrayList<>(rs.getSize());
+                while (rs.next())
+                {
+                    Issue issue = IssueManager.getIssue(c, user, rs.getInt("IssueId"));
+                    Date resolvedDate = issue.getResolved();
+                    Date closedDate = issue.getClosed();
+                    Instant resolvedInstant = (resolvedDate != null) ? resolvedDate.toInstant() : null;
+                    Instant closedInstant = (closedDate != null) ? closedDate.toInstant() : null;
+                    String client = (String)issue.getProperties().get("client");
+
+                    if((client != null) && (client.equals("ITN")))
+                    {
+                        final BuildIssue buildIssue = new BuildIssue(
+                                issue.getIssueId(),
+                                issue.getType(),
+                                issue.getArea(),
+                                issue.getTitle(),
+                                issue.getStatus(),
+                                issue.getMilestone(),
+                                resolvedInstant,
+                                closedInstant,
+                                client
+                        );
+                        buildIssues.add(buildIssue);
+                    }
+                }
+            }
+
+            if((buildIssues != null) && (buildIssues.size() > 0))
+                buildSummaryBean.setBuildIssues(buildIssues);
+
+            return new JspView("/org/labkey/issue/view/buildSummary.jsp", buildSummaryBean);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return (new ListAction(getViewContext())).appendNavTrail(root).addChild("Build Summary Page", new ActionURL(BuildSummaryAction.class, getContainer()));
+        }
+    }
+
+    public static class BuildSummaryBean
+    {
+        ArrayList<BuildIssue> buildIssues;
+
+        public ArrayList<BuildIssue> getBuildIssues()
+        {
+            return buildIssues;
+        }
+
+        public void setBuildIssues(ArrayList<BuildIssue> buildIssues)
+        {
+            this.buildIssues = buildIssues;
+        }
+    }
+
+    public static class BuildIssue
+    {
+        private int issueId;
+        private String type;
+        private String area;
+        private String title;
+        private String status;
+        private String milestone;
+        private Instant resolved;
+        private Instant closed;
+        private String client;
+
+        public BuildIssue(int issueId, String type, String area, String title, String status, String milestone, Instant resolved, Instant closed, String client)
+        {
+            this.issueId = issueId;
+            this.type = type;
+            this.area = area;
+            this.title = title;
+            this.status = status;
+            this.milestone = milestone;
+            this.resolved = resolved;
+            this.closed = closed;
+            this.client = client;
+        }
+
+        public int getIssueId()
+        {
+            return issueId;
+        }
+
+        public void setIssueId(int issueId)
+        {
+            this.issueId = issueId;
+        }
+
+        public String getType()
+        {
+            return type;
+        }
+
+        public void setType(String type)
+        {
+            this.type = type;
+        }
+
+        public String getArea()
+        {
+            return area;
+        }
+
+        public void setArea(String area)
+        {
+            this.area = area;
+        }
+
+        public String getTitle()
+        {
+            return title;
+        }
+
+        public void setTitle(String title)
+        {
+            this.title = title;
+        }
+
+        public String getStatus()
+        {
+            return status;
+        }
+
+        public void setStatus(String status)
+        {
+            this.status = status;
+        }
+
+        public String getMilestone()
+        {
+            return milestone;
+        }
+
+        public void setMilestone(String milestone)
+        {
+            this.milestone = milestone;
+        }
+
+        public Instant getResolved()
+        {
+            return resolved;
+        }
+
+        public void setResolved(Instant resolved)
+        {
+            this.resolved = resolved;
+        }
+
+        public Instant getClosed()
+        {
+            return closed;
+        }
+
+        public void setClosed(Instant closed)
+        {
+            this.closed = closed;
+        }
+
+        public String getClient()
+        {
+            return client;
+        }
+
+        public void setClient(String client)
+        {
+            this.client = client;
+        }
+    }
+
 }
