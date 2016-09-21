@@ -13,7 +13,9 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DeferredUpgrade;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -25,6 +27,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainTemplate;
@@ -37,6 +40,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserSchema;
@@ -975,6 +979,50 @@ public class IssuesUpgradeCode implements UpgradeCode
             result = 31 * result + (int2 != null ? int2.hashCode() : 0);
 
             return result;
+        }
+    }
+
+    /**
+     * Invoked by issues-16.23-16.24.sql
+     *
+     * Drop properties from the issues provisioned tables that are present in the issues.issues hardtable,
+     * this needs to be performed in a deferred java upgrade script because it must be ordered to run
+     * after previous deferred upgrade scripts:
+     *
+     * issues-16.13-16.14.sql
+     * issues-16.21-16.22.sql
+     * issues-16.22-16.23.sql
+     */
+    @DeferredUpgrade
+    public void dropRedundantProperties(final ModuleContext context)
+    {
+        _log.info("Dropping redundant fields from the issues provisioned tables");
+
+        User upgradeUser = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.getRole(SiteAdminRole.class)), false);
+        try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
+        {
+            for (IssueListDef issueListDef : IssueManager.getIssueListDefs(null))
+            {
+                Domain domain = issueListDef.getDomain(upgradeUser);
+                if (domain != null)
+                {
+                    TableInfo table = issueListDef.createTable(upgradeUser);
+                    if (table != null)
+                    {
+                        Collection<PropertyStorageSpec> propsDropped = new ArrayList<>();
+
+                        if (table.getColumn(FieldKey.fromParts("Duplicate")) != null)
+                            propsDropped.add(new PropertyStorageSpec("Duplicate", JdbcType.INTEGER));
+
+                        if (table.getColumn(FieldKey.fromParts("LastIndexed")) != null)
+                            propsDropped.add(new PropertyStorageSpec("LastIndexed", JdbcType.TIMESTAMP));
+
+                        if (!propsDropped.isEmpty())
+                            StorageProvisioner.dropStorageProperties(domain, propsDropped);
+                    }
+                }
+            }
+            transaction.commit();
         }
     }
 }

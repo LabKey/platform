@@ -228,6 +228,11 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         ColumnInfo entityId = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("EntityId")));
         entityId.setHidden(true);
 
+        ColumnInfo duplicateCol = addWrapColumn(_rootTable.getColumn("Duplicate"));
+        duplicateCol.setURL(new DetailsURL(base, Collections.singletonMap("issueId", "Duplicate")));
+        duplicateCol.setDisplayColumnFactory(new URLTitleDisplayColumnFactory("Issue ${Duplicate}: ${Duplicate/Title:htmlEncode}"));
+        duplicateCol.setFk(new QueryForeignKey(IssuesSchema.getInstance().getTableInfoIssues(), getContainer(), "IssueId", "IssueId"));
+
         TableInfo defTable = _issueDef.createTable(getUserSchema().getUser());
 
         HashMap<String,DomainProperty> properties = new HashMap<>();
@@ -266,12 +271,6 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
             else if (colName.equalsIgnoreCase("AssignedTo"))
             {
                 IssuesTable.AssignedToForeignKey.initColumn(extensionCol);
-            }
-            else if (colName.equalsIgnoreCase("Duplicate"))
-            {
-                extensionCol.setURL(new DetailsURL(base, Collections.singletonMap("issueId", "Duplicate")));
-                extensionCol.setDisplayColumnFactory(new URLTitleDisplayColumnFactory("Issue ${Duplicate}: ${Duplicate/Title:htmlEncode}"));
-                extensionCol.setFk(new QueryForeignKey(IssuesSchema.getInstance().getTableInfoIssues(), getContainer(), "IssueId", "IssueId"));
             }
             else if (colName.equalsIgnoreCase("NotifyList"))
             {
@@ -348,7 +347,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         // NOTE: Issue 27795: Duplicate duplicate columns on issue.issues and provisioned issue table
         SQLFragment sql = new SQLFragment();
         sql.append("(SELECT * FROM\n");
-        sql.append("(SELECT i.issueid, /*i.duplicate,*/ i.lastIndexed, i.issueDefId, p.* FROM ");
+        sql.append("(SELECT i.issueid, i.duplicate, i.lastIndexed, i.issueDefId, p.* FROM ");
         sql.append(_rootTable, "i");
         sql.append(" INNER JOIN ").append(provisioned, "p").append(" ON i.entityId = p.entityId");
         sql.append(") x");
