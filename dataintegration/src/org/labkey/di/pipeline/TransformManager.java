@@ -278,7 +278,7 @@ public class TransformManager implements DataIntegrationService.Interface
             String name = xmlp.getName();
             try
             {
-                JdbcType type = JdbcType.valueOf(xmlp.getType().toUpperCase());
+                JdbcType type = JdbcType.valueOf(xmlp.getType().toString().toUpperCase());
                 String strValue = xmlp.isSetValue() ? xmlp.getValue() : null;
                 Object value = type.convert(strValue);
                 ParameterDescription p = new ParameterDescriptionImpl(name, type, null);

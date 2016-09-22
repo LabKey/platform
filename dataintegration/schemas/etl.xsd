@@ -365,8 +365,58 @@
     <complexType name="ParameterType">
         <attribute name="name" type="string" use="required" />
         <attribute name="value" type="string" use="optional" />
-        <attribute name="type" type="string" use="required" />
+        <attribute name="type" type="etl:SqlType" use="required" />
     </complexType>
+
+    <simpleType name="SqlType">
+        <annotation>
+            <documentation>
+                Enumerated list of java.sql.types. Mirrors the enum defined in java JdbcType.
+            </documentation>
+        </annotation>
+        <restriction base="string">
+            <enumeration value="BIGINT"/>
+            <enumeration value="bigint"/>
+            <enumeration value="BINARY"/>
+            <enumeration value="binary"/>
+            <enumeration value="BOOLEAN"/>
+            <enumeration value="boolean"/>
+            <enumeration value="CHAR"/>
+            <enumeration value="char"/>
+            <enumeration value="DECIMAL"/>
+            <enumeration value="decimal"/>
+            <enumeration value="DOUBLE"/>
+            <enumeration value="double"/>
+            <enumeration value="INTEGER"/>
+            <enumeration value="integer"/>
+            <enumeration value="LONGVARBINARY"/>
+            <enumeration value="longvarbinary"/>
+            <enumeration value="LONGVARCHAR"/>
+            <enumeration value="longvarchar"/>
+            <enumeration value="REAL"/>
+            <enumeration value="real"/>
+            <enumeration value="SMALLINT"/>
+            <enumeration value="smallint"/>
+            <enumeration value="DATE"/>
+            <enumeration value="date"/>
+            <enumeration value="TIME"/>
+            <enumeration value="time"/>
+            <enumeration value="TIMESTAMP"/>
+            <enumeration value="timestamp"/>
+            <enumeration value="TINYINT"/>
+            <enumeration value="tinyint"/>
+            <enumeration value="VARBINARY"/>
+            <enumeration value="varbinary"/>
+            <enumeration value="VARCHAR"/>
+            <enumeration value="varchar"/>
+            <enumeration value="GUID"/>
+            <enumeration value="guid"/>
+            <enumeration value="NULL"/>
+            <enumeration value="null"/>
+            <enumeration value="OTHER"/>
+            <enumeration value="other"/>
+        </restriction>
+    </simpleType>
 
     <complexType name="PipelineParametersType">
         <sequence minOccurs="1" maxOccurs="unbounded">
