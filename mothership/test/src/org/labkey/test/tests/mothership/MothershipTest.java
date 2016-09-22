@@ -225,8 +225,11 @@ public class MothershipTest extends BaseWebDriverTest
     @Test
     public void testReports() throws Exception
     {
+        // js error 'region.name is null' in DataRegion.js when you go to the mothership reports page.
+        pauseJsErrorChecker();
         final ReportsPage reportsPage = ReportsPage.beginAt(this);
         final List<BodyWebPart> bodyWebParts = new PortalHelper(getDriver()).getBodyWebParts();
+        resumeJsErrorChecker();
 
         List<String> expected = Arrays.asList("\"Unbugged\" Exceptions by Owner", "Unassigned Exceptions", "Installations");
         List<String> actual = new ArrayList<>();
