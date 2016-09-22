@@ -250,7 +250,7 @@
                             }
                             else {
                                 if (window.console && window.console.log) {
-                                    window.console.log(err);
+                                    window.console.log(response);
                                 }
                             }
                         },
