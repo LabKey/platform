@@ -371,8 +371,8 @@ Ext4.define('LABKEY.vis.ChartTypePanel', {
             if (!Ext4.Array.equals(initKeys, newKeys))
                 return true;
 
-            var initFieldNames = Ext4.Array.pluck(Ext4.Object.getValues(this.initValues.fields), 'name'),
-                newFieldNames = Ext4.Array.pluck(Ext4.Object.getValues(newValues.fields), 'name');
+            var initFieldNames = Ext4.Array.pluck(Ext4.Array.clean(Ext4.Object.getValues(this.initValues.fields)), 'name'),
+                newFieldNames = Ext4.Array.pluck(Ext4.Array.clean(Ext4.Object.getValues(newValues.fields)), 'name');
             if (!Ext4.Array.equals(initFieldNames, newFieldNames))
                 return true;
         }

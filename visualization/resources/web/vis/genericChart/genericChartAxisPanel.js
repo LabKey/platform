@@ -82,7 +82,6 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
 
     setPanelOptionValues: function(config)
     {
-        if (config) {
         if (config.label)
             this.setAxisLabel(config.label);
 
@@ -90,7 +89,6 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             this.setScaleTrans(config.trans);
         else if (config.scaleTrans)
             this.setScaleTrans(config.scaleTrans);
-        }
     },
 
     getAxisLabel: function(){

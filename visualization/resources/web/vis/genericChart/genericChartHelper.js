@@ -98,6 +98,12 @@ LABKEY.vis.GenericChartHelper = new function(){
             main: {
                 value: labels.main ? labels.main : ''
             },
+            subtitle: {
+                value: labels.subtitle ? labels.subtitle : ''
+            },
+            footer: {
+                value: labels.footer ? labels.footer : ''
+            },
             x: {
                 value: labels.x ? labels.x : ''
             },

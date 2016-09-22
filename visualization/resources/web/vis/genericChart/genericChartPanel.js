@@ -510,7 +510,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         this.setRenderType(values.type);
                         this.measures = values.fields;
 
-                        this.getChartLayoutPanel().onMeasuresChange(this.measures, this.renderType);
+                        this.getChartLayoutPanel().onMeasuresChange(this.measures);
                         this.getChartLayoutPanel().updateVisibleLayoutOptions(this.getSelectedChartTypeData());
                         this.ensureChartLayoutOptions();
 
@@ -562,6 +562,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 options: this.options,
                 isDeveloper: this.isDeveloper,
                 defaultChartLabel: this.getDefaultTitle(),
+                defaultOpacity: this.renderType == 'bar_chart' ? 100 : undefined,
                 listeners: {
                     scope: this,
                     cancel: function(panel)
@@ -879,25 +880,20 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             config.width = this.options.general.width;
             config.height = this.options.general.height;
-            if (!config.size) config.size = {};
-            config.size.innerRadius = '' + this.options.general.innerRadius + '%';
-            config.size.outerRadius = '' + this.options.general.outerRadius + '%';
             config.pointType = this.options.general.pointType;
+            config.labels.main = this.options.general.label;
+            config.labels.subtitle = this.options.general.subtitle;
+            config.labels.footer = this.options.general.footer;
+
             config.geomOptions = Ext4.apply({}, this.options.general);
             config.geomOptions.showOutliers = config.pointType ? config.pointType == 'outliers' : true;
-            config.labels.main = this.options.general.label;
-            config.labels.x = this.options.general.subtitle;
-            config.labels.y = this.options.general.footer;
-            if (!config.labels.inner) config.labels.inner = {};
-            config.labels.inner.format = this.options.general.showPercentages ? 'percentage' : 'none';
-            config.labels.inner.hideWhenLessThanPercentage = this.options.general.hideWhenLessThanPercentage;
-            if (!config.misc) config.misc = {};
-            config.misc.gradient = {};
-            config.misc.gradient.enabled = this.options.general.gradient != 0;
-            config.misc.gradient.percentage = this.options.general.gradient;
-            config.misc.gradient.color = '#' + this.options.general.gradientColor;
-            config.misc.colors = {};
-            config.misc.colors.segments = this.options.general.colorPaletteCombo ? LABKEY.vis.Scale[this.options.general.colorPaletteCombo]() : LABKEY.vis.Scale.ColorDiscrete();
+            config.geomOptions.pieInnerRadius = this.options.general.pieInnerRadius;
+            config.geomOptions.pieOuterRadius = this.options.general.pieOuterRadius;
+            config.geomOptions.showPiePercentages = this.options.general.showPiePercentages;
+            config.geomOptions.pieHideWhenLessThanPercentage = this.options.general.pieHideWhenLessThanPercentage;
+            config.geomOptions.gradientPercentage = this.options.general.gradientPercentage;
+            config.geomOptions.gradientColor = this.options.general.gradientColor;
+            config.geomOptions.colorPaletteScale = this.options.general.colorPaletteScale;
         }
 
         if (this.options.x && !config.labels.x)
@@ -1360,6 +1356,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             else
                 this.options.general.label = this.getDefaultTitle();
 
+            if (chartConfig.labels && chartConfig.labels.subtitle)
+                this.options.general.subtitle = chartConfig.labels.subtitle;
+            if (chartConfig.labels && chartConfig.labels.footer)
+                this.options.general.footer = chartConfig.labels.footer;
+
             this.options.x = {};
             if (chartConfig.labels && chartConfig.labels.x)
                 this.options.x.label = chartConfig.labels.x;
@@ -1566,32 +1567,47 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         else if (this.renderType == 'pie_chart')
         {
             data = LABKEY.vis.GenericChartHelper.generateAggregateData(data, dimName, measureName, aggType, '[Blank]');
-            var footerText = aggType == 'SUM' ? labels.y.value : '';
-            var negativeValues = this.checkForNegativeData(data);
-            if (negativeValues.length > 0) {
-                plotConfig.height = Math.floor(plotConfig.height * 0.95); // adding warning text without shrinking height cuts off the footer text
-                var str = 'There are negative values in the data that the Pie will not display. Omitted: ' + negativeValues.toString();
-                this.addWarningText(str);
+
+            if (this.checkForNegativeData(data))
+            {
+                // adding warning text without shrinking height cuts off the footer text
+                plotConfig.height = Math.floor(plotConfig.height * 0.95);
             }
+
             plotConfig = Ext4.apply(plotConfig, {
                 data: data,
                 header: {
                     title: { text: labels.main.value },
-                    subtitle: { text: labels.x.value },
+                    subtitle: { text: labels.subtitle.value },
                     titleSubtitlePadding: 1
                 },
                 footer: {
-                    text: footerText,
+                    text: labels.footer.value,
                     location: 'bottom-center'
                 },
                 labels: {
                     mainLabel: { fontSize: 14 },
                     percentage: { fontSize: 14 },
                     outer: { pieDistance: 20 },
-                    inner: chartConfig.labels.inner
+                    inner: {
+                        format: chartConfig.geomOptions.showPiePercentages ? 'percentage' : 'none',
+                        hideWhenLessThanPercentage: chartConfig.geomOptions.pieHideWhenLessThanPercentage
+                    }
                 },
-                size: chartConfig.size,
-                misc: chartConfig.misc,
+                size: {
+                    pieInnerRadius: chartConfig.geomOptions.pieInnerRadius + '%',
+                    pieOuterRadius: chartConfig.geomOptions.pieOuterRadius + '%'
+                },
+                misc: {
+                    gradient: {
+                        enabled: chartConfig.geomOptions.gradientPercentage != 0,
+                        percentage: chartConfig.geomOptions.gradientPercentage,
+                        color: '#' + chartConfig.geomOptions.gradientColor
+                    },
+                    colors: {
+                        segments: LABKEY.vis.Scale[chartConfig.geomOptions.colorPaletteScale]()
+                    }
+                },
                 effects: { highlightSegmentOnMouseover: false },
                 tooltips: { enabled: true }
             });
@@ -1610,6 +1626,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
             else if (this.renderType == 'bar_chart')
             {
+                // TODO: this logic should move to onMeasureChange
                 if (aggType == 'COUNT' && labels.y.value != '')
                     labels.y.value = '';
                 else if (aggType == 'SUM' && labels.y.value)
@@ -1671,7 +1688,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 negativesFound.push(entry.label)
             }
         });
-        return negativesFound;
+
+        if (negativesFound.length > 0)
+        {
+            this.addWarningText('There are negative values in the data that the Pie Chart cannot display. '
+                    + 'Omitted: ' + negativesFound.join(', '));
+        }
+
+        return negativesFound.length > 0;
     },
 
     initMeasures : function(forExport)

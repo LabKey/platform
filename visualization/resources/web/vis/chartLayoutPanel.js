@@ -7,6 +7,7 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
     height: 525,
     isDeveloper: false,
     defaultChartLabel: null,
+    defaultOpacity: null,
 
     initComponent : function()
     {
@@ -45,7 +46,8 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
                 label: 'General',
                 cardClass: 'LABKEY.vis.GenericChartOptionsPanel',
                 config: {
-                    defaultChartLabel: this.defaultChartLabel
+                    defaultChartLabel: this.defaultChartLabel,
+                    defaultOpacity: this.defaultOpacity
                 }
             },{
                 name: 'x',
@@ -335,7 +337,7 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
         return hasChanges;
     },
 
-    onMeasuresChange : function(measures, renderType)
+    onMeasuresChange : function(measures)
     {
         Ext4.Object.each(measures, function(key, props)
         {
@@ -348,16 +350,13 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
             }
         }, this);
 
-        if (renderType == 'pie_chart') {
-            var navIndex = this.getNavigationPanel().getStore().findExact('name', 'general');
-            if (navIndex > -1)
-            {
-                var generalOptionsPanel = this.getCenterPanel().getLayout().getLayoutItems()[navIndex];
-                if (generalOptionsPanel.onMeasureChange)
-                    if (measures.x || measures.y) {
-                        generalOptionsPanel.onMeasureChange(measures.x, measures.y);
-                    }
-            }
+        // also give the general layout options tab a chance to update on measure change
+        var navIndex = this.getNavigationPanel().getStore().findExact('name', 'general');
+        if (navIndex > -1)
+        {
+            var generalOptionsPanel = this.getCenterPanel().getLayout().getLayoutItems()[navIndex];
+            if (generalOptionsPanel.onMeasureChange)
+                generalOptionsPanel.onMeasureChange(measures);
         }
     },
 
