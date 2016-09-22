@@ -1610,24 +1610,19 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
             else if (this.renderType == 'bar_chart')
             {
-                if (aggType == 'COUNT' && labels.y.value != '') {
+                if (aggType == 'COUNT' && labels.y.value != '')
                     labels.y.value = '';
-                }
-                else if (aggType == 'SUM' && labels.y.value) {
+                else if (aggType == 'SUM' && labels.y.value)
                     labels.y.value = 'Sum of ' + labels.y.value;
-                }
+
                 data = LABKEY.vis.GenericChartHelper.generateAggregateData(data, dimName, measureName, aggType, '[Blank]');
-                var min = null;
-                Ext4.each(data, function(entry) {
-                   if (min == null) {
-                       min = entry.value;
-                   } else if (entry.value < min) {
-                       min = entry.value;
-                   }
-                });
-                if (min > 0) { min = 0; }
+
                 aes = { x: 'label', y: 'value' };
-                scales.y = {domain: [min, null]};
+
+                var values = Ext4.Array.pluck(data, 'value'),
+                    min = Math.min(0, Ext4.Array.min(values)),
+                    max = Math.max(0, Ext4.Array.max(values));
+                scales.y = { domain: [min, max] };
             }
 
             layers.push(
