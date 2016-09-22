@@ -730,10 +730,12 @@ var barChart = new LABKEY.vis.Plot({
     aes: { x: 'name', y: 'count' },
     scales : {
         x : { scaleType: 'discrete' },
-        y : { domain: [0, null] }
+        y : { domain: [-20, 20] }
     },
-    data: [{name: 'test1', count: 16}, {name: 'test2', count: 8}, {name: 'test3', count: 4}, {name: 'test4', count: 2},
-        {name: 'test5', count: 1}, {name: 'test6', count: 2}, {name: 'test7', count: 4}, {name: 'test8', count: 8}, {name: 'test9', count: 16}]
+    data: [
+        {name: 'test1', count: 16}, {name: 'test2', count: 8}, {name: 'test3', count: 4}, {name: 'test4', count: 2}, {name: 'test5', count: 1},
+        {name: 'test6', count: -1}, {name: 'test7', count: -2}, {name: 'test8', count: -4}, {name: 'test9', count: -8}, {name: 'test10', count: -16}
+    ]
 });
 
 var barChart2 = new LABKEY.vis.BarPlot({

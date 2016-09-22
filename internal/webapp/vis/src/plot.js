@@ -1398,8 +1398,10 @@ boxPlot.render();
         }
         config.size.canvasWidth = config.width || config.size.canvasWidth;
         config.size.canvasHeight = config.height || config.size.canvasHeight;
-        config.size.pieInnerRadius = config.size.innerRadius;
-        config.size.pieOuterRadius = config.size.outerRadius;
+        if (config.size.innerRadius)
+            config.size.pieInnerRadius = config.size.innerRadius;
+        if (config.size.outerRadius)
+            config.size.pieOuterRadius = config.size.outerRadius;
 
         // apply default font/colors/etc., it not explicitly set
         if (!config.header) config.header = {};
@@ -1422,7 +1424,7 @@ boxPlot.render();
         if (!config.labels.outer.pieDistance) config.labels.outer.pieDistance = 10;
         if (!config.labels.inner) config.labels.inner = {};
         if (!config.labels.inner.format) config.labels.inner.format = 'percentage';
-        if (!config.labels.inner.hideWhenLessThanPercentage) config.labels.inner.hideWhenLessThanPercentage = 5;
+        if (!config.labels.inner.hideWhenLessThanPercentage) config.labels.inner.hideWhenLessThanPercentage = 10;
         if (!config.labels.lines) config.labels.lines = {};
         if (!config.labels.lines.style) config.labels.lines.style = 'straight';
         if (!config.labels.lines.color) config.labels.lines.color = '#222222';
