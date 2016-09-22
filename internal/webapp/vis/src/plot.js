@@ -1398,10 +1398,6 @@ boxPlot.render();
         }
         config.size.canvasWidth = config.width || config.size.canvasWidth;
         config.size.canvasHeight = config.height || config.size.canvasHeight;
-        if (config.size.innerRadius)
-            config.size.pieInnerRadius = config.size.innerRadius;
-        if (config.size.outerRadius)
-            config.size.pieOuterRadius = config.size.outerRadius;
 
         // apply default font/colors/etc., it not explicitly set
         if (!config.header) config.header = {};
