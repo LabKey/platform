@@ -1,8 +1,15 @@
 package org.labkey.issue;
 
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.util.GUID;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,122 +24,6 @@ public class BuildSummaryUtil
     {
         List<IssuesController.BuildIssue> allIssues = getFilteredBuildIssues(inputBean);
         return constructBuildSummaryBean(allIssues);
-    }
-
-    public static String getBuildSummaryContentHTML(BuildSummaryBean bean)
-    {
-        StringBuilder builder = new StringBuilder();
-        //TODO add css
-
-        // javascript
-        builder.append("<script type=\"text/javascript\">\n");
-        builder.append("function expandCollapse(id,showClassName){\n");
-        builder.append("var imgId = 'img_'+ id;");
-        builder.append("if(document.getElementById(id).className == 'collapsed'){\n");
-        builder.append("document.getElementById(id).className = 'expanded';\n");
-        builder.append("document.getElementById(imgId).src=LABKEY.contextPath + \"/_images/minus.gif\";\n");
-        builder.append("}\n");
-        builder.append("else{\n");
-        builder.append("document.getElementById(id).className = 'collapsed';\n");
-        builder.append("document.getElementById(imgId).src = LABKEY.contextPath + \"/_images/plus.gif\";\n");
-        builder.append("}\n");
-        builder.append("}\n");
-        builder.append("</script>");
-
-        // header info
-        builder.append("<p>Note: This list is missing secure issues. If you’re waiting for one of these issues to get fixed, please follow up with the LabKey support team </p>");
-
-        // issues expando
-        if (bean.getVerifiedAreaIssues().keySet().size() == 0
-                && bean.getUnverifiedAreaIssues().keySet().size() == 0)
-            return "";
-
-        builder.append("<div style=\"display:block; margin-top:10px\"></div>\n");
-        String sectionExpandoId = "summary_" + GUID.makeGUID();
-        builder.append(buildExpandoScript(sectionExpandoId));
-        builder.append("<h3>Issues</h3>\n");
-        builder.append("<br style=\"clear:both\">\n");
-
-        builder.append("<div class=\"collapsed\" style=\"margin-top:-20px\" id=\"");
-        builder.append(sectionExpandoId);
-        builder.append("\">\n");
-        builder.append("<ul style=\"list-style-type: none;\">\n");
-        String verifiedExpandoId = "verified_" + GUID.makeGUID();
-        String unverifiedExpandoId = "unverified_" + GUID.makeGUID();
-        builder.append(buildIssueTypeSection(bean.getVerifiedAreaIssues(), verifiedExpandoId, "Verified Issues"));
-        builder.append(buildIssueTypeSection(bean.getUnverifiedAreaIssues(), unverifiedExpandoId, "Unverified Issues"));
-        builder.append("</ul>\n");
-        builder.append("</div>\n");
-
-        return builder.toString();
-    }
-
-    public static String buildIssueTypeSection(Map<String, List<BuildIssue>> areaIssues, String typeId, String typeTitle)
-    {
-        if (areaIssues == null || areaIssues.isEmpty())
-            return "";
-
-        StringBuilder builder = new StringBuilder();
-
-        builder.append("<li>\n");
-        builder.append(buildExpandoScript(typeId));
-        builder.append("<h3>").append(typeTitle).append("</h3>\n");
-        builder.append("<br style=\"clear:both\">\n");
-
-        builder.append("<div class=\"collapsed\" style=\"margin-top:-20px\" id=\"");
-        builder.append(typeId);
-        builder.append("\">\n");
-        builder.append("<ul style=\"list-style-type: none;\">\n");
-        for (String areaTitle : areaIssues.keySet())
-        {
-            String issueExpandoId = "issue_" + GUID.makeGUID();
-            builder.append(buildIssueAreaSection(areaIssues.get(areaTitle), issueExpandoId, areaTitle));
-        }
-        builder.append("</ul>\n");
-        builder.append("</div>\n");
-        builder.append("</li>\n");
-        return builder.toString();
-    }
-
-    public static String buildIssueAreaSection(List<BuildIssue> issues, String areaId, String areaTitle)
-    {
-        if (issues.isEmpty())
-            return "";
-        StringBuilder builder = new StringBuilder();
-
-        builder.append("<li>\n");
-        builder.append(buildExpandoScript(areaId));
-        builder.append("<h3>").append(areaTitle).append("</h3>\n");
-        builder.append("<br style=\"clear:both\">\n");
-
-        builder.append("<div class=\"collapsed\" style=\"margin-top:-20px\" id=\"");
-        builder.append(areaId);
-        builder.append("\">\n");
-        builder.append("<ul class=\"collapsiblelist\">\n");
-        for (BuildIssue issue : issues)
-        {
-            builder.append("<li>");
-            builder.append(issue.getTitle());
-            builder.append("</li>\n");
-        }
-        builder.append("</ul>\n");
-        builder.append("</div>\n");
-
-        builder.append("</li>\n");
-        return builder.toString();
-    }
-
-    public static String buildExpandoScript(String sectionId)
-    {
-        StringBuilder builder = new StringBuilder();
-        builder.append("<a href=\"javascript:expandCollapse('");
-        builder.append(sectionId);
-        builder.append("');\">\n");
-        builder.append("<img style=\"padding-top:4px;padding-right:5px\" border=\"0\" align=\"left\" id=\"");
-        builder.append("img_").append(sectionId);
-        builder.append("\" src=\"/labkey/_images/plus.gif\">\n");
-        builder.append("</a>\n");
-        return builder.toString();
     }
 
     public static BuildSummaryBean constructBuildSummaryBean(List<BuildIssue> allIssues)
@@ -162,8 +53,18 @@ public class BuildSummaryUtil
                 unverifiedIssues.get(issue.getArea()).add(issue);
             }
         }
-        summaryBean.setVerifiedAreaIssues(verifiedIssues);
-        summaryBean.setUnverifiedAreaIssues(unverifiedIssues);
+
+        Map<String, Map<String, List<BuildIssue>>> summarizedIssues = new HashMap<>();
+        if (!verifiedIssues.isEmpty())
+        {
+            summarizedIssues.put("Verified Issues", verifiedIssues);
+        }
+
+        if (!unverifiedIssues.isEmpty())
+        {
+            summarizedIssues.put("unverified Issues", unverifiedIssues);
+        }
+        summaryBean.setSummarizedIssues(summarizedIssues);
         return summaryBean;
     }
 

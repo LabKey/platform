@@ -2581,20 +2581,6 @@ public class IssuesController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class GetBuildSummaryContentAction extends ApiAction<IssuesController.BuildSummaryBean>
-    {
-        @Override
-        public ApiResponse execute(BuildSummaryBean bean, BindException errors) throws Exception
-        {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            errors.addAllErrors(defaultBindParameters(bean, getViewContext().getBindPropertyValues()));
-            BuildSummaryBean summarizedBean = BuildSummaryUtil.populateBuildSummaryBean(bean);
-            response.put("html", BuildSummaryUtil.getBuildSummaryContentHTML(summarizedBean));
-            return new ApiSimpleResponse(response);
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
     public class BuildSummaryAction extends SimpleViewAction<IssuesController.BuildSummaryBean>
     {
         @Override
@@ -2607,7 +2593,9 @@ public class IssuesController extends SpringActionController
                 return new HtmlView(getUndefinedIssueListMessage(getViewContext(), issueDefName));
             }
 
-            return new JspView("/org/labkey/issue/view/buildSummary.jsp", buildSummaryBean);
+            BuildSummaryBean summarizedBean = BuildSummaryUtil.populateBuildSummaryBean(buildSummaryBean);
+
+            return new JspView("/org/labkey/issue/view/buildSummary.jsp", summarizedBean);
         }
 
         @Override
@@ -2619,28 +2607,18 @@ public class IssuesController extends SpringActionController
 
     public static class BuildSummaryBean
     {
-        private Map<String, List<BuildIssue>> verifiedAreaIssues = new HashMap<>();
-        private Map<String, List<BuildIssue>> unverifiedAreaIssues = new HashMap<>();
+        private Map<String, Map<String, List<BuildIssue>>> summarizedIssues = new HashMap<>();
 
-        public Map<String, List<BuildIssue>> getVerifiedAreaIssues()
+        public void setSummarizedIssues(Map<String, Map<String, List<BuildIssue>>> bean)
         {
-            return verifiedAreaIssues;
+            this.summarizedIssues = bean;
         }
 
-        public void setVerifiedAreaIssues(Map<String, List<BuildIssue>> verifiedAreaIssues)
+        public Map<String, Map<String, List<BuildIssue>>> getSummarizedIssues()
         {
-            this.verifiedAreaIssues = verifiedAreaIssues;
+            return summarizedIssues;
         }
 
-        public Map<String, List<BuildIssue>> getUnverifiedAreaIssues()
-        {
-            return unverifiedAreaIssues;
-        }
-
-        public void setUnverifiedAreaIssues(Map<String, List<BuildIssue>> unverifiedAreaIssues)
-        {
-            this.unverifiedAreaIssues = unverifiedAreaIssues;
-        }
     }
 
     public static class BuildIssue
