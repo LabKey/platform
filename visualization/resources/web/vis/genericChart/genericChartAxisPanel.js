@@ -110,7 +110,7 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             radioComp.setValue(true);
     },
 
-    onMeasureChange : function(properties)
+    onMeasureChange : function(properties, renderType)
     {
         if (!this.userEditedLabel)
         {

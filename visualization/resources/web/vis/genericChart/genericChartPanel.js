@@ -48,7 +48,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
                             this.subject = o.subject;
                             this.requestData();
-                            this.requestRender(false);
+                            this.requestRender();
                         },
                         failure : this.onFailure,
                         scope   : this
@@ -57,7 +57,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 }
                 else {
                     this.requestData();
-                    this.requestRender(false);
+                    this.requestRender();
                 }
             }
 
@@ -110,7 +110,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         this.chartDefinitionChanged = new Ext4.util.DelayedTask(function(){
             this.markDirty(true);
-            this.requestRender(false);
+            this.requestRender();
         }, this);
 
         this.items = [this.getCenterPanel()];
@@ -141,7 +141,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     getViewPanel : function()
     {
-        // TODO change usages of this.viewPanel to this.getViewPanel()
         if (!this.viewPanel)
         {
             this.viewPanel = Ext4.create('Ext.panel.Panel', {
@@ -342,7 +341,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 scope: this,
                 handler: function()
                 {
-                    if (this.viewPanel.isHidden())
+                    if (this.getViewPanel().isHidden())
                     {
                         this.getCenterPanel().getLayout().setActiveItem(0);
                         this.toggleViewBtn.setText('View Data');
@@ -510,7 +509,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         this.setRenderType(values.type);
                         this.measures = values.fields;
 
-                        this.getChartLayoutPanel().onMeasuresChange(this.measures);
+                        this.getChartLayoutPanel().onMeasuresChange(this.measures, this.renderType);
                         this.getChartLayoutPanel().updateVisibleLayoutOptions(this.getSelectedChartTypeData());
                         this.ensureChartLayoutOptions();
 
@@ -777,7 +776,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 this.getSaveBtn().disable();
                 this.getSaveAsBtn().disable();
 
-                this.viewPanel.add(errorDiv);
+                this.getViewPanel().add(errorDiv);
             };
             config.scope = this;
         }
@@ -1405,22 +1404,18 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.getToggleViewBtn().enable();
 
         this.clearChartPanel();
-        this.viewPanel.add(errorDiv);
+        this.getViewPanel().add(errorDiv);
         this.getEl().unmask();
     },
 
-    // TODO: I think we can remove the forExport param and related code now that thumbnails don't need to re-render
-    renderPlot : function(forExport)
+    renderPlot : function()
     {
         // Don't attempt to render if the view panel isn't visible or the chart type window is visible.
-        if (this.viewPanel.isHidden() || this.getChartTypeWindow().isVisible())
+        if (this.getViewPanel().isHidden() || this.getChartTypeWindow().isVisible())
             return;
 
-        if (!forExport)
-        {
-            this.getEl().mask('Rendering Chart...');
-            this.clearChartPanel();
-        }
+        this.getEl().mask('Rendering Chart...');
+        this.clearChartPanel();
 
         if (this.chartData.rows.length === 0)
         {
@@ -1430,7 +1425,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
 
         // initMeasures returns false and opens the Chart Type panel if a required measure is not chosen by the user.
-        if (!this.initMeasures(forExport))
+        if (!this.initMeasures())
             return;
 
         var newChartDiv = Ext4.create('Ext.container.Container', {
@@ -1438,7 +1433,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             cls: 'chart-display',
             autoEl: {tag: 'div'}
         });
-        this.viewPanel.add(newChartDiv);
+        this.getViewPanel().add(newChartDiv);
 
         var chartType, aes, scales, plotConfig,
             chartConfig = this.getChartConfig(),
@@ -1455,9 +1450,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (customRenderType && customRenderType.generateScales)
             scales = customRenderType.generateScales(this, chartConfig, scales);
         if (!Ext4.isDefined(chartConfig.width) || chartConfig.width == null)
-            chartConfig.width = !forExport ? this.viewPanel.getWidth() : 1200;
+            chartConfig.width = this.getViewPanel().getWidth();
         if (!Ext4.isDefined(chartConfig.height) || chartConfig.height == null)
-            chartConfig.height = !forExport ? this.viewPanel.getHeight() - 25 : 600;
+            chartConfig.height = this.getViewPanel().getHeight() - 25;
 
         if (!this.isChartConfigValid(chartType, chartConfig, aes, scales))
             return;
@@ -1489,32 +1484,27 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             newChartDiv.getEl().insertFirst(warningDiv);
         }
 
-        if (!forExport)
-        {
-            this.getTopButtonBar().enable();
+        this.getTopButtonBar().enable();
 
-            this.getChartTypeBtn().enable();
-            this.getChartLayoutBtn().enable();
-            this.getSaveBtn().enable();
-            this.getSaveAsBtn().enable();
+        this.getChartTypeBtn().enable();
+        this.getChartLayoutBtn().enable();
+        this.getSaveBtn().enable();
+        this.getSaveAsBtn().enable();
 
-            this.enableExport();
+        this.enableExport();
 
-            this.getEl().unmask();
-            if (this.editMode && this.supportedBrowser)
-            {
-                // TODO get thumbnail to work for pie chart
-                this.chartSVG = LABKEY.vis.SVGConverter.svgToStr(newChartDiv.getEl().child('svg').dom);
-                this.getSavePanel().updateCurrentChartThumbnail(this.chartSVG);
-            }
-        }
-        else
-        {
-            return newChartDiv.id;
-        }
+        this.getEl().unmask();
+        if (this.editMode && this.supportedBrowser)
+            this.updateSaveChartThumbnail(newChartDiv);
 
         // We just rendered the plot, we don't need to request another render.
         this.setRenderRequested(false);
+    },
+
+    updateSaveChartThumbnail : function(chartDiv)
+    {
+        this.chartSVG = LABKEY.vis.SVGConverter.svgToStr(chartDiv.getEl().child('svg').dom);
+        this.getSavePanel().updateCurrentChartThumbnail(this.chartSVG);
     },
 
     isChartConfigValid : function(chartType, chartConfig, aes, scales)
@@ -1545,7 +1535,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             dimName = chartConfig.measures.x ? chartConfig.measures.x.name : null,
             measureName = chartConfig.measures.y ? chartConfig.measures.y.name : null,
             aggType = measureName != null ? 'SUM' : 'COUNT',
-            data = this.chartData.rows;
+            data = this.chartData.rows,
+            me = this;
 
         geom = LABKEY.vis.GenericChartHelper.generateGeom(chartType, chartConfig.geomOptions);
         labels = LABKEY.vis.GenericChartHelper.generateLabels(chartConfig.labels);
@@ -1566,6 +1557,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
         else if (this.renderType == 'pie_chart')
         {
+            // TODO: this logic should move to onMeasureChange
+            if (aggType == 'SUM' && labels.footer.value)
+                labels.footer.value = 'Sum of ' + labels.footer.value;
+
             data = LABKEY.vis.GenericChartHelper.generateAggregateData(data, dimName, measureName, aggType, '[Blank]');
 
             if (this.checkForNegativeData(data))
@@ -1609,7 +1604,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     }
                 },
                 effects: { highlightSegmentOnMouseover: false },
-                tooltips: { enabled: true }
+                tooltips: { enabled: true },
+                callbacks: {
+                    onload: function(){
+                        // because of the load delay, need to reset the thumbnail svg for pie charts
+                        me.updateSaveChartThumbnail(newChartDiv);
+                    }
+                }
             });
         }
         else
@@ -1627,9 +1628,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             else if (this.renderType == 'bar_chart')
             {
                 // TODO: this logic should move to onMeasureChange
-                if (aggType == 'COUNT' && labels.y.value != '')
-                    labels.y.value = '';
-                else if (aggType == 'SUM' && labels.y.value)
+                if (aggType == 'SUM' && labels.y.value)
                     labels.y.value = 'Sum of ' + labels.y.value;
 
                 data = LABKEY.vis.GenericChartHelper.generateAggregateData(data, dimName, measureName, aggType, '[Blank]');
@@ -1698,7 +1697,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         return negativesFound.length > 0;
     },
 
-    initMeasures : function(forExport)
+    initMeasures : function()
     {
         // Initialize the x and y measures on first chart load. Returns false if we're missing the x or y measure.
         var measure, fk,
@@ -1707,7 +1706,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             requiresX = requiredFieldNames.indexOf('x') > -1,
             requiresY = requiredFieldNames.indexOf('y') > -1;
 
-        if (!this.measures.y && !forExport)
+        if (!this.measures.y)
         {
             if (this.autoColumnYName || (requiresY && this.autoColumnName))
             {
@@ -1726,7 +1725,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
         }
 
-        if (!this.measures.x && !forExport)
+        if (!this.measures.x)
         {
             if (this.renderType !== "box_plot" && this.renderType !== "auto_plot")
             {
@@ -1763,7 +1762,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (measure)
         {
             this.measures.y = measure.data ? measure.data : measure;
-            this.getChartLayoutPanel().onMeasuresChange(this.measures);
+            this.getChartLayoutPanel().onMeasuresChange(this.measures, this.renderType);
         }
     },
 
@@ -1772,7 +1771,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (measure)
         {
             this.measures.x = measure.data ? measure.data : measure;
-            this.getChartLayoutPanel().onMeasuresChange(this.measures);
+            this.getChartLayoutPanel().onMeasuresChange(this.measures, this.renderType);
         }
     },
 
@@ -1851,7 +1850,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     html: '<h3 style="color:red;">Error rendering chart:</h2>' + validation.message,
                     autoScroll: true
                 });
-                this.viewPanel.add(errorDiv);
+                this.getViewPanel().add(errorDiv);
             }
         }
     },
@@ -1892,7 +1891,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     clearChartPanel : function()
     {
         this.clearWarningText();
-        this.viewPanel.removeAll();
+        this.getViewPanel().removeAll();
         this.disableExport();
     },
 
@@ -2052,7 +2051,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             {
                 // If it's already been requested then we just need to request it again, since
                 // this time we have the data to render.
-                this.requestRender(false);
+                this.requestRender();
             }
 
             if (this.firstLoad)
@@ -2174,12 +2173,12 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         LABKEY.Query.selectRows(this.getQueryConfig());
     },
 
-    requestRender : function(forExport)
+    requestRender : function()
     {
         if (this.isDataLoading())
             this.setRenderRequested(true);
         else
-            this.renderPlot(forExport);
+            this.renderPlot();
     },
 
     renderChart : function()

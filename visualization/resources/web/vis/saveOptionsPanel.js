@@ -344,7 +344,7 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
         if (size)
             chartSVGStr = chartSVGStr.replace(/<svg /, '<svg viewBox="0 0 ' + size.width + ' ' + size.height + '"');
         else
-            chartSVGStr = chartSVGStr.replace(/<svg /, '<svg viewBox="0 150 1150 300"');
+            chartSVGStr = chartSVGStr.replace(/<svg /, '<svg viewBox="0 150 1300 300"');
         // remove the id reference so that updates to the original aren't confused
         chartSVGStr = chartSVGStr.replace(/id="[\w\-]+"/, '');
 

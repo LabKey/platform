@@ -337,7 +337,7 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
         return hasChanges;
     },
 
-    onMeasuresChange : function(measures)
+    onMeasuresChange : function(measures, renderType)
     {
         Ext4.Object.each(measures, function(key, props)
         {
@@ -346,7 +346,7 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
             {
                 var panel = this.getCenterPanel().getLayout().getLayoutItems()[navIndex];
                 if (panel.onMeasureChange)
-                    panel.onMeasureChange(props);
+                    panel.onMeasureChange(props, renderType);
             }
         }, this);
 
@@ -356,7 +356,7 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
         {
             var generalOptionsPanel = this.getCenterPanel().getLayout().getLayoutItems()[navIndex];
             if (generalOptionsPanel.onMeasureChange)
-                generalOptionsPanel.onMeasureChange(measures);
+                generalOptionsPanel.onMeasureChange(measures, renderType);
         }
     },
 

@@ -402,13 +402,16 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         return values;
     },
 
-    onMeasureChange : function(measures)
+    onMeasureChange : function(measures, renderType)
     {
-        if (Ext4.isDefined(measures.x) && measures.x.hasOwnProperty('label'))
-            this.setSubtitle(measures.x.label);
+        if (renderType == 'pie_chart')
+        {
+            if (Ext4.isDefined(measures.x) && measures.x.hasOwnProperty('label'))
+                this.setSubtitle(measures.x.label);
 
-        if (Ext4.isDefined(measures.y) && measures.y.hasOwnProperty('label'))
-            this.setFooter(measures.y.label);
+            if (Ext4.isDefined(measures.y) && measures.y.hasOwnProperty('label'))
+                this.setFooter(measures.y.label);
+        }
     },
 
     setPanelOptionValues: function(chartConfig)

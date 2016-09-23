@@ -54,7 +54,7 @@ Ext4.define('LABKEY.vis.GenericOptionsPanel', {
         return true;
     },
 
-    onMeasureChange : function(properties)
+    onMeasureChange : function(properties, renderType)
     {},
 
     // called to reset the panel components based on the values in the parameter object,
