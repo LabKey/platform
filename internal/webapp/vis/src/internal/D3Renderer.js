@@ -1662,8 +1662,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
 
         if (this.canvas && plot.labels[name] && plot.labels[name].value) {
-            if(typeof plot.labels[name].maxCharPerLine !== 'undefined') {
-                if(plot.labels[name].value.length > plot.labels[name].maxCharPerLine) {
+            if (typeof plot.labels[name].maxCharPerLine !== 'undefined')
+            {
+                if (plot.labels[name].value.length > plot.labels[name].maxCharPerLine)
+                {
                     var fontSize = plot.scales[name].fontSize ? plot.scales[name].fontSize : defaultAxisFontSize;
                     var tspanEl, textWidth = null;
 
@@ -1672,7 +1674,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                     var values = plot.labels[name].value.match(regex);
 
                     // Insert each chunk into tspans
-                    for(var i=0; i<values.length; i++) {
+                    for (var i=0; i<values.length; i++)
+                    {
                         var calcX, calcY, align = 'middle';
 
                         if(typeof plot.labels[name].lineWrapAlign !== 'undefined')
@@ -1688,16 +1691,21 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                         if(textWidth === null)
                             textWidth = tspanEl[0][0].getComputedTextLength();
 
-                        if(name === 'x' || name === 'xTop') {
+                        if (name === 'x' || name === 'xTop')
+                        {
                             if(align === 'start') {
                                 calcX = x - textWidth/2;
-                            } else if(align === 'end') {
+                            }
+                            else if(align === 'end') {
                                 calcX = x + textWidth/2;
-                            } else {
+                            }
+                            else {
                                 calcX = x;
                             }
                             calcY = y + fontSize*i;
-                        } else {
+                        }
+                        else
+                        {
                             calcX = 0;
                             calcY = 0 - (fontSize*values.length/2)*(values.length-i-1); //Center vertically
                         }
@@ -1705,18 +1713,28 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                         tspanEl.attr('x',calcX).attr('y',calcY);
                     }
                 }
-            } else {
+            }
+            else if (labelElements[name])
+            {
                 labelElements[name].dom.text(plot.labels[name].value);
                 if (plot.labels[name].color) {
                     labelElements[name].dom.attr('fill', plot.labels[name].color);
                 }
             }
-            if (translate) {
-                labelElements[name].dom.attr('transform', 'translate(' + x + ',' + y + ')rotate(' + rotate + ')')
-            } else {
-                labelElements[name].dom.attr('x', x);
-                labelElements[name].dom.attr('y', y);
+
+            if (labelElements[name])
+            {
+                if (translate)
+                {
+                    labelElements[name].dom.attr('transform', 'translate(' + x + ',' + y + ')rotate(' + rotate + ')')
+                }
+                else
+                {
+                    labelElements[name].dom.attr('x', x);
+                    labelElements[name].dom.attr('y', y);
+                }
             }
+
             if (plot.labels[name].lookClickable == true) {
                 renderClickArea.call(this, name);
             }
