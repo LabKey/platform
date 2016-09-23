@@ -292,7 +292,8 @@ public class ButtonBar extends DisplayElement
                 for (int i = 0; i < _elementList.size(); i++)
                 {
                     DisplayElement existing = _elementList.get(i);
-                    if (existing.getCaption().equalsIgnoreCase(target))
+                    String caption = existing.getCaption();
+                    if (caption != null && caption.equalsIgnoreCase(target))
                     {
                         _elementList.add(before ? i : i+1, elem);
                         added = true;

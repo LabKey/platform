@@ -15,6 +15,7 @@
  */
 package org.labkey.api.view;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.security.permissions.Permission;
@@ -119,6 +120,7 @@ public abstract class DisplayElement implements View, Cloneable
     }
 
 
+    @Nullable
     public String getCaption()
     {
         return null == _caption ? null : _caption.getSource();
