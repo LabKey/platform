@@ -50,10 +50,6 @@ var labResultsPlotConfig = {
     width: 900,
 	height: 300,
     clipRect: true,
-    // TODO: Fix bg, grid, gridLine colors for D3Renderer (Issue 19375)
-//    bgColor: '#777777',
-//    gridColor: '#FF00FF',
-//    gridLineColor: "#FFFFFF",
 	data: labResultsRows,
 	aes: {
 		x: function(row){return row.Days.value},
@@ -122,7 +118,19 @@ var coffeePlot = new LABKEY.vis.Plot({
         xTop: 'time',
         yLeft: 'efficiency'
     },
+    legendData: [
+        {text: 'LabKey Dev 1', color: '#0000A0'},
+        {text: 'LabKey Dev 2', color: '#ADD8E6'},
+        {text: 'No Coffee Consumed', shape: LABKEY.vis.Scale.Shape()[0]},
+        {text: 'Coffee Consumed', shape: LABKEY.vis.Scale.Shape()[1]}
+    ],
     scales: {
+        color: {
+            scaleType: 'discrete',
+            scale: function(group) {
+                return group == 'LabKey Dev 1 Efficiency' ? '#0000A0' : '#ADD8E6';
+            }
+        },
         xTop: {
             scaleType: 'discrete'
         },
@@ -183,6 +191,8 @@ var boxPlot = new LABKEY.vis.Plot({
     clipRect: true,
     width: 900,
     height: 300,
+    bgColor: '#dddddd',
+    gridLineColor: '#777777',
     labels: {
         main: {value: 'Example Box Plot'},
         yLeft: {value: 'Age'},
