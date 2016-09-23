@@ -15,13 +15,10 @@
      * limitations under the License.
      */
 %>
-<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
-<%@ page import="org.labkey.issue.actions.DeleteIssueListAction" %>
 <%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.query.QueryAction" %>
 <%@ page import="org.labkey.issue.query.IssuesQuerySchema" %>
@@ -33,20 +30,41 @@
     ActionURL cancelURL = QueryService.get().urlFor(getUser(), getContainer(), QueryAction.executeQuery, "issues", IssuesQuerySchema.TableType.IssueListDef.name());
 
 %>
-    Build summary things and stuff
-    <br><%
 
-    for(IssuesController.BuildIssue buildIssue : bean.getBuildIssues())
-    {
-        out.println("<br>Issue ID: " + buildIssue.getIssueId() + "<br>");
-        out.println("Title: " + buildIssue.getTitle() + "<br>");
-        out.println("Client: " + buildIssue.getClient() + "<br>");
-        out.println("Area: " + buildIssue.getArea() + "<br>");
-        out.println("Milestone: " + buildIssue.getMilestone() + "<br>");
-        out.println("Status: " + buildIssue.getStatus() + "<br>");
-        out.println("Type: " + buildIssue.getType() + "<br>");
-        out.println("Resolved: " + buildIssue.getResolved() + "<br>");
-        out.println("Closed: " + buildIssue.getClosed() + "<br>");
+<style type="text/css">
+    .collapsed {
+        display:none;
+    }
+    .expanded {
+        display:block;
     }
 
-    %>
+</style>
+
+<div id="issueContentDiv">
+</div>
+
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        Ext4.onReady(function(){
+            var url = LABKEY.ActionURL.buildURL('issues', 'getBuildSummaryContent', null, {});
+            Ext4.Ajax.request({
+                url : url,
+                method: 'POST',
+                success: function(resp){
+                    debugger;
+                    var json = LABKEY.Utils.decode(resp.responseText);
+                    if (!json)
+                        return;
+                    LABKEY.Utils.loadAjaxContent(resp, "issueContentDiv", function() { });
+                },
+                failure : function() {
+                    Ext4.Msg.alert("Error", "Failed to load build summary content.");
+                },
+                scope : this
+            });
+        })
+
+    }, false);
+</script>
+

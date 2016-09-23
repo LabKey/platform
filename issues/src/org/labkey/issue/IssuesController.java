@@ -2581,6 +2581,20 @@ public class IssuesController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
+    public class GetBuildSummaryContentAction extends ApiAction<IssuesController.BuildSummaryBean>
+    {
+        @Override
+        public ApiResponse execute(BuildSummaryBean bean, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            errors.addAllErrors(defaultBindParameters(bean, getViewContext().getBindPropertyValues()));
+            BuildSummaryBean summarizedBean = BuildSummaryUtil.populateBuildSummaryBean(bean);
+            response.put("html", BuildSummaryUtil.getBuildSummaryContentHTML(summarizedBean));
+            return new ApiSimpleResponse(response);
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
     public class BuildSummaryAction extends SimpleViewAction<IssuesController.BuildSummaryBean>
     {
         @Override
@@ -2592,47 +2606,6 @@ public class IssuesController extends SpringActionController
             {
                 return new HtmlView(getUndefinedIssueListMessage(getViewContext(), issueDefName));
             }
-
-            TableInfo table = IssuesSchema.getInstance().getTableInfoIssues();
-            Collection<ColumnInfo> columns = table.getColumns();
-            Filter idFilter = new SimpleFilter(FieldKey.fromString("IssueDefId"), issueListDef.getRowId());
-            TableSelector selector = new TableSelector(table, columns, idFilter, null);
-            ArrayList<BuildIssue> buildIssues;
-            Container c = getContainer();
-            User user = getUser();
-
-            try (TableResultSet rs = selector.getResultSet())
-            {
-                buildIssues = new ArrayList<>(rs.getSize());
-                while (rs.next())
-                {
-                    Issue issue = IssueManager.getIssue(c, user, rs.getInt("IssueId"));
-                    Date resolvedDate = issue.getResolved();
-                    Date closedDate = issue.getClosed();
-                    Instant resolvedInstant = (resolvedDate != null) ? resolvedDate.toInstant() : null;
-                    Instant closedInstant = (closedDate != null) ? closedDate.toInstant() : null;
-                    String client = (String)issue.getProperties().get("client");
-
-                    if((client != null) && (client.equals("ITN")))
-                    {
-                        final BuildIssue buildIssue = new BuildIssue(
-                                issue.getIssueId(),
-                                issue.getType(),
-                                issue.getArea(),
-                                issue.getTitle(),
-                                issue.getStatus(),
-                                issue.getMilestone(),
-                                resolvedInstant,
-                                closedInstant,
-                                client
-                        );
-                        buildIssues.add(buildIssue);
-                    }
-                }
-            }
-
-            if((buildIssues != null) && (buildIssues.size() > 0))
-                buildSummaryBean.setBuildIssues(buildIssues);
 
             return new JspView("/org/labkey/issue/view/buildSummary.jsp", buildSummaryBean);
         }
@@ -2646,16 +2619,27 @@ public class IssuesController extends SpringActionController
 
     public static class BuildSummaryBean
     {
-        ArrayList<BuildIssue> buildIssues;
+        private Map<String, List<BuildIssue>> verifiedAreaIssues = new HashMap<>();
+        private Map<String, List<BuildIssue>> unverifiedAreaIssues = new HashMap<>();
 
-        public ArrayList<BuildIssue> getBuildIssues()
+        public Map<String, List<BuildIssue>> getVerifiedAreaIssues()
         {
-            return buildIssues;
+            return verifiedAreaIssues;
         }
 
-        public void setBuildIssues(ArrayList<BuildIssue> buildIssues)
+        public void setVerifiedAreaIssues(Map<String, List<BuildIssue>> verifiedAreaIssues)
         {
-            this.buildIssues = buildIssues;
+            this.verifiedAreaIssues = verifiedAreaIssues;
+        }
+
+        public Map<String, List<BuildIssue>> getUnverifiedAreaIssues()
+        {
+            return unverifiedAreaIssues;
+        }
+
+        public void setUnverifiedAreaIssues(Map<String, List<BuildIssue>> unverifiedAreaIssues)
+        {
+            this.unverifiedAreaIssues = unverifiedAreaIssues;
         }
     }
 
