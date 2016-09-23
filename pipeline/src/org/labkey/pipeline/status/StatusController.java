@@ -517,11 +517,12 @@ public class StatusController extends SpringActionController
         }
     }
 
-    public static ActionURL urlShowFile(Container c, int rowId, String filename)
+    public static ActionURL urlShowFile(Container c, int rowId, String filename, boolean download)
     {
         return new ActionURL(ShowFileAction.class, c)
                 .addParameter(RowIdForm.Params.rowId, Integer.toString(rowId))
-                .addParameter(ShowFileForm.Params.filename, filename);
+                .addParameter(ShowFileForm.Params.filename, filename)
+                .addParameter(ShowFileForm.Params.download, download);
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -562,7 +563,7 @@ public class StatusController extends SpringActionController
 
                         if (visible)
                         {
-                            renderFile(out, fileShow);
+                            PageFlowUtil.streamFile(getViewContext().getResponse(), fileStatus, form.isDownload());
                             written = true;
                         }
                     }
@@ -576,8 +577,9 @@ public class StatusController extends SpringActionController
 
     public static class ShowFileForm extends RowIdForm
     {
-        enum Params { filename }
+        enum Params { filename, download }
 
+        private boolean _download;
         private String _filename;
 
         public String getFilename()
@@ -588,6 +590,16 @@ public class StatusController extends SpringActionController
         public void setFilename(String filename)
         {
             this._filename = filename;
+        }
+
+        public boolean isDownload()
+        {
+            return _download;
+        }
+
+        public void setDownload(boolean download)
+        {
+            _download = download;
         }
     }
 
@@ -1075,25 +1087,6 @@ public class StatusController extends SpringActionController
         return rgn;
     }
 
-    private void renderFile(PrintWriter out, File f)
-    {
-        try (BufferedReader br = Readers.getReader(f))
-        {
-            String line;
-
-            while ((line = br.readLine()) != null)
-            {
-                out.write(line);
-                out.write(_newline);
-            }
-        }
-        catch (IOException e)
-        {
-            out.write("...Error reading file...");
-            out.write(_newline);
-        }
-    }
-
     protected static boolean isVisibleFile(String name, String basename)
     {
         if (name.endsWith(".def") ||
@@ -1135,7 +1128,7 @@ public class StatusController extends SpringActionController
         @Override
         public ActionURL urlShowFile(Container container, int rowId, String filename)
         {
-            return StatusController.urlShowFile(container, rowId, filename);
+            return StatusController.urlShowFile(container, rowId, filename, false);
         }
     }
 
