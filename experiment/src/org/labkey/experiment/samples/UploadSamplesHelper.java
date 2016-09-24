@@ -25,6 +25,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
@@ -51,6 +52,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -902,11 +904,27 @@ public class UploadSamplesHelper
             else
             {
                 ExpMaterial parent = null;
-                // Couldn't find exactly one match, check if it might be of the form <SAMPLE_SET_NAME>.<SAMPLE_NAME>
-                int dotIndex = parentName.indexOf(".");
+                // Couldn't find exactly one match, check if it might be of the form
+                // /PROJECT/FOLDER.SAMPLE_SET_NAME.SAMPLE_NAME or just SAMPLE_SET_NAME.SAMPLE_NAME
+                int dotIndex = parentName.lastIndexOf(".");
                 if (dotIndex != -1)
                 {
                     String sampleSetName = parentName.substring(0, dotIndex);
+
+                    // See if there's potentially a container path prefixed
+                    int i = sampleSetName.indexOf(".");
+                    if (i != -1 && sampleSetName.startsWith("/"))
+                    {
+                        String folderPath = sampleSetName.substring(0, i);
+                        Container targetedContainer = ContainerManager.getForPath(folderPath);
+                        // Make sure the container exists and the user has permission to see it
+                        if (targetedContainer != null && targetedContainer.hasPermission(_form.getUser(), ReadPermission.class))
+                        {
+                            c = targetedContainer;
+                            sampleSetName = sampleSetName.substring(i + 1);
+                        }
+                    }
+
                     String sampleName = parentName.substring(dotIndex + 1);
                     parent = findMaterial(c, sampleSetName, sampleName);
                 }
