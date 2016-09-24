@@ -246,18 +246,11 @@ public class DatasetQueryView extends StudyQueryView
 
         if (sourceLsidCol != null)
         {
-            try
+            if (sourceLsidDisplayCol != null)
+                sourceLsidDisplayCol.setVisible(false);
+            if (_showSourceLinks && hasUsefulDetailsPage() && null != _dataset.getAssayProtocol())
             {
-                if (sourceLsidDisplayCol != null)
-                    sourceLsidDisplayCol.setVisible(false);
-                if (_showSourceLinks && hasSourceLsids() && hasUsefulDetailsPage())
-                {
-                    view.getDataRegion().addDisplayColumn(0, new DatasetDetailsColumn(sourceLsidCol, getUser()));
-                }
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeException(e);
+                view.getDataRegion().addDisplayColumn(0, new DatasetDetailsColumn(sourceLsidCol, getUser()));
             }
         }
 
