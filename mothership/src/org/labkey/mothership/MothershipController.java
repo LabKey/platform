@@ -881,10 +881,10 @@ public class MothershipController extends SpringActionController
         {
             super(new DataRegion(), (BindException) null);
             setTitle(title);
-            TableInfo exceptionTableInfo = MothershipManager.get().getTableInfoExceptionReport();
-            ResultSet rs = new SqlSelector(exceptionTableInfo.getSchema(), new SQLFragment(sql)).getResultSet();
+            ResultSet rs = new SqlSelector(MothershipManager.get().getSchema(), new SQLFragment(sql)).getResultSet();
             List<ColumnInfo> colInfos = DataRegion.colInfosFromMetaData(rs.getMetaData());
             setResults(new ResultsImpl(rs, colInfos));
+            getDataRegion().setSettings(new QuerySettings(getViewContext(), title.replace("\"","")));
             getDataRegion().setColumns(colInfos);
             getDataRegion().setSortable(false);
             getDataRegion().setShowFilters(false);
