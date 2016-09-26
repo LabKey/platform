@@ -57,6 +57,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.ValidatorContext;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.DataLoaderSettings;
@@ -612,7 +613,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 ForeignKey fk = column != null ? column.getFk() : null;
                 if (fk != null && fk.allowImportByAlternateKey())
                 {
-                    remapMap.put(pd, new SimpleTranslator.RemapPostConvert(fk.getLookupTableInfo(), true));
+                    remapMap.put(pd, new SimpleTranslator.RemapPostConvert(fk.getLookupTableInfo(), true, SimpleTranslator.RemapMissingBehavior.Error));
                 }
             }
         }
@@ -881,7 +882,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         // use DomainProperty name as the role
         String role = dp == null ? null : dp.getName(); // TODO: More than one DomainProperty could be a lookup to the SampleSet
 
-        Set<Container> searchContainers = AssayResultTable.getSearchContainers(container, ss, dp, user);
+        Set<Container> searchContainers = ExpSchema.getSearchContainers(container, ss, dp, user);
 
         for (Container searchContainer : searchContainers)
         {

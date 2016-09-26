@@ -17,6 +17,10 @@
 package org.labkey.api.exp.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.*;
@@ -25,6 +29,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
@@ -375,15 +380,72 @@ public class ExpSchema extends AbstractExpSchema
         };
     }
 
-    public ForeignKey getMaterialIdForeignKey()
+    /**
+     * @param domainProperty the property on which the lookup is configured
+     */
+    @NotNull
+    public ForeignKey getMaterialIdForeignKey(@Nullable ExpSampleSet targetSampleSet, @Nullable DomainProperty domainProperty)
     {
-        return new ExperimentLookupForeignKey("RowId")
+        if (targetSampleSet == null)
         {
-            public TableInfo getLookupTableInfo()
+            return new ExperimentLookupForeignKey("RowId")
             {
-                return getTable(TableType.Materials);
+                public TableInfo getLookupTableInfo()
+                {
+                    ExpTable result = getTable(TableType.Materials);
+                    result.setContainerFilter(new ContainerFilter.SimpleContainerFilter(getSearchContainers(getContainer(), targetSampleSet, domainProperty, getUser())));
+                    return result;
+                }
+            };
+        }
+        return getSamplesSchema().materialIdForeignKey(targetSampleSet, domainProperty);
+    }
+
+    @NotNull
+    public static Set<Container> getSearchContainers(Container currentContainer, @Nullable ExpSampleSet ss, @Nullable DomainProperty dp, User user)
+    {
+        Set<Container> searchContainers = new LinkedHashSet<>();
+        if (dp != null)
+        {
+            Lookup lookup = dp.getLookup();
+            if (lookup != null && lookup.getContainer() != null)
+            {
+                Container lookupContainer = lookup.getContainer();
+                if (lookupContainer.hasPermission(user, ReadPermission.class))
+                {
+                    // The property is specifically targeting a container, so look there and only there
+                    searchContainers.add(lookup.getContainer());
+                }
             }
-        };
+        }
+
+        if (searchContainers.isEmpty())
+        {
+            // Default to looking in the current container
+            searchContainers.add(currentContainer);
+            if (ss == null || (ss.getContainer().isProject() && !currentContainer.isProject()))
+            {
+                Container c = currentContainer.getParent();
+                // Recurse up the chain to the project
+                while (c != null && !c.isRoot())
+                {
+                    if (c.hasPermission(user, ReadPermission.class))
+                    {
+                        searchContainers.add(c);
+                    }
+                    c = c.getParent();
+                }
+            }
+            Container sharedContainer = ContainerManager.getSharedContainer();
+            if (ss == null || ss.getContainer().equals(sharedContainer))
+            {
+                if (sharedContainer.hasPermission(user, ReadPermission.class))
+                {
+                    searchContainers.add(ContainerManager.getSharedContainer());
+                }
+            }
+        }
+        return searchContainers;
     }
 
     public abstract static class ExperimentLookupForeignKey extends LookupForeignKey

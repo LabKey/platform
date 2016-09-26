@@ -37,10 +37,6 @@ public class PdLookupForeignKey extends AbstractForeignKey
     Container _currentContainer;
     private Container _targetContainer;
 
-    /** The FK may target a different set of containers from the original query - might be useful to pull up to AbstractForeignKey */
-    @Nullable
-    private ContainerFilter _customContainerFilter;
-
     public PdLookupForeignKey(@NotNull User user, @NotNull PropertyDescriptor pd, @NotNull Container container)
     {
         super(pd.getLookupSchema(), pd.getLookupQuery(), null);
@@ -73,11 +69,6 @@ public class PdLookupForeignKey extends AbstractForeignKey
     public String getLookupSchemaName()
     {
         return _lookupSchemaName;
-    }
-
-    public void setCustomContainerFilter(@Nullable ContainerFilter customContainerFilter)
-    {
-        _customContainerFilter = customContainerFilter;
     }
 
     @Override
@@ -119,12 +110,6 @@ public class PdLookupForeignKey extends AbstractForeignKey
 
         if (table.getPkColumns().size() < 1 || table.getPkColumns().size() > 2)
             return null;
-
-        if (_customContainerFilter != null)
-        {
-            // Assume it's containerFilterable
-            ((ContainerFilterable)table).setContainerFilter(_customContainerFilter);
-        }
 
         return table;
     }
@@ -232,10 +217,5 @@ public class PdLookupForeignKey extends AbstractForeignKey
         if (null == columnName)
             return null;
         return LookupForeignKey.getDetailsURL(parent, lookupTable, columnName);
-    }
-
-    public void setContainerFilter(ContainerFilter filter)
-    {
-        _customContainerFilter = filter;
     }
 }

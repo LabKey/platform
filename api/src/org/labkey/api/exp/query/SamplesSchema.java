@@ -16,9 +16,12 @@
 
 package org.labkey.api.exp.query;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.User;
 import org.labkey.api.query.*;
@@ -118,7 +121,10 @@ public class SamplesSchema extends AbstractExpSchema
         return ret;
     }
 
-    public ForeignKey materialIdForeignKey(final ExpSampleSet ss)
+    /**
+     * @param domainProperty the property on which the lookup is configured
+     */
+    public ForeignKey materialIdForeignKey(@NotNull final ExpSampleSet ss, @Nullable DomainProperty domainProperty)
     {
         return new LookupForeignKey("RowId")
         {
@@ -126,8 +132,13 @@ public class SamplesSchema extends AbstractExpSchema
             {
                 ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), SamplesSchema.this);
                 ret.populate(ss, false);
-                ret.setContainerFilter(ContainerFilter.EVERYTHING);
+                ret.setContainerFilter(new ContainerFilter.SimpleContainerFilter(ExpSchema.getSearchContainers(getContainer(), ss, domainProperty, getUser())));
                 ret.overlayMetadata(ret.getPublicName(), SamplesSchema.this, new ArrayList<>());
+                if (domainProperty != null && domainProperty.getPropertyType().getJdbcType().isText())
+                {
+                    // Hack to support lookup via RowId or Name
+                    _columnName = "Name";
+                }
                 return ret;
             }
 

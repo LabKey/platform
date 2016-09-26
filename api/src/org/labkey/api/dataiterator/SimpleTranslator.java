@@ -146,14 +146,16 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     {
         private final TableInfo _targetTable;
         private final boolean _includeTitleColumn;
+        private final RemapMissingBehavior _missing;
 
         private List<MultiValuedMap<?, ?>> _maps = null;
-        private MultiValuedMap<String, Object> _titleColumnLookupMap = null;
+        private MultiValuedMap<String, ?> _titleColumnLookupMap = null;
 
-        public RemapPostConvert(@NotNull TableInfo targetTable, boolean includeTitleColumn)
+        public RemapPostConvert(@NotNull TableInfo targetTable, boolean includeTitleColumn, RemapMissingBehavior missing)
         {
             _targetTable = targetTable;
             _includeTitleColumn = includeTitleColumn;
+            _missing = missing;
         }
 
         private List<MultiValuedMap<?, ?>> getMaps()
@@ -196,8 +198,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     ColumnInfo titleColumn = _targetTable.getTitleColumn() != null ? _targetTable.getColumn(_targetTable.getTitleColumn()) : null;
                     if (titleColumn != null && !seen.contains(titleColumn))
                     {
-                        TableSelector ts = new TableSelector(_targetTable, Arrays.asList(titleColumn, pkCol), null, null);
-                        _titleColumnLookupMap = ts.getMultiValuedMap();
+                        _titleColumnLookupMap = createMap(_targetTable, pkCol, titleColumn);
                     }
                 }
             }
@@ -205,7 +206,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         }
 
         // Create a value map from the altKeyCol -> pkCol
-        private MultiValuedMap<?, ?> createMap(TableInfo targetTable, ColumnInfo pkCol, ColumnInfo altKeyCol)
+        private <K> MultiValuedMap<K, ?> createMap(TableInfo targetTable, ColumnInfo pkCol, ColumnInfo altKeyCol)
         {
             // While there should be at most one matching value for lookup targets with a true unique constraint,
             // using a multi-valued map allows us to also work with things that are almost always unique, like
@@ -227,21 +228,25 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 }
             }
 
-            getMaps();
-
             if (_titleColumnLookupMap != null)
             {
-                Collection<Object> vs = _titleColumnLookupMap.get(String.valueOf(k));
+                Collection<?> vs = _titleColumnLookupMap.get(String.valueOf(k));
                 if (vs != null && !vs.isEmpty())
                 {
                     return getSingleValue(k, vs);
                 }
             }
 
-            return k;
+            switch (_missing)
+            {
+                case Null:          return null;
+                case OriginalValue: return k;
+                case Error:
+                default:            throw new ConversionException("Could not translate value: " + String.valueOf(k));
+            }
         }
 
-        private Object getSingleValue(Object k, Collection<Object> vs)
+        private Object getSingleValue(Object k, Collection<?> vs)
         {
             if (vs.size() == 1)
                 return vs.iterator().next();
@@ -572,7 +577,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     }
 
-    enum RemapMissingBehavior
+    public enum RemapMissingBehavior
     {
         /** Every incoming value must have an entry in the map. */
         Error,
@@ -600,7 +605,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             _toCol = toCol;
             _missing = missing;
             _includeTitleColumn = includeTitleColumn;
-            _remapper = new RemapPostConvert(_toCol.getFkTableInfo(), _includeTitleColumn);
+            _remapper = new RemapPostConvert(_toCol.getFkTableInfo(), _includeTitleColumn, _missing);
         }
 
         @Override

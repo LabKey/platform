@@ -70,7 +70,6 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -143,11 +142,9 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
                     PropertyColumn.copyAttributes(_userSchema.getUser(), col, pd, schema.getContainer(), _userSchema.getSchemaPath(), getPublicName(), pkFieldKey);
 
                     ExpSampleSet ss = DefaultAssayRunCreator.getLookupSampleSet(domainProperty, getContainer());
-                    if (col.getFk() instanceof PdLookupForeignKey && (ss != null || DefaultAssayRunCreator.isLookupToMaterials(domainProperty)))
+                    if (ss != null || DefaultAssayRunCreator.isLookupToMaterials(domainProperty))
                     {
-                        Set<Container> searchContainers = getSearchContainers(getContainer(), ss, domainProperty, getUserSchema().getUser());
-                        ContainerFilter.SimpleContainerFilter filter = new ContainerFilter.SimpleContainerFilter(searchContainers);
-                        ((PdLookupForeignKey)col.getFk()).setContainerFilter(filter);
+                        col.setFk(new ExpSchema(_userSchema.getUser(), _userSchema.getContainer()).getMaterialIdForeignKey(ss, domainProperty));
                     }
                 }
                 addColumn(col);
@@ -245,53 +242,6 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
 
         setDefaultVisibleColumns(visibleColumns);
     }
-
-    @NotNull
-    public static Set<Container> getSearchContainers(Container currentContainer, @Nullable ExpSampleSet ss, @Nullable DomainProperty dp, User user)
-    {
-        Set<Container> searchContainers = new LinkedHashSet<>();
-        if (dp != null)
-        {
-            Lookup lookup = dp.getLookup();
-            if (lookup != null && lookup.getContainer() != null)
-            {
-                Container lookupContainer = lookup.getContainer();
-                if (lookupContainer.hasPermission(user, ReadPermission.class))
-                {
-                    // The property is specifically targeting a container, so look there and only there
-                    searchContainers.add(lookup.getContainer());
-                }
-            }
-        }
-
-        if (searchContainers.isEmpty())
-        {
-            // Default to looking in the current container
-            searchContainers.add(currentContainer);
-            if (ss == null || (ss.getContainer().isProject() && !currentContainer.isProject()))
-            {
-                Container c = currentContainer.getParent();
-                // Recurse up the chain to the project
-                while (c != null && !c.isRoot())
-                {
-                    if (c.hasPermission(user, ReadPermission.class))
-                    {
-                        searchContainers.add(c);
-                    }
-                    c = c.getParent();
-                }
-            }
-            Container sharedContainer = ContainerManager.getSharedContainer();
-            if (ss == null || ss.getContainer().equals(sharedContainer))
-            {
-                if (sharedContainer.hasPermission(user, ReadPermission.class))
-                {
-                    searchContainers.add(ContainerManager.getSharedContainer());
-                }
-            }
-        }
-        return searchContainers;
-}
 
     private void configureSpecimensLookup(ColumnInfo specimenIdCol, boolean foundTargetStudyCol)
     {
