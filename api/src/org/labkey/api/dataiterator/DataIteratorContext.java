@@ -16,10 +16,12 @@
 package org.labkey.api.dataiterator;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryUpdateService;
 
 import java.util.Map;
+import java.util.Set;
 
 import static org.labkey.api.query.QueryUpdateService.InsertOption.INSERT;
 
@@ -44,6 +46,8 @@ public class DataIteratorContext
     boolean _verbose = false;
     boolean _supportAutoIncrementKey = false;
     boolean _allowImportLookupByAlternateKey = false;
+    private final Set<String> _passThroughBuiltInColumnNames = new CaseInsensitiveHashSet();
+    private final Set<String> _dontUpdateColumnNames = new CaseInsensitiveHashSet();
 
     int _maxRowErrors = 1;
 
@@ -140,6 +144,16 @@ public class DataIteratorContext
     public void setAllowImportLookupByAlternateKey(boolean allowImportLookupByAlternateKey)
     {
         _allowImportLookupByAlternateKey = allowImportLookupByAlternateKey;
+    }
+
+    public Set<String> getPassThroughBuiltInColumnNames()
+    {
+        return _passThroughBuiltInColumnNames;
+    }
+
+    public Set<String> getDontUpdateColumnNames()
+    {
+        return _dontUpdateColumnNames;
     }
 
     /** if this etl should be killed, will execute <code>throw _errors;</code> */

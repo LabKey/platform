@@ -77,6 +77,14 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
                 throw new NullPointerException("getDataIterator() returned NULL");
             return null;
         }
+        if (null == dontUpdate)
+        {
+            dontUpdate = context.getDontUpdateColumnNames();
+        }
+        else
+        {
+            dontUpdate.addAll(context.getDontUpdateColumnNames());
+        }
         TableInsertDataIterator it;
         it = new TableInsertDataIterator(di, table, c, context, keyColumns, addlSkipColumns, dontUpdate);
         return it;
