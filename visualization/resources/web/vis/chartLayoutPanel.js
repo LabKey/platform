@@ -54,13 +54,19 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
                 cardId: 'card-2',
                 label: 'X-Axis',
                 layoutOptions: 'axisBased',
-                cardClass: 'LABKEY.vis.GenericChartAxisPanel'
+                cardClass: 'LABKEY.vis.GenericChartAxisPanel',
+                config: {
+                    axisName: 'x'
+                }
             },{
                 name: 'y',
                 cardId: 'card-3',
                 label: 'Y-Axis',
                 layoutOptions: 'axisBased',
-                cardClass: 'LABKEY.vis.GenericChartAxisPanel'
+                cardClass: 'LABKEY.vis.GenericChartAxisPanel',
+                config: {
+                    axisName: 'y'
+                }
             }];
 
             if (this.isDeveloper)
@@ -195,7 +201,7 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
         {
             Ext4.each(this.getCenterPanel().items.items, function(panel)
             {
-                if (panel.setPanelOptionValues)
+                if (!panel.isDisabled() && panel.setPanelOptionValues)
                 {
                     this.getCenterPanel().getLayout().setActiveItem(panel.itemId);
                     panel.setPanelOptionValues(this.initValues[panel.panelName]);
@@ -339,22 +345,10 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
 
     onMeasuresChange : function(measures, renderType)
     {
-        Ext4.Object.each(measures, function(key, props)
+        // give each of the layout options tabs a chance to update on measure change
+        for (var i = 0; i < this.getNavigationPanel().getStore().getCount(); i++)
         {
-            var navIndex = this.getNavigationPanel().getStore().findExact('name', key);
-            if (navIndex > -1)
-            {
-                var panel = this.getCenterPanel().getLayout().getLayoutItems()[navIndex];
-                if (panel.onMeasureChange)
-                    panel.onMeasureChange(props, renderType);
-            }
-        }, this);
-
-        // also give the general layout options tab a chance to update on measure change
-        var navIndex = this.getNavigationPanel().getStore().findExact('name', 'general');
-        if (navIndex > -1)
-        {
-            var generalOptionsPanel = this.getCenterPanel().getLayout().getLayoutItems()[navIndex];
+            var generalOptionsPanel = this.getCenterPanel().getLayout().getLayoutItems()[i];
             if (generalOptionsPanel.onMeasureChange)
                 generalOptionsPanel.onMeasureChange(measures, renderType);
         }

@@ -540,6 +540,7 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionsPanel', {
         Ext4.each(this.chartType.get('fields'), function(field)
         {
             this.add(Ext4.create('LABKEY.vis.ChartTypeFieldSelectionPanel', {
+                chartTypeName: this.chartType.get('name'),
                 field: field,
                 selection: this.selection ? this.selection[field.name] : undefined
             }));
@@ -581,6 +582,7 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
     field: null,
     selection: null,
     allowableTypes: null,
+    chartTypeName: null,
 
     initComponent : function()
     {
@@ -638,10 +640,16 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
                 tpl: new Ext4.XTemplate(
                     '<tpl if="name">',
                         '<div class="field-selection-display">',
-                            '{label:htmlEncode}',
+                            '{[this.getFieldSelectionDisplay("' + this.chartTypeName + '", "' + this.field.name + '", values)]}',
                             '<div class="fa fa-times field-selection-remove"></div>',
                         '</div>',
-                    '</tpl>'
+                    '</tpl>',
+                    {
+                        getFieldSelectionDisplay: function(chartTypeName, fieldName, values)
+                        {
+                            return Ext4.String.htmlEncode(LABKEY.vis.GenericChartHelper.getDefaultLabel(chartTypeName, fieldName, values));
+                        }
+                    }
                 )
             });
 

@@ -88,6 +88,22 @@ LABKEY.vis.GenericChartHelper = new function(){
     };
 
     /**
+     * Generate a default label for the selected measure for the given renderType.
+     * @param renderType
+     * @param measureName - the chart type's measure name
+     * @param properties - properties for the selected column
+     */
+    var getDefaultLabel = function(renderType, measureName, properties)
+    {
+        var label = properties ? properties.label || properties.queryName : '';
+
+        if ((renderType == 'bar_chart' || renderType == 'pie_chart') && measureName == 'y')
+            label = 'Sum of ' + label;
+
+        return label;
+    };
+
+    /**
      * Given the saved labels object we convert it to include all label types (main, x, and y). Each label type defaults
      * to empty string ('').
      * @param {Object} labels The saved labels object.
@@ -673,6 +689,7 @@ LABKEY.vis.GenericChartHelper = new function(){
          */
         getRenderTypes: getRenderTypes,
         getChartType: getChartType,
+        getDefaultLabel: getDefaultLabel,
         generateLabels: generateLabels,
         generateScales: generateScales,
         generateAes: generateAes,

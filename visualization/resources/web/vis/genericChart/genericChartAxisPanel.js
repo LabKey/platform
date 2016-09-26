@@ -9,6 +9,8 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
 
     border: false,
 
+    axisName: null,
+
     constructor : function(config){
 
         config.userEditedLabel = (config.label ? true : false);
@@ -26,7 +28,7 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
         });
 
         this.axisLabelField.addListener('keyup', function(){
-            this.userEditedLabel = true;
+            this.userEditedLabel = this.axisLabelField.getValue() != '';
         }, this, {buffer: 500});
 
         this.scaleTypeRadioGroup = Ext4.create('Ext.form.RadioGroup', {
@@ -110,14 +112,15 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             radioComp.setValue(true);
     },
 
-    onMeasureChange : function(properties, renderType)
+    onMeasureChange : function(measures, renderType)
     {
         if (!this.userEditedLabel)
         {
-            if (properties.label)
-                this.axisLabelField.setValue(properties.label);
-            else if (properties.queryName)
-                this.axisLabelField.setValue(properties.queryName);
+            var properties = measures[this.axisName];
+            if (Ext4.isDefined(properties))
+                this.setAxisLabel(LABKEY.vis.GenericChartHelper.getDefaultLabel(renderType, this.axisName, properties));
+            else
+                this.setAxisLabel('');
         }
     }
 });

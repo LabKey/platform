@@ -1557,10 +1557,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
         else if (this.renderType == 'pie_chart')
         {
-            // TODO: this logic should move to onMeasureChange
-            if (aggType == 'SUM' && labels.footer.value)
-                labels.footer.value = 'Sum of ' + labels.footer.value;
-
             data = LABKEY.vis.GenericChartHelper.generateAggregateData(data, dimName, measureName, aggType, '[Blank]');
 
             if (this.checkForNegativeData(data))
@@ -1627,10 +1623,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
             else if (this.renderType == 'bar_chart')
             {
-                // TODO: this logic should move to onMeasureChange
-                if (aggType == 'SUM' && labels.y.value)
-                    labels.y.value = 'Sum of ' + labels.y.value;
-
                 data = LABKEY.vis.GenericChartHelper.generateAggregateData(data, dimName, measureName, aggType, '[Blank]');
 
                 aes = { x: 'label', y: 'value' };

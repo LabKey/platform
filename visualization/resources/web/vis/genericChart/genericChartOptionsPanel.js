@@ -13,6 +13,8 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
     defaultOpacity: null,
     defaultChartLabel: null,
     defaultColorPaletteScale: 'ColorDiscrete',
+    userEditedSubtitle: false,
+    userEditedFooter: false,
 
     initComponent : function() {
 
@@ -35,8 +37,12 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             labelWidth: labelWidth,
             width: 275,
             padding: '0 0 10px 0',
+            enableKeyEvents: true,
             layoutOptions: 'pie'
         });
+        this.subtitleBox.addListener('keyup', function(){
+            this.userEditedSubtitle = this.subtitleBox.getValue() != '';
+        }, this, {buffer: 500});
 
         this.footerBox = Ext4.create('Ext.form.field.Text', {
             name: 'footer',
@@ -45,8 +51,12 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             labelWidth: labelWidth,
             width: 275,
             padding: '0 0 10px 0',
+            enableKeyEvents: true,
             layoutOptions: 'pie'
         });
+        this.footerBox.addListener('keyup', function(){
+            this.userEditedFooter = this.footerBox.getValue() != '';
+        }, this, {buffer: 500});
 
         this.widthBox = Ext4.create('Ext.form.field.Number', {
             name: 'width',
@@ -404,13 +414,20 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
     onMeasureChange : function(measures, renderType)
     {
-        if (renderType == 'pie_chart')
+        if (!this.userEditedSubtitle)
         {
-            if (Ext4.isDefined(measures.x) && measures.x.hasOwnProperty('label'))
-                this.setSubtitle(measures.x.label);
+            if (renderType == 'pie_chart' && Ext4.isDefined(measures.x) && measures.x.hasOwnProperty('label'))
+                this.setSubtitle(LABKEY.vis.GenericChartHelper.getDefaultLabel(renderType, 'x', measures.x));
+            else
+                this.setSubtitle('');
+        }
 
-            if (Ext4.isDefined(measures.y) && measures.y.hasOwnProperty('label'))
-                this.setFooter(measures.y.label);
+        if (!this.userEditedFooter)
+        {
+            if (renderType == 'pie_chart' && Ext4.isDefined(measures.y) && measures.y.hasOwnProperty('label'))
+                this.setFooter(LABKEY.vis.GenericChartHelper.getDefaultLabel(renderType, 'y', measures.y));
+            else
+                this.setFooter('');
         }
     },
 
