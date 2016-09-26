@@ -52,7 +52,10 @@ public class DataIntegrationQuerySchema extends UserSchema
     {
         TransformRunId("diTransformRunId"),
         TransformModified("diModified"),
-        TransformRowVersion("diRowVersion");
+        TransformModifiedBy("diModifiedBy"),
+        TransformRowVersion("diRowVersion"),
+        TransformCreated("diCreated"),
+        TransformCreatedBy("diCreatedBy");
 
         final String _name;
 

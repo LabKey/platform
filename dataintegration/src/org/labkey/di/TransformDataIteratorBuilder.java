@@ -36,7 +36,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.labkey.di.DataIntegrationQuerySchema.Columns.TransformCreated;
+import static org.labkey.di.DataIntegrationQuerySchema.Columns.TransformCreatedBy;
 import static org.labkey.di.DataIntegrationQuerySchema.Columns.TransformModified;
+import static org.labkey.di.DataIntegrationQuerySchema.Columns.TransformModifiedBy;
 import static org.labkey.di.DataIntegrationQuerySchema.Columns.TransformRunId;
 
 /**
@@ -46,14 +49,14 @@ import static org.labkey.di.DataIntegrationQuerySchema.Columns.TransformRunId;
  */
 public class TransformDataIteratorBuilder implements DataIteratorBuilder
 {
-    final int _transformRunId;
-    final DataIteratorBuilder _input;
-    Logger _statusLogger = null;
+    private final int _transformRunId;
+    private final DataIteratorBuilder _input;
+    private Logger _statusLogger = null;
     @NotNull
-    PipelineJob _job;
+    private PipelineJob _job;
     private final String _statusName;
-    final Map<String, String> _columnMap;
-    final Map<ParameterDescription, Object> _constants;
+    private final Map<String, String> _columnMap;
+    private final Map<ParameterDescription, Object> _constants;
 
     public TransformDataIteratorBuilder(int transformRunId, DataIteratorBuilder input, @Nullable Logger statusLogger, @NotNull PipelineJob job, String statusName, Map<String, String> columnMap, Map<ParameterDescription, Object> constants)
     {
@@ -67,13 +70,22 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
     }
 
 
-    static final CaseInsensitiveHashSet diColumns = new CaseInsensitiveHashSet();
+    private static final CaseInsensitiveHashSet diColumns = new CaseInsensitiveHashSet();
     static
     {
         for (DataIntegrationQuerySchema.Columns c : DataIntegrationQuerySchema.Columns.values())
             diColumns.add(c.getColumnName());
     }
 
+    private static final CaseInsensitiveHashSet passThroughAllowedColumns = new CaseInsensitiveHashSet();
+    static
+    {
+        for (SimpleTranslator.SpecialColumn c : SimpleTranslator.SpecialColumn.values())
+        {
+            if (!SimpleTranslator.SpecialColumn.Container.equals(c))
+                passThroughAllowedColumns.add(c.name());
+        }
+    }
 
     @Override
     public DataIterator getDataIterator(DataIteratorContext context)
@@ -117,16 +129,28 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
             ColumnInfo c = in.getColumnInfo(i);
             if (diColumns.contains(c.getName()) || TransformUtils.isRowversionColumn(c) || constantNames.contains(c.getName()))
                 continue;
-            int outColIndex = out.addColumn(i);
+            ColumnInfo outCol = out.getColumnInfo(out.addColumn(i));
             if (_columnMap.containsKey(c.getColumnName())) // Map to a different output name
-                out.getColumnInfo(outColIndex).setName(_columnMap.get(c.getColumnName()));
+                outCol.setName(_columnMap.get(c.getColumnName()));
+            if (passThroughAllowedColumns.contains(outCol.getName()))
+                context.getPassThroughBuiltInColumnNames().add(outCol.getName());
         }
         _constants.entrySet().stream().filter(e -> !diColumns.contains(e.getKey().getName())).forEach(e ->
-        {
-            out.addConstantColumn(e.getKey().getName(), e.getKey().getJdbcType(), e.getValue());
-        });
+                out.addConstantColumn(e.getKey().getName(), e.getKey().getJdbcType(), e.getValue()));
+
+        // If the created and createdBy columns aren't coming from the source, don't modify them on updates
+        if (!context.getPassThroughBuiltInColumnNames().contains(SimpleTranslator.SpecialColumn.Created.name()))
+            context.getDontUpdateColumnNames().add(SimpleTranslator.SpecialColumn.Created.name());
+        if (!context.getPassThroughBuiltInColumnNames().contains(SimpleTranslator.SpecialColumn.CreatedBy.name()))
+            context.getDontUpdateColumnNames().add(SimpleTranslator.SpecialColumn.CreatedBy.name());
+
         out.addConstantColumn(TransformRunId.getColumnName(), JdbcType.INTEGER, _transformRunId);
         out.addTimestampColumn(TransformModified.getColumnName());
+        out.addConstantColumn(TransformModifiedBy.getColumnName(), JdbcType.INTEGER, _job.getUser().getUserId());
+        out.addTimestampColumn(TransformCreated.getColumnName());
+        context.getDontUpdateColumnNames().add(TransformCreated.getColumnName());
+        out.addConstantColumn(TransformCreatedBy.getColumnName(), JdbcType.INTEGER, _job.getUser().getUserId());
+        context.getDontUpdateColumnNames().add(TransformCreatedBy.getColumnName());
 
         return LoggingDataIterator.wrap(out);
     }

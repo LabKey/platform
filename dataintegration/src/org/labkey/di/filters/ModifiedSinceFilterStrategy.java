@@ -124,6 +124,7 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
             throw new ConfigurationException("Table not found: " + _config.getSourceQuery());
 
         String timestampColumnName = StringUtils.defaultString(_config.getSourceTimestampColumnName(), _defaultTimestampColumnName);
+        // For multi-stage ETL's, allow the diModified column in source to be the timestampColumn.
         timestampColumnName = StringUtils.defaultString(timestampColumnName, Columns.TransformModified.getColumnName());
         _tsCol = _table.getColumn(timestampColumnName);
         if (null == _tsCol)
