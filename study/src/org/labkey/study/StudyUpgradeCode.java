@@ -16,6 +16,7 @@
 package org.labkey.study;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Constraint;
@@ -40,14 +41,20 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudySnapshotType;
 import org.labkey.study.model.DatasetDomainKind;
+import org.labkey.study.model.DoseAndRoute;
 import org.labkey.study.model.LocationDomainKind;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.TreatmentManager;
+import org.labkey.study.model.TreatmentProductImpl;
 import org.labkey.study.query.LocationTable;
 import org.labkey.study.query.SpecimenTablesProvider;
+import org.labkey.study.query.StudyQuerySchema;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -426,6 +433,44 @@ public class StudyUpgradeCode implements UpgradeCode
                                 {
                                     _log.error("Error upgrading study dataset schemas: ", e);
                                     throw (e);
+                                }
+                            }
+                        }
+                    }
+                }
+                transaction.commit();
+            }
+        }
+    }
+
+    /**
+     * Populate the new DoseAndRoute table with existing entries from the ProductTreatmentMap provisioned table, so they can
+     * be used in the update study design tool.
+     *
+     * Invoked by study-16.21-16.22.sql
+     */
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void populateDoseAndRoute(final ModuleContext context) throws Exception
+    {
+        if (!context.isNewInstall())
+        {
+            try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
+            {
+                Set<Container> allContainers = ContainerManager.getAllChildren(ContainerManager.getRoot());
+                for (Container c : allContainers)
+                {
+                    UserSchema schema = QueryService.get().getUserSchema(context.getUpgradeUser(), c, StudyQuerySchema.SCHEMA_NAME);
+                    if (schema != null)
+                    {
+                        TableInfo ti = schema.getTable(StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
+                        if (ti != null)
+                        {
+                            for (TreatmentProductImpl product : new TableSelector(ti).getArrayList(TreatmentProductImpl.class))
+                            {
+                                if (!StringUtils.isBlank(product.getDose()) || !StringUtils.isBlank(product.getRoute()) && product.getProductId() != 0)
+                                {
+                                    DoseAndRoute doseAndRoute = new DoseAndRoute(product.getDose(), product.getRoute(), product.getProductId(), c);
+                                    TreatmentManager.getInstance().saveStudyProductDoseAndRoute(c, context.getUpgradeUser(), doseAndRoute);
                                 }
                             }
                         }

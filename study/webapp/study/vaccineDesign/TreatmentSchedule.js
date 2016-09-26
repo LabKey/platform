@@ -226,9 +226,9 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentsGrid', {
 
     mainTitle : 'Treatments',
 
-    width: 1400,
+    width: 1120,
 
-    studyDesignQueryNames : ['StudyDesignRoutes', 'Product'],
+    studyDesignQueryNames : ['StudyDesignRoutes', 'Product', 'DoseAndRoute'],
 
     //Override
     getStore : function()
@@ -274,7 +274,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentsGrid', {
                 editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Description', 190, '95%')
             }, {
                 label: 'Immunogens',
-                width: 500,
+                width: 360,
                 dataIndex: 'Immunogen',
                 subgridConfig: {
                     columns: [{
@@ -284,26 +284,19 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentsGrid', {
                         required: true,
                         queryName: 'Product',
                         editorType: 'LABKEY.ext4.ComboBox',
-                        editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('ProductId', 190, 'Product',
-                                LABKEY.Filter.create('Role', 'Immunogen'), 'Label', 'RowId')
+                        editorConfig : this.getProductEditor('Immunogen')
                     },{
-                        label: 'Dose and Units',
+                        label: 'Dose and Route',
                         width: 140,
-                        dataIndex: 'Dose',
-                        editorType: 'Ext.form.field.Text',
-                        editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Dose', 130)
-                    },{
-                        label: 'Route',
-                        width: 140,
-                        dataIndex: 'Route',
-                        queryName: 'StudyDesignRoutes',
+                        dataIndex: 'DoseAndRoute',
+                        queryName: 'DoseAndRoute',
                         editorType: 'LABKEY.ext4.ComboBox',
-                        editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('Route', 130, 'StudyDesignRoutes')
+                        editorConfig: this.getDoseAndRouteEditor()
                     }]
                 }
             }, {
                 label: 'Adjuvants',
-                width: 500,
+                width: 360,
                 dataIndex: 'Adjuvant',
                 subgridConfig: {
                     columns: [{
@@ -313,27 +306,69 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentsGrid', {
                         required: true,
                         queryName: 'Product',
                         editorType: 'LABKEY.ext4.ComboBox',
-                        editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('ProductId', 190, 'Product',
-                                LABKEY.Filter.create('Role', 'Adjuvant'), 'Label', 'RowId')
+                        editorConfig: this.getProductEditor('Adjuvant')
                     },{
-                        label: 'Dose and Units',
+                        label: 'Dose and Route',
                         width: 140,
-                        dataIndex: 'Dose',
-                        editorType: 'Ext.form.field.Text',
-                        editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Dose', 130)
-                    },{
-                        label: 'Route',
-                        width: 140,
-                        dataIndex: 'Route',
-                        queryName: 'StudyDesignRoutes',
+                        dataIndex: 'DoseAndRoute',
+                        queryName: 'DoseAndRoute',
                         editorType: 'LABKEY.ext4.ComboBox',
-                        editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('Route', 130, 'StudyDesignRoutes')
+                        editorConfig: this.getDoseAndRouteEditor()
                     }]
                 }
             }];
         }
 
         return this.columnConfigs;
+    },
+
+    getProductEditor : function(roleName){
+
+        var cfg = LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('ProductId', 190, 'Product',
+                LABKEY.Filter.create('Role', roleName), 'Label', 'RowId');
+
+        cfg.listeners = {
+            scope: this,
+            change : function(cmp, value) {
+                // clear out (if any) value for the dose and route field
+                if (this.cellEditField){
+
+                    var index = this.cellEditField.storeIndex,
+                        record = this.getStore().getAt(index),
+                        outerDataIndex = this.cellEditField.outerDataIndex,
+                        subgridIndex = Number(this.cellEditField.subgridIndex);
+
+                    this.updateSubgridRecordValue(record, outerDataIndex, subgridIndex, 'DoseAndRoute', '');
+                }
+            }
+        };
+        return cfg;
+    },
+
+    getDoseAndRouteEditor : function(){
+
+        var cfg = LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('DoseAndRoute', 130, 'DoseAndRoute',
+                undefined, 'label', 'label');
+        cfg.listeners = {
+            scope: this,
+            render : function(cmp) {
+                var store = Ext4.getStore('DoseAndRoute');
+                if (store) {
+                    var index = cmp.storeIndex,
+                        record = this.getStore().getAt(index),
+                        outerDataIndex = cmp.outerDataIndex,
+                        subgridIndex = Number(cmp.subgridIndex);
+
+                    // get the product id to filter on
+                    var productId = record.get(outerDataIndex)[subgridIndex]['ProductId'];
+                    if (productId){
+                        store.filterArray = [LABKEY.Filter.create('ProductId', productId)];
+                        store.load();
+                    }
+                }
+            }
+        };
+        return cfg;
     },
 
     //Override

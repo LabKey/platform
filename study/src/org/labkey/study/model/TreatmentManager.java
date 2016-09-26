@@ -49,6 +49,7 @@ import org.labkey.study.query.StudyQuerySchema;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -293,6 +294,9 @@ public class TreatmentManager
             // delete the usages of this study product in the ProductAntigen table (provision table)
             deleteProductAntigens(container, user, rowId);
 
+            // delete the associated doses and routes for this product
+            Table.delete(StudySchema.getInstance().getTableInfoDoseAndRoute(), new SimpleFilter(FieldKey.fromParts("ProductId"), rowId));
+
             // delete the associated treatment study product mappings (provision table)
             SimpleFilter filter = SimpleFilter.createContainerFilter(container);
             filter.addCondition(FieldKey.fromParts("ProductId"), rowId);
@@ -329,6 +333,53 @@ public class TreatmentManager
     {
         TableInfo productAntigenTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
         return saveStudyDesignRow(container, user, productAntigenTable, antigen.serialize(), antigen.isNew() ? null : antigen.getRowId(), "RowId");
+    }
+
+    public DoseAndRoute saveStudyProductDoseAndRoute(Container container, User user, DoseAndRoute doseAndRoute)
+    {
+        if (doseAndRoute.isNew())
+            return Table.insert(user, StudySchema.getInstance().getTableInfoDoseAndRoute(), doseAndRoute);
+        else
+            return Table.update(user, StudySchema.getInstance().getTableInfoDoseAndRoute(), doseAndRoute, doseAndRoute.getRowId());
+    }
+
+    public Collection<DoseAndRoute> getStudyProductsDoseAndRoute(Container container, User user, int productId)
+    {
+        return new TableSelector(StudySchema.getInstance().getTableInfoDoseAndRoute(),
+                new SimpleFilter(FieldKey.fromParts("productId"), productId), null).getCollection(DoseAndRoute.class);
+    }
+
+    @Nullable
+    public DoseAndRoute getDoseAndRoute(Container container, String dose, String route, int productId)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), container);
+        filter.addCondition(FieldKey.fromParts("ProductId"), productId);
+        if (dose != null)
+            filter.addCondition(FieldKey.fromParts("Dose"), dose);
+        if (route != null)
+            filter.addCondition(FieldKey.fromParts("Route"), route);
+        Collection<DoseAndRoute> doseAndRoutes = new TableSelector(StudySchema.getInstance().getTableInfoDoseAndRoute(), filter, null).getCollection(DoseAndRoute.class);
+
+        if (!doseAndRoutes.isEmpty())
+        {
+            return doseAndRoutes.iterator().next();
+        }
+        return null;
+    }
+
+    @Nullable
+    public DoseAndRoute getDoseAndRoute(Container container, String label, int productId)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), container);
+        filter.addCondition(FieldKey.fromParts("ProductId"), productId);
+        filter.addCondition(FieldKey.fromParts("Label"), label);
+        Collection<DoseAndRoute> doseAndRoutes = new TableSelector(StudySchema.getInstance().getTableInfoDoseAndRoute(), filter, null).getCollection(DoseAndRoute.class);
+
+        if (!doseAndRoutes.isEmpty())
+        {
+            return doseAndRoutes.iterator().next();
+        }
+        return null;
     }
 
     public Integer saveStudyDesignRow(Container container, User user, TableInfo tableInfo, Map<String, Object> row, Integer key, String pkColName) throws Exception

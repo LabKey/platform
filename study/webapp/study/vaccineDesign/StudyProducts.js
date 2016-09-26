@@ -10,7 +10,7 @@ Ext4.define('LABKEY.VaccineDesign.StudyProductsPanel', {
 
     bodyStyle : 'background-color: transparent;',
 
-    width: 1200,
+    minWidth: 1500,
 
     disableEdit : true,
 
@@ -222,13 +222,13 @@ Ext4.define('LABKEY.VaccineDesign.StudyProductsGrid', {
 Ext4.define('LABKEY.VaccineDesign.ImmunogensGrid', {
     extend : 'LABKEY.VaccineDesign.StudyProductsGrid',
 
-    width: 1200,
+    width: 1500,
 
     mainTitle : 'Immunogens',
 
     filterRole : 'Immunogen',
 
-    studyDesignQueryNames : ['StudyDesignImmunogenTypes', 'StudyDesignGenes', 'StudyDesignSubTypes'],
+    studyDesignQueryNames : ['StudyDesignImmunogenTypes', 'StudyDesignGenes', 'StudyDesignSubTypes', 'StudyDesignRoutes'],
 
     //Override
     getColumnConfigs : function()
@@ -249,7 +249,7 @@ Ext4.define('LABKEY.VaccineDesign.ImmunogensGrid', {
                 queryName: 'StudyDesignImmunogenTypes',
                 editorType: 'LABKEY.ext4.ComboBox',
                 editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('Type', 190, 'StudyDesignImmunogenTypes')
-            }, {
+            },{
                 label: 'HIV Antigens',
                 width: 800,
                 dataIndex: 'Antigens',
@@ -282,6 +282,26 @@ Ext4.define('LABKEY.VaccineDesign.ImmunogensGrid', {
                         editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Sequence', 225)
                     }]
                 }
+            },{
+                label: 'Doses and Routes',
+                width: 300,
+                dataIndex: 'DoseAndRoute',
+                subgridConfig: {
+                    columns: [{
+                        label: 'Dose',
+                        width: 140,
+                        dataIndex: 'Dose',
+                        editorType: 'Ext.form.field.Text',
+                        editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Dose', 130)
+                    },{
+                        label: 'Route',
+                        width: 140,
+                        dataIndex: 'Route',
+                        queryName: 'StudyDesignRoutes',
+                        editorType: 'LABKEY.ext4.ComboBox',
+                        editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('Route', 130, 'StudyDesignRoutes')
+                    }]
+                }
             }];
         }
 
@@ -292,11 +312,13 @@ Ext4.define('LABKEY.VaccineDesign.ImmunogensGrid', {
 Ext4.define('LABKEY.VaccineDesign.AdjuvantsGrid', {
     extend : 'LABKEY.VaccineDesign.StudyProductsGrid',
 
-    width : 400,
+    width : 700,
 
     mainTitle : 'Adjuvants',
 
     filterRole : 'Adjuvant',
+
+    studyDesignQueryNames : ['StudyDesignRoutes'],
 
     //Override
     getColumnConfigs : function()
@@ -310,6 +332,26 @@ Ext4.define('LABKEY.VaccineDesign.AdjuvantsGrid', {
                 required: true,
                 editorType: 'Ext.form.field.Text',
                 editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Label', 363)
+            },{
+                label: 'Doses and Routes',
+                width: 300,
+                dataIndex: 'DoseAndRoute',
+                subgridConfig: {
+                    columns: [{
+                        label: 'Dose',
+                        width: 140,
+                        dataIndex: 'Dose',
+                        editorType: 'Ext.form.field.Text',
+                        editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Dose', 130)
+                    },{
+                        label: 'Route',
+                        width: 140,
+                        dataIndex: 'Route',
+                        queryName: 'StudyDesignRoutes',
+                        editorType: 'LABKEY.ext4.ComboBox',
+                        editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('Route', 130, 'StudyDesignRoutes')
+                    }]
+                }
             }];
         }
 

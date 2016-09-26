@@ -454,4 +454,9 @@ public class StudySchema
     {
         return getSchema().getTable("AssaySpecimenVisit");
     }
+
+    public TableInfo getTableInfoDoseAndRoute()
+    {
+        return getSchema().getTable("DoseAndRoute");
+    }
 }

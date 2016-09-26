@@ -62,6 +62,7 @@ import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
+import org.labkey.study.query.studydesign.DoseAndRouteTable;
 import org.labkey.study.query.studydesign.StudyDesignAssaysTable;
 import org.labkey.study.query.studydesign.StudyDesignGenesTable;
 import org.labkey.study.query.studydesign.StudyDesignImmunogenTypesTable;
@@ -143,6 +144,7 @@ public class StudyQuerySchema extends UserSchema
     public static final String STUDY_DESIGN_UNITS_TABLE_NAME = "StudyDesignUnits";
     public static final String STUDY_DESIGN_ASSAYS_TABLE_NAME = "StudyDesignAssays";
     public static final String STUDY_DESIGN_LABS_TABLE_NAME = "StudyDesignLabs";
+    public static final String DOSE_AND_ROUTE_TABLE_NAME = "DoseAndRoute";
 
     @Nullable // if no study defined in this container
     final StudyImpl _study;
@@ -294,6 +296,7 @@ public class StudyQuerySchema extends UserSchema
             names.add(STUDY_DESIGN_UNITS_TABLE_NAME);
             names.add(STUDY_DESIGN_ASSAYS_TABLE_NAME);
             names.add(STUDY_DESIGN_LABS_TABLE_NAME);
+            names.add(DOSE_AND_ROUTE_TABLE_NAME);
 
             if (_study != null)
             {
@@ -521,6 +524,10 @@ public class StudyQuerySchema extends UserSchema
         if (STUDY_DESIGN_LABS_TABLE_NAME.equalsIgnoreCase(name))
         {
             return new StudyDesignLabsTable(this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
+        }
+        if (DOSE_AND_ROUTE_TABLE_NAME.equalsIgnoreCase(name))
+        {
+            return new DoseAndRouteTable(this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
         }
 
         if (_study == null)

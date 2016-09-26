@@ -25,6 +25,9 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresPermission;
@@ -37,13 +40,14 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.CohortManager;
-import org.labkey.study.model.StudyTreatmentSchedule;
 import org.labkey.study.model.CohortImpl;
+import org.labkey.study.model.CohortManager;
+import org.labkey.study.model.DoseAndRoute;
 import org.labkey.study.model.ProductAntigenImpl;
 import org.labkey.study.model.ProductImpl;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.StudyTreatmentSchedule;
 import org.labkey.study.model.TreatmentImpl;
 import org.labkey.study.model.TreatmentManager;
 import org.labkey.study.model.TreatmentProductImpl;
@@ -60,6 +64,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: cnathe
@@ -176,6 +182,12 @@ public class StudyDesignController extends BaseStudyController
                 }
                 productProperties.put("Antigens", productAntigenList);
 
+                // get dose and route information associated with this product
+                List<Map<String, Object>> doseAndRoutes = TreatmentManager.getInstance().getStudyProductsDoseAndRoute(getContainer(), getUser(), product.getRowId())
+                        .stream()
+                        .map(DoseAndRoute::serialize)
+                        .collect(Collectors.toList());
+                productProperties.put("DoseAndRoute", doseAndRoutes);
                 productList.add(productProperties);
             }
 
@@ -387,6 +399,7 @@ public class StudyDesignController extends BaseStudyController
                     productRowIds.add(updatedRowId);
 
                     updateProductAntigens(updatedRowId, product.getAntigens());
+                    updateProductDoseAndRoutes(updatedRowId, product.getDoseAndRoutes());
                 }
             }
 
@@ -412,6 +425,34 @@ public class StudyDesignController extends BaseStudyController
             // delete any other study products antigens, not included in the insert/update list, for the given productId
             for (ProductAntigenImpl antigen : TreatmentManager.getInstance().getFilteredStudyProductAntigens(getContainer(), getUser(), productId, antigenRowIds))
                 TreatmentManager.getInstance().deleteStudyProductAntigen(getContainer(), getUser(), antigen.getRowId());
+        }
+
+        private void updateProductDoseAndRoutes(int productId, List<DoseAndRoute> doseAndRoutes)
+        {
+            // get existing dose and routes
+            Set<Integer> existingDoseAndRoutes = TreatmentManager.getInstance().getStudyProductsDoseAndRoute(getContainer(), getUser(), productId)
+                    .stream()
+                    .map(DoseAndRoute::getRowId)
+                    .collect(Collectors.toSet());
+
+            try (DbScope.Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction())
+            {
+                for (DoseAndRoute doseAndRoute : doseAndRoutes)
+                {
+                    doseAndRoute.setProductId(productId);
+                    existingDoseAndRoutes.remove(doseAndRoute.getRowId());
+                    TreatmentManager.getInstance().saveStudyProductDoseAndRoute(getContainer(), getUser(), doseAndRoute);
+                }
+
+                // remove deleted dose and routes
+                if (!existingDoseAndRoutes.isEmpty())
+                {
+                    SimpleFilter filter = new SimpleFilter();
+                    filter.addInClause(FieldKey.fromParts("RowId"), existingDoseAndRoutes);
+                    Table.delete(StudySchema.getInstance().getTableInfoDoseAndRoute(), filter);
+                }
+                transaction.commit();
+            }
         }
     }
 

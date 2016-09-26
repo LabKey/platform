@@ -38,6 +38,7 @@ public class ProductImpl implements Product
     private String _role;
     private String _type;
     private List<ProductAntigenImpl> _antigens;
+    private List<DoseAndRoute> _doseAndRoutes;
 
     // from TreatmentProductMap (not serialized with product)
     private String _dose;
@@ -149,6 +150,16 @@ public class ProductImpl implements Product
         _container = container;
     }
 
+    public List<DoseAndRoute> getDoseAndRoutes()
+    {
+        return _doseAndRoutes;
+    }
+
+    public void setDoseAndRoutes(List<DoseAndRoute> doseAndRoutes)
+    {
+        _doseAndRoutes = doseAndRoutes;
+    }
+
     public Map<String, Object> serialize()
     {
         Map<String, Object> props = new HashMap<>();
@@ -175,6 +186,17 @@ public class ProductImpl implements Product
                 antigens.add(ProductAntigenImpl.fromJSON(antigensJSON.getJSONObject(j), container));
 
             product.setAntigens(antigens);
+        }
+
+        if (o.containsKey("DoseAndRoute") && o.get("DoseAndRoute")  instanceof JSONArray)
+        {
+            JSONArray doseJSON = (JSONArray) o.get("DoseAndRoute");
+
+            List<DoseAndRoute> doseAndRoutes = new ArrayList<>();
+            for (int j = 0; j < doseJSON.length(); j++)
+                doseAndRoutes.add(DoseAndRoute.fromJSON(doseJSON.getJSONObject(j), container, product.getRowId()));
+
+            product.setDoseAndRoutes(doseAndRoutes);
         }
 
         return product;

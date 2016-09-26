@@ -1935,6 +1935,7 @@ study/resources/schemas/dbscripts/postgresql/study-16.10-16.20.sql -text
 study/resources/schemas/dbscripts/postgresql/study-16.11-16.12.sql -text
 study/resources/schemas/dbscripts/postgresql/study-16.12-16.13.sql -text
 study/resources/schemas/dbscripts/postgresql/study-16.20-16.21.sql -text
+study/resources/schemas/dbscripts/postgresql/study-16.21-16.22.sql -text
 study/resources/schemas/dbscripts/postgresql/study-create.sql -text
 study/resources/schemas/dbscripts/postgresql/study-drop.sql -text
 study/resources/schemas/dbscripts/sqlserver/obsolete/study-0.00-12.20.sql -text
@@ -1973,6 +1974,7 @@ study/resources/schemas/dbscripts/sqlserver/study-16.10-16.20.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-16.11-16.12.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-16.12-16.13.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-16.20-16.21.sql -text
+study/resources/schemas/dbscripts/sqlserver/study-16.21-16.22.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-create.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-drop.sql -text
 study/resources/schemas/study.xml -text
@@ -2166,6 +2168,7 @@ study/src/org/labkey/study/model/DateDatasetDomainKind.java -text
 study/src/org/labkey/study/model/DefaultSpecimenTablesTemplate.java -text
 study/src/org/labkey/study/model/DerivativeType.java -text
 study/src/org/labkey/study/model/DerivativeTypeDomainKind.java -text
+study/src/org/labkey/study/model/DoseAndRoute.java -text
 study/src/org/labkey/study/model/ExtendedSpecimenRequestView.java -text
 study/src/org/labkey/study/model/ExtensibleStudyEntity.java -text
 study/src/org/labkey/study/model/GroupSecurityType.java -text
@@ -2343,6 +2346,7 @@ study/src/org/labkey/study/query/VisitUpdateService.java -text
 study/src/org/labkey/study/query/VisualizationVisitTagTable.java -text
 study/src/org/labkey/study/query/studydesign/AbstractStudyDesignDomainKind.java -text
 study/src/org/labkey/study/query/studydesign/DefaultStudyDesignTable.java -text
+study/src/org/labkey/study/query/studydesign/DoseAndRouteTable.java -text
 study/src/org/labkey/study/query/studydesign/StudyDesignAssaysTable.java -text
 study/src/org/labkey/study/query/studydesign/StudyDesignGenesTable.java -text
 study/src/org/labkey/study/query/studydesign/StudyDesignImmunogenTypesTable.java -text

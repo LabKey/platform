@@ -6,7 +6,8 @@ Ext4.define('LABKEY.VaccineDesign.Product', {
         {name : 'Label', type : 'string'},
         {name : 'Role', type : 'string'},
         {name : 'Type', type : 'string'},
-        {name : 'Antigens', defaultValue: []}
+        {name : 'Antigens', defaultValue: []},
+        {name : 'DoseAndRoute', defaultValue: []}
     ]
 });
 
