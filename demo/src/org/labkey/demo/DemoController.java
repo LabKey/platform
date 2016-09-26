@@ -21,7 +21,6 @@ import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.FormArrayList;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.NavTrailAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ActionButton;
@@ -86,7 +85,7 @@ public class DemoController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class BeginAction extends SimpleViewAction implements NavTrailAction
+    public class BeginAction extends SimpleViewAction
     {
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -248,7 +247,7 @@ public class DemoController extends SpringActionController
      * Note this returns a true ModelAndView.  bulkUpdate.jsp looks like a typical Spring jsp
      */
     @RequiresPermission(UpdatePermission.class)
-    public class BulkUpdateAction extends FormViewAction<BulkUpdateForm> implements NavTrailAction
+    public class BulkUpdateAction extends FormViewAction<BulkUpdateForm>
     {
         @SuppressWarnings("UnusedDeclaration")
         public BulkUpdateAction()
