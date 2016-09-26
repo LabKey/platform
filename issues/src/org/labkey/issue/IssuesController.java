@@ -2593,7 +2593,7 @@ public class IssuesController extends SpringActionController
                 return new HtmlView(getUndefinedIssueListMessage(getViewContext(), issueDefName));
             }
 
-            BuildSummaryBean summarizedBean = BuildSummaryUtil.populateBuildSummaryBean(buildSummaryBean);
+            BuildSummaryBean summarizedBean = BuildSummaryUtil.populateBuildSummaryBean(issueListDef, getViewContext().getActionURL(), getContainer(), getUser());
 
             return new JspView("/org/labkey/issue/view/buildSummary.jsp", summarizedBean);
         }
@@ -2637,7 +2637,7 @@ public class IssuesController extends SpringActionController
         {
             this.issueId = issueId;
             this.type = type;
-            this.area = area;
+            this.area = (area == null || area.isEmpty()) ? "Unassigned" : area;
             this.title = title;
             this.status = status;
             this.milestone = milestone;
