@@ -84,7 +84,7 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
         sql.append(")");
         ColumnInfo ret = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
 
-        ret.setFk(schema.materialIdForeignKey(sampleSet));
+        ret.setFk(schema.materialIdForeignKey(sampleSet, null));
         return ret;
     }
 

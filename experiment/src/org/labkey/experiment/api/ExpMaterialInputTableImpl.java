@@ -41,7 +41,7 @@ public class ExpMaterialInputTableImpl extends ExpInputTableImpl<ExpMaterialInpu
             case Material:
             {
                 ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("MaterialId"));
-                result.setFk(getExpSchema().getMaterialIdForeignKey());
+                result.setFk(getExpSchema().getMaterialIdForeignKey(null, null));
                 return result;
             }
             case Role:

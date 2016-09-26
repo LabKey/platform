@@ -491,7 +491,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         }
         sql.append(")");
         ExprColumn ret = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
-        ret.setFk(schema.materialIdForeignKey(ss));
+        ret.setFk(schema.materialIdForeignKey(ss, null));
         return doAdd(ret);
     }
 
