@@ -469,8 +469,11 @@ public class StudyUpgradeCode implements UpgradeCode
                             {
                                 if (!StringUtils.isBlank(product.getDose()) || !StringUtils.isBlank(product.getRoute()) && product.getProductId() != 0)
                                 {
-                                    DoseAndRoute doseAndRoute = new DoseAndRoute(product.getDose(), product.getRoute(), product.getProductId(), c);
-                                    TreatmentManager.getInstance().saveStudyProductDoseAndRoute(c, context.getUpgradeUser(), doseAndRoute);
+                                    if (TreatmentManager.getInstance().getDoseAndRoute(product.getContainer(), product.getDose(), product.getRoute(), product.getProductId()) == null)
+                                    {
+                                        DoseAndRoute doseAndRoute = new DoseAndRoute(product.getDose(), product.getRoute(), product.getProductId(), c);
+                                        TreatmentManager.getInstance().saveStudyProductDoseAndRoute(c, context.getUpgradeUser(), doseAndRoute);
+                                    }
                                 }
                             }
                         }
