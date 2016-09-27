@@ -121,6 +121,7 @@
             showUpload: true,
             listDirectories: true,
             useNarrowUpload: true,
+            disableContextMenu: true,
             actions: ['parentFolder', 'refresh', <%=c.hasPermission(getUser(), InsertPermission.class)%> ? 'upload' : '',  'manage'],
             columns: ['iconfacls', 'name'],
             folderTreeOptions: {
