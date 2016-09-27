@@ -534,50 +534,64 @@ public class SequenceVisitManager extends VisitManager
         if (visits.isEmpty())
             return "-1";
         DecimalFormat f = new DecimalFormat("0.0###");
-        return generateSequenceToVisit(visits, sn, f);
+        return generateSequenceToVisit(visits, sn, f, 1);
     }
-    private String generateSequenceToVisit(List<VisitImpl> visits, String sn, DecimalFormat f)
+    private String generateSequenceToVisit(List<VisitImpl> visits, String sn, DecimalFormat f, int indent)
     {
-        if (visits.size() <= 10)
+        if (visits.size() <= 16)
         {
             StringBuilder sb = new StringBuilder();
             boolean allEqual = visits.stream().allMatch(v -> v.getSequenceNumMin()==v.getSequenceNumMax());
             if (allEqual)
             {
-                sb.append("CASE " + sn + "\n");
+                _indent(sb,indent); sb.append("CASE " + sn);
                 for (VisitImpl v : visits)
                 {
-                    sb.append(" WHEN ").append(f.format(v.getSequenceNumMin())).append(" THEN " ).append(v.getId()).append("\n");
+                    _indent(sb,indent); sb.append("WHEN ").append(f.format(v.getSequenceNumMin())).append(" THEN " ).append(v.getId());
                 }
-                sb.append("ELSE -1\n");
-                sb.append("END\n");
+                _indent(sb,indent); sb.append("ELSE -1");
+                _indent(sb,indent); sb.append("END");
             }
             else
             {
-                sb.append("CASE\n");
+                _indent(sb,indent); sb.append("CASE");
                 for (VisitImpl v : visits)
                 {
                     if (v.getSequenceNumMin() == v.getSequenceNumMax())
-                        sb.append(" WHEN ").append(sn).append(" = ").append(f.format(v.getSequenceNumMin())).append(" THEN ").append(v.getId()).append("\n");
+                    {
+                        _indent(sb, indent); sb.append(" WHEN ").append(sn).append(" = ").append(f.format(v.getSequenceNumMin())).append(" THEN ").append(v.getId());
+                    }
                     else
-                        sb.append(" WHEN ").append(sn).append(" BETWEEN ").append(f.format(v.getSequenceNumMin())).append(" AND ").append(f.format(v.getSequenceNumMax())).append(" THEN ").append(v.getId()).append("\n");
+                    {
+                        _indent(sb,indent); sb.append(" WHEN ").append(sn).append(" BETWEEN ").append(f.format(v.getSequenceNumMin())).append(" AND ").append(f.format(v.getSequenceNumMax())).append(" THEN ").append(v.getId());
+                    }
                 }
-                sb.append("ELSE -1\n");
-                sb.append("END\n");
+                _indent(sb,indent); sb.append("ELSE -1");
+                _indent(sb,indent); sb.append("END");
             }
             return sb.toString();
         }
         else
         {
-            int mid = visits.size()/2;
-            VisitImpl v = visits.get(mid);
             StringBuilder sb = new StringBuilder();
-            sb.append("CASE WHEN ").append(sn).append(" < ").append(f.format(v.getSequenceNumMin())).append(" THEN\n");
-            sb.append(generateSequenceToVisit(visits.subList(0,mid), sn, f));
-            sb.append("\nELSE\n");
-            sb.append(generateSequenceToVisit(visits.subList(mid,visits.size()), sn, f));
-            sb.append("\nEND\n");
+            _indent(sb,indent); sb.append("CASE");
+            int partStart = 0, partEnd = 0;
+            for (int part=1 ; part<4 ; part++)
+            {
+                partEnd = visits.size()*part / 4;
+                VisitImpl v = visits.get(partEnd);
+                _indent(sb,indent); sb.append("WHEN ").append(sn).append(" < ").append(f.format(v.getSequenceNumMin())).append(" THEN");
+                sb.append(generateSequenceToVisit(visits.subList(partStart, partEnd), sn, f, indent+1));
+                partStart = partEnd;
+            }
+            _indent(sb,indent); sb.append("ELSE");
+            sb.append(generateSequenceToVisit(visits.subList(partStart, visits.size()), sn, f, indent+1));
+            _indent(sb,indent); sb.append("END");
             return sb.toString();
         }
+    }
+    private void _indent(StringBuilder sb, int indent)
+    {
+        sb.append("\n                                             ".substring(0,indent));
     }
 }
