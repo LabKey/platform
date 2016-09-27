@@ -1416,6 +1416,7 @@ boxPlot.render();
         if (!config.labels.mainLabel.font) config.labels.mainLabel.font = 'Roboto, arial';
         if (!config.labels.percentage) config.labels.percentage = {};
         if (!config.labels.percentage.font) config.labels.percentage.font = 'Roboto, arial';
+        if (!config.labels.percentage.color) config.labels.percentage.color = '#DDDDDD';
         if (!config.labels.outer) config.labels.outer = {};
         if (!config.labels.outer.hasOwnProperty('pieDistance')) config.labels.outer.pieDistance = 10;
         if (!config.labels.inner) config.labels.inner = {};
