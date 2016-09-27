@@ -1038,21 +1038,36 @@
                 });
             }
 
-            var responseMetadata = {
-                schemaName: results.schemaName,
-                queryName: results.queryName
-            };
+            var responseMetadata = $.extend
+                (
+                    {
+                        schemaName: results.schemaName,
+                        queryName: results.queryName
+                    },
+                    results.getMetaData()
+                );
 
             // TODO: Remove this backwards compatibility once cds/fb_refinement is ready
             if (results.columnAliases !== undefined) {
                 responseMetadata.columnAliases = results.columnAliases;
             }
 
-            return new MeasureStore({
+            var ms = new MeasureStore({
                 measures: measures,
                 records: results.rows,
                 responseMetadata: responseMetadata
             });
+
+            // tack on field metadata to each column
+            results.metaData.fields.forEach(function(field)
+            {
+                var name = field.fieldKey.toString();
+                var index = ms._columnMap[name];
+                if (index)
+                    ms._columns[index].field = field;
+            });
+
+            return ms;
         }
 
         function _handleGetDataResponse(results, measures, dimensions)
@@ -1410,7 +1425,7 @@
                 var measures = this.measures,
                     r = {},
                     keyNames = dim._keys,
-                    keyValues = entry.key.split(CONCAT_STRING),
+                    keyValues = $.type(entry.key) === 'string' ? entry.key.split(CONCAT_STRING) : [entry.key],
                     label, measureName, i;
 
                 for (i = 0; i < keyNames.length; i++)
