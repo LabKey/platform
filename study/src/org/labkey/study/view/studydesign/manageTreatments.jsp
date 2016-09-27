@@ -74,49 +74,12 @@
             visitNoun : <%=q(visitNoun)%>,
             returnURL : <%=q(returnUrl)%>
         });
-
-        var projectMenu = null;
-        if (LABKEY.container.type != "project")
-        {
-            var projectPath = LABKEY.container.path.substring(0, LABKEY.container.path.indexOf("/", 1));
-            projectMenu = {
-                text: 'Project',
-                menu: {
-                    items: [{
-                        text: 'Routes',
-                        href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignRoutes'}),
-                        hrefTarget: '_blank'  // issue 19493
-                    }]
-                }
-            };
-        }
-
-        var folderMenu = {
-            text: 'Folder',
-            menu: {
-                items: [{
-                    text: 'Routes',
-                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignRoutes'}),
-                    hrefTarget: '_blank'  // issue 19493
-                }]
-            }
-        };
-
-        Ext4.create('Ext.button.Button', {
-            text: 'Configure',
-            renderTo: 'config-dropdown-menu',
-            menu: projectMenu ? {items: [projectMenu, folderMenu]} : folderMenu.menu
-        });
     });
 </script>
 
 Enter treatment information in the grids below.
 <div style="width: 1400px;">
     <ul>
-        <li>
-            Configure dropdown options for routes at the project level to be shared across study designs or within this folder for
-            study specific properties: <span id='config-dropdown-menu'></span>
-        </li>
         <li>Each treatment label must be unique and must consist of at least one study products, i.e. immunogens and/or adjuvants.</li>
         <li>
             Use the manage study products page to change or update the set of available immunogens and adjuvants.

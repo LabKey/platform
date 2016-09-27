@@ -72,6 +72,10 @@
                         text: 'SubTypes',
                         href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignSubTypes'}),
                         hrefTarget: '_blank'  // issue 19493
+                    },{
+                        text: 'Routes',
+                        href: LABKEY.ActionURL.buildURL('query', 'executeQuery', projectPath, {schemaName: 'study', 'query.queryName': 'StudyDesignRoutes'}),
+                        hrefTarget: '_blank'  // issue 19493
                     }]
                 }
             };
@@ -92,6 +96,10 @@
                     text: 'SubTypes',
                     href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignSubTypes'}),
                     hrefTarget: '_blank'  // issue 19493
+                },{
+                    text: 'Routes',
+                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: 'study', 'query.queryName': 'StudyDesignRoutes'}),
+                    hrefTarget: '_blank'  // issue 19493
                 }]
             }
         };
@@ -108,7 +116,7 @@ Enter vaccine design information in the grids below.
 <div style="width: 850px;">
     <ul>
         <li>
-            Configure dropdown options for immunogen types, genes, and subtypes at the project level to be shared across study designs or within this folder for
+            Configure dropdown options for immunogen types, genes, subtypes, and routes at the project level to be shared across study designs or within this folder for
             study specific properties: <span id='config-dropdown-menu'></span>
         </li>
         <li>Each immunogen and adjuvant in the study should be listed on one row of the grids below.</li>

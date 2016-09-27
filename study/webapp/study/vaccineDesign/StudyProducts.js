@@ -14,6 +14,8 @@ Ext4.define('LABKEY.VaccineDesign.StudyProductsPanel', {
 
     disableEdit : true,
 
+    dirty : false,
+
     returnURL : null,
 
     initComponent : function()
@@ -25,6 +27,8 @@ Ext4.define('LABKEY.VaccineDesign.StudyProductsPanel', {
         ];
 
         this.callParent();
+
+        window.onbeforeunload = LABKEY.beforeunload(this.beforeUnload, this);
     },
 
     getImmunogensGrid : function()
@@ -35,7 +39,10 @@ Ext4.define('LABKEY.VaccineDesign.StudyProductsPanel', {
                 disableEdit: this.disableEdit
             });
 
-            this.immunogenGrid.on('dirtychange', function() { this.getSaveButton().enable(); }, this);
+            this.immunogenGrid.on('dirtychange', function() {
+                this.setDirty(true);
+                this.getSaveButton().enable();
+            }, this);
         }
 
         return this.immunogenGrid;
@@ -50,7 +57,10 @@ Ext4.define('LABKEY.VaccineDesign.StudyProductsPanel', {
                 disableEdit: this.disableEdit
             });
 
-            this.adjuvantGrid.on('dirtychange', function() { this.getSaveButton().enable(); }, this);
+            this.adjuvantGrid.on('dirtychange', function() {
+                this.setDirty(true);
+                this.getSaveButton().enable();
+            }, this);
         }
 
         return this.adjuvantGrid;
@@ -159,6 +169,7 @@ Ext4.define('LABKEY.VaccineDesign.StudyProductsPanel', {
 
     goToReturnURL : function()
     {
+        this.setDirty(false);
         window.location = this.returnURL;
     },
 
@@ -172,6 +183,23 @@ Ext4.define('LABKEY.VaccineDesign.StudyProductsPanel', {
         });
 
         this.getEl().unmask();
+    },
+
+    setDirty : function(dirty)
+    {
+        this.dirty = dirty;
+        LABKEY.Utils.signalWebDriverTest("studyProductsDirty", dirty);
+    },
+
+    isDirty : function()
+    {
+        return this.dirty;
+    },
+
+    beforeUnload : function()
+    {
+        if (!this.disableEdit && this.isDirty())
+            return 'Please save your changes.';
     }
 });
 
@@ -180,6 +208,8 @@ Ext4.define('LABKEY.VaccineDesign.StudyProductsGrid', {
     extend : 'LABKEY.VaccineDesign.BaseDataView',
 
     filterRole : null,
+
+    showDoseRoute : true,
 
     //Override
     getStore : function()
@@ -282,27 +312,32 @@ Ext4.define('LABKEY.VaccineDesign.ImmunogensGrid', {
                         editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Sequence', 225)
                     }]
                 }
-            },{
-                label: 'Doses and Routes',
-                width: 300,
-                dataIndex: 'DoseAndRoute',
-                subgridConfig: {
-                    columns: [{
-                        label: 'Dose',
-                        width: 140,
-                        dataIndex: 'Dose',
-                        editorType: 'Ext.form.field.Text',
-                        editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Dose', 130)
-                    },{
-                        label: 'Route',
-                        width: 140,
-                        dataIndex: 'Route',
-                        queryName: 'StudyDesignRoutes',
-                        editorType: 'LABKEY.ext4.ComboBox',
-                        editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('Route', 130, 'StudyDesignRoutes')
-                    }]
-                }
             }];
+
+            if (this.showDoseRoute)
+            {
+                this.columnConfigs.push({
+                    label: 'Doses and Routes',
+                    width: 300,
+                    dataIndex: 'DoseAndRoute',
+                    subgridConfig: {
+                        columns: [{
+                            label: 'Dose',
+                            width: 140,
+                            dataIndex: 'Dose',
+                            editorType: 'Ext.form.field.Text',
+                            editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Dose', 130)
+                        },{
+                            label: 'Route',
+                            width: 140,
+                            dataIndex: 'Route',
+                            queryName: 'StudyDesignRoutes',
+                            editorType: 'LABKEY.ext4.ComboBox',
+                            editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('Route', 130, 'StudyDesignRoutes')
+                        }]
+                    }
+                });
+            }
         }
 
         return this.columnConfigs;
@@ -332,27 +367,32 @@ Ext4.define('LABKEY.VaccineDesign.AdjuvantsGrid', {
                 required: true,
                 editorType: 'Ext.form.field.Text',
                 editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Label', 363)
-            },{
-                label: 'Doses and Routes',
-                width: 300,
-                dataIndex: 'DoseAndRoute',
-                subgridConfig: {
-                    columns: [{
-                        label: 'Dose',
-                        width: 140,
-                        dataIndex: 'Dose',
-                        editorType: 'Ext.form.field.Text',
-                        editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Dose', 130)
-                    },{
-                        label: 'Route',
-                        width: 140,
-                        dataIndex: 'Route',
-                        queryName: 'StudyDesignRoutes',
-                        editorType: 'LABKEY.ext4.ComboBox',
-                        editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('Route', 130, 'StudyDesignRoutes')
-                    }]
-                }
             }];
+
+            if (this.showDoseRoute)
+            {
+                this.columnConfigs.push({
+                    label: 'Doses and Routes',
+                    width: 300,
+                    dataIndex: 'DoseAndRoute',
+                    subgridConfig: {
+                        columns: [{
+                            label: 'Dose',
+                            width: 140,
+                            dataIndex: 'Dose',
+                            editorType: 'Ext.form.field.Text',
+                            editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Dose', 130)
+                        }, {
+                            label: 'Route',
+                            width: 140,
+                            dataIndex: 'Route',
+                            queryName: 'StudyDesignRoutes',
+                            editorType: 'LABKEY.ext4.ComboBox',
+                            editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('Route', 130, 'StudyDesignRoutes')
+                        }]
+                    }
+                });
+            }
         }
 
         return this.columnConfigs;

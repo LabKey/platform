@@ -9,15 +9,17 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentSchedulePanel', {
 
     disableEdit : true,
 
+    dirty : false,
+
     returnURL : null,
 
     initComponent : function()
     {
-        this.items = [
-            this.getTreatmentsGrid()
-        ];
+        this.items = [this.getTreatmentsGrid()];
 
         this.callParent();
+
+        window.onbeforeunload = LABKEY.beforeunload(this.beforeUnload, this);
     },
 
     getTreatmentsGrid : function()
@@ -28,7 +30,10 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentSchedulePanel', {
                 disableEdit: this.disableEdit
             });
 
-            this.treatmentsGrid.on('dirtychange', function() { this.getSaveButton().enable(); }, this);
+            this.treatmentsGrid.on('dirtychange', function() {
+                this.setDirty(true);
+                this.getSaveButton().enable();
+            }, this);
 
             // Note: since we need the data from the treatment grid, don't add this.getTreatmentScheduleGrid() until the treatment grid store has loaded
             this.treatmentsGrid.on('loadcomplete', this.onTreatmentGridLoadComplete, this, {single: true});
@@ -64,7 +69,10 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentSchedulePanel', {
                 visitNoun: this.visitNoun
             });
 
-            this.treatmentScheduleGrid.on('dirtychange', function() { this.getSaveButton().enable(); }, this);
+            this.treatmentScheduleGrid.on('dirtychange', function() {
+                this.setDirty(true);
+                this.getSaveButton().enable();
+            }, this);
         }
 
         return this.treatmentScheduleGrid;
@@ -205,6 +213,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentSchedulePanel', {
 
     goToReturnURL : function()
     {
+        this.setDirty(false);
         window.location = this.returnURL;
     },
 
@@ -218,6 +227,23 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentSchedulePanel', {
         });
 
         this.getEl().unmask();
+    },
+
+    setDirty : function(dirty)
+    {
+        this.dirty = dirty;
+        LABKEY.Utils.signalWebDriverTest("treatmentScheduleDirty", dirty);
+    },
+
+    isDirty : function()
+    {
+        return this.dirty;
+    },
+
+    beforeUnload : function()
+    {
+        if (!this.disableEdit && this.isDirty())
+            return 'Please save your changes.';
     }
 });
 
@@ -347,8 +373,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentsGrid', {
 
     getDoseAndRouteEditor : function(){
 
-        var cfg = LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('DoseAndRoute', 130, 'DoseAndRoute',
-                undefined, 'label', 'label');
+        var cfg = LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('DoseAndRoute', 130, 'DoseAndRoute', undefined, 'Label', 'Label');
         cfg.listeners = {
             scope: this,
             render : function(cmp) {
