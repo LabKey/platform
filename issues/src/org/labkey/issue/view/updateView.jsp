@@ -37,7 +37,6 @@
 <%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.ArrayList" %>
-<%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.function.Function" %>
@@ -49,6 +48,7 @@
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
+        dependencies.add("internal/jQuery");
         dependencies.add("Ext4");
     }
 %>
@@ -66,7 +66,11 @@
     String completionUrl = urlProvider(SecurityUrls.class).getCompleteUserReadURLPrefix(c);
     ActionURL cancelURL;
 
-    if (issue.getIssueId() > 0)
+    if (bean.getReturnURL() != null)
+    {
+        cancelURL = bean.getReturnURL();
+    }
+    else if (issue.getIssueId() > 0)
     {
         cancelURL = IssuesController.issueURL(c, IssuesController.DetailsAction.class).addParameter("issueId", issue.getIssueId());
     }
@@ -156,7 +160,7 @@
             }
         %>
 
-        LABKEY.Utils.onReady(function(){
+        $(function() {
             $("input[name='title']").attr("tabindex", "1");
             $("select[name='assignedTo']").attr("tabindex", "2");
             $("select[name='type']").attr("tabindex", "3");
@@ -339,9 +343,18 @@
 
     <%
         if (bean.getCallbackURL() != null)
-        {%>
-    <input type="hidden" name="callbackURL" value="<%=h(bean.getCallbackURL())%>"/><%
-    }
+        {
+    %>
+    <input type="hidden" name="callbackURL" value="<%=h(bean.getCallbackURL())%>"/>
+    <%
+        }
+
+        if (bean.getReturnURL() != null)
+        {
+    %>
+    <input type="hidden" name="returnUrl" value="<%=h(bean.getReturnURL())%>"/>
+    <%
+        }
 
     for (Issue.Comment comment : issue.getComments())
     {%>

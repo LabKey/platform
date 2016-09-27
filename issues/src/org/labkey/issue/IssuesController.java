@@ -40,7 +40,21 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.*;
+import org.labkey.api.data.AttachmentParentEntity;
+import org.labkey.api.data.BeanViewForm;
+import org.labkey.api.data.ColumnHeaderType;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TSVGridWriter;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.exp.property.Domain;
@@ -124,13 +138,10 @@ import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -547,25 +558,6 @@ public class IssuesController extends SpringActionController
                 return new HtmlView(getUndefinedIssueListMessage(getViewContext(), _issue.getIssueDefName()));
             }
 
-/*
-            // if we have errors, then form.getBean() is likely to throw, but try anyway
-            if (errors.hasErrors())
-            {
-                try
-                {
-                    _issue = reshow ? form.getBean() : new Issue();
-                }
-                catch (Exception e)
-                {
-                    _issue = new Issue();
-                }
-            }
-            else
-            {
-                _issue = reshow ? form.getBean() : new Issue();
-            }
-*/
-
             if (_issue.getAssignedTo() != null)
             {
                 User user = UserManager.getUser(_issue.getAssignedTo());
@@ -596,23 +588,22 @@ public class IssuesController extends SpringActionController
             }
 
             beforeReshow(reshow, form, _issue, issueListDef);
-            IssuePage page = new IssuePage(getContainer(), getUser());
-            JspView v = new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
 
+            IssuePage page = new IssuePage(getContainer(), getUser());
             page.setAction(InsertAction.class);
             page.setMode(DataRegion.MODE_UPDATE);
-
             page.setIssue(_issue);
             page.setPrevIssue(_issue);
             page.setCustomColumnConfiguration(customColumnConfig);
             page.setBody(form.getComment() == null ? form.getBody() : form.getComment());
             page.setCallbackURL(form.getCallbackURL());
+            page.setReturnURL(form.getReturnActionURL());
             page.setEditable(getEditableFields(page.getAction(), customColumnConfig));
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
             page.setErrors(errors);
             page.setIssueListDef(getIssueListDef());
 
-            return v;
+            return new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -622,17 +613,17 @@ public class IssuesController extends SpringActionController
         }
 
         @Override
-        public ActionURL getSuccessURL(IssuesController.IssuesForm issuesForm)
+        public ActionURL getSuccessURL(IssuesController.IssuesForm form)
         {
-            if (!StringUtils.isEmpty(issuesForm.getCallbackURL()))
+            if (!StringUtils.isEmpty(form.getCallbackURL()))
             {
-                ActionURL url = new ActionURL(issuesForm.getCallbackURL());
+                ActionURL url = new ActionURL(form.getCallbackURL());
                 url.addParameter("issueId", _issue.getIssueId());
                 url.addParameter("assignedTo", _issue.getAssignedTo());
                 return url;
             }
 
-            return new DetailsAction(_issue, getViewContext()).getURL();
+            return form.getReturnActionURL(getDetailsURL(getContainer(), _issue.getIssueId(), false));
         }
     }
 
@@ -773,8 +764,8 @@ public class IssuesController extends SpringActionController
                     IssueManager.saveIssue(user, getContainer(), relatedIssue);
                 }
 
-                // this list represents all the ids which will need related handling for a droping a relatedIssue entry
-                if(!prevRelatedIds.equals(newRelatedIds))
+                // this list represents all the ids which will need related handling for dropping a relatedIssue entry
+                if (!prevRelatedIds.equals(newRelatedIds))
                 {
                     Collection<Integer> prevIssues = new ArrayList<>();
                     prevIssues.addAll(prevRelatedIds);
@@ -1596,20 +1587,19 @@ public class IssuesController extends SpringActionController
             beforeReshow(reshow, form, _issue, getIssueListDef());
 
             IssuePage page = new IssuePage(getContainer(), user);
-            JspView v = new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
-
             page.setAction(UpdateAction.class);
             page.setMode(DataRegion.MODE_UPDATE);
             page.setIssue(_issue);
             page.setPrevIssue(prevIssue);
             page.setCustomColumnConfiguration(getColumnConfiguration());
             page.setBody(form.getComment());
+            page.setReturnURL(form.getReturnActionURL());
             page.setEditable(getEditableFields(page.getAction(), getColumnConfiguration()));
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
             page.setErrors(errors);
             page.setIssueListDef(getIssueListDef());
 
-            return v;
+            return new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1656,8 +1646,6 @@ public class IssuesController extends SpringActionController
             beforeReshow(reshow, form, _issue, getIssueListDef());
 
             IssuePage page = new IssuePage(getContainer(), user);
-            JspView v = new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
-
             page.setAction(ResolveAction.class);
             page.setMode(DataRegion.MODE_UPDATE);
             page.setIssue(_issue);
@@ -1669,7 +1657,7 @@ public class IssuesController extends SpringActionController
             page.setErrors(errors);
             page.setIssueListDef(getIssueListDef());
 
-            return v;
+            return new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1700,8 +1688,6 @@ public class IssuesController extends SpringActionController
             beforeReshow(reshow, form, _issue, getIssueListDef());
 
             IssuePage page = new IssuePage(getContainer(), user);
-            JspView v = new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
-
             page.setAction(CloseAction.class);
             page.setMode(DataRegion.MODE_UPDATE);
             page.setIssue(_issue);
@@ -1713,7 +1699,7 @@ public class IssuesController extends SpringActionController
             page.setErrors(errors);
             page.setIssueListDef(getIssueListDef());
 
-            return v;
+            return new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1747,8 +1733,6 @@ public class IssuesController extends SpringActionController
             beforeReshow(reshow, form, _issue, getIssueListDef());
 
             IssuePage page = new IssuePage(getContainer(), user);
-            JspView v = new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
-
             page.setAction(ReopenAction.class);
             page.setMode(DataRegion.MODE_UPDATE);
             page.setIssue(_issue);
@@ -1760,7 +1744,7 @@ public class IssuesController extends SpringActionController
             page.setErrors(errors);
             page.setIssueListDef(getIssueListDef());
 
-            return v;
+            return new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -2022,54 +2006,6 @@ public class IssuesController extends SpringActionController
         }
     }
 
-    public static List<Issue.Comment> getRecentComments(Container container, User user, int limit)
-    {
-        // Defaults to the 20 most recent comments
-        if (limit == 0)
-            limit = 20;
-
-        List<Issue.Comment> result = new ArrayList<>(limit);
-
-        SimpleFilter filter = new SimpleFilter();
-        ContainerFilter containerFilter = new ContainerFilter.CurrentAndSubfolders(user);
-        FieldKey containerFieldKey = FieldKey.fromParts("IssueId_Container");
-        filter.addCondition(containerFilter.createFilterClause(IssuesSchema.getInstance().getSchema(), containerFieldKey, container));
-
-        Sort sort = new Sort("-Created");
-
-        // Selecting comments as maps so we can get the issue id -- it's not on the Comment entity.
-        List<FieldKey> fields = new ArrayList<>(IssuesSchema.getInstance().getTableInfoComments().getDefaultVisibleColumns());
-        fields.add(containerFieldKey);
-
-        Map<FieldKey, ColumnInfo> columnMap = QueryService.get().getColumns(IssuesSchema.getInstance().getTableInfoComments(), fields);
-
-        TableSelector selector = new TableSelector(IssuesSchema.getInstance().getTableInfoComments(), columnMap.values(), filter, sort);
-        selector.setMaxRows(limit);
-        Collection<Map<String, Object>> comments = selector.getMapCollection();
-        ObjectFactory<Issue.Comment> commentFactory = ObjectFactory.Registry.getFactory(Issue.Comment.class);
-        Map<Integer, Issue> issuesIds = new HashMap<>();
-
-        for (Map<String, Object> comment : comments)
-        {
-            Integer issueId = (Integer)comment.get("issueid");
-            if (issueId == null)
-                continue;
-
-            Issue issue = issuesIds.get(issueId);
-            if (issue == null)
-            {
-                issue = new TableSelector(IssuesSchema.getInstance().getTableInfoIssues()).getObject(issueId, Issue.class);
-                issuesIds.put(issueId, issue);
-            }
-
-            Issue.Comment c = commentFactory.fromMap(comment);
-            c.setIssue(issue);
-            result.add(c);
-        }
-
-        return result;
-    }
-
 
     @RequiresPermission(AdminPermission.class)
     public class PurgeAction extends SimpleViewAction
@@ -2304,7 +2240,6 @@ public class IssuesController extends SpringActionController
         {
             User user = getUser();
             Issue issue = getIssue(issueIdForm.getIssueId(), false);
-            //IssuePage page = new IssuePage();
 
             BeanMap wrapper = new BeanMap(issue);
             JSONObject jsonIssue = new JSONObject(wrapper);
@@ -2595,7 +2530,7 @@ public class IssuesController extends SpringActionController
 
             BuildSummaryBean summarizedBean = BuildSummaryUtil.populateBuildSummaryBean(issueListDef, getViewContext().getActionURL(), getContainer(), getUser());
 
-            return new JspView("/org/labkey/issue/view/buildSummary.jsp", summarizedBean);
+            return new JspView<>("/org/labkey/issue/view/buildSummary.jsp", summarizedBean);
         }
 
         @Override

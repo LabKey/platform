@@ -90,6 +90,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     private CustomColumnConfiguration _ccc;
     private Set<String> _editable = Collections.emptySet();
     private String _callbackURL;
+    private ActionURL _returnURL;
     private BindException _errors;
     private Class<? extends Controller> _action;
     private String _body;
@@ -190,6 +191,16 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     public void setCallbackURL(String callbackURL)
     {
         _callbackURL = callbackURL;
+    }
+
+    public ActionURL getReturnURL()
+    {
+        return _returnURL;
+    }
+
+    public void setReturnURL(ActionURL returnURL)
+    {
+        _returnURL = returnURL;
     }
 
     public BindException getErrors()
