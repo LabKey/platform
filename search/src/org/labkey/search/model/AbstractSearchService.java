@@ -66,14 +66,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * User: matthewb
@@ -90,9 +87,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     // Resources go here for preprocessing (this can be multi-threaded)
     final PriorityBlockingQueue<Item> _itemQueue = new PriorityBlockingQueue<>(1000, itemCompare);
-
-    // And a single threaded queue for actually writing to the index (can this be multi-threaded?)
-    BlockingQueue<Item> _indexQueue = null;
 
     private final List<IndexTask> _tasks = new CopyOnWriteArrayList<>();
     private final _IndexTask _defaultTask = new _IndexTask("default");
@@ -269,6 +263,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             {
                 ((_IndexTask)_task).completeItem(this, success);
             }
+
             if (!success)
             {
                 WebdavResource r = getResource();
@@ -288,9 +283,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             if (_id != null ? !_id.equals(item._id) : item._id != null) return false;
             if (_op != item._op) return false;
             if (_res != null ? !_res.equals(item._res) : item._res != null) return false;
-            if (_run != null ? !_run.equals(item._run) : item._run != null) return false;
-
-            return true;
+            return _run != null ? _run.equals(item._run) : item._run == null;
         }
 
         @Override
@@ -311,11 +304,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    final Item _commitItem = new Item(null, new Runnable(){
-        @Override
-        public void run()
-        {
-        }
+    final Item _commitItem = new Item(null, () ->
+    {
     }, PRIORITY.commit);
 
 
@@ -324,8 +314,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         if (_runQueue.size() > 0)
             return true;
         int n = _itemQueue.size();
-        if (null != _indexQueue)
-            n += _indexQueue.size();
         return n > 100;
     }
 
@@ -460,9 +448,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
             ItemRunnable that = (ItemRunnable) o;
 
-            if (!_item.equals(that._item)) return false;
+            return _item.equals(that._item);
 
-            return true;
         }
 
         @Override
@@ -744,8 +731,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         }
         _runQueue.clear();
         _itemQueue.clear();
-        if (null != _indexQueue)
-            _indexQueue.clear();
     }
 
 
@@ -768,25 +753,11 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         }
     }
 
-    
-    protected int getCountPreprocessorThreads()
-    {
-        return isPreprocessThreadSafe() ? 1 : 0;
-    }
-
-    
     protected int getCountIndexingThreads()
     {
         int cpu = Runtime.getRuntime().availableProcessors();
         return Math.max(1,cpu/4);
     }
-
-
-    protected boolean isPreprocessThreadSafe()
-    {
-        return true;
-    }
-
 
     protected void startThreads()
     {
@@ -808,22 +779,11 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             _threads.add(t);
         }
 
-        int countPreprocessingThreads = getCountPreprocessorThreads();
-        for (int i=0 ; i<getCountPreprocessorThreads() ; i++)
-        {
-            Thread t = new Thread(group, preprocessRunnable, "SearchService:preprocess " + i);
-            t.start();
-            _threads.add(t);
-        }
-
         {
             Thread t = new Thread(group, runRunnable, "SearchService:runner");
             t.start();
             _threads.add(t);
         }
-
-        if (0 < countPreprocessingThreads)
-            _indexQueue = new ArrayBlockingQueue<>(Math.min(100,10*countIndexingThreads));
 
         _threadsInitialized = true;
 
@@ -843,8 +803,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         _crawlerPaused = true;
         _runQueue.clear();
         _itemQueue.clear();
-        if (null != _indexQueue)
-            _indexQueue.clear();
         for (Thread t : _threads)
             t.interrupt();
     }
@@ -943,152 +901,19 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             s.unlock();
     }
     
-
-
-    ReentrantLock lockPreprocess = isPreprocessThreadSafe() ? null : new ReentrantLock();
-
-    private boolean preprocess(Item i)
-    {
-        if (_commitItem == i)
-            return true;
-
-        WebdavResource r = i.getResource();
-        if (null == r || !r.exists())
-            return false;
-        
-        i._modified = r.getLastModified();
-
-        if (!_lock(lockPreprocess))
-            return false;
-
-        try
-        {
-            Throwable[] out = new Throwable[] {null};
-            _log.debug("preprocess(" + r.getDocumentId() + ")");
-
-            /** TESTING */
-            assert null==(out[0]="test_preprocess_exception".equals(r.getName())?new IllegalArgumentException("testing"):null) || true;
-
-            if (null == out[0])
-                i._preprocessMap = preprocess(i._id, i._res, out);
-
-            if (null != out[0])
-            {
-                _IndexTask t = (_IndexTask)i._task;
-                if (null != t && null != t._listener)
-                    t._listener.indexError(r,out[0]);
-            }
-            if (null == i._preprocessMap)
-            {
-                _log.debug("skipping " + i._id);
-                return false;
-            }
-            return true;
-        }
-        finally
-        {
-            _unlock(lockPreprocess);
-        }
-    }
-
-
-    Runnable preprocessRunnable = new Runnable()
-    {
-        public void run()
-        {
-            while (!_shuttingDown)
-            {
-                Item i = null;
-                boolean success = false;
-                try
-                {
-                    i = _itemQueue.take();
-                    if (!preprocess(i))
-                        continue;
-                    _log.debug("_indexQueue.put(" + i._id + ")");
-                    _indexQueue.put(i);
-                    success = true;
-                }
-                catch (RuntimeSQLException x)
-                {
-                    if (SqlDialect.isTransactionException(x))
-                    {
-                        if (null != i && ++i._preprocessAttempts <= 3)
-                        {
-                            _itemQueue.put(i);
-                            continue;
-                        }
-                    }
-                    _log.error("Error processing " + (null != i ? i._id : ""), x);
-                }
-                catch (InterruptedException x)
-                {
-                    // check _shuttingDown
-                }
-                catch (Throwable x)
-                {
-                    _log.error("Error processing " + (null != i ? i._id : ""), x);
-                }
-                finally
-                {
-                    try
-                    {
-                        if (!success && null != i)
-                        {
-                            i.complete(success);
-                        }
-                    }
-                    finally
-                    {
-                        DbScope.closeAllConnectionsForCurrentThread();
-                    }
-                }
-            }
-        }
-    };
-
-
-    Item getPreprocessedItem() throws InterruptedException
+    Item getItemToIndex() throws InterruptedException
     {
         Item i = null;
 
         try
         {
-            // if there's an indexQueue, other threads may be preprocessing
-            // first look for a preprocessed item on the _indexQueue
-            if (null != _indexQueue)
-            {
-                i = _indexQueue.poll();
-                if (null != i)
-                    return i;
-                // help out on preprocessing?
-                i = _itemQueue.poll();
-                if (null != i)
-                {
-                    if (preprocess(i))
-                        return i;
-                    else
-                        i.complete(false);
-                }
-                checkIdle();
-                return _indexQueue.poll(2, TimeUnit.SECONDS);
-            }
-
-            // otherwise just wait on the preprocess queue
             i = _itemQueue.poll();
             if (null == i || i == _commitItem)
                 checkIdle();
             if (null == i)
                 i = _itemQueue.poll(2, TimeUnit.SECONDS);
 
-            if (null != i)
-            {
-                if (preprocess(i))
-                    return i;
-                else
-                    i.complete(false);
-            }
-            return null;
+            return i;
         }
         catch (RuntimeSQLException x)
         {
@@ -1118,32 +943,42 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    Runnable indexRunnable = new Runnable()
+    Runnable indexRunnable = () ->
     {
-        public void run()
+        while (!_shuttingDown)
         {
-            while (!_shuttingDown)
+            try
             {
-                try
-                {
-                      _indexLoop();
-                }
-                catch (Throwable t)
-                {
-                    // this should only happen if the catch/finally of the inner loop throws
-                    try {_log.warn("error in indexer", t);} catch (Throwable x){/* */}
-                }
+                  _indexLoop();
             }
-            synchronized (_commitLock)
+            catch (Throwable t)
             {
-                if (_countIndexedSinceCommit > 0)
-                {
-                    commit();
-                    _countIndexedSinceCommit = 0;
-                }
+                // this should only happen if the catch/finally of the inner loop throws
+                try {_log.warn("error in indexer", t);} catch (Throwable x){/* */}
+            }
+        }
+        synchronized (_commitLock)
+        {
+            if (_countIndexedSinceCommit > 0)
+            {
+                commit();
+                _countIndexedSinceCommit = 0;
             }
         }
     };
+
+    private void commitCheck(long ms)
+    {
+        synchronized (_commitLock)
+        {
+            // TODO: Add a check that allows commit in the case where we've been continuously pounding the indexer for a long time...
+            // either an oldest non-committed document check or a simple _countIndexedSinceCommit > n check.
+            if (_countIndexedSinceCommit > 0 && _lastIndexedTime + 2000 < ms && _runQueue.isEmpty())
+            {
+                commit();
+            }
+        }
+    }
 
 
     private void _indexLoop()
@@ -1152,33 +987,43 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         boolean success = false;
         try
         {
-            i = getPreprocessedItem();
+            i = getItemToIndex();
             long ms = HeartBeat.currentTimeMillis();
 
+            //TODO: _commitItem is never enqueued should this case be removed?
             if (null == i || _commitItem == i)
             {
-                synchronized (_commitLock)
-                {
-                    // TODO: Add a check that allows commit in the case where we've been continuously pounding the indexer for a long time...
-                    // either an oldest non-committed document check or a simple _countIndexedSinceCommit > n check.
-                    if (_countIndexedSinceCommit > 0 && _lastIndexedTime + 2000 < ms && _runQueue.isEmpty())
-                    {
-                        commit();
-                    }
-                }
+                commitCheck(ms);
                 return;
             }
 
             WebdavResource r = i.getResource();
             if (null == r || !r.exists())
+            {
+                i.complete(false);
+                commitCheck(ms);
                 return;
-            MemTracker.getInstance().put(r);
-            _log.debug("index(" + i._id + ")");
+            }
 
-            if (index(i._id, i._res, i._preprocessMap))
+            i._modified = r.getLastModified();
+
+            MemTracker.getInstance().put(r);
+            _log.debug("processAndIndex(" + i._id + ")");
+
+            Throwable[] out = new Throwable[] {null};
+
+            success = processAndIndex(i._id, i._res, out);
+
+            if (null != out[0])
+            {
+                _IndexTask t = (_IndexTask)i._task;
+                if (null != t && null != t._listener)
+                    t._listener.indexError(r,out[0]);
+            }
+
+            if (success)
             {
                 i._res.setLastIndexed(i._start, i._modified);
-                success = true;
                 synchronized (_commitLock)
                 {
                     String category = (String)i.getResource().getProperties().get(PROPERTY.categories.toString());
@@ -1189,6 +1034,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                         commit();
                 }
             }
+            else
+                _log.debug("skipping " + i._id);
         }
         catch (InterruptedException x)
         {
@@ -1280,11 +1127,10 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     protected abstract void clearIndex();  // must be callable before (and after) start() has been called.
 
 
-    Map<?,?> preprocess(String id, WebdavResource r, Throwable[] handledException)
+    boolean processAndIndex(String id, WebdavResource r, Throwable[] handledException)
     {
-        return Collections.emptyMap();
+        return false;
     }
-
 
     protected final List<DocumentProvider> _documentProviders = new CopyOnWriteArrayList<>();
     
@@ -1292,7 +1138,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     {
         _documentProviders.add(provider);
     }
-
 
     protected final List<DocumentParser> _documentParsers = new CopyOnWriteArrayList<>();
     
@@ -1305,14 +1150,11 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     {
         final IndexTask task = null==in ? createTask("Index folder " + c.getPath()) : in;
 
-        Runnable r = new Runnable()
+        Runnable r = () ->
         {
-            public void run()
+            for (DocumentProvider p : _documentProviders)
             {
-                for (DocumentProvider p : _documentProviders)
-                {
-                    p.enumerateDocuments(task, c, since);
-                }
+                p.enumerateDocuments(task, c, since);
             }
         };
         task.addRunnable(r, PRIORITY.bulk); // breaks rule of always adding w/higher priority than parent task
@@ -1355,6 +1197,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     
     public void indexFull(final boolean force)
     {
+        //TODO: remove commented block
 //        final IndexTask task = createTask("Full reindex");
 //        Runnable r = new Runnable()
 //        {
