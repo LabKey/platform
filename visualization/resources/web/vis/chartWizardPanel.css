@@ -161,6 +161,10 @@
     cursor: default;
 }
 
+.chart-layout-panel .option-label {
+    color: #000000;
+}
+
 .save-form-panel {
     padding: 10px;
     background-color: #ffffff !important;

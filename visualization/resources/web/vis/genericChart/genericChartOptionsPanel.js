@@ -84,22 +84,22 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             name: 'showPiePercentages',
             getInputValue: this.getShowPiePercentages,
             fieldLabel: 'Show Percentages',
-            labelWidth: labelWidth,
+            labelWidth: 155,
             padding: '0 0 10px 0',
             layoutOptions: 'pie',
             checked: true
         });
 
-        this.piePercentageHideSlider = Ext4.create('Ext.slider.Single', {
+        this.piePercentageHideNumber = Ext4.create('Ext.form.field.Number', {
             name: 'pieHideWhenLessThanPercentage',
-            getInputValue: this.getHidePiePercentages,
-            labelWidth: labelWidth,
+            getInputValue: this.getHidePiePercentageNumber,
+            labelWidth: 155,
             fieldLabel: 'Hide % when less than',
-            width: 270,
+            width: 210,
             padding: '0 0 10px 0',
             layoutOptions: 'pie',
+            allowDecimals: false,
             value: 5,
-            increment: 1,
             minValue: 0,
             maxValue: 100
         });
@@ -107,7 +107,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         this.gradientSlider = Ext4.create('Ext.slider.Single', {
             name: 'gradientPercentage',
             getInputValue: this.getGradientPercentage,
-            labelWidth: labelWidth,
+            labelWidth: 155,
             fieldLabel: 'Gradient %',
             width: 270,
             padding: '0 0 10px 0',
@@ -119,7 +119,9 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         });
 
         this.gradientColorLabel = Ext4.create('Ext.form.Label', {
-            width: labelWidth,
+            width: 155,
+            cls: 'option-label',
+            style: 'position: absolute;',
             text: 'Gradient Color:',
             layoutOptions: 'pie'
         });
@@ -127,7 +129,6 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         this.gradientColorPicker = Ext4.create('Ext.picker.Color', {
             name: 'gradientColor',
             getInputValue: this.getGradientColor,
-            labelWidth: labelWidth,
             value: 'FFFFFF',  // initial selected color
             width: 280,
             padding: '0 0 0 100px',
@@ -170,7 +171,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         this.pieInnerRadiusSlider = Ext4.create('Ext.slider.Single', {
             name: 'pieInnerRadius',
             getInputValue: this.getPieInnerRadiusPercent,
-            labelWidth: labelWidth,
+            labelWidth: 155,
             fieldLabel: 'Inner Radius %',
             width: 270,
             padding: '0 0 10px 0',
@@ -184,7 +185,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         this.pieOuterRadiusSlider = Ext4.create('Ext.slider.Single', {
             name: 'pieOuterRadius',
             getInputValue: this.getPieOuterRadiusPercent,
-            labelWidth: labelWidth,
+            labelWidth: 155,
             fieldLabel: 'Outer Radius %',
             width: 270,
             padding: '0 0 10px 0',
@@ -235,6 +236,8 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
         this.colorLabel = Ext4.create('Ext.form.Label', {
             width: labelWidth,
+            cls: 'option-label',
+            style: 'position: absolute;',
             text: 'Point Color:',
             layoutOptions: 'point'
         });
@@ -250,6 +253,8 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
         this.lineColorLabel = Ext4.create('Ext.form.Label', {
             width: labelWidth,
+            cls: 'option-label',
+            style: 'position: absolute;',
             text: 'Line Color:',
             layoutOptions: 'line'
         });
@@ -265,6 +270,8 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
         this.fillColorLabel = Ext4.create('Ext.form.Label', {
             width: labelWidth,
+            cls: 'option-label',
+            style: 'position: absolute;',
             text: 'Fill Color:',
             layoutOptions: 'line'
         });
@@ -317,12 +324,12 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         });
 
         this.items = [{
-            columnWidth: 0.45,
+            columnWidth: 0.5,
             border: false,
             padding: '0 20px 0 0',
             items: this.getColumnOneFields()
         },{
-            columnWidth: 0.45, //0.5 + 0.5 + padding causes weird bug where columns are too wide to fit side-by-side
+            columnWidth: 0.5,
             border: false,
             items: this.getColumnTwoFields()
         }];
@@ -369,29 +376,29 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             this.footerBox,
             this.widthBox,
             this.heightBox,
-            this.showPiePercentagesCheckBox,
-            this.piePercentageHideSlider,
-            this.pieInnerRadiusSlider,
-            this.pieOuterRadiusSlider,
+            this.pointTypeCombo,
+            this.jitterCheckbox,
             this.opacitySlider,
             this.pointSizeSlider,
-            this.colorLabel, this.pointColorPicker
+            this.colorLabel, this.pointColorPicker,
+            this.colorPaletteComboBox,
+            this.colorPaletteFieldContainer
         ];
     },
 
     getColumnTwoFields: function()
     {
         return [
-            this.pointTypeCombo,
-            this.jitterCheckbox,
             this.lineWidthSlider,
+            this.lineColorLabel, this.lineColorPicker,
+            this.fillColorLabel, this.fillColorPicker,
+            this.showPiePercentagesCheckBox,
+            this.piePercentageHideNumber,
+            this.pieInnerRadiusSlider,
+            this.pieOuterRadiusSlider,
             this.gradientSlider,
             this.gradientColorLabel,
-            this.gradientColorPicker,
-            this.colorPaletteComboBox,
-            this.colorPaletteFieldContainer,
-            this.lineColorLabel, this.lineColorPicker,
-            this.fillColorLabel, this.fillColorPicker
+            this.gradientColorPicker
         ];
     },
 
@@ -464,7 +471,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             this.setShowPiePercentages(chartConfig.showPiePercentages);
 
         if (Ext4.isDefined(chartConfig.pieHideWhenLessThanPercentage))
-            this.setHidePiePercentages(chartConfig.pieHideWhenLessThanPercentage);
+            this.setHidePiePercentageNumber(chartConfig.pieHideWhenLessThanPercentage);
 
         if (Ext4.isDefined(chartConfig.colorPaletteScale))
             this.setColorPalette(chartConfig.colorPaletteScale);
@@ -511,7 +518,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
                 this.setShowPiePercentages(chartConfig.geomOptions.showPiePercentages);
 
             if (chartConfig.geomOptions.pieHideWhenLessThanPercentage)
-                this.setHidePiePercentages(chartConfig.geomOptions.pieHideWhenLessThanPercentage);
+                this.setHidePiePercentageNumber(chartConfig.geomOptions.pieHideWhenLessThanPercentage);
 
             if (chartConfig.geomOptions.colorPaletteScale)
                 this.setColorPalette(chartConfig.geomOptions.colorPaletteScale);
@@ -691,12 +698,12 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         this.showPiePercentagesCheckBox.setValue(value);
     },
 
-    getHidePiePercentages: function() {
-        return this.piePercentageHideSlider.getValue();
+    getHidePiePercentageNumber: function() {
+        return this.piePercentageHideNumber.getValue();
     },
 
-    setHidePiePercentages: function(value) {
-        this.piePercentageHideSlider.setValue(value);
+    setHidePiePercentageNumber: function(value) {
+        this.piePercentageHideNumber.setValue(value);
     },
 
     getColorPalette: function() {
