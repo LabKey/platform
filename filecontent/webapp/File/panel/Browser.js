@@ -173,7 +173,11 @@ Ext4.define('File.panel.Browser', {
      */
     useNarrowUpload : false,
 
-
+    /**
+     * Disable right click context menu
+     * @cfg {Boolean} disableContextMenu
+     */
+    disableContextMenu : false,
     /**
      * @cfg {Boolean} isWebDav
      */
@@ -2177,6 +2181,34 @@ Ext4.define('File.panel.Browser', {
                         }
                     }
                 },
+
+                cellcontextmenu : function (grid, td, cellIndex, record, tr, rowIndex, e, eOpts) {
+                    if (this.disableContextMenu)
+                        return;
+                    if (record && record.data) {
+
+                        // Issue 21404: Can no longer copy download link from files in file browser
+                        // Don't show the custom context menu for columns containing a link (by marking the column
+                        // with 'showContextMenu = false') and let the browser show it's right-click menu instead.
+                        var showContext = true;
+                        var columns = grid.getGridColumns();
+                        if (cellIndex > 0 && cellIndex < columns.length) {
+                            var column = columns[cellIndex];
+                            if (column.initialConfig && column.initialConfig.showContextMenu === false)
+                                showContext = false;
+                        }
+
+                        if (showContext)
+                            this.showContextMenu(record, e);
+                    }
+                },
+
+                containercontextmenu : function (grid, e, eOpts) {
+                    if (this.disableContextMenu)
+                        return;
+                    this.showContextMenu(null, e);
+                },
+
                 scope : this
             }
         });
@@ -3050,6 +3082,74 @@ Ext4.define('File.panel.Browser', {
 
     hasStatePrefix : function() {
         return Ext4.isString(this.statePrefix);
+    },
+
+    showContextMenu : function(record, e) {
+        var menu = this.getContextMenu();
+
+        // iterate the menu items actions to restore original action's text
+        // We have to do this every time we reshow the menu. After some actions
+        // (e.g., renaming a file), the actions will unset their text causing
+        // the context menu items to lose their label... :(
+        menu.items.each(function (item) {
+            if (item.itemId) {
+                if (this.actions.indexOf(item.itemId) > -1) {
+                    item.setText(item.initialConfig.hardText);
+                }
+            }
+        }, this);
+
+        menu.setItem(record);
+        menu.showAt(e.getX(), e.getY());
+        e.preventDefault();
+    },
+
+    getContextMenu : function () {
+        if (!this.contextMenu) {
+            // TODO: This should respect the visibility/availability as specified by the pipeline configuration
+            var actions = this.getActions().map,
+                    items;
+            this.configureActions();
+
+            if (this.isWebDav) {
+                items = [
+                    actions.upload,
+                    actions.download,
+                    '-',
+                    actions.viewFile,
+                    actions.createDirectory,
+                    '-',
+                    actions.movePath,
+                    actions.deletePath,
+                    actions.renamePath,
+                    '-',
+                    actions.refresh
+                ];
+            }
+            else {
+                items = [
+                    actions.upload,
+                    actions.download,
+                    actions.importData,
+                    '-',
+                    actions.viewFile,
+                    actions.createDirectory,
+                    '-',
+                    actions.movePath,
+                    actions.deletePath,
+                    actions.renamePath,
+                    actions.editFileProps,
+                    '-',
+                    actions.refresh
+                ];
+            }
+
+            this.contextMenu = Ext4.create('File.panel.ContextMenu', {
+                items: items
+            });
+        }
+
+        return this.contextMenu;
     }
 });
 
