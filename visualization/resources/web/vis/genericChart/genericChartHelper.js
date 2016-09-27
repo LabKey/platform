@@ -600,6 +600,126 @@ LABKEY.vis.GenericChartHelper = new function(){
     };
 
     /**
+     * Generate the plot config for the given chart renderType and config options.
+     * @param renderTo
+     * @param chartConfig
+     * @param labels
+     * @param aes
+     * @param scales
+     * @param data
+     * @returns {Object}
+     */
+    var generatePlotConfig = function(renderTo, chartConfig, labels, aes, scales, geom, data)
+    {
+        var renderType = chartConfig.renderType,
+            layers = [],
+            plotConfig = {
+                renderTo: renderTo,
+                rendererType: 'd3',
+                width: chartConfig.width,
+                height: chartConfig.height
+            };
+
+        if (renderType == 'pie_chart')
+            return _generatePieChartConfig(plotConfig, chartConfig, labels, data);
+
+        if (renderType == 'bar_chart')
+        {
+            aes = { x: 'label', y: 'value' };
+
+            var values = Ext4.Array.pluck(data, 'value'),
+                min = Math.min(0, Ext4.Array.min(values)),
+                max = Math.max(0, Ext4.Array.max(values));
+            scales.y = { domain: [min, max] };
+        }
+        else if (renderType == 'box_plot' && chartConfig.pointType == 'all')
+        {
+            layers.push(
+                new LABKEY.vis.Layer({
+                    data: data,
+                    geom: LABKEY.vis.GenericChartHelper.generatePointGeom(chartConfig.geomOptions),
+                    aes: {hoverText: LABKEY.vis.GenericChartHelper.generatePointHover(chartConfig.measures)}
+                })
+            );
+        }
+
+        layers.push(
+            new LABKEY.vis.Layer({
+                data: data,
+                geom: geom
+            })
+        );
+
+        plotConfig = Ext4.apply(plotConfig, {
+            data: data,
+            labels: labels,
+            aes: aes,
+            scales: scales,
+            layers: layers
+        });
+
+        return plotConfig;
+    };
+
+    var _generatePieChartConfig = function(baseConfig, chartConfig, labels, data)
+    {
+        return Ext4.apply(baseConfig, {
+            data: data,
+            header: {
+                title: { text: labels.main.value },
+                subtitle: { text: labels.subtitle.value },
+                titleSubtitlePadding: 1
+            },
+            footer: {
+                text: labels.footer.value,
+                location: 'bottom-center'
+            },
+            labels: {
+                mainLabel: { fontSize: 14 },
+                percentage: { fontSize: 14 },
+                outer: { pieDistance: 20 },
+                inner: {
+                    format: chartConfig.geomOptions.showPiePercentages ? 'percentage' : 'none',
+                    hideWhenLessThanPercentage: chartConfig.geomOptions.pieHideWhenLessThanPercentage
+                }
+            },
+            size: {
+                pieInnerRadius: chartConfig.geomOptions.pieInnerRadius + '%',
+                pieOuterRadius: chartConfig.geomOptions.pieOuterRadius + '%'
+            },
+            misc: {
+                gradient: {
+                    enabled: chartConfig.geomOptions.gradientPercentage != 0,
+                    percentage: chartConfig.geomOptions.gradientPercentage,
+                    color: '#' + chartConfig.geomOptions.gradientColor
+                },
+                colors: {
+                    segments: LABKEY.vis.Scale[chartConfig.geomOptions.colorPaletteScale]()
+                }
+            },
+            effects: { highlightSegmentOnMouseover: false },
+            tooltips: { enabled: true }
+        });
+    };
+
+    /**
+     * Check if the selectRows API response has data. Return an error string if no data exists.
+     * @param response
+     * @param includeFilterMsg true to include a message about removing filters
+     * @returns {String}
+     */
+    var validateResponseHasData = function(response, includeFilterMsg)
+    {
+        if (!response || !response.rows || response.rows.length == 0)
+        {
+            return 'The response returned 0 rows of data. The query may be empty or the applied filters may be too strict.'
+                + (includeFilterMsg ? 'Try removing or adjusting any filters if possible.' : '');
+        }
+
+        return null;
+    };
+
+    /**
      * Verifies that the axis measure is actually present and has data. Also checks to make sure that data can be used in a log
      * scale (if applicable). Returns an object with a success parameter (boolean) and a message parameter (string). If the
      * success parameter is false there is a critical error and the chart cannot be rendered. If success is true the chart
@@ -703,6 +823,8 @@ LABKEY.vis.GenericChartHelper = new function(){
         generateBoxplotGeom: generateBoxplotGeom,
         generatePointGeom: generatePointGeom,
         generateAggregateData: generateAggregateData,
+        generatePlotConfig: generatePlotConfig,
+        validateResponseHasData: validateResponseHasData,
         validateAxisMeasure: validateAxisMeasure,
         validateXAxis: validateXAxis,
         validateYAxis: validateYAxis,

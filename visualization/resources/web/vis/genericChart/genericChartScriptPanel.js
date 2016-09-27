@@ -17,89 +17,79 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "    var chartId = 'exportedChart';\n" +
             "\n" +
             "    var renderMessages = function(id, messages) {\n" +
-            "        var errorDiv;\n" +
-            "        var el = document.getElementById(id);\n" +
-            "        var child;\n" +
-            "        if (el && el.children.length > 0) {\n" +
-            "            child = el.children[0];\n" +
+            "        if (messages && messages.length > 0) {\n" +
+            "            var errorDiv = document.createElement('div');\n" +
+            "            errorDiv.setAttribute('style', 'padding: 10px; background-color: #ffe5e5; color: #d83f48; font-weight: bold;');\n" +
+            "            errorDiv.innerHTML = messages.join('<br/>');\n" +
+            "            document.getElementById(id).appendChild(errorDiv);\n" +
+            "        }\n" +
+            "    };\n" +
+            "\n" +
+            "    var validateChartConfig = function(chartConfig, aes, scales, responseData) {\n" +
+            "        var hasNoDataMsg = LABKEY.vis.GenericChartHelper.validateResponseHasData(responseData, false);\n" +
+            "        if (hasNoDataMsg != null)\n" +
+            "            return {success: false, messages: [hasNoDataMsg]};\n" +
+            "\n" +
+            "        var measureNames = Object.keys(chartConfig.measures);\n" +
+            "        for (var i = 0; i < measureNames.length; i++) {\n" +
+            "            var measureProps = chartConfig.measures[measureNames[i]];\n" +
+            "            if (measureProps && measureProps.name && responseData.rows[0][measureProps.name] == undefined)\n" +
+            "                return {success: false, messages: ['The measure, ' + measureProps.label + ', is not available. It may have been renamed or removed.']};\n" +
             "        }\n" +
             "\n" +
-            "        for (var i = 0; i < messages.length; i++) {\n" +
-            "            errorDiv = document.createElement('div');\n" +
-            "            errorDiv.setAttribute('class', 'labkey-error');\n" +
-            "            errorDiv.innerHTML = messages[i];\n" +
-            "            if(child) {\n" +
-            "                el.insertBefore(errorDiv, child);\n" +
-            "            } else {\n" +
-            "                el.appendChild(errorDiv);\n" +
+            "        var messages = [], axisMeasureNames = ['x', 'y'];\n" +
+            "        for (var i = 0; i < axisMeasureNames.length; i++) {\n" +
+            "            if (measureNames.indexOf(axisMeasureNames[i]) > 0) {\n" +
+            "                var validation = LABKEY.vis.GenericChartHelper.validateAxisMeasure(chartConfig.renderType, chartConfig, axisMeasureNames[i], aes, scales, responseData.rows);\n" +
+            "                if (validation.message != null)\n" +
+            "                    messages.push(validation.message);\n" +
+            "                if (!validation.success)\n" +
+            "                    return {success: false, messages: messages};\n" +
             "            }\n" +
             "        }\n" +
+            "\n" +
+            "        return {success: true, messages: messages};\n" +
+            "\n" +
             "    };\n" +
             "\n" +
             "    var selectRowsCallback = function(responseData) {\n" +
             "        // After the data is loaded we can render the chart.\n" +
+            "\n" +
             "        // chartConfig is the saved information about the chart (labels, scales, etc.)\n" +
-            "        var gch = LABKEY.vis.GenericChartHelper;\n" +
             "        var chartConfig = {{chartConfig}};\n" +
-            "        chartConfig.geomOptions.showOutliers = chartConfig.pointType ? chartConfig.pointType == 'outliers' : true;\n" +
-            "        var DEFAULT_WIDTH = 800, DEFAULT_HEIGHT = 600;\n" +
-            "        var chartType = gch.getChartType(chartConfig.renderType, chartConfig.measures.x.normalizedType);\n" +
-            "        var layerConfig = {\n" +
-            "            data: responseData.rows,\n" +
-            "            geom: gch.generateGeom(chartType, chartConfig.geomOptions)\n" +
-            "        };\n" +
-            "        var aes = gch.generateAes(chartType, chartConfig.measures, responseData.schemaName, responseData.queryName);\n" +
-            "        var scales = gch.generateScales(chartType, chartConfig.measures, chartConfig.scales, aes, responseData);\n" +
-            "        var labels = gch.generateLabels(chartConfig.labels);\n" +
-            "        var messages = [];\n" +
-            "        var validation = gch.validateAxisMeasure(chartType, chartConfig, 'x', aes, scales, responseData.rows);\n" +
-            "        \n" +
-            "        if (validation.message != null) {\n" +
-            "            messages.push(validation.message);\n" +
+            "        if (!chartConfig.hasOwnProperty('width') || chartConfig.width == null) chartConfig.width = 800;\n" +
+            "        if (!chartConfig.hasOwnProperty('height') || chartConfig.height == null) chartConfig.height = 600;\n" +
+            "\n" +
+            "        var xAxisType = chartConfig.measures.x ? (chartConfig.measures.x.normalizedType || chartConfig.measures.x.type) : null;\n" +
+            "        var chartType = LABKEY.vis.GenericChartHelper.getChartType(chartConfig.renderType, xAxisType);\n" +
+            "        var aes = LABKEY.vis.GenericChartHelper.generateAes(chartType, chartConfig.measures, responseData.schemaName, responseData.queryName);\n" +
+            "        var scales = LABKEY.vis.GenericChartHelper.generateScales(chartType, chartConfig.measures, chartConfig.scales, aes, responseData);\n" +
+            "        var geom = LABKEY.vis.GenericChartHelper.generateGeom(chartType, chartConfig.geomOptions);\n" +
+            "        var labels = LABKEY.vis.GenericChartHelper.generateLabels(chartConfig.labels);\n" +
+            "\n" +
+            "        var data = responseData.rows;\n" +
+            "        if (chartType == 'bar_chart' || chartType == 'pie_chart') {\n" +
+            "            var dimName = chartConfig.measures.x ? chartConfig.measures.x.name : null;\n" +
+            "            var measureName = chartConfig.measures.y ? chartConfig.measures.y.name : null;\n" +
+            "            var aggType = measureName != null ? 'SUM' : 'COUNT';\n" +
+            "            data = LABKEY.vis.GenericChartHelper.generateAggregateData(data, dimName, measureName, aggType, '[Blank]');\n" +
             "        }\n" +
             "\n" +
-            "        if (!validation.success) {\n" +
-            "            renderMessages(chartId, messages);\n" +
+            "        var plotConfig = LABKEY.vis.GenericChartHelper.generatePlotConfig(chartId, chartConfig, labels, aes, scales, geom, data);\n" +
+            "\n" +
+            "        var validation = validateChartConfig(chartConfig, aes, scales, responseData);\n" +
+            "        renderMessages(chartId, validation.messages);\n" +
+            "        if (!validation.success)\n" +
             "            return;\n" +
+            "\n" +
+            "        var plot;\n" +
+            "        if (chartType == 'pie_chart') {\n" +
+            "            new LABKEY.vis.PieChart(plotConfig);\n" +
             "        }\n" +
-            "\n" +
-            "        validation = gch.validateAxisMeasure(chartType, chartConfig, 'y', aes, scales, responseData.rows);\n" +
-            "\n" +
-            "        if (validation.message != null) {\n" +
-            "            messages.push(validation.message);\n" +
+            "        else {\n" +
+            "            plot = new LABKEY.vis.Plot(plotConfig);\n" +
+            "            plot.render();\n" +
             "        }\n" +
-            "\n" +
-            "        if (!validation.success) {\n" +
-            "            renderMessages(chartId, messages);\n" +
-            "            return;\n" +
-            "        }\n" +
-            "\n" +
-            "        var layers = [];\n" +
-            "\n" +
-            "" +
-            "        if(chartConfig.pointType == 'all') {\n" +
-            "           layers.push(new LABKEY.vis.Layer({\n" +
-            "               data: responseData.rows,\n" +
-            "               geom: gch.generatePointGeom(chartConfig.geomOptions),\n" +
-            "               aes: {hoverText: gch.generatePointHover(chartConfig.measures)}\n" +
-            "           }));\n" +
-            "        }\n" +
-            "\n" +
-            "        layers.push(new LABKEY.vis.Layer(layerConfig));\n" +
-            "        var plotConfig = {\n" +
-            "            renderTo: chartId,\n" +
-            "            width: chartConfig.width ? chartConfig.width : DEFAULT_WIDTH,\n" +
-            "            height: chartConfig.height? chartConfig.height : DEFAULT_HEIGHT,\n" +
-            "            labels: labels,\n" +
-            "            aes: aes,\n" +
-            "            scales: scales,\n" +
-            "            layers: layers,\n" +
-            "            data: responseData.rows\n" +
-            "        }\n" +
-            "        var plot = new LABKEY.vis.Plot(plotConfig);\n" +
-            "        \n" +
-            "        plot.render();\n" +
-            "        renderMessages(chartId, messages);\n" +
             "    };\n" +
             "\n" +
             "    var dependencyCallback = function() {\n" +
@@ -196,7 +186,8 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
         }
     },
 
-    compileTemplate: function(input) {
+    compileTemplate: function(input)
+    {
         return this.SCRIPT_TEMPLATE
                 .replace('{{chartConfig}}', LABKEY.Utils.encode(input.chartConfig))
                 .replace('{{queryConfig}}', LABKEY.Utils.encode(input.queryConfig))

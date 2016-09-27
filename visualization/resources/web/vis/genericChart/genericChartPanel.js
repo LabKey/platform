@@ -600,7 +600,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (!this.exportScriptPanel)
         {
             this.exportScriptPanel = Ext4.create('LABKEY.vis.GenericChartScriptPanel', {
-                width: 800,
+                width: Math.max(this.getViewPanel().getWidth() - 100, 800),
                 listeners: {
                     scope: this,
                     closeOptionsWindow: function(){
@@ -870,6 +870,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     {
         var config = {};
 
+        config.renderType = this.renderType;
         config.measures = Ext4.apply({}, this.measures);
         config.scales = {};
         config.labels = {};
@@ -1381,15 +1382,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
     },
 
-    handleNoData : function()
+    handleNoData : function(errorMsg)
     {
         // Issue 18339
         this.setRenderRequested(false);
-        var error = 'The response returned 0 rows of data. The query may be empty or the applied filters may be too strict. Try removing or adjusting any filters if possible.';
         var errorDiv = Ext4.create('Ext.container.Container', {
             border: 1,
             autoEl: {tag: 'div'},
-            html: '<h3 style="color:red;">An unexpected error occurred while retrieving data.</h2>' + error,
+            html: '<h3 style="color:red;">An unexpected error occurred while retrieving data.</h2>' + errorMsg,
             autoScroll: true
         });
 
@@ -1417,10 +1417,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.getEl().mask('Rendering Chart...');
         this.clearChartPanel();
 
-        if (this.chartData.rows.length === 0)
+        var hasNoDataMsg = LABKEY.vis.GenericChartHelper.validateResponseHasData(this.chartData, true);
+        if (hasNoDataMsg != null)
         {
             this.getEl().unmask();
-            this.handleNoData();
+            this.handleNoData(hasNoDataMsg);
             return;
         }
 
@@ -1531,21 +1532,18 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     getPlotConfig : function(newChartDiv, chartType, chartConfig, aes, scales, customRenderType)
     {
-        var plotConfig, geom, labels, layers = [],
-            dimName = chartConfig.measures.x ? chartConfig.measures.x.name : null,
-            measureName = chartConfig.measures.y ? chartConfig.measures.y.name : null,
-            aggType = measureName != null ? 'SUM' : 'COUNT',
-            data = this.chartData.rows,
-            me = this;
+        var plotConfig, geom, labels, data = this.chartData.rows, me = this;
 
         geom = LABKEY.vis.GenericChartHelper.generateGeom(chartType, chartConfig.geomOptions);
         labels = LABKEY.vis.GenericChartHelper.generateLabels(chartConfig.labels);
 
-        plotConfig = {
-            renderTo: newChartDiv.id,
-            width: chartConfig.width,
-            height: chartConfig.height
-        };
+        if (chartType == 'bar_chart' || chartType == 'pie_chart')
+        {
+            var dimName = chartConfig.measures.x ? chartConfig.measures.x.name : null;
+            var measureName = chartConfig.measures.y ? chartConfig.measures.y.name : null;
+            var aggType = measureName != null ? 'SUM' : 'COUNT';
+            data = LABKEY.vis.GenericChartHelper.generateAggregateData(data, dimName, measureName, aggType, '[Blank]');
+        }
 
         if (customRenderType && Ext4.isFunction(customRenderType.generatePlotConfig))
         {
@@ -1554,120 +1552,47 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     chartConfig.width, chartConfig.height,
                     data, aes, scales, labels
             );
+
+            plotConfig.rendererType = 'd3';
         }
-        else if (this.renderType == 'pie_chart')
+        else
         {
-            data = LABKEY.vis.GenericChartHelper.generateAggregateData(data, dimName, measureName, aggType, '[Blank]');
+            plotConfig = LABKEY.vis.GenericChartHelper.generatePlotConfig(newChartDiv.id, chartConfig, labels, aes, scales, geom, data);
 
-            if (this.checkForNegativeData(data))
+            if (this.renderType == 'pie_chart')
             {
-                // adding warning text without shrinking height cuts off the footer text
-                plotConfig.height = Math.floor(plotConfig.height * 0.95);
-            }
+                if (this.checkForNegativeData(data))
+                {
+                    // adding warning text without shrinking height cuts off the footer text
+                    plotConfig.height = Math.floor(plotConfig.height * 0.95);
+                }
 
-            plotConfig = Ext4.apply(plotConfig, {
-                data: data,
-                header: {
-                    title: { text: labels.main.value },
-                    subtitle: { text: labels.subtitle.value },
-                    titleSubtitlePadding: 1
-                },
-                footer: {
-                    text: labels.footer.value,
-                    location: 'bottom-center'
-                },
-                labels: {
-                    mainLabel: { fontSize: 14 },
-                    percentage: { fontSize: 14 },
-                    outer: { pieDistance: 20 },
-                    inner: {
-                        format: chartConfig.geomOptions.showPiePercentages ? 'percentage' : 'none',
-                        hideWhenLessThanPercentage: chartConfig.geomOptions.pieHideWhenLessThanPercentage
-                    }
-                },
-                size: {
-                    pieInnerRadius: chartConfig.geomOptions.pieInnerRadius + '%',
-                    pieOuterRadius: chartConfig.geomOptions.pieOuterRadius + '%'
-                },
-                misc: {
-                    gradient: {
-                        enabled: chartConfig.geomOptions.gradientPercentage != 0,
-                        percentage: chartConfig.geomOptions.gradientPercentage,
-                        color: '#' + chartConfig.geomOptions.gradientColor
-                    },
-                    colors: {
-                        segments: LABKEY.vis.Scale[chartConfig.geomOptions.colorPaletteScale]()
-                    }
-                },
-                effects: { highlightSegmentOnMouseover: false },
-                tooltips: { enabled: true },
-                callbacks: {
+                plotConfig.callbacks = {
                     onload: function(){
                         // because of the load delay, need to reset the thumbnail svg for pie charts
                         me.updateSaveChartThumbnail(newChartDiv);
                     }
-                }
-            });
-        }
-        else
-        {
-            if (chartConfig.pointType == 'all')
-            {
-                layers.push(
-                    new LABKEY.vis.Layer({
-                        data: data,
-                        geom: LABKEY.vis.GenericChartHelper.generatePointGeom(chartConfig.geomOptions),
-                        aes: {hoverText: LABKEY.vis.GenericChartHelper.generatePointHover(chartConfig.measures)}
-                    })
-                );
+                };
             }
-            else if (this.renderType == 'bar_chart')
-            {
-                data = LABKEY.vis.GenericChartHelper.generateAggregateData(data, dimName, measureName, aggType, '[Blank]');
-
-                aes = { x: 'label', y: 'value' };
-
-                var values = Ext4.Array.pluck(data, 'value'),
-                    min = Math.min(0, Ext4.Array.min(values)),
-                    max = Math.max(0, Ext4.Array.max(values));
-                scales.y = { domain: [min, max] };
-            }
-
-            layers.push(
-                new LABKEY.vis.Layer({
-                    data: data,
-                    geom: geom
-                })
-            );
-
-            // client has specified a line type (only applicable for scatter plot)
-            if (this.curveFit && this.measures.x && this.isScatterPlot(this.renderType, this.getXAxisType(this.measures.x)))
+            // if client has specified a line type (only applicable for scatter plot), apply that as another layer
+            else if (this.curveFit && this.measures.x && this.isScatterPlot(this.renderType, this.getXAxisType(this.measures.x)))
             {
                 var factory = this.lineRenderers[this.curveFit.type];
                 if (factory)
                 {
-                    layers.push(
+                    plotConfig.layers.push(
                         new LABKEY.vis.Layer({
                             geom: new LABKEY.vis.Geom.Path({}),
                             aes: {x: 'x', y: 'y'},
-                            data: LABKEY.vis.Stat.fn(factory.createRenderer(this.curveFit.params),
-                                    this.curveFit.points, this.curveFit.min, this.curveFit.max)
+                            data: LABKEY.vis.Stat.fn(factory.createRenderer(this.curveFit.params), this.curveFit.points, this.curveFit.min, this.curveFit.max)
                         })
                     );
                 }
             }
-
-            plotConfig = Ext4.apply(plotConfig, {
-                data: data,
-                labels: labels,
-                aes: aes,
-                scales: scales,
-                layers: layers
-            });
         }
 
-        if (this.supportedBrowser && !this.useRaphael)
-            plotConfig.rendererType = 'd3';
+        if (!this.supportedBrowser || this.useRaphael)
+            plotConfig.rendererType = 'raphael';
 
         return plotConfig;
     },
@@ -2033,9 +1958,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         this.setDataLoading(false);
 
-        if (response.rows.length === 0)
+        var hasNoDataMsg = LABKEY.vis.GenericChartHelper.validateResponseHasData(response, true);
+        if (hasNoDataMsg != null)
         {
-            this.handleNoData();
+            this.handleNoData(hasNoDataMsg);
         }
         else
         {
