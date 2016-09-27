@@ -4,6 +4,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.issues.IssuesSchema;
@@ -53,7 +54,7 @@ public class DeleteIssueListAction extends FormViewAction<DeleteIssueListAction.
             {
                 TableInfo table = issueListDef.createTable(getUser());
 
-                form.getRowCounts().add(new TableSelector(table, null, null).getRowCount());
+                form.getRowCounts().add(new TableSelector(table, SimpleFilter.createContainerFilter(getContainer()), null).getRowCount());
                 form.getIssueDefNames().add(issueListDef.getName());
                 form.getIssueDefId().add(issueListDef.getRowId());
             }
