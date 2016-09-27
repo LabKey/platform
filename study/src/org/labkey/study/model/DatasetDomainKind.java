@@ -84,9 +84,10 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
     {
         PropertyStorageSpec[] props =
         {
+            new PropertyStorageSpec(DSROWID, JdbcType.BIGINT, 0, PropertyStorageSpec.Special.PrimaryKeyNonClustered, false, true, null),
             new PropertyStorageSpec(CONTAINER, JdbcType.GUID),
             new PropertyStorageSpec(PARTICIPANTID, JdbcType.VARCHAR, 32),
-            new PropertyStorageSpec(LSID, JdbcType.VARCHAR, 200, PropertyStorageSpec.Special.PrimaryKeyNonClustered),
+            new PropertyStorageSpec(LSID, JdbcType.VARCHAR, 200),
             new PropertyStorageSpec(SEQUENCENUM, JdbcType.DECIMAL),
             new PropertyStorageSpec(SOURCELSID, JdbcType.VARCHAR, 200),
             new PropertyStorageSpec(_KEY, JdbcType.VARCHAR, 200),
@@ -124,7 +125,9 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
             new PropertyStorageSpec.Index(false, true, CONTAINER, PARTICIPANTID, DATE),
             new PropertyStorageSpec.Index(false, CONTAINER, QCSTATE),
             new PropertyStorageSpec.Index(true, CONTAINER, PARTICIPANTID, SEQUENCENUM, _KEY),
-            new PropertyStorageSpec.Index(true, LSID)
+            new PropertyStorageSpec.Index(true, LSID),
+            new PropertyStorageSpec.Index(false, DATE)
+
         };
 
         DATASPACE_PROPERTY_INDICES = new HashSet<>(Arrays.asList(indices));
@@ -133,7 +136,8 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
             new PropertyStorageSpec.Index(false, true, PARTICIPANTID, DATE),
             new PropertyStorageSpec.Index(false, QCSTATE),
             new PropertyStorageSpec.Index(true, PARTICIPANTID, SEQUENCENUM, _KEY),
-            new PropertyStorageSpec.Index(true, LSID)
+            new PropertyStorageSpec.Index(true, LSID),
+            new PropertyStorageSpec.Index(false, DATE)
         };
 
         PROPERTY_INDICES = new HashSet<>(Arrays.asList(indicesNonDS));

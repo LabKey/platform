@@ -46,6 +46,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudySnapshotType;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetDomainKind;
 import org.labkey.study.model.DoseAndRoute;
 import org.labkey.study.model.LocationDomainKind;
@@ -474,6 +475,105 @@ public class StudyUpgradeCode implements UpgradeCode
                                         DoseAndRoute doseAndRoute = new DoseAndRoute(product.getDose(), product.getRoute(), product.getProductId(), c);
                                         TreatmentManager.getInstance().saveStudyProductDoseAndRoute(c, context.getUpgradeUser(), doseAndRoute);
                                     }
+                                }
+                            }
+                        }
+                    }
+                }
+                transaction.commit();
+            }
+        }
+    }
+
+    /**
+     * Update dataspace primary key to be consistent with non-dataspace primary key.  Add date index to speed up queries.
+     *
+     * @param context
+     * @throws Exception
+     */
+
+    // Invoked by study-16.23-16.24.sql
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void updateDateIndex(final ModuleContext context) throws Exception
+    {
+        if (!context.isNewInstall())
+        {
+            try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
+            {
+                List<String> updated = new ArrayList<>();
+                Set<Container> allContainers = ContainerManager.getAllChildren(ContainerManager.getRoot());
+                for (Container c : allContainers)
+                {
+                    Study study = StudyManager.getInstance().getStudy(c);
+                    if (null != study)
+                    {
+                        List<? extends Dataset> datasets = study.getDatasets();
+                        for (Dataset dataset : datasets)
+                        {
+                            Domain domain = dataset.getDomain();
+                            if (domain != null)
+                            {
+                                if(updated.contains(domain.getStorageTableName()))
+                                    continue;
+
+                                // New primary key
+                                PropertyStorageSpec ps = new PropertyStorageSpec(DatasetDomainKind.DSROWID, JdbcType.BIGINT, 0,
+                                        PropertyStorageSpec.Special.PrimaryKeyNonClustered, false, true, null);
+
+                                // Primary key constraint
+                                Constraint dropPk = new Constraint(domain.getStorageTableName(), Constraint.CONSTRAINT_TYPES.PRIMARYKEY, false, null);
+
+                                try
+                                {
+                                    // Update pk on dataspace datasets
+                                    if (StudyManager.getInstance().getStudy(domain.getContainer()).isDataspaceStudy())
+                                    {
+                                        String sql = "";
+                                        if(((DatasetDefinition) dataset).getStorageTableInfo().getSqlDialect().isSqlServer())
+                                        {
+                                            sql = "IF NOT EXISTS(\n" +
+                                                    "    SELECT *\n" +
+                                                    "    FROM sys.columns \n" +
+                                                    "    WHERE Name = N'" + DatasetDomainKind.DSROWID + "'\n" +
+                                                    "      AND Object_ID = Object_ID(N'studydataset." + domain.getStorageTableName() + "'))\n" +
+                                                    "BEGIN\n" +
+                                                    "    ALTER TABLE studydataset." + domain.getStorageTableName() + " ADD " + DatasetDomainKind.DSROWID +
+                                                    " BIGINT IDENTITY (1, 1) NOT NULL;\n" +
+                                                    "    ALTER TABLE studydataset." + domain.getStorageTableName() + " DROP CONSTRAINT " + dropPk.getName() + ";\n" +
+                                                    "    ALTER TABLE studydataset." + domain.getStorageTableName() + " ADD CONSTRAINT " + dropPk.getName() +
+                                                    " " + dropPk.getType() + " NONCLUSTERED " + "(" + DatasetDomainKind.DSROWID + ");" +
+                                                    "END";
+                                        }
+                                        else if(((DatasetDefinition) dataset).getStorageTableInfo().getSqlDialect().isPostgreSQL())
+                                        {
+                                            sql = "DO $$\n" +
+                                                    "BEGIN\n" +
+                                                    "IF NOT EXISTS(SELECT column_name \n" +
+                                                    "FROM information_schema.columns \n" +
+                                                    "WHERE table_name='" + domain.getStorageTableName() + "' and column_name='" + DatasetDomainKind.DSROWID + "')\n" +
+                                                    "THEN\n" +
+                                                    "   ALTER TABLE studydataset." + domain.getStorageTableName() + " ADD COLUMN " + DatasetDomainKind.DSROWID + " BIGSERIAL;\n" +
+                                                    "   ALTER TABLE studydataset." + domain.getStorageTableName() + " DROP CONSTRAINT " + dropPk.getName() + ";\n" +
+                                                    "   ALTER TABLE studydataset." + domain.getStorageTableName() + " ADD CONSTRAINT " + dropPk.getName() +
+                                                    " " + dropPk.getType() + " (" + DatasetDomainKind.DSROWID + ");\n" +
+                                                    "END IF;\n" +
+                                                    "END$$;";
+                                        }
+
+                                        if(!sql.isEmpty())
+                                        {
+                                            SQLFragment f = new SQLFragment(sql);
+                                            new SqlExecutor(StudySchema.getInstance().getScope()).execute(f);
+                                        }
+                                    }
+
+                                    StorageProvisioner.addOrDropTableIndices(domain, null, true, null);
+                                    updated.add(domain.getStorageTableName());
+                                }
+                                catch (Exception e)
+                                {
+                                    _log.error("Error upgrading study dataset schemas: ", e);
+                                    throw (e);
                                 }
                             }
                         }
