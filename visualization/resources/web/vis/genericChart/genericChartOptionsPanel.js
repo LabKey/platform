@@ -104,10 +104,26 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             maxValue: 100
         });
 
+        this.piePercentagesColorLabel = Ext4.create('Ext.form.Label', {
+            width: labelWidth,
+            cls: 'option-label',
+            style: 'position: absolute;',
+            text: 'Percentages Color:',
+            layoutOptions: 'pie'
+        });
+
+        this.piePercentagesColorPicker = Ext4.create('Ext.picker.Color', {
+            name: 'piePercentagesColor',
+            getInputValue: this.getPiePercentagesColor,
+            width: 280,
+            padding: '0 0 0 100px',
+            layoutOptions: 'pie'
+        });
+
         this.gradientSlider = Ext4.create('Ext.slider.Single', {
             name: 'gradientPercentage',
             getInputValue: this.getGradientPercentage,
-            labelWidth: 155,
+            labelWidth: labelWidth,
             fieldLabel: 'Gradient %',
             width: 270,
             padding: '0 0 10px 0',
@@ -119,7 +135,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         });
 
         this.gradientColorLabel = Ext4.create('Ext.form.Label', {
-            width: 155,
+            width: labelWidth,
             cls: 'option-label',
             style: 'position: absolute;',
             text: 'Gradient Color:',
@@ -171,7 +187,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         this.pieInnerRadiusSlider = Ext4.create('Ext.slider.Single', {
             name: 'pieInnerRadius',
             getInputValue: this.getPieInnerRadiusPercent,
-            labelWidth: 155,
+            labelWidth: 105,
             fieldLabel: 'Inner Radius %',
             width: 270,
             padding: '0 0 10px 0',
@@ -185,7 +201,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         this.pieOuterRadiusSlider = Ext4.create('Ext.slider.Single', {
             name: 'pieOuterRadius',
             getInputValue: this.getPieOuterRadiusPercent,
-            labelWidth: 155,
+            labelWidth: 105,
             fieldLabel: 'Outer Radius %',
             width: 270,
             padding: '0 0 10px 0',
@@ -382,7 +398,9 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             this.pointSizeSlider,
             this.colorLabel, this.pointColorPicker,
             this.colorPaletteComboBox,
-            this.colorPaletteFieldContainer
+            this.colorPaletteFieldContainer,
+            this.pieInnerRadiusSlider,
+            this.pieOuterRadiusSlider
         ];
     },
 
@@ -394,8 +412,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             this.fillColorLabel, this.fillColorPicker,
             this.showPiePercentagesCheckBox,
             this.piePercentageHideNumber,
-            this.pieInnerRadiusSlider,
-            this.pieOuterRadiusSlider,
+            this.piePercentagesColorLabel, this.piePercentagesColorPicker,
             this.gradientSlider,
             this.gradientColorLabel,
             this.gradientColorPicker
@@ -473,6 +490,9 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         if (Ext4.isDefined(chartConfig.pieHideWhenLessThanPercentage))
             this.setHidePiePercentageNumber(chartConfig.pieHideWhenLessThanPercentage);
 
+        if (Ext4.isDefined(chartConfig.piePercentagesColor))
+            this.setPiePercentagesColor(chartConfig.piePercentagesColor);
+
         if (Ext4.isDefined(chartConfig.colorPaletteScale))
             this.setColorPalette(chartConfig.colorPaletteScale);
 
@@ -519,6 +539,9 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
             if (chartConfig.geomOptions.pieHideWhenLessThanPercentage)
                 this.setHidePiePercentageNumber(chartConfig.geomOptions.pieHideWhenLessThanPercentage);
+
+            if (chartConfig.geomOptions.piePercentagesColor)
+                this.setPiePercentagesColor(chartConfig.geomOptions.piePercentagesColor);
 
             if (chartConfig.geomOptions.colorPaletteScale)
                 this.setColorPalette(chartConfig.geomOptions.colorPaletteScale);
@@ -696,6 +719,15 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
     setShowPiePercentages: function(value) {
         this.showPiePercentagesCheckBox.setValue(value);
+    },
+
+    getPiePercentagesColor: function(){
+        return this.piePercentagesColorPicker.getValue();
+    },
+
+    setPiePercentagesColor: function(value){
+        if (value != null && value != 'none')
+            this.piePercentagesColorPicker.select(value);
     },
 
     getHidePiePercentageNumber: function() {

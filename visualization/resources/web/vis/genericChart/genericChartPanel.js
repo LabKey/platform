@@ -890,6 +890,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             config.geomOptions.pieInnerRadius = this.options.general.pieInnerRadius;
             config.geomOptions.pieOuterRadius = this.options.general.pieOuterRadius;
             config.geomOptions.showPiePercentages = this.options.general.showPiePercentages;
+            config.geomOptions.piePercentagesColor = this.options.general.piePercentagesColor;
             config.geomOptions.pieHideWhenLessThanPercentage = this.options.general.pieHideWhenLessThanPercentage;
             config.geomOptions.gradientPercentage = this.options.general.gradientPercentage;
             config.geomOptions.gradientColor = this.options.general.gradientColor;

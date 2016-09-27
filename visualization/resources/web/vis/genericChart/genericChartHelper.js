@@ -676,7 +676,10 @@ LABKEY.vis.GenericChartHelper = new function(){
             },
             labels: {
                 mainLabel: { fontSize: 14 },
-                percentage: { fontSize: 14 },
+                percentage: {
+                    fontSize: 14,
+                    color: chartConfig.geomOptions.piePercentagesColor != null ? '#' + chartConfig.geomOptions.piePercentagesColor : undefined
+                },
                 outer: { pieDistance: 20 },
                 inner: {
                     format: chartConfig.geomOptions.showPiePercentages ? 'percentage' : 'none',
