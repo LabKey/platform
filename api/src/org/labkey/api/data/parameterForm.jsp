@@ -78,6 +78,10 @@ var decl = [
                 if (p.jsontype == 'int') {
                     item.decimalPrecision = 0;
                 }
+                else if (p.jsontype == 'float') {
+                    // Allow lots of precision or ExtJS will truncate potentially useful digits
+                    item.decimalPrecision = 15;
+                }
                 items.push(item);
             }
 
