@@ -212,7 +212,6 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
 
             checkMissingRequired : function(values, dataIndex)
             {
-                // TODO need to update this cls after cell field change
                 if (values[dataIndex] == null || values[dataIndex] == '')
                     return ' missing-required';
 
@@ -358,6 +357,7 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
             var field = Ext4.create(editor.type, Ext4.apply(editor.config, {
                 renderTo: target,
                 value: this.getCurrentCellValue(column, record, dataIndex, outerDataIndex, subgridIndex),
+                required: column.required,
                 storeIndex: index,
                 dataFilterValue: dataFilterValue,
                 outerDataIndex: outerDataIndex,
@@ -396,6 +396,15 @@ Ext4.define('LABKEY.VaccineDesign.BaseDataView', {
         {
             var column = this.getColumnConfig(fieldName, dataFilterValue, outerDataIndex);
             this.updateStoreRecordValue(record, column, newValue);
+        }
+
+        // update the missing-required cls based on the new field value
+        if (field.required)
+        {
+            if (newValue == null || newValue == '')
+                Ext4.get(field.renderTo).addCls('missing-required');
+            else
+                Ext4.get(field.renderTo).removeCls('missing-required');
         }
 
         // resume store events so that adding and deleting will re-render the dataview
