@@ -115,6 +115,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         this.piePercentagesColorPicker = Ext4.create('Ext.picker.Color', {
             name: 'piePercentagesColor',
             getInputValue: this.getPiePercentagesColor,
+            value: '333333',  // initial selected color
             width: 280,
             padding: '0 0 0 100px',
             layoutOptions: 'pie'
