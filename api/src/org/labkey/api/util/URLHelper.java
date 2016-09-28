@@ -773,6 +773,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable
         // null check
         if (a._parameters == b._parameters) return true;
         if (a._parameters == null || b._parameters == null) return false;
+        if (a._parameters.size() != b._parameters.size()) return false;
         HashMap<String,String> bmap = new HashMap<>(b._parameters.size());
         for (Pair<String,String> p : b._parameters)
             bmap.put(p.first, p.second);

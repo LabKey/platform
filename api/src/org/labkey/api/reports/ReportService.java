@@ -84,7 +84,9 @@ public class ReportService
         ReportDescriptor getModuleReportDescriptor(Module module, Container container, User user, String path);
         List<ReportDescriptor> getModuleReportDescriptors(Module module, Container container, User user, @Nullable String path);
 
+        @Nullable
         Report createReportInstance(String typeName);
+        @Nullable
         Report createReportInstance(ReportDescriptor descriptor);
 
         void deleteReport(ContainerUser context, Report report);
