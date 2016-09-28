@@ -567,6 +567,7 @@ public class StudyUpgradeCode implements UpgradeCode
                                         }
                                     }
 
+                                    // This will add any indexes not already in the table. In this case the date index.
                                     StorageProvisioner.addOrDropTableIndices(domain, null, true, null);
                                     updated.add(domain.getStorageTableName());
                                 }
