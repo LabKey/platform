@@ -17,9 +17,11 @@ package org.labkey.api.dataiterator;
 
 
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.di.columnTransform.ColumnTransform;
 import org.labkey.api.query.SchemaKey;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -67,7 +69,7 @@ public class CopyConfig
     private boolean _gating = false;
     private boolean _saveState = false;
 
-    protected Map<String, String> _columnTransforms = new CaseInsensitiveHashMap<>();
+    protected final Map<String, List<ColumnTransform>> _columnTransforms = new CaseInsensitiveHashMap<>();
 
     public CopyConfig()
     {
@@ -388,7 +390,7 @@ public class CopyConfig
         _saveState = saveState;
     }
 
-    public Map<String, String> getColumnTransforms()
+    public Map<String, List<ColumnTransform>> getColumnTransforms()
     {
         return Collections.unmodifiableMap(_columnTransforms);
     }

@@ -726,13 +726,13 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         }
     }
 
-    Map<String,Integer> getColumnNameMap()
+    public Map<String,Integer> getColumnNameMap()
     {
         if (null == _inputNameMap)
         {
             _inputNameMap = DataIteratorUtil.createColumnNameMap(_data);
         }
-        return _inputNameMap;
+        return Collections.unmodifiableMap(_inputNameMap);
     }
 
 
