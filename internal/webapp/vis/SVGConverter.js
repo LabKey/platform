@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-Ext4.namespace("LABKEY", "LABKEY.vis");
+LABKEY.vis = LABKEY.vis || {};
 
 /**
  * A singleton class to convert SVG text to downloadable images
@@ -28,8 +28,6 @@ LABKEY.vis.SVGConverter = {
             return;
         }
 
-        // Insert a hidden <form> into to page, put the JSON into it, and submit it - the server's response
-        // will make the browser pop up a dialog
         var action;
         var convertTo = format ? format.toLowerCase() : this.FORMAT_PNG;
         if (this.FORMAT_PDF == convertTo)
@@ -39,16 +37,30 @@ LABKEY.vis.SVGConverter = {
         else
             throw "Unknown format: " + format;
 
-        // use multipart post (i.e fileuploadfield) in case the SVG source is large (i.e. > 2 MB)
-        var exportForm = Ext4.create('Ext.form.Panel', {
-            hidden: true,
-            items: [
-                {xtype : 'hidden', name : 'svg', value: svg},
-                {xtype : 'hidden', name : 'title', value: Ext4.util.Format.trim(title)},
-                {xtype : 'fileuploadfield', name : 'file'}
-            ]
-        });
-        exportForm.submit({url: LABKEY.ActionURL.buildURL('visualization', action), target: '_blank', scope: this});
+        // Insert a <form> into to page, with svg and title as hidden inputs, and submit it
+        var newForm = document.createElement('form');
+        newForm.method = 'POST';
+        newForm.enctype = 'multipart/form-data'; // use multipat post in case the SVG source is large (i.e. > 2 MB)
+        newForm.action = LABKEY.ActionURL.buildURL('visualization', action);
+        newForm.target = '_blank';
+        document.body.appendChild(newForm);
+
+        var svgInput = document.createElement('input');
+        svgInput.setAttribute('type', 'hidden');
+        svgInput.setAttribute('name', 'svg');
+        svgInput.setAttribute('value', svg);
+        newForm.appendChild(svgInput);
+
+        if (title)
+        {
+            var titleInput = document.createElement('input');
+            titleInput.setAttribute('type', 'hidden');
+            titleInput.setAttribute('name', 'title');
+            titleInput.setAttribute('value', title.trim());
+            newForm.appendChild(titleInput);
+        }
+
+        newForm.submit();
     },
 
     /** Transforms the given svg root node and all of its children into an XML string,
