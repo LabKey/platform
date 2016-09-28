@@ -1894,19 +1894,19 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     exportChartToPdf : function()
     {
-        this.exportChartToImage('pdf');
+        this.exportChartToImage(LABKEY.vis.SVGConverter.FORMAT_PDF);
     },
 
     exportChartToPng : function()
     {
-        this.exportChartToImage('png');
+        this.exportChartToImage(LABKEY.vis.SVGConverter.FORMAT_PNG);
     },
 
     exportChartToImage : function(type)
     {
         var chartContainer = this.getViewPanel().down('container[cls~=chart-display]');
         if (chartContainer != null)
-            LABKEY.vis.SVGConverter.convert(chartContainer.getEl().child('svg').dom, (type || 'pdf'), this.getChartConfig().labels.main);
+            LABKEY.vis.SVGConverter.convert(chartContainer.getEl().child('svg').dom, (type || LABKEY.vis.SVGConverter.FORMAT_PDF), this.getChartConfig().labels.main);
     },
 
     exportChartToScript : function()
