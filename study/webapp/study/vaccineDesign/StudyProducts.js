@@ -162,7 +162,7 @@ Ext4.define('LABKEY.VaccineDesign.StudyProductsPanel', {
             failure: function(response)
             {
                 var resp = Ext4.decode(response.responseText);
-                this.onFailure(resp.exception);
+                this.onFailure(Ext4.Array.pluck(resp.errors, 'message').join('<br/>'));
             }
         });
     },

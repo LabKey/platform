@@ -15,6 +15,7 @@
  */
 package org.labkey.study.controllers;
 
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
@@ -358,7 +359,7 @@ public class StudyDesignController extends BaseStudyController
             {
                 if (product.getLabel() == null || "".equals(product.getLabel()))
                 {
-                    errors.reject(ERROR_MSG, "Label field is required for all study products.");
+                    errors.reject(ERROR_MSG, "Label is a required field for all study products.");
                     break;
                 }
             }
@@ -498,22 +499,22 @@ public class StudyDesignController extends BaseStudyController
             // validate that each treatment has a label
             for (TreatmentImpl treatment : form.getTreatments())
             {
-                if (treatment.getLabel() == null)
-                    errors.reject(ERROR_MSG, "Treatment label is required.");
+                if (StringUtils.isEmpty(treatment.getLabel()))
+                    errors.reject(ERROR_MSG, "Label is a required field for all treatments.");
 
                 // validate that each treatment product mapping has a selected product
                 for (TreatmentProductImpl treatmentProduct : treatment.getTreatmentProducts())
                 {
                     if (treatmentProduct.getProductId() <= 0)
-                        errors.reject(ERROR_MSG, "Each treatment product must have a selected Immunogen or Adjuvant.");
+                        errors.reject(ERROR_MSG, "Each treatment product must have a selected study product.");
                 }
             }
 
             // validate that each cohort has a label, is unique, and has a valid subject count value
             for (CohortImpl cohort : form.getCohorts())
             {
-                if (cohort.getLabel() == null)
-                    errors.reject(ERROR_MSG, "Cohort label is required.");
+                if (StringUtils.isEmpty(cohort.getLabel()))
+                    errors.reject(ERROR_MSG, "Label is a required field for all cohorts.");
 
                 CohortImpl cohortByLabel = StudyManager.getInstance().getCohortByLabel(getContainer(), getUser(), cohort.getLabel());
                 if (cohort.getRowId() > 0)
