@@ -142,7 +142,7 @@ public class StoredProcedureStep extends TransformTask
         public static Map<String, String> getTimestampParams() {return TIMESTAMP_PARAMS;}
     }
 
-    public StoredProcedureStep(TransformTaskFactory f, PipelineJob job, StoredProcedureStepMeta meta, TransformJobContext context)
+    StoredProcedureStep(TransformTaskFactory f, PipelineJob job, StoredProcedureStepMeta meta, TransformJobContext context)
     {
         super(f, job, meta, context);
         _meta = meta;

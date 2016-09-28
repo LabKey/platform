@@ -589,6 +589,9 @@ dataintegration/src/org/labkey/di/TransformHistoryView.java -text
 dataintegration/src/org/labkey/di/TransformSummaryTable.java -text
 dataintegration/src/org/labkey/di/VariableMap.java -text
 dataintegration/src/org/labkey/di/VariableMapImpl.java -text
+dataintegration/src/org/labkey/di/columnTransforms/ColumnMappingTransform.java -text
+dataintegration/src/org/labkey/di/columnTransforms/OmitSourceColumn.java -text
+dataintegration/src/org/labkey/di/columnTransforms/TestColumnTransform.java -text
 dataintegration/src/org/labkey/di/data/TransformDataType.java -text
 dataintegration/src/org/labkey/di/data/TransformProperty.java -text
 dataintegration/src/org/labkey/di/filters/DeletedRowsSource.java -text

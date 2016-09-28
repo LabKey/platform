@@ -27,11 +27,14 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
+import org.labkey.api.di.columnTransform.ColumnTransform;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.di.pipeline.TransformUtils;
 
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -55,21 +58,22 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
     @NotNull
     private PipelineJob _job;
     private final String _statusName;
-    private final Map<String, String> _columnMap;
+    private final Map<String, List<ColumnTransform>> _columnTransforms;
     private final Map<ParameterDescription, Object> _constants;
 
-    public TransformDataIteratorBuilder(int transformRunId, DataIteratorBuilder input, @Nullable Logger statusLogger, @NotNull PipelineJob job, String statusName, Map<String, String> columnMap, Map<ParameterDescription, Object> constants)
+    public TransformDataIteratorBuilder(int transformRunId, DataIteratorBuilder input, @Nullable Logger statusLogger, @NotNull PipelineJob job, String statusName, Map<String, List<ColumnTransform>> columnTransforms, Map<ParameterDescription, Object> constants)
     {
         _transformRunId = transformRunId;
         _input = input;
         _statusLogger = statusLogger;
         _job = job;
         _statusName = statusName;
-        _columnMap = columnMap;
+        _columnTransforms = columnTransforms;
         _constants = constants;
     }
 
 
+    // The special diColumn values are set automatically by the ETL job if they appear in the target
     private static final CaseInsensitiveHashSet diColumns = new CaseInsensitiveHashSet();
     static
     {
@@ -77,6 +81,7 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
             diColumns.add(c.getColumnName());
     }
 
+    // LabKey built-in columns, other than container, are allowed to pass through from source
     private static final CaseInsensitiveHashSet passThroughAllowedColumns = new CaseInsensitiveHashSet();
     static
     {
@@ -124,17 +129,40 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
 
         Set<String> constantNames = _constants.keySet().stream().map(ParameterDescription::getName).collect(Collectors.toCollection(CaseInsensitiveHashSet::new));
 
+        final Set<ColumnInfo> outCols = new HashSet<>();
         for (int i=1 ; i<=in.getColumnCount() ; i++)
         {
             ColumnInfo c = in.getColumnInfo(i);
             if (diColumns.contains(c.getName()) || TransformUtils.isRowversionColumn(c) || constantNames.contains(c.getName()))
                 continue;
-            ColumnInfo outCol = out.getColumnInfo(out.addColumn(i));
-            if (_columnMap.containsKey(c.getColumnName())) // Map to a different output name
-                outCol.setName(_columnMap.get(c.getColumnName()));
-            if (passThroughAllowedColumns.contains(outCol.getName()))
-                context.getPassThroughBuiltInColumnNames().add(outCol.getName());
+            // Add any transforms for this source column
+            if (_columnTransforms.containsKey(c.getColumnName()))
+            {
+                for (ColumnTransform ct : _columnTransforms.get(c.getColumnName()))
+                {
+                    outCols.addAll(ct.addTransform(out, _transformRunId, i));
+                }
+            }
+            else
+            {
+                // Just add the column as a passthrough from source to target
+                outCols.add(out.getColumnInfo(out.addColumn(i)));
+            }
         }
+        // Now add the transforms that didn't specify a source column
+        if (_columnTransforms.containsKey(null))
+        {
+            for (ColumnTransform ct : _columnTransforms.get(null))
+            {
+                outCols.addAll(ct.addTransform(out, _transformRunId, null));
+            }
+        }
+
+        // If any of the LK built in columns (other than container) appear in the source query or
+        // have been added by a column transform, allow them to pass through.
+        outCols.stream().filter(outCol -> passThroughAllowedColumns.contains(outCol.getName()))
+                .forEach(outCol -> context.getPassThroughBuiltInColumnNames().add(outCol.getName()));
+
         _constants.entrySet().stream().filter(e -> !diColumns.contains(e.getKey().getName())).forEach(e ->
                 out.addConstantColumn(e.getKey().getName(), e.getKey().getJdbcType(), e.getValue()));
 

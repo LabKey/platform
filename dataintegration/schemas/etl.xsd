@@ -461,12 +461,18 @@
 
     <complexType name="ColumnTransformType">
         <annotation>
-            <documentation>Defines an in-flight mapping of column names between source and target.
+            <documentation>Defines a java class to use to transform a column value.
                 This works for both query and file targets.
+                The implementation of the transform class declares if "source" and/or "target"
+                column names are required. Default implementation requires only source, and the
+                same name is used for the target column.
+                If no transformClass is specified, a simple in-flight column name mapping is
+                performed between the source and target. In this case both source and target are required.
             </documentation>
         </annotation>
-        <attribute name="source" type="string" use="required" />
-        <attribute name="target" type="string" use="required"/>
+        <attribute name="source" type="string" />
+        <attribute name="target" type="string" />
+        <attribute name="transformClass" type="string"/>
     </complexType>
 
     <complexType name="ConstantsType">

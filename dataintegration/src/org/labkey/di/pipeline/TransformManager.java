@@ -166,7 +166,7 @@ public class TransformManager implements DataIntegrationService.Interface
         }
         catch (XmlValidationException|XmlException|IOException e)
         {
-            LOG.warn("ETL Config: Unable to parse " + resource + " : " + e.getMessage());
+            LOG.error("ETL Config: Unable to parse " + resource + " : " + e.getMessage());
             LOG.debug(e);
         }
         return null;
@@ -242,7 +242,7 @@ public class TransformManager implements DataIntegrationService.Interface
                 TransformType[] transformTypes = transforms.getTransformArray();
                 for (TransformType t : transformTypes)
                 {
-                    StepMeta meta = buildTransformStepMeta(t, stepIds, constants);
+                    StepMeta meta = buildTransformStepMeta(t, stepIds, constants, etlXml.getName());
                     stepMetaDatas.add(meta);
                     if (meta.isGating())
                         hasGateStep = true;
@@ -333,7 +333,7 @@ public class TransformManager implements DataIntegrationService.Interface
     public static final String INVALID_DESTINATION = "No destination element specified.";
     public static final String INVALID_PROCEDURE = "No procedure element specified.";
 
-    private StepMeta buildTransformStepMeta(TransformType transformXML, Set<String> stepIds, Map<ParameterDescription, Object> constants) throws XmlException
+    private StepMeta buildTransformStepMeta(TransformType transformXML, Set<String> stepIds, Map<ParameterDescription, Object> constants, String etlName) throws XmlException
     {
         if (null == transformXML.getId())
             throw new XmlException(ID_REQUIRED);
@@ -354,6 +354,7 @@ public class TransformManager implements DataIntegrationService.Interface
 
         meta = provider.createMetaInstance();
         meta.setProvider(provider);
+        meta.setEtlName(etlName);
         // Apply the global set of constants to be provided to the target.
         // When the StepMeta config is parsed, any constants at the step level
         // will override this initial set.

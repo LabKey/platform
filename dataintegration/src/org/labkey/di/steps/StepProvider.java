@@ -33,7 +33,7 @@ public interface StepProvider
      * The preferred type name. Used in the transform type attribute
      * @return The name
      */
-    public String getName();
+    String getName();
 
     /**
      *  Optional list of alternate names for the type
@@ -41,29 +41,29 @@ public interface StepProvider
      *  and in the initial rollout we were using fully qualified class names
      * @return  List of alternate names
      */
-    public List<String> getLegacyNames();
+    List<String> getLegacyNames();
 
     /**
      *  The class for the Step
      * @return The .class
      */
-    public Class getStepClass();
+    Class getStepClass();
 
     /**
      * Instantiate the correct StepMeta subclass
      * @return An instance of the StepMeta corresponding to the type
      */
-    public StepMeta createMetaInstance();
+    StepMeta createMetaInstance();
 
     /**
      * Instantiate the correct Step subclass.
-     * @param f
-     * @param job
+     * @param f The factory
+     * @param job The current job
      * @param meta Should be cast to the correct StepMeta subclass in the constructor call
-     * @param context
+     * @param context Job context passed into the step
      * @return An instance of the Step class corresponding to the type
      */
-    public TransformTask createStepInstance(TransformTaskFactory f, PipelineJob job, StepMeta meta, TransformJobContext context);
+    TransformTask createStepInstance(TransformTaskFactory f, PipelineJob job, StepMeta meta, TransformJobContext context);
 
-    public Map<String, StepProvider> getNameProviderMap();
+    Map<String, StepProvider> getNameProviderMap();
 }
