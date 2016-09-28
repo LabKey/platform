@@ -1266,7 +1266,9 @@ public class IssuesController extends SpringActionController
                         return false;
                     }
 
-                    Issue related = IssueManager.getIssue(null, getUser(), relatedId);
+                    // only need to verify that the related issue exists without regard to folder permissions (issue:27483), so just query
+                    // the issues.issues table directly.
+                    Issue related = new TableSelector(IssuesSchema.getInstance().getTableInfoIssues()).getObject(relatedId, Issue.class);
                     if (related == null)
                     {
                         errors.rejectValue("Related", SpringActionController.ERROR_MSG, "Related issue '" + relatedId + "' not found");

@@ -19,6 +19,7 @@ package org.labkey.study.controllers.reports;
 import gwt.client.org.labkey.study.chart.client.StudyChartDesigner;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.labkey.api.action.Action;
@@ -400,23 +401,30 @@ public class ReportsController extends BaseStudyController
         public ModelAndView getView(SaveReportForm form, BindException errors) throws Exception
         {
             Report report = form.getReport(getViewContext());
-            final String key = ReportUtil.getReportQueryKey(report.getDescriptor());
-
-            int reportId = ReportService.get().saveReport(getViewContext(), key, report);
-
-            if (form.isRedirectToReport())
-                throw new RedirectException("showReport.view?reportId=" + reportId);
-
-            if (form.getShowWithDataset() != 0)
+            if (report != null)
             {
-                return getDatasetForward(reportId, form.getShowWithDataset());
-            }
-            else if (form.getRedirectToDataset() != null && !form.getRedirectToDataset().equals(-1))
-            {
-                return getDatasetForward(reportId, form.getRedirectToDataset());
+                final String key = ReportUtil.getReportQueryKey(report.getDescriptor());
+
+                int reportId = ReportService.get().saveReport(getViewContext(), key, report);
+
+                if (form.isRedirectToReport())
+                    throw new RedirectException("showReport.view?reportId=" + reportId);
+
+                if (form.getShowWithDataset() != 0)
+                {
+                    return getDatasetForward(reportId, form.getShowWithDataset());
+                }
+                else if (form.getRedirectToDataset() != null && !form.getRedirectToDataset().equals(-1))
+                {
+                    return getDatasetForward(reportId, form.getRedirectToDataset());
+                }
+                else
+                    return HttpView.redirect(PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
             }
             else
-                return HttpView.redirect(PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
+            {
+                return new HtmlView("<span class='labkey-error'>The report to save is either invalid or was not specified.</span>");
+            }
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -444,7 +452,14 @@ public class ReportsController extends BaseStudyController
         public ModelAndView getView(SaveReportViewForm form, boolean reshow, BindException errors) throws Exception
         {
             form.setErrors(errors);
-            return new JspView<>("/org/labkey/study/view/saveReportView.jsp", form);
+            if (form.getReport(getViewContext()) != null)
+            {
+                return new JspView<>("/org/labkey/study/view/saveReportView.jsp", form);
+            }
+            else
+            {
+                return new HtmlView("<span class='labkey-error'>The report to save is either invalid or was not specified.</span>");
+            }
         }
 
         public void validateCommand(SaveReportViewForm form, Errors errors)
@@ -457,9 +472,12 @@ public class ReportsController extends BaseStudyController
         public boolean handlePost(SaveReportViewForm form, BindException errors) throws Exception
         {
             Report report = form.getReport(getViewContext());
-            _savedReportId = ReportService.get().saveReport(getViewContext(), ReportUtil.getReportKey(form.getSchemaName(), form.getQueryName()), report);
-
-            return true;
+            if (report != null)
+            {
+                _savedReportId = ReportService.get().saveReport(getViewContext(), ReportUtil.getReportKey(form.getSchemaName(), form.getQueryName()), report);
+                return true;
+            }
+            return false;
         }
 
         public ActionURL getSuccessURL(SaveReportViewForm form)
@@ -1149,17 +1167,22 @@ public class ReportsController extends BaseStudyController
             this.reportType = reportType;
         }
 
+        @Nullable
         public Report getReport(ContainerUser cu)
         {
             Report report = ReportManager.get().createReport(reportType);
-            ReportDescriptor descriptor = report.getDescriptor();
-            descriptor.setReportName(label);
-            descriptor.initFromQueryString(params);
-            descriptor.setProperty("showWithDataset", String.valueOf(showWithDataset));
-            descriptor.setReportDescription(description);
-            descriptor.setProperty(ReportDescriptor.Prop.dataRegionName, dataRegionName);
+            if (report != null)
+            {
+                ReportDescriptor descriptor = report.getDescriptor();
+                descriptor.setReportName(label);
+                descriptor.initFromQueryString(params);
+                descriptor.setProperty("showWithDataset", String.valueOf(showWithDataset));
+                descriptor.setReportDescription(description);
+                descriptor.setProperty(ReportDescriptor.Prop.dataRegionName, dataRegionName);
 
-            return report;
+                return report;
+            }
+            return null;
         }
 
         public String getConfirmed()
@@ -1232,23 +1255,28 @@ public class ReportsController extends BaseStudyController
             reportType = report.getDescriptor().getReportType();
         }
 
+        @Nullable
         public Report getReport(ContainerUser cu)
         {
             Report report = super.getReport(cu);
-            ReportDescriptor descriptor = report.getDescriptor();
+            if (report != null)
+            {
+                ReportDescriptor descriptor = report.getDescriptor();
 
-            if (!StringUtils.isEmpty(getSchemaName()))
-                descriptor.setProperty(QueryParam.schemaName.toString(), getSchemaName());
-            if (!StringUtils.isEmpty(getQueryName()))
-                descriptor.setProperty(QueryParam.queryName.toString(), getQueryName());
-            if (!StringUtils.isEmpty(getViewName()))
-                descriptor.setProperty(QueryParam.viewName.toString(), getViewName());
-            if (!StringUtils.isEmpty(getDataRegionName()))
-                descriptor.setProperty(QueryParam.dataRegionName.toString(), getDataRegionName());
-            if (!getShareReport())
-                descriptor.setOwner(getViewContext().getUser().getUserId());
+                if (!StringUtils.isEmpty(getSchemaName()))
+                    descriptor.setProperty(QueryParam.schemaName.toString(), getSchemaName());
+                if (!StringUtils.isEmpty(getQueryName()))
+                    descriptor.setProperty(QueryParam.queryName.toString(), getQueryName());
+                if (!StringUtils.isEmpty(getViewName()))
+                    descriptor.setProperty(QueryParam.viewName.toString(), getViewName());
+                if (!StringUtils.isEmpty(getDataRegionName()))
+                    descriptor.setProperty(QueryParam.dataRegionName.toString(), getDataRegionName());
+                if (!getShareReport())
+                    descriptor.setOwner(getViewContext().getUser().getUserId());
 
-            return report;
+                return report;
+            }
+            return null;
         }
 
         public void setShareReport(boolean shareReport){_shareReport = shareReport;}

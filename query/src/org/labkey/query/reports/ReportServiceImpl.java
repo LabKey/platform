@@ -192,6 +192,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             _log.warn("Report type : " + report.getType() + " has previously been registered.");
     }
 
+    @Nullable
     public Report createReportInstance(String typeName)
     {
         // ConcurrentHashMap doesn't support null keys, so do the extra check ourselves
@@ -223,6 +224,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         }
     }
 
+    @Nullable
     public Report createReportInstance(ReportDescriptor descriptor)
     {
         Report report = createReportInstance(descriptor.getReportType());

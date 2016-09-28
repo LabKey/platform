@@ -16,6 +16,7 @@
 package org.labkey.study.reports;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -178,6 +179,7 @@ public class ReportManager implements DatasetManager.DatasetListener
         return new TableSelector(tinfo, columns, filter, null).setForDisplay(true).getResults();
     }
 
+    @Nullable
     public Report createReport(String reportType)
     {
         return ReportService.get().createReportInstance(reportType);

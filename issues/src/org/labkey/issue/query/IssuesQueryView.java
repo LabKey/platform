@@ -46,7 +46,6 @@ import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 
@@ -120,37 +119,37 @@ public class IssuesQueryView extends QueryView
     @Override
     protected void addGridViews(MenuButton menu, URLHelper target, String currentView)
     {
-        URLHelper url = target.clone().deleteParameters();
+        URLHelper url = cloneIssuesUrl(target);
         NavTree item = new NavTree("all", url);
         if ("".equals(currentView))
-            item.setStrong(target.toString().equals(url.toString()));
+            item.setStrong(URLHelper.queryEqual(url, target));
         menu.addMenuItem(item);
 
-        url = target.clone().deleteParameters();
+        url = cloneIssuesUrl(target);
         url.addFilter(getDataRegionName(), FieldKey.fromString("Status"), CompareType.EQUAL, "open");
         Sort sort = new Sort("AssignedTo/DisplayName");
-        sort.insertSortColumn("Milestone", true);
+        sort.insertSortColumn(FieldKey.fromParts("Milestone"), Sort.SortDirection.ASC, true);
         sort.addURLSort(url, getDataRegionName());
         url.addParameter(getDataRegionName() + ".sort", sort.getSortParamValue());
         item = new NavTree("open", url);
         if ("".equals(currentView))
-            item.setStrong(target.toString().equals(url.toString()));
+            item.setStrong(URLHelper.queryEqual(url, target));
         menu.addMenuItem(item);
 
-        url = target.clone().deleteParameters();
+        url = cloneIssuesUrl(target);
         url.addFilter(getDataRegionName(), FieldKey.fromString("Status"), CompareType.EQUAL, "resolved");
         sort = new Sort("AssignedTo/DisplayName");
-        sort.insertSortColumn("Milestone", true);
+        sort.insertSortColumn(FieldKey.fromParts("Milestone"), Sort.SortDirection.ASC, true);
         sort.addURLSort(url, getDataRegionName());
         url.addParameter(getDataRegionName() + ".sort", sort.getSortParamValue());
         item = new NavTree("resolved", url);
         if ("".equals(currentView))
-            item.setStrong(target.toString().equals(url.toString()));
+            item.setStrong(URLHelper.queryEqual(url, target));
         menu.addMenuItem(item);
 
         if (!getUser().isGuest())
         {
-            url = target.clone().deleteParameters();
+            url = cloneIssuesUrl(target);
             url.addFilter(getDataRegionName(), FieldKey.fromString("AssignedTo/DisplayName"), CompareType.EQUAL, getUser().getDisplayName(getViewContext().getUser()));
             url.addFilter(getDataRegionName(), FieldKey.fromString("Status"), CompareType.NEQ_OR_NULL, "closed");
             sort = new Sort("-Milestone");
@@ -158,22 +157,20 @@ public class IssuesQueryView extends QueryView
             url.addParameter(getDataRegionName() + ".sort", sort.getSortParamValue());
             item = new NavTree("mine", url);
             if ("".equals(currentView))
-                item.setStrong(target.toString().equals(url.toString()));
+                item.setStrong(URLHelper.queryEqual(url, target));
             menu.addMenuItem(item);
         }
 
         // sort the grid view alphabetically, with private views over public ones
         List<CustomView> views = new ArrayList<>(getQueryDef().getCustomViews(getViewContext().getUser(), getViewContext().getRequest(), false, false).values());
-        Collections.sort(views, new Comparator<CustomView>() {
-            public int compare(CustomView o1, CustomView o2)
-            {
-                if (!o1.isShared() && o2.isShared()) return -1;
-                if (o1.isShared() && !o2.isShared()) return 1;
-                if (o1.getName() == null) return -1;
-                if (o2.getName() == null) return 1;
+        Collections.sort(views, (o1, o2) ->
+        {
+            if (!o1.isShared() && o2.isShared()) return -1;
+            if (o1.isShared() && !o2.isShared()) return 1;
+            if (o1.getName() == null) return -1;
+            if (o2.getName() == null) return 1;
 
-                return o1.getName().compareTo(o2.getName());
-            }
+            return o1.getName().compareTo(o2.getName());
         });
 
         boolean addSep = true;
@@ -181,8 +178,6 @@ public class IssuesQueryView extends QueryView
         // issues doesn't preserve any URL sorts or filters because they may have been introduced by
         // the built in filter views.
         // TODO: replace these views with programatically filtered ones so we can leave URL filters on
-        target.deleteParameters();
-
         for (CustomView view : views)
         {
             String label = view.getName();
@@ -194,7 +189,7 @@ public class IssuesQueryView extends QueryView
                 menu.addSeparator();
                 addSep = false;
             }
-            item = new NavTree(label, target.clone().replaceParameter(param(QueryParam.viewName), label).getLocalURIString());
+            item = new NavTree(label, cloneIssuesUrl(target).replaceParameter(param(QueryParam.viewName), label).getLocalURIString());
             item.setId("GridViews:" + PageFlowUtil.filter(label));
             if (label.equals(currentView))
                 item.setStrong(true);
@@ -219,5 +214,20 @@ public class IssuesQueryView extends QueryView
             }
             menu.addMenuItem(item);
         }
+    }
+
+    private URLHelper cloneIssuesUrl(URLHelper target)
+    {
+        URLHelper url = target.clone().deleteParameters();
+
+        // preserve some required parameters
+        if (target.getParameter(IssuesListView.ISSUE_LIST_DEF_NAME) != null)
+            url.addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, target.getParameter(IssuesListView.ISSUE_LIST_DEF_NAME));
+        if (target.getParameter(QueryParam.schemaName.name()) != null)
+            url.addParameter(QueryParam.schemaName.name(), target.getParameter(QueryParam.schemaName.name()));
+        if (target.getParameter(param(QueryParam.queryName)) != null)
+            url.addParameter(param(QueryParam.queryName), target.getParameter(param(QueryParam.queryName)));
+
+        return url;
     }
 }

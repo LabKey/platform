@@ -239,7 +239,7 @@ public class IssueManager
     {
         Issue issue = _getIssue(c, issueId);
 
-        if (issue != null)
+        if (issue != null && issue.getIssueDefId() != null)
         {
             // container may initially be null if we don't care about a specific folder, but we need the
             // correct domain for the provisioned table properties associated with the issue
