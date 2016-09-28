@@ -42,7 +42,8 @@ Ext4.define('LABKEY.VaccineDesign.Utils', {
             hideFieldLabel: true,
             name: name,
             width: width,
-            height: height
+            height: height,
+            selectOnFocus: true
         }
     },
 
@@ -73,16 +74,21 @@ Ext4.define('LABKEY.VaccineDesign.Utils', {
     {
         var key = Ext4.isDefined(filter) ? queryName +  '|' + filter.getColumnName() + '|' + filter.getValue() : queryName,
             store = Ext4.getStore(key),
-            hasStudyDesignPrefix = queryName.indexOf('StudyDesign') == 0;
+            hasStudyDesignPrefix = queryName.indexOf('StudyDesign') == 0,
+            columns = 'RowId,Name,Label,DisplayOrder';
 
         if (Ext4.isDefined(store))
             return store;
+
+        // special case to query ProductId column for DoseAndRoute table
+        if (queryName == 'DoseAndRoute')
+            columns += ',ProductId';
 
         return Ext4.create('LABKEY.ext4.Store', {
             storeId: key,
             schemaName: 'study',
             queryName: queryName,
-            columns: 'RowId,Name,Label,DisplayOrder',
+            columns: columns,
             filterArray: Ext4.isDefined(filter) ? [filter] : (hasStudyDesignPrefix ? [LABKEY.Filter.create('Inactive', false)] : []),
             containerFilter: LABKEY.container.type == 'project' || Ext4.isDefined(filter) || !hasStudyDesignPrefix ? 'Current' : 'CurrentPlusProject',
             sort: '-Container/Path,Label',

@@ -18,8 +18,14 @@
 .study-vaccine-design td.cell-value {
     padding: 5px;
     border: solid 1px #DDDDDD;
-    height: 30px;
     vertical-align: top;
+}
+
+.study-vaccine-design td.cell-display {
+    height: 30px;
+}
+.study-vaccine-design td.cell-value {
+    height: 33px;
 }
 
 .study-vaccine-design table.subgrid td {
@@ -38,10 +44,6 @@
 }
 .study-vaccine-design table.outer tr.alternate-row td {
     background-color: #F4F4F4;
-}
-
-.study-vaccine-design td.cell-value {
-    cursor: pointer;
 }
 
 .study-vaccine-design td.cell-value.missing-required {

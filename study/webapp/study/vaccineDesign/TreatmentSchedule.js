@@ -5,7 +5,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentSchedulePanel', {
 
     bodyStyle : 'background-color: transparent;',
 
-    minWidth: 1400,
+    width: 1300,
 
     disableEdit : true,
 
@@ -30,10 +30,8 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentSchedulePanel', {
                 disableEdit: this.disableEdit
             });
 
-            this.treatmentsGrid.on('dirtychange', function() {
-                this.setDirty(true);
-                this.getSaveButton().enable();
-            }, this);
+            this.treatmentsGrid.on('dirtychange', this.enableSaveButton, this);
+            this.treatmentsGrid.on('celledited', this.enableSaveButton, this);
 
             // Note: since we need the data from the treatment grid, don't add this.getTreatmentScheduleGrid() until the treatment grid store has loaded
             this.treatmentsGrid.on('loadcomplete', this.onTreatmentGridLoadComplete, this, {single: true});
@@ -48,8 +46,9 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentSchedulePanel', {
         this.add(this.getButtonBar());
 
         // since a treatment label change needs to be reflected in the treatment schedule grid, force a refresh there
-        this.getTreatmentsGrid().on('celledited', function(){
-            this.getTreatmentScheduleGrid().refresh();
+        this.getTreatmentsGrid().on('celledited', function(view, fieldName, value){
+            if (fieldName == 'Label')
+                this.getTreatmentScheduleGrid().refresh();
         }, this);
 
         // removing a treatment row needs to also remove any visit mappings for that treatment
@@ -69,10 +68,8 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentSchedulePanel', {
                 visitNoun: this.visitNoun
             });
 
-            this.treatmentScheduleGrid.on('dirtychange', function() {
-                this.setDirty(true);
-                this.getSaveButton().enable();
-            }, this);
+            this.treatmentScheduleGrid.on('dirtychange', this.enableSaveButton, this);
+            this.treatmentScheduleGrid.on('celledited', this.enableSaveButton, this);
         }
 
         return this.treatmentScheduleGrid;
@@ -109,6 +106,12 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentSchedulePanel', {
         }
 
         return this.saveButton;
+    },
+
+    enableSaveButton : function()
+    {
+        this.setDirty(true);
+        this.getSaveButton().enable();
     },
 
     getCancelButton : function()
@@ -215,7 +218,10 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentSchedulePanel', {
             failure: function(response)
             {
                 var resp = Ext4.decode(response.responseText);
-                this.onFailure(Ext4.Array.pluck(resp.errors, 'message').join('<br/>'));
+                if (resp.errors)
+                    this.onFailure(Ext4.Array.pluck(resp.errors, 'message').join('<br/>'));
+                else
+                    this.onFailure(resp.exception);
             }
         });
     },
@@ -261,7 +267,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentsGrid', {
 
     mainTitle : 'Treatments',
 
-    width: 1120,
+    width: 1300,
 
     studyDesignQueryNames : ['StudyDesignRoutes', 'Product', 'DoseAndRoute'],
 
@@ -300,16 +306,16 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentsGrid', {
                 dataIndex: 'Label',
                 required: true,
                 editorType: 'Ext.form.field.Text',
-                editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Label', 190)
+                editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Label', 185)
             },{
                 label: 'Description',
                 width: 200,
                 dataIndex: 'Description',
                 editorType: 'Ext.form.field.TextArea',
-                editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Description', 190, '95%')
+                editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Description', 185, '95%')
             }, {
                 label: 'Immunogens',
-                width: 360,
+                width: 430,
                 dataIndex: 'Immunogen',
                 subgridConfig: {
                     columns: [{
@@ -322,16 +328,16 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentsGrid', {
                         editorConfig : this.getProductEditor('Immunogen')
                     },{
                         label: 'Dose and Route',
-                        width: 140,
+                        width: 200,
                         dataIndex: 'DoseAndRoute',
                         queryName: 'DoseAndRoute',
                         editorType: 'LABKEY.ext4.ComboBox',
-                        editorConfig: this.getDoseAndRouteEditor()
+                        editorConfig: this.getDoseAndRouteEditorConfig()
                     }]
                 }
             }, {
                 label: 'Adjuvants',
-                width: 360,
+                width: 430,
                 dataIndex: 'Adjuvant',
                 subgridConfig: {
                     columns: [{
@@ -344,11 +350,11 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentsGrid', {
                         editorConfig: this.getProductEditor('Adjuvant')
                     },{
                         label: 'Dose and Route',
-                        width: 140,
+                        width: 200,
                         dataIndex: 'DoseAndRoute',
                         queryName: 'DoseAndRoute',
                         editorType: 'LABKEY.ext4.ComboBox',
-                        editorConfig: this.getDoseAndRouteEditor()
+                        editorConfig: this.getDoseAndRouteEditorConfig()
                     }]
                 }
             }];
@@ -359,50 +365,70 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentsGrid', {
 
     getProductEditor : function(roleName){
 
-        var cfg = LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('ProductId', 190, 'Product',
-                LABKEY.Filter.create('Role', roleName), 'Label', 'RowId');
+        var filter = LABKEY.Filter.create('Role', roleName),
+            cfg = LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('ProductId', 185, 'Product', filter, 'Label', 'RowId');
 
         cfg.listeners = {
             scope: this,
-            change : function(cmp, value) {
+            change : function(cmp, productId) {
                 // clear out (if any) value for the dose and route field
-                if (this.cellEditField){
+                var record = this.getStore().getAt(cmp.storeIndex),
+                    outerDataIndex = cmp.outerDataIndex,
+                    subgridIndex = Number(cmp.subgridIndex),
+                    selector = 'tr.row:nth(' + (this.getStore().indexOf(record)+1) + ') table.subgrid-' + outerDataIndex
+                            + ' tr.subrow:nth(' + (subgridIndex+1) + ') td[data-index=DoseAndRoute] input';
 
-                    var index = this.cellEditField.storeIndex,
-                        record = this.getStore().getAt(index),
-                        outerDataIndex = this.cellEditField.outerDataIndex,
-                        subgridIndex = Number(this.cellEditField.subgridIndex);
-
-                    this.updateSubgridRecordValue(record, outerDataIndex, subgridIndex, 'DoseAndRoute', '');
+                var inputField = this.getInputFieldFromSelector(selector);
+                if (inputField != null)
+                {
+                    inputField.setValue('');
+                    inputField.bindStore(this.getNewDoseAndRouteComboStore(productId));
                 }
             }
         };
         return cfg;
     },
 
-    getDoseAndRouteEditor : function(){
-
-        var cfg = LABKEY.VaccineDesign.Utils.getStudyDesignComboConfig('DoseAndRoute', 130, 'DoseAndRoute', undefined, 'Label', 'Label');
-        cfg.listeners = {
-            scope: this,
-            render : function(cmp) {
-                var store = Ext4.getStore('DoseAndRoute');
-                if (store) {
-                    var index = cmp.storeIndex,
-                        record = this.getStore().getAt(index),
+    getDoseAndRouteEditorConfig : function()
+    {
+        return {
+            hideFieldLabel: true,
+            name: 'DoseAndRoute',
+            width: 185,
+            forceSelection : false, // allow usage of inactive types
+            editable : false,
+            queryMode : 'local',
+            displayField : 'Label',
+            valueField : 'Label',
+            store : null, // the store will be created and bound to this combo after render
+            listeners : {
+                scope: this,
+                render : function(cmp) {
+                    var record = this.getStore().getAt(cmp.storeIndex),
                         outerDataIndex = cmp.outerDataIndex,
-                        subgridIndex = Number(cmp.subgridIndex);
+                        subgridIndex = Number(cmp.subgridIndex),
+                        productId = record.get(outerDataIndex)[subgridIndex]['ProductId'];
 
-                    // get the product id to filter on
-                    var productId = record.get(outerDataIndex)[subgridIndex]['ProductId'];
-                    if (productId){
-                        store.filterArray = [LABKEY.Filter.create('ProductId', productId)];
-                        store.load();
-                    }
+                    cmp.bindStore(this.getNewDoseAndRouteComboStore(productId));
                 }
             }
         };
-        return cfg;
+    },
+
+    getNewDoseAndRouteComboStore : function(productId)
+    {
+        // need to create a new store each time since we need to add a [none] option and include any new treatment records
+        var data = [];
+        Ext4.each(Ext4.getStore('DoseAndRoute').getRange(), function(record)
+        {
+            if (record.get('ProductId') == null || record.get('ProductId') == productId)
+                data.push(Ext4.clone(record.data));
+        }, this);
+
+        return Ext4.create('Ext.data.Store', {
+            fields: ['RowId', 'Label'],
+            data: data
+        });
     },
 
     //Override
@@ -438,6 +464,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentsGrid', {
         var preProductIds = Ext4.Array.pluck(record.get('Immunogen'), 'ProductId').concat(Ext4.Array.pluck(record.get('Adjuvant'), 'ProductId'));
         this.callParent([target, record]);
         this.populateTreatmentLabel(record, preProductIds);
+        this.refresh(true);
     },
 
     populateTreatmentLabel : function(record, preProductIds)
@@ -445,10 +472,26 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentsGrid', {
         var currentLabel = record.get('Label');
         if (currentLabel == '' || currentLabel == this.getLabelFromProductIds(preProductIds))
         {
-            var postProductIds = Ext4.Array.pluck(record.get('Immunogen'), 'ProductId').concat(Ext4.Array.pluck(record.get('Adjuvant'), 'ProductId'));
-            record.set('Label', this.getLabelFromProductIds(postProductIds));
-            this.fireEvent('celledited');
+            var postProductIds = Ext4.Array.pluck(record.get('Immunogen'), 'ProductId').concat(Ext4.Array.pluck(record.get('Adjuvant'), 'ProductId')),
+                updatedTreatmentLabel = this.getLabelFromProductIds(postProductIds);
+
+            // need to update the input field value, which will intern update the record and fire teh celledited event
+            var inputField = this.getInputFieldFromSelector('tr.row:nth(' + (this.getStore().indexOf(record)+1) + ') td.cell-value input');
+            if (inputField != null)
+            {
+                inputField.setValue(updatedTreatmentLabel);
+                record.set('Label', updatedTreatmentLabel);
+            }
         }
+    },
+
+    getInputFieldFromSelector : function(selector)
+    {
+        var inputFieldEl = Ext4.DomQuery.selectNode(selector, this.getEl().dom);
+        if (inputFieldEl != null)
+            return Ext4.ComponentManager.get(inputFieldEl.id.replace('-inputEl', ''));
+
+        return null;
     },
 
     getLabelFromProductIds : function(productIdsArr)
@@ -472,9 +515,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleGrid', {
 
     mainTitle : 'Treatment Schedule',
 
-    width: 330,
-
-    //studyDesignQueryNames : ['Visit'],
+    width: 350,
 
     subjectNoun : 'Subject',
 
@@ -567,7 +608,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleGrid', {
         return {
             hideFieldLabel: true,
             name: 'VisitMap',
-            width: 140,
+            width: 135,
             forceSelection : false, // allow usage of inactive types
             editable : false,
             queryMode : 'local',
@@ -580,7 +621,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleGrid', {
     getNewTreatmentComboStore : function()
     {
         // need to create a new store each time since we need to add a [none] option and include any new treatment records
-        var data = [{RowId: null, Label: '[none'}];
+        var data = [{RowId: null, Label: '[none]'}];
         Ext4.each(this.getTreatmentsStore().getRange(), function(record)
         {
             data.push(Ext4.clone(record.data));
@@ -616,19 +657,19 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleGrid', {
                 dataIndex: 'Label',
                 required: true,
                 editorType: 'Ext.form.field.Text',
-                editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Label', 190)
+                editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignTextConfig('Label', 185)
             },{
                 label: this.subjectNoun + ' Count',
                 width: 130,
                 dataIndex: 'SubjectCount',
                 editorType: 'Ext.form.field.Number',
-                editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignNumberConfig('SubjectCount', 120)
+                editorConfig: LABKEY.VaccineDesign.Utils.getStudyDesignNumberConfig('SubjectCount', 115)
             }];
 
             var visitConfigs = this.getVisitColumnConfigs();
 
             // update the width based on the number of visit columns
-            this.setWidth((visitConfigs.length * 150) + 330);
+            this.setWidth((visitConfigs.length * 150) + 350);
 
             this.columnConfigs = columnConfigs.concat(visitConfigs);
         }
@@ -689,6 +730,8 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleGrid', {
                     TreatmentId: newValue
                 });
             }
+
+            this.fireEvent('celledited', this, 'VisitMap', visitMapArr);
         }
         else
         {

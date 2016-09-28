@@ -357,7 +357,7 @@ public class StudyDesignController extends BaseStudyController
             // label field is required
             for (ProductImpl product : form.getProducts())
             {
-                if (product.getLabel() == null || "".equals(product.getLabel()))
+                if (product.getLabel() == null || StringUtils.isEmpty(product.getLabel().trim()))
                 {
                     errors.reject(ERROR_MSG, "Label is a required field for all study products.");
                     break;
@@ -499,7 +499,7 @@ public class StudyDesignController extends BaseStudyController
             // validate that each treatment has a label
             for (TreatmentImpl treatment : form.getTreatments())
             {
-                if (StringUtils.isEmpty(treatment.getLabel()))
+                if (treatment.getLabel() == null || StringUtils.isEmpty(treatment.getLabel().trim()))
                     errors.reject(ERROR_MSG, "Label is a required field for all treatments.");
 
                 // validate that each treatment product mapping has a selected product
@@ -513,7 +513,7 @@ public class StudyDesignController extends BaseStudyController
             // validate that each cohort has a label, is unique, and has a valid subject count value
             for (CohortImpl cohort : form.getCohorts())
             {
-                if (StringUtils.isEmpty(cohort.getLabel()))
+                if (cohort.getLabel() == null || StringUtils.isEmpty(cohort.getLabel().trim()))
                     errors.reject(ERROR_MSG, "Label is a required field for all cohorts.");
 
                 CohortImpl cohortByLabel = StudyManager.getInstance().getCohortByLabel(getContainer(), getUser(), cohort.getLabel());
