@@ -509,7 +509,7 @@ public class StudyDesignController extends BaseStudyController
                 }
             }
 
-            // validate that each cohort has a label and it is unique
+            // validate that each cohort has a label, is unique, and has a valid subject count value
             for (CohortImpl cohort : form.getCohorts())
             {
                 if (cohort.getLabel() == null)
@@ -525,6 +525,14 @@ public class StudyDesignController extends BaseStudyController
                 else if (cohortByLabel != null)
                 {
                     errors.reject(ERROR_MSG, "A cohort with the label '" + cohort.getLabel() + "' already exists in this study.");
+                }
+
+                if (cohort.getSubjectCount() != null)
+                {
+                    if (cohort.getSubjectCount() < 0)
+                        errors.reject(ERROR_MSG, "Cohort subject count values must be a positive integer.");
+                    else if (cohort.getSubjectCount() == Integer.MAX_VALUE)
+                        errors.reject(ERROR_MSG, "Cohort subject count value larger than the max value allowed.");
                 }
             }
         }

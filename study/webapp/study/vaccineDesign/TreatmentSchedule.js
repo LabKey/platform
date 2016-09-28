@@ -138,7 +138,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentSchedulePanel', {
             var recData = Ext4.clone(record.data);
             index++;
 
-            // drop and empty immunogen or adjuvant rows that were just added
+            // drop any empty immunogen or adjuvant rows that were just added
             recData['Products'] = [];
             Ext4.each(recData['Immunogen'], function(immunogen)
             {
@@ -151,7 +151,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentSchedulePanel', {
                     recData['Products'].push(adjuvant);
             }, this);
 
-            // drop any empty rows that were just added
+            // drop any empty treatment rows that were just added
             var hasData = recData['Label'] != '' || recData['Description'] != '' || recData['Products'].length > 0;
             if (Ext4.isDefined(recData['RowId']) || hasData)
             {
@@ -171,44 +171,53 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentSchedulePanel', {
         if (errorMsg.length > 0)
         {
             this.onFailure(errorMsg.join('<br/>'));
+            return;
         }
-        else
+
+        Ext4.each(this.getTreatmentScheduleGrid().getStore().getRange(), function(record)
         {
-            Ext4.each(this.getTreatmentScheduleGrid().getStore().getRange(), function(record)
+            var recData = Ext4.clone(record.data);
+
+            // drop any empty cohort rows that were just added
+            var hasData = recData['Label'] != '' || recData['SubjectCount'] != '' || recData['VisitMap'].length > 0;
+            if (Ext4.isDefined(recData['RowId']) || hasData)
             {
-                var recData = Ext4.clone(record.data);
-
-                // drop any empty rows that were just added
-                var hasData = recData['Label'] != '' || recData['SubjectCount'] != '' || recData['VisitMap'].length > 0;
-                if (Ext4.isDefined(recData['RowId']) || hasData)
-                {
+                var countVal = Number(recData['SubjectCount']);
+                if (isNaN(countVal) || countVal < 0)
+                    errorMsg.push('Cohort ' + this.subjectNoun.toLowerCase() + ' count values must be a positive integer: ' + recData['SubjectCount'] + '.');
+                else
                     cohorts.push(recData);
-                }
-            }, this);
+            }
+        }, this);
 
-            LABKEY.Ajax.request({
-                url     : LABKEY.ActionURL.buildURL('study-design', 'updateTreatmentSchedule.api'),
-                method  : 'POST',
-                jsonData: {
-                    treatments: treatments,
-                    cohorts: cohorts
-                },
-                scope: this,
-                success: function(response)
-                {
-                    var resp = Ext4.decode(response.responseText);
-                    if (resp.success)
-                        this.goToReturnURL();
-                    else
-                        this.onFailure();
-                },
-                failure: function(response)
-                {
-                    var resp = Ext4.decode(response.responseText);
-                    this.onFailure(resp.exception);
-                }
-            });
+        if (errorMsg.length > 0)
+        {
+            this.onFailure(errorMsg.join('<br/>'));
+            return;
         }
+
+        LABKEY.Ajax.request({
+            url     : LABKEY.ActionURL.buildURL('study-design', 'updateTreatmentSchedule.api'),
+            method  : 'POST',
+            jsonData: {
+                treatments: treatments,
+                cohorts: cohorts
+            },
+            scope: this,
+            success: function(response)
+            {
+                var resp = Ext4.decode(response.responseText);
+                if (resp.success)
+                    this.goToReturnURL();
+                else
+                    this.onFailure();
+            },
+            failure: function(response)
+            {
+                var resp = Ext4.decode(response.responseText);
+                this.onFailure(resp.exception);
+            }
+        });
     },
 
     goToReturnURL : function()

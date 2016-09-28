@@ -59,7 +59,7 @@ Ext4.define('LABKEY.VaccineDesign.Utils', {
             name: name,
             width: width,
             minValue: 0,
-            allowDecimal: false
+            allowDecimals: false
         }
     },
 
