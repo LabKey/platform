@@ -192,11 +192,20 @@ public abstract class ColumnTransformImpl implements ColumnTransform
         return _outColumns;
     }
 
+    /**
+     * Returns the row value for the configured source column
+     * @return the value in this row
+     */
     protected Object getInputValue()
     {
         return _data.getInputColumnValue(_inputPosition);
     }
 
+    /**
+     * Returns the row value for any arbitrary column in the source query
+     * @param columnName the name of the column
+     * @return the value in this row
+     */
     protected Object getInputValue(String columnName)
     {
         return _data.getInputColumnValue(_data.getColumnNameMap().get(columnName));
