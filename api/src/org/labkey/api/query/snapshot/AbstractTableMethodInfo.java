@@ -16,6 +16,7 @@
 package org.labkey.api.query.snapshot;
 
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AbstractMethodInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.DbSchema;
@@ -32,7 +33,7 @@ public abstract class AbstractTableMethodInfo extends AbstractMethodInfo
         super(jdbcType);
     }
     
-    public final SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+    public final SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
     {
         throw new IllegalStateException("Table name required for this method");
     }

@@ -1031,36 +1031,66 @@ public class SimpleFilter implements Filter
 
     public void addUrlFilters(URLHelper urlHelp, @Nullable String regionName)
     {
-        String prefix = regionName == null ? "" : regionName + ".";
-        String[] filterKeys = urlHelp.getKeysByPrefix(prefix);
-        for (String filterKey : filterKeys)
-        {
-            String colTildeCompare = filterKey.substring(prefix.length());
+        String prefixDot = regionName == null ? "" : regionName + ".";
 
-            for (String param : urlHelp.getParameters(filterKey))
+        // for "dataRegion.column~op" filters
+        urlHelp.getParameterMap().entrySet().stream()
+            .filter(entry -> entry.getKey().startsWith(prefixDot))
+            .forEach(entry ->
             {
-                String[] compareInfo = colTildeCompare.split(SEPARATOR_CHAR);
-                CompareType type = null;
-                FieldKey fieldKey = FieldKey.fromString(compareInfo[0]);
-                if (compareInfo.length == 2)
-                    type = CompareType.getByURLKey(compareInfo[1]);
-
-                if (null == type || fieldKey == null)
-                    continue;
-
-                try
+                String colTildeCompare = entry.getKey().substring(prefixDot.length());
+                for (String param : entry.getValue())
                 {
-                    FilterClause fc = type.createFilterClause(fieldKey, param);
-                    fc._needsTypeConversion = true;
-                    _clauses.add(fc);
+                    String[] compareInfo = colTildeCompare.split(SEPARATOR_CHAR);
+                    CompareType type = null;
+                    FieldKey fieldKey = FieldKey.fromString(compareInfo[0]);
+                    if (compareInfo.length == 2)
+                        type = CompareType.getByURLKey(compareInfo[1]);
+
+                    if (null == type || fieldKey == null)
+                        continue;
+
+                    try
+                    {
+                        FilterClause fc = type.createFilterClause(fieldKey, param);
+                        fc._needsTypeConversion = true;
+                        _clauses.add(fc);
+                    }
+                    catch (ConversionException e)
+                    {
+                        // rethrow with better error message.  Date CompareTypes convert the parameter when created.
+                        throw new ConversionException("Could not convert filter value \"" + param + "\" for column \"" + fieldKey.toDisplayString() + "\". Please check your input. " + (e.getMessage() != null ? e.getMessage() : ""), e);
+                    }
                 }
-                catch (ConversionException e)
+            });
+
+        // for "dataRegion~op" filters (e.g. dataregion level filters)
+        String prefixTilde = regionName == null ? "" : regionName + "~";
+        urlHelp.getParameterMap().entrySet().stream()
+                .filter(entry -> entry.getKey().startsWith(prefixTilde))
+                .forEach(entry ->
                 {
-                    // rethrow with better error message.  Date CompareTypes convert the parameter when created.
-                    throw new ConversionException("Could not convert filter value \"" + param + "\" for column \"" + fieldKey.toDisplayString() + "\". Please check your input. " + (e.getMessage() != null ? e.getMessage() : ""), e);
-                }
-            }
-        }
+                    String colTildeCompare = entry.getKey().substring(prefixTilde.length());
+                    for (String param : entry.getValue())
+                    {
+                        CompareType type = CompareType.getByURLKey(colTildeCompare);
+
+                        if (null == type)
+                            continue;
+
+                        try
+                        {
+                            FilterClause fc = type.createFilterClause(new FieldKey(null,"*"), param);
+                            fc._needsTypeConversion = true;
+                            _clauses.add(fc);
+                        }
+                        catch (ConversionException e)
+                        {
+                            // rethrow with better error message.  Date CompareTypes convert the parameter when created.
+                            throw new ConversionException("Could not convert filter value \"" + param + "\". Please check your input. " + (e.getMessage() != null ? e.getMessage() : ""), e);
+                        }
+                    }
+                });
     }
 
     public SimpleFilter addAllClauses(SimpleFilter filter)

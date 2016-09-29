@@ -74,6 +74,6 @@ abstract public class AbstractMethodInfo implements MethodInfo
 
     public SQLFragment getSQL(String tableAlias, DbSchema schema, SQLFragment[] arguments)
     {
-        return getSQL(schema, arguments);
+        return getSQL(schema.getSqlDialect(), arguments);
     }
 }

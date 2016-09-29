@@ -16,6 +16,8 @@
 
 package org.labkey.api.data;
 
+import org.labkey.api.data.dialect.SqlDialect;
+
 /**
  * A method on a table.
  * Most tables do not have methods.  Methods are often used to expose lookup columns, where the lookup column
@@ -30,7 +32,7 @@ public interface MethodInfo
      */
     ColumnInfo createColumnInfo(TableInfo parentTable, ColumnInfo[] arguments, String alias);
 
-    SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments);
+    SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments);
 
     // for table methods
     SQLFragment getSQL(String tableAlias, DbSchema schema, SQLFragment[] arguments);
