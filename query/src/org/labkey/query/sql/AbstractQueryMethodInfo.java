@@ -18,6 +18,7 @@ package org.labkey.query.sql;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AbstractMethodInfo;
 
 /**
@@ -33,9 +34,9 @@ public abstract class AbstractQueryMethodInfo extends AbstractMethodInfo
     }
 
     @Override
-    final public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+    final public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
     {
-        return getSQL((Query)null, schema, arguments);
+        return getSQL((Query)null, dialect, arguments);
     }
 
     @Override
@@ -44,5 +45,5 @@ public abstract class AbstractQueryMethodInfo extends AbstractMethodInfo
         return super.getSQL(tableAlias, schema, arguments);
     }
 
-    abstract public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments);
+    abstract public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments);
 }

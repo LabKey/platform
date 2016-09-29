@@ -33,32 +33,7 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.ColumnHeaderType;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ColumnLogging;
-import org.labkey.api.data.CompareType;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.Filter;
-import org.labkey.api.data.ForeignKey;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.LookupColumn;
-import org.labkey.api.data.Parameter;
-import org.labkey.api.data.QueryLogging;
-import org.labkey.api.data.Results;
-import org.labkey.api.data.ResultsImpl;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SQLGenerationException;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.gwt.client.AuditBehaviorType;
@@ -67,29 +42,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.QueryBasedModuleResourceCache;
 import org.labkey.api.module.QueryBasedModuleResourceCacheHandler;
-import org.labkey.api.query.AliasManager;
-import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.query.CustomView;
-import org.labkey.api.query.CustomViewChangeListener;
-import org.labkey.api.query.CustomViewInfo;
-import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.DetailsURL;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.InvalidNamedSetException;
-import org.labkey.api.query.MetadataParseException;
-import org.labkey.api.query.QueryAction;
-import org.labkey.api.query.QueryChangeListener;
-import org.labkey.api.query.QueryDefinition;
-import org.labkey.api.query.QueryException;
-import org.labkey.api.query.QueryParam;
-import org.labkey.api.query.QuerySchema;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QueryView;
-import org.labkey.api.query.SchemaKey;
-import org.labkey.api.query.SchemaTreeNode;
-import org.labkey.api.query.SchemaTreeWalker;
-import org.labkey.api.query.SimpleUserSchema;
-import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
@@ -131,8 +84,19 @@ import org.labkey.query.persist.LinkedSchemaDef;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.QuerySnapshotDef;
+import org.labkey.query.sql.QExpr;
+import org.labkey.query.sql.QField;
+import org.labkey.query.sql.QIfDefined;
+import org.labkey.query.sql.QInternalExpr;
+import org.labkey.query.sql.QMethodCall;
+import org.labkey.query.sql.QNode;
+import org.labkey.query.sql.QQuery;
+import org.labkey.query.sql.QRowStar;
+import org.labkey.query.sql.QUnion;
 import org.labkey.query.sql.Query;
 import org.labkey.query.sql.QueryTableInfo;
+import org.labkey.query.sql.SqlBuilder;
+import org.labkey.query.sql.SqlParser;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import javax.servlet.http.HttpServletRequest;
@@ -163,6 +127,8 @@ import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
+
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 
 public class QueryServiceImpl extends QueryService
@@ -207,8 +173,172 @@ public class QueryServiceImpl extends QueryService
             CompareType.ISBLANK,
             CompareType.NONBLANK,
             CompareType.MV_INDICATOR,
-            CompareType.NO_MV_INDICATOR
+            CompareType.NO_MV_INDICATOR,
+            WHERE
     ));
+
+    public static final CompareType WHERE = new CompareType("WHERE", new String[]{"where"}, true, "sql", "WHERE", null) // UNDONE OperatorType
+    {
+        @Override
+        protected WhereClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        {
+            return new WhereClause((String)value);
+        }
+
+        @Override
+        public boolean meetsCriteria(Object value, Object[] paramVals)
+        {
+            throw new UnsupportedOperationException("Conditional formatting not yet supported for MV indicators");
+        }
+    };
+
+    private static class WhereClause extends CompareType.CompareClause
+    {
+        final QExpr expr;
+
+        WhereClause(String value)
+        {
+            super(new FieldKey(null,"*"),WHERE,value);
+            String expression = (String)getParamVals()[0];
+            List<QueryParseException> errors = new ArrayList<>();
+            QExpr parseResult;
+            if (StringUtils.isBlank(value))
+                parseResult = null;
+            else
+                parseResult = new SqlParser(null, null).parseExpr(expression, errors);
+            expr = parseResult;
+            if (!errors.isEmpty())
+                throw new ConversionException(errors.get(0));
+        }
+
+        @Override
+        protected void appendFilterText(StringBuilder sb, SimpleFilter.ColumnNameFormatter formatter)
+        {
+            sb.append(getParamVals()[0]);
+        }
+
+        @Override
+        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        {
+            return (String)getParamVals()[0];
+        }
+
+        @Override
+        public List<String> getColumnNames()
+        {
+            return getFieldKeys().stream().filter(f -> null==f.getParent()).map(f -> f.getName())
+                    .collect(Collectors.toList());
+        }
+
+        @Override
+        public List<FieldKey> getFieldKeys()
+        {
+            if (null == expr)
+                return Collections.emptyList();
+            Set<FieldKey> set = new HashSet<>();
+            collectKeys(expr, set);
+            return set.stream().collect(Collectors.toList());
+        }
+
+        private void collectKeys(QExpr expr, Set<FieldKey> set)
+        {
+            if (expr instanceof QQuery || expr instanceof QUnion || expr instanceof QRowStar || expr instanceof QIfDefined)
+                return;
+            FieldKey key = expr.getFieldKey();
+            if (key != null)
+                set.add(key);
+
+            QExpr methodName = null;
+            if (expr instanceof QMethodCall)
+            {
+                methodName = (QExpr)expr.childList().get(0);
+                if (null == methodName.getFieldKey())
+                    methodName = null;
+            }
+
+            for (QNode child : expr.children())
+            {
+                // skip identifier that is actually a method
+                if (child != methodName)
+                    collectKeys((QExpr)child, set);
+            }
+        }
+
+        @Override
+        public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        {
+            String expression = (String)getParamVals()[0];
+            if (isBlank(expression))
+                return new SQLFragment("1=1");
+            // reparse because we have a dialect now
+            List<QueryParseException> errors = new ArrayList<>();
+            QExpr expr = new SqlParser(dialect, null).parseExpr(expression, errors);
+            if (null == expr || !errors.isEmpty())
+                return new SQLFragment("0=1"); // UNDONE: error reporting
+            QExpr bound = bind(expr, columnMap);
+            return bound.getSqlFragment(dialect, null);
+        }
+
+        private QExpr bind(QExpr expr, Map<FieldKey, ? extends ColumnInfo> columnMap)
+        {
+            if (expr instanceof QQuery || expr instanceof QUnion || expr instanceof QRowStar || expr instanceof QIfDefined)
+            {
+                throw new UnsupportedOperationException("unsupported expression");
+            }
+
+            FieldKey key = expr.getFieldKey();
+            if (key != null)
+            {
+                ColumnInfo c = columnMap.get(key);
+                if (null == c)
+                    throw new UnsupportedOperationException("column not found: " + key.toString());
+                return new QColumnInfo(c);
+            }
+
+            QExpr methodName = null;
+            if (expr instanceof QMethodCall)
+            {
+                methodName = (QExpr)expr.childList().get(0);
+                if (null == methodName.getFieldKey())
+                    methodName = null;
+            }
+
+            QExpr ret = (QExpr) expr.clone();
+            for (QNode child : expr.children())
+            {
+                if (child == methodName)
+                    ret.appendChild(new QField(null, ((QExpr)child).getFieldKey().getName(), child));
+                else
+                    ret.appendChild(bind((QExpr)child, columnMap));
+            }
+            return ret;
+        }
+    }
+
+    public static class QColumnInfo extends QInternalExpr
+    {
+        final ColumnInfo col;
+
+        QColumnInfo(ColumnInfo col)
+        {
+            this.col = col;
+        }
+
+        @Override
+        public void appendSql(SqlBuilder builder, Query query)
+        {
+            builder.append(col.getAlias());
+        }
+
+        @Override
+        public boolean isConstant()
+        {
+            return false;
+        }
+    }
+
+
+
 
     static public QueryServiceImpl get()
     {
@@ -1793,7 +1923,7 @@ public class QueryServiceImpl extends QueryService
 
     public TableType parseMetadata(String metadataXML, Collection<QueryException> errors)
     {
-        if (metadataXML == null || StringUtils.isBlank(metadataXML))
+        if (metadataXML == null || isBlank(metadataXML))
             return null;
 
         XmlOptions options = XmlBeansUtil.getDefaultParseOptions();

@@ -107,7 +107,7 @@ public enum Operator
                     ArrayList<SQLFragment> terms = new ArrayList<>();
                     for (QNode operand : operands)
                     {
-                        SQLFragment sqlf = ((QExpr) operand).getSqlFragment(builder.getDbSchema(), query);
+                        SQLFragment sqlf = ((QExpr) operand).getSqlFragment(builder.getDialect(), query);
                         JdbcType type = ((QExpr) operand).getSqlType();
                         if (null != builder.getDialect())
                             sqlf = builder.getDialect().implicitConvertToString(type, sqlf);

@@ -254,7 +254,7 @@ public class QueryUnion extends QueryRelation
 				{
 					QExpr expr = resolveFields(entry.getKey());
 					unionSql.append(comma);
-					unionSql.append(expr.getSqlFragment(_schema.getDbSchema(), _query));
+					unionSql.append(expr.getSqlFragment(_schema.getDbSchema().getSqlDialect(), _query));
 					if (!entry.getValue())
 						unionSql.append(" DESC");
 					comma = ", ";

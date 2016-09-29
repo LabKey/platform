@@ -275,19 +275,21 @@ public class SqlParser
             {
                 _parseErrors.add(x);
             }
-            if (_parseErrors.size() != 0)
-                return null;
 
-            CommonTree parseRoot = (CommonTree)exprScope.getTree();
-            assert MemTracker.getInstance().put(parseRoot);
-            if (null == parseRoot)
-                return null;
+            if (_parseErrors.isEmpty())
+            {
+                CommonTree parseRoot = (CommonTree) exprScope.getTree();
+                assert MemTracker.getInstance().put(parseRoot);
+                if (null == parseRoot)
+                    return null;
 
-            QNode qnodeRoot = convertParseTree(parseRoot);
-			assert dump(qnodeRoot);
-            assert MemTracker.getInstance().put(qnodeRoot);
+                QNode qnodeRoot = convertParseTree(parseRoot);
+                assert dump(qnodeRoot);
+                assert MemTracker.getInstance().put(qnodeRoot);
 
-            _root = qnodeRoot != null && qnodeRoot instanceof QExpr ? (QExpr) qnodeRoot : null;
+                _root = qnodeRoot != null && qnodeRoot instanceof QExpr ? (QExpr) qnodeRoot : null;
+            }
+
             for (Throwable e : _parseErrors)
             {
                 errors.add(wrapParseException(e));

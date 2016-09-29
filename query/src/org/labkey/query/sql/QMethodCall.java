@@ -46,7 +46,7 @@ public class QMethodCall extends QExpr
         for (QNode n : getLastChild().children())
         {
 			QExpr expr = (QExpr)n;
-            SQLFragment sqlf = expr.getSqlFragment(builder.getDbSchema(), query);
+            SQLFragment sqlf = expr.getSqlFragment(builder.getDialect(), query);
             if (null == sqlf)
             {
                 QueryParseException qpe = new QueryParseException("Unexpected error parsing query near method " + getFirstChild().getTokenText(), null, expr.getLine(), expr.getColumn());
@@ -68,12 +68,12 @@ public class QMethodCall extends QExpr
         else if (method instanceof AbstractQueryMethodInfo)
         {
             // method that supports query parameter
-            builder.append(((AbstractQueryMethodInfo)method).getSQL(query, builder.getDbSchema(), arguments.toArray(new SQLFragment[arguments.size()])));
+            builder.append(((AbstractQueryMethodInfo)method).getSQL(query, builder.getDialect(), arguments.toArray(new SQLFragment[arguments.size()])));
         }
         else
         {
             // regular method info
-            builder.append(method.getSQL(builder.getDbSchema(), arguments.toArray(new SQLFragment[arguments.size()])));
+            builder.append(method.getSQL(builder.getDialect(), arguments.toArray(new SQLFragment[arguments.size()])));
         }
     }
 

@@ -51,9 +51,9 @@ abstract public class QExpr extends QNode
         return null;
     }
 
-    public SQLFragment getSqlFragment(DbSchema schema, Query query)
+    public SQLFragment getSqlFragment(SqlDialect dialect, Query query)
     {
-        SqlBuilder ret = new SqlBuilder(schema);
+        SqlBuilder ret = new SqlBuilder(dialect);
         appendSql(ret, query);
         return ret;
     }
@@ -100,7 +100,7 @@ abstract public class QExpr extends QNode
             @Override
             public SQLFragment getValueSql(String tableAlias)
             {
-                return getSqlFragment(getParentTable().getSchema(), query);
+                return getSqlFragment(getParentTable().getSchema().getSqlDialect(), query);
             }
         };
     }

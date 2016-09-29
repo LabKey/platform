@@ -253,13 +253,13 @@ public abstract class Method
                 {
                     return new AbstractQueryMethodInfo(_jdbcType)
                     {
-                        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
+                        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
                         {
                             assert arguments.length == 2 || arguments.length == 3;
                             if (arguments.length == 2)
-                                return schema.getSqlDialect().sqlLocate(arguments[0], arguments[1]);
+                                return  dialect.sqlLocate(arguments[0], arguments[1]);
                             else
-                                return schema.getSqlDialect().sqlLocate(arguments[0], arguments[1], arguments[2]);
+                                return dialect.sqlLocate(arguments[0], arguments[1], arguments[2]);
                         }
                     };
                 }
@@ -342,7 +342,7 @@ public abstract class Method
                 return new JdbcMethodInfoImpl(_name, _jdbcType)
                 {
                     @Override
-                    public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
+                    public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
                     {
                         if (arguments.length == 2)
                         {
@@ -353,7 +353,7 @@ public abstract class Method
                             argumentsThree[2] = new SQLFragment(String.valueOf(Integer.MAX_VALUE/2));
                             arguments = argumentsThree;
                         }
-                        return super.getSQL(query, schema, arguments);
+                        return super.getSQL(query, dialect, arguments);
                     }
                 };
             }
@@ -454,11 +454,10 @@ public abstract class Method
             _name = name;
         }
 
-        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
+        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
-            SqlDialect dialect = schema.getSqlDialect();
             return dialect.formatJdbcFunction(_name, arguments);
-            }
+        }
     }
 
 
@@ -469,7 +468,7 @@ public abstract class Method
             super(method._name, method._jdbcType);
         }
 
-        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] argumentsIN)
+        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] argumentsIN)
         {
             SQLFragment[] arguments = argumentsIN.clone();
             if (arguments.length >= 1)
@@ -478,7 +477,7 @@ public abstract class Method
                 if (i != null)
                     arguments[0] = new SQLFragment(i.name());
             }
-            return super.getSQL(query, schema, arguments);
+            return super.getSQL(query, dialect, arguments);
         }
     }
 
@@ -539,10 +538,10 @@ public abstract class Method
                     /* */
                 }
             }
-            return new ExprColumn(parentTable, alias, getSQL(parentTable.getSchema(), fragments), jdbcType);
+            return new ExprColumn(parentTable, alias, getSQL(parentTable.getSchema().getSqlDialect(), fragments), jdbcType);
         }
 
-        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] fragments)
+        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] fragments)
         {
             SQLFragment length = null;
             if (fragments.length >= 2)
@@ -551,9 +550,9 @@ public abstract class Method
                 try
                 {
                     JdbcType jdbcType = ConvertType.valueOf(sqlEscapeTypeName).jdbcType;
-                    String typeName = schema.getSqlDialect().sqlTypeNameFromJdbcType(jdbcType);
+                    String typeName = dialect.sqlTypeNameFromJdbcType(jdbcType);
                     if (null == typeName)
-                        throw new NullPointerException("No sql type name found for '" + jdbcType.name() + "' in " + schema.getSqlDialect().getProductName() + " database");
+                        throw new NullPointerException("No sql type name found for '" + jdbcType.name() + "' in " + dialect.getProductName() + " database");
                     if (fragments.length > 2)
                         length = fragments[2];
                     fragments = new SQLFragment[] {fragments[0], new SQLFragment(typeName)};
@@ -622,7 +621,7 @@ public abstract class Method
             return jdbcType;
         }
 
-        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
+        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment();
             ret.append(_name).append("(");
@@ -648,16 +647,16 @@ public abstract class Method
 		// https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=7078
         // Even though we are generating {fn ROUND()}, SQL Server requires 2 arguments
         // while Postgres requires 1 argument (for doubles)
-		public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
+		public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
 		{
-            boolean supportsRoundDouble = schema.getSqlDialect().supportsRoundDouble();
+            boolean supportsRoundDouble = dialect.supportsRoundDouble();
             boolean unitRound = arguments.length == 1 || (arguments.length==2 && arguments[1].getSQL().equals("0"));
             if (unitRound)
             {
                 if (supportsRoundDouble)
-                    return super.getSQL(query, schema, new SQLFragment[] {arguments[0], new SQLFragment("0")});
+                    return super.getSQL(query, dialect, new SQLFragment[] {arguments[0], new SQLFragment("0")});
                 else
-                    return super.getSQL(query, schema, new SQLFragment[] {arguments[0]});
+                    return super.getSQL(query, dialect, new SQLFragment[] {arguments[0]});
             }
 
             int i = Integer.MIN_VALUE;
@@ -671,14 +670,14 @@ public abstract class Method
             }
 
             if (supportsRoundDouble || i == Integer.MIN_VALUE)
-                return super.getSQL(query, schema, arguments);
+                return super.getSQL(query, dialect, arguments);
 
             // fall back, only supports simple integer
             SQLFragment scaled = new SQLFragment();
             scaled.append("(");
             scaled.append(arguments[0]);
             scaled.append(")*").append(Math.pow(10,i));
-            SQLFragment ret = super.getSQL(query, schema, new SQLFragment[] {scaled});
+            SQLFragment ret = super.getSQL(query, dialect, new SQLFragment[] {scaled});
             ret.append("/");
             ret.append(Math.pow(10,i));
             return ret;
@@ -693,15 +692,15 @@ public abstract class Method
             super(JdbcType.INTEGER);
         }
 
-        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
+        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
             if (arguments.length == 2)
-                return new AgeInYearsMethodInfo().getSQL(schema, arguments);
+                return new AgeInYearsMethodInfo().getSQL(dialect, arguments);
             TimestampDiffInterval i = TimestampDiffInterval.parse(arguments[2].getSQL());
             if (i == TimestampDiffInterval.SQL_TSI_YEAR)
-                return new AgeInYearsMethodInfo().getSQL(schema, arguments);
+                return new AgeInYearsMethodInfo().getSQL(dialect, arguments);
             if (i == TimestampDiffInterval.SQL_TSI_MONTH)
-                return new AgeInMonthsMethodInfo().getSQL(schema, arguments);
+                return new AgeInMonthsMethodInfo().getSQL(dialect, arguments);
             if (null == i)
                 throw new IllegalArgumentException("AGE(" + arguments[2].getSQL() + ")");
             else
@@ -717,19 +716,19 @@ public abstract class Method
             super(JdbcType.INTEGER);
         }
 
-        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
+        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
             MethodInfo year = labkeyMethod.get("year").getMethodInfo();
             MethodInfo month = labkeyMethod.get("month").getMethodInfo();
             MethodInfo dayofmonth = labkeyMethod.get("dayofmonth").getMethodInfo();
 
             SQLFragment ret = new SQLFragment();
-            SQLFragment yearA = year.getSQL(schema, new SQLFragment[] {arguments[0]});
-            SQLFragment monthA = month.getSQL(schema, new SQLFragment[] {arguments[0]});
-            SQLFragment dayA = dayofmonth.getSQL(schema, new SQLFragment[] {arguments[0]});
-            SQLFragment yearB = year.getSQL(schema, new SQLFragment[] {arguments[1]});
-            SQLFragment monthB = month.getSQL(schema, new SQLFragment[] {arguments[1]});
-            SQLFragment dayB = dayofmonth.getSQL(schema, new SQLFragment[] {arguments[1]});
+            SQLFragment yearA = year.getSQL(dialect, new SQLFragment[] {arguments[0]});
+            SQLFragment monthA = month.getSQL(dialect, new SQLFragment[] {arguments[0]});
+            SQLFragment dayA = dayofmonth.getSQL(dialect, new SQLFragment[] {arguments[0]});
+            SQLFragment yearB = year.getSQL(dialect, new SQLFragment[] {arguments[1]});
+            SQLFragment monthB = month.getSQL(dialect, new SQLFragment[] {arguments[1]});
+            SQLFragment dayB = dayofmonth.getSQL(dialect, new SQLFragment[] {arguments[1]});
 
             ret.append("(CASE WHEN (")
                     .append(monthA).append(">").append(monthB).append(" OR ")
@@ -752,19 +751,21 @@ public abstract class Method
             super(JdbcType.INTEGER);
         }
 
-        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
+
+        @Override
+        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
             MethodInfo year = labkeyMethod.get("year").getMethodInfo();
             MethodInfo month = labkeyMethod.get("month").getMethodInfo();
             MethodInfo dayofmonth = labkeyMethod.get("dayofmonth").getMethodInfo();
 
             SQLFragment ret = new SQLFragment();
-            SQLFragment yearA = year.getSQL(schema, new SQLFragment[] {arguments[0]});
-            SQLFragment monthA = month.getSQL(schema, new SQLFragment[] {arguments[0]});
-            SQLFragment dayA = dayofmonth.getSQL(schema, new SQLFragment[] {arguments[0]});
-            SQLFragment yearB = year.getSQL(schema, new SQLFragment[] {arguments[1]});
-            SQLFragment monthB = month.getSQL(schema, new SQLFragment[] {arguments[1]});
-            SQLFragment dayB = dayofmonth.getSQL(schema, new SQLFragment[] {arguments[1]});
+            SQLFragment yearA = year.getSQL(dialect, new SQLFragment[] {arguments[0]});
+            SQLFragment monthA = month.getSQL(dialect, new SQLFragment[] {arguments[0]});
+            SQLFragment dayA = dayofmonth.getSQL(dialect, new SQLFragment[] {arguments[0]});
+            SQLFragment yearB = year.getSQL(dialect, new SQLFragment[] {arguments[1]});
+            SQLFragment monthB = month.getSQL(dialect, new SQLFragment[] {arguments[1]});
+            SQLFragment dayB = dayofmonth.getSQL(dialect, new SQLFragment[] {arguments[1]});
 
             ret.append("(CASE WHEN (")
                     .append(dayA).append(">").append(dayB)
@@ -789,18 +790,19 @@ public abstract class Method
             super(JdbcType.BOOLEAN);
         }
 
-        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
+        @Override
+        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
             // try to turn second argument into pattern
             SQLFragment pattern = escapeLikePattern(arguments[1], '!', null, "%");
             if (null != pattern)
             {
-                String like = schema.getSqlDialect().getCaseInsensitiveLikeOperator();
+                String like = dialect.getCaseInsensitiveLikeOperator();
                 SQLFragment ret = new SQLFragment();
                 ret.append("((").append(arguments[0]).append(") ").append(like).append(" ").append(pattern).append(" ESCAPE '!')");
                 return ret;
             }
-            else if (schema.getSqlDialect().isCaseSensitive())
+            else if (dialect.isCaseSensitive())
             {
                 SQLFragment ret = new SQLFragment();
                 ret.append("{fn lcase({fn left(").append(arguments[0]).append(",").append("{fn length(").append(arguments[1]).append(")})})}");
@@ -827,7 +829,7 @@ public abstract class Method
             super(JdbcType.BOOLEAN);
         }
 
-        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
+        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment();
             SQLFragment a = arguments[0];
@@ -850,7 +852,7 @@ public abstract class Method
             super(JdbcType.DECIMAL);
         }
 
-        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
+        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
             return new SQLFragment("CAST(" + (new DecimalFormat("0.0###")).format(ModuleLoader.getInstance().getCoreModule().getVersion()) + " AS NUMERIC(15,4))");
         }
@@ -863,7 +865,7 @@ public abstract class Method
             super(JdbcType.INTEGER);
         }
 
-        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
+        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment("?");
             ret.add(new Callable(){
@@ -897,7 +899,7 @@ public abstract class Method
             super(JdbcType.VARCHAR);
         }
 
-        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
+        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment("?");
             ret.add(new Callable(){
@@ -925,7 +927,7 @@ public abstract class Method
             this.path = path;
         }
 
-        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
+        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
             String v;
             // NOTE we resolve CONTAINER at compile time because we don't have a good place to set this variable at runtime
@@ -936,7 +938,7 @@ public abstract class Method
             if (null == v)
                 return new SQLFragment("CAST(NULL AS VARCHAR)");
             else
-                return new SQLFragment("CAST(? AS " + schema.getSqlDialect().sqlTypeNameFromJdbcType(JdbcType.VARCHAR) + ")", v);
+                return new SQLFragment("CAST(? AS " + dialect.sqlTypeNameFromJdbcType(JdbcType.VARCHAR) + ")", v);
         }
     }
 
@@ -948,7 +950,7 @@ public abstract class Method
             super(JdbcType.VARCHAR);
         }
 
-        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
+        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
             String moduleName = toSimpleString(arguments[0]);
             String propertyName = toSimpleString(arguments[1]);
@@ -970,7 +972,7 @@ public abstract class Method
                 Container cCompile = getCompileTimeContainer(query);
                 if (null != cCompile)
                     value = mp.getEffectiveValue(cCompile);
-                return new SQLFragment("CAST(? AS " + schema.getSqlDialect().sqlTypeNameFromJdbcType(JdbcType.VARCHAR) + ")", value);
+                return new SQLFragment("CAST(? AS " + dialect.sqlTypeNameFromJdbcType(JdbcType.VARCHAR) + ")", value);
             }
 
             return new SQLFragment("CAST(NULL AS VARCHAR)");
@@ -985,7 +987,7 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
+        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
             getProperty:
             {
@@ -1036,7 +1038,7 @@ public abstract class Method
                 }
 
                 //see issue 19661.  SQLServer defaults to 30 for VARCHAR, unless a length is explicitly specified, so we CAST using the length of this string
-                return new SQLFragment("CAST(? AS " + schema.getSqlDialect().sqlTypeNameFromJdbcType(JdbcType.VARCHAR) + (value == null ? "" : "(" + value.toString().length() + ")") + ")", value);
+                return new SQLFragment("CAST(? AS " + dialect.sqlTypeNameFromJdbcType(JdbcType.VARCHAR) + (value == null ? "" : "(" + value.toString().length() + ")") + ")", value);
             }
 
             // no legal field found
@@ -1052,7 +1054,7 @@ public abstract class Method
             super(JdbcType.VARCHAR);
         }
 
-        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
+        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment("?");
             ret.add(AppProps.getInstance().getContextPath());
@@ -1068,7 +1070,7 @@ public abstract class Method
             super(JdbcType.BOOLEAN);
         }
 
-        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
+        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment groupArg = arguments[0];
             SQLFragment userArg = arguments.length > 1 ? arguments[1] : null;
@@ -1091,7 +1093,7 @@ public abstract class Method
             // NOTE: we are not verifying principals.type='g'
             // NOTE: we are not verifying principals.container in (project,site)
 
-            return CompareType.getMemberOfSQL(schema.getSqlDialect(), userArg, groupArg);
+            return CompareType.getMemberOfSQL(dialect, userArg, groupArg);
          }
     }
 
@@ -1163,7 +1165,7 @@ public abstract class Method
         }
         
         @Override
-        public SQLFragment getSQL(Query query, DbSchema schema, SQLFragment[] arguments)
+        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment();
             ret.append("(").append(arguments[0]).append(",").append(arguments[1]).append(")");
