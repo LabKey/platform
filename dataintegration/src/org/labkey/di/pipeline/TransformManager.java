@@ -39,10 +39,10 @@ import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.dataiterator.CopyConfig;
 import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.di.ScheduledPipelineJobContext;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
-import org.labkey.api.dataiterator.CopyConfig;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
@@ -88,6 +88,7 @@ import org.labkey.di.filters.RunFilterStrategy;
 import org.labkey.di.filters.SelectAllFilterStrategy;
 import org.labkey.di.steps.ExternalPipelineTaskProvider;
 import org.labkey.di.steps.RemoteQueryTransformStepProvider;
+import org.labkey.di.steps.SimpleQueryTransformStepMeta;
 import org.labkey.di.steps.SimpleQueryTransformStepProvider;
 import org.labkey.di.steps.StepMeta;
 import org.labkey.di.steps.StepProvider;
@@ -872,7 +873,7 @@ public class TransformManager implements DataIntegrationService.Interface
         int deletedRows = 0;
         TransformDescriptor etl = (TransformDescriptor)getDescriptor(id);
         Map<String, String> retMap = new HashMap<>();
-        StringBuilder sb = new StringBuilder();     // Error string
+        StringBuilder errorBuilder = new StringBuilder();
         if(etl != null)
         {
             List<StepMeta> stepMetas = etl.getStepMetaDatas();
@@ -883,28 +884,31 @@ public class TransformManager implements DataIntegrationService.Interface
             {
                 if (stepMeta.isUseTarget() && ((CopyConfig)stepMeta).getTargetType() == CopyConfig.TargetTypes.query)
                 {
+                    if (SimpleQueryTransformStepMeta.class.isInstance(stepMeta) && ((SimpleQueryTransformStepMeta)stepMeta).isTruncateStep())
+                        continue; // Don't bother truncating from a truncate step!
+
                     QuerySchema querySchema = DefaultSchema.get(user, c, stepMeta.getTargetSchema());
                     if (null == querySchema || null == querySchema.getDbSchema())
                     {
-                        sb.append("Could not find schema: ").append(stepMeta.getTargetSchema()).append("\n");
+                        errorBuilder.append("Could not find schema: ").append(stepMeta.getTargetSchema()).append("\n");
                         continue;
                     }
                     TableInfo targetTableInfo = querySchema.getTable(stepMeta.getTargetQuery());
                     if (null == targetTableInfo)
                     {
-                        sb.append("Could not find table: ").append(stepMeta.getTargetSchema()).append('.').append(stepMeta.getTargetQuery()).append("\n");
+                        errorBuilder.append("Could not find table: ").append(stepMeta.getTargetSchema()).append('.').append(stepMeta.getTargetQuery()).append("\n");
                         continue;
                     }
                     targets.add(targetTableInfo);
                 }
             }
 
-            if(sb.length()<1)
+            if(errorBuilder.length()<1)
             {
                 // Reverse targets to delete in reverse order in case foreign keys exist between targets
                 Collections.reverse(targets);
 
-                // Truncate tables. This does not delete tables just rows.
+                // Truncate tables
                 for (TableInfo target : targets)
                 {
                     QueryUpdateService qus = target.getUpdateService();
@@ -917,16 +921,20 @@ public class TransformManager implements DataIntegrationService.Interface
                         }
                         catch(QueryUpdateServiceException | SQLException | BatchValidationException e)
                         {
-                            throw new IllegalStateException("Unable to perform truncate transaction on " + target.toString());
+                            String msg = "Unable to perform truncate transaction on " + target.toString();
+                            errorBuilder.append(msg).append("\n");
+                            errorBuilder.append(e.getMessage()).append("\n");
+                            LOG.error(msg, e);
                         }
-                    } else
+                    }
+                    else
                     {
-                        throw new IllegalStateException("Could not open query service for " + target.toString());
+                        errorBuilder.append("No truncation on target '").append(target.toString()).append( "' is not an updatable table.\n");
                     }
                 }
             }
-            if(sb.length()>0)
-                retMap.put("error", sb.toString());
+            if(errorBuilder.length()>0)
+                retMap.put("error", errorBuilder.toString());
             retMap.put("rows", Integer.toString(deletedRows));
         }
         return retMap;

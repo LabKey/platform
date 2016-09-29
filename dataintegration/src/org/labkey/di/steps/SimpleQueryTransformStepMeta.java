@@ -16,6 +16,7 @@
 package org.labkey.di.steps;
 
 import org.apache.xmlbeans.XmlException;
+import org.labkey.api.dataiterator.CopyConfig;
 import org.labkey.di.pipeline.TransformManager;
 import org.labkey.etl.xml.TransformType;
 
@@ -47,5 +48,10 @@ public class SimpleQueryTransformStepMeta extends StepMetaImpl
             throw new XmlException(TransformManager.INVALID_DESTINATION);
         if (getTargetOptions() != TargetOptions.truncate && !isUseSource())
             throw new XmlException(TransformManager.INVALID_SOURCE);
+    }
+
+    public boolean isTruncateStep()
+    {
+        return !isUseSource() && getTargetOptions() == CopyConfig.TargetOptions.truncate;
     }
 }
