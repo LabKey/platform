@@ -166,7 +166,7 @@ public class TransformManager implements DataIntegrationService.Interface
         }
         catch (XmlValidationException|XmlException|IOException e)
         {
-            LOG.error("ETL Config: Unable to parse " + resource + " : " + e.getMessage());
+            LOG.warn("ETL Config: Unable to parse " + resource + " : " + e.getMessage());
             LOG.debug(e);
         }
         return null;
