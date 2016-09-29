@@ -25,8 +25,6 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.issue.ColumnTypeEnum" %>
@@ -126,7 +124,7 @@
     List<NavTree> additionalHeaderLinks = new ArrayList<>();
     for (IssueDetailHeaderLinkProvider provider : IssuesListDefService.get().getIssueDetailHeaderLinkProviders())
     {
-        IssueListDef issueListDef = IssueManager.getIssueListDef(issue.getIssueDefId());
+        IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issue.getIssueDefId());
         if (issueListDef != null)
         {
             boolean issueIsOpen = Issue.statusOPEN.equals(issue.getStatus());

@@ -1071,6 +1071,7 @@ issues/src/org/labkey/issue/model/CustomColumn.java -text
 issues/src/org/labkey/issue/model/GeneralIssuesListDefProvider.java -text
 issues/src/org/labkey/issue/model/Issue.java -text
 issues/src/org/labkey/issue/model/IssueListDef.java -text
+issues/src/org/labkey/issue/model/IssueListDefCache.java -text
 issues/src/org/labkey/issue/model/IssueManager.java -text
 issues/src/org/labkey/issue/model/IssuePage.java -text
 issues/src/org/labkey/issue/model/IssuesListDefServiceImpl.java -text

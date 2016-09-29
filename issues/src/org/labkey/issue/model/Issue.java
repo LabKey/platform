@@ -436,10 +436,15 @@ public class Issue extends Entity implements Serializable, Cloneable
     {
         if (_issueDefName == null && _issueDefId != null)
         {
-            IssueListDef issueListDef = IssueManager.getIssueListDef(_issueDefId);
+            IssueListDef issueListDef = IssueManager.getIssueListDef(getContainerFromId(), _issueDefId);
             _issueDefName = issueListDef != null ? issueListDef.getName() : null;
         }
         return _issueDefName;
+    }
+
+    public Container getContainerFromId()
+    {
+        return ContainerManager.getForId(getContainerId());
     }
 
     public void setIssueDefName(String issueDefName)

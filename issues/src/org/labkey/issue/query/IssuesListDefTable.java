@@ -164,7 +164,7 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
 
             IssueListDef def = null;
             if (rowId != null)
-                def = IssueManager.getIssueListDef(rowId);
+                def = IssueManager.getIssueListDef(c, rowId);
             else if (name != null)
                 def = IssueManager.getIssueListDef(c, name);
             else

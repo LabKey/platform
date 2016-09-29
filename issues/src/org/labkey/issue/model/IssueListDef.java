@@ -5,6 +5,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Entity;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SimpleFilter;
@@ -153,30 +154,33 @@ public class IssueListDef extends Entity
 
         if (isNew())
         {
-            // need to transact this
-            def = Table.insert(user, IssuesSchema.getInstance().getTableInfoIssueListDef(), this);
-            String uri = generateDomainURI(getDomainContainer(user), user, getName(), getKind());
-            Container domainContainer = getDomainContainer(user);
-
-            Domain domain = PropertyService.get().getDomain(domainContainer, uri);
-            if (domain == null)
+            try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
             {
-                try
-                {
-                    AbstractIssuesListDefDomainKind domainKind = getDomainKind();
-                    domainKind.createLookupDomains(domainContainer, user, getName());
-                    domain = PropertyService.get().createDomain(getDomainContainer(user), uri, getName());
+                def = IssueManager.insertIssueListDef(user, this);
+                String uri = generateDomainURI(getDomainContainer(user), user, getName(), getKind());
+                Container domainContainer = getDomainContainer(user);
 
-                    ensureDomainProperties(domain, domainKind, domainKind.getRequiredProperties(), domainKind.getPropertyForeignKeys(domainContainer));
-                    domain.save(user);
-                    setDefaultValues(domain, domainKind.getRequiredProperties());
-
-                    setDefaultEntryTypeNames(domainContainer, domainKind.getDefaultSingularName(), domainKind.getDefaultPluralName());
-                }
-                catch (BatchValidationException | ExperimentException e)
+                Domain domain = PropertyService.get().getDomain(domainContainer, uri);
+                if (domain == null)
                 {
-                    throw new UnexpectedException(e);
+                    try
+                    {
+                        AbstractIssuesListDefDomainKind domainKind = getDomainKind();
+                        domainKind.createLookupDomains(domainContainer, user, getName());
+                        domain = PropertyService.get().createDomain(getDomainContainer(user), uri, getName());
+
+                        ensureDomainProperties(domain, domainKind, domainKind.getRequiredProperties(), domainKind.getPropertyForeignKeys(domainContainer));
+                        domain.save(user);
+                        setDefaultValues(domain, domainKind.getRequiredProperties());
+
+                        setDefaultEntryTypeNames(domainContainer, domainKind.getDefaultSingularName(), domainKind.getDefaultPluralName());
+                    }
+                    catch (BatchValidationException | ExperimentException e)
+                    {
+                        throw new UnexpectedException(e);
+                    }
                 }
+                transaction.commit();
             }
         }
         return def;

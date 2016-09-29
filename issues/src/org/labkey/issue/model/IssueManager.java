@@ -30,26 +30,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.AttachmentParentEntity;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DatabaseCache;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.Filter;
-import org.labkey.api.data.ObjectFactory;
-import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.Results;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -205,13 +186,11 @@ public class IssueManager
 
     private static Issue _getIssue(@Nullable Container c, int issueId)
     {
-        SimpleFilter f = new SimpleFilter(FieldKey.fromParts("issueId"), issueId);
+        SimpleFilter filter = null;
         if (null != c)
-            f.addCondition(FieldKey.fromParts("container"), c);
+            filter = new SimpleFilter(FieldKey.fromParts("Container"), c);
 
-        TableSelector selector = new TableSelector(_issuesSchema.getTableInfoIssues(), f, null);
-        selector.setForDisplay(true);
-        Issue issue = selector.getObject(Issue.class);
+        Issue issue = new TableSelector(_issuesSchema.getTableInfoIssues(), filter, null).getObject(issueId, Issue.class);
         if (issue == null)
             return null;
 
@@ -246,7 +225,7 @@ public class IssueManager
             if (c == null)
                 c = ContainerManager.getForId(issue.getContainerId());
 
-            IssueListDef issueListDef = getIssueListDef(issue.getIssueDefId());
+            IssueListDef issueListDef = getIssueListDef(issue.getContainerFromId(), issue.getIssueDefId());
             UserSchema userSchema = QueryService.get().getUserSchema(user, c, IssuesQuerySchema.SCHEMA_NAME);
             TableInfo table = userSchema.getTable(issueListDef.getName());
 
@@ -1068,26 +1047,30 @@ public class IssueManager
         try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
         {
             List<AttachmentParent> attachmentParents = new ArrayList<>();
-            Set<Integer> issueDefs = new HashSet<>();
+            Integer issueDefId = null;
+            Container issueDefContainer = null;
             List<String> entityIds = new ArrayList<>();
             for (int issueId : issueIds)
             {
                 Issue issue = IssueManager.getIssue(null, user, issueId);
                 if (issue != null)
                 {
-                    if (issue.getIssueDefId() != null)
-                        issueDefs.add(issue.getIssueDefId());
+                    if (issue.getIssueDefId() != null && issueDefId == null)
+                    {
+                        issueDefId = issue.getIssueDefId();
+                        issueDefContainer = issue.getContainerFromId();
+                    }
                     entityIds.add(issue.getEntityId());
 
                     for (Issue.Comment comment : issue.getComments())
                         attachmentParents.add(comment);
                 }
             }
-            if (!issueDefs.isEmpty())
+            if (issueDefId != null)
             {
                 // these should all be within the same domain so we don't care which issuedef we get, they
                 // should all be the same provisioned table
-                IssueListDef issueDef = getIssueListDef(issueDefs.iterator().next());
+                IssueListDef issueDef = getIssueListDef(issueDefContainer, issueDefId);
                 if (issueDef != null)
                 {
                     // get the destination issue definition
@@ -1503,29 +1486,32 @@ public class IssueManager
         }
     }
 
-    public static List<IssueListDef> getIssueListDefsByKind(@NotNull String kind, Container container)
+    public static Collection<IssueListDef> getIssueListDefsByKind(@NotNull String kind, Container container)
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addCondition(FieldKey.fromParts("Kind"), kind);
-        return new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), filter, null).getArrayList(IssueListDef.class);
+        return IssueListDefCache.getForDomainKind(container, kind);
     }
 
-    public static List<IssueListDef> getIssueListDefs(Container container)
+    public static Collection<IssueListDef> getIssueListDefs(Container container)
     {
-        SimpleFilter filter = container == null ? null : SimpleFilter.createContainerFilter(container);
-        return new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), filter, null).getArrayList(IssueListDef.class);
+        return IssueListDefCache.getIssueListDefs(container);
     }
 
+    public static IssueListDef insertIssueListDef(User user, IssueListDef def)
+    {
+        IssueListDefCache.uncache(ContainerManager.getForId(def.getContainerId()));
+        return Table.insert(user, IssuesSchema.getInstance().getTableInfoIssueListDef(), def);
+    }
+
+    @Nullable
     public static IssueListDef getIssueListDef(Container container, String name)
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addCondition(FieldKey.fromParts("name"), name);
-        return new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), filter, null).getObject(IssueListDef.class);
+        return IssueListDefCache.getIssueListDef(container, name);
     }
 
-    public static IssueListDef getIssueListDef(int rowId)
+    @Nullable
+    public static IssueListDef getIssueListDef(Container container, int rowId)
     {
-        return new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), null, null).getObject(rowId, IssueListDef.class);
+        return IssueListDefCache.getIssueListDef(container, rowId);
     }
 
     /**
@@ -1544,18 +1530,9 @@ public class IssueManager
         return null;
     }
 
-    public static void deleteIssueListDef(String name, Container c, User user) throws DomainNotFoundException
-    {
-        IssueListDef def = getIssueListDef(c, name);
-        if (def == null)
-            throw new IllegalArgumentException("Can't find IssueDef with name " + name);
-
-        _deleteIssueListDef(def, c, user);
-    }
-
     public static void deleteIssueListDef(int rowId, Container c, User user) throws DomainNotFoundException
     {
-        IssueListDef def = getIssueListDef(rowId);
+        IssueListDef def = getIssueListDef(c, rowId);
         if (def == null)
             throw new IllegalArgumentException("Can't find IssueDef with rowId " + rowId);
 
@@ -1588,6 +1565,7 @@ public class IssueManager
             {
                 d.getDomainKind().deleteDomain(user, d);
             }
+            IssueListDefCache.uncache(c);
             transaction.commit();
         }
     }
@@ -1673,11 +1651,11 @@ public class IssueManager
     {
         if (issue.getIssueDefId() != null)
         {
-            return getIssueListDef(issue.getIssueDefId());
+            return getIssueListDef(issue.getContainerFromId(), issue.getIssueDefId());
         }
         else if (issue.getIssueDefName() != null)
         {
-            return getIssueListDef(ContainerManager.getForId(issue.getContainerId()), issue.getIssueDefName());
+            return getIssueListDef(issue.getContainerFromId(), issue.getIssueDefName());
         }
         return null;
     }

@@ -49,7 +49,7 @@ public class DeleteIssueListAction extends FormViewAction<DeleteIssueListAction.
 
         for (String id : ids)
         {
-            IssueListDef issueListDef = IssueManager.getIssueListDef(NumberUtils.toInt(id));
+            IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(),NumberUtils.toInt(id));
             if (issueListDef != null)
             {
                 TableInfo table = issueListDef.createTable(getUser());
